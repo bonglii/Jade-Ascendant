@@ -5,27 +5,23 @@
 /android/
 
 # ==============================
-# Local / generated tooling
+# Local machine configuration
 # ==============================
 .local/
 
 # ==============================
-# Generated builds / artifacts
+# Generated QA / test artifacts
 # ==============================
 artifacts/
-release/
-build/
-builds/
-dist/
 
 # ==============================
-# Android / distributable builds
+# Exported Android packages
 # ==============================
 *.apk
 *.aab
 
 # ==============================
-# Signing / credentials
+# Signing keys / certificates
 # NEVER commit these
 # ==============================
 *.keystore
@@ -33,14 +29,13 @@ dist/
 *.p12
 
 # ==============================
-# Environment / secrets
+# Secrets / environment files
 # ==============================
 .env
 .env.*
-*.secret
 
 # ==============================
-# OS junk
+# Operating system junk
 # ==============================
 Thumbs.db
 Desktop.ini
