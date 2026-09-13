@@ -1,0 +1,248 @@
+{
+  "build": "JA-RELEASE-CANDIDATE-20260909",
+  "date": "2026-09-09",
+  "source_status": "PASS",
+  "scope": "Source/data/asset packaging checks only. No gameplay, performance, signing, or Play approval claim.",
+  "source_checks": [
+    {
+      "name": "Literal resource references and scene resource IDs",
+      "status": "PASS",
+      "details": []
+    },
+    {
+      "name": "Lexical delimiter and duplicate-function checks (not GDScript compilation)",
+      "status": "PASS",
+      "details": []
+    },
+    {
+      "name": "Five stable Chapter 1 stage IDs",
+      "status": "PASS"
+    },
+    {
+      "name": "Five implemented scene destinations",
+      "status": "PASS"
+    },
+    {
+      "name": "Only the fifth trial is the chapter finale",
+      "status": "PASS"
+    },
+    {
+      "name": "Stage 1 timing and stone rewards preserved",
+      "status": "PASS"
+    },
+    {
+      "name": "Distinct stage palettes",
+      "status": "PASS"
+    },
+    {
+      "name": "Enemy probability tables sum to 100",
+      "status": "PASS",
+      "details": []
+    },
+    {
+      "name": "Sixteen items across four equipment slots",
+      "status": "PASS"
+    },
+    {
+      "name": "Four items per rarity",
+      "status": "PASS",
+      "details": {
+        "common": 4,
+        "rare": 4,
+        "epic": 4,
+        "legendary": 4
+      }
+    },
+    {
+      "name": "Positive currency and shard prices",
+      "status": "PASS"
+    },
+    {
+      "name": "Four original equipment bonuses retained",
+      "status": "PASS"
+    },
+    {
+      "name": "Every equipment/material icon resolves",
+      "status": "PASS"
+    },
+    {
+      "name": "Translation format arguments preserved",
+      "status": "PASS",
+      "details": []
+    },
+    {
+      "name": "Indonesian core message catalog",
+      "status": "PASS",
+      "details": {
+        "entries": 389,
+        "visual_language_qa": "NOT_RUN"
+      }
+    },
+    {
+      "name": "PNG dimensions/depth/channels: assets/branding/launcher_192.png",
+      "status": "PASS",
+      "details": [
+        192,
+        192,
+        8,
+        6
+      ]
+    },
+    {
+      "name": "PNG dimensions/depth/channels: assets/branding/adaptive_foreground_432.png",
+      "status": "PASS",
+      "details": [
+        432,
+        432,
+        8,
+        6
+      ]
+    },
+    {
+      "name": "PNG dimensions/depth/channels: assets/branding/adaptive_background_432.png",
+      "status": "PASS",
+      "details": [
+        432,
+        432,
+        8,
+        6
+      ]
+    },
+    {
+      "name": "PNG dimensions/depth/channels: assets/branding/adaptive_monochrome_432.png",
+      "status": "PASS",
+      "details": [
+        432,
+        432,
+        8,
+        6
+      ]
+    },
+    {
+      "name": "PNG dimensions/depth/channels: release/store/play_icon_512.png",
+      "status": "PASS",
+      "details": [
+        512,
+        512,
+        8,
+        6
+      ]
+    },
+    {
+      "name": "PNG dimensions/depth/channels: release/store/feature_graphic_1024x500.png",
+      "status": "PASS",
+      "details": [
+        1024,
+        500,
+        8,
+        2
+      ]
+    },
+    {
+      "name": "Play icon below 1 MiB",
+      "status": "PASS"
+    },
+    {
+      "name": "Nineteen audio assets; PCM SFX are populated and unclipped",
+      "status": "PASS",
+      "details": []
+    },
+    {
+      "name": "Music has Ogg containers and loop import settings",
+      "status": "PASS"
+    },
+    {
+      "name": "AAB / API 36 / min 24 / ARM64 offline preset",
+      "status": "PASS"
+    },
+    {
+      "name": "Only optional vibration permission enabled",
+      "status": "PASS",
+      "details": [
+        "vibrate"
+      ]
+    },
+    {
+      "name": "Development tools and mock provider excluded from export",
+      "status": "PASS"
+    }
+  ],
+  "supplemental_source_checks": [
+    {
+      "name": "Boss baseline preserved: scenes/enemy/boss_1.tscn",
+      "status": "PASS",
+      "details": {
+        "baseline_sha256": "26e2df67bb67a4af19d24135ce9d1366aaf089dddbe70590cc848bf0d602207d",
+        "current_sha256": "26e2df67bb67a4af19d24135ce9d1366aaf089dddbe70590cc848bf0d602207d"
+      }
+    },
+    {
+      "name": "Boss baseline preserved: assets/enemy/boss_1_jade_valley_sovereign_spriteframes.tres",
+      "status": "PASS",
+      "details": {
+        "baseline_sha256": "3af0375c7fd47fa31fe0b98d8419a3fdc739d52998d6627898fd1414d5e1feab",
+        "current_sha256": "3af0375c7fd47fa31fe0b98d8419a3fdc739d52998d6627898fd1414d5e1feab"
+      }
+    },
+    {
+      "name": "Adaptive safe area: adaptive_foreground_432.png",
+      "status": "PASS",
+      "details": {
+        "furthest_nontransparent_radius": 125.501,
+        "limit": 132
+      }
+    },
+    {
+      "name": "Adaptive safe area: adaptive_monochrome_432.png",
+      "status": "PASS",
+      "details": {
+        "furthest_nontransparent_radius": 109.501,
+        "limit": 132
+      }
+    },
+    {
+      "name": "Production resource references do not require export-excluded assets",
+      "status": "PASS",
+      "details": {
+        "errors": [],
+        "intentional_debug_only": []
+      }
+    },
+    {
+      "name": "Windows wrapper source arguments",
+      "status": "PASS",
+      "details": {
+        "executed_on_windows": false
+      }
+    },
+    {
+      "name": "Python helper syntax",
+      "status": "PASS",
+      "details": {
+        "executed": "CPython ast/py_compile; not Windows or Godot"
+      }
+    },
+    {
+      "name": "Listing length: Short description",
+      "status": "PASS",
+      "details": {
+        "characters": 79,
+        "limit": 80
+      }
+    },
+    {
+      "name": "Listing length: Deskripsi singkat",
+      "status": "PASS",
+      "details": {
+        "characters": 74,
+        "limit": 80
+      }
+    }
+  ],
+  "engine": "NOT_RUN",
+  "windows_helpers": "NOT_RUN",
+  "android_build": "NOT_RUN",
+  "device": "NOT_RUN",
+  "gameplay_screenshots": "NOT_RUN",
+  "play_submission": "NOT_SUBMITTED"
+}

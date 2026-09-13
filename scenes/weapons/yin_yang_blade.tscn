@@ -1,0 +1,24 @@
+[gd_scene load_steps=4 format=3 uid="uid://bysxe5oj163ft"]
+
+[ext_resource type="Script" uid="uid://cga8gabdme3b5" path="res://scripts/weapon/yin_yang_blade.gd" id="1_script"]
+[ext_resource type="SpriteFrames" path="res://assets/weapons/sword/yin_yang_blades_spriteframes.tres" id="2_frames"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_5h11f"]
+
+[node name="YinYangBlade" type="Area2D" unique_id=1433978358]
+z_index = 2
+script = ExtResource("1_script")
+
+[node name="AuraRing" type="Line2D" parent="."]
+width = 2.0
+default_color = Color(0.28, 0.78, 0.72, 0.28)
+points = PackedVector2Array(-14, 0, -9.9, -9.9, 0, -14, 9.9, -9.9, 14, 0, 9.9, 9.9, 0, 14, -9.9, 9.9, -14, 0)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+sprite_frames = ExtResource("2_frames")
+animation = &"yin"
+autoplay = "yin"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=525555469]
+shape = SubResource("CircleShape2D_5h11f")

@@ -1,0 +1,41 @@
+[gd_scene load_steps=6 format=3 uid="uid://cm84fi0gm23fp"]
+
+[ext_resource type="Script" uid="uid://xucafd6gcii4" path="res://scripts/enemy/enemy_6.gd" id="1_vjmq4"]
+[ext_resource type="SpriteFrames" path="res://assets/enemy/enemy_6_verdant_ward_keeper_spriteframes.tres" id="2_enemy6_frames"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bx8n8"]
+size = Vector2(21, 31.5)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_5h11f"]
+radius = 150.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_bx8n8"]
+radius = 90.0
+
+[node name="Enemy_6" type="CharacterBody2D" unique_id=670151518 groups=["enemy"]]
+collision_layer = 2
+collision_mask = 19
+script = ExtResource("1_vjmq4")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1853367339]
+texture_filter = 1
+position = Vector2(-1, -10)
+scale = Vector2(1.08, 1.08)
+sprite_frames = ExtResource("2_enemy6_frames")
+animation = &"idle_left"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1131922980]
+position = Vector2(-1.5, 1.25)
+shape = SubResource("RectangleShape2D_bx8n8")
+
+[node name="GuardianAura" type="Area2D" parent="." unique_id=911304435]
+collision_layer = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="GuardianAura" unique_id=1848809769]
+shape = SubResource("CircleShape2D_5h11f")
+
+[node name="QiPulseArea" type="Area2D" parent="." unique_id=1471928]
+collision_layer = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="QiPulseArea" unique_id=445519380]
+shape = SubResource("CircleShape2D_bx8n8")

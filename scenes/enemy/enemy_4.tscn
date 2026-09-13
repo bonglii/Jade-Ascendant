@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3 uid="uid://b08i7dvcdadik"]
+
+[ext_resource type="Script" uid="uid://b07xk14cymxqt" path="res://scripts/enemy/enemy_4.gd" id="1_rk7d6"]
+[ext_resource type="SpriteFrames" path="res://assets/enemy/enemy_4_verdant_formation_adept_spriteframes.tres" id="2_enemy4_frames"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_fs2sx"]
+size = Vector2(33, 39)
+
+[node name="Enemy_4" type="CharacterBody2D" unique_id=1823935556 groups=["enemy"]]
+collision_layer = 2
+collision_mask = 19
+script = ExtResource("1_rk7d6")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1868193304]
+texture_filter = 1
+position = Vector2(-1, -16)
+sprite_frames = ExtResource("2_enemy4_frames")
+animation = &"idle_right"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1129791828]
+position = Vector2(-3, -3)
+shape = SubResource("RectangleShape2D_fs2sx")

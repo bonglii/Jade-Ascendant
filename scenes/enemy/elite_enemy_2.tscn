@@ -1,0 +1,24 @@
+[gd_scene load_steps=4 format=3 uid="uid://drwo5h4u3e83l"]
+
+[ext_resource type="Script" uid="uid://bwt62j3xdd73a" path="res://scripts/enemy/elite_enemy_2.gd" id="1_ro280"]
+[ext_resource type="SpriteFrames" path="res://assets/enemy/elite_2_storm_cultivator_spriteframes.tres" id="2_storm_frames"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bx8n8"]
+size = Vector2(28, 39.5)
+
+[node name="Elite_enemy_2" type="CharacterBody2D" unique_id=815164592 groups=["elite", "enemy"]]
+collision_layer = 2
+collision_mask = 19
+script = ExtResource("1_ro280")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=912535188]
+texture_filter = 1
+z_index = 2
+scale = Vector2(1.06, 1.06)
+position = Vector2(0, -15)
+sprite_frames = ExtResource("2_storm_frames")
+animation = &"idle_left"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=600897341]
+position = Vector2(0, 5)
+shape = SubResource("RectangleShape2D_bx8n8")

@@ -1,0 +1,452 @@
+[gd_scene load_steps=23 format=3 uid="uid://gmotv77sjjqo"]
+
+[ext_resource type="Script" path="res://scripts/ui/CultivationMenu.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/ui/mobile_safe_area.gd" id="2_safe"]
+[ext_resource type="Theme" path="res://assets/ui/jade_ui_theme.tres" id="3_theme"]
+[ext_resource type="Texture2D" path="res://assets/ui/cultivation/cultivation_sanctum.png" id="4_bg"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/spirit_stone.svg" id="5_stone"]
+[ext_resource type="Script" path="res://scripts/ui/cultivation_formation.gd" id="6_formation"]
+[ext_resource type="Script" path="res://scripts/ui/wuxia_hub_nav.gd" id="7_nav"]
+[ext_resource type="Texture2D" path="res://assets/ui/wuxia/realm_frame.png" id="8_realm_frame"]
+[ext_resource type="Texture2D" path="res://assets/ui/wuxia/trial_frame.png" id="9_trial_frame"]
+[ext_resource type="Texture2D" path="res://assets/ui/wuxia/cta_jade_normal.png" id="10_cta_normal"]
+[ext_resource type="Texture2D" path="res://assets/ui/wuxia/cta_jade_hover.png" id="11_cta_hover"]
+[ext_resource type="Texture2D" path="res://assets/ui/wuxia/cta_jade_pressed.png" id="12_cta_pressed"]
+
+[sub_resource type="Gradient" id="Gradient_shade"]
+offsets = PackedFloat32Array(0, 0.28, 0.58, 1)
+colors = PackedColorArray(0.002, 0.014, 0.024, 0.34, 0.002, 0.014, 0.024, 0.24, 0.002, 0.014, 0.024, 0.36, 0.001, 0.008, 0.014, 0.76)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture_shade"]
+gradient = SubResource("Gradient_shade")
+width = 648
+height = 1152
+fill_from = Vector2(0.5, 0)
+fill_to = Vector2(0.5, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleTopBar"]
+bg_color = Color(0.002, 0.019, 0.031, 0.92)
+border_width_bottom = 1
+border_color = Color(0.30, 0.86, 0.74, 0.30)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_left = 7
+corner_radius_bottom_right = 7
+content_margin_left = 12.0
+content_margin_top = 7.0
+content_margin_right = 12.0
+content_margin_bottom = 7.0
+shadow_color = Color(0, 0, 0, 0.48)
+shadow_size = 7
+
+[sub_resource type="StyleBoxFlat" id="StyleHeaderFrame"]
+content_margin_left = 18.0
+content_margin_top = 12.0
+content_margin_right = 18.0
+content_margin_bottom = 12.0
+bg_color = Color(0.002, 0.028, 0.040, 0.90)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.95, 0.75, 0.30, 0.54)
+corner_radius_top_left = 11
+corner_radius_top_right = 11
+corner_radius_bottom_left = 11
+corner_radius_bottom_right = 11
+shadow_color = Color(0, 0, 0, 0.36)
+shadow_size = 7
+
+[sub_resource type="StyleBoxFlat" id="StyleDetailFrame"]
+content_margin_left = 18.0
+content_margin_top = 12.0
+content_margin_right = 18.0
+content_margin_bottom = 12.0
+bg_color = Color(0.002, 0.021, 0.034, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.26, 0.82, 0.71, 0.40)
+corner_radius_top_left = 11
+corner_radius_top_right = 11
+corner_radius_bottom_left = 11
+corner_radius_bottom_right = 11
+shadow_color = Color(0, 0, 0, 0.36)
+shadow_size = 7
+
+[sub_resource type="StyleBoxFlat" id="StyleCurrentEffect"]
+bg_color = Color(0.006, 0.070, 0.070, 0.78)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.28, 0.82, 0.70, 0.52)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_left = 8
+corner_radius_bottom_right = 8
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+
+[sub_resource type="StyleBoxFlat" id="StyleNextEffect"]
+bg_color = Color(0.050, 0.040, 0.014, 0.72)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.96, 0.79, 0.36, 0.58)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_left = 8
+corner_radius_bottom_right = 8
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+
+[sub_resource type="StyleBoxTexture" id="StyleRefineNormal"]
+texture = ExtResource("10_cta_normal")
+texture_margin_left = 26.0
+texture_margin_top = 18.0
+texture_margin_right = 26.0
+texture_margin_bottom = 18.0
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxTexture" id="StyleRefineHover"]
+texture = ExtResource("11_cta_hover")
+texture_margin_left = 26.0
+texture_margin_top = 18.0
+texture_margin_right = 26.0
+texture_margin_bottom = 18.0
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxTexture" id="StyleRefinePressed"]
+texture = ExtResource("12_cta_pressed")
+texture_margin_left = 26.0
+texture_margin_top = 18.0
+texture_margin_right = 26.0
+texture_margin_bottom = 18.0
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+
+[node name="CultivationMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_theme")
+script = ExtResource("1_script")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("4_bg")
+expand_mode = 1
+stretch_mode = 6
+self_modulate = Color(0.78, 0.88, 0.90, 1)
+
+[node name="Shade" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("GradientTexture_shade")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Content" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_safe")
+
+[node name="TopBar" type="PanelContainer" parent="Content"]
+layout_mode = 1
+anchor_left = 0.03
+anchor_top = 0.018
+anchor_right = 0.97
+anchor_bottom = 0.018
+offset_bottom = 64.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleTopBar")
+
+[node name="TopRow" type="HBoxContainer" parent="Content/TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleBox" type="VBoxContainer" parent="Content/TopBar/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = -2
+
+[node name="TopTitle" type="Label" parent="Content/TopBar/TopRow/TitleBox"]
+layout_mode = 2
+theme_type_variation = &"JadeHeroName"
+theme_override_font_sizes/font_size = 18
+text = "CULTIVATION"
+
+[node name="TopSubtitle" type="Label" parent="Content/TopBar/TopRow/TitleBox"]
+layout_mode = 2
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 9
+text = "SACRED MERIDIAN FORMATION"
+
+[node name="StoneBox" type="HBoxContainer" parent="Content/TopBar/TopRow"]
+layout_mode = 2
+theme_override_constants/separation = 5
+alignment = 1
+
+[node name="StoneIcon" type="TextureRect" parent="Content/TopBar/TopRow/StoneBox"]
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+texture = ExtResource("5_stone")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SpiritStoneLabel" type="Label" parent="Content/TopBar/TopRow/StoneBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+theme_type_variation = &"JadeCurrencyLabel"
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="HeaderPanel" type="PanelContainer" parent="Content"]
+layout_mode = 1
+anchor_left = 0.03
+anchor_top = 0.102
+anchor_right = 0.97
+anchor_bottom = 0.102
+offset_bottom = 100.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleHeaderFrame")
+
+[node name="HeaderVBox" type="VBoxContainer" parent="Content/HeaderPanel"]
+layout_mode = 2
+theme_override_constants/separation = 1
+
+[node name="Eyebrow" type="Label" parent="Content/HeaderPanel/HeaderVBox"]
+layout_mode = 2
+theme_type_variation = &"JadeSubtitle"
+theme_override_font_sizes/font_size = 10
+text = "INNER SEA  •  PERMANENT CULTIVATION"
+
+[node name="HeaderTitle" type="Label" parent="Content/HeaderPanel/HeaderVBox"]
+layout_mode = 2
+theme_type_variation = &"JadeTitle"
+theme_override_font_sizes/font_size = 25
+text = "Sacred Cultivation Formation"
+
+[node name="MasteryLabel" type="Label" parent="Content/HeaderPanel/HeaderVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 10
+text = "MERIDIAN MASTERY 0 / 30"
+
+[node name="Formation" type="Control" parent="Content"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.035
+anchor_top = 0.198
+anchor_right = 0.965
+anchor_bottom = 0.648
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("6_formation")
+
+[node name="DetailPanel" type="PanelContainer" parent="Content"]
+layout_mode = 1
+anchor_left = 0.03
+anchor_top = 0.657
+anchor_right = 0.97
+anchor_bottom = 0.657
+offset_bottom = 270.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleDetailFrame")
+
+[node name="DetailVBox" type="VBoxContainer" parent="Content/DetailPanel"]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="DetailHeader" type="HBoxContainer" parent="Content/DetailPanel/DetailVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DetailNames" type="VBoxContainer" parent="Content/DetailPanel/DetailVBox/DetailHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = -2
+
+[node name="SelectedPathSubtitle" type="Label" parent="Content/DetailPanel/DetailVBox/DetailHeader/DetailNames"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeSubtitle"
+theme_override_font_sizes/font_size = 10
+text = "BODY MERIDIAN"
+
+[node name="SelectedPathName" type="Label" parent="Content/DetailPanel/DetailVBox/DetailHeader/DetailNames"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeHeroName"
+theme_override_font_sizes/font_size = 22
+text = "Vitality"
+
+[node name="LevelLabel" type="Label" parent="Content/DetailPanel/DetailVBox/DetailHeader"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+theme_type_variation = &"JadeSubtitle"
+theme_override_font_sizes/font_size = 12
+text = "LEVEL 0 / 10"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="DescriptionLabel" type="Label" parent="Content/DetailPanel/DetailVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 11
+text = "Strengthen the body and expand the vessel of qi."
+autowrap_mode = 2
+
+[node name="EffectRow" type="HBoxContainer" parent="Content/DetailPanel/DetailVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CurrentCard" type="PanelContainer" parent="Content/DetailPanel/DetailVBox/EffectRow"]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleCurrentEffect")
+
+[node name="CurrentVBox" type="VBoxContainer" parent="Content/DetailPanel/DetailVBox/EffectRow/CurrentCard"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="CurrentCaption" type="Label" parent="Content/DetailPanel/DetailVBox/EffectRow/CurrentCard/CurrentVBox"]
+layout_mode = 2
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 9
+text = "CURRENT EFFECT"
+
+[node name="CurrentEffectLabel" type="Label" parent="Content/DetailPanel/DetailVBox/EffectRow/CurrentCard/CurrentVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeQiLabel"
+theme_override_font_sizes/font_size = 14
+text = "+0 MAX HP"
+
+[node name="NextCard" type="PanelContainer" parent="Content/DetailPanel/DetailVBox/EffectRow"]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleNextEffect")
+
+[node name="NextVBox" type="VBoxContainer" parent="Content/DetailPanel/DetailVBox/EffectRow/NextCard"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="NextCaption" type="Label" parent="Content/DetailPanel/DetailVBox/EffectRow/NextCard/NextVBox"]
+layout_mode = 2
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 9
+text = "NEXT REFINEMENT"
+
+[node name="NextEffectLabel" type="Label" parent="Content/DetailPanel/DetailVBox/EffectRow/NextCard/NextVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeTitle"
+theme_override_font_sizes/font_size = 14
+text = "+5 MAX HP"
+
+[node name="RefineRow" type="HBoxContainer" parent="Content/DetailPanel/DetailVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CostBox" type="HBoxContainer" parent="Content/DetailPanel/DetailVBox/RefineRow"]
+custom_minimum_size = Vector2(118, 58)
+layout_mode = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="CostIcon" type="TextureRect" parent="Content/DetailPanel/DetailVBox/RefineRow/CostBox"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+texture = ExtResource("5_stone")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CostLabel" type="Label" parent="Content/DetailPanel/DetailVBox/RefineRow/CostBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeCurrencyLabel"
+theme_override_font_sizes/font_size = 15
+text = "100"
+vertical_alignment = 1
+
+[node name="RefineButton" type="Button" parent="Content/DetailPanel/DetailVBox/RefineRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 0.92, 0.68, 1)
+theme_override_colors/font_hover_color = Color(1, 0.96, 0.78, 1)
+theme_override_colors/font_disabled_color = Color(0.58, 0.62, 0.58, 0.82)
+theme_override_styles/normal = SubResource("StyleRefineNormal")
+theme_override_styles/hover = SubResource("StyleRefineHover")
+theme_override_styles/pressed = SubResource("StyleRefinePressed")
+theme_override_styles/focus = SubResource("StyleRefineHover")
+theme_override_styles/disabled = SubResource("StyleRefineNormal")
+text = "REFINE MERIDIAN"
+
+[node name="InsufficientLabel" type="Label" parent="Content/DetailPanel/DetailVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 9
+text = ""
+horizontal_alignment = 1
+
+[node name="HubNav" type="Control" parent="Content"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.03
+anchor_top = 1.0
+anchor_right = 0.97
+anchor_bottom = 1.0
+offset_top = -98.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 0
+script = ExtResource("7_nav")
+active_tab = 1

@@ -1,0 +1,72 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://pvotww8mfkmk"]
+
+[ext_resource type="Texture2D" uid="uid://hymkpydtlhel" path="res://assets/weapons/sword/yin_yang_blades_64x64.png" id="1_sheet"]
+
+[sub_resource type="AtlasTexture" id="Yang1"]
+atlas = ExtResource("1_sheet")
+region = Rect2(0, 64, 64, 64)
+
+[sub_resource type="AtlasTexture" id="Yang2"]
+atlas = ExtResource("1_sheet")
+region = Rect2(64, 64, 64, 64)
+
+[sub_resource type="AtlasTexture" id="Yang3"]
+atlas = ExtResource("1_sheet")
+region = Rect2(128, 64, 64, 64)
+
+[sub_resource type="AtlasTexture" id="Yang4"]
+atlas = ExtResource("1_sheet")
+region = Rect2(192, 64, 64, 64)
+
+[sub_resource type="AtlasTexture" id="Yin1"]
+atlas = ExtResource("1_sheet")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="Yin2"]
+atlas = ExtResource("1_sheet")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="Yin3"]
+atlas = ExtResource("1_sheet")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="Yin4"]
+atlas = ExtResource("1_sheet")
+region = Rect2(192, 0, 64, 64)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Yang1")
+}, {
+"duration": 1.0,
+"texture": SubResource("Yang2")
+}, {
+"duration": 1.0,
+"texture": SubResource("Yang3")
+}, {
+"duration": 1.0,
+"texture": SubResource("Yang4")
+}],
+"loop": 1,
+"name": &"yang",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Yin1")
+}, {
+"duration": 1.0,
+"texture": SubResource("Yin2")
+}, {
+"duration": 1.0,
+"texture": SubResource("Yin3")
+}, {
+"duration": 1.0,
+"texture": SubResource("Yin4")
+}],
+"loop": 1,
+"name": &"yin",
+"speed": 10.0
+}]

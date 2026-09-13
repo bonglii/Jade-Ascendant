@@ -1,0 +1,135 @@
+[gd_scene format=3 uid="uid://bgx5wsy8ldta7"]
+
+[sub_resource type="GDScript" id="GDScript_t7f0k"]
+script/source = "extends Node
+
+## Sword Dao Resonance - Lv7 Piercing Guard Test
+## Test development sementara untuk memastikan satu original
+## Spirit Sword projectile hanya dapat memicu Resonance satu kali,
+## walaupun projectile menembus lebih dari satu enemy.
+
+const SPIRIT_SWORD_SCENE: PackedScene = preload(
+	\"res://scenes/weapons/spirit_sword.tscn\"
+)
+
+var resonance_signal_count: int = 0
+
+class DummyEnemy:
+	extends Node2D
+
+	var hp: float = 100.0
+
+	func take_damage(amount: float) -> void:
+		hp -= amount
+
+		print(
+			\"[TEST] Dummy Enemy HP: \",
+			hp
+		)
+
+func _ready() -> void:
+	print(\"\")
+	print(\"==========================================\")
+	print(\"SWORD DAO RESONANCE - LV7 PIERCE TEST\")
+	print(\"==========================================\")
+
+	run_piercing_guard_test()
+
+func run_piercing_guard_test() -> void:
+	var enemy_a := DummyEnemy.new()
+	var enemy_b := DummyEnemy.new()
+
+	enemy_a.name = \"DummyEnemyA\"
+	enemy_b.name = \"DummyEnemyB\"
+
+	add_child(enemy_a)
+	add_child(enemy_b)
+
+	enemy_a.add_to_group(\"enemy\")
+	enemy_b.add_to_group(\"enemy\")
+
+	var sword := SPIRIT_SWORD_SCENE.instantiate()
+
+	add_child(sword)
+
+	sword.damage = 10.0
+	sword.is_critical = true
+	sword.is_resonance_projectile = false
+	sword.resonance_triggered = false
+
+	# Spirit Sword Lv7 mendapatkan satu extra pierce.
+	sword.pierce = 1
+
+	sword.critical_hit_confirmed.connect(
+		_on_critical_hit_confirmed
+	)
+
+	print(\"[TEST] Hit #1 -> DummyEnemyA\")
+
+	sword._on_body_entered(
+		enemy_a
+	)
+
+	print(
+		\"[TEST] Signal count after hit #1: \",
+		resonance_signal_count
+	)
+
+	print(
+		\"[TEST] Resonance triggered after hit #1: \",
+		sword.resonance_triggered
+	)
+
+	print(
+		\"[TEST] Remaining pierce after hit #1: \",
+		sword.pierce
+	)
+
+	print(\"------------------------------------------\")
+	print(\"[TEST] Hit #2 -> DummyEnemyB\")
+
+	sword._on_body_entered(
+		enemy_b
+	)
+
+	print(
+		\"[TEST] Signal count after hit #2: \",
+		resonance_signal_count
+	)
+
+	verify_result()
+
+func _on_critical_hit_confirmed(
+	source_projectile: Area2D,
+	_hit_enemy: Node2D,
+	_hit_position: Vector2
+) -> void:
+	resonance_signal_count += 1
+
+	print(
+		\"[TEST] critical_hit_confirmed received: \",
+		resonance_signal_count
+	)
+
+	source_projectile.mark_resonance_triggered()
+
+func verify_result() -> void:
+	print(\"==========================================\")
+
+	if resonance_signal_count == 1:
+		print(\"TEST RESULT: PASS\")
+		print(
+			\"Original piercing projectile triggered Resonance only once.\"
+		)
+	else:
+		print(\"TEST RESULT: FAIL\")
+		print(
+			\"Expected 1 Resonance signal, received: \",
+			resonance_signal_count
+		)
+
+	print(\"==========================================\")
+"
+
+[node name="TestSwordDaoPierce" type="Node" unique_id=1091623552]
+script = SubResource("GDScript_t7f0k")

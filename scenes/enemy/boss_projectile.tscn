@@ -1,0 +1,20 @@
+[gd_scene load_steps=4 format=3 uid="uid://bplhcpp3rv4mm"]
+
+[ext_resource type="Script" uid="uid://4cmytkikwc1h" path="res://scripts/enemy/boss_projectile.gd" id="1_ke263"]
+[ext_resource type="SpriteFrames" path="res://assets/enemy/boss_1_jade_orb_projectile_spriteframes.tres" id="2_orb_frames"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_5h11f"]
+radius = 18.0
+
+[node name="BossProjectile" type="Area2D" unique_id=865172553]
+collision_layer = 2
+collision_mask = 19
+script = ExtResource("1_ke263")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1749920749]
+texture_filter = 1
+sprite_frames = ExtResource("2_orb_frames")
+animation = &"fly"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=757487248]
+shape = SubResource("CircleShape2D_5h11f")

@@ -1,0 +1,351 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/stage_select.gd" id="1_stage"]
+[ext_resource type="Theme" path="res://assets/ui/jade_ui_theme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://scripts/ui/mobile_safe_area.gd" id="3_safe"]
+[ext_resource type="Script" path="res://scripts/ui/wuxia_realm_backdrop.gd" id="4_backdrop"]
+[ext_resource type="Script" path="res://scripts/ui/wuxia_plaque_button.gd" id="5_plaque"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/equipment.svg" id="6_trial_icon"]
+
+[node name="StageSelect" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_stage")
+
+[node name="RealmBackdrop" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4_backdrop")
+
+[node name="ReadabilityShade" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.003, 0.016, 0.027, 0.18)
+
+[node name="TopAccent" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 3.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.957, 0.78, 0.357, 0.76)
+
+[node name="SafeArea" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 22
+script = ExtResource("3_safe")
+
+[node name="MainLayout" type="VBoxContainer" parent="SafeArea"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TopBar" type="HBoxContainer" parent="SafeArea/MainLayout"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="BackButton" type="Button" parent="SafeArea/MainLayout/TopBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(118, 50)
+layout_mode = 2
+theme_type_variation = &"JadeBackButton"
+theme_override_colors/font_color = Color(1, 0.941, 0.737, 1)
+theme_override_colors/font_hover_color = Color(1, 0.969, 0.82, 1)
+theme_override_font_sizes/font_size = 15
+text = "‹   BACK"
+script = ExtResource("5_plaque")
+plaque_style = 0
+
+[node name="TopSpacer" type="Control" parent="SafeArea/MainLayout/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="JourneyLabel" type="Label" parent="SafeArea/MainLayout/TopBar"]
+layout_mode = 2
+theme_type_variation = &"JadeNavLabel"
+theme_override_font_sizes/font_size = 13
+text = "JOURNEY   •   TRIALS"
+vertical_alignment = 1
+
+[node name="HeaderPanel" type="PanelContainer" parent="SafeArea/MainLayout"]
+custom_minimum_size = Vector2(0, 116)
+layout_mode = 2
+theme_type_variation = &"JadeJourneyHeaderPanel"
+
+[node name="HeaderMargin" type="MarginContainer" parent="SafeArea/MainLayout/HeaderPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 12
+
+[node name="Header" type="VBoxContainer" parent="SafeArea/MainLayout/HeaderPanel/HeaderMargin"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="ChapterLabel" type="Label" parent="SafeArea/MainLayout/HeaderPanel/HeaderMargin/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeSubtitle"
+theme_override_font_sizes/font_size = 12
+text = "CHAPTER"
+horizontal_alignment = 1
+
+[node name="ChapterNameLabel" type="Label" parent="SafeArea/MainLayout/HeaderPanel/HeaderMargin/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeTitle"
+theme_override_font_sizes/font_size = 27
+text = "Unknown Realm"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="RealmEpithetLabel" type="Label" parent="SafeArea/MainLayout/HeaderPanel/HeaderMargin/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeHeroName"
+theme_override_font_sizes/font_size = 12
+text = "CULTIVATION REALM"
+horizontal_alignment = 1
+
+[node name="TitleLabel" type="Label" parent="SafeArea/MainLayout/HeaderPanel/HeaderMargin/Header"]
+layout_mode = 2
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 11
+text = "SELECT A TRIAL AND CONTINUE YOUR ASCENSION"
+horizontal_alignment = 1
+
+[node name="StageSectionHeader" type="HBoxContainer" parent="SafeArea/MainLayout"]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+
+[node name="SectionLabel" type="Label" parent="SafeArea/MainLayout/StageSectionHeader"]
+layout_mode = 2
+theme_type_variation = &"JadeSubtitle"
+theme_override_font_sizes/font_size = 11
+text = "REALM TRIALS"
+
+[node name="SectionSpacer" type="Control" parent="SafeArea/MainLayout/StageSectionHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SectionHint" type="Label" parent="SafeArea/MainLayout/StageSectionHeader"]
+layout_mode = 2
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 10
+text = "PROGRESS IS PERMANENT"
+
+[node name="StageScroll" type="ScrollContainer" parent="SafeArea/MainLayout"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="StageList" type="VBoxContainer" parent="SafeArea/MainLayout/StageScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 9
+
+[node name="SelectedPanel" type="PanelContainer" parent="SafeArea/MainLayout"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+theme_type_variation = &"JadeSelectedTrialPanel"
+
+[node name="SelectedMargin" type="MarginContainer" parent="SafeArea/MainLayout/SelectedPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 12
+
+[node name="SelectedContent" type="VBoxContainer" parent="SafeArea/MainLayout/SelectedPanel/SelectedMargin"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="SelectedTopRow" type="HBoxContainer" parent="SafeArea/MainLayout/SelectedPanel/SelectedMargin/SelectedContent"]
+layout_mode = 2
+
+[node name="SelectedEyebrow" type="Label" parent="SafeArea/MainLayout/SelectedPanel/SelectedMargin/SelectedContent/SelectedTopRow"]
+layout_mode = 2
+theme_type_variation = &"JadeSubtitle"
+theme_override_font_sizes/font_size = 11
+text = "SELECTED TRIAL"
+
+[node name="SelectedTopSpacer" type="Control" parent="SafeArea/MainLayout/SelectedPanel/SelectedMargin/SelectedContent/SelectedTopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SelectedStageStatusLabel" type="Label" parent="SafeArea/MainLayout/SelectedPanel/SelectedMargin/SelectedContent/SelectedTopRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 11
+
+[node name="SelectedStageLabel" type="Label" parent="SafeArea/MainLayout/SelectedPanel/SelectedMargin/SelectedContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeHeroName"
+theme_override_font_sizes/font_size = 20
+text = "No playable stage selected"
+autowrap_mode = 2
+
+[node name="SelectedRealmLabel" type="Label" parent="SafeArea/MainLayout/SelectedPanel/SelectedMargin/SelectedContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 10
+text = ""
+
+[node name="StartButton" type="Button" parent="SafeArea/MainLayout/SelectedPanel/SelectedMargin/SelectedContent"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 62)
+layout_mode = 2
+theme_type_variation = &"JadePrimaryButton"
+theme_override_colors/font_color = Color(1, 0.941, 0.737, 1)
+theme_override_colors/font_hover_color = Color(1, 0.976, 0.84, 1)
+theme_override_font_sizes/font_size = 20
+text = "BEGIN TRIAL"
+icon = ExtResource("6_trial_icon")
+icon_max_width = 30
+expand_icon = true
+script = ExtResource("5_plaque")
+plaque_style = 1
+
+[node name="StartConfirmDialog" type="Control" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+z_index = 100
+
+[node name="Dim" type="ColorRect" parent="StartConfirmDialog"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.002, 0.01, 0.015, 0.78)
+
+[node name="Center" type="CenterContainer" parent="StartConfirmDialog"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ConfirmPanel" type="PanelContainer" parent="StartConfirmDialog/Center"]
+custom_minimum_size = Vector2(350, 0)
+layout_mode = 2
+theme_type_variation = &"JadeSelectedTrialPanel"
+
+[node name="Margin" type="MarginContainer" parent="StartConfirmDialog/Center/ConfirmPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 22
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 22
+theme_override_constants/margin_bottom = 20
+
+[node name="Content" type="VBoxContainer" parent="StartConfirmDialog/Center/ConfirmPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Eyebrow" type="Label" parent="StartConfirmDialog/Center/ConfirmPanel/Margin/Content"]
+layout_mode = 2
+theme_type_variation = &"JadeSubtitle"
+theme_override_font_sizes/font_size = 11
+text = "ACTIVE TRIAL IN PROGRESS"
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="StartConfirmDialog/Center/ConfirmPanel/Margin/Content"]
+layout_mode = 2
+theme_type_variation = &"JadeTitle"
+theme_override_font_sizes/font_size = 22
+text = "ABANDON CURRENT TRIAL?"
+horizontal_alignment = 1
+
+[node name="Rule" type="ColorRect" parent="StartConfirmDialog/Center/ConfirmPanel/Margin/Content"]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.957, 0.78, 0.357, 0.42)
+
+[node name="ConfirmStageLabel" type="Label" parent="StartConfirmDialog/Center/ConfirmPanel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeHeroName"
+theme_override_font_sizes/font_size = 17
+text = "Selected Trial"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="ConfirmBodyLabel" type="Label" parent="StartConfirmDialog/Center/ConfirmPanel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 13
+text = "A saved run already exists. Starting this trial will replace that checkpoint."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="SafetyLabel" type="Label" parent="StartConfirmDialog/Center/ConfirmPanel/Margin/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.431, 0.902, 0.671, 1)
+theme_override_font_sizes/font_size = 12
+text = "PERMANENT PROGRESSION IS SAFE"
+horizontal_alignment = 1
+
+[node name="ButtonRow" type="HBoxContainer" parent="StartConfirmDialog/Center/ConfirmPanel/Margin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CancelStartButton" type="Button" parent="StartConfirmDialog/Center/ConfirmPanel/Margin/Content/ButtonRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"JadeSecondaryButton"
+theme_override_font_sizes/font_size = 15
+text = "KEEP SAVE"
+
+[node name="StartNewButton" type="Button" parent="StartConfirmDialog/Center/ConfirmPanel/Margin/Content/ButtonRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"JadePrimaryButton"
+theme_override_font_sizes/font_size = 15
+text = "START NEW"

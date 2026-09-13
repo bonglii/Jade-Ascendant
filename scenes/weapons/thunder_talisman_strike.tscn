@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://e7h1gl1ankex"]
+
+[ext_resource type="Script" uid="uid://b8ob1jtoeohri" path="res://scripts/weapon/thunder_talisman_strike.gd" id="1_effect"]
+[ext_resource type="SpriteFrames" uid="uid://bgfe3rv2ebage" path="res://assets/weapons/magic/thunder_talisman_spriteframes.tres" id="2_frames"]
+
+[node name="ThunderTalismanStrike" type="Node2D" unique_id=2107872529]
+z_index = 5
+script = ExtResource("1_effect")
+
+[node name="TalismanSprite" type="AnimatedSprite2D" parent="." unique_id=153548373]
+texture_filter = 1
+position = Vector2(0, -20)
+sprite_frames = ExtResource("2_frames")
+animation = &"activate"
+autoplay = "activate"

@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3 uid="uid://c8vlrbwsigeeh"]
+
+[ext_resource type="Script" uid="uid://ksulxcyoqxpr" path="res://scripts/enemy/enemy_5.gd" id="1_rvjpu"]
+[ext_resource type="SpriteFrames" path="res://assets/enemy/enemy_5_veiled_shadowblade_spriteframes.tres" id="2_enemy5_frames"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_w4uvg"]
+size = Vector2(33, 46.5)
+
+[node name="Enemy_5" type="CharacterBody2D" unique_id=1367716903 groups=["enemy"]]
+collision_layer = 2
+collision_mask = 19
+script = ExtResource("1_rvjpu")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1810092027]
+texture_filter = 1
+position = Vector2(-1.000001, -11)
+sprite_frames = ExtResource("2_enemy5_frames")
+animation = &"idle_left"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1178305430]
+position = Vector2(-2, -2)
+shape = SubResource("RectangleShape2D_w4uvg")

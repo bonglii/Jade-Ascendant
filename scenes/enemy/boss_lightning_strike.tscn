@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://cue5k0108o6lj"]
+
+[ext_resource type="Script" uid="uid://bqsae1mecm664" path="res://scripts/enemy/boss_lightning_strike.gd" id="1_v3pb4"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_v3pb4"]
+radius = 60.0
+
+[node name="BossLightningStrike" type="Area2D" unique_id=1852489668]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("1_v3pb4")
+
+[node name="TelegraphVisual" type="Polygon2D" parent="." unique_id=1840975622]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=818156279]
+shape = SubResource("CircleShape2D_v3pb4")

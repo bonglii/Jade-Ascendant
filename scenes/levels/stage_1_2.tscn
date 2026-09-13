@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://dw6dlaino5t0d"]
+
+[ext_resource type="PackedScene" uid="uid://drex5dbc04jek" path="res://scenes/levels/level_1.tscn" id="1_arena"]
+[ext_resource type="Script" uid="uid://np5i1vfv7b83" path="res://scripts/world/chapter_stage_decor.gd" id="2_decor"]
+
+[node name="Stage_1_2" unique_id=1262945968 instance=ExtResource("1_arena")]
+stage_id = 2
+
+[node name="VerdantQiValleyDecor" parent="." index="2"]
+script = ExtResource("2_decor")
+stage_id = 2
+
+[node name="StageIdentity" parent="HUD/ScreenRoot/HUDSafeArea" index="0"]
+anchors_preset = -1
+
+[node name="TopHUD" parent="HUD/ScreenRoot/HUDSafeArea" index="1" unique_id=1320611754]
+anchors_preset = -1
+
+[node name="TutorialPanel" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay" index="0"]
+anchors_preset = -1
+
+[node name="BossPanel" parent="HUD/ScreenRoot/HUDSafeArea" index="4" unique_id=867019197]
+anchors_preset = -1

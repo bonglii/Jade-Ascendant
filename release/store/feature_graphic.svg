@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500"><defs><radialGradient id="bg" cx=".5" cy=".38" r=".75"><stop stop-color="#174e42"/><stop offset="1" stop-color="#051b1b"/></radialGradient><linearGradient id="mist" x2="0" y2="1"><stop stop-color="#2b7460"/><stop offset="1" stop-color="#0a2926"/></linearGradient></defs><rect width="1024" height="500" fill="#071f20"/><circle cx="237" cy="224" r="208" fill="#123e35"/><circle cx="237" cy="224" r="177" fill="none" stroke="#a99159" stroke-width="1" opacity=".5"/><path d="M0 400 105 312 199 386 313 315 418 382 578 313 718 398 865 285 1024 389V500H0Z" fill="#16463a"/><path d="M0 454 143 389 235 423 402 377 536 444 711 367 846 439 1024 374V500H0Z" fill="#0b302b"/><path d="M400 117H950M400 370H950" stroke="#b6a066" stroke-width="1" opacity=".7"/><g transform="translate(19 4) scale(.85)"><g fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M256 116 355 157 396 256 355 355 256 396 157 355 116 256 157 157Z" stroke="#d1ae63" stroke-width="5"/>
+<circle cx="256" cy="256" r="124" stroke="#62baa3" stroke-width="2" opacity=".65"/>
+<path d="M178 298Q220 222 202 190M334 298Q292 222 310 190" stroke="#5bc4a6" stroke-width="5"/>
+<path d="M163 281Q202 281 225 239M349 281Q310 281 287 239" stroke="#c0e3bb" stroke-width="3"/>
+<path d="M256 126 274 172 266 293 246 293 238 172Z" fill="#d9f5df" stroke="#63cdb1" stroke-width="4"/>
+<path d="M256 137V285" stroke="#6ab3a0" stroke-width="3"/>
+<path d="M224 298Q240 286 256 295Q272 286 288 298L283 311Q268 305 256 310Q244 305 229 311Z" fill="#e2c079" stroke="#d1ae63" stroke-width="3"/>
+<path d="M250 311H262V345H250Z" fill="#295f55" stroke="#ddbd70" stroke-width="3"/>
+<path d="M246 349 256 339 266 349 256 360Z" fill="#efd696" stroke="#d1ae63" stroke-width="2"/>
+<path d="M256 360Q234 373 252 388M260 359Q277 374 265 390" stroke="#73ddbe" stroke-width="4"/>
+<path d="M246 108 256 94 266 108 256 118Z" fill="#dbbc74" stroke="none"/>
+</g></g><g fill="#e9d296" font-family="DejaVu Serif,serif"><text x="434" y="218" font-size="72" letter-spacing="14">JADE</text><text x="434" y="294" font-size="51" letter-spacing="3">ASCENDANT</text></g><text x="438" y="342" fill="#a4c8b6" font-family="DejaVu Sans,sans-serif" font-size="16" letter-spacing="3">A PATH TO ASCENSION</text><path d="M938 31H993V85M31 31H86M31 31V85M31 416V469H86M938 469H993V416" stroke="#c8ae70" stroke-width="2" fill="none"/></svg>

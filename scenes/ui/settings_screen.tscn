@@ -1,0 +1,382 @@
+[gd_scene format=3 uid="uid://nxjiho8g4aij"]
+
+[ext_resource type="Script" uid="uid://c6v5hx43vhd8v" path="res://scripts/ui/settings_screen.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://bwa0wej15sgvf" path="res://scripts/ui/mobile_safe_area.gd" id="2_safe"]
+[ext_resource type="Theme" uid="uid://d0fwhrxw25bsx" path="res://assets/ui/jade_ui_theme.tres" id="3_theme"]
+[ext_resource type="Texture2D" uid="uid://q77j4c4gegrb" path="res://assets/ui/main_menu/main_menu_key_art_lin_yue.png" id="4_bg"]
+[ext_resource type="Texture2D" uid="uid://doog3thxi45kx" path="res://assets/ui/icons/settings.svg" id="5_settings"]
+[ext_resource type="Texture2D" uid="uid://rot6l84ghrjj" path="res://assets/ui/wuxia/realm_frame.png" id="6_frame"]
+[ext_resource type="Texture2D" uid="uid://db8r5vi12ni2x" path="res://assets/ui/wuxia/trial_frame.png" id="7_card"]
+[ext_resource type="Texture2D" uid="uid://tmqe5bjjm8k3" path="res://assets/ui/wuxia/cta_blue_normal.png" id="11_blue_normal"]
+[ext_resource type="Texture2D" uid="uid://posdjbv1lr04" path="res://assets/ui/wuxia/cta_blue_hover.png" id="12_blue_hover"]
+[ext_resource type="Texture2D" uid="uid://xbao4owrpqqy" path="res://assets/ui/settings/jade_slider_knob.svg" id="13_knob"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBlueNormal"]
+texture = ExtResource("11_blue_normal")
+texture_margin_left = 26.0
+texture_margin_top = 14.0
+texture_margin_right = 26.0
+texture_margin_bottom = 14.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBlueHover"]
+texture = ExtResource("12_blue_hover")
+texture_margin_left = 26.0
+texture_margin_top = 14.0
+texture_margin_right = 26.0
+texture_margin_bottom = 14.0
+
+[sub_resource type="StyleBoxFlat" id="StyleHeader"]
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+bg_color = Color(0.002, 0.024, 0.038, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.95, 0.76, 0.32, 0.52)
+corner_radius_top_left = 11
+corner_radius_top_right = 11
+corner_radius_bottom_left = 11
+corner_radius_bottom_right = 11
+shadow_color = Color(0, 0, 0, 0.36)
+shadow_size = 7
+
+[sub_resource type="StyleBoxFlat" id="StyleCard"]
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+bg_color = Color(0.002, 0.023, 0.035, 0.93)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.82, 0.72, 0.30)
+corner_radius_top_left = 11
+corner_radius_top_right = 11
+corner_radius_bottom_left = 11
+corner_radius_bottom_right = 11
+shadow_color = Color(0, 0, 0, 0.36)
+shadow_size = 7
+
+[sub_resource type="StyleBoxFlat" id="StyleSlider"]
+content_margin_top = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.0015, 0.020, 0.030, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.18, 0.62, 0.56, 0.60)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleSliderFill"]
+bg_color = Color(0.26, 0.88, 0.74, 0.94)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_left = 4
+corner_radius_bottom_right = 4
+shadow_color = Color(0.10, 0.70, 0.64, 0.26)
+shadow_size = 3
+
+[node name="SettingsScreen" type="Control" unique_id=1350252504]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_theme")
+script = ExtResource("1_script")
+
+[node name="Background" type="TextureRect" parent="." unique_id=1210277750]
+modulate = Color(0.15, 0.24, 0.27, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("4_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Backdrop" type="ColorRect" parent="." unique_id=1185776628]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.001, 0.010, 0.018, 0.78)
+
+[node name="SafeArea" type="Control" parent="." unique_id=1533374593]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_safe")
+
+[node name="Scroll" type="ScrollContainer" parent="SafeArea"]
+layout_mode = 1
+anchor_left = 0.055
+anchor_top = 0.035
+anchor_right = 0.945
+anchor_bottom = 0.965
+horizontal_scroll_mode = 0
+
+[node name="Content" type="VBoxContainer" parent="SafeArea/Scroll" unique_id=1301821657]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="TopRow" type="HBoxContainer" parent="SafeArea/Scroll/Content" unique_id=45414330]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="BackButton" type="Button" parent="SafeArea/Scroll/Content/TopRow" unique_id=1646219379]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(94, 46)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBlueNormal")
+theme_override_styles/pressed = SubResource("StyleBlueNormal")
+theme_override_styles/hover = SubResource("StyleBlueHover")
+theme_override_styles/focus = SubResource("StyleBlueHover")
+text = "‹  HOME"
+
+[node name="TopSpacer" type="Control" parent="SafeArea/Scroll/Content/TopRow" unique_id=1207852859]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SectionLabel" type="Label" parent="SafeArea/Scroll/Content/TopRow" unique_id=2015650841]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.74, 0.72, 1)
+theme_override_font_sizes/font_size = 12
+text = "PREFERENCES"
+vertical_alignment = 1
+
+[node name="Header" type="PanelContainer" parent="SafeArea/Scroll/Content" unique_id=2048388168]
+custom_minimum_size = Vector2(0, 102)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleHeader")
+
+[node name="HeaderRow" type="HBoxContainer" parent="SafeArea/Scroll/Content/Header" unique_id=1489185934]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SettingsIcon" type="TextureRect" parent="SafeArea/Scroll/Content/Header/HeaderRow" unique_id=26332950]
+modulate = Color(0.36, 0.92, 0.79, 1)
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 2
+texture = ExtResource("5_settings")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HeaderText" type="VBoxContainer" parent="SafeArea/Scroll/Content/Header/HeaderRow" unique_id=229651093]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 1
+
+[node name="Eyebrow" type="Label" parent="SafeArea/Scroll/Content/Header/HeaderRow/HeaderText" unique_id=261226719]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.32, 0.82, 0.72, 1)
+theme_override_font_sizes/font_size = 11
+text = "JADE ASCENDANT"
+
+[node name="Title" type="Label" parent="SafeArea/Scroll/Content/Header/HeaderRow/HeaderText" unique_id=857735407]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.8, 0.39, 1)
+theme_override_font_sizes/font_size = 25
+text = "Settings"
+
+[node name="Subtitle" type="Label" parent="SafeArea/Scroll/Content/Header/HeaderRow/HeaderText" unique_id=679965658]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.64, 0.72, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+text = "Audio mixing • saved automatically on this device"
+
+[node name="AudioCard" type="PanelContainer" parent="SafeArea/Scroll/Content" unique_id=1469569905]
+custom_minimum_size = Vector2(0, 388)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleCard")
+
+[node name="AudioContent" type="VBoxContainer" parent="SafeArea/Scroll/Content/AudioCard" unique_id=1622021595]
+layout_mode = 2
+theme_override_constants/separation = 13
+
+[node name="AudioHeading" type="HBoxContainer" parent="SafeArea/Scroll/Content/AudioCard/AudioContent" unique_id=1018058259]
+layout_mode = 2
+
+[node name="AudioText" type="VBoxContainer" parent="SafeArea/Scroll/Content/AudioCard/AudioContent/AudioHeading" unique_id=1486870954]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="AudioEyebrow" type="Label" parent="SafeArea/Scroll/Content/AudioCard/AudioContent/AudioHeading/AudioText" unique_id=433481898]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.32, 0.82, 0.72, 1)
+theme_override_font_sizes/font_size = 11
+text = "AUDIO MIXER"
+
+[node name="AudioTitle" type="Label" parent="SafeArea/Scroll/Content/AudioCard/AudioContent/AudioHeading/AudioText" unique_id=1569476523]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.8, 0.39, 1)
+theme_override_font_sizes/font_size = 20
+text = "Spiritual Resonance"
+
+[node name="RoutingStatusLabel" type="Label" parent="SafeArea/Scroll/Content/AudioCard/AudioContent/AudioHeading" unique_id=2090488161]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.38, 0.88, 0.72, 1)
+theme_override_font_sizes/font_size = 10
+text = "MUSIC & SOUND"
+vertical_alignment = 1
+
+[node name="Divider" type="HSeparator" parent="SafeArea/Scroll/Content/AudioCard/AudioContent" unique_id=1122083693]
+layout_mode = 2
+
+[node name="MasterRow" type="VBoxContainer" parent="SafeArea/Scroll/Content/AudioCard/AudioContent" unique_id=535017081]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="MasterTop" type="HBoxContainer" parent="SafeArea/Scroll/Content/AudioCard/AudioContent/MasterRow" unique_id=720078760]
+layout_mode = 2
+
+[node name="MasterLabel" type="Label" parent="SafeArea/Scroll/Content/AudioCard/AudioContent/MasterRow/MasterTop" unique_id=621937507]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.89, 0.91, 0.86, 1)
+theme_override_font_sizes/font_size = 16
+text = "Master Volume"
+
+[node name="MasterValueLabel" type="Label" parent="SafeArea/Scroll/Content/AudioCard/AudioContent/MasterRow/MasterTop" unique_id=1033026561]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.8, 0.39, 1)
+theme_override_font_sizes/font_size = 15
+text = "100%"
+
+[node name="MasterHint" type="Label" parent="SafeArea/Scroll/Content/AudioCard/AudioContent/MasterRow" unique_id=180890943]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.68, 1)
+theme_override_font_sizes/font_size = 12
+text = "Controls the final output of every audio channel."
+
+[node name="MasterSlider" type="HSlider" parent="SafeArea/Scroll/Content/AudioCard/AudioContent/MasterRow" unique_id=357575958]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_icons/grabber = ExtResource("13_knob")
+theme_override_icons/grabber_highlight = ExtResource("13_knob")
+theme_override_styles/slider = SubResource("StyleSlider")
+theme_override_styles/grabber_area = SubResource("StyleSliderFill")
+value = 100.0
+
+[node name="MusicRow" type="VBoxContainer" parent="SafeArea/Scroll/Content/AudioCard/AudioContent" unique_id=625135520]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="MusicTop" type="HBoxContainer" parent="SafeArea/Scroll/Content/AudioCard/AudioContent/MusicRow" unique_id=816597702]
+layout_mode = 2
+
+[node name="MusicLabel" type="Label" parent="SafeArea/Scroll/Content/AudioCard/AudioContent/MusicRow/MusicTop" unique_id=1247850948]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.89, 0.91, 0.86, 1)
+theme_override_font_sizes/font_size = 16
+text = "Music"
+
+[node name="MusicValueLabel" type="Label" parent="SafeArea/Scroll/Content/AudioCard/AudioContent/MusicRow/MusicTop" unique_id=253979841]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.8, 0.39, 1)
+theme_override_font_sizes/font_size = 15
+text = "80%"
+
+[node name="MusicHint" type="Label" parent="SafeArea/Scroll/Content/AudioCard/AudioContent/MusicRow" unique_id=1685263594]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.68, 1)
+theme_override_font_sizes/font_size = 12
+text = "Controls music routed through the Music channel."
+
+[node name="MusicSlider" type="HSlider" parent="SafeArea/Scroll/Content/AudioCard/AudioContent/MusicRow" unique_id=359511834]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_icons/grabber = ExtResource("13_knob")
+theme_override_icons/grabber_highlight = ExtResource("13_knob")
+theme_override_styles/slider = SubResource("StyleSlider")
+theme_override_styles/grabber_area = SubResource("StyleSliderFill")
+value = 80.0
+
+[node name="SFXRow" type="VBoxContainer" parent="SafeArea/Scroll/Content/AudioCard/AudioContent" unique_id=145177266]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="SFXTop" type="HBoxContainer" parent="SafeArea/Scroll/Content/AudioCard/AudioContent/SFXRow" unique_id=219993521]
+layout_mode = 2
+
+[node name="SFXLabel" type="Label" parent="SafeArea/Scroll/Content/AudioCard/AudioContent/SFXRow/SFXTop" unique_id=1241553382]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.89, 0.91, 0.86, 1)
+theme_override_font_sizes/font_size = 16
+text = "Sound Effects"
+
+[node name="SFXValueLabel" type="Label" parent="SafeArea/Scroll/Content/AudioCard/AudioContent/SFXRow/SFXTop" unique_id=382447385]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.8, 0.39, 1)
+theme_override_font_sizes/font_size = 15
+text = "100%"
+
+[node name="SFXHint" type="Label" parent="SafeArea/Scroll/Content/AudioCard/AudioContent/SFXRow" unique_id=964481746]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.68, 1)
+theme_override_font_sizes/font_size = 12
+text = "Controls combat, interface, and world effects routed to SFX."
+
+[node name="SFXSlider" type="HSlider" parent="SafeArea/Scroll/Content/AudioCard/AudioContent/SFXRow" unique_id=1850989750]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_icons/grabber = ExtResource("13_knob")
+theme_override_icons/grabber_highlight = ExtResource("13_knob")
+theme_override_styles/slider = SubResource("StyleSlider")
+theme_override_styles/grabber_area = SubResource("StyleSliderFill")
+value = 100.0
+
+[node name="PersistenceNote" type="Label" parent="SafeArea/Scroll/Content/AudioCard/AudioContent" unique_id=1679515343]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.71, 0.68, 1)
+theme_override_font_sizes/font_size = 12
+text = "Applied instantly • saved automatically on this device."
+horizontal_alignment = 1
+
+[node name="Actions" type="HBoxContainer" parent="SafeArea/Scroll/Content" unique_id=1978583748]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="ResetButton" type="Button" parent="SafeArea/Scroll/Content/Actions" unique_id=712268851]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 46)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBlueNormal")
+theme_override_styles/pressed = SubResource("StyleBlueNormal")
+theme_override_styles/hover = SubResource("StyleBlueHover")
+theme_override_styles/focus = SubResource("StyleBlueHover")
+text = "RESTORE AUDIO DEFAULTS"

@@ -1,0 +1,21 @@
+[gd_scene load_steps=3 format=3 uid="uid://chhx0eipp1vjp"]
+
+[ext_resource type="Script" uid="uid://iws4o45p2kxp" path="res://scripts/weapon/eight_trigrams_formation.gd" id="1_jyqs0"]
+[ext_resource type="Texture2D" path="res://assets/weapons/magic/eight_trigrams_formation_bagua_192x192.png" id="2_bagua"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_5h11f"]
+radius = 80.0
+
+[node name="EightTrigramsFormation" type="Area2D" unique_id=95217330]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_jyqs0")
+
+[node name="FormationSigil" type="Sprite2D" parent="."]
+texture_filter = 1
+z_index = -1
+modulate = Color(1, 1, 1, 0.30)
+texture = ExtResource("2_bagua")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=328758177]
+shape = SubResource("CircleShape2D_5h11f")

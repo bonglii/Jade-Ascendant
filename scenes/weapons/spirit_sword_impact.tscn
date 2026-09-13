@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://lhynvlijfj32"]
+
+[ext_resource type="Script" uid="uid://blsslymir4w1p" path="res://scripts/weapon/spirit_sword_impact.gd" id="1_effect"]
+
+[node name="SpiritSwordImpact" type="Node2D" unique_id=1110517892]
+z_index = 5
+script = ExtResource("1_effect")

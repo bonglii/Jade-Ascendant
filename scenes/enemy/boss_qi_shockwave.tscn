@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://c78rr6h1oxr4t"]
+
+[ext_resource type="Script" uid="uid://ytv33ixn8gky" path="res://scripts/enemy/boss_qi_shockwave.gd" id="1_ch05q"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ch05q"]
+
+[node name="BossQiShockwave" type="Area2D" unique_id=611153732]
+script = ExtResource("1_ch05q")
+
+[node name="TelegraphVisual" type="Polygon2D" parent="." unique_id=2073370919]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=200740459]
+shape = SubResource("CircleShape2D_ch05q")

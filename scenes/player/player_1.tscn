@@ -1,0 +1,46 @@
+[gd_scene load_steps=8 format=3 uid="uid://bfgsoumsdfstf"]
+
+[ext_resource type="Script" uid="uid://b6cynrl26sypv" path="res://scripts/player/player_1.gd" id="1_hvohr"]
+[ext_resource type="SpriteFrames" path="res://assets/character/player/player_lin_yue_idle_walk_spriteframes.tres" id="2_lin_yue_frames"]
+[ext_resource type="Script" uid="uid://dkgen8ioin5ci" path="res://scripts/stats/player_stats.gd" id="3_gok7g"]
+[ext_resource type="Script" uid="uid://c73svejah172s" path="res://scripts/weapon/weapon_manager.gd" id="4_x2oxy"]
+[ext_resource type="Script" path="res://scripts/player/lin_yue_combat_presentation.gd" id="5_combat_presentation"]
+[ext_resource type="Script" path="res://scripts/player/lin_yue_cultivation_presentation.gd" id="6_cultivation_presentation"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_player_footprint"]
+radius = 20.0
+height = 44.0
+
+[node name="player_1" type="CharacterBody2D" unique_id=107959663 groups=["player"]]
+motion_mode = 1
+collision_mask = 18
+script = ExtResource("1_hvohr")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1541859066]
+texture_filter = 1
+z_index = 3
+position = Vector2(4.999999, -16.999998)
+sprite_frames = ExtResource("2_lin_yue_frames")
+animation = &"idle_down"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1176997301]
+position = Vector2(5, 6)
+shape = SubResource("CapsuleShape2D_player_footprint")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1976692312]
+
+[node name="PlayerStats" type="Node" parent="." unique_id=947640225]
+script = ExtResource("3_gok7g")
+
+[node name="WeaponManager" type="Node" parent="." unique_id=1137634568]
+script = ExtResource("4_x2oxy")
+
+[node name="CombatPresentation" type="Node2D" parent="."]
+position = Vector2(5, -37)
+z_index = 3
+script = ExtResource("5_combat_presentation")
+
+[node name="CultivationPresentation" type="Node2D" parent="."]
+position = Vector2(5, -34)
+z_index = 4
+script = ExtResource("6_cultivation_presentation")

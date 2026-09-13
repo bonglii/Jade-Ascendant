@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://crl35nm72eivy"]
+
+[ext_resource type="Script" uid="uid://g1dshfqbtnj" path="res://scripts/weapon/heavenly_lightning.gd" id="1_ua3yg"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_j8fi1"]
+radius = 64.0
+
+[node name="Heavenly_Lightning" type="Area2D" unique_id=1714804528]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_ua3yg")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1002947900]
+shape = SubResource("CircleShape2D_j8fi1")

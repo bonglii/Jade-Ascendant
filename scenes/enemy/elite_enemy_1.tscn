@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://sve8gpkdoe7"]
+
+[ext_resource type="Script" uid="uid://bl23ubr8rw5e6" path="res://scripts/enemy/elite_enemy_1.gd" id="1_c7rou"]
+[ext_resource type="SpriteFrames" uid="uid://c14tj20kki6ny" path="res://assets/enemy/elite_1_jadebound_iron_disciple_spriteframes.tres" id="2_elite1_frames"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_5h11f"]
+radius = 19.0
+height = 58.0
+
+[node name="Elite_Enemy_1" type="CharacterBody2D" unique_id=2142081932 groups=["elite", "enemy"]]
+collision_layer = 2
+collision_mask = 19
+script = ExtResource("1_c7rou")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=61815358]
+z_index = 2
+texture_filter = 1
+position = Vector2(0, -3)
+scale = Vector2(1.06, 1.06)
+sprite_frames = ExtResource("2_elite1_frames")
+animation = &"idle_left"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=321053622]
+position = Vector2(-1, 2)
+shape = SubResource("CapsuleShape2D_5h11f")

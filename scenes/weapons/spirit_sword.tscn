@@ -1,0 +1,31 @@
+[gd_scene load_steps=4 format=3 uid="uid://bd6vaji17apa7"]
+
+[ext_resource type="Script" uid="uid://e60n7pgj45n6" path="res://scripts/weapon/spirit_sword.gd" id="1_n1stx"]
+[ext_resource type="SpriteFrames" path="res://assets/weapons/sword/spirit_sword_jade_jian_spriteframes.tres" id="2_sword_frames"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s20gs"]
+size = Vector2(52, 19.5)
+
+[node name="SpiritSword" type="Area2D" unique_id=321222312]
+z_index = 2
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("1_n1stx")
+
+[node name="QiTrail" type="Line2D" parent="."]
+position = Vector2(-2, 0)
+width = 5.0
+default_color = Color(0.27, 0.86, 0.83, 0.28)
+points = PackedVector2Array(-32, 0, -20, -1.5, -8, 0)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+sprite_frames = ExtResource("2_sword_frames")
+animation = &"fly"
+autoplay = "fly"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=542053815]
+position = Vector2(8, 1)
+shape = SubResource("RectangleShape2D_s20gs")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

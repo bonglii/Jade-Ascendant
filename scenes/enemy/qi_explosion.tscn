@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://bh1ejo87k6bwh"]
+
+[ext_resource type="Script" uid="uid://cbcnnjyyrhpsp" path="res://scripts/enemy/qi_explosion.gd" id="1_4jf7p"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_5h11f"]
+radius = 42.0
+
+[node name="QiExplosion" type="Area2D" unique_id=523746457]
+script = ExtResource("1_4jf7p")
+
+[node name="TelegraphVisual" type="Polygon2D" parent="." unique_id=1966389060]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2008085497]
+shape = SubResource("CircleShape2D_5h11f")

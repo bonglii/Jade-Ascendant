@@ -1,0 +1,671 @@
+[gd_scene load_steps=25 format=3 uid="uid://bc4wx1fx20mfl"]
+
+[ext_resource type="Script" path="res://scripts/ui/equipment_screen.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/ui/mobile_safe_area.gd" id="2_safe"]
+[ext_resource type="Theme" path="res://assets/ui/jade_ui_theme.tres" id="3_theme"]
+[ext_resource type="Texture2D" path="res://assets/ui/hero/hero_pavilion.png" id="4_bg"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/spirit_stone.svg" id="5_stone"]
+[ext_resource type="Script" path="res://scripts/ui/wuxia_hub_nav.gd" id="6_nav"]
+[ext_resource type="Texture2D" path="res://assets/ui/wuxia/realm_frame.png" id="7_realm_frame"]
+[ext_resource type="Texture2D" path="res://assets/ui/wuxia/trial_frame.png" id="8_trial_frame"]
+[ext_resource type="Texture2D" path="res://assets/ui/wuxia/cta_jade_normal.png" id="9_cta_normal"]
+[ext_resource type="Texture2D" path="res://assets/ui/wuxia/cta_jade_hover.png" id="10_cta_hover"]
+[ext_resource type="Texture2D" path="res://assets/ui/wuxia/cta_jade_pressed.png" id="11_cta_pressed"]
+[ext_resource type="SpriteFrames" path="res://assets/character/player/player_lin_yue_idle_walk_spriteframes.tres" id="12_player_frames"]
+
+[sub_resource type="Gradient" id="Gradient_shade"]
+offsets = PackedFloat32Array(0, 0.24, 0.55, 0.78, 1)
+colors = PackedColorArray(0.001, 0.010, 0.018, 0.48, 0.001, 0.010, 0.018, 0.14, 0.001, 0.012, 0.020, 0.20, 0.001, 0.010, 0.018, 0.54, 0.001, 0.006, 0.012, 0.84)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture_shade"]
+gradient = SubResource("Gradient_shade")
+width = 648
+height = 1152
+fill_from = Vector2(0.5, 0)
+fill_to = Vector2(0.5, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleTopBar"]
+bg_color = Color(0.003, 0.025, 0.041, 0.94)
+border_width_bottom = 1
+border_color = Color(0.957, 0.78, 0.357, 0.60)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_left = 7
+corner_radius_bottom_right = 7
+content_margin_left = 12.0
+content_margin_top = 7.0
+content_margin_right = 12.0
+content_margin_bottom = 7.0
+shadow_color = Color(0, 0, 0, 0.48)
+shadow_size = 4
+
+[sub_resource type="StyleBoxTexture" id="StyleHeaderFrame"]
+texture = ExtResource("7_realm_frame")
+texture_margin_left = 30.0
+texture_margin_top = 24.0
+texture_margin_right = 30.0
+texture_margin_bottom = 24.0
+content_margin_left = 18.0
+content_margin_top = 11.0
+content_margin_right = 18.0
+content_margin_bottom = 11.0
+
+[sub_resource type="StyleBoxFlat" id="StyleRack"]
+bg_color = Color(0.001, 0.018, 0.030, 0.88)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.82, 0.72, 0.38)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_left = 12
+corner_radius_bottom_right = 12
+content_margin_left = 8.0
+content_margin_top = 7.0
+content_margin_right = 8.0
+content_margin_bottom = 7.0
+shadow_color = Color(0, 0, 0, 0.34)
+shadow_size = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleDetailFrame"]
+bg_color = Color(0.002, 0.020, 0.032, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 2
+border_color = Color(0.91, 0.72, 0.30, 0.54)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_left = 12
+corner_radius_bottom_right = 12
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+shadow_color = Color(0, 0, 0, 0.42)
+shadow_size = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleTabActive"]
+bg_color = Color(0.016, 0.18, 0.16, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 2
+border_color = Color(0.96, 0.78, 0.36, 0.92)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_left = 4
+corner_radius_bottom_right = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleTabNormal"]
+bg_color = Color(0.002, 0.026, 0.035, 0.88)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.24, 0.58, 0.53, 0.36)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_left = 4
+corner_radius_bottom_right = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleInspection"]
+bg_color = Color(0.004, 0.038, 0.050, 0.80)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.28, 0.82, 0.72, 0.38)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_left = 9
+corner_radius_bottom_right = 9
+content_margin_left = 8.0
+content_margin_top = 6.0
+content_margin_right = 8.0
+content_margin_bottom = 6.0
+
+[sub_resource type="StyleBoxTexture" id="StyleActionNormal"]
+texture = ExtResource("9_cta_normal")
+texture_margin_left = 26.0
+texture_margin_top = 18.0
+texture_margin_right = 26.0
+texture_margin_bottom = 18.0
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxTexture" id="StyleActionHover"]
+texture = ExtResource("10_cta_hover")
+texture_margin_left = 26.0
+texture_margin_top = 18.0
+texture_margin_right = 26.0
+texture_margin_bottom = 18.0
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxTexture" id="StyleActionPressed"]
+texture = ExtResource("11_cta_pressed")
+texture_margin_left = 26.0
+texture_margin_top = 18.0
+texture_margin_right = 26.0
+texture_margin_bottom = 18.0
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+
+
+[node name="EquipmentScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_theme")
+script = ExtResource("1_script")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("4_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Shade" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("GradientTexture_shade")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Content" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_safe")
+
+[node name="TopBar" type="PanelContainer" parent="Content"]
+layout_mode = 1
+anchor_left = 0.03
+anchor_top = 0.018
+anchor_right = 0.97
+anchor_bottom = 0.018
+offset_bottom = 64.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleTopBar")
+
+[node name="TopRow" type="HBoxContainer" parent="Content/TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleBox" type="VBoxContainer" parent="Content/TopBar/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = -2
+
+[node name="TopTitle" type="Label" parent="Content/TopBar/TopRow/TitleBox"]
+layout_mode = 2
+theme_type_variation = &"JadeHeroName"
+theme_override_font_sizes/font_size = 18
+text = "HERO"
+
+[node name="TopSubtitle" type="Label" parent="Content/TopBar/TopRow/TitleBox"]
+layout_mode = 2
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 9
+text = "MARTIAL LOADOUT  •  JADE PAVILION"
+
+[node name="StoneBox" type="HBoxContainer" parent="Content/TopBar/TopRow"]
+layout_mode = 2
+theme_override_constants/separation = 5
+alignment = 1
+
+[node name="StoneIcon" type="TextureRect" parent="Content/TopBar/TopRow/StoneBox"]
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+texture = ExtResource("5_stone")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SpiritStoneLabel" type="Label" parent="Content/TopBar/TopRow/StoneBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+theme_type_variation = &"JadeCurrencyLabel"
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="HeroHeader" type="PanelContainer" parent="Content"]
+layout_mode = 1
+anchor_left = 0.03
+anchor_top = 0.102
+anchor_right = 0.97
+anchor_bottom = 0.102
+offset_bottom = 84.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleHeaderFrame")
+
+[node name="HeaderVBox" type="VBoxContainer" parent="Content/HeroHeader"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="HeaderRow" type="HBoxContainer" parent="Content/HeroHeader/HeaderVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="HeroText" type="VBoxContainer" parent="Content/HeroHeader/HeaderVBox/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = -3
+
+[node name="HeroEyebrow" type="Label" parent="Content/HeroHeader/HeaderVBox/HeaderRow/HeroText"]
+layout_mode = 2
+theme_type_variation = &"JadeSubtitle"
+theme_override_font_sizes/font_size = 9
+text = "WANDERING CULTIVATOR"
+
+[node name="HeroName" type="Label" parent="Content/HeroHeader/HeaderVBox/HeaderRow/HeroText"]
+layout_mode = 2
+theme_type_variation = &"JadeTitle"
+theme_override_font_sizes/font_size = 22
+text = "Lin Yue"
+
+[node name="EquippedCountLabel" type="Label" parent="Content/HeroHeader/HeaderVBox/HeaderRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(104, 0)
+layout_mode = 2
+theme_type_variation = &"JadeCurrencyLabel"
+theme_override_font_sizes/font_size = 11
+text = "EQUIPPED 0 / 4"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="Content/HeroHeader/HeaderVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 9
+text = "LOADOUT READY"
+
+[node name="SubTabs" type="HBoxContainer" parent="Content"]
+layout_mode = 1
+anchor_left = 0.03
+anchor_top = 0.184
+anchor_right = 0.97
+anchor_bottom = 0.184
+offset_bottom = 38.0
+grow_horizontal = 2
+theme_override_constants/separation = 6
+
+[node name="EquipmentTabButton" type="Button" parent="Content/SubTabs"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleTabActive")
+theme_override_styles/hover = SubResource("StyleTabActive")
+theme_override_styles/pressed = SubResource("StyleTabActive")
+theme_override_styles/focus = SubResource("StyleTabActive")
+theme_override_styles/disabled = SubResource("StyleTabActive")
+theme_override_colors/font_disabled_color = Color(0.98, 0.82, 0.39, 1.0)
+text = "EQUIPMENT"
+disabled = true
+
+[node name="BackpackTabButton" type="Button" parent="Content/SubTabs"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleTabNormal")
+theme_override_styles/hover = SubResource("StyleTabActive")
+theme_override_styles/pressed = SubResource("StyleTabActive")
+theme_override_styles/focus = SubResource("StyleTabActive")
+text = "BACKPACK"
+
+[node name="HeroLoadoutPanel" type="PanelContainer" parent="Content"]
+layout_mode = 1
+anchor_left = 0.03
+anchor_top = 0.225
+anchor_right = 0.97
+anchor_bottom = 0.535
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleRack")
+
+[node name="HeroStage" type="Control" parent="Content/HeroLoadoutPanel"]
+layout_mode = 2
+clip_contents = true
+
+[node name="StageTitle" type="Label" parent="Content/HeroLoadoutPanel/HeroStage"]
+layout_mode = 1
+anchor_left = 0.34
+anchor_top = 0.02
+anchor_right = 0.66
+anchor_bottom = 0.02
+offset_bottom = 24.0
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 9
+text = "LOADOUT"
+horizontal_alignment = 1
+
+[node name="HeroPreviewSprite" type="AnimatedSprite2D" parent="Content/HeroLoadoutPanel/HeroStage"]
+unique_name_in_owner = true
+position = Vector2(302, 155)
+scale = Vector2(2.05, 2.05)
+sprite_frames = ExtResource("12_player_frames")
+animation = &"idle_down"
+autoplay = "idle_down"
+
+[node name="HeroNameLabel" type="Label" parent="Content/HeroLoadoutPanel/HeroStage"]
+layout_mode = 1
+anchor_left = 0.36
+anchor_top = 0.73
+anchor_right = 0.64
+anchor_bottom = 0.73
+offset_bottom = 22.0
+theme_type_variation = &"JadeHeroName"
+theme_override_font_sizes/font_size = 13
+text = "LIN YUE"
+horizontal_alignment = 1
+
+[node name="ArmamentButton" type="Button" parent="Content/HeroLoadoutPanel/HeroStage"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.4
+anchor_top = 0.1
+anchor_right = 0.6
+anchor_bottom = 0.1
+offset_bottom = 52.0
+theme_type_variation = &"JadeSecondaryButton"
+text = "ARMAMENT"
+
+[node name="RobeButton" type="Button" parent="Content/HeroLoadoutPanel/HeroStage"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.035
+anchor_top = 0.16
+anchor_right = 0.235
+anchor_bottom = 0.16
+offset_bottom = 82.0
+theme_type_variation = &"JadeSecondaryButton"
+text = "ROBE"
+
+[node name="BracerButton" type="Button" parent="Content/HeroLoadoutPanel/HeroStage"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.765
+anchor_top = 0.16
+anchor_right = 0.965
+anchor_bottom = 0.16
+offset_bottom = 82.0
+theme_type_variation = &"JadeSecondaryButton"
+text = "BRACER"
+
+[node name="PendantButton" type="Button" parent="Content/HeroLoadoutPanel/HeroStage"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.035
+anchor_top = 0.56
+anchor_right = 0.235
+anchor_bottom = 0.56
+offset_bottom = 82.0
+theme_type_variation = &"JadeSecondaryButton"
+text = "PENDANT"
+
+[node name="BootsButton" type="Button" parent="Content/HeroLoadoutPanel/HeroStage"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.765
+anchor_top = 0.56
+anchor_right = 0.965
+anchor_bottom = 0.56
+offset_bottom = 82.0
+theme_type_variation = &"JadeSecondaryButton"
+text = "BOOTS"
+
+[node name="BonusSummaryLabel" type="Label" parent="Content/HeroLoadoutPanel/HeroStage"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.08
+anchor_top = 0.88
+anchor_right = 0.92
+anchor_bottom = 0.88
+offset_bottom = 24.0
+theme_type_variation = &"JadeQiLabel"
+theme_override_font_sizes/font_size = 10
+text = "NO ACTIVE LOADOUT BONUSES"
+horizontal_alignment = 1
+clip_text = true
+
+[node name="CollectionPanel" type="PanelContainer" parent="Content"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.03
+anchor_top = 0.545
+anchor_right = 0.97
+anchor_bottom = 0.89
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleRack")
+
+[node name="CollectionVBox" type="VBoxContainer" parent="Content/CollectionPanel"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="CandidateCaption" type="Label" parent="Content/CollectionPanel/CollectionVBox"]
+layout_mode = 2
+theme_type_variation = &"JadeSubtitle"
+theme_override_font_sizes/font_size = 10
+text = "MY EQUIPMENT  •  TAP AN ITEM FOR DETAILS"
+
+[node name="CandidateScroll" type="ScrollContainer" parent="Content/CollectionPanel/CollectionVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 2
+
+[node name="CandidateGrid" type="GridContainer" parent="Content/CollectionPanel/CollectionVBox/CandidateScroll"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(548, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 7
+theme_override_constants/v_separation = 7
+columns = 4
+
+[node name="DetailPanel" type="PanelContainer" parent="Content"]
+unique_name_in_owner = true
+visible = false
+z_index = 5
+layout_mode = 1
+anchor_left = 0.045
+anchor_top = 0.545
+anchor_right = 0.955
+anchor_bottom = 0.885
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleDetailFrame")
+
+[node name="DetailVBox" type="VBoxContainer" parent="Content/DetailPanel"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="DetailHeaderRow" type="HBoxContainer" parent="Content/DetailPanel/DetailVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="DetailHeader" type="VBoxContainer" parent="Content/DetailPanel/DetailVBox/DetailHeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 1
+
+[node name="SelectedSlotLabel" type="Label" parent="Content/DetailPanel/DetailVBox/DetailHeaderRow/DetailHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeTitle"
+theme_override_font_sizes/font_size = 15
+text = "ROBE"
+
+[node name="EquippedItemLabel" type="Label" parent="Content/DetailPanel/DetailVBox/DetailHeaderRow/DetailHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeSubtitle"
+theme_override_font_sizes/font_size = 9
+text = "EQUIPPED  •  NONE"
+autowrap_mode = 2
+
+[node name="DetailCloseButton" type="Button" parent="Content/DetailPanel/DetailVBox/DetailHeaderRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(42, 36)
+layout_mode = 2
+theme_type_variation = &"JadeSecondaryButton"
+theme_override_font_sizes/font_size = 14
+text = "×"
+
+[node name="InspectionCard" type="PanelContainer" parent="Content/DetailPanel/DetailVBox"]
+custom_minimum_size = Vector2(0, 76)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleInspection")
+
+[node name="InspectionRow" type="HBoxContainer" parent="Content/DetailPanel/DetailVBox/InspectionCard"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SelectedItemIcon" type="TextureRect" parent="Content/DetailPanel/DetailVBox/InspectionCard/InspectionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(62, 62)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="InspectionText" type="VBoxContainer" parent="Content/DetailPanel/DetailVBox/InspectionCard/InspectionRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 1
+
+[node name="ItemRoleLabel" type="Label" parent="Content/DetailPanel/DetailVBox/InspectionCard/InspectionRow/InspectionText"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeSubtitle"
+theme_override_font_sizes/font_size = 10
+text = "BODY WARD"
+autowrap_mode = 2
+
+[node name="SelectedStatLabel" type="Label" parent="Content/DetailPanel/DetailVBox/InspectionCard/InspectionRow/InspectionText"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeQiLabel"
+theme_override_font_sizes/font_size = 10
+text = "CORE PASSIVE  •  +10 Max HP"
+autowrap_mode = 2
+
+[node name="SignatureEffectLabel" type="Label" parent="Content/DetailPanel/DetailVBox/InspectionCard/InspectionRow/InspectionText"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 8
+text = "NO SIGNATURE EFFECT"
+autowrap_mode = 2
+
+[node name="CompareLabel" type="Label" parent="Content/DetailPanel/DetailVBox/InspectionCard/InspectionRow/InspectionText"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 8
+text = "LOADOUT IMPACT  •  NO CHANGE"
+autowrap_mode = 2
+
+
+[node name="AscensionStatusLabel" type="Label" parent="Content/DetailPanel/DetailVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeSubtitle"
+theme_override_font_sizes/font_size = 9
+text = "ASCENSION  •  ★☆☆☆☆  •  REFINEMENT SHARDS 0"
+autowrap_mode = 2
+
+[node name="AscensionPreviewLabel" type="Label" parent="Content/DetailPanel/DetailVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeQiLabel"
+theme_override_font_sizes/font_size = 9
+text = "NEXT 2★  •  CORE PASSIVE PREVIEW"
+autowrap_mode = 2
+
+[node name="AscendButton" type="Button" parent="Content/DetailPanel/DetailVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_type_variation = &"JadePrimaryButton"
+theme_override_font_sizes/font_size = 10
+text = "ASCENSION LOCKED"
+disabled = true
+
+[node name="AscendHintLabel" type="Label" parent="Content/DetailPanel/DetailVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 8
+text = "Ascension strengthens core passives only; Signature Effects stay fixed."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="ActionButton" type="Button" parent="Content/DetailPanel/DetailVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(1, 0.92, 0.68, 1)
+theme_override_colors/font_hover_color = Color(1, 0.96, 0.78, 1)
+theme_override_colors/font_disabled_color = Color(0.58, 0.62, 0.58, 0.82)
+theme_override_styles/normal = SubResource("StyleActionNormal")
+theme_override_styles/hover = SubResource("StyleActionHover")
+theme_override_styles/pressed = SubResource("StyleActionPressed")
+theme_override_styles/focus = SubResource("StyleActionHover")
+theme_override_styles/disabled = SubResource("StyleActionNormal")
+text = "EQUIP ITEM"
+
+[node name="ActionHintLabel" type="Label" parent="Content/DetailPanel/DetailVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 8
+text = "Tap × to return to the equipment grid."
+horizontal_alignment = 1
+
+[node name="HubNav" type="Control" parent="Content"]
+layout_mode = 1
+anchor_left = 0.03
+anchor_top = 1.0
+anchor_right = 0.97
+anchor_bottom = 1.0
+offset_top = -98.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 0
+script = ExtResource("6_nav")
+active_tab = 2

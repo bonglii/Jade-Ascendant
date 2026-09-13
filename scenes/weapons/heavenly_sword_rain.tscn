@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3 uid="uid://cnk8c8u627bx"]
+
+[ext_resource type="Script" uid="uid://dum8a1cien7d0" path="res://scripts/weapon/heavenly_sword_rain.gd" id="1_vngpn"]
+[ext_resource type="Texture2D" path="res://assets/weapons/sword/heavenly_sword_rain_jian_64x96.png" id="2_heavenly_jian"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_8k7nu"]
+radius = 32.0
+
+[node name="HeavenlySwordStrike" type="Area2D" unique_id=1858720501]
+z_index = 2
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_vngpn")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=2040026000]
+texture_filter = 1
+position = Vector2(0, -6)
+scale = Vector2(0.72, 0.72)
+texture = ExtResource("2_heavenly_jian")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2237083]
+shape = SubResource("CircleShape2D_8k7nu")

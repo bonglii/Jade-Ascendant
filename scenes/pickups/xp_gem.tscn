@@ -1,0 +1,60 @@
+[gd_scene load_steps=8 format=3 uid="uid://dq2fuh62vp268"]
+
+[ext_resource type="Texture2D" path="res://assets/pickups/xp_gold_amber_qi_shard_32x32.png" id="1_sheet"]
+[ext_resource type="Script" uid="uid://d3vvgg5ep7nu3" path="res://scripts/pickups/xp_gem.gd" id="2_script"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1"]
+atlas = ExtResource("1_sheet")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2"]
+atlas = ExtResource("1_sheet")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3"]
+atlas = ExtResource("1_sheet")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4"]
+atlas = ExtResource("1_sheet")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_gold_amber_xp"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gok7g"]
+size = Vector2(24.75, 17.375)
+
+[node name="XPGem" type="Area2D" unique_id=1298130350]
+collision_layer = 32
+script = ExtResource("2_script")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+z_index = -2
+scale = Vector2(1.08, 1.08)
+sprite_frames = SubResource("SpriteFrames_gold_amber_xp")
+animation = &"idle"
+autoplay = "idle"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1388229896]
+shape = SubResource("RectangleShape2D_gok7g")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

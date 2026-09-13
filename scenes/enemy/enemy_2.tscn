@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://du0mcd3i7okyl"]
+
+[ext_resource type="Script" uid="uid://ciktaq32om1w1" path="res://scripts/enemy/enemy_2.gd" id="1_cluvb"]
+[ext_resource type="SpriteFrames" uid="uid://bnoyr1efuy07p" path="res://assets/enemy/enemy_2_fallen_talisman_caster_spriteframes.tres" id="2_enemy2_frames"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_5h11f"]
+height = 36.0
+
+[node name="enemy_2" type="CharacterBody2D" unique_id=1235451691 groups=["enemy"]]
+collision_layer = 2
+collision_mask = 19
+script = ExtResource("1_cluvb")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=635097361]
+texture_filter = 1
+position = Vector2(0, -16)
+sprite_frames = ExtResource("2_enemy2_frames")
+animation = &"idle_right"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1374157066]
+shape = SubResource("CapsuleShape2D_5h11f")

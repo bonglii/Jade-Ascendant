@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3 uid="uid://dvq2y4fjosgsg"]
+
+[ext_resource type="Script" uid="uid://b6ebf55iu7pxo" path="res://scripts/enemy/enemy_1.gd" id="1_trh57"]
+[ext_resource type="SpriteFrames" path="res://assets/enemy/enemy_1_fallen_valley_disciple_spriteframes.tres" id="2_enemy1_frames"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_x2oxy"]
+radius = 16.0
+height = 44.0
+
+[node name="enemy_1" type="CharacterBody2D" unique_id=999088632 groups=["enemy"]]
+collision_layer = 2
+collision_mask = 19
+script = ExtResource("1_trh57")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1954715219]
+texture_filter = 1
+position = Vector2(0.9999981, -11)
+sprite_frames = ExtResource("2_enemy1_frames")
+animation = &"walk_left"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1214969540]
+position = Vector2(0, -1)
+shape = SubResource("CapsuleShape2D_x2oxy")

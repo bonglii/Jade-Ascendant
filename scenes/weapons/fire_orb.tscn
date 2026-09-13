@@ -1,0 +1,31 @@
+[gd_scene load_steps=4 format=3 uid="uid://5oou88chh00o"]
+
+[ext_resource type="Script" uid="uid://bmidnml55p5l" path="res://scripts/weapon/fire_orb.gd" id="1_700y4"]
+[ext_resource type="SpriteFrames" path="res://assets/weapons/magic/fire_orb_cultivation_spriteframes.tres" id="2_fire_frames"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_700y4"]
+radius = 13.0
+
+[node name="FireOrb" type="Area2D" unique_id=2069029301]
+z_index = 2
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("1_700y4")
+
+[node name="FlameTrail" type="Line2D" parent="."]
+position = Vector2(-4, 0)
+width = 7.0
+default_color = Color(1, 0.31, 0.06, 0.32)
+points = PackedVector2Array(-27, 0, -18, -2.5, -9, 0)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+sprite_frames = ExtResource("2_fire_frames")
+animation = &"fly"
+autoplay = "fly"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=846645414]
+position = Vector2(2, 0)
+shape = SubResource("CircleShape2D_700y4")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

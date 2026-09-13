@@ -1,0 +1,11 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/levels/level_1.tscn" id="1_arena"]
+[ext_resource type="Script" path="res://scripts/world/chapter_stage_decor.gd" id="2_decor"]
+
+[node name="Stage_1_4" instance=ExtResource("1_arena")]
+stage_id = 4
+
+[node name="VerdantQiValleyDecor" parent="." index="2"]
+script = ExtResource("2_decor")
+stage_id = 4

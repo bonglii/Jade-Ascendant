@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://buu76ohiy0ri3"]
+
+[ext_resource type="Script" uid="uid://b146ncroeip2a" path="res://scripts/enemy/lightning_strike.gd" id="1_w6l36"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_5h11f"]
+radius = 55.0
+
+[node name="LightningStrike" type="Area2D" unique_id=1834571930]
+script = ExtResource("1_w6l36")
+
+[node name="TelegraphVisual" type="Polygon2D" parent="." unique_id=1784156769]
+color = Color(0.42, 0.20, 0.78, 0.24)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1870099924]
+shape = SubResource("CircleShape2D_5h11f")

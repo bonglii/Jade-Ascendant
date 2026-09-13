@@ -1,0 +1,420 @@
+[gd_scene format=3 uid="uid://dlamosmp241fw"]
+
+[ext_resource type="Script" uid="uid://ced0rmrol1ld6" path="res://scripts/ui/MainMenu.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://bwa0wej15sgvf" path="res://scripts/ui/mobile_safe_area.gd" id="2_safe"]
+[ext_resource type="Theme" uid="uid://d0fwhrxw25bsx" path="res://assets/ui/jade_ui_theme.tres" id="3_theme"]
+[ext_resource type="Texture2D" uid="uid://q77j4c4gegrb" path="res://assets/ui/main_menu/main_menu_key_art_lin_yue.png" id="4_keyart"]
+[ext_resource type="Shader" uid="uid://bbmrqordhrxp4" path="res://assets/ui/main_menu/main_menu_key_art.gdshader" id="5_shader"]
+[ext_resource type="Texture2D" uid="uid://cfp724xrlgbba" path="res://assets/ui/icons/spirit_stone.svg" id="6_stone"]
+[ext_resource type="Texture2D" uid="uid://doog3thxi45kx" path="res://assets/ui/icons/settings.svg" id="7_settings"]
+[ext_resource type="Texture2D" uid="uid://b7p7peohietrb" path="res://assets/ui/icons/daily.svg" id="8_daily"]
+[ext_resource type="Texture2D" uid="uid://chxfam0rad016" path="res://assets/ui/icons/achieve.svg" id="9_achieve"]
+[ext_resource type="Script" uid="uid://crm4bfk0nejkr" path="res://scripts/ui/wuxia_hub_nav.gd" id="11_nav"]
+[ext_resource type="Texture2D" uid="uid://bqjljaqv4jxcd" path="res://assets/ui/wuxia/cta_jade_normal.png" id="14_cta_jade_normal"]
+[ext_resource type="Texture2D" uid="uid://be2gqkoxqupki" path="res://assets/ui/wuxia/cta_jade_hover.png" id="15_cta_jade_hover"]
+[ext_resource type="Texture2D" uid="uid://55gulwuyuq2l" path="res://assets/ui/wuxia/cta_jade_pressed.png" id="16_cta_jade_pressed"]
+[ext_resource type="Texture2D" uid="uid://tmqe5bjjm8k3" path="res://assets/ui/wuxia/cta_blue_normal.png" id="17_cta_blue_normal"]
+[ext_resource type="Texture2D" uid="uid://posdjbv1lr04" path="res://assets/ui/wuxia/cta_blue_hover.png" id="18_cta_blue_hover"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_key_art"]
+shader = ExtResource("5_shader")
+shader_parameter/pulse_strength = 0.025
+shader_parameter/pulse_speed = 0.65
+
+[sub_resource type="Gradient" id="Gradient_readability"]
+offsets = PackedFloat32Array(0, 0.16, 0.48, 0.72, 1)
+colors = PackedColorArray(0.001, 0.008, 0.014, 0.50, 0.001, 0.009, 0.016, 0.05, 0.001, 0.012, 0.019, 0.06, 0.001, 0.010, 0.017, 0.42, 0.001, 0.007, 0.013, 0.90)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture_readability"]
+gradient = SubResource("Gradient_readability")
+width = 648
+height = 1152
+fill_from = Vector2(0.5, 0)
+fill_to = Vector2(0.5, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleTopBar"]
+content_margin_left = 8.0
+content_margin_top = 5.0
+content_margin_right = 8.0
+content_margin_bottom = 5.0
+bg_color = Color(0.002, 0.018, 0.030, 0.90)
+border_width_bottom = 1
+border_color = Color(0.34, 0.88, 0.76, 0.30)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+shadow_color = Color(0, 0, 0, 0.42)
+shadow_size = 7
+
+[sub_resource type="StyleBoxFlat" id="StyleActionGlass"]
+bg_color = Color(0.001, 0.017, 0.028, 0.72)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.28, 0.82, 0.72, 0.24)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.46)
+shadow_size = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleQuickAction"]
+content_margin_left = 8.0
+content_margin_top = 5.0
+content_margin_right = 8.0
+content_margin_bottom = 5.0
+bg_color = Color(0.004, 0.046, 0.058, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.957, 0.78, 0.357, 0.68)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleQuickActionHover"]
+content_margin_left = 8.0
+content_margin_top = 5.0
+content_margin_right = 8.0
+content_margin_bottom = 5.0
+bg_color = Color(0.012, 0.095, 0.105, 0.97)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.957, 0.78, 0.357, 0.92)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleQuickActionPressed"]
+content_margin_left = 8.0
+content_margin_top = 5.0
+content_margin_right = 8.0
+content_margin_bottom = 5.0
+bg_color = Color(0.003, 0.036, 0.047, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.353, 0.784, 0.843, 0.88)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxTexture" id="StyleCTABlueNormal"]
+content_margin_left = 20.0
+content_margin_top = 10.0
+content_margin_right = 20.0
+content_margin_bottom = 10.0
+texture = ExtResource("17_cta_blue_normal")
+texture_margin_left = 38.0
+texture_margin_top = 18.0
+texture_margin_right = 38.0
+texture_margin_bottom = 18.0
+
+[sub_resource type="StyleBoxTexture" id="StyleCTABlueHover"]
+content_margin_left = 20.0
+content_margin_top = 10.0
+content_margin_right = 20.0
+content_margin_bottom = 10.0
+texture = ExtResource("18_cta_blue_hover")
+texture_margin_left = 38.0
+texture_margin_top = 18.0
+texture_margin_right = 38.0
+texture_margin_bottom = 18.0
+
+[sub_resource type="StyleBoxTexture" id="StyleCTAJadeNormal"]
+content_margin_left = 20.0
+content_margin_top = 10.0
+content_margin_right = 20.0
+content_margin_bottom = 10.0
+texture = ExtResource("14_cta_jade_normal")
+texture_margin_left = 38.0
+texture_margin_top = 18.0
+texture_margin_right = 38.0
+texture_margin_bottom = 18.0
+
+[sub_resource type="StyleBoxTexture" id="StyleCTAJadePressed"]
+content_margin_left = 20.0
+content_margin_top = 11.0
+content_margin_right = 20.0
+content_margin_bottom = 9.0
+texture = ExtResource("16_cta_jade_pressed")
+texture_margin_left = 38.0
+texture_margin_top = 18.0
+texture_margin_right = 38.0
+texture_margin_bottom = 18.0
+
+[sub_resource type="StyleBoxTexture" id="StyleCTAJadeHover"]
+content_margin_left = 20.0
+content_margin_top = 10.0
+content_margin_right = 20.0
+content_margin_bottom = 10.0
+texture = ExtResource("15_cta_jade_hover")
+texture_margin_left = 38.0
+texture_margin_top = 18.0
+texture_margin_right = 38.0
+texture_margin_bottom = 18.0
+
+[node name="MainMenu" type="Control" unique_id=1924806438]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_theme")
+script = ExtResource("1_script")
+
+[node name="KeyArt" type="TextureRect" parent="." unique_id=1587467656]
+unique_name_in_owner = true
+material = SubResource("ShaderMaterial_key_art")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("4_keyart")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="ReadabilityShade" type="TextureRect" parent="." unique_id=83252418]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("GradientTexture_readability")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="HomeUI" type="Control" parent="." unique_id=1943910154]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_safe")
+
+[node name="TopBar" type="PanelContainer" parent="HomeUI" unique_id=1046483393]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.03
+anchor_right = 0.97
+offset_top = 10.0
+offset_bottom = 70.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleTopBar")
+
+[node name="Row" type="HBoxContainer" parent="HomeUI/TopBar" unique_id=1490297606]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Profile" type="PanelContainer" parent="HomeUI/TopBar/Row" unique_id=1385136767]
+custom_minimum_size = Vector2(176, 0)
+layout_mode = 2
+theme_type_variation = &"JadeProfilePanel"
+
+[node name="ProfileText" type="VBoxContainer" parent="HomeUI/TopBar/Row/Profile" unique_id=1609411947]
+layout_mode = 2
+theme_override_constants/separation = -1
+
+[node name="Name" type="Label" parent="HomeUI/TopBar/Row/Profile/ProfileText" unique_id=2078041491]
+layout_mode = 2
+theme_type_variation = &"JadeHeroName"
+theme_override_font_sizes/font_size = 16
+text = "LIN YUE"
+
+[node name="Path" type="Label" parent="HomeUI/TopBar/Row/Profile/ProfileText" unique_id=977959310]
+layout_mode = 2
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 10
+text = "WANDERING CULTIVATOR"
+
+[node name="TopSpacer" type="Control" parent="HomeUI/TopBar/Row" unique_id=557237226]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Currency" type="PanelContainer" parent="HomeUI/TopBar/Row" unique_id=1422834198]
+custom_minimum_size = Vector2(122, 0)
+layout_mode = 2
+theme_type_variation = &"JadeCurrencyPanel"
+
+[node name="CurrencyRow" type="HBoxContainer" parent="HomeUI/TopBar/Row/Currency" unique_id=612841085]
+layout_mode = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="StoneIcon" type="TextureRect" parent="HomeUI/TopBar/Row/Currency/CurrencyRow" unique_id=352093408]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+texture = ExtResource("6_stone")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SpiritStoneLabel" type="Label" parent="HomeUI/TopBar/Row/Currency/CurrencyRow" unique_id=402510328]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeCurrencyLabel"
+theme_override_font_sizes/font_size = 15
+text = "0"
+vertical_alignment = 1
+
+[node name="SettingsButton" type="Button" parent="HomeUI/TopBar/Row" unique_id=1634383488]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(54, 54)
+layout_mode = 2
+theme_type_variation = &"JadeDockButton"
+icon = ExtResource("7_settings")
+expand_icon = true
+
+[node name="ExitButton" type="Button" parent="HomeUI/TopBar/Row" unique_id=510865149]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(38, 48)
+layout_mode = 2
+theme_type_variation = &"JadeDockButton"
+theme_override_font_sizes/font_size = 14
+text = "×"
+
+[node name="ActionGlass" type="PanelContainer" parent="HomeUI"]
+layout_mode = 1
+anchor_left = 0.045
+anchor_top = 1.0
+anchor_right = 0.955
+anchor_bottom = 1.0
+offset_top = -438.0
+offset_bottom = -102.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleActionGlass")
+
+[node name="HomeActions" type="VBoxContainer" parent="HomeUI"]
+layout_mode = 1
+anchor_left = 0.06
+anchor_top = 1.0
+anchor_right = 0.94
+anchor_bottom = 1.0
+offset_top = -414.0
+offset_bottom = -116.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 10
+alignment = 2
+
+[node name="SanctuaryLabel" type="Label" parent="HomeUI/HomeActions"]
+layout_mode = 2
+theme_type_variation = &"JadeSubtitle"
+theme_override_colors/font_color = Color(0.96, 0.80, 0.42, 1)
+theme_override_font_sizes/font_size = 12
+text = "JADE SANCTUARY"
+horizontal_alignment = 1
+
+[node name="RealmSummaryLabel" type="Label" parent="HomeUI/HomeActions"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeHeroName"
+theme_override_font_sizes/font_size = 25
+text = "Verdant Qi Valley"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="HomeHintLabel" type="Label" parent="HomeUI/HomeActions"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 11
+text = "Your path to ascension"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="ContinueButton" type="Button" parent="HomeUI/HomeActions" unique_id=446129908]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+theme_type_variation = &"JadePrimaryButton"
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 0.94, 0.76, 1)
+theme_override_styles/normal = SubResource("StyleCTABlueNormal")
+theme_override_styles/hover = SubResource("StyleCTABlueHover")
+theme_override_styles/pressed = SubResource("StyleCTABlueNormal")
+theme_override_styles/focus = SubResource("StyleCTABlueHover")
+text = "CONTINUE RUN"
+
+[node name="JourneyButton" type="Button" parent="HomeUI/HomeActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 66)
+layout_mode = 2
+theme_type_variation = &"JadePrimaryButton"
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(1, 0.95, 0.77, 1)
+theme_override_styles/normal = SubResource("StyleCTAJadeNormal")
+theme_override_styles/hover = SubResource("StyleCTAJadeHover")
+theme_override_styles/pressed = SubResource("StyleCTAJadePressed")
+theme_override_styles/focus = SubResource("StyleCTAJadeHover")
+text = "ENTER JOURNEY"
+tooltip_text = "Choose your next trial"
+
+[node name="QuickActions" type="HBoxContainer" parent="HomeUI/HomeActions"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DailyQuickButton" type="Button" parent="HomeUI/HomeActions/QuickActions" unique_id=269683487]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"JadeDockButton"
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleQuickAction")
+theme_override_styles/hover = SubResource("StyleQuickActionHover")
+theme_override_styles/pressed = SubResource("StyleQuickActionPressed")
+theme_override_styles/focus = SubResource("StyleQuickActionHover")
+text = "DAILY TRIALS"
+icon = ExtResource("8_daily")
+icon_max_width = 22
+expand_icon = true
+
+[node name="AchievementQuickButton" type="Button" parent="HomeUI/HomeActions/QuickActions" unique_id=1735798691]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"JadeDockButton"
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleQuickAction")
+theme_override_styles/hover = SubResource("StyleQuickActionHover")
+theme_override_styles/pressed = SubResource("StyleQuickActionPressed")
+theme_override_styles/focus = SubResource("StyleQuickActionHover")
+text = "ACHIEVEMENTS"
+icon = ExtResource("9_achieve")
+icon_max_width = 22
+expand_icon = true
+
+[node name="HubNav" type="Control" parent="HomeUI" unique_id=497319177]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.03
+anchor_top = 1.0
+anchor_right = 0.97
+anchor_bottom = 1.0
+offset_top = -98.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 0
+script = ExtResource("11_nav")
