@@ -13,17 +13,20 @@ const PATH_DATA: Dictionary = {
 	"vitality": {
 		"name": "Vitality",
 		"subtitle": "BODY MERIDIAN",
-		"description": "Strengthen the body and expand the vessel of qi."
+		"description": "Strengthen the body and expand the vessel of qi.",
+		"accent": Color(0.34, 0.96, 0.66, 1.0)
 	},
 	"sword_power": {
 		"name": "Sword Power",
 		"subtitle": "SWORD DAO MERIDIAN",
-		"description": "Refine sword intent into permanent spiritual power."
+		"description": "Refine sword intent into permanent spiritual power.",
+		"accent": Color(1.0, 0.76, 0.26, 1.0)
 	},
 	"swift_qi": {
 		"name": "Swift Qi",
 		"subtitle": "FLOWING QI MERIDIAN",
-		"description": "Circulate qi faster to shorten the interval between attacks."
+		"description": "Circulate qi faster to shorten the interval between attacks.",
+		"accent": Color(0.30, 0.87, 1.0, 1.0)
 	}
 }
 
@@ -40,10 +43,29 @@ const PATH_DATA: Dictionary = {
 @onready var refine_button: Button = %RefineButton
 @onready var insufficient_label: Label = %InsufficientLabel
 
+@onready var top_bar: PanelContainer = $Content/TopBar
+@onready var top_title: Label = $Content/TopBar/TopRow/TitleBox/TopTitle
+@onready var top_subtitle: Label = $Content/TopBar/TopRow/TitleBox/TopSubtitle
+@onready var stone_icon: TextureRect = $Content/TopBar/TopRow/StoneBox/StoneIcon
+@onready var header_panel: PanelContainer = $Content/HeaderPanel
+@onready var header_vbox: VBoxContainer = $Content/HeaderPanel/HeaderVBox
+@onready var header_title: Label = $Content/HeaderPanel/HeaderVBox/HeaderTitle
+@onready var eyebrow: Label = $Content/HeaderPanel/HeaderVBox/Eyebrow
+@onready var detail_panel: PanelContainer = $Content/DetailPanel
+@onready var detail_vbox: VBoxContainer = $Content/DetailPanel/DetailVBox
+@onready var current_card: PanelContainer = $Content/DetailPanel/DetailVBox/EffectRow/CurrentCard
+@onready var current_caption: Label = $Content/DetailPanel/DetailVBox/EffectRow/CurrentCard/CurrentVBox/CurrentCaption
+@onready var next_card: PanelContainer = $Content/DetailPanel/DetailVBox/EffectRow/NextCard
+@onready var next_caption: Label = $Content/DetailPanel/DetailVBox/EffectRow/NextCard/NextVBox/NextCaption
+@onready var cost_icon: TextureRect = $Content/DetailPanel/DetailVBox/RefineRow/CostBox/CostIcon
+
 var selected_path: String = "vitality"
+var mastery_meter: ProgressBar = null
+var path_meter: ProgressBar = null
 
 func _ready() -> void:
 	SceneTransitionManager.set_back_handler(handle_system_back)
+	_apply_premium_polish()
 	if formation.has_signal("path_selected"):
 		formation.connect("path_selected", _on_path_selected)
 	refine_button.pressed.connect(_on_refine_pressed)
@@ -52,8 +74,157 @@ func _ready() -> void:
 	update_display()
 	DebugLogger.system(str("CultivationMenu aktif!"))
 
+func _apply_premium_polish() -> void:
+	# Keep the existing scene contract intact and only upgrade its presentation.
+	top_bar.add_theme_stylebox_override(
+		"panel",
+		_make_panel_style(
+			Color(0.002, 0.020, 0.031, 0.96),
+			Color(0.31, 0.92, 0.78, 0.42),
+			10,
+			8
+		)
+	)
+	top_title.add_theme_font_size_override("font_size", 20)
+	top_title.add_theme_color_override("font_color", Color(0.98, 0.86, 0.52, 1.0))
+	top_subtitle.add_theme_font_size_override("font_size", 10)
+	spirit_stone_label.add_theme_font_size_override("font_size", 16)
+	stone_icon.custom_minimum_size = Vector2(29.0, 29.0)
+
+	header_panel.add_theme_stylebox_override(
+		"panel",
+		_make_panel_style(
+			Color(0.002, 0.031, 0.043, 0.95),
+			Color(0.96, 0.78, 0.33, 0.68),
+			14,
+			10
+		)
+	)
+	header_vbox.add_theme_constant_override("separation", 2)
+	eyebrow.add_theme_font_size_override("font_size", 11)
+	eyebrow.add_theme_color_override("font_color", Color(0.39, 0.91, 0.78, 0.96))
+	header_title.add_theme_font_size_override("font_size", 27)
+	header_title.add_theme_color_override("font_color", Color(1.0, 0.89, 0.61, 1.0))
+	mastery_label.add_theme_font_size_override("font_size", 11)
+
+	mastery_meter = ProgressBar.new()
+	mastery_meter.name = "MasteryMeter"
+	mastery_meter.custom_minimum_size = Vector2(0.0, 10.0)
+	mastery_meter.show_percentage = false
+	mastery_meter.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mastery_meter.add_theme_stylebox_override(
+		"background",
+		_make_meter_style(Color(0.006, 0.031, 0.038, 0.96), Color(0.18, 0.47, 0.44, 0.48))
+	)
+	mastery_meter.add_theme_stylebox_override(
+		"fill",
+		_make_meter_style(Color(0.20, 0.86, 0.69, 0.98), Color(0.98, 0.80, 0.36, 0.82))
+	)
+	header_vbox.add_child(mastery_meter)
+
+	detail_panel.add_theme_stylebox_override(
+		"panel",
+		_make_panel_style(
+			Color(0.002, 0.020, 0.032, 0.97),
+			Color(0.32, 0.86, 0.74, 0.52),
+			14,
+			10
+		)
+	)
+	detail_vbox.add_theme_constant_override("separation", 8)
+	selected_path_subtitle.add_theme_font_size_override("font_size", 11)
+	selected_path_name.add_theme_font_size_override("font_size", 24)
+	level_label.add_theme_font_size_override("font_size", 12)
+	description_label.add_theme_font_size_override("font_size", 13)
+	description_label.add_theme_color_override("font_color", Color(0.76, 0.84, 0.82, 0.98))
+
+	path_meter = ProgressBar.new()
+	path_meter.name = "SelectedPathMeter"
+	path_meter.custom_minimum_size = Vector2(0.0, 9.0)
+	path_meter.show_percentage = false
+	path_meter.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	path_meter.add_theme_stylebox_override(
+		"background",
+		_make_meter_style(Color(0.004, 0.026, 0.034, 0.96), Color(0.20, 0.45, 0.43, 0.42))
+	)
+	path_meter.add_theme_stylebox_override(
+		"fill",
+		_make_meter_style(Color(0.28, 0.90, 0.73, 0.98), Color(0.98, 0.80, 0.36, 0.76))
+	)
+	detail_vbox.add_child(path_meter)
+	detail_vbox.move_child(path_meter, description_label.get_index() + 1)
+
+	current_caption.add_theme_font_size_override("font_size", 10)
+	next_caption.add_theme_font_size_override("font_size", 10)
+	current_effect_label.add_theme_font_size_override("font_size", 16)
+	next_effect_label.add_theme_font_size_override("font_size", 16)
+	cost_label.add_theme_font_size_override("font_size", 16)
+	cost_icon.custom_minimum_size = Vector2(27.0, 27.0)
+	refine_button.custom_minimum_size.y = 62.0
+	refine_button.add_theme_font_size_override("font_size", 19)
+	insufficient_label.add_theme_font_size_override("font_size", 11)
+	insufficient_label.add_theme_color_override("font_color", Color(0.70, 0.78, 0.76, 0.96))
+
+	current_card.add_theme_stylebox_override(
+		"panel",
+		_make_panel_style(
+			Color(0.005, 0.068, 0.066, 0.90),
+			Color(0.28, 0.87, 0.73, 0.58),
+			10,
+			3
+		)
+	)
+	next_card.add_theme_stylebox_override(
+		"panel",
+		_make_panel_style(
+			Color(0.063, 0.044, 0.010, 0.88),
+			Color(0.97, 0.79, 0.33, 0.72),
+			10,
+			3
+		)
+	)
+
+func _make_panel_style(
+	bg_color: Color,
+	border_color: Color,
+	radius: int,
+	shadow_size: int
+) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = bg_color
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.border_color = border_color
+	style.corner_radius_top_left = radius
+	style.corner_radius_top_right = radius
+	style.corner_radius_bottom_left = radius
+	style.corner_radius_bottom_right = radius
+	style.content_margin_left = 14.0
+	style.content_margin_top = 9.0
+	style.content_margin_right = 14.0
+	style.content_margin_bottom = 9.0
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
+	style.shadow_size = shadow_size
+	return style
+
+func _make_meter_style(bg_color: Color, border_color: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = bg_color
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.border_color = border_color
+	style.corner_radius_top_left = 5
+	style.corner_radius_top_right = 5
+	style.corner_radius_bottom_left = 5
+	style.corner_radius_bottom_right = 5
+	return style
+
 func update_display() -> void:
-	spirit_stone_label.text = "%d" % ProgressionManager.spirit_stone
+	spirit_stone_label.text = _format_amount(ProgressionManager.spirit_stone)
 	var total_level: int = (
 		ProgressionManager.vitality_level
 		+ ProgressionManager.sword_power_level
@@ -65,6 +236,9 @@ func update_display() -> void:
 		+ ProgressionManager.SWIFT_QI_MAX_LEVEL
 	)
 	mastery_label.text = tr("MERIDIAN MASTERY %d / %d") % [total_level, total_max]
+	if mastery_meter != null:
+		mastery_meter.max_value = float(maxi(total_max, 1))
+		mastery_meter.value = float(total_level)
 	if formation.has_method("set_state"):
 		formation.call("set_state", _build_formation_state(), selected_path)
 	_update_detail_panel()
@@ -97,30 +271,57 @@ func _update_detail_panel() -> void:
 	var max_level: int = _get_path_max_level(selected_path)
 	var maxed: bool = _is_path_maxed(selected_path)
 	var cost: int = _get_path_cost(selected_path)
+	var accent: Color = data.get("accent", Color(0.32, 0.90, 0.76, 1.0))
 
-	selected_path_subtitle.text = str(data.get("subtitle", "MERIDIAN"))
-	selected_path_name.text = str(data.get("name", "Cultivation"))
+	selected_path_subtitle.text = tr(str(data.get("subtitle", "MERIDIAN")))
+	selected_path_name.text = tr(str(data.get("name", "Cultivation")))
+	selected_path_name.add_theme_color_override("font_color", accent)
 	level_label.text = tr("LEVEL %d / %d") % [level, max_level]
-	description_label.text = str(data.get("description", ""))
+	description_label.text = tr(str(data.get("description", "")))
+	if path_meter != null:
+		path_meter.max_value = float(maxi(max_level, 1))
+		path_meter.value = float(level)
 	current_effect_label.text = _get_current_effect_text(selected_path, level)
 	next_effect_label.text = _get_next_effect_text(selected_path, level, maxed)
+	_refresh_detail_accent(accent)
 
 	if maxed:
 		cost_label.text = "MAX"
 		refine_button.disabled = true
-		refine_button.text = "MERIDIAN PERFECTED"
-		insufficient_label.text = "This meridian has reached its current limit."
+		refine_button.text = tr("MERIDIAN PERFECTED")
+		insufficient_label.text = tr("This meridian has reached its current limit.")
 		return
 
-	cost_label.text = "%d" % cost
+	cost_label.text = _format_amount(cost)
 	refine_button.disabled = ProgressionManager.spirit_stone < cost
-	refine_button.text = "REFINE MERIDIAN"
+	refine_button.text = tr("REFINE MERIDIAN")
 
 	if refine_button.disabled:
 		var missing: int = maxi(cost - ProgressionManager.spirit_stone, 0)
 		insufficient_label.text = tr("Need %d more Spirit Stones.") % missing
 	else:
-		insufficient_label.text = "Permanent upgrade • persists between journeys."
+		insufficient_label.text = tr("Permanent upgrade • persists between journeys.")
+
+func _refresh_detail_accent(accent: Color) -> void:
+	var border: Color = accent
+	border.a = 0.60
+	detail_panel.add_theme_stylebox_override(
+		"panel",
+		_make_panel_style(Color(0.002, 0.020, 0.032, 0.97), border, 14, 10)
+	)
+	var current_border: Color = accent
+	current_border.a = 0.52
+	current_card.add_theme_stylebox_override(
+		"panel",
+		_make_panel_style(Color(0.005, 0.055, 0.060, 0.90), current_border, 10, 3)
+	)
+	if path_meter != null:
+		var fill_border: Color = accent.lerp(Color(1.0, 0.82, 0.40, 1.0), 0.18)
+		fill_border.a = 0.86
+		path_meter.add_theme_stylebox_override(
+			"fill",
+			_make_meter_style(Color(accent.r, accent.g, accent.b, 0.92), fill_border)
+		)
 
 func _get_current_effect_text(path_id: String, level: int) -> String:
 	match path_id:
@@ -132,11 +333,11 @@ func _get_current_effect_text(path_id: String, level: int) -> String:
 			var attack_speed: float = _get_swift_qi_attack_speed(level)
 			return tr("%.3f ATTACKS/S") % attack_speed
 		_:
-			return "CURRENT EFFECT"
+			return tr("CURRENT EFFECT")
 
 func _get_next_effect_text(path_id: String, level: int, maxed: bool) -> String:
 	if maxed:
-		return "PERFECTED"
+		return tr("PERFECTED")
 	var next_level: int = level + 1
 	match path_id:
 		"vitality":
@@ -147,7 +348,7 @@ func _get_next_effect_text(path_id: String, level: int, maxed: bool) -> String:
 			var next_speed: float = _get_swift_qi_attack_speed(next_level)
 			return tr("%.3f ATTACKS/S") % next_speed
 		_:
-			return "NEXT REFINEMENT"
+			return tr("NEXT REFINEMENT")
 
 func _get_swift_qi_attack_speed(level: int) -> float:
 	var cooldown: float = pow(SWIFT_QI_COOLDOWN_MULTIPLIER, float(level))
@@ -251,3 +452,11 @@ func _return_to_journey() -> void:
 			"CultivationMenu: gagal kembali ke Journey Hub. Error code: "
 			+ str(change_error)
 		)
+
+func _format_amount(value: int) -> String:
+	var digits: String = str(maxi(value, 0))
+	var formatted: String = ""
+	while digits.length() > 3:
+		formatted = "," + digits.right(3) + formatted
+		digits = digits.left(digits.length() - 3)
+	return digits + formatted

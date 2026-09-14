@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <radialGradient id="jade" cx="50%" cy="42%" r="58%">
+      <stop offset="0" stop-color="#bafff1"/>
+      <stop offset=".28" stop-color="#40e4ce"/>
+      <stop offset=".68" stop-color="#0b8f88"/>
+      <stop offset="1" stop-color="#063e4c"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#fff0a5"/>
+      <stop offset=".5" stop-color="#e9bb4e"/>
+      <stop offset="1" stop-color="#8f5b18"/>
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <circle cx="64" cy="64" r="53" fill="#031923" fill-opacity=".9" stroke="url(#gold)" stroke-width="3"/>
+  <circle cx="64" cy="64" r="44" fill="none" stroke="#4bf0d8" stroke-opacity=".55" stroke-width="1.5"/>
+  <path d="M64 22c16 12 28 24 28 42 0 18-12 30-28 42-16-12-28-24-28-42 0-18 12-30 28-42z" fill="url(#jade)" fill-opacity=".3" stroke="#83ffe9" stroke-width="2" filter="url(#glow)"/>
+  <path d="M64 34l10 20 22 3-16 15 4 22-20-10-20 10 4-22-16-15 22-3z" fill="none" stroke="url(#gold)" stroke-width="2.4"/>
+  <circle cx="64" cy="64" r="9" fill="url(#jade)" stroke="#fff0a5" stroke-width="2"/>
+</svg>

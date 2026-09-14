@@ -15,15 +15,17 @@
 [ext_resource type="Texture2D" uid="uid://55gulwuyuq2l" path="res://assets/ui/wuxia/cta_jade_pressed.png" id="16_cta_jade_pressed"]
 [ext_resource type="Texture2D" uid="uid://tmqe5bjjm8k3" path="res://assets/ui/wuxia/cta_blue_normal.png" id="17_cta_blue_normal"]
 [ext_resource type="Texture2D" uid="uid://posdjbv1lr04" path="res://assets/ui/wuxia/cta_blue_hover.png" id="18_cta_blue_hover"]
+[ext_resource type="Texture2D" path="res://assets/ui/main_menu/polish/sanctuary_medallion.svg" id="19_medallion"]
+[ext_resource type="Texture2D" path="res://assets/ui/main_menu/polish/path_spark.svg" id="20_path_spark"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_key_art"]
 shader = ExtResource("5_shader")
-shader_parameter/pulse_strength = 0.025
-shader_parameter/pulse_speed = 0.65
+shader_parameter/pulse_strength = 0.018
+shader_parameter/pulse_speed = 0.58
 
 [sub_resource type="Gradient" id="Gradient_readability"]
-offsets = PackedFloat32Array(0, 0.16, 0.48, 0.72, 1)
-colors = PackedColorArray(0.001, 0.008, 0.014, 0.50, 0.001, 0.009, 0.016, 0.05, 0.001, 0.012, 0.019, 0.06, 0.001, 0.010, 0.017, 0.42, 0.001, 0.007, 0.013, 0.90)
+offsets = PackedFloat32Array(0, 0.18, 0.52, 0.72, 1)
+colors = PackedColorArray(0.001, 0.007, 0.013, 0.42, 0.001, 0.009, 0.016, 0.02, 0.001, 0.012, 0.019, 0.10, 0.001, 0.010, 0.017, 0.56, 0.001, 0.006, 0.012, 0.94)
 
 [sub_resource type="GradientTexture2D" id="GradientTexture_readability"]
 gradient = SubResource("Gradient_readability")
@@ -33,81 +35,190 @@ fill_from = Vector2(0.5, 0)
 fill_to = Vector2(0.5, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleTopBar"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.002, 0.015, 0.025, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.91, 0.72, 0.30, 0.46)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0, 0, 0.58)
+shadow_size = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleTopProfile"]
 content_margin_left = 8.0
 content_margin_top = 5.0
-content_margin_right = 8.0
+content_margin_right = 10.0
 content_margin_bottom = 5.0
-bg_color = Color(0.002, 0.018, 0.030, 0.90)
+bg_color = Color(0.004, 0.043, 0.054, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.34, 0.88, 0.76, 0.30)
+border_color = Color(0.31, 0.88, 0.76, 0.34)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleCurrencyShell"]
+content_margin_left = 7.0
+content_margin_top = 5.0
+content_margin_right = 9.0
+content_margin_bottom = 5.0
+bg_color = Color(0.018, 0.047, 0.052, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.96, 0.77, 0.32, 0.52)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleActionGlass"]
+bg_color = Color(0.002, 0.017, 0.028, 0.93)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.29, 0.90, 0.77, 0.36)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0, 0, 0, 0.66)
+shadow_size = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleRealmCard"]
+content_margin_left = 15.0
+content_margin_top = 13.0
+content_margin_right = 15.0
+content_margin_bottom = 13.0
+bg_color = Color(0.005, 0.050, 0.064, 0.97)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.80, 0.68, 0.31, 0.42)
+corner_radius_top_left = 17
+corner_radius_top_right = 17
+corner_radius_bottom_right = 17
+corner_radius_bottom_left = 17
+shadow_color = Color(0, 0, 0, 0.32)
+shadow_size = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBadge"]
+content_margin_left = 9.0
+content_margin_top = 4.0
+content_margin_right = 9.0
+content_margin_bottom = 4.0
+bg_color = Color(0.02, 0.15, 0.16, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.89, 0.69, 0.25, 0.72)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleStatusBadge"]
+content_margin_left = 9.0
+content_margin_top = 4.0
+content_margin_right = 9.0
+content_margin_bottom = 4.0
+bg_color = Color(0.015, 0.105, 0.115, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.27, 0.82, 0.72, 0.38)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleProgressBg"]
+bg_color = Color(0.002, 0.018, 0.025, 0.90)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.21, 0.49, 0.46, 0.38)
 corner_radius_top_left = 7
 corner_radius_top_right = 7
 corner_radius_bottom_right = 7
 corner_radius_bottom_left = 7
-shadow_color = Color(0, 0, 0, 0.42)
-shadow_size = 7
 
-[sub_resource type="StyleBoxFlat" id="StyleActionGlass"]
-bg_color = Color(0.001, 0.017, 0.028, 0.72)
-border_width_left = 1
+[sub_resource type="StyleBoxFlat" id="StyleProgressFill"]
+bg_color = Color(0.12, 0.78, 0.67, 0.96)
 border_width_top = 1
-border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.28, 0.82, 0.72, 0.24)
-corner_radius_top_left = 14
-corner_radius_top_right = 14
-corner_radius_bottom_right = 14
-corner_radius_bottom_left = 14
-shadow_color = Color(0, 0, 0, 0.46)
-shadow_size = 10
+border_color = Color(0.96, 0.77, 0.30, 0.86)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
 
 [sub_resource type="StyleBoxFlat" id="StyleQuickAction"]
-content_margin_left = 8.0
-content_margin_top = 5.0
-content_margin_right = 8.0
-content_margin_bottom = 5.0
-bg_color = Color(0.004, 0.046, 0.058, 0.94)
+content_margin_left = 11.0
+content_margin_top = 8.0
+content_margin_right = 11.0
+content_margin_bottom = 8.0
+bg_color = Color(0.006, 0.052, 0.066, 0.98)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.957, 0.78, 0.357, 0.68)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+border_color = Color(0.34, 0.88, 0.76, 0.44)
+corner_radius_top_left = 13
+corner_radius_top_right = 13
+corner_radius_bottom_right = 13
+corner_radius_bottom_left = 13
+shadow_color = Color(0, 0, 0, 0.30)
+shadow_size = 4
 
 [sub_resource type="StyleBoxFlat" id="StyleQuickActionHover"]
-content_margin_left = 8.0
-content_margin_top = 5.0
-content_margin_right = 8.0
-content_margin_bottom = 5.0
-bg_color = Color(0.012, 0.095, 0.105, 0.97)
+content_margin_left = 11.0
+content_margin_top = 8.0
+content_margin_right = 11.0
+content_margin_bottom = 8.0
+bg_color = Color(0.014, 0.105, 0.115, 0.99)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.957, 0.78, 0.357, 0.92)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+border_color = Color(0.96, 0.78, 0.36, 0.80)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
 [sub_resource type="StyleBoxFlat" id="StyleQuickActionPressed"]
-content_margin_left = 8.0
-content_margin_top = 5.0
-content_margin_right = 8.0
-content_margin_bottom = 5.0
-bg_color = Color(0.003, 0.036, 0.047, 0.98)
+content_margin_left = 11.0
+content_margin_top = 9.0
+content_margin_right = 11.0
+content_margin_bottom = 7.0
+bg_color = Color(0.003, 0.037, 0.048, 0.99)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.353, 0.784, 0.843, 0.88)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+border_color = Color(0.35, 0.78, 0.84, 0.84)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
 [sub_resource type="StyleBoxTexture" id="StyleCTABlueNormal"]
 content_margin_left = 20.0
@@ -188,7 +299,7 @@ texture = ExtResource("4_keyart")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="ReadabilityShade" type="TextureRect" parent="." unique_id=83252418]
+[node name="ReadabilityShade" type="TextureRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -200,6 +311,18 @@ texture = SubResource("GradientTexture_readability")
 expand_mode = 1
 stretch_mode = 6
 
+[node name="PathSpark" type="TextureRect" parent="."]
+layout_mode = 1
+anchor_left = 0.0
+anchor_top = 0.48
+anchor_right = 1.0
+anchor_bottom = 0.76
+mouse_filter = 2
+texture = ExtResource("20_path_spark")
+expand_mode = 1
+stretch_mode = 6
+modulate = Color(1, 1, 1, 0.70)
+
 [node name="HomeUI" type="Control" parent="." unique_id=1943910154]
 unique_name_in_owner = true
 layout_mode = 1
@@ -210,79 +333,91 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_safe")
 
-[node name="TopBar" type="PanelContainer" parent="HomeUI" unique_id=1046483393]
+[node name="TopBar" type="PanelContainer" parent="HomeUI"]
 layout_mode = 1
-anchors_preset = -1
 anchor_left = 0.03
 anchor_right = 0.97
-offset_top = 10.0
-offset_bottom = 70.0
+offset_top = 8.0
+offset_bottom = 82.0
 grow_horizontal = 2
 theme_override_styles/panel = SubResource("StyleTopBar")
 
-[node name="Row" type="HBoxContainer" parent="HomeUI/TopBar" unique_id=1490297606]
+[node name="Row" type="HBoxContainer" parent="HomeUI/TopBar"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 8
 
-[node name="Profile" type="PanelContainer" parent="HomeUI/TopBar/Row" unique_id=1385136767]
-custom_minimum_size = Vector2(176, 0)
+[node name="Profile" type="PanelContainer" parent="HomeUI/TopBar/Row"]
+custom_minimum_size = Vector2(224, 0)
 layout_mode = 2
-theme_type_variation = &"JadeProfilePanel"
+theme_override_styles/panel = SubResource("StyleTopProfile")
 
-[node name="ProfileText" type="VBoxContainer" parent="HomeUI/TopBar/Row/Profile" unique_id=1609411947]
+[node name="ProfileContent" type="HBoxContainer" parent="HomeUI/TopBar/Row/Profile"]
 layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="ProfileSeal" type="TextureRect" parent="HomeUI/TopBar/Row/Profile/ProfileContent"]
+custom_minimum_size = Vector2(38, 38)
+layout_mode = 2
+texture = ExtResource("19_medallion")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ProfileText" type="VBoxContainer" parent="HomeUI/TopBar/Row/Profile/ProfileContent"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = -1
 
-[node name="Name" type="Label" parent="HomeUI/TopBar/Row/Profile/ProfileText" unique_id=2078041491]
+[node name="Name" type="Label" parent="HomeUI/TopBar/Row/Profile/ProfileContent/ProfileText"]
 layout_mode = 2
 theme_type_variation = &"JadeHeroName"
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 18
 text = "LIN YUE"
 
-[node name="Path" type="Label" parent="HomeUI/TopBar/Row/Profile/ProfileText" unique_id=977959310]
+[node name="Path" type="Label" parent="HomeUI/TopBar/Row/Profile/ProfileContent/ProfileText"]
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.52, 0.91, 0.83, 0.94)
+theme_override_font_sizes/font_size = 11
 text = "WANDERING CULTIVATOR"
 
-[node name="TopSpacer" type="Control" parent="HomeUI/TopBar/Row" unique_id=557237226]
+[node name="TopSpacer" type="Control" parent="HomeUI/TopBar/Row"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Currency" type="PanelContainer" parent="HomeUI/TopBar/Row" unique_id=1422834198]
-custom_minimum_size = Vector2(122, 0)
+[node name="Currency" type="PanelContainer" parent="HomeUI/TopBar/Row"]
+custom_minimum_size = Vector2(134, 0)
 layout_mode = 2
-theme_type_variation = &"JadeCurrencyPanel"
+theme_override_styles/panel = SubResource("StyleCurrencyShell")
 
-[node name="CurrencyRow" type="HBoxContainer" parent="HomeUI/TopBar/Row/Currency" unique_id=612841085]
+[node name="CurrencyRow" type="HBoxContainer" parent="HomeUI/TopBar/Row/Currency"]
 layout_mode = 2
 theme_override_constants/separation = 4
 alignment = 1
 
-[node name="StoneIcon" type="TextureRect" parent="HomeUI/TopBar/Row/Currency/CurrencyRow" unique_id=352093408]
-custom_minimum_size = Vector2(28, 28)
+[node name="StoneIcon" type="TextureRect" parent="HomeUI/TopBar/Row/Currency/CurrencyRow"]
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 texture = ExtResource("6_stone")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="SpiritStoneLabel" type="Label" parent="HomeUI/TopBar/Row/Currency/CurrencyRow" unique_id=402510328]
+[node name="SpiritStoneLabel" type="Label" parent="HomeUI/TopBar/Row/Currency/CurrencyRow"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeCurrencyLabel"
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 16
 text = "0"
 vertical_alignment = 1
 
-[node name="SettingsButton" type="Button" parent="HomeUI/TopBar/Row" unique_id=1634383488]
+[node name="SettingsButton" type="Button" parent="HomeUI/TopBar/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(54, 54)
+custom_minimum_size = Vector2(52, 52)
 layout_mode = 2
 theme_type_variation = &"JadeDockButton"
 icon = ExtResource("7_settings")
 expand_icon = true
 
-[node name="ExitButton" type="Button" parent="HomeUI/TopBar/Row" unique_id=510865149]
+[node name="ExitButton" type="Button" parent="HomeUI/TopBar/Row"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(38, 48)
 layout_mode = 2
@@ -296,8 +431,8 @@ anchor_left = 0.045
 anchor_top = 1.0
 anchor_right = 0.955
 anchor_bottom = 1.0
-offset_top = -438.0
-offset_bottom = -102.0
+offset_top = -552.0
+offset_bottom = -106.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
@@ -305,63 +440,133 @@ theme_override_styles/panel = SubResource("StyleActionGlass")
 
 [node name="HomeActions" type="VBoxContainer" parent="HomeUI"]
 layout_mode = 1
-anchor_left = 0.06
+anchor_left = 0.062
 anchor_top = 1.0
-anchor_right = 0.94
+anchor_right = 0.938
 anchor_bottom = 1.0
-offset_top = -414.0
-offset_bottom = -116.0
+offset_top = -532.0
+offset_bottom = -121.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_constants/separation = 10
-alignment = 2
+alignment = 1
 
-[node name="SanctuaryLabel" type="Label" parent="HomeUI/HomeActions"]
+[node name="HeaderRow" type="HBoxContainer" parent="HomeUI/HomeActions"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Medallion" type="TextureRect" parent="HomeUI/HomeActions/HeaderRow"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+texture = ExtResource("19_medallion")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HeaderText" type="VBoxContainer" parent="HomeUI/HomeActions/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = -1
+
+[node name="SanctuaryLabel" type="Label" parent="HomeUI/HomeActions/HeaderRow/HeaderText"]
 layout_mode = 2
 theme_type_variation = &"JadeSubtitle"
 theme_override_colors/font_color = Color(0.96, 0.80, 0.42, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 13
 text = "JADE SANCTUARY"
-horizontal_alignment = 1
 
-[node name="RealmSummaryLabel" type="Label" parent="HomeUI/HomeActions"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"JadeHeroName"
-theme_override_font_sizes/font_size = 25
-text = "Verdant Qi Valley"
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="HomeHintLabel" type="Label" parent="HomeUI/HomeActions"]
-unique_name_in_owner = true
+[node name="SanctuaryHint" type="Label" parent="HomeUI/HomeActions/HeaderRow/HeaderText"]
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
 theme_override_font_sizes/font_size = 11
-text = "Your path to ascension"
-horizontal_alignment = 1
+text = "ASCENSION PATH"
+
+[node name="RealmCard" type="PanelContainer" parent="HomeUI/HomeActions"]
+custom_minimum_size = Vector2(0, 142)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleRealmCard")
+
+[node name="RealmVBox" type="VBoxContainer" parent="HomeUI/HomeActions/RealmCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="MetaRow" type="HBoxContainer" parent="HomeUI/HomeActions/RealmCard/RealmVBox"]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="ChapterBadge" type="PanelContainer" parent="HomeUI/HomeActions/RealmCard/RealmVBox/MetaRow"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBadge")
+
+[node name="ChapterBadgeLabel" type="Label" parent="HomeUI/HomeActions/RealmCard/RealmVBox/MetaRow/ChapterBadge"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.86, 0.47, 1)
+theme_override_font_sizes/font_size = 11
+text = "CHAPTER 01"
+
+[node name="MetaSpacer" type="Control" parent="HomeUI/HomeActions/RealmCard/RealmVBox/MetaRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StatusBadge" type="PanelContainer" parent="HomeUI/HomeActions/RealmCard/RealmVBox/MetaRow"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleStatusBadge")
+
+[node name="RealmStatusLabel" type="Label" parent="HomeUI/HomeActions/RealmCard/RealmVBox/MetaRow/StatusBadge"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "IN PROGRESS"
+
+[node name="RealmSummaryLabel" type="Label" parent="HomeUI/HomeActions/RealmCard/RealmVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeHeroName"
+theme_override_colors/font_color = Color(0.94, 1.0, 0.97, 1)
+theme_override_font_sizes/font_size = 26
+text = "Verdant Qi Valley"
 autowrap_mode = 2
 
-[node name="ContinueButton" type="Button" parent="HomeUI/HomeActions" unique_id=446129908]
+[node name="HomeHintLabel" type="Label" parent="HomeUI/HomeActions/RealmCard/RealmVBox"]
 unique_name_in_owner = true
-visible = false
-custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
-theme_type_variation = &"JadePrimaryButton"
-theme_override_font_sizes/font_size = 18
-theme_override_colors/font_color = Color(1, 0.94, 0.76, 1)
-theme_override_styles/normal = SubResource("StyleCTABlueNormal")
-theme_override_styles/hover = SubResource("StyleCTABlueHover")
-theme_override_styles/pressed = SubResource("StyleCTABlueNormal")
-theme_override_styles/focus = SubResource("StyleCTABlueHover")
-text = "CONTINUE RUN"
+theme_type_variation = &"JadeMutedLabel"
+theme_override_colors/font_color = Color(0.62, 0.82, 0.79, 1)
+theme_override_font_sizes/font_size = 12
+text = "Your path to ascension"
+autowrap_mode = 2
+
+[node name="ProgressRow" type="HBoxContainer" parent="HomeUI/HomeActions/RealmCard/RealmVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RealmProgressBar" type="ProgressBar" parent="HomeUI/HomeActions/RealmCard/RealmVBox/ProgressRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 15)
+layout_mode = 2
+size_flags_horizontal = 3
+show_percentage = false
+theme_override_styles/background = SubResource("StyleProgressBg")
+theme_override_styles/fill = SubResource("StyleProgressFill")
+max_value = 5.0
+value = 0.0
+
+[node name="RealmProgressLabel" type="Label" parent="HomeUI/HomeActions/RealmCard/RealmVBox/ProgressRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(94, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.80, 0.42, 1)
+theme_override_font_sizes/font_size = 11
+text = "0 / 5 COMPLETE"
+horizontal_alignment = 2
 
 [node name="JourneyButton" type="Button" parent="HomeUI/HomeActions"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 66)
+custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 theme_type_variation = &"JadePrimaryButton"
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 21
 theme_override_colors/font_color = Color(1, 0.95, 0.77, 1)
 theme_override_styles/normal = SubResource("StyleCTAJadeNormal")
 theme_override_styles/hover = SubResource("StyleCTAJadeHover")
@@ -370,40 +575,56 @@ theme_override_styles/focus = SubResource("StyleCTAJadeHover")
 text = "ENTER JOURNEY"
 tooltip_text = "Choose your next trial"
 
+[node name="ContinueButton" type="Button" parent="HomeUI/HomeActions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_type_variation = &"JadePrimaryButton"
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.88, 0.98, 1.0, 1)
+theme_override_styles/normal = SubResource("StyleCTABlueNormal")
+theme_override_styles/hover = SubResource("StyleCTABlueHover")
+theme_override_styles/pressed = SubResource("StyleCTABlueNormal")
+theme_override_styles/focus = SubResource("StyleCTABlueHover")
+text = "CONTINUE RUN"
+
 [node name="QuickActions" type="HBoxContainer" parent="HomeUI/HomeActions"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="DailyQuickButton" type="Button" parent="HomeUI/HomeActions/QuickActions" unique_id=269683487]
+[node name="DailyQuickButton" type="Button" parent="HomeUI/HomeActions/QuickActions"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 46)
+custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"JadeDockButton"
-theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.79, 0.95, 0.91, 1)
+theme_override_font_sizes/font_size = 12
 theme_override_styles/normal = SubResource("StyleQuickAction")
 theme_override_styles/hover = SubResource("StyleQuickActionHover")
 theme_override_styles/pressed = SubResource("StyleQuickActionPressed")
 theme_override_styles/focus = SubResource("StyleQuickActionHover")
 text = "DAILY TRIALS"
 icon = ExtResource("8_daily")
-icon_max_width = 22
+icon_max_width = 28
 expand_icon = true
 
-[node name="AchievementQuickButton" type="Button" parent="HomeUI/HomeActions/QuickActions" unique_id=1735798691]
+[node name="AchievementQuickButton" type="Button" parent="HomeUI/HomeActions/QuickActions"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 46)
+custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"JadeDockButton"
-theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.96, 0.85, 0.52, 1)
+theme_override_font_sizes/font_size = 12
 theme_override_styles/normal = SubResource("StyleQuickAction")
 theme_override_styles/hover = SubResource("StyleQuickActionHover")
 theme_override_styles/pressed = SubResource("StyleQuickActionPressed")
 theme_override_styles/focus = SubResource("StyleQuickActionHover")
 text = "ACHIEVEMENTS"
 icon = ExtResource("9_achieve")
-icon_max_width = 22
+icon_max_width = 28
 expand_icon = true
 
 [node name="HubNav" type="Control" parent="HomeUI" unique_id=497319177]

@@ -11,6 +11,10 @@ const CheckpointData = preload("res://scripts/managers/checkpoint_manager.gd")
 @onready var spirit_stone_label: Label = %SpiritStoneLabel
 @onready var realm_summary_label: Label = %RealmSummaryLabel
 @onready var home_hint_label: Label = %HomeHintLabel
+@onready var chapter_badge_label: Label = %ChapterBadgeLabel
+@onready var realm_status_label: Label = %RealmStatusLabel
+@onready var realm_progress_bar: ProgressBar = %RealmProgressBar
+@onready var realm_progress_label: Label = %RealmProgressLabel
 @onready var continue_button: Button = %ContinueButton
 @onready var journey_button: Button = %JourneyButton
 @onready var daily_quick_button: Button = %DailyQuickButton
@@ -38,23 +42,56 @@ func _refresh_home() -> void:
 	var chapter: Dictionary = JourneyManager.get_chapter_data(chapter_id)
 	var progress: Dictionary = JourneyManager.get_chapter_progress(chapter_id)
 	var cleared: int = int(progress.get("cleared_stages", 0))
-	var total: int = int(progress.get("total_stages", 5))
+	var total: int = maxi(int(progress.get("total_stages", 5)), 1)
+	var chapter_complete: bool = cleared >= total
+
+	chapter_badge_label.text = tr("CHAPTER %02d") % chapter_id
 	realm_summary_label.text = str(chapter.get("display_name", "Jade Sanctuary"))
-	home_hint_label.text = tr("%d / %d trials cleared  •  Your path to ascension") % [cleared, total]
-	if total > 0 and cleared >= total:
-		home_hint_label.text = "CHAPTER COMPLETE  •  Revisit any trial in Journey"
+	realm_progress_bar.max_value = float(total)
+	realm_progress_bar.value = float(clampi(cleared, 0, total))
+	realm_progress_label.text = tr("%d / %d COMPLETE") % [cleared, total]
+
+	if chapter_complete:
+		realm_status_label.text = tr("COMPLETED")
+		realm_status_label.add_theme_color_override("font_color", Color(1.0, 0.84, 0.40, 1.0))
+		home_hint_label.text = tr("CHAPTER COMPLETE  •  Revisit any trial in Journey")
+		journey_button.text = tr("SELECT CHAPTER")
+	else:
+		realm_status_label.text = tr("IN PROGRESS")
+		realm_status_label.add_theme_color_override("font_color", Color(0.48, 0.96, 0.83, 1.0))
+		home_hint_label.text = tr("%d / %d trials cleared  •  Your path to ascension") % [cleared, total]
+		journey_button.text = tr("ENTER JOURNEY")
+
 	var has_checkpoint: bool = _has_checkpoint()
 	continue_button.visible = has_checkpoint
 	continue_button.disabled = not has_checkpoint
 	continue_button.text = _get_continue_button_text() if has_checkpoint else "CONTINUE RUN"
 	var daily_count: int = DailyQuestManager.get_claimable_count()
 	var achievement_count: int = AchievementManager.get_claimable_count()
-	daily_quick_button.text = tr("DAILY TRIALS") + (" (%d)" % daily_count if daily_count > 0 else "")
-	achievement_quick_button.text = tr("ACHIEVEMENTS") + (" (%d)" % achievement_count if achievement_count > 0 else "")
+	daily_quick_button.text = tr("DAILY TRIALS") + ("  •  %d" % daily_count if daily_count > 0 else "")
+	achievement_quick_button.text = tr("ACHIEVEMENTS") + ("  •  %d" % achievement_count if achievement_count > 0 else "")
+	_refresh_quick_action_emphasis(daily_count, achievement_count)
 	if SaveManager.is_progress_read_only():
 		continue_button.disabled = true
 		journey_button.disabled = true
+		realm_status_label.text = tr("SAVE RECOVERY REQUIRED")
+		realm_status_label.add_theme_color_override("font_color", Color(1.0, 0.55, 0.45, 1.0))
 		home_hint_label.text = "A save needs recovery. Close and reopen the game before continuing."
+
+
+func _refresh_quick_action_emphasis(daily_count: int, achievement_count: int) -> void:
+	var daily_color: Color = (
+		Color(0.88, 1.0, 0.96, 1.0)
+		if daily_count > 0
+		else Color(0.68, 0.84, 0.80, 1.0)
+	)
+	var achievement_color: Color = (
+		Color(1.0, 0.88, 0.52, 1.0)
+		if achievement_count > 0
+		else Color(0.78, 0.80, 0.70, 1.0)
+	)
+	daily_quick_button.add_theme_color_override("font_color", daily_color)
+	achievement_quick_button.add_theme_color_override("font_color", achievement_color)
 
 func _on_journey_pressed() -> void:
 	_open_hub_scene_fast(CHAPTER_SELECT_SCENE, "Journey")
@@ -62,7 +99,6 @@ func _on_journey_pressed() -> void:
 func handle_system_back() -> void:
 	if not SceneTransitionManager.is_transitioning:
 		get_tree().quit()
-
 
 func _on_continue_pressed() -> void:
 	if SaveManager.is_progress_read_only():
@@ -94,7 +130,7 @@ func _get_continue_button_text() -> String:
 	var checkpoint_data: Dictionary = _get_continue_checkpoint_data()
 	if not checkpoint_data.has("chapter_id"):
 		return "CONTINUE RUN"
-	return tr("CONTINUE  •  C%d  S%d") % [
+	return tr("CONTINUE  •  STAGE %d-%d") % [
 		int(checkpoint_data["chapter_id"]),
 		int(checkpoint_data["stage_id"])
 	]
