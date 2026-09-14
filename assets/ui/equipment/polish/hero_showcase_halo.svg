@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="core" cx="50%" cy="46%" r="50%">
+      <stop offset="0" stop-color="#89fff1" stop-opacity=".34"/>
+      <stop offset=".45" stop-color="#19cbbd" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#052b37" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="jade" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#a8fff0"/><stop offset=".45" stop-color="#23d8c7"/><stop offset="1" stop-color="#0a7f86"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#fff0a8"/><stop offset=".45" stop-color="#f1c353"/><stop offset="1" stop-color="#9d6415"/>
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="6"/></filter>
+  </defs>
+  <circle cx="256" cy="250" r="202" fill="url(#core)"/>
+  <circle cx="256" cy="250" r="170" fill="none" stroke="#2ce8d3" stroke-opacity=".28" stroke-width="3"/>
+  <circle cx="256" cy="250" r="146" fill="none" stroke="#b9fff3" stroke-opacity=".34" stroke-width="2" stroke-dasharray="6 10"/>
+  <path d="M256 57l22 28-22 16-22-16zM256 443l22-28-22-16-22 16zM63 250l28-22 16 22-16 22zM449 250l-28-22-16 22 16 22z" fill="url(#gold)" opacity=".92"/>
+  <path d="M128 108c39-34 82-53 128-53s89 19 128 53M128 392c39 34 82 53 128 53s89-19 128-53" fill="none" stroke="url(#gold)" stroke-width="5" stroke-linecap="round" opacity=".72"/>
+  <path d="M103 168c-20 47-20 117 0 164M409 168c20 47 20 117 0 164" fill="none" stroke="url(#jade)" stroke-width="4" stroke-linecap="round" opacity=".65"/>
+  <g opacity=".55" filter="url(#glow)" fill="#4ff3df">
+    <circle cx="256" cy="86" r="7"/><circle cx="426" cy="250" r="7"/><circle cx="256" cy="414" r="7"/><circle cx="86" cy="250" r="7"/>
+  </g>
+  <path d="M256 110l28 42-28 22-28-22zM256 390l28-42-28-22-28 22z" fill="none" stroke="#f2cc63" stroke-width="3" opacity=".7"/>
+  <path d="M183 250c12-55 35-89 73-120 38 31 61 65 73 120-12 55-35 89-73 120-38-31-61-65-73-120z" fill="none" stroke="#38dac9" stroke-width="2" opacity=".28"/>
+</svg>

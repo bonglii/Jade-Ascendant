@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
+  <defs>
+    <radialGradient id="a" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#47f3e0" stop-opacity=".24"/>
+      <stop offset=".48" stop-color="#0dbeb4" stop-opacity=".14"/>
+      <stop offset=".78" stop-color="#063a45" stop-opacity=".08"/>
+      <stop offset="1" stop-color="#00151d" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#86fff0"/>
+      <stop offset=".45" stop-color="#23cfc2"/>
+      <stop offset=".72" stop-color="#f3ca63"/>
+      <stop offset="1" stop-color="#6ef7df"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <circle cx="160" cy="160" r="150" fill="url(#a)"/>
+  <circle cx="160" cy="160" r="131" fill="none" stroke="url(#ring)" stroke-width="2.4" stroke-opacity=".72" filter="url(#glow)"/>
+  <circle cx="160" cy="160" r="112" fill="none" stroke="#52ead7" stroke-width="1.2" stroke-opacity=".38" stroke-dasharray="4 7"/>
+  <circle cx="160" cy="160" r="91" fill="none" stroke="#f2c65c" stroke-width="1.4" stroke-opacity=".42"/>
+  <path d="M160 31l9 18-9 18-9-18zm0 222 9 18-9 18-9-18zM31 160l18-9 18 9-18 9zm222 0 18-9 18 9-18 9z" fill="#f6d47b" fill-opacity=".78"/>
+  <g fill="none" stroke="#64f5df" stroke-width="2" stroke-linecap="round" stroke-opacity=".48">
+    <path d="M78 97c18-29 43-43 70-49M242 97c-18-29-43-43-70-49"/>
+    <path d="M78 223c18 29 43 43 70 49M242 223c-18 29-43 43-70 49"/>
+    <path d="M83 110c-18 4-29 13-36 26 14-5 27-3 37 4-8 5-14 12-17 22 13-8 26-10 39-6"/>
+    <path d="M237 110c18 4 29 13 36 26-14-5-27-3-37 4 8 5 14 12 17 22-13-8-26-10-39-6"/>
+    <path d="M83 210c-18-4-29-13-36-26 14 5 27 3 37-4-8-5-14-12-17-22 13 8 26 10 39 6"/>
+    <path d="M237 210c18-4 29-13 36-26-14 5-27 3-37-4 8-5 14-12 17-22-13 8-26 10-39 6"/>
+  </g>
+  <g fill="#7ff8e7" fill-opacity=".58">
+    <circle cx="160" cy="48" r="3"/><circle cx="160" cy="272" r="3"/><circle cx="48" cy="160" r="3"/><circle cx="272" cy="160" r="3"/>
+    <circle cx="81" cy="81" r="2.5"/><circle cx="239" cy="81" r="2.5"/><circle cx="81" cy="239" r="2.5"/><circle cx="239" cy="239" r="2.5"/>
+  </g>
+  <path d="M160 84l23 18 8 28-10 32-21 22-21-22-10-32 8-28z" fill="none" stroke="#b6fff4" stroke-width="1.5" stroke-opacity=".30"/>
+</svg>

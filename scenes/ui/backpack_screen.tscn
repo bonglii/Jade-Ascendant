@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://bqux2432n0b2q"]
+[gd_scene load_steps=21 format=3 uid="uid://bqux2432n0b2q"]
 
 [ext_resource type="Script" path="res://scripts/ui/backpack_screen.gd" id="1_script"]
 [ext_resource type="Script" path="res://scripts/ui/mobile_safe_area.gd" id="2_safe"]
@@ -8,10 +8,12 @@
 [ext_resource type="Script" path="res://scripts/ui/wuxia_hub_nav.gd" id="6_nav"]
 [ext_resource type="Texture2D" path="res://assets/ui/wuxia/realm_frame.png" id="7_realm_frame"]
 [ext_resource type="Texture2D" path="res://assets/ui/wuxia/trial_frame.png" id="8_trial_frame"]
+[ext_resource type="Texture2D" path="res://assets/ui/equipment/polish/relic_vault_backdrop.svg" id="9_watermark"]
+[ext_resource type="Texture2D" path="res://assets/ui/equipment/polish/ascension_emblem.svg" id="10_asc"]
 
 [sub_resource type="Gradient" id="Gradient_shade"]
-offsets = PackedFloat32Array(0, 0.23, 0.48, 0.74, 1)
-colors = PackedColorArray(0.001, 0.010, 0.018, 0.58, 0.001, 0.010, 0.018, 0.28, 0.001, 0.012, 0.020, 0.40, 0.001, 0.010, 0.018, 0.68, 0.001, 0.006, 0.012, 0.88)
+offsets = PackedFloat32Array(0, 0.23, 0.49, 0.74, 1)
+colors = PackedColorArray(0.001, 0.010, 0.018, 0.48, 0.001, 0.010, 0.018, 0.20, 0.001, 0.012, 0.020, 0.32, 0.001, 0.010, 0.018, 0.62, 0.001, 0.006, 0.012, 0.88)
 
 [sub_resource type="GradientTexture2D" id="GradientTexture_shade"]
 gradient = SubResource("Gradient_shade")
@@ -21,19 +23,22 @@ fill_from = Vector2(0.5, 0)
 fill_to = Vector2(0.5, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleTopBar"]
-bg_color = Color(0.003, 0.025, 0.041, 0.94)
-border_width_bottom = 1
-border_color = Color(0.957, 0.78, 0.357, 0.60)
-corner_radius_top_left = 7
-corner_radius_top_right = 7
-corner_radius_bottom_left = 7
-corner_radius_bottom_right = 7
-content_margin_left = 12.0
-content_margin_top = 7.0
-content_margin_right = 12.0
-content_margin_bottom = 7.0
-shadow_color = Color(0, 0, 0, 0.48)
-shadow_size = 4
+bg_color = Color(0.002, 0.025, 0.042, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 2
+border_color = Color(0.96, 0.75, 0.27, 0.72)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_left = 10
+corner_radius_bottom_right = 10
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+shadow_color = Color(0.02, 0.75, 0.72, 0.12)
+shadow_size = 8
 
 [sub_resource type="StyleBoxTexture" id="StyleHeaderFrame"]
 texture = ExtResource("7_realm_frame")
@@ -42,52 +47,89 @@ texture_margin_top = 24.0
 texture_margin_right = 30.0
 texture_margin_bottom = 24.0
 content_margin_left = 18.0
-content_margin_top = 11.0
+content_margin_top = 12.0
 content_margin_right = 18.0
-content_margin_bottom = 11.0
+content_margin_bottom = 12.0
 
 [sub_resource type="StyleBoxFlat" id="StyleListFrame"]
-bg_color = Color(0.002, 0.020, 0.032, 0.92)
-border_width_left = 1
+bg_color = Color(0.002, 0.025, 0.041, 0.94)
+border_width_left = 2
 border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.25, 0.80, 0.70, 0.34)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_left = 12
-corner_radius_bottom_right = 12
-content_margin_left = 10.0
-content_margin_top = 9.0
-content_margin_right = 10.0
-content_margin_bottom = 9.0
-shadow_color = Color(0, 0, 0, 0.38)
-shadow_size = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.20, 0.85, 0.74, 0.42)
+corner_radius_top_left = 15
+corner_radius_top_right = 15
+corner_radius_bottom_left = 15
+corner_radius_bottom_right = 15
+content_margin_left = 11.0
+content_margin_top = 10.0
+content_margin_right = 11.0
+content_margin_bottom = 10.0
+shadow_color = Color(0, 0, 0, 0.42)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleDetailFrame"]
+bg_color = Color(0.002, 0.020, 0.033, 0.985)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 3
+border_color = Color(0.98, 0.72, 0.20, 0.90)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_left = 16
+corner_radius_bottom_right = 16
+content_margin_left = 16.0
+content_margin_top = 13.0
+content_margin_right = 16.0
+content_margin_bottom = 13.0
+shadow_color = Color(0.95, 0.54, 0.12, 0.22)
+shadow_size = 12
 
 [sub_resource type="StyleBoxFlat" id="StyleTabActive"]
-bg_color = Color(0.016, 0.18, 0.16, 0.92)
+bg_color = Color(0.020, 0.20, 0.17, 0.98)
+border_width_left = 2
+border_width_top = 1
+border_width_right = 2
+border_width_bottom = 3
+border_color = Color(1.0, 0.77, 0.25, 0.98)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_left = 8
+corner_radius_bottom_right = 8
+shadow_color = Color(0.12, 0.85, 0.77, 0.22)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleTabNormal"]
+bg_color = Color(0.003, 0.033, 0.048, 0.92)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 2
-border_color = Color(0.96, 0.78, 0.36, 0.92)
+border_color = Color(0.24, 0.66, 0.59, 0.48)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_left = 8
+corner_radius_bottom_right = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleCodexTrack"]
+bg_color = Color(0.008, 0.045, 0.060, 0.88)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_left = 4
 corner_radius_bottom_right = 4
 
-[sub_resource type="StyleBoxFlat" id="StyleTabNormal"]
-bg_color = Color(0.002, 0.026, 0.035, 0.88)
-border_width_left = 1
-border_width_top = 1
+[sub_resource type="StyleBoxFlat" id="StyleCodexFill"]
+bg_color = Color(0.18, 0.88, 0.72, 0.96)
 border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.24, 0.58, 0.53, 0.36)
+border_color = Color(0.98, 0.78, 0.28, 0.72)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_left = 4
 corner_radius_bottom_right = 4
-
+shadow_color = Color(0.18, 0.88, 0.72, 0.22)
+shadow_size = 4
 
 [node name="BackpackScreen" type="Control"]
 layout_mode = 3
@@ -136,41 +178,41 @@ script = ExtResource("2_safe")
 [node name="TopBar" type="PanelContainer" parent="Content"]
 layout_mode = 1
 anchor_left = 0.03
-anchor_top = 0.018
+anchor_top = 0.016
 anchor_right = 0.97
-anchor_bottom = 0.018
-offset_bottom = 64.0
+anchor_bottom = 0.016
+offset_bottom = 62.0
 grow_horizontal = 2
 theme_override_styles/panel = SubResource("StyleTopBar")
 
 [node name="TopRow" type="HBoxContainer" parent="Content/TopBar"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 10
 
 [node name="TitleBox" type="VBoxContainer" parent="Content/TopBar/TopRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = -2
+theme_override_constants/separation = -1
 
 [node name="TopTitle" type="Label" parent="Content/TopBar/TopRow/TitleBox"]
 layout_mode = 2
 theme_type_variation = &"JadeHeroName"
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 20
 text = "HERO"
 
 [node name="TopSubtitle" type="Label" parent="Content/TopBar/TopRow/TitleBox"]
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 9
-text = "BACKPACK  •  EQUIPMENT INVENTORY"
+theme_override_font_sizes/font_size = 11
+text = "BACKPACK  •  CULTIVATION COLLECTION"
 
 [node name="StoneBox" type="HBoxContainer" parent="Content/TopBar/TopRow"]
 layout_mode = 2
-theme_override_constants/separation = 5
+theme_override_constants/separation = 6
 alignment = 1
 
 [node name="StoneIcon" type="TextureRect" parent="Content/TopBar/TopRow/StoneBox"]
-custom_minimum_size = Vector2(26, 26)
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 texture = ExtResource("5_stone")
 expand_mode = 1
@@ -178,10 +220,10 @@ stretch_mode = 5
 
 [node name="SpiritStoneLabel" type="Label" parent="Content/TopBar/TopRow/StoneBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(72, 0)
+custom_minimum_size = Vector2(78, 0)
 layout_mode = 2
 theme_type_variation = &"JadeCurrencyLabel"
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 16
 text = "0"
 horizontal_alignment = 2
 vertical_alignment = 1
@@ -189,10 +231,10 @@ vertical_alignment = 1
 [node name="HeroHeader" type="PanelContainer" parent="Content"]
 layout_mode = 1
 anchor_left = 0.03
-anchor_top = 0.102
+anchor_top = 0.091
 anchor_right = 0.97
-anchor_bottom = 0.102
-offset_bottom = 78.0
+anchor_bottom = 0.091
+offset_bottom = 94.0
 grow_horizontal = 2
 theme_override_styles/panel = SubResource("StyleHeaderFrame")
 
@@ -210,29 +252,47 @@ text = "Martial Backpack"
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeQiLabel"
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 13
 text = "OWNED 0 UNIQUE  •  0 TOTAL"
 
 [node name="EquippedSummaryLabel" type="Label" parent="Content/HeroHeader/HeaderVBox"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 11
-text = "EQUIPPED 0 / 4"
+theme_override_font_sizes/font_size = 12
+text = "EQUIPPED 0 / 5"
+
+[node name="CollectionProgressLabel" type="Label" parent="Content/HeroHeader/HeaderVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeSubtitle"
+theme_override_font_sizes/font_size = 12
+text = "RELIC CODEX  0 / 25"
+
+
+[node name="CollectionProgressBar" type="ProgressBar" parent="Content/HeroHeader/HeaderVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+show_percentage = false
+max_value = 25.0
+value = 0.0
+theme_override_styles/background = SubResource("StyleCodexTrack")
+theme_override_styles/fill = SubResource("StyleCodexFill")
 
 [node name="SubTabs" type="HBoxContainer" parent="Content"]
 layout_mode = 1
 anchor_left = 0.03
-anchor_top = 0.175
+anchor_top = 0.181
 anchor_right = 0.97
-anchor_bottom = 0.175
-offset_bottom = 38.0
+anchor_bottom = 0.191
+offset_bottom = 42.0
 grow_horizontal = 2
-theme_override_constants/separation = 5
+theme_override_constants/separation = 7
 
 [node name="EquipmentTabButton" type="Button" parent="Content/SubTabs"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 34)
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 13
@@ -243,7 +303,7 @@ theme_override_styles/focus = SubResource("StyleTabActive")
 text = "EQUIPMENT"
 
 [node name="BackpackTabButton" type="Button" parent="Content/SubTabs"]
-custom_minimum_size = Vector2(0, 34)
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 13
@@ -252,23 +312,23 @@ theme_override_styles/hover = SubResource("StyleTabActive")
 theme_override_styles/pressed = SubResource("StyleTabActive")
 theme_override_styles/focus = SubResource("StyleTabActive")
 theme_override_styles/disabled = SubResource("StyleTabActive")
-theme_override_colors/font_disabled_color = Color(0.98, 0.82, 0.39, 1.0)
+theme_override_colors/font_disabled_color = Color(1.0, 0.88, 0.56, 1.0)
 text = "BACKPACK"
 disabled = true
 
 [node name="FilterRow" type="HBoxContainer" parent="Content"]
 layout_mode = 1
 anchor_left = 0.03
-anchor_top = 0.218
+anchor_top = 0.225
 anchor_right = 0.97
-anchor_bottom = 0.218
-offset_bottom = 36.0
+anchor_bottom = 0.237
+offset_bottom = 42.0
 grow_horizontal = 2
-theme_override_constants/separation = 5
+theme_override_constants/separation = 6
 
 [node name="AllFilterButton" type="Button" parent="Content/FilterRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 34)
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"JadePrimaryButton"
@@ -276,7 +336,7 @@ text = "ALL"
 
 [node name="EquipmentFilterButton" type="Button" parent="Content/FilterRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 34)
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"JadeSecondaryButton"
@@ -284,7 +344,7 @@ text = "GEAR"
 
 [node name="MaterialFilterButton" type="Button" parent="Content/FilterRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 34)
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"JadeSecondaryButton"
@@ -292,7 +352,7 @@ text = "MATERIAL"
 
 [node name="EquippedFilterButton" type="Button" parent="Content/FilterRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 34)
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"JadeSecondaryButton"
@@ -300,7 +360,7 @@ text = "EQUIPPED"
 
 [node name="SortButton" type="Button" parent="Content/FilterRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(96, 34)
+custom_minimum_size = Vector2(110, 40)
 layout_mode = 2
 theme_type_variation = &"JadeSecondaryButton"
 text = "SORT  •  RARITY"
@@ -308,28 +368,41 @@ text = "SORT  •  RARITY"
 [node name="InventoryPanel" type="PanelContainer" parent="Content"]
 layout_mode = 1
 anchor_left = 0.03
-anchor_top = 0.258
+anchor_top = 0.275
 anchor_right = 0.97
-anchor_bottom = 0.886
+anchor_bottom = 0.89
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleListFrame")
 
+[node name="CollectionWatermark" type="TextureRect" parent="Content/InventoryPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("9_watermark")
+expand_mode = 1
+stretch_mode = 5
+modulate = Color(1, 1, 1, 0.72)
+
 [node name="InventoryVBox" type="VBoxContainer" parent="Content/InventoryPanel"]
 layout_mode = 2
-theme_override_constants/separation = 5
+theme_override_constants/separation = 8
 
 [node name="PanelTitle" type="Label" parent="Content/InventoryPanel/InventoryVBox"]
 layout_mode = 2
 theme_type_variation = &"JadeSubtitle"
-theme_override_font_sizes/font_size = 9
-text = "INVENTORY  •  TAP AN ITEM FOR DETAILS"
+theme_override_font_sizes/font_size = 12
+text = "RELIC VAULT  •  TAP TO INSPECT"
 
 [node name="EmptyLabel" type="Label" parent="Content/InventoryPanel/InventoryVBox"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "No items match this filter."
 horizontal_alignment = 1
 
@@ -344,7 +417,7 @@ custom_minimum_size = Vector2(548, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/h_separation = 7
-theme_override_constants/v_separation = 7
+theme_override_constants/v_separation = 9
 columns = 5
 
 [node name="DetailPanel" type="PanelContainer" parent="Content"]
@@ -352,102 +425,132 @@ unique_name_in_owner = true
 visible = false
 z_index = 5
 layout_mode = 1
-anchor_left = 0.045
-anchor_top = 0.545
-anchor_right = 0.955
-anchor_bottom = 0.89
+anchor_left = 0.04
+anchor_top = 0.535
+anchor_right = 0.96
+anchor_bottom = 0.875
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleListFrame")
+theme_override_styles/panel = SubResource("StyleDetailFrame")
 
 [node name="DetailVBox" type="VBoxContainer" parent="Content/DetailPanel"]
 layout_mode = 2
-theme_override_constants/separation = 4
+theme_override_constants/separation = 5
 
-[node name="DetailTopRow" type="HBoxContainer" parent="Content/DetailPanel/DetailVBox"]
+[node name="ItemInfoCard" type="PanelContainer" parent="Content/DetailPanel/DetailVBox"]
+unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_styles/panel = SubResource("StyleListFrame")
 
-[node name="DetailRow" type="HBoxContainer" parent="Content/DetailPanel/DetailVBox/DetailTopRow"]
+[node name="DetailTopRow" type="HBoxContainer" parent="Content/DetailPanel/DetailVBox/ItemInfoCard"]
 layout_mode = 2
-size_flags_horizontal = 3
 theme_override_constants/separation = 10
 
-[node name="SelectedItemIcon" type="TextureRect" parent="Content/DetailPanel/DetailVBox/DetailTopRow/DetailRow"]
+[node name="DetailRow" type="HBoxContainer" parent="Content/DetailPanel/DetailVBox/ItemInfoCard/DetailTopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 13
+
+[node name="SelectedItemIcon" type="TextureRect" parent="Content/DetailPanel/DetailVBox/ItemInfoCard/DetailTopRow/DetailRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(64, 64)
+custom_minimum_size = Vector2(82, 82)
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="DetailText" type="VBoxContainer" parent="Content/DetailPanel/DetailVBox/DetailTopRow/DetailRow"]
+[node name="DetailText" type="VBoxContainer" parent="Content/DetailPanel/DetailVBox/ItemInfoCard/DetailTopRow/DetailRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 1
+theme_override_constants/separation = 3
 
-[node name="SelectedItemNameLabel" type="Label" parent="Content/DetailPanel/DetailVBox/DetailTopRow/DetailRow/DetailText"]
+[node name="SelectedItemNameLabel" type="Label" parent="Content/DetailPanel/DetailVBox/ItemInfoCard/DetailTopRow/DetailRow/DetailText"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeTitle"
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 20
 text = "NO ITEM SELECTED"
 autowrap_mode = 2
 
-[node name="SelectedMetaLabel" type="Label" parent="Content/DetailPanel/DetailVBox/DetailTopRow/DetailRow/DetailText"]
+[node name="SelectedMetaLabel" type="Label" parent="Content/DetailPanel/DetailVBox/ItemInfoCard/DetailTopRow/DetailRow/DetailText"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeSubtitle"
-theme_override_font_sizes/font_size = 9
+theme_override_font_sizes/font_size = 12
 text = "Choose an item from the backpack grid."
 autowrap_mode = 2
 
-[node name="SelectedStatsLabel" type="Label" parent="Content/DetailPanel/DetailVBox/DetailTopRow/DetailRow/DetailText"]
+[node name="SelectedStatsLabel" type="Label" parent="Content/DetailPanel/DetailVBox/ItemInfoCard/DetailTopRow/DetailRow/DetailText"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeQiLabel"
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 12
 text = ""
 autowrap_mode = 2
 
-[node name="SelectedEffectLabel" type="Label" parent="Content/DetailPanel/DetailVBox/DetailTopRow/DetailRow/DetailText"]
+[node name="DetailCloseButton" type="Button" parent="Content/DetailPanel/DetailVBox/ItemInfoCard/DetailTopRow"]
 unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 8
-text = ""
-autowrap_mode = 2
-
-[node name="DetailCloseButton" type="Button" parent="Content/DetailPanel/DetailVBox/DetailTopRow"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(42, 36)
+custom_minimum_size = Vector2(46, 42)
 layout_mode = 2
 theme_type_variation = &"JadeSecondaryButton"
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 17
 text = "×"
 
+[node name="SignaturePanel" type="PanelContainer" parent="Content/DetailPanel/DetailVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleListFrame")
 
-[node name="AscensionStatusLabel" type="Label" parent="Content/DetailPanel/DetailVBox"]
+[node name="SelectedEffectLabel" type="Label" parent="Content/DetailPanel/DetailVBox/SignaturePanel"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeSubtitle"
-theme_override_font_sizes/font_size = 9
-text = "ASCENSION  •  ★☆☆☆☆  •  REFINEMENT SHARDS 0"
+theme_override_font_sizes/font_size = 13
+text = "SIGNATURE EFFECT"
 autowrap_mode = 2
 
-[node name="AscensionPreviewLabel" type="Label" parent="Content/DetailPanel/DetailVBox"]
+[node name="AscensionPanel" type="PanelContainer" parent="Content/DetailPanel/DetailVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleListFrame")
+
+[node name="AscensionRow" type="HBoxContainer" parent="Content/DetailPanel/DetailVBox/AscensionPanel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="AscensionEmblem" type="TextureRect" parent="Content/DetailPanel/DetailVBox/AscensionPanel/AscensionRow"]
+custom_minimum_size = Vector2(50, 50)
+layout_mode = 2
+texture = ExtResource("10_asc")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="AscensionText" type="VBoxContainer" parent="Content/DetailPanel/DetailVBox/AscensionPanel/AscensionRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="AscensionStatusLabel" type="Label" parent="Content/DetailPanel/DetailVBox/AscensionPanel/AscensionRow/AscensionText"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeSubtitle"
+theme_override_font_sizes/font_size = 13
+text = "★☆☆☆☆  →  ★★☆☆☆\nSHARDS  0 / 0"
+autowrap_mode = 2
+
+[node name="AscensionPreviewLabel" type="Label" parent="Content/DetailPanel/DetailVBox/AscensionPanel/AscensionRow/AscensionText"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeQiLabel"
-theme_override_font_sizes/font_size = 9
-text = "NEXT 2★  •  CORE PASSIVE PREVIEW"
+theme_override_font_sizes/font_size = 12
+text = "NEXT CORE PASSIVE\nPREVIEW"
 autowrap_mode = 2
 
 [node name="AscendButton" type="Button" parent="Content/DetailPanel/DetailVBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 36)
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 theme_type_variation = &"JadePrimaryButton"
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 13
 text = "ASCENSION LOCKED"
 disabled = true
 
@@ -455,17 +558,17 @@ disabled = true
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 8
-text = "Ascension strengthens core passives only; Signature Effects stay fixed."
+theme_override_font_sizes/font_size = 10
+text = "Core passive increases; Signature Effect stays fixed."
 horizontal_alignment = 1
 autowrap_mode = 2
 
 [node name="SelectedActionButton" type="Button" parent="Content/DetailPanel/DetailVBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 theme_type_variation = &"JadePrimaryButton"
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 15
 text = "NO ACTION"
 disabled = true
 
@@ -473,7 +576,7 @@ disabled = true
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 8
+theme_override_font_sizes/font_size = 10
 text = "Tap × to return to the inventory grid."
 horizontal_alignment = 1
 autowrap_mode = 2
