@@ -1,7 +1,7 @@
 extends Control
 
 ## Lightweight scalable wuxia/xianxia realm backdrop.
-## Drawn procedurally so it remains crisp across portrait aspect ratios.
+## Procedural and chapter-aware so every realm owns a distinct visual identity.
 
 var sky_top: Color = Color(0.006, 0.027, 0.047, 1.0)
 var sky_bottom: Color = Color(0.016, 0.086, 0.094, 1.0)
@@ -11,6 +11,7 @@ var mist: Color = Color(0.286, 0.776, 0.82, 0.10)
 var moon: Color = Color(0.941, 0.91, 0.827, 0.08)
 var accent: Color = Color(0.353, 0.784, 0.843, 1.0)
 var gold: Color = Color(0.941, 0.8, 0.439, 1.0)
+var realm_motif: String = "generic"
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -25,6 +26,7 @@ func apply_profile(profile: Dictionary) -> void:
 	moon = profile.get("moon", moon)
 	accent = profile.get("accent", accent)
 	gold = profile.get("gold", gold)
+	realm_motif = str(profile.get("realm_motif", realm_motif))
 	queue_redraw()
 
 func _notification(what: int) -> void:
@@ -41,6 +43,7 @@ func _draw() -> void:
 	_draw_far_mountains(canvas_size)
 	_draw_mist_bands(canvas_size)
 	_draw_near_mountains(canvas_size)
+	_draw_realm_identity(canvas_size)
 	_draw_spiritual_stream(canvas_size)
 	_draw_motes(canvas_size)
 	_draw_frame_accents(canvas_size)
@@ -62,13 +65,26 @@ func _draw_sky(canvas_size: Vector2) -> void:
 
 func _draw_moon(canvas_size: Vector2) -> void:
 	var radius: float = minf(canvas_size.x, canvas_size.y) * 0.115
-	var center: Vector2 = Vector2(canvas_size.x * 0.78, canvas_size.y * 0.26)
+	var center: Vector2 = Vector2(canvas_size.x * 0.78, canvas_size.y * 0.22)
+	var glow_alpha: float = 0.32
+	if realm_motif == "crimson":
+		glow_alpha = 0.62
+	elif realm_motif == "nine_heavens":
+		glow_alpha = 0.42
+
 	draw_circle(
 		center,
-		radius * 1.28,
-		Color(moon.r, moon.g, moon.b, moon.a * 0.32)
+		radius * 1.40,
+		Color(moon.r, moon.g, moon.b, moon.a * glow_alpha)
 	)
 	draw_circle(center, radius, moon)
+
+	if realm_motif == "crimson":
+		draw_circle(
+			center + Vector2(radius * 0.44, -radius * 0.10),
+			radius * 0.82,
+			Color(sky_top.r, sky_top.g, sky_top.b, 0.98)
+		)
 
 func _draw_far_mountains(canvas_size: Vector2) -> void:
 	var y_base: float = canvas_size.y * 0.61
@@ -128,6 +144,165 @@ func _draw_mist_bands(canvas_size: Vector2) -> void:
 		Vector2(-20.0, canvas_size.y * 0.73)
 	])
 	draw_colored_polygon(band_b, band_b_color)
+
+func _draw_realm_identity(canvas_size: Vector2) -> void:
+	match realm_motif:
+		"verdant":
+			_draw_verdant_identity(canvas_size)
+		"crimson":
+			_draw_crimson_identity(canvas_size)
+		"nine_heavens":
+			_draw_nine_heavens_identity(canvas_size)
+		_:
+			pass
+
+func _draw_verdant_identity(canvas_size: Vector2) -> void:
+	# Bamboo silhouettes on the outer edges make the Valley instantly readable.
+	for side_value in [-1.0, 1.0]:
+		var side: float = float(side_value)
+		var x: float = canvas_size.x * (0.075 if side < 0.0 else 0.925)
+		var stalk_color := Color(accent.r, accent.g, accent.b, 0.13)
+		draw_line(
+			Vector2(x, canvas_size.y * 0.16),
+			Vector2(x - side * 18.0, canvas_size.y * 0.78),
+			stalk_color,
+			5.0,
+			true
+		)
+		for index in range(5):
+			var y: float = canvas_size.y * (0.26 + float(index) * 0.105)
+			var branch_end := Vector2(x - side * 35.0, y - 16.0)
+			draw_line(Vector2(x, y), branch_end, stalk_color, 2.0, true)
+			draw_line(
+				branch_end,
+				branch_end + Vector2(-side * 14.0, -8.0),
+				Color(accent.r, accent.g, accent.b, 0.09),
+				4.0,
+				true
+			)
+
+	var gate_center := Vector2(canvas_size.x * 0.50, canvas_size.y * 0.34)
+	var gate_w: float = canvas_size.x * 0.19
+	var gate_h: float = canvas_size.y * 0.085
+	draw_line(
+		gate_center + Vector2(-gate_w, gate_h),
+		gate_center + Vector2(-gate_w, -gate_h * 0.25),
+		Color(gold.r, gold.g, gold.b, 0.12),
+		2.0,
+		true
+	)
+	draw_line(
+		gate_center + Vector2(gate_w, gate_h),
+		gate_center + Vector2(gate_w, -gate_h * 0.25),
+		Color(gold.r, gold.g, gold.b, 0.12),
+		2.0,
+		true
+	)
+	draw_line(
+		gate_center + Vector2(-gate_w * 1.16, -gate_h * 0.25),
+		gate_center + Vector2(gate_w * 1.16, -gate_h * 0.25),
+		Color(gold.r, gold.g, gold.b, 0.15),
+		2.2,
+		true
+	)
+
+func _draw_crimson_identity(canvas_size: Vector2) -> void:
+	# Bloodwood branches and hanging seals distinguish Chapter 2 from a recolor.
+	var branch := Color(0.34, 0.045, 0.085, 0.22)
+	draw_line(
+		Vector2(-18.0, canvas_size.y * 0.44),
+		Vector2(canvas_size.x * 0.31, canvas_size.y * 0.17),
+		branch,
+		8.0,
+		true
+	)
+	draw_line(
+		Vector2(canvas_size.x * 0.16, canvas_size.y * 0.30),
+		Vector2(canvas_size.x * 0.36, canvas_size.y * 0.25),
+		branch,
+		4.0,
+		true
+	)
+	draw_line(
+		Vector2(canvas_size.x * 0.08, canvas_size.y * 0.36),
+		Vector2(canvas_size.x * 0.03, canvas_size.y * 0.22),
+		branch,
+		3.0,
+		true
+	)
+
+	for index in range(3):
+		var center := Vector2(
+			canvas_size.x * (0.20 + float(index) * 0.11),
+			canvas_size.y * (0.27 + float(index % 2) * 0.05)
+		)
+		draw_line(
+			center + Vector2(0.0, -22.0),
+			center + Vector2(0.0, -5.0),
+			Color(gold.r, gold.g, gold.b, 0.13),
+			1.2,
+			true
+		)
+		draw_rect(
+			Rect2(center - Vector2(6.0, 5.0), Vector2(12.0, 22.0)),
+			Color(accent.r, accent.g, accent.b, 0.07),
+			true
+		)
+		draw_rect(
+			Rect2(center - Vector2(6.0, 5.0), Vector2(12.0, 22.0)),
+			Color(gold.r, gold.g, gold.b, 0.12),
+			false,
+			1.0
+		)
+
+func _draw_nine_heavens_identity(canvas_size: Vector2) -> void:
+	# Constellation lines and cloud-palace geometry anchor the celestial chapter.
+	var star_uvs: Array[Vector2] = [
+		Vector2(0.12, 0.18), Vector2(0.24, 0.12), Vector2(0.38, 0.22),
+		Vector2(0.52, 0.13), Vector2(0.68, 0.20), Vector2(0.83, 0.11),
+		Vector2(0.90, 0.28), Vector2(0.73, 0.33)
+	]
+	for index in range(star_uvs.size()):
+		var point := Vector2(
+			canvas_size.x * star_uvs[index].x,
+			canvas_size.y * star_uvs[index].y
+		)
+		draw_circle(point, 2.0, Color(gold.r, gold.g, gold.b, 0.24))
+		if index > 0:
+			var previous := Vector2(
+				canvas_size.x * star_uvs[index - 1].x,
+				canvas_size.y * star_uvs[index - 1].y
+			)
+			draw_line(
+				previous,
+				point,
+				Color(accent.r, accent.g, accent.b, 0.11),
+				1.2,
+				true
+			)
+
+	var palace_center := Vector2(canvas_size.x * 0.5, canvas_size.y * 0.41)
+	var half_w: float = canvas_size.x * 0.13
+	var half_h: float = canvas_size.y * 0.045
+	draw_polyline(
+		PackedVector2Array([
+			palace_center + Vector2(-half_w, half_h),
+			palace_center + Vector2(-half_w, -half_h),
+			palace_center + Vector2(0.0, -half_h * 2.1),
+			palace_center + Vector2(half_w, -half_h),
+			palace_center + Vector2(half_w, half_h)
+		]),
+		Color(accent.r, accent.g, accent.b, 0.13),
+		2.0,
+		true
+	)
+	draw_line(
+		palace_center + Vector2(-half_w * 1.22, -half_h),
+		palace_center + Vector2(half_w * 1.22, -half_h),
+		Color(gold.r, gold.g, gold.b, 0.15),
+		1.8,
+		true
+	)
 
 func _draw_spiritual_stream(canvas_size: Vector2) -> void:
 	var stream_color: Color = Color(accent.r, accent.g, accent.b, 0.16)

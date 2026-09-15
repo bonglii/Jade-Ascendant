@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://b7j3wp55da62x" path="res://scripts/player/lin_yue_combat_presentation.gd" id="5_combat_presentation"]
 [ext_resource type="Script" uid="uid://d5o2jsr7ap6y" path="res://scripts/player/lin_yue_cultivation_presentation.gd" id="6_cultivation_presentation"]
 [ext_resource type="Script" uid="uid://dncwbdal5j4b3" path="res://scripts/player/lin_yue_pavilion_aura_presentation.gd" id="7_pavilion_aura"]
+[ext_resource type="Script" uid="uid://vub7u1i071we" path="res://scripts/player/lin_yue_equipment_set_presentation.gd" id="8_equipment_set"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_player_footprint"]
 radius = 20.0
@@ -17,10 +18,18 @@ collision_mask = 18
 motion_mode = 1
 script = ExtResource("1_hvohr")
 
+[node name="CombatOrigin" type="Marker2D" parent="." unique_id=127132831]
+position = Vector2(5, -17)
+
 [node name="PavilionAuraPresentation" type="Node2D" parent="." unique_id=1446017382]
 z_index = 2
 position = Vector2(5, -17)
 script = ExtResource("7_pavilion_aura")
+
+[node name="EquipmentSetPresentation" type="Node2D" parent="." unique_id=482943106]
+z_index = 2
+position = Vector2(5, -17)
+script = ExtResource("8_equipment_set")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1541859066]
 z_index = 3
@@ -42,11 +51,12 @@ script = ExtResource("3_gok7g")
 script = ExtResource("4_x2oxy")
 
 [node name="CombatPresentation" type="Node2D" parent="." unique_id=1628822110]
-z_index = 3
-position = Vector2(5, -37)
+z_index = 4
+position = Vector2(5, -17)
 script = ExtResource("5_combat_presentation")
 
 [node name="CultivationPresentation" type="Node2D" parent="." unique_id=10098081]
 z_index = 4
-position = Vector2(5, -34)
+position = Vector2(5, -17)
+scale = Vector2(1.1, 1.1)
 script = ExtResource("6_cultivation_presentation")

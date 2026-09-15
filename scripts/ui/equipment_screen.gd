@@ -8,6 +8,7 @@ extends Control
 const MAIN_MENU_SCENE: String = "res://scenes/ui/main_menu.tscn"
 const BACKPACK_SCENE: String = "res://scenes/ui/backpack_screen.tscn"
 const EquipmentVisualCatalog = preload("res://scripts/ui/equipment_visual_catalog.gd")
+const EquipmentSetCatalog = preload("res://scripts/data/equipment_set_catalog.gd")
 
 const SLOT_ORDER: Array[String] = [
 	"armament",
@@ -33,6 +34,7 @@ const COMPARISON_KEYS: Array[String] = [
 @onready var equipped_count_label: Label = %EquippedCountLabel
 @onready var status_label: Label = %StatusLabel
 @onready var bonus_summary_label: Label = %BonusSummaryLabel
+@onready var stage_title: Label = $Content/HeroLoadoutPanel/HeroStage/StageTitle
 @onready var hero_preview_sprite: AnimatedSprite2D = %HeroPreviewSprite
 @onready var hero_menu_art: TextureRect = %HeroMenuArt
 @onready var hero_ghost_sprite: AnimatedSprite2D = %HeroGhostSprite
@@ -88,7 +90,10 @@ func _ready() -> void:
 		InventoryManager.inventory_changed.connect(_on_inventory_changed)
 	if not EquipmentManager.equipment_ascended.is_connected(_on_equipment_ascended):
 		EquipmentManager.equipment_ascended.connect(_on_equipment_ascended)
+	selected_item_icon.custom_minimum_size = Vector2(90.0, 90.0)
 	_setup_hero_showcase()
+	bonus_summary_label.clip_text = true
+	bonus_summary_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	_refresh_screen()
 	detail_panel.visible = detail_open
 	DebugLogger.system(str("Hero Equipment Hub aktif!"))
@@ -141,17 +146,24 @@ func _start_hero_showcase_motion() -> void:
 func _refresh_screen() -> void:
 	spirit_stone_label.text = "%d" % ProgressionManager.spirit_stone
 	var can_modify: bool = EquipmentManager.can_modify_equipment()
+	var has_checkpoint: bool = EquipmentManager.has_preserved_active_run_loadout()
 	var equipped_count: int = _get_equipped_count()
 	equipped_count_label.text = tr("EQUIPPED %d / %d") % [equipped_count, SLOT_ORDER.size()]
 	if can_modify:
-		status_label.text = tr("LOADOUT READY  •  SELECT A SLOT TO ATTUNE")
+		if has_checkpoint:
+			status_label.text = tr("NEXT RUN LOADOUT  •  CONTINUE KEEPS SAVED LOADOUT")
+		else:
+			status_label.text = tr("LOADOUT READY  •  SELECT A SLOT TO ATTUNE")
 		hero_preview_sprite.modulate = Color.WHITE
 		hero_menu_art.modulate = Color.WHITE
 	else:
-		status_label.text = tr("LOADOUT SEALED  •  ACTIVE RUN CHECKPOINT")
+		status_label.text = tr("LOADOUT LOCKED  •  SAVE RECOVERY REQUIRED")
 		hero_preview_sprite.modulate = Color(0.78, 0.86, 0.90, 0.92)
 		hero_menu_art.modulate = Color(0.74, 0.82, 0.86, 0.90)
+	stage_title.text = _build_set_stage_title()
+	stage_title.tooltip_text = _build_set_tooltip()
 	bonus_summary_label.text = _build_bonus_summary()
+	bonus_summary_label.tooltip_text = _build_set_tooltip()
 	_refresh_slot_button(armament_button, "armament")
 	_refresh_slot_button(robe_button, "robe")
 	_refresh_slot_button(bracer_button, "bracer")
@@ -382,7 +394,14 @@ func _refresh_detail_panel(can_modify: bool) -> void:
 	_apply_detail_rarity_style(EquipmentVisualCatalog.get_rarity_color(rarity_id))
 	selected_item_icon.texture = _load_item_icon(selected_item_id)
 	item_role_label.text = str(selected_data.get("display_name", selected_item_id))
-	selected_stat_label.text = "%s  •  %s  •  %s\nCORE  %s" % [tr(rarity_id.to_upper()), _format_stars(selected_star), tr(EquipmentVisualCatalog.get_slot_role(selected_slot_id)), _get_item_stat_text(selected_data)]
+	var selected_set_id: String = EquipmentSetCatalog.get_set_id_for_item(selected_item_id)
+	var selected_set_name: String = EquipmentSetCatalog.get_display_name(selected_set_id)
+	selected_stat_label.text = "%s  •  %s  •  %s\nCORE  %s" % [
+		tr(rarity_id.to_upper()),
+		_format_stars(selected_star),
+		tr(selected_set_name) if not selected_set_name.is_empty() else tr(EquipmentVisualCatalog.get_slot_role(selected_slot_id)),
+		_get_item_stat_text(selected_data)
+	]
 	item_role_label.add_theme_color_override("font_color", EquipmentVisualCatalog.get_rarity_color(rarity_id))
 	signature_effect_label.text = "%s — %s\n%s" % [
 		tr("SIGNATURE"),
@@ -393,14 +412,19 @@ func _refresh_detail_panel(can_modify: bool) -> void:
 	_refresh_ascension_controls(can_modify)
 
 	var is_equipped: bool = equipped_item_id == selected_item_id
+	var has_checkpoint: bool = EquipmentManager.has_preserved_active_run_loadout()
 	if not can_modify:
-		action_button.text = tr("LOADOUT SEALED")
+		action_button.text = tr("LOADOUT LOCKED")
 		action_button.disabled = true
-		action_hint_label.text = tr("Finish or clear the active run before changing equipment.")
+		action_hint_label.text = tr("Resolve save recovery before changing equipment.")
 	elif is_equipped:
 		action_button.text = tr("UNEQUIP")
 		action_button.disabled = false
-		action_hint_label.text = tr("Remove this item from the permanent loadout.")
+		action_hint_label.text = (
+			tr("Saved for NEXT RUN. Continue keeps the checkpoint loadout.")
+			if has_checkpoint
+			else tr("Remove this item from the permanent loadout.")
+		)
 	elif not InventoryManager.owns_item(selected_item_id):
 		action_button.text = tr("ITEM NOT OWNED")
 		action_button.disabled = true
@@ -408,7 +432,11 @@ func _refresh_detail_panel(can_modify: bool) -> void:
 	else:
 		action_button.text = tr("EQUIP ITEM")
 		action_button.disabled = false
-		action_hint_label.text = tr("Applies immediately and saves outside active runs.")
+		action_hint_label.text = (
+			tr("Saved for NEXT RUN. Continue keeps the checkpoint loadout.")
+			if has_checkpoint
+			else tr("Applies to the next journey and saves permanently.")
+		)
 
 func _build_loadout_impact(equipped_item_id: String, inspected_item_id: String) -> String:
 	if inspected_item_id.is_empty():
@@ -475,15 +503,19 @@ func _refresh_ascension_controls(can_modify: bool) -> void:
 	ascension_preview_label.text = tr("NEXT CORE PASSIVE\n%s") % _build_ascension_stat_preview(selected_item_id, target_star)
 	ascend_button.text = tr("ASCEND TO %d★  •  %d SHARDS") % [target_star, cost]
 	if not can_modify:
-		ascend_button.text = tr("ASCENSION SEALED")
+		ascend_button.text = tr("ASCENSION LOCKED")
 		ascend_button.disabled = true
-		ascend_hint_label.text = tr("Finish or clear the active run before ascending equipment.")
+		ascend_hint_label.text = tr("Resolve save recovery before ascending equipment.")
 	elif shard_balance < cost:
 		ascend_button.disabled = true
 		ascend_hint_label.text = tr("Need %d more Refinement Shards.") % (cost - shard_balance)
 	else:
 		ascend_button.disabled = false
-		ascend_hint_label.text = tr("Core passive increases. Signature Effect remains unchanged.")
+		ascend_hint_label.text = (
+			tr("Ascension saves for NEXT RUN; Continue keeps the checkpoint stars.")
+			if EquipmentManager.has_preserved_active_run_loadout()
+			else tr("Core passive increases. Signature Effect remains unchanged.")
+		)
 
 func _build_ascension_stat_preview(item_id: String, target_star: int) -> String:
 	var base_data: Dictionary = EquipmentManager.get_item_data(item_id)
@@ -618,17 +650,74 @@ func _load_item_icon(item_id: String) -> Texture2D:
 
 func _build_bonus_summary() -> String:
 	var parts: Array[String] = []
-	var hp_bonus: float = EquipmentManager.get_total_max_health_bonus()
-	var damage_bonus: float = (EquipmentManager.get_damage_multiplier() - 1.0) * 100.0
-	var move_bonus: float = (EquipmentManager.get_movement_speed_multiplier() - 1.0) * 100.0
-	var exp_bonus: float = (EquipmentManager.get_experience_multiplier() - 1.0) * 100.0
-	var crit_bonus: float = EquipmentManager.get_critical_chance_bonus() * 100.0
+	var hp_bonus: float = EquipmentManager.get_loadout_total_max_health_bonus()
+	var damage_bonus: float = (EquipmentManager.get_loadout_damage_multiplier() - 1.0) * 100.0
+	var move_bonus: float = (EquipmentManager.get_loadout_movement_speed_multiplier() - 1.0) * 100.0
+	var exp_bonus: float = (EquipmentManager.get_loadout_experience_multiplier() - 1.0) * 100.0
+	var crit_bonus: float = EquipmentManager.get_loadout_critical_chance_bonus() * 100.0
 	if hp_bonus != 0.0: parts.append("+%.0f HP" % hp_bonus)
 	if damage_bonus != 0.0: parts.append("+%.0f%% DMG" % damage_bonus)
 	if move_bonus != 0.0: parts.append("+%.0f%% MOVE" % move_bonus)
 	if exp_bonus != 0.0: parts.append("+%.0f%% EXP" % exp_bonus)
 	if crit_bonus != 0.0: parts.append("+%.0f%% CRIT" % crit_bonus)
 	return tr("NO ACTIVE LOADOUT BONUSES") if parts.is_empty() else "  •  ".join(parts)
+
+
+func _build_set_stage_title() -> String:
+	var set_state: Dictionary = _get_dominant_set_state()
+	var set_id: String = str(set_state.get("set_id", ""))
+	var piece_count: int = int(set_state.get("piece_count", 0))
+	if set_id.is_empty() or piece_count <= 0:
+		return tr("JADE LOADOUT")
+	return "%s  •  %d/5" % [
+		tr(EquipmentSetCatalog.get_display_name(set_id)),
+		piece_count
+	]
+
+
+func _get_equipped_item_ids() -> Array[String]:
+	var equipped_ids: Array[String] = []
+	for slot_id: String in SLOT_ORDER:
+		var item_id: String = EquipmentManager.get_equipped_item_id(slot_id)
+		if not item_id.is_empty():
+			equipped_ids.append(item_id)
+	return equipped_ids
+
+
+func _get_dominant_set_state() -> Dictionary:
+	return EquipmentSetCatalog.get_dominant_set_state(_get_equipped_item_ids())
+
+
+func _build_set_tooltip() -> String:
+	var set_state: Dictionary = _get_dominant_set_state()
+	var set_id: String = str(set_state.get("set_id", ""))
+	var piece_count: int = int(set_state.get("piece_count", 0))
+	if set_id.is_empty() or piece_count <= 0:
+		return tr("No equipment set is currently attuned.")
+
+	var equipped_ids: Array[String] = _get_equipped_item_ids()
+	var active_names: Array[String] = []
+	var missing_names: Array[String] = []
+
+	for item_id: String in EquipmentSetCatalog.get_active_piece_ids(set_id, equipped_ids):
+		var item_data: Dictionary = EquipmentManager.get_item_data(item_id)
+		active_names.append(str(item_data.get("display_name", item_id)))
+
+	for item_id: String in EquipmentSetCatalog.get_missing_piece_ids(set_id, equipped_ids):
+		var item_data: Dictionary = EquipmentManager.get_item_data(item_id)
+		missing_names.append(str(item_data.get("display_name", item_id)))
+
+	var active_text: String = ", ".join(active_names) if not active_names.is_empty() else tr("None")
+	var missing_text: String = ", ".join(missing_names) if not missing_names.is_empty() else tr("None")
+	return "%s  %d/5  •  %s\\n%s: %s\\n%s: %s" % [
+		tr(EquipmentSetCatalog.get_display_name(set_id)),
+		piece_count,
+		tr(EquipmentSetCatalog.get_resonance_label(piece_count)),
+		tr("ACTIVE"),
+		active_text,
+		tr("MISSING"),
+		missing_text
+	]
 
 func _get_equipped_count() -> int:
 	var count: int = 0

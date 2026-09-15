@@ -7,8 +7,8 @@ signal critical_hit_confirmed(
 )
 
 ## Spirit Sword Projectile
-## Menyimpan damage serta metadata Critical Hit
-## sampai projectile benar-benar mengenai enemy.
+## Original player projectiles are aligned to Player/CombatOrigin.
+## Resonance projectiles intentionally retain their actual hit position.
 
 const SPIRIT_SWORD_IMPACT_SCENE: PackedScene = preload(
 	"res://scenes/weapons/spirit_sword_impact.tscn"
@@ -25,33 +25,61 @@ var is_critical: bool = false
 var is_resonance_projectile: bool = false
 var resonance_triggered: bool = false
 
-## Jumlah enemy tambahan yang dapat ditembus.
 var pierce: int = 0
 var lifetime: float = 4.0
 var hit_ids: Array[int] = []
 var consumed: bool = false
+
 
 func _physics_process(delta: float) -> void:
 	lifetime -= delta
 	if lifetime <= 0.0:
 		queue_free()
 		return
+
 	position += direction * speed * delta
 
+
 func setup(target_position: Vector2) -> void:
+	if not is_resonance_projectile:
+		_align_original_spawn_to_combat_origin()
+
 	direction = global_position.direction_to(
 		target_position
 	)
 
 	rotation = direction.angle()
 
-## Menandai bahwa projectile sudah menghasilkan resonance.
+
+func _align_original_spawn_to_combat_origin() -> void:
+	var player := (
+		get_tree().get_first_node_in_group("player")
+		as Node2D
+	)
+	if player == null:
+		return
+
+	var combat_origin := (
+		player.get_node_or_null("CombatOrigin")
+		as Node2D
+	)
+	if combat_origin == null:
+		return
+
+	# Preserve the existing secondary-projectile perpendicular spawn offset.
+	var existing_spawn_offset: Vector2 = (
+		global_position - player.global_position
+	)
+	global_position = (
+		combat_origin.global_position
+		+ existing_spawn_offset
+	)
+
+
 func mark_resonance_triggered() -> void:
 	resonance_triggered = true
 
-## Development-only verification untuk memastikan
-## satu original projectile tidak dapat memicu resonance
-## lebih dari satu kali setelah piercing hit.
+
 func run_resonance_guard_test() -> bool:
 	if is_resonance_projectile:
 		return false
@@ -74,9 +102,15 @@ func run_resonance_guard_test() -> bool:
 
 	return guard_active
 
+
 func _on_body_entered(body: Node2D) -> void:
-	if consumed or not body.is_in_group("enemy") or body.get_instance_id() in hit_ids:
+	if (
+		consumed
+		or not body.is_in_group("enemy")
+		or body.get_instance_id() in hit_ids
+	):
 		return
+
 	hit_ids.append(body.get_instance_id())
 
 	body.take_damage(damage)
@@ -96,12 +130,16 @@ func _on_body_entered(body: Node2D) -> void:
 	consumed = true
 	queue_free()
 
+
 func spawn_hit_visual() -> void:
 	var current_scene: Node = get_tree().current_scene
 	if current_scene == null:
 		return
 
-	var effect := SPIRIT_SWORD_IMPACT_SCENE.instantiate() as SpiritSwordImpact
+	var effect := (
+		SPIRIT_SWORD_IMPACT_SCENE.instantiate()
+		as SpiritSwordImpact
+	)
 	if effect == null:
 		return
 
@@ -112,7 +150,7 @@ func spawn_hit_visual() -> void:
 		is_resonance_projectile
 	)
 
-## Mengirim Critical Hit event kepada SpiritSwordWeapon.
+
 func try_emit_critical_hit(hit_enemy: Node2D) -> void:
 	if not is_critical:
 		return

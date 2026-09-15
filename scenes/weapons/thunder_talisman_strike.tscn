@@ -9,7 +9,8 @@ script = ExtResource("1_effect")
 
 [node name="TalismanSprite" type="AnimatedSprite2D" parent="." unique_id=153548373]
 texture_filter = 1
-position = Vector2(0, -20)
+position = Vector2(0, -38)
+scale = Vector2(0.82, 0.82)
 sprite_frames = ExtResource("2_frames")
 animation = &"activate"
 autoplay = "activate"

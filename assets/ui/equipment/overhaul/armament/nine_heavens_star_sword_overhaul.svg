@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<defs>
+
+<linearGradient id="steel" x1="0" y1="0" x2="1" y2="1">
+  <stop offset="0" stop-color="#eef8f4"/>
+  <stop offset=".18" stop-color="#a5c7c2"/>
+  <stop offset=".52" stop-color="#42636a"/>
+  <stop offset=".78" stop-color="#9ed5c8"/>
+  <stop offset="1" stop-color="#263a42"/>
+</linearGradient>
+<linearGradient id="jade" x1="0" y1="0" x2="1" y2="1">
+  <stop offset="0" stop-color="#8dffd2"/>
+  <stop offset=".42" stop-color="#1ecf9d"/>
+  <stop offset="1" stop-color="#075c55"/>
+</linearGradient>
+<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+  <stop offset="0" stop-color="#fff1a3"/>
+  <stop offset=".36" stop-color="#e2b64e"/>
+  <stop offset="1" stop-color="#7d4d14"/>
+</linearGradient>
+<filter id="softGlow" x="-80%" y="-80%" width="260%" height="260%">
+  <feGaussianBlur stdDeviation="7"/>
+</filter>
+<filter id="smallGlow" x="-50%" y="-50%" width="200%" height="200%">
+  <feGaussianBlur stdDeviation="3"/>
+</filter>
+
+<linearGradient id="starBlade" x1="0" y1="0" x2="1" y2="1">
+  <stop offset="0" stop-color="#ffffff"/>
+  <stop offset=".22" stop-color="#a6f6ff"/>
+  <stop offset=".50" stop-color="#3aa5ca"/>
+  <stop offset=".76" stop-color="#e3ffff"/>
+  <stop offset="1" stop-color="#49739b"/>
+</linearGradient>
+
+</defs>
+
+<g opacity=".24" filter="url(#softGlow)">
+  <circle cx="256" cy="251" r="176" fill="none" stroke="#6de9ff" stroke-width="15"/>
+  <circle cx="256" cy="251" r="143" fill="none" stroke="#f2cc65" stroke-width="10"/>
+</g>
+<g opacity=".72">
+  <circle cx="115" cy="153" r="5" fill="#d7ffff"/>
+  <circle cx="162" cy="91" r="4" fill="#f6d46c"/>
+  <circle cx="385" cy="126" r="5" fill="#aefaff"/>
+  <circle cx="420" cy="245" r="4" fill="#efd069"/>
+  <circle cx="357" cy="390" r="5" fill="#c8ffff"/>
+  <path d="M115 153 L162 91 L385 126 L420 245 L357 390"
+        fill="none" stroke="#6adcf1" stroke-width="2" opacity=".45"/>
+</g>
+<g transform="rotate(-42 256 256)">
+  <path d="M243 48 L269 48 L280 302 L256 354 L232 302 Z"
+        fill="url(#starBlade)" stroke="#efffff" stroke-width="4"/>
+  <path d="M256 64 L263 294" stroke="#ffffff" stroke-width="4" opacity=".78"/>
+  <path d="M213 313 L236 301 L256 310 L276 301 L299 313
+           L284 341 L256 350 L228 341 Z"
+        fill="url(#gold)" stroke="#fff0a0" stroke-width="4"/>
+  <path d="M229 316 L256 329 L283 316" fill="none" stroke="#5adfcc" stroke-width="4"/>
+  <path d="M242 342 L270 342 L267 430 L245 430 Z"
+        fill="#10243d" stroke="#d7b652" stroke-width="4"/>
+  <path d="M246 355 L269 367 M246 381 L269 393 M246 407 L269 419"
+        stroke="#3cd0c1" stroke-width="4"/>
+  <path d="M237 430 L275 430 L267 461 L256 474 L245 461 Z"
+        fill="url(#gold)" stroke="#f7dc77" stroke-width="3"/>
+  <circle cx="256" cy="321" r="15" fill="#0d324b" stroke="#f8d869" stroke-width="4"/>
+  <path d="M256 308 L260 317 L270 321 L260 326 L256 336 L252 326 L242 321 L252 317 Z"
+        fill="#76f3e1"/>
+  <circle cx="256" cy="321" r="22" fill="none" stroke="#65e8d5" stroke-width="3"
+          opacity=".58" filter="url(#smallGlow)"/>
+</g>
+<g stroke-linecap="round">
+  <path d="M94 386 Q202 329 260 245" fill="none" stroke="#6eeaf1" stroke-width="4" opacity=".42"/>
+  <path d="M266 241 Q338 160 416 119" fill="none" stroke="#f2ce68" stroke-width="3" opacity=".37"/>
+</g>
+
+</svg>

@@ -96,7 +96,7 @@ func _build_nodes() -> void:
 	core_title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	core_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	core_title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	core_title_label.add_theme_font_size_override("font_size", 16)
+	core_title_label.add_theme_font_size_override("font_size", 17)
 	core_title_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.52, 1.0))
 	core_title_label.text = "DAO CORE"
 	add_child(core_title_label)
@@ -106,7 +106,7 @@ func _build_nodes() -> void:
 	core_level_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	core_level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	core_level_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	core_level_label.add_theme_font_size_override("font_size", 12)
+	core_level_label.add_theme_font_size_override("font_size", 13)
 	core_level_label.add_theme_color_override("font_color", Color(0.49, 0.98, 0.87, 1.0))
 	add_child(core_level_label)
 
@@ -131,7 +131,7 @@ func _build_nodes() -> void:
 		title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		title_label.add_theme_font_size_override("font_size", 15)
+		title_label.add_theme_font_size_override("font_size", 16)
 		title_label.text = tr(str(NODE_TITLES[path_id]))
 		add_child(title_label)
 		title_labels[path_id] = title_label
@@ -140,7 +140,7 @@ func _build_nodes() -> void:
 		level_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		level_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		level_label.add_theme_font_size_override("font_size", 11)
+		level_label.add_theme_font_size_override("font_size", 12)
 		add_child(level_label)
 		level_labels[path_id] = level_label
 

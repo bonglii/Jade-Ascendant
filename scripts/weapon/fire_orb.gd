@@ -1,6 +1,5 @@
 extends Area2D
 
-
 ## Fire Orb uses a dedicated ACTUAL-hit effect; no fake AoE is added.
 const FIRE_ORB_IMPACT_SCENE: PackedScene = preload(
 	"res://scenes/weapons/fire_orb_impact.tscn"
@@ -13,16 +12,39 @@ var direction: Vector2 = Vector2.ZERO
 var lifetime: float = 4.0
 var consumed: bool = false
 
+
 func _physics_process(delta: float) -> void:
 	lifetime -= delta
 	if lifetime <= 0.0:
 		queue_free()
 		return
+
 	position += direction * speed * delta
 
+
 func setup(target_position: Vector2) -> void:
+	_align_to_player_combat_origin()
 	direction = global_position.direction_to(target_position)
 	rotation = direction.angle()
+
+
+func _align_to_player_combat_origin() -> void:
+	var player := (
+		get_tree().get_first_node_in_group("player")
+		as Node2D
+	)
+	if player == null:
+		return
+
+	var combat_origin := (
+		player.get_node_or_null("CombatOrigin")
+		as Node2D
+	)
+	if combat_origin == null:
+		return
+
+	global_position = combat_origin.global_position
+
 
 func _on_body_entered(body: Node2D) -> void:
 	if not consumed and body.is_in_group("enemy"):
@@ -31,12 +53,16 @@ func _on_body_entered(body: Node2D) -> void:
 		spawn_hit_visual()
 		queue_free()
 
+
 func spawn_hit_visual() -> void:
 	var current_scene: Node = get_tree().current_scene
 	if current_scene == null:
 		return
 
-	var effect := FIRE_ORB_IMPACT_SCENE.instantiate() as FireOrbImpact
+	var effect := (
+		FIRE_ORB_IMPACT_SCENE.instantiate()
+		as FireOrbImpact
+	)
 	if effect == null:
 		return
 

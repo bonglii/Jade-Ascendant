@@ -87,7 +87,7 @@ func _apply_premium_polish() -> void:
 	)
 	top_title.add_theme_font_size_override("font_size", 20)
 	top_title.add_theme_color_override("font_color", Color(0.98, 0.86, 0.52, 1.0))
-	top_subtitle.add_theme_font_size_override("font_size", 10)
+	top_subtitle.add_theme_font_size_override("font_size", 11)
 	spirit_stone_label.add_theme_font_size_override("font_size", 16)
 	stone_icon.custom_minimum_size = Vector2(29.0, 29.0)
 
@@ -101,11 +101,11 @@ func _apply_premium_polish() -> void:
 		)
 	)
 	header_vbox.add_theme_constant_override("separation", 2)
-	eyebrow.add_theme_font_size_override("font_size", 11)
+	eyebrow.add_theme_font_size_override("font_size", 12)
 	eyebrow.add_theme_color_override("font_color", Color(0.39, 0.91, 0.78, 0.96))
 	header_title.add_theme_font_size_override("font_size", 27)
 	header_title.add_theme_color_override("font_color", Color(1.0, 0.89, 0.61, 1.0))
-	mastery_label.add_theme_font_size_override("font_size", 11)
+	mastery_label.add_theme_font_size_override("font_size", 12)
 
 	mastery_meter = ProgressBar.new()
 	mastery_meter.name = "MasteryMeter"
@@ -132,11 +132,11 @@ func _apply_premium_polish() -> void:
 		)
 	)
 	detail_vbox.add_theme_constant_override("separation", 8)
-	selected_path_subtitle.add_theme_font_size_override("font_size", 11)
+	selected_path_subtitle.add_theme_font_size_override("font_size", 12)
 	selected_path_name.add_theme_font_size_override("font_size", 24)
-	level_label.add_theme_font_size_override("font_size", 12)
-	description_label.add_theme_font_size_override("font_size", 13)
-	description_label.add_theme_color_override("font_color", Color(0.76, 0.84, 0.82, 0.98))
+	level_label.add_theme_font_size_override("font_size", 13)
+	description_label.add_theme_font_size_override("font_size", 14)
+	description_label.add_theme_color_override("font_color", Color(0.80, 0.88, 0.86, 1.0))
 
 	path_meter = ProgressBar.new()
 	path_meter.name = "SelectedPathMeter"
@@ -154,16 +154,16 @@ func _apply_premium_polish() -> void:
 	detail_vbox.add_child(path_meter)
 	detail_vbox.move_child(path_meter, description_label.get_index() + 1)
 
-	current_caption.add_theme_font_size_override("font_size", 10)
-	next_caption.add_theme_font_size_override("font_size", 10)
+	current_caption.add_theme_font_size_override("font_size", 11)
+	next_caption.add_theme_font_size_override("font_size", 11)
 	current_effect_label.add_theme_font_size_override("font_size", 16)
 	next_effect_label.add_theme_font_size_override("font_size", 16)
 	cost_label.add_theme_font_size_override("font_size", 16)
 	cost_icon.custom_minimum_size = Vector2(27.0, 27.0)
 	refine_button.custom_minimum_size.y = 62.0
 	refine_button.add_theme_font_size_override("font_size", 19)
-	insufficient_label.add_theme_font_size_override("font_size", 11)
-	insufficient_label.add_theme_color_override("font_color", Color(0.70, 0.78, 0.76, 0.96))
+	insufficient_label.add_theme_font_size_override("font_size", 12)
+	insufficient_label.add_theme_color_override("font_color", Color(0.76, 0.83, 0.81, 0.98))
 
 	current_card.add_theme_stylebox_override(
 		"panel",

@@ -100,7 +100,7 @@ func _ellipse_points(
 	center: Vector2,
 	radius_x: float,
 	radius_y: float,
-	rotation: float = 0.0
+	angle_offset: float = 0.0
 ) -> PackedVector2Array:
 	var points := PackedVector2Array()
 
@@ -113,7 +113,7 @@ func _ellipse_points(
 		var point := Vector2(
 			cos(angle) * radius_x,
 			sin(angle) * radius_y
-		).rotated(rotation)
+		).rotated(angle_offset)
 		points.append(center + point)
 
 	return points
@@ -150,7 +150,7 @@ func _draw_ground_sigil(
 	secondary_color: Color,
 	radius_x: float,
 	radius_y: float,
-	rotation: float,
+	angle_offset: float,
 	spokes: int
 ) -> void:
 	var alpha: float = _pulse(0.28, 0.46, 1.55)
@@ -160,7 +160,7 @@ func _draw_ground_sigil(
 			GROUND_CENTER,
 			radius_x,
 			radius_y,
-			rotation
+			angle_offset
 		),
 		Color(
 			main_color.r,
@@ -176,7 +176,7 @@ func _draw_ground_sigil(
 			GROUND_CENTER,
 			radius_x * 0.72,
 			radius_y * 0.72,
-			-rotation
+			-angle_offset
 		),
 		Color(
 			secondary_color.r,
@@ -190,7 +190,7 @@ func _draw_ground_sigil(
 
 	for index in range(spokes):
 		var angle: float = (
-			rotation
+			angle_offset
 			+ float(index) * TAU / float(spokes)
 		)
 		var outer := Vector2(
@@ -275,12 +275,12 @@ func _draw_vertical_wisps(
 func _draw_cardinal_glints(
 	color: Color,
 	radius: float,
-	rotation: float,
+	angle_offset: float,
 	count: int
 ) -> void:
 	for index in range(count):
 		var angle: float = (
-			rotation
+			angle_offset
 			+ float(index) * TAU / float(count)
 		)
 		var direction := Vector2.RIGHT.rotated(angle)
