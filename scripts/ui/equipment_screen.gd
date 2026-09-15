@@ -146,14 +146,18 @@ func _start_hero_showcase_motion() -> void:
 func _refresh_screen() -> void:
 	spirit_stone_label.text = "%d" % ProgressionManager.spirit_stone
 	var can_modify: bool = EquipmentManager.can_modify_equipment()
+	var has_checkpoint: bool = EquipmentManager.has_preserved_active_run_loadout()
 	var equipped_count: int = _get_equipped_count()
 	equipped_count_label.text = tr("EQUIPPED %d / %d") % [equipped_count, SLOT_ORDER.size()]
 	if can_modify:
-		status_label.text = tr("LOADOUT READY  •  SELECT A SLOT TO ATTUNE")
+		if has_checkpoint:
+			status_label.text = tr("NEXT RUN LOADOUT  •  CONTINUE KEEPS SAVED LOADOUT")
+		else:
+			status_label.text = tr("LOADOUT READY  •  SELECT A SLOT TO ATTUNE")
 		hero_preview_sprite.modulate = Color.WHITE
 		hero_menu_art.modulate = Color.WHITE
 	else:
-		status_label.text = tr("LOADOUT SEALED  •  ACTIVE RUN CHECKPOINT")
+		status_label.text = tr("LOADOUT LOCKED  •  SAVE RECOVERY REQUIRED")
 		hero_preview_sprite.modulate = Color(0.78, 0.86, 0.90, 0.92)
 		hero_menu_art.modulate = Color(0.74, 0.82, 0.86, 0.90)
 	stage_title.text = _build_set_stage_title()
@@ -408,14 +412,19 @@ func _refresh_detail_panel(can_modify: bool) -> void:
 	_refresh_ascension_controls(can_modify)
 
 	var is_equipped: bool = equipped_item_id == selected_item_id
+	var has_checkpoint: bool = EquipmentManager.has_preserved_active_run_loadout()
 	if not can_modify:
-		action_button.text = tr("LOADOUT SEALED")
+		action_button.text = tr("LOADOUT LOCKED")
 		action_button.disabled = true
-		action_hint_label.text = tr("Finish or clear the active run before changing equipment.")
+		action_hint_label.text = tr("Resolve save recovery before changing equipment.")
 	elif is_equipped:
 		action_button.text = tr("UNEQUIP")
 		action_button.disabled = false
-		action_hint_label.text = tr("Remove this item from the permanent loadout.")
+		action_hint_label.text = (
+			tr("Saved for NEXT RUN. Continue keeps the checkpoint loadout.")
+			if has_checkpoint
+			else tr("Remove this item from the permanent loadout.")
+		)
 	elif not InventoryManager.owns_item(selected_item_id):
 		action_button.text = tr("ITEM NOT OWNED")
 		action_button.disabled = true
@@ -423,7 +432,11 @@ func _refresh_detail_panel(can_modify: bool) -> void:
 	else:
 		action_button.text = tr("EQUIP ITEM")
 		action_button.disabled = false
-		action_hint_label.text = tr("Applies immediately and saves outside active runs.")
+		action_hint_label.text = (
+			tr("Saved for NEXT RUN. Continue keeps the checkpoint loadout.")
+			if has_checkpoint
+			else tr("Applies to the next journey and saves permanently.")
+		)
 
 func _build_loadout_impact(equipped_item_id: String, inspected_item_id: String) -> String:
 	if inspected_item_id.is_empty():
@@ -490,15 +503,19 @@ func _refresh_ascension_controls(can_modify: bool) -> void:
 	ascension_preview_label.text = tr("NEXT CORE PASSIVE\n%s") % _build_ascension_stat_preview(selected_item_id, target_star)
 	ascend_button.text = tr("ASCEND TO %d★  •  %d SHARDS") % [target_star, cost]
 	if not can_modify:
-		ascend_button.text = tr("ASCENSION SEALED")
+		ascend_button.text = tr("ASCENSION LOCKED")
 		ascend_button.disabled = true
-		ascend_hint_label.text = tr("Finish or clear the active run before ascending equipment.")
+		ascend_hint_label.text = tr("Resolve save recovery before ascending equipment.")
 	elif shard_balance < cost:
 		ascend_button.disabled = true
 		ascend_hint_label.text = tr("Need %d more Refinement Shards.") % (cost - shard_balance)
 	else:
 		ascend_button.disabled = false
-		ascend_hint_label.text = tr("Core passive increases. Signature Effect remains unchanged.")
+		ascend_hint_label.text = (
+			tr("Ascension saves for NEXT RUN; Continue keeps the checkpoint stars.")
+			if EquipmentManager.has_preserved_active_run_loadout()
+			else tr("Core passive increases. Signature Effect remains unchanged.")
+		)
 
 func _build_ascension_stat_preview(item_id: String, target_star: int) -> String:
 	var base_data: Dictionary = EquipmentManager.get_item_data(item_id)
@@ -633,11 +650,11 @@ func _load_item_icon(item_id: String) -> Texture2D:
 
 func _build_bonus_summary() -> String:
 	var parts: Array[String] = []
-	var hp_bonus: float = EquipmentManager.get_total_max_health_bonus()
-	var damage_bonus: float = (EquipmentManager.get_damage_multiplier() - 1.0) * 100.0
-	var move_bonus: float = (EquipmentManager.get_movement_speed_multiplier() - 1.0) * 100.0
-	var exp_bonus: float = (EquipmentManager.get_experience_multiplier() - 1.0) * 100.0
-	var crit_bonus: float = EquipmentManager.get_critical_chance_bonus() * 100.0
+	var hp_bonus: float = EquipmentManager.get_loadout_total_max_health_bonus()
+	var damage_bonus: float = (EquipmentManager.get_loadout_damage_multiplier() - 1.0) * 100.0
+	var move_bonus: float = (EquipmentManager.get_loadout_movement_speed_multiplier() - 1.0) * 100.0
+	var exp_bonus: float = (EquipmentManager.get_loadout_experience_multiplier() - 1.0) * 100.0
+	var crit_bonus: float = EquipmentManager.get_loadout_critical_chance_bonus() * 100.0
 	if hp_bonus != 0.0: parts.append("+%.0f HP" % hp_bonus)
 	if damage_bonus != 0.0: parts.append("+%.0f%% DMG" % damage_bonus)
 	if move_bonus != 0.0: parts.append("+%.0f%% MOVE" % move_bonus)

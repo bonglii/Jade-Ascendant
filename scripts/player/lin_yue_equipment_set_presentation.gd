@@ -52,7 +52,9 @@ func _on_settings_changed() -> void:
 func _refresh_from_managers() -> void:
 	var equipped_item_ids: Array[String] = []
 	for slot_id: String in EquipmentManager.get_slot_ids():
-		var item_id: String = EquipmentManager.get_equipped_item_id(slot_id)
+		var item_id: String = (
+			EquipmentManager.get_runtime_equipped_item_id(slot_id)
+		)
 		if not item_id.is_empty():
 			equipped_item_ids.append(item_id)
 
