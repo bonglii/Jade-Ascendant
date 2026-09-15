@@ -132,9 +132,9 @@ func _build_hero_header() -> void:
 	title_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title_box.add_theme_constant_override("separation", 0)
 	title_row.add_child(title_box)
-	_label(title_box, tr("JADE PAVILION"), 10, JADE)
+	_label(title_box, tr("JADE PAVILION"), 11, JADE)
 	_label(title_box, tr("Sanctum of Refinement"), 24, Color(1.0, 0.87, 0.50))
-	_label(title_box, tr("Rest, gather your Qi, and prepare for the next trial."), 11, Color(0.74, 0.85, 0.81, 1.0))
+	_label(title_box, tr("Rest, gather your Qi, and prepare for the next trial."), 12, Color(0.74, 0.85, 0.81, 1.0))
 
 	var resource_row: HBoxContainer = HBoxContainer.new()
 	resource_row.add_theme_constant_override("separation", 8)
@@ -144,7 +144,7 @@ func _build_hero_header() -> void:
 
 func _build_status_banner() -> void:
 	status_panel = _panel(content, _status_style(JADE_SOFT))
-	status_label = _label(status_panel, "", 11, Color(0.70, 0.95, 0.86))
+	status_label = _label(status_panel, "", 12, Color(0.70, 0.95, 0.86))
 	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	status_label.custom_minimum_size.y = 22.0
@@ -210,7 +210,7 @@ func _build_forge_section() -> void:
 		GOLD
 	)
 
-	var filter_label: Label = _label(forge, tr("RARITY"), 11, TEXT_MUTED)
+	var filter_label: Label = _label(forge, tr("RARITY"), 12, TEXT_MUTED)
 	filter_label.add_theme_color_override("font_color", Color(0.70, 0.78, 0.74, 1.0))
 
 	var filter_row: HBoxContainer = HBoxContainer.new()
@@ -221,7 +221,7 @@ func _build_forge_section() -> void:
 		button.text = tr(rarity.capitalize()).to_upper()
 		button.custom_minimum_size = Vector2(0.0, 42.0)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.add_theme_font_size_override("font_size", 11)
+		button.add_theme_font_size_override("font_size", 12)
 		button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		button.pressed.connect(_select_rarity.bind(rarity))
 		filter_row.add_child(button)
@@ -240,7 +240,7 @@ func _build_player_trust_section() -> void:
 	copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	copy.add_theme_constant_override("separation", 1)
 	row.add_child(copy)
-	_label(copy, tr("PLAYER-FIRST EDITION"), 10, Color(CYAN.r, CYAN.g, CYAN.b, 0.90))
+	_label(copy, tr("PLAYER-FIRST EDITION"), 11, Color(CYAN.r, CYAN.g, CYAN.b, 0.90))
 	_label(copy, tr("About Jade Ascendant"), 17, Color(1.0, 0.86, 0.48))
 	var privacy: Button = _button(row, tr("PRIVACY & SUPPORT"), _open_privacy, false, CYAN)
 	privacy.custom_minimum_size = Vector2(154.0, 42.0)
@@ -344,7 +344,7 @@ func _create_aura_card(cosmetic_id: String, featured: bool = false) -> PanelCont
 	# above a generic form card.  The lower glass strip keeps names readable on
 	# every aura artwork at the 405x860 mobile QA viewport.
 	var preview_stage: Control = Control.new()
-	preview_stage.custom_minimum_size = Vector2(0.0, 156.0 if featured else 104.0)
+	preview_stage.custom_minimum_size = Vector2(0.0, 160.0 if featured else 108.0)
 	preview_stage.clip_contents = true
 	box.add_child(preview_stage)
 
@@ -404,12 +404,12 @@ func _create_aura_card(cosmetic_id: String, featured: bool = false) -> PanelCont
 	else:
 		state_text = tr("AVAILABLE")
 		state_color = accent
-	_label(title_box, state_text, 11, state_color)
+	_label(title_box, state_text, 12, state_color)
 
 	var action: Button = Button.new()
 	action.custom_minimum_size.y = 50.0 if featured else 42.0
 	action.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	action.add_theme_font_size_override("font_size", 12 if featured else 11)
+	action.add_theme_font_size_override("font_size", 13 if featured else 12)
 	action.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_apply_button_style(action, accent, featured)
 	action.pressed.connect(_select_cosmetic.bind(cosmetic_id))
@@ -483,7 +483,7 @@ func _create_equipment_card(item_id: String, data: Dictionary) -> PanelContainer
 	box.add_theme_constant_override("separation", 5)
 	card.add_child(box)
 
-	var rarity_tag: Label = _label(box, tr(rarity_id.capitalize()).to_upper(), 10, rarity_color)
+	var rarity_tag: Label = _label(box, tr(rarity_id.capitalize()).to_upper(), 11, rarity_color)
 	rarity_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 	var icon_frame: PanelContainer = PanelContainer.new()
@@ -504,8 +504,8 @@ func _create_equipment_card(item_id: String, data: Dictionary) -> PanelContainer
 	var slot_label: Label = _label(
 		box,
 		tr(EquipmentVisualCatalog.get_slot_title(str(data.get("slot", "")))),
-		10,
-		Color(rarity_color.r, rarity_color.g, rarity_color.b, 0.90)
+		11,
+		Color(rarity_color.r, rarity_color.g, rarity_color.b, 0.94)
 	)
 	slot_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var stat: Label = _label(box, EquipmentVisualCatalog.get_stat_summary(data), 12, Color(0.78, 0.89, 0.85, 1.0))
@@ -514,7 +514,7 @@ func _create_equipment_card(item_id: String, data: Dictionary) -> PanelContainer
 
 	if owned_item:
 		var owned_badge: Label = _state_badge(box, tr("OWNED  •  EQUIP FROM HERO"), JADE)
-		owned_badge.add_theme_font_size_override("font_size", 10)
+		owned_badge.add_theme_font_size_override("font_size", 11)
 		owned_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	elif not unlocked_item:
 		var requirement: Dictionary = PavilionManager.get_item_unlock_requirement(item_id)
@@ -526,12 +526,12 @@ func _create_equipment_card(item_id: String, data: Dictionary) -> PanelContainer
 			],
 			Color(0.55, 0.62, 0.61, 1.0)
 		)
-		locked_badge.add_theme_font_size_override("font_size", 10)
+		locked_badge.add_theme_font_size_override("font_size", 11)
 		locked_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	else:
 		var signature_name: String = EquipmentVisualCatalog.get_signature_effect_name(data)
 		if signature_name != "NO SIGNATURE EFFECT":
-			var signature: Label = _label(box, tr(signature_name), 11, Color(0.82, 0.70, 0.98, 1.0))
+			var signature: Label = _label(box, tr(signature_name), 12, Color(0.82, 0.70, 0.98, 1.0))
 			signature.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			signature.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
@@ -544,8 +544,8 @@ func _create_equipment_card(item_id: String, data: Dictionary) -> PanelContainer
 		var shard_price: int = int(data.get("forge_cost", 0))
 		var buy: Button = _button(action_row, tr("%d STONES") % stone_price, _buy.bind(item_id, false), false, GOLD)
 		var forge_button: Button = _button(action_row, tr("%d SHARDS") % shard_price, _buy.bind(item_id, true), false, CYAN)
-		buy.add_theme_font_size_override("font_size", 10)
-		forge_button.add_theme_font_size_override("font_size", 10)
+		buy.add_theme_font_size_override("font_size", 11)
+		forge_button.add_theme_font_size_override("font_size", 11)
 		var sealed: bool = not EquipmentManager.can_modify_equipment() or SaveManager.is_progress_read_only()
 		buy.disabled = sealed or ProgressionManager.spirit_stone < stone_price
 		forge_button.disabled = sealed or InventoryManager.get_item_count(InventoryManager.REFINEMENT_SHARD) < shard_price
@@ -752,9 +752,9 @@ func _section_card(
 	var box: VBoxContainer = VBoxContainer.new()
 	box.add_theme_constant_override("separation", 7)
 	panel.add_child(box)
-	_label(box, eyebrow, 11, Color(accent.r, accent.g, accent.b, 0.96))
+	_label(box, eyebrow, 12, Color(accent.r, accent.g, accent.b, 0.96))
 	_label(box, title, 23, Color(1.0, 0.86, 0.48))
-	_label(box, description, 13, TEXT_MUTED)
+	_label(box, description, 14, Color(0.76, 0.84, 0.82, 1.0))
 	return box
 
 
@@ -784,7 +784,7 @@ func _resource_chip(
 	copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	copy.add_theme_constant_override("separation", -1)
 	row.add_child(copy)
-	_label(copy, caption, 9, Color(accent.r, accent.g, accent.b, 0.88))
+	_label(copy, caption, 10, Color(accent.r, accent.g, accent.b, 0.88))
 	return _label(copy, "0", 16, Color(1.0, 0.91, 0.62, 1.0))
 
 
@@ -846,7 +846,7 @@ func _state_badge(parent_node: Node, value: String, accent: Color) -> Label:
 	var panel: PanelContainer = PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", _chip_style(accent))
 	parent_node.add_child(panel)
-	var label: Label = _label(panel, value, 9, Color(accent.r, accent.g, accent.b, 0.96))
+	var label: Label = _label(panel, value, 10, Color(accent.r, accent.g, accent.b, 0.96))
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	return label
 
@@ -878,7 +878,7 @@ func _button(
 	button.text = value
 	button.custom_minimum_size.y = 52.0 if primary else 42.0
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	button.add_theme_font_size_override("font_size", 14 if primary else 11)
+	button.add_theme_font_size_override("font_size", 14 if primary else 12)
 	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_apply_button_style(button, accent, primary)
 	button.pressed.connect(callback)

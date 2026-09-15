@@ -12,11 +12,23 @@ collision_layer = 4
 collision_mask = 2
 script = ExtResource("1_700y4")
 
+[node name="FlameTrailGlow" type="Line2D" parent="."]
+position = Vector2(-4, 0)
+width = 16.0
+default_color = Color(1, 0.18, 0.03, 0.11)
+points = PackedVector2Array(-38, 0, -27, -3, -16, 2, -7, 0)
+
 [node name="FlameTrail" type="Line2D" parent="."]
 position = Vector2(-4, 0)
-width = 7.0
-default_color = Color(1, 0.31, 0.06, 0.32)
-points = PackedVector2Array(-27, 0, -18, -2.5, -9, 0)
+width = 8.0
+default_color = Color(1, 0.31, 0.06, 0.38)
+points = PackedVector2Array(-32, 0, -22, -2.5, -10, 0)
+
+[node name="FlameTrailCore" type="Line2D" parent="."]
+position = Vector2(-4, 0)
+width = 3.0
+default_color = Color(1, 0.82, 0.24, 0.72)
+points = PackedVector2Array(-23, 0, -14, -1, -7, 0)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 texture_filter = 1

@@ -1,26 +1,16 @@
 extends Area2D
 class_name HeavenlySwordRain
 
-## Heavenly Sword Rain
-## Satu instance celestial jian yang jatuh dari langit
-## dan menghantam area di sekitar target.
-##
-## Semantic VFX:
-## - Telegraph memperlihatkan radius strike sebelum damage.
-## - Celestial jian benar-benar turun menuju titik impact.
-## - Active impact muncul tepat ketika AoE damage aktif.
-## - Successful impact signal contract tetap sama.
-
 signal successful_impact(
 	impact_position: Vector2,
 	base_damage: float
 )
 
 const DEFAULT_TELEGRAPH_DURATION: float = 0.35
-const DEFAULT_ACTIVE_DURATION: float = 0.10
-const VFX_SEGMENTS: int = 36
+const DEFAULT_ACTIVE_DURATION: float = 0.12
+const VFX_SEGMENTS: int = 40
 
-const SWORD_START_Y: float = -64.0
+const SWORD_START_Y: float = -76.0
 const SWORD_IMPACT_Y: float = -6.0
 
 var strike_damage: float = 0.0
@@ -31,20 +21,20 @@ var player_stats: Node = null
 var has_impacted: bool = false
 
 var telegraph_ring: Line2D = null
+var middle_ring: Line2D = null
 var inner_marker: Line2D = null
+var descent_glow: Line2D = null
 
 @onready var collision_shape: CollisionShape2D = (
 	get_node_or_null("CollisionShape2D")
 )
-
 @onready var sword_sprite: Sprite2D = (
 	get_node_or_null("Sprite2D")
 )
 
-func _ready() -> void:
-	## Player-owned telegraph/falling sword stays below Lin Yue.
-	z_index = 2
 
+func _ready() -> void:
+	z_index = 2
 	collision_layer = 0
 	collision_mask = 2
 	monitoring = true
@@ -66,6 +56,7 @@ func _ready() -> void:
 
 	queue_free()
 
+
 func setup(
 	damage: float,
 	radius: float,
@@ -74,6 +65,7 @@ func setup(
 	strike_damage = damage
 	strike_radius = radius
 	player_stats = stats
+
 
 func apply_strike_radius() -> void:
 	if collision_shape == null:
@@ -86,7 +78,6 @@ func apply_strike_radius() -> void:
 		collision_shape.shape
 		as CircleShape2D
 	)
-
 	if source_shape == null:
 		push_error(
 			"Heavenly Sword Rain membutuhkan CircleShape2D."
@@ -97,7 +88,6 @@ func apply_strike_radius() -> void:
 		source_shape.duplicate()
 		as CircleShape2D
 	)
-
 	if circle_shape == null:
 		push_error(
 			"CircleShape2D Heavenly Sword Rain gagal diduplikasi."
@@ -107,12 +97,12 @@ func apply_strike_radius() -> void:
 	collision_shape.shape = circle_shape
 	circle_shape.radius = strike_radius
 
+
 func create_ring_points(
 	ring_radius: float,
 	segment_count: int = VFX_SEGMENTS
 ) -> PackedVector2Array:
 	var points := PackedVector2Array()
-
 	var safe_segment_count: int = max(
 		segment_count,
 		3
@@ -124,7 +114,6 @@ func create_ring_points(
 			* float(index)
 			/ float(safe_segment_count)
 		)
-
 		points.append(
 			Vector2.RIGHT.rotated(angle)
 			* ring_radius
@@ -132,62 +121,91 @@ func create_ring_points(
 
 	return points
 
-## Telegraph menunjukkan radius strike dan sword turun ke tanah.
+
+func _make_line(
+	points: PackedVector2Array,
+	width: float,
+	color: Color
+) -> Line2D:
+	var line := Line2D.new()
+	line.width = width
+	line.default_color = color
+	line.antialiased = true
+	line.points = points
+	add_child(line)
+	return line
+
+
 func create_telegraph_visual() -> void:
-	telegraph_ring = Line2D.new()
-	telegraph_ring.width = 2.0
-	telegraph_ring.default_color = Color(
-		0.72,
-		0.90,
-		1.0,
-		0.62
+	# Outer ring is EXACT gameplay radius: no false telegraph.
+	telegraph_ring = _make_line(
+		create_ring_points(strike_radius),
+		2.6,
+		Color(0.66, 0.90, 1.0, 0.74)
 	)
-	telegraph_ring.antialiased = true
-	telegraph_ring.points = create_ring_points(
-		strike_radius
+	middle_ring = _make_line(
+		create_ring_points(strike_radius * 0.70),
+		1.5,
+		Color(0.80, 0.95, 1.0, 0.46)
 	)
-	add_child(telegraph_ring)
+	inner_marker = _make_line(
+		create_ring_points(strike_radius * 0.34),
+		1.2,
+		Color(0.92, 0.99, 1.0, 0.42)
+	)
 
-	inner_marker = Line2D.new()
-	inner_marker.width = 1.0
-	inner_marker.default_color = Color(
-		0.84,
-		0.96,
-		1.0,
-		0.34
-	)
-	inner_marker.antialiased = true
-	inner_marker.points = create_ring_points(
-		strike_radius * 0.42
-	)
-	add_child(inner_marker)
+	for ring in [
+		telegraph_ring,
+		middle_ring,
+		inner_marker
+	]:
+		ring.scale = Vector2.ONE * 0.70
 
-	telegraph_ring.scale = Vector2.ONE * 0.72
-	inner_marker.scale = Vector2.ONE * 0.72
+	if not SettingsManager.reduced_effects:
+		for index in range(8):
+			var direction := Vector2.RIGHT.rotated(
+				float(index) * TAU / 8.0
+			)
+			_make_line(
+				PackedVector2Array([
+					direction * strike_radius * 0.74,
+					direction * strike_radius * 0.94
+				]),
+				1.3,
+				Color(0.74, 0.94, 1.0, 0.50)
+			)
+
+		descent_glow = _make_line(
+			PackedVector2Array([
+				Vector2(0.0, SWORD_START_Y - 12.0),
+				Vector2(0.0, SWORD_IMPACT_Y + 8.0)
+			]),
+			8.0,
+			Color(0.52, 0.86, 1.0, 0.14)
+		)
+		descent_glow.z_index = 2
 
 	var tween := create_tween()
 	tween.set_parallel(true)
 
-	tween.tween_property(
+	for ring in [
 		telegraph_ring,
-		"scale",
-		Vector2.ONE,
-		telegraph_duration
-	)
-
-	tween.tween_property(
-		inner_marker,
-		"scale",
-		Vector2.ONE,
-		telegraph_duration
-	)
+		middle_ring,
+		inner_marker
+	]:
+		tween.tween_property(
+			ring,
+			"scale",
+			Vector2.ONE,
+			telegraph_duration
+		)
 
 	if sword_sprite != null:
 		var target_scale: Vector2 = sword_sprite.scale
 
 		sword_sprite.position.y = SWORD_START_Y
-		sword_sprite.scale = target_scale * 0.86
-		sword_sprite.modulate.a = 0.28
+		sword_sprite.scale = target_scale * 0.78
+		sword_sprite.modulate.a = 0.22
 
 		tween.tween_property(
 			sword_sprite,
@@ -199,14 +217,12 @@ func create_telegraph_visual() -> void:
 		).set_ease(
 			Tween.EASE_IN
 		)
-
 		tween.tween_property(
 			sword_sprite,
 			"scale",
-			target_scale,
+			target_scale * 1.06,
 			telegraph_duration
 		)
-
 		tween.tween_property(
 			sword_sprite,
 			"modulate:a",
@@ -214,78 +230,68 @@ func create_telegraph_visual() -> void:
 			telegraph_duration
 		)
 
-func hide_telegraph_visual() -> void:
-	if telegraph_ring != null:
-		telegraph_ring.visible = false
 
-	if inner_marker != null:
-		inner_marker.visible = false
+func hide_telegraph_visual() -> void:
+	for line in [
+		telegraph_ring,
+		middle_ring,
+		inner_marker,
+		descent_glow
+	]:
+		if line != null:
+			line.visible = false
+
 
 func create_impact_visual() -> void:
-	var impact_ring := Line2D.new()
-	## Parent is z=2, so relative +3 resolves to combat impact z=5.
-	impact_ring.z_index = 3
-	impact_ring.width = 5.0
-	impact_ring.default_color = Color(
-		0.82,
-		0.96,
-		1.0,
-		0.94
-	)
-	impact_ring.antialiased = true
-
 	var start_radius: float = maxf(
-		strike_radius * 0.35,
+		strike_radius * 0.28,
 		7.0
 	)
 
-	impact_ring.points = create_ring_points(
-		start_radius
+	var glow_ring := _make_line(
+		create_ring_points(start_radius),
+		10.0,
+		Color(0.40, 0.80, 1.0, 0.16)
 	)
-	add_child(impact_ring)
+	glow_ring.z_index = 3
 
-	var streak := Line2D.new()
+	var impact_ring := _make_line(
+		create_ring_points(start_radius),
+		5.5,
+		Color(0.82, 0.96, 1.0, 1.0)
+	)
+	impact_ring.z_index = 3
+
+	var streak := _make_line(
+		PackedVector2Array([
+			Vector2(0.0, -82.0),
+			Vector2(0.0, 10.0)
+		]),
+		5.0,
+		Color(0.94, 0.99, 1.0, 0.98)
+	)
 	streak.z_index = 3
-	streak.width = 4.0
-	streak.default_color = Color(
-		0.92,
-		0.98,
-		1.0,
-		0.92
-	)
-	streak.antialiased = true
-	streak.points = PackedVector2Array([
-		Vector2(0.0, -58.0),
-		Vector2(0.0, 8.0)
-	])
-	add_child(streak)
 
-	## Empat short Qi shards memberi rasa celestial impact,
-	## tanpa menambah hitbox baru.
-	for direction in [
-		Vector2.RIGHT,
-		Vector2.LEFT,
-		Vector2.UP,
-		Vector2.DOWN
-	]:
-		var shard := Line2D.new()
-		shard.z_index = 3
-		shard.width = 2.0
-		shard.default_color = Color(
-			0.72,
-			0.96,
-			1.0,
-			0.78
+	var shard_count: int = (
+		4 if SettingsManager.reduced_effects else 8
+	)
+
+	for index in range(shard_count):
+		var direction := Vector2.RIGHT.rotated(
+			float(index) * TAU / float(shard_count)
 		)
-		shard.antialiased = true
-		shard.points = PackedVector2Array([
-			direction * 6.0,
-			direction * minf(
-				strike_radius * 0.72,
-				28.0
-			)
-		])
-		add_child(shard)
+		var shard := _make_line(
+			PackedVector2Array([
+				direction * 7.0,
+				direction * minf(
+					strike_radius * 0.82,
+					34.0
+				)
+			]),
+			2.3 if index % 2 == 0 else 1.6,
+			Color(0.66, 0.94, 1.0, 0.84)
+		)
+		shard.z_index = 3
 
 		var shard_tween := create_tween()
 		shard_tween.tween_property(
@@ -302,19 +308,19 @@ func create_impact_visual() -> void:
 	var tween := create_tween()
 	tween.set_parallel(true)
 
-	tween.tween_property(
-		impact_ring,
-		"scale",
-		Vector2.ONE * target_scale,
-		active_duration
-	)
-
-	tween.tween_property(
-		impact_ring,
-		"modulate:a",
-		0.0,
-		active_duration
-	)
+	for ring in [glow_ring, impact_ring]:
+		tween.tween_property(
+			ring,
+			"scale",
+			Vector2.ONE * target_scale,
+			active_duration
+		)
+		tween.tween_property(
+			ring,
+			"modulate:a",
+			0.0,
+			active_duration
+		)
 
 	tween.tween_property(
 		streak,
@@ -330,6 +336,7 @@ func create_impact_visual() -> void:
 			0.0,
 			active_duration
 		)
+
 
 func impact() -> void:
 	if has_impacted:
@@ -356,13 +363,12 @@ func impact() -> void:
 			strike_damage
 		)
 
+
 func damage_target(target: Node) -> bool:
 	if target == null:
 		return false
-
 	if not is_instance_valid(target):
 		return false
-
 	if not target.has_method("take_damage"):
 		return false
 

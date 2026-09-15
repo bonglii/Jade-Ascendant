@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+<defs>
+  <radialGradient id="a" cx="50%" cy="48%" r="52%"><stop offset="0" stop-color="#9df2d3" stop-opacity=".30"/><stop offset=".68" stop-color="#10524d" stop-opacity=".11"/><stop offset="1" stop-color="#061f25" stop-opacity="0"/></radialGradient>
+  <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff0a5"/><stop offset=".52" stop-color="#e3bf5c"/><stop offset="1" stop-color="#a8741d"/></linearGradient>
+</defs>
+<circle cx="80" cy="80" r="75" fill="url(#a)"/>
+<circle cx="80" cy="80" r="64" fill="none" stroke="#72dfbf" stroke-opacity=".44" stroke-width="2"/>
+<circle cx="80" cy="80" r="54" fill="none" stroke="url(#g)" stroke-opacity=".82" stroke-width="2.5"/>
+<circle cx="80" cy="80" r="42" fill="#082d30" fill-opacity=".78" stroke="#b7eed1" stroke-opacity=".35"/>
+<path d="M80 37 C69 55 67 68 73 79 C59 74 48 78 36 90 C54 89 68 95 80 110 C92 95 106 89 124 90 C112 78 101 74 87 79 C93 68 91 55 80 37Z" fill="none" stroke="url(#g)" stroke-width="4" stroke-linejoin="round"/>
+<path d="M55 89 Q80 67 105 89 Q80 111 55 89Z" fill="#75dfbc" fill-opacity=".16" stroke="#c8f4db" stroke-opacity=".68" stroke-width="1.5"/>
+<circle cx="80" cy="89" r="5" fill="#f5d979"/>
+<g stroke="#efd069" stroke-opacity=".65" stroke-width="1.5">
+  <path d="M80 8V24"/><path d="M80 136V152"/><path d="M8 80H24"/><path d="M136 80H152"/>
+</g>
+</svg>

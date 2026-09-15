@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/achievement_screen.gd" id="1_script"]
 [ext_resource type="Script" path="res://scripts/ui/mobile_safe_area.gd" id="2_safe"]
@@ -6,128 +6,127 @@
 [ext_resource type="Texture2D" path="res://assets/ui/trials/trials_hall.png" id="4_bg"]
 [ext_resource type="Texture2D" path="res://assets/ui/icons/spirit_stone.svg" id="5_stone"]
 [ext_resource type="Script" path="res://scripts/ui/wuxia_hub_nav.gd" id="6_nav"]
-[ext_resource type="Texture2D" path="res://assets/ui/wuxia/realm_frame.png" id="7_realm_frame"]
-[ext_resource type="Texture2D" path="res://assets/ui/wuxia/trial_frame.png" id="8_trial_frame"]
+[ext_resource type="Script" path="res://scripts/ui/trials_hall_overlay.gd" id="7_overlay"]
 
-[sub_resource type="Gradient" id="Gradient_shade"]
-offsets = PackedFloat32Array(0, 0.24, 0.60, 1)
-colors = PackedColorArray(0.004, 0.011, 0.026, 0.24, 0.004, 0.011, 0.026, 0.18, 0.003, 0.010, 0.020, 0.38, 0.001, 0.006, 0.012, 0.78)
 
-[sub_resource type="GradientTexture2D" id="GradientTexture_shade"]
-gradient = SubResource("Gradient_shade")
+[sub_resource type="Gradient" id="GradientShade"]
+offsets = PackedFloat32Array(0, 0.28, 0.66, 1)
+colors = PackedColorArray(0.002, 0.010, 0.020, 0.22, 0.002, 0.014, 0.024, 0.20, 0.002, 0.012, 0.020, 0.50, 0.001, 0.006, 0.012, 0.84)
+
+[sub_resource type="GradientTexture2D" id="GradientTextureShade"]
+gradient = SubResource("GradientShade")
 width = 648
 height = 1152
 fill_from = Vector2(0.5, 0)
 fill_to = Vector2(0.5, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleTopBar"]
-bg_color = Color(0.002, 0.018, 0.030, 0.93)
-border_width_bottom = 1
-border_color = Color(0.30, 0.86, 0.74, 0.28)
-corner_radius_top_left = 7
-corner_radius_top_right = 7
-corner_radius_bottom_left = 7
-corner_radius_bottom_right = 7
 content_margin_left = 12.0
-content_margin_top = 7.0
+content_margin_top = 8.0
 content_margin_right = 12.0
-content_margin_bottom = 7.0
+content_margin_bottom = 8.0
+bg_color = Color(0.002, 0.017, 0.028, 0.95)
+border_width_bottom = 1
+border_color = Color(0.30, 0.86, 0.74, 0.32)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_left = 8
+corner_radius_bottom_right = 8
 shadow_color = Color(0, 0, 0, 0.50)
 shadow_size = 7
 
-[sub_resource type="StyleBoxFlat" id="StyleHeaderFrame"]
+[sub_resource type="StyleBoxFlat" id="StyleHero"]
 content_margin_left = 16.0
-content_margin_top = 10.0
+content_margin_top = 12.0
 content_margin_right = 16.0
-content_margin_bottom = 10.0
-bg_color = Color(0.002, 0.027, 0.040, 0.90)
+content_margin_bottom = 12.0
+bg_color = Color(0.002, 0.027, 0.040, 0.94)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.95, 0.75, 0.31, 0.48)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_left = 10
-corner_radius_bottom_right = 10
-shadow_color = Color(0, 0, 0, 0.32)
-shadow_size = 6
+border_color = Color(0.95, 0.75, 0.31, 0.60)
+corner_radius_top_left = 11
+corner_radius_top_right = 11
+corner_radius_bottom_left = 11
+corner_radius_bottom_right = 11
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 7
 
 [sub_resource type="StyleBoxFlat" id="StyleTabActive"]
-bg_color = Color(0.008, 0.105, 0.101, 0.94)
+bg_color = Color(0.008, 0.105, 0.101, 0.96)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.96, 0.78, 0.36, 0.88)
+border_width_bottom = 2
+border_color = Color(0.96, 0.78, 0.36, 0.94)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_left = 8
 corner_radius_bottom_right = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleTabInactive"]
-bg_color = Color(0.002, 0.023, 0.035, 0.86)
+bg_color = Color(0.002, 0.023, 0.035, 0.90)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.20, 0.62, 0.57, 0.30)
+border_color = Color(0.20, 0.62, 0.57, 0.34)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_left = 8
 corner_radius_bottom_right = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleSummaryFrame"]
-content_margin_left = 12.0
-content_margin_top = 10.0
-content_margin_right = 12.0
-content_margin_bottom = 10.0
-bg_color = Color(0.002, 0.024, 0.036, 0.91)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.24, 0.82, 0.71, 0.34)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_left = 10
-corner_radius_bottom_right = 10
-shadow_color = Color(0, 0, 0, 0.32)
-shadow_size = 6
-
-[sub_resource type="StyleBoxFlat" id="StyleListFrame"]
+[sub_resource type="StyleBoxFlat" id="StyleSummary"]
 content_margin_left = 10.0
-content_margin_top = 10.0
+content_margin_top = 9.0
 content_margin_right = 10.0
-content_margin_bottom = 10.0
-bg_color = Color(0.0015, 0.019, 0.030, 0.90)
+content_margin_bottom = 9.0
+bg_color = Color(0.002, 0.025, 0.037, 0.94)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.22, 0.72, 0.65, 0.26)
+border_color = Color(0.25, 0.82, 0.71, 0.42)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_left = 10
 corner_radius_bottom_right = 10
-shadow_color = Color(0, 0, 0, 0.32)
-shadow_size = 6
+shadow_color = Color(0, 0, 0, 0.30)
+shadow_size = 5
 
 [sub_resource type="StyleBoxFlat" id="StyleMetric"]
-bg_color = Color(0.003, 0.038, 0.050, 0.84)
+content_margin_left = 7.0
+content_margin_top = 5.0
+content_margin_right = 7.0
+content_margin_bottom = 5.0
+bg_color = Color(0.004, 0.044, 0.054, 0.90)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.24, 0.78, 0.68, 0.34)
+border_color = Color(0.25, 0.78, 0.68, 0.38)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_left = 8
 corner_radius_bottom_right = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleList"]
 content_margin_left = 8.0
-content_margin_top = 5.0
+content_margin_top = 8.0
 content_margin_right = 8.0
-content_margin_bottom = 5.0
+content_margin_bottom = 8.0
+bg_color = Color(0.0015, 0.018, 0.029, 0.90)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.22, 0.72, 0.65, 0.28)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_left = 10
+corner_radius_bottom_right = 10
+
 
 [node name="AchievementScreen" type="Control"]
 layout_mode = 3
@@ -150,7 +149,7 @@ mouse_filter = 2
 texture = ExtResource("4_bg")
 expand_mode = 1
 stretch_mode = 6
-self_modulate = Color(0.90, 0.92, 0.96, 1)
+self_modulate = Color(0.88, 0.92, 0.96, 1)
 
 [node name="Shade" type="TextureRect" parent="."]
 layout_mode = 1
@@ -160,9 +159,20 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = SubResource("GradientTexture_shade")
+texture = SubResource("GradientTextureShade")
 expand_mode = 1
 stretch_mode = 6
+
+[node name="HallOverlay" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("7_overlay")
+mode = 1
 
 [node name="Content" type="Control" parent="."]
 unique_name_in_owner = true
@@ -177,10 +187,10 @@ script = ExtResource("2_safe")
 [node name="TopBar" type="PanelContainer" parent="Content"]
 layout_mode = 1
 anchor_left = 0.03
-anchor_top = 0.018
+anchor_top = 0.016
 anchor_right = 0.97
-anchor_bottom = 0.018
-offset_bottom = 64.0
+anchor_bottom = 0.016
+offset_bottom = 58.0
 grow_horizontal = 2
 theme_override_styles/panel = SubResource("StyleTopBar")
 
@@ -191,19 +201,20 @@ theme_override_constants/separation = 8
 [node name="TitleBox" type="VBoxContainer" parent="Content/TopBar/TopRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = -2
+theme_override_constants/separation = -1
 
 [node name="TopTitle" type="Label" parent="Content/TopBar/TopRow/TitleBox"]
 layout_mode = 2
 theme_type_variation = &"JadeHeroName"
 theme_override_font_sizes/font_size = 18
-text = "TRIALS"
+text = "TRIAL HALL"
 
 [node name="TopSubtitle" type="Label" parent="Content/TopBar/TopRow/TitleBox"]
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 9
-text = "JADE TRIAL HALL • CULTIVATION RECORDS"
+theme_override_colors/font_color = Color(0.76, 0.83, 0.82, 0.98)
+theme_override_font_sizes/font_size = 11
+text = "CULTIVATION RECORDS"
 
 [node name="StoneBox" type="HBoxContainer" parent="Content/TopBar/TopRow"]
 layout_mode = 2
@@ -211,7 +222,7 @@ theme_override_constants/separation = 5
 alignment = 1
 
 [node name="StoneIcon" type="TextureRect" parent="Content/TopBar/TopRow/StoneBox"]
-custom_minimum_size = Vector2(26, 26)
+custom_minimum_size = Vector2(25, 25)
 layout_mode = 2
 texture = ExtResource("5_stone")
 expand_mode = 1
@@ -219,7 +230,7 @@ stretch_mode = 5
 
 [node name="SpiritStoneLabel" type="Label" parent="Content/TopBar/TopRow/StoneBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(72, 0)
+custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
 theme_type_variation = &"JadeCurrencyLabel"
 theme_override_font_sizes/font_size = 15
@@ -230,43 +241,60 @@ vertical_alignment = 1
 [node name="HeaderPanel" type="PanelContainer" parent="Content"]
 layout_mode = 1
 anchor_left = 0.03
-anchor_top = 0.102
+anchor_top = 0.090
 anchor_right = 0.97
-anchor_bottom = 0.102
-offset_bottom = 104.0
+anchor_bottom = 0.090
+offset_bottom = 98.0
 grow_horizontal = 2
-theme_override_styles/panel = SubResource("StyleHeaderFrame")
+theme_override_styles/panel = SubResource("StyleHero")
 
-[node name="HeaderVBox" type="VBoxContainer" parent="Content/HeaderPanel"]
+[node name="HeroRow" type="HBoxContainer" parent="Content/HeaderPanel"]
 layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HeroCopy" type="VBoxContainer" parent="Content/HeaderPanel/HeroRow"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 1
 
-[node name="HeaderEyebrow" type="Label" parent="Content/HeaderPanel/HeaderVBox"]
+[node name="HeaderEyebrow" type="Label" parent="Content/HeaderPanel/HeroRow/HeroCopy"]
 layout_mode = 2
 theme_type_variation = &"JadeSubtitle"
 theme_override_font_sizes/font_size = 10
-text = "TRIAL HALL  •  ETERNAL RECORDS"
+text = "ETERNAL ARCHIVE  •  PERMANENT MILESTONES"
 
-[node name="HeaderTitle" type="Label" parent="Content/HeaderPanel/HeaderVBox"]
+[node name="HeaderTitle" type="Label" parent="Content/HeaderPanel/HeroRow/HeroCopy"]
 layout_mode = 2
 theme_type_variation = &"JadeTitle"
-theme_override_font_sizes/font_size = 24
-text = "Achievement Records"
+theme_override_font_sizes/font_size = 23
+text = "Eternal Records"
 
-[node name="RecordLabel" type="Label" parent="Content/HeaderPanel/HeaderVBox"]
+[node name="RecordLabel" type="Label" parent="Content/HeaderPanel/HeroRow/HeroCopy"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 10
-text = "ETERNAL RECORDS"
+theme_override_colors/font_color = Color(0.75, 0.82, 0.82, 0.98)
+theme_override_font_sizes/font_size = 11
+text = "Permanent milestones across the cultivation journey."
+autowrap_mode = 2
+
+
+[node name="ArchiveMark" type="Label" parent="Content/HeaderPanel/HeroRow"]
+custom_minimum_size = Vector2(54, 54)
+layout_mode = 2
+theme_type_variation = &"JadeCurrencyLabel"
+theme_override_font_sizes/font_size = 26
+text = "◇"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="SectionTabs" type="HBoxContainer" parent="Content"]
 layout_mode = 1
 anchor_left = 0.03
-anchor_top = 0.208
+anchor_top = 0.205
 anchor_right = 0.97
-anchor_bottom = 0.208
-offset_bottom = 48.0
+anchor_bottom = 0.205
+offset_bottom = 42.0
 grow_horizontal = 2
 theme_override_constants/separation = 6
 
@@ -274,32 +302,30 @@ theme_override_constants/separation = 6
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 12
 theme_override_styles/normal = SubResource("StyleTabInactive")
 theme_override_styles/hover = SubResource("StyleTabActive")
 theme_override_styles/pressed = SubResource("StyleTabActive")
 theme_override_styles/focus = SubResource("StyleTabActive")
+
 text = "DAILY"
 
 [node name="AchievementTab" type="Button" parent="Content/SectionTabs"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 13
-theme_override_colors/font_color = Color(0.98, 0.84, 0.46, 1)
+theme_override_font_sizes/font_size = 12
 theme_override_styles/normal = SubResource("StyleTabActive")
 theme_override_styles/hover = SubResource("StyleTabActive")
 theme_override_styles/pressed = SubResource("StyleTabActive")
 theme_override_styles/focus = SubResource("StyleTabActive")
+theme_override_colors/font_color = Color(0.98, 0.84, 0.46, 1)
 text = "ACHIEVEMENTS"
 
 [node name="ChallengeTab" type="Button" parent="Content/SectionTabs"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 12
-theme_override_colors/font_disabled_color = Color(0.48, 0.52, 0.50, 0.72)
-theme_override_styles/disabled = SubResource("StyleTabInactive")
 visible = false
 text = ""
 disabled = true
@@ -307,27 +333,33 @@ disabled = true
 [node name="SummaryPanel" type="PanelContainer" parent="Content"]
 layout_mode = 1
 anchor_left = 0.03
-anchor_top = 0.267
+anchor_top = 0.258
 anchor_right = 0.97
-anchor_bottom = 0.267
-offset_bottom = 82.0
+anchor_bottom = 0.258
+offset_bottom = 110.0
 grow_horizontal = 2
-theme_override_styles/panel = SubResource("StyleSummaryFrame")
+theme_override_styles/panel = SubResource("StyleSummary")
 
-[node name="SummaryRow" type="HBoxContainer" parent="Content/SummaryPanel"]
+[node name="SummaryVBox" type="VBoxContainer" parent="Content/SummaryPanel"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 5
 
-[node name="DiscoveredMetric" type="PanelContainer" parent="Content/SummaryPanel/SummaryRow"]
-custom_minimum_size = Vector2(118, 46)
+[node name="MetricRow" type="HBoxContainer" parent="Content/SummaryPanel/SummaryVBox"]
 layout_mode = 2
+theme_override_constants/separation = 6
+
+
+[node name="DiscoveredMetric" type="PanelContainer" parent="Content/SummaryPanel/SummaryVBox/MetricRow"]
+custom_minimum_size = Vector2(104, 44)
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleMetric")
 
-[node name="MetricVBox" type="VBoxContainer" parent="Content/SummaryPanel/SummaryRow/DiscoveredMetric"]
+[node name="VBox" type="VBoxContainer" parent="Content/SummaryPanel/SummaryVBox/MetricRow/DiscoveredMetric"]
 layout_mode = 2
 theme_override_constants/separation = -2
 
-[node name="DiscoveredValueLabel" type="Label" parent="Content/SummaryPanel/SummaryRow/DiscoveredMetric/MetricVBox"]
+[node name="DiscoveredValueLabel" type="Label" parent="Content/SummaryPanel/SummaryVBox/MetricRow/DiscoveredMetric/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeHeroName"
@@ -335,23 +367,24 @@ theme_override_font_sizes/font_size = 16
 text = "0 / 0"
 horizontal_alignment = 1
 
-[node name="Caption" type="Label" parent="Content/SummaryPanel/SummaryRow/DiscoveredMetric/MetricVBox"]
+[node name="Caption" type="Label" parent="Content/SummaryPanel/SummaryVBox/MetricRow/DiscoveredMetric/VBox"]
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 8
+theme_override_font_sizes/font_size = 10
 text = "DISCOVERED"
 horizontal_alignment = 1
 
-[node name="ReadyMetric" type="PanelContainer" parent="Content/SummaryPanel/SummaryRow"]
-custom_minimum_size = Vector2(118, 46)
+[node name="ReadyMetric" type="PanelContainer" parent="Content/SummaryPanel/SummaryVBox/MetricRow"]
+custom_minimum_size = Vector2(80, 44)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleMetric")
 
-[node name="MetricVBox" type="VBoxContainer" parent="Content/SummaryPanel/SummaryRow/ReadyMetric"]
+[node name="VBox" type="VBoxContainer" parent="Content/SummaryPanel/SummaryVBox/MetricRow/ReadyMetric"]
 layout_mode = 2
 theme_override_constants/separation = -2
 
-[node name="ReadyValueLabel" type="Label" parent="Content/SummaryPanel/SummaryRow/ReadyMetric/MetricVBox"]
+[node name="ReadyValueLabel" type="Label" parent="Content/SummaryPanel/SummaryVBox/MetricRow/ReadyMetric/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeHeroName"
@@ -359,32 +392,84 @@ theme_override_font_sizes/font_size = 16
 text = "0"
 horizontal_alignment = 1
 
-[node name="Caption" type="Label" parent="Content/SummaryPanel/SummaryRow/ReadyMetric/MetricVBox"]
+[node name="Caption" type="Label" parent="Content/SummaryPanel/SummaryVBox/MetricRow/ReadyMetric/VBox"]
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 8
-text = "REWARDS READY"
+theme_override_font_sizes/font_size = 10
+text = "READY"
 horizontal_alignment = 1
 
-[node name="ClaimAllButton" type="Button" parent="Content/SummaryPanel/SummaryRow"]
+[node name="RewardMetric" type="PanelContainer" parent="Content/SummaryPanel/SummaryVBox/MetricRow"]
+custom_minimum_size = Vector2(92, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleMetric")
+
+[node name="VBox" type="VBoxContainer" parent="Content/SummaryPanel/SummaryVBox/MetricRow/RewardMetric"]
+layout_mode = 2
+theme_override_constants/separation = -2
+
+[node name="TotalRewardValueLabel" type="Label" parent="Content/SummaryPanel/SummaryVBox/MetricRow/RewardMetric/VBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(184, 46)
+layout_mode = 2
+theme_type_variation = &"JadeCurrencyLabel"
+theme_override_font_sizes/font_size = 16
+text = "0"
+horizontal_alignment = 1
+
+[node name="Caption" type="Label" parent="Content/SummaryPanel/SummaryVBox/MetricRow/RewardMetric/VBox"]
+layout_mode = 2
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 10
+text = "STONES"
+horizontal_alignment = 1
+
+
+[node name="ClaimAllButton" type="Button" parent="Content/SummaryPanel/SummaryVBox/MetricRow"]
+custom_minimum_size = Vector2(120, 44)
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"JadePrimaryButton"
 theme_override_font_sizes/font_size = 11
-text = "NO REWARDS"
+text = "NO REWARDS READY"
+
+
+[node name="RecordHeader" type="HBoxContainer" parent="Content/SummaryPanel/SummaryVBox"]
+layout_mode = 2
+
+[node name="RecordTitle" type="Label" parent="Content/SummaryPanel/SummaryVBox/RecordHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"JadeSubtitle"
+theme_override_font_sizes/font_size = 10
+text = "ETERNAL RECORD COMPLETION"
+
+[node name="RecordProgressLabel" type="Label" parent="Content/SummaryPanel/SummaryVBox/RecordHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeCurrencyLabel"
+theme_override_font_sizes/font_size = 10
+text = "0 OF 0 RECORDS DISCOVERED"
+horizontal_alignment = 2
+
+[node name="RecordProgressBar" type="ProgressBar" parent="Content/SummaryPanel/SummaryVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+show_percentage = false
+
 
 [node name="ListPanel" type="PanelContainer" parent="Content"]
 layout_mode = 1
 anchor_left = 0.03
-anchor_top = 0.355
+anchor_top = 0.395
 anchor_right = 0.97
 anchor_bottom = 1.0
-offset_bottom = -112.0
+offset_bottom = -110.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleListFrame")
+theme_override_styles/panel = SubResource("StyleList")
 
 [node name="Scroll" type="ScrollContainer" parent="Content/ListPanel"]
 layout_mode = 2

@@ -4,31 +4,31 @@ extends RefCounted
 ## Gameplay authority remains in EquipmentManager / InventoryManager.
 
 const ITEM_ICON_PATHS: Dictionary = {
-	"wanderer_jade_jian": "res://assets/weapons/sword/spirit_sword_jade_jian_96x64.png",
-	"mistveil_jian": "res://assets/ui/equipment/mistveil_jian.svg",
-	"spirit_seal_fan": "res://assets/ui/equipment/spirit_seal_fan.svg",
-	"cinnabar_moon_saber": "res://assets/ui/equipment/cinnabar_moon_saber.svg",
-	"nine_heavens_star_sword": "res://assets/ui/equipment/nine_heavens_star_sword.svg",
-	"verdant_qi_robe": "res://assets/ui/equipment/verdant_qi_robe.svg",
-	"jade_guard_bracer": "res://assets/ui/equipment/jade_guard_bracer.svg",
-	"cloudstep_boots": "res://assets/ui/equipment/cloudstep_boots.svg",
-	"spirit_jade_pendant": "res://assets/ui/equipment/spirit_jade_pendant.svg",
-	"bamboo_weave_robe": "res://assets/ui/equipment/bamboo_weave_robe.svg",
-	"moonthread_robe": "res://assets/ui/equipment/moonthread_robe.svg",
-	"jade_edge_bracer": "res://assets/ui/equipment/jade_edge_bracer.svg",
-	"mirror_edge_bracer": "res://assets/ui/equipment/mirror_edge_bracer.svg",
-	"miststride_boots": "res://assets/ui/equipment/miststride_boots.svg",
-	"qi_reservoir_pendant": "res://assets/ui/equipment/qi_reservoir_pendant.svg",
-	"ward_keeper_robe": "res://assets/ui/equipment/ward_keeper_robe.svg",
-	"stormcall_bracer": "res://assets/ui/equipment/stormcall_bracer.svg",
-	"shadowstep_boots": "res://assets/ui/equipment/shadowstep_boots.svg",
-	"starstep_boots": "res://assets/ui/equipment/starstep_boots.svg",
-	"shrine_seal_pendant": "res://assets/ui/equipment/shrine_seal_pendant.svg",
+	"wanderer_jade_jian": "res://assets/ui/equipment/final/wanderer_jade_jian.png",
+	"mistveil_jian": "res://assets/ui/equipment/final/mistveil_jian.png",
+	"spirit_seal_fan": "res://assets/ui/equipment/final/spirit_seal_fan.png",
+	"cinnabar_moon_saber": "res://assets/ui/equipment/final/cinnabar_moon_saber.png",
+	"nine_heavens_star_sword": "res://assets/ui/equipment/final/nine_heavens_star_sword.png",
+	"verdant_qi_robe": "res://assets/ui/equipment/final/verdant_qi_robe.png",
+	"jade_guard_bracer": "res://assets/ui/equipment/final/jade_guard_bracer.png",
+	"cloudstep_boots": "res://assets/ui/equipment/final/cloudstep_boots.png",
+	"spirit_jade_pendant": "res://assets/ui/equipment/final/spirit_jade_pendant.png",
+	"bamboo_weave_robe": "res://assets/ui/equipment/final/bamboo_weave_robe.png",
+	"moonthread_robe": "res://assets/ui/equipment/final/moonthread_robe.png",
+	"jade_edge_bracer": "res://assets/ui/equipment/final/jade_edge_bracer.png",
+	"mirror_edge_bracer": "res://assets/ui/equipment/final/mirror_edge_bracer.png",
+	"miststride_boots": "res://assets/ui/equipment/final/miststride_boots.png",
+	"qi_reservoir_pendant": "res://assets/ui/equipment/final/qi_reservoir_pendant.png",
+	"ward_keeper_robe": "res://assets/ui/equipment/final/ward_keeper_robe.png",
+	"stormcall_bracer": "res://assets/ui/equipment/final/stormcall_bracer.png",
+	"shadowstep_boots": "res://assets/ui/equipment/final/shadowstep_boots.png",
+	"starstep_boots": "res://assets/ui/equipment/final/starstep_boots.png",
+	"shrine_seal_pendant": "res://assets/ui/equipment/final/shrine_seal_pendant.png",
 	"sword_heart_pendant": "res://assets/ui/equipment/sword_heart_pendant.svg",
-	"sovereign_mantle": "res://assets/ui/equipment/sovereign_mantle.svg",
-	"tribulation_bracer": "res://assets/ui/equipment/tribulation_bracer.svg",
-	"cloudtreader_boots": "res://assets/ui/equipment/cloudtreader_boots.svg",
-	"ascendant_heart": "res://assets/ui/equipment/ascendant_heart.svg",
+	"sovereign_mantle": "res://assets/ui/equipment/final/sovereign_mantle.png",
+	"tribulation_bracer": "res://assets/ui/equipment/final/tribulation_bracer.png",
+	"cloudtreader_boots": "res://assets/ui/equipment/final/cloudtreader_boots.png",
+	"ascendant_heart": "res://assets/ui/equipment/final/ascendant_heart.png",
 	"refinement_shard": "res://assets/ui/equipment/refinement_shard.svg"
 }
 
@@ -104,7 +104,6 @@ static func get_signature_effect_name(item_data: Dictionary) -> String:
 	var explicit_name: String = str(item_data.get("signature_effect_name", ""))
 	if not explicit_name.is_empty():
 		return explicit_name
-	# Compatibility fallback for older local data during migration/testing.
 	explicit_name = str(item_data.get("awakened_effect_name", ""))
 	if not explicit_name.is_empty():
 		return explicit_name
@@ -114,13 +113,11 @@ static func get_signature_effect_description(item_data: Dictionary) -> String:
 	var explicit_description: String = str(item_data.get("signature_effect_description", ""))
 	if not explicit_description.is_empty():
 		return explicit_description
-	# Compatibility fallback for older local data during migration/testing.
 	explicit_description = str(item_data.get("awakened_effect_description", ""))
 	if not explicit_description.is_empty():
 		return explicit_description
 	return "This equipment currently grants its core passive only."
 
-# Compatibility wrappers keep Backpack/older callers stable until Gate 1.6 UI cleanup.
 static func get_awakened_effect_name(item_data: Dictionary) -> String:
 	return get_signature_effect_name(item_data)
 
@@ -139,6 +136,7 @@ static func get_stat_summary(item_data: Dictionary) -> String:
 		if item_data.has(key):
 			var value_text: String = _format_stat_number(float(item_data[key]))
 			parts.append("+%s %s" % [value_text, TranslationServer.translate(str(numeric_labels[key]))])
+
 	var percent_labels: Dictionary = {
 		"damage_bonus": "Damage",
 		"movement_speed_bonus": "Movement",
@@ -150,6 +148,7 @@ static func get_stat_summary(item_data: Dictionary) -> String:
 		if item_data.has(key):
 			var value_text: String = _format_stat_number(float(item_data[key]) * 100.0)
 			parts.append("+%s%% %s" % [value_text, TranslationServer.translate(str(percent_labels[key]))])
+
 	if parts.is_empty():
 		return str(TranslationServer.translate("No stat bonus"))
 	return " • ".join(parts)

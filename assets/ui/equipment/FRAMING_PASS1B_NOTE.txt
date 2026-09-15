@@ -1,0 +1,17 @@
+JADE ASCENDANT — Equipment Framing Pass 1B
+Purpose: normalize visual mass after Pass 1A source-clipping cleanup.
+
+Changes:
+- Same artwork, no redesign.
+- 24 final PNG equipment assets rescaled within the existing 512x512 transparent canvas.
+- Category targets:
+  Armament 82% max visual occupancy
+  Robe 84%
+  Bracer 80%
+  Boots 80%
+  Pendant 80%
+- Full ornament/aura bounds preserved.
+- Small optical upward offset keeps stars/captions clear in Hero cards.
+- sword_heart_pendant remains the existing SVG fallback because the approved source sheet did not contain a fifth complete pendant artwork.
+
+No gameplay, stats, inventory, save, rarity, or equipment authority changed.

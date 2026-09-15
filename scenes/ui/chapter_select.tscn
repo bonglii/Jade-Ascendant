@@ -35,7 +35,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.003, 0.016, 0.027, 0.18)
+color = Color(0.003, 0.016, 0.027, 0.22)
 
 [node name="TopAccent" type="ColorRect" parent="."]
 layout_mode = 1
@@ -53,29 +53,29 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 22
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 22
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 18
 script = ExtResource("3_safe")
 
 [node name="MainLayout" type="VBoxContainer" parent="SafeArea"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 
 [node name="TopBar" type="HBoxContainer" parent="SafeArea/MainLayout"]
-custom_minimum_size = Vector2(0, 52)
+custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
 theme_override_constants/separation = 10
 
 [node name="BackButton" type="Button" parent="SafeArea/MainLayout/TopBar"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(118, 50)
+custom_minimum_size = Vector2(106, 44)
 layout_mode = 2
 theme_type_variation = &"JadeBackButton"
 theme_override_colors/font_color = Color(1, 0.941, 0.737, 1)
 theme_override_colors/font_hover_color = Color(1, 0.969, 0.82, 1)
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 14
 text = "‹   BACK"
 script = ExtResource("5_plaque")
 plaque_style = 0
@@ -87,29 +87,29 @@ size_flags_horizontal = 3
 [node name="JourneyLabel" type="Label" parent="SafeArea/MainLayout/TopBar"]
 layout_mode = 2
 theme_type_variation = &"JadeNavLabel"
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 12
 text = "JOURNEY   •   REALMS"
 vertical_alignment = 1
 
 [node name="HeaderPanel" type="PanelContainer" parent="SafeArea/MainLayout"]
-custom_minimum_size = Vector2(0, 126)
+custom_minimum_size = Vector2(0, 136)
 layout_mode = 2
 theme_type_variation = &"JadeJourneyHeaderPanel"
 
 [node name="HeaderMargin" type="MarginContainer" parent="SafeArea/MainLayout/HeaderPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 14
-theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 14
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 13
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 13
 
 [node name="Header" type="VBoxContainer" parent="SafeArea/MainLayout/HeaderPanel/HeaderMargin"]
 layout_mode = 2
-theme_override_constants/separation = 5
+theme_override_constants/separation = 4
 
 [node name="EyebrowRow" type="HBoxContainer" parent="SafeArea/MainLayout/HeaderPanel/HeaderMargin/Header"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 9
 
 [node name="LeftRule" type="ColorRect" parent="SafeArea/MainLayout/HeaderPanel/HeaderMargin/Header/EyebrowRow"]
 custom_minimum_size = Vector2(0, 1)
@@ -121,7 +121,7 @@ color = Color(0.957, 0.78, 0.357, 0.5)
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeSubtitle"
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 13
 text = "CELESTIAL JOURNEY"
 horizontal_alignment = 1
 
@@ -134,15 +134,15 @@ color = Color(0.957, 0.78, 0.357, 0.5)
 [node name="TitleLabel" type="Label" parent="SafeArea/MainLayout/HeaderPanel/HeaderMargin/Header"]
 layout_mode = 2
 theme_type_variation = &"JadeTitle"
-theme_override_font_sizes/font_size = 29
-text = "SELECT CHAPTER"
+theme_override_font_sizes/font_size = 30
+text = "SELECT REALM"
 horizontal_alignment = 1
 
 [node name="RealmEpithetLabel" type="Label" parent="SafeArea/MainLayout/HeaderPanel/HeaderMargin/Header"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeHeroName"
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 16
 text = "VALLEY OF AWAKENING"
 horizontal_alignment = 1
 
@@ -150,20 +150,21 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.76, 0.83, 0.83, 0.98)
+theme_override_font_sizes/font_size = 14
 text = "Choose a cultivation realm and continue the path toward ascension."
 horizontal_alignment = 1
 autowrap_mode = 2
 
 [node name="ChapterSectionHeader" type="HBoxContainer" parent="SafeArea/MainLayout"]
-custom_minimum_size = Vector2(0, 26)
+custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 
 [node name="SectionLabel" type="Label" parent="SafeArea/MainLayout/ChapterSectionHeader"]
 layout_mode = 2
 theme_type_variation = &"JadeSubtitle"
-theme_override_font_sizes/font_size = 12
-text = "AVAILABLE REALMS"
+theme_override_font_sizes/font_size = 13
+text = "ASCENSION REALMS"
 
 [node name="SectionSpacer" type="Control" parent="SafeArea/MainLayout/ChapterSectionHeader"]
 layout_mode = 2
@@ -172,8 +173,8 @@ size_flags_horizontal = 3
 [node name="SectionHint" type="Label" parent="SafeArea/MainLayout/ChapterSectionHeader"]
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 11
-text = "ASCENSION PATH"
+theme_override_font_sizes/font_size = 12
+text = "PERMANENT JOURNEY"
 
 [node name="ChapterScroll" type="ScrollContainer" parent="SafeArea/MainLayout"]
 layout_mode = 2
@@ -184,7 +185,7 @@ horizontal_scroll_mode = 0
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 
 [node name="HintPanel" type="PanelContainer" parent="SafeArea/MainLayout"]
 layout_mode = 2
@@ -192,16 +193,17 @@ theme_type_variation = &"JadeJourneyHintPanel"
 
 [node name="HintMargin" type="MarginContainer" parent="SafeArea/MainLayout/HintPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 9
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 9
 
 [node name="HintLabel" type="Label" parent="SafeArea/MainLayout/HintPanel/HintMargin"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.72, 0.80, 0.80, 0.96)
+theme_override_font_sizes/font_size = 13
 text = "Unlocked realms can be revisited. Cleared progress is permanent."
 horizontal_alignment = 1
 autowrap_mode = 2

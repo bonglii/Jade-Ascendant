@@ -376,8 +376,8 @@ text = "LIN YUE"
 [node name="Path" type="Label" parent="HomeUI/TopBar/Row/Profile/ProfileContent/ProfileText"]
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
-theme_override_colors/font_color = Color(0.52, 0.91, 0.83, 0.94)
-theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.66, 0.94, 0.87, 0.98)
+theme_override_font_sizes/font_size = 12
 text = "WANDERING CULTIVATOR"
 
 [node name="TopSpacer" type="Control" parent="HomeUI/TopBar/Row"]
@@ -471,8 +471,8 @@ theme_override_constants/separation = -1
 [node name="SanctuaryLabel" type="Label" parent="HomeUI/HomeActions/HeaderRow/HeaderText"]
 layout_mode = 2
 theme_type_variation = &"JadeSubtitle"
-theme_override_colors/font_color = Color(0.96, 0.80, 0.42, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.98, 0.83, 0.46, 1)
+theme_override_font_sizes/font_size = 14
 text = "JADE SANCTUARY"
 
 [node name="SanctuaryHint" type="Label" parent="HomeUI/HomeActions/HeaderRow/HeaderText"]
@@ -532,8 +532,8 @@ autowrap_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
-theme_override_colors/font_color = Color(0.62, 0.82, 0.79, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.72, 0.86, 0.83, 1)
+theme_override_font_sizes/font_size = 13
 text = "Your path to ascension"
 autowrap_mode = 2
 
@@ -556,8 +556,8 @@ value = 0.0
 unique_name_in_owner = true
 custom_minimum_size = Vector2(94, 0)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.96, 0.80, 0.42, 1)
-theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.98, 0.83, 0.46, 1)
+theme_override_font_sizes/font_size = 12
 text = "0 / 5 COMPLETE"
 horizontal_alignment = 2
 
@@ -599,8 +599,8 @@ custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"JadeDockButton"
-theme_override_colors/font_color = Color(0.79, 0.95, 0.91, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.86, 0.98, 0.94, 1)
+theme_override_font_sizes/font_size = 13
 theme_override_styles/normal = SubResource("StyleQuickAction")
 theme_override_styles/hover = SubResource("StyleQuickActionHover")
 theme_override_styles/pressed = SubResource("StyleQuickActionPressed")
@@ -616,8 +616,8 @@ custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"JadeDockButton"
-theme_override_colors/font_color = Color(0.96, 0.85, 0.52, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(1.0, 0.89, 0.58, 1)
+theme_override_font_sizes/font_size = 13
 theme_override_styles/normal = SubResource("StyleQuickAction")
 theme_override_styles/hover = SubResource("StyleQuickActionHover")
 theme_override_styles/pressed = SubResource("StyleQuickActionPressed")
