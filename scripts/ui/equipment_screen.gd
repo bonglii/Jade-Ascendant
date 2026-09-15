@@ -8,6 +8,7 @@ extends Control
 const MAIN_MENU_SCENE: String = "res://scenes/ui/main_menu.tscn"
 const BACKPACK_SCENE: String = "res://scenes/ui/backpack_screen.tscn"
 const EquipmentVisualCatalog = preload("res://scripts/ui/equipment_visual_catalog.gd")
+const EquipmentSetCatalog = preload("res://scripts/data/equipment_set_catalog.gd")
 
 const SLOT_ORDER: Array[String] = [
 	"armament",
@@ -33,6 +34,7 @@ const COMPARISON_KEYS: Array[String] = [
 @onready var equipped_count_label: Label = %EquippedCountLabel
 @onready var status_label: Label = %StatusLabel
 @onready var bonus_summary_label: Label = %BonusSummaryLabel
+@onready var stage_title: Label = $Content/HeroLoadoutPanel/HeroStage/StageTitle
 @onready var hero_preview_sprite: AnimatedSprite2D = %HeroPreviewSprite
 @onready var hero_menu_art: TextureRect = %HeroMenuArt
 @onready var hero_ghost_sprite: AnimatedSprite2D = %HeroGhostSprite
@@ -88,7 +90,10 @@ func _ready() -> void:
 		InventoryManager.inventory_changed.connect(_on_inventory_changed)
 	if not EquipmentManager.equipment_ascended.is_connected(_on_equipment_ascended):
 		EquipmentManager.equipment_ascended.connect(_on_equipment_ascended)
+	selected_item_icon.custom_minimum_size = Vector2(90.0, 90.0)
 	_setup_hero_showcase()
+	bonus_summary_label.clip_text = true
+	bonus_summary_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	_refresh_screen()
 	detail_panel.visible = detail_open
 	DebugLogger.system(str("Hero Equipment Hub aktif!"))
@@ -151,7 +156,10 @@ func _refresh_screen() -> void:
 		status_label.text = tr("LOADOUT SEALED  •  ACTIVE RUN CHECKPOINT")
 		hero_preview_sprite.modulate = Color(0.78, 0.86, 0.90, 0.92)
 		hero_menu_art.modulate = Color(0.74, 0.82, 0.86, 0.90)
+	stage_title.text = _build_set_stage_title()
+	stage_title.tooltip_text = _build_set_tooltip()
 	bonus_summary_label.text = _build_bonus_summary()
+	bonus_summary_label.tooltip_text = _build_set_tooltip()
 	_refresh_slot_button(armament_button, "armament")
 	_refresh_slot_button(robe_button, "robe")
 	_refresh_slot_button(bracer_button, "bracer")
@@ -382,7 +390,14 @@ func _refresh_detail_panel(can_modify: bool) -> void:
 	_apply_detail_rarity_style(EquipmentVisualCatalog.get_rarity_color(rarity_id))
 	selected_item_icon.texture = _load_item_icon(selected_item_id)
 	item_role_label.text = str(selected_data.get("display_name", selected_item_id))
-	selected_stat_label.text = "%s  •  %s  •  %s\nCORE  %s" % [tr(rarity_id.to_upper()), _format_stars(selected_star), tr(EquipmentVisualCatalog.get_slot_role(selected_slot_id)), _get_item_stat_text(selected_data)]
+	var selected_set_id: String = EquipmentSetCatalog.get_set_id_for_item(selected_item_id)
+	var selected_set_name: String = EquipmentSetCatalog.get_display_name(selected_set_id)
+	selected_stat_label.text = "%s  •  %s  •  %s\nCORE  %s" % [
+		tr(rarity_id.to_upper()),
+		_format_stars(selected_star),
+		tr(selected_set_name) if not selected_set_name.is_empty() else tr(EquipmentVisualCatalog.get_slot_role(selected_slot_id)),
+		_get_item_stat_text(selected_data)
+	]
 	item_role_label.add_theme_color_override("font_color", EquipmentVisualCatalog.get_rarity_color(rarity_id))
 	signature_effect_label.text = "%s — %s\n%s" % [
 		tr("SIGNATURE"),
@@ -629,6 +644,63 @@ func _build_bonus_summary() -> String:
 	if exp_bonus != 0.0: parts.append("+%.0f%% EXP" % exp_bonus)
 	if crit_bonus != 0.0: parts.append("+%.0f%% CRIT" % crit_bonus)
 	return tr("NO ACTIVE LOADOUT BONUSES") if parts.is_empty() else "  •  ".join(parts)
+
+
+func _build_set_stage_title() -> String:
+	var set_state: Dictionary = _get_dominant_set_state()
+	var set_id: String = str(set_state.get("set_id", ""))
+	var piece_count: int = int(set_state.get("piece_count", 0))
+	if set_id.is_empty() or piece_count <= 0:
+		return tr("JADE LOADOUT")
+	return "%s  •  %d/5" % [
+		tr(EquipmentSetCatalog.get_display_name(set_id)),
+		piece_count
+	]
+
+
+func _get_equipped_item_ids() -> Array[String]:
+	var equipped_ids: Array[String] = []
+	for slot_id: String in SLOT_ORDER:
+		var item_id: String = EquipmentManager.get_equipped_item_id(slot_id)
+		if not item_id.is_empty():
+			equipped_ids.append(item_id)
+	return equipped_ids
+
+
+func _get_dominant_set_state() -> Dictionary:
+	return EquipmentSetCatalog.get_dominant_set_state(_get_equipped_item_ids())
+
+
+func _build_set_tooltip() -> String:
+	var set_state: Dictionary = _get_dominant_set_state()
+	var set_id: String = str(set_state.get("set_id", ""))
+	var piece_count: int = int(set_state.get("piece_count", 0))
+	if set_id.is_empty() or piece_count <= 0:
+		return tr("No equipment set is currently attuned.")
+
+	var equipped_ids: Array[String] = _get_equipped_item_ids()
+	var active_names: Array[String] = []
+	var missing_names: Array[String] = []
+
+	for item_id: String in EquipmentSetCatalog.get_active_piece_ids(set_id, equipped_ids):
+		var item_data: Dictionary = EquipmentManager.get_item_data(item_id)
+		active_names.append(str(item_data.get("display_name", item_id)))
+
+	for item_id: String in EquipmentSetCatalog.get_missing_piece_ids(set_id, equipped_ids):
+		var item_data: Dictionary = EquipmentManager.get_item_data(item_id)
+		missing_names.append(str(item_data.get("display_name", item_id)))
+
+	var active_text: String = ", ".join(active_names) if not active_names.is_empty() else tr("None")
+	var missing_text: String = ", ".join(missing_names) if not missing_names.is_empty() else tr("None")
+	return "%s  %d/5  •  %s\\n%s: %s\\n%s: %s" % [
+		tr(EquipmentSetCatalog.get_display_name(set_id)),
+		piece_count,
+		tr(EquipmentSetCatalog.get_resonance_label(piece_count)),
+		tr("ACTIVE"),
+		active_text,
+		tr("MISSING"),
+		missing_text
+	]
 
 func _get_equipped_count() -> int:
 	var count: int = 0
