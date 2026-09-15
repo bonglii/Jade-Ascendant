@@ -51,7 +51,6 @@ const ASCENSION_SCALABLE_STATS = [
 ]
 
 const EquipmentCatalog = preload("res://scripts/data/equipment_catalog.gd")
-const EquipmentSetCatalog = preload("res://scripts/data/equipment_set_catalog.gd")
 const EQUIPMENT_CATALOG: Dictionary = EquipmentCatalog.ITEMS
 
 var equipped_item_ids: Dictionary = {
@@ -378,51 +377,6 @@ func unequip_slot(slot_id: String) -> bool:
 	))
 	return true
 
-func _get_equipped_item_ids_for_set(
-	use_runtime: bool
-) -> Array[String]:
-	var item_ids: Array[String] = []
-	for slot_id in get_slot_ids():
-		var item_id: String = (
-			get_runtime_equipped_item_id(slot_id)
-			if use_runtime
-			else get_loadout_equipped_item_id(slot_id)
-		)
-		if not item_id.is_empty():
-			item_ids.append(item_id)
-	return item_ids
-
-
-func _get_equipment_set_bonuses(use_runtime: bool) -> Dictionary:
-	return EquipmentSetCatalog.get_active_gameplay_bonuses(
-		_get_equipped_item_ids_for_set(use_runtime)
-	)
-
-
-func get_loadout_equipment_set_bonuses() -> Dictionary:
-	return _get_equipment_set_bonuses(false).duplicate(true)
-
-
-func get_equipment_set_bonuses() -> Dictionary:
-	return _get_equipment_set_bonuses(
-		_should_use_active_run_loadout()
-	).duplicate(true)
-
-
-func get_loadout_equipment_set_bonus(stat_id: String) -> float:
-	return float(
-		_get_equipment_set_bonuses(false).get(stat_id, 0.0)
-	)
-
-
-func get_equipment_set_bonus(stat_id: String) -> float:
-	return float(
-		_get_equipment_set_bonuses(
-			_should_use_active_run_loadout()
-		).get(stat_id, 0.0)
-	)
-
-
 func _get_stat_total(stat_id: String, use_runtime: bool) -> float:
 	var total_bonus: float = 0.0
 	for slot_id in get_slot_ids():
@@ -432,11 +386,6 @@ func _get_stat_total(stat_id: String, use_runtime: bool) -> float:
 			else get_loadout_equipped_item_data(slot_id)
 		)
 		total_bonus += float(item_data.get(stat_id, 0.0))
-
-	# Set resonance is derived from the same loadout context as the item stats:
-	# NEXT RUN in hub screens, preserved ACTIVE RUN snapshot during gameplay.
-	var set_bonuses: Dictionary = _get_equipment_set_bonuses(use_runtime)
-	total_bonus += float(set_bonuses.get(stat_id, 0.0))
 	return total_bonus
 
 func get_loadout_total_max_health_bonus() -> float:
