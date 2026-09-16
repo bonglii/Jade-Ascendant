@@ -19,6 +19,7 @@ signal reward_rejected(
 
 const REWARD_KEY_SPIRIT_STONE: String = "spirit_stone"
 const REWARD_KEY_ITEMS: String = "items"
+const REWARD_KEY_HERO_EXP: String = "hero_exp"
 
 const SOURCE_STAGE_CLEAR: String = "stage_clear"
 const SOURCE_BOSS_DEFEAT: String = "boss_defeat"
@@ -33,6 +34,15 @@ const ChapterOneCatalog = preload("res://scripts/data/chapter_one_catalog.gd")
 const ChapterTwoCatalog = preload("res://scripts/data/chapter_two_catalog.gd")
 const ChapterThreeCatalog = preload("res://scripts/data/chapter_three_catalog.gd")
 
+## Permanent Lin Yue EXP is intentionally earned through trials rather than
+## purchased. First clears accelerate discovery; repeats remain useful.
+const HERO_EXP_FIRST_CLEAR_MULTIPLIER: float = 1.5
+const HERO_EXP_STAGE_BASE: Dictionary = {
+	1: [40, 50, 60, 70, 100],
+	2: [90, 110, 130, 150, 200],
+	3: [160, 190, 220, 260, 350]
+}
+
 ## Nilai first/repeat clear sengaja tetap mengikuti baseline lama.
 ## Nominal dapat dibedakan nanti tanpa mengubah flow VictoryManager.
 const DEFAULT_STAGE_CLEAR_REWARDS: Dictionary = {
@@ -46,20 +56,10 @@ const DEFAULT_STAGE_CLEAR_REWARDS: Dictionary = {
 	}
 }
 
-## Equipment is available outside Stage Clear progression. Chapter stages award
-## economy currency only; they must never inject equipment copies into Inventory.
-const STAGE_CLEAR_REWARD_CATALOG: Dictionary = {
-	"1-1": {
-		"first_clear": {
-			"spirit_stone": 100,
-			"items": {}
-		},
-		"repeat_clear": {
-			"spirit_stone": 100,
-			"items": {}
-		}
-	}
-}
+## Production stage rewards are owned by the chapter catalogs.
+## Keep this table only for deliberate exceptional overrides; an old Stage 1-1
+## override previously bypassed repeat_clear_shards from ChapterOneCatalog.
+const STAGE_CLEAR_REWARD_CATALOG: Dictionary = {}
 
 ## Boss source is registered for exact-once routing, but has no separate item
 ## payload. Stage completion owns each Chapter clear reward.
@@ -76,19 +76,22 @@ const GAME_OVER_REWARD_TIERS: Array = [
 		"id": "early_failure",
 		"min_wave": 2,
 		"max_wave": 3,
-		"spirit_stone": 10
+		"spirit_stone": 10,
+		"hero_exp": 5
 	},
 	{
 		"id": "mid_failure",
 		"min_wave": 4,
 		"max_wave": 6,
-		"spirit_stone": 20
+		"spirit_stone": 20,
+		"hero_exp": 10
 	},
 	{
 		"id": "late_failure",
 		"min_wave": 7,
 		"max_wave": 10,
-		"spirit_stone": 30
+		"spirit_stone": 30,
+		"hero_exp": 15
 	}
 ]
 
@@ -153,19 +156,39 @@ func get_default_stage_clear_reward(
 	)
 	return reward_data.duplicate(true)
 
+func get_stage_clear_hero_exp(
+	chapter_id: int,
+	stage_id: int,
+	was_first_clear: bool
+) -> int:
+	var chapter_values: Array = HERO_EXP_STAGE_BASE.get(chapter_id, [])
+	if stage_id <= 0 or stage_id > chapter_values.size():
+		return 0
+	var base_exp: int = maxi(int(chapter_values[stage_id - 1]), 0)
+	if was_first_clear:
+		return int(round(float(base_exp) * HERO_EXP_FIRST_CLEAR_MULTIPLIER))
+	return base_exp
+
 func get_stage_clear_reward(
 	chapter_id: int,
 	stage_id: int,
 	was_first_clear: bool
 ) -> Dictionary:
 	var stage_key := get_stage_reward_key(chapter_id, stage_id)
-	# Chapter catalogs are the source of truth for implemented stages. Keep the
-	# legacy stage reward table only as a fallback for non-catalog content.
-	if (
+	var clear_type: String = get_stage_clear_type(was_first_clear)
+	var stage_rewards: Dictionary = DEFAULT_STAGE_CLEAR_REWARDS
+	var reward_data: Dictionary = {}
+	if STAGE_CLEAR_REWARD_CATALOG.has(stage_key):
+		stage_rewards = STAGE_CLEAR_REWARD_CATALOG.get(
+			stage_key,
+			DEFAULT_STAGE_CLEAR_REWARDS
+		)
+		reward_data = stage_rewards.get(clear_type, {}).duplicate(true)
+	elif (
 		chapter_id == 1
 		and ChapterOneCatalog.STAGES.has(stage_id)
 	):
-		return _get_catalog_stage_clear_reward(
+		reward_data = _get_catalog_stage_clear_reward(
 			ChapterOneCatalog.get_stage(stage_id),
 			was_first_clear
 		)
@@ -173,7 +196,7 @@ func get_stage_clear_reward(
 		chapter_id == 2
 		and ChapterTwoCatalog.STAGES.has(stage_id)
 	):
-		return _get_catalog_stage_clear_reward(
+		reward_data = _get_catalog_stage_clear_reward(
 			ChapterTwoCatalog.get_stage(stage_id),
 			was_first_clear
 		)
@@ -181,19 +204,21 @@ func get_stage_clear_reward(
 		chapter_id == 3
 		and ChapterThreeCatalog.STAGES.has(stage_id)
 	):
-		return _get_catalog_stage_clear_reward(
+		reward_data = _get_catalog_stage_clear_reward(
 			ChapterThreeCatalog.get_stage(stage_id),
 			was_first_clear
 		)
-	var stage_rewards: Dictionary = DEFAULT_STAGE_CLEAR_REWARDS
-	if STAGE_CLEAR_REWARD_CATALOG.has(stage_key):
-		stage_rewards = STAGE_CLEAR_REWARD_CATALOG.get(
-			stage_key,
-			DEFAULT_STAGE_CLEAR_REWARDS
-		)
-	var clear_type := get_stage_clear_type(was_first_clear)
-	var reward_data: Dictionary = stage_rewards.get(clear_type, {})
-	return reward_data.duplicate(true)
+	else:
+		reward_data = stage_rewards.get(clear_type, {}).duplicate(true)
+
+	var hero_exp: int = get_stage_clear_hero_exp(
+		chapter_id,
+		stage_id,
+		was_first_clear
+	)
+	if hero_exp > 0:
+		reward_data[REWARD_KEY_HERO_EXP] = hero_exp
+	return reward_data
 
 func _get_catalog_stage_clear_reward(
 	stage_data: Dictionary,
@@ -234,6 +259,8 @@ func has_reward_payload(reward_data: Dictionary) -> bool:
 	)
 	if spirit_stone_amount > 0:
 		return true
+	if int(reward_data.get(REWARD_KEY_HERO_EXP, 0)) > 0:
+		return true
 	var raw_items = reward_data.get(REWARD_KEY_ITEMS, {})
 	if not raw_items is Dictionary:
 		return false
@@ -255,6 +282,13 @@ func get_reward_summary(
 	if spirit_stone_amount > 0:
 		summary_lines.append(
 			tr("%d Spirit Stone") % spirit_stone_amount
+		)
+	var hero_exp_amount: int = int(
+		reward_data.get(REWARD_KEY_HERO_EXP, 0)
+	)
+	if hero_exp_amount > 0:
+		summary_lines.append(
+			tr("%d HERO EXP") % hero_exp_amount
 		)
 
 	var raw_items = reward_data.get(REWARD_KEY_ITEMS, {})
@@ -298,21 +332,27 @@ func get_game_over_reward(wave: int) -> Dictionary:
 		if wave < minimum_wave or wave > maximum_wave:
 			continue
 		return create_reward_data(
-			int(tier_data.get(REWARD_KEY_SPIRIT_STONE, 0))
+			int(tier_data.get(REWARD_KEY_SPIRIT_STONE, 0)),
+			{},
+			int(tier_data.get(REWARD_KEY_HERO_EXP, 0))
 		)
 	return create_reward_data()
 
 func create_reward_data(
 	spirit_stone_amount: int = 0,
-	item_amounts: Dictionary = {}
+	item_amounts: Dictionary = {},
+	hero_exp_amount: int = 0
 ) -> Dictionary:
-	return {
+	var reward_data: Dictionary = {
 		REWARD_KEY_SPIRIT_STONE: maxi(
 			spirit_stone_amount,
 			0
 		),
 		REWARD_KEY_ITEMS: item_amounts.duplicate(true)
 	}
+	if hero_exp_amount > 0:
+		reward_data[REWARD_KEY_HERO_EXP] = hero_exp_amount
+	return reward_data
 
 func get_reward_validation_error(
 	source_type: String,
@@ -328,6 +368,11 @@ func get_reward_validation_error(
 	)
 	if spirit_stone_amount < 0:
 		return "Spirit Stone reward tidak boleh negatif"
+	var hero_exp_amount: int = int(
+		reward_data.get(REWARD_KEY_HERO_EXP, 0)
+	)
+	if hero_exp_amount < 0:
+		return "Hero EXP reward tidak boleh negatif"
 	var raw_items = reward_data.get(REWARD_KEY_ITEMS, {})
 	if not raw_items is Dictionary:
 		return "item reward harus berupa Dictionary"
@@ -342,7 +387,7 @@ func get_reward_validation_error(
 		if not InventoryManager.is_known_item(item_id):
 			return "item tidak dikenal: " + item_id
 		has_item_reward = true
-	if spirit_stone_amount <= 0 and not has_item_reward:
+	if spirit_stone_amount <= 0 and hero_exp_amount <= 0 and not has_item_reward:
 		return "reward tidak memiliki grant yang valid"
 	return ""
 
@@ -369,15 +414,21 @@ func grant_reward(
 	var normalized_reward: Dictionary = _normalize_reward_data(reward_data)
 	var item_rewards: Dictionary = normalized_reward.get(REWARD_KEY_ITEMS, {})
 	var spirit_stone_amount: int = int(normalized_reward.get(REWARD_KEY_SPIRIT_STONE, 0))
+	var hero_exp_amount: int = int(normalized_reward.get(REWARD_KEY_HERO_EXP, 0))
+	var previous_hero_total: int = ProgressionManager.hero_experience_total
 	var progression_data: Dictionary = ProgressionManager.build_progression_save_data()
 	progression_data["spirit_stone"] = int(progression_data["spirit_stone"]) + spirit_stone_amount
+	progression_data = ProgressionManager.preview_add_hero_experience(
+		progression_data,
+		hero_exp_amount
+	)
 	var counts: Dictionary = InventoryManager.preview_add_items(item_rewards)
 	var targets: Dictionary = additional_domains.duplicate(true)
 	targets["progression"] = progression_data
 	targets["inventory"] = {"version": 1, "item_counts": counts}
 	if not SaveManager.write_save_batch(targets):
 		return _reject_reward(source_type, source_id, "Reward could not be committed. Restart to recover any pending transaction.")
-	ProgressionManager.apply_progression_save_data(progression_data)
+	ProgressionManager.apply_progression_save_data(progression_data, true)
 	var previous_counts: Dictionary = InventoryManager.item_counts.duplicate(true)
 	InventoryManager.item_counts = counts
 	for raw_id in counts:
@@ -393,7 +444,15 @@ func grant_reward(
 		var delta: int = int(counts[raw_id]) - int(previous_counts.get(raw_id, 0))
 		if delta > 0:
 			applied_items[str(raw_id)] = delta
-	last_grant_result["applied_reward_data"] = create_reward_data(spirit_stone_amount, applied_items)
+	var applied_hero_exp: int = maxi(
+		ProgressionManager.hero_experience_total - previous_hero_total,
+		0
+	)
+	last_grant_result["applied_reward_data"] = create_reward_data(
+		spirit_stone_amount,
+		applied_items,
+		applied_hero_exp
+	)
 	reward_granted.emit(source_type, source_id, normalized_reward.duplicate(true))
 	AudioManager.play_sfx("claim")
 	return last_grant_result.duplicate(true)
@@ -425,12 +484,18 @@ func _normalize_reward_data(reward_data: Dictionary) -> Dictionary:
 		normalized_items[item_id] = int(
 			raw_items.get(raw_item_id, 0)
 		)
-	return {
+	var normalized: Dictionary = {
 		REWARD_KEY_SPIRIT_STONE: int(
 			reward_data.get(REWARD_KEY_SPIRIT_STONE, 0)
 		),
 		REWARD_KEY_ITEMS: normalized_items
 	}
+	var hero_exp_amount: int = int(
+		reward_data.get(REWARD_KEY_HERO_EXP, 0)
+	)
+	if hero_exp_amount > 0:
+		normalized[REWARD_KEY_HERO_EXP] = hero_exp_amount
+	return normalized
 
 func _reject_reward(
 	source_type: String,
@@ -478,4 +543,8 @@ func preview_received_reward(reward_data: Dictionary) -> Dictionary:
 		var amount: int = int(next_counts[raw_id]) - InventoryManager.get_item_count(str(raw_id))
 		if amount > 0:
 			received[str(raw_id)] = amount
-	return create_reward_data(int(reward_data.get(REWARD_KEY_SPIRIT_STONE, 0)), received)
+	return create_reward_data(
+		int(reward_data.get(REWARD_KEY_SPIRIT_STONE, 0)),
+		received,
+		int(reward_data.get(REWARD_KEY_HERO_EXP, 0))
+	)

@@ -23,6 +23,28 @@ const CheckpointData = preload("res://scripts/managers/checkpoint_manager.gd")
 @onready var exit_button: Button = %ExitButton
 @onready var key_art: TextureRect = %KeyArt
 @onready var home_ui: Control = %HomeUI
+@onready var profile_text_box: VBoxContainer = (
+	$HomeUI/TopBar/Row/Profile/ProfileContent/ProfileText
+)
+@onready var profile_path_label: Label = (
+	$HomeUI/TopBar/Row/Profile/ProfileContent/ProfileText/Path
+)
+@onready var profile_panel: PanelContainer = (
+	$HomeUI/TopBar/Row/Profile
+)
+@onready var profile_seal: TextureRect = (
+	$HomeUI/TopBar/Row/Profile/ProfileContent/ProfileSeal
+)
+
+var hero_level_label: Label = null
+var hero_level_bar: ProgressBar = null
+
+var profile_overlay: Control = null
+var profile_sheet_panel: PanelContainer = null
+var profile_sheet_body: VBoxContainer = null
+var profile_sheet_rank_label: Label = null
+var profile_sheet_level_label: Label = null
+var profile_sheet_exp_bar: ProgressBar = null
 
 func _ready() -> void:
 	continue_button.pressed.connect(_on_continue_pressed)
@@ -32,12 +54,17 @@ func _ready() -> void:
 	settings_button.pressed.connect(_on_settings_pressed)
 	exit_button.pressed.connect(_on_exit_pressed)
 	SceneTransitionManager.set_back_handler(handle_system_back)
+	_ensure_hero_level_profile()
+	_configure_profile_interaction()
+	_ensure_profile_sheet()
+	_ensure_hero_progression_initialized()
 	_refresh_home()
 	_configure_platform_ui()
 	call_deferred("_play_intro_animation")
 
 func _refresh_home() -> void:
 	spirit_stone_label.text = _format_amount(int(ProgressionManager.spirit_stone))
+	_refresh_hero_level_profile()
 	var chapter_id: int = JourneyManager.selected_chapter_id
 	var chapter: Dictionary = JourneyManager.get_chapter_data(chapter_id)
 	var progress: Dictionary = JourneyManager.get_chapter_progress(chapter_id)
@@ -51,18 +78,9 @@ func _refresh_home() -> void:
 	realm_progress_bar.value = float(clampi(cleared, 0, total))
 	realm_progress_label.text = tr("%d / %d COMPLETE") % [cleared, total]
 
-	if chapter_complete:
-		realm_status_label.text = tr("COMPLETED")
-		realm_status_label.add_theme_color_override("font_color", Color(1.0, 0.84, 0.40, 1.0))
-		home_hint_label.text = tr("CHAPTER COMPLETE  •  Revisit any trial in Journey")
-		journey_button.text = tr("SELECT CHAPTER")
-	else:
-		realm_status_label.text = tr("IN PROGRESS")
-		realm_status_label.add_theme_color_override("font_color", Color(0.48, 0.96, 0.83, 1.0))
-		home_hint_label.text = tr("%d / %d trials cleared  •  Your path to ascension") % [cleared, total]
-		journey_button.text = tr("ENTER JOURNEY")
-
 	var has_checkpoint: bool = _has_checkpoint()
+	_refresh_progress_guidance(chapter_id, cleared, total, chapter_complete, has_checkpoint)
+
 	continue_button.visible = has_checkpoint
 	continue_button.disabled = not has_checkpoint
 	continue_button.text = _get_continue_button_text() if has_checkpoint else "CONTINUE RUN"
@@ -78,6 +96,141 @@ func _refresh_home() -> void:
 		realm_status_label.add_theme_color_override("font_color", Color(1.0, 0.55, 0.45, 1.0))
 		home_hint_label.text = "A save needs recovery. Close and reopen the game before continuing."
 
+	if profile_overlay != null and profile_overlay.visible:
+		_refresh_profile_sheet()
+
+func _ensure_hero_progression_initialized() -> void:
+	if ProgressionManager.hero_progression_initialized:
+		return
+
+	# Saves created before this feature did not track repeat-clear history. Seed
+	# only known first clears, which is deterministic and cannot over-credit.
+	var historical_exp: int = 0
+	for chapter_id: int in range(1, 4):
+		var stage_ids: Array = JourneyManager.get_stage_ids(chapter_id)
+		for raw_stage_id: Variant in stage_ids:
+			var stage_id: int = int(raw_stage_id)
+			if not JourneyManager.is_stage_cleared(chapter_id, stage_id):
+				continue
+			historical_exp += RewardManager.get_stage_clear_hero_exp(
+				chapter_id,
+				stage_id,
+				true
+			)
+
+	if ProgressionManager.initialize_hero_progression(historical_exp):
+		DebugLogger.system(str(
+			"Lin Yue Hero Level initialized | Level: ",
+			ProgressionManager.get_hero_level(),
+			" | Historical EXP: ",
+			historical_exp
+		))
+
+func _ensure_hero_level_profile() -> void:
+	if hero_level_label != null and hero_level_bar != null:
+		return
+
+	hero_level_label = Label.new()
+	hero_level_label.name = "HeroLevelLabel"
+	hero_level_label.add_theme_font_size_override("font_size", 9)
+	hero_level_label.add_theme_color_override(
+		"font_color",
+		Color(1.0, 0.84, 0.46, 0.96)
+	)
+	profile_text_box.add_child(hero_level_label)
+
+	hero_level_bar = ProgressBar.new()
+	hero_level_bar.name = "HeroLevelBar"
+	hero_level_bar.custom_minimum_size = Vector2(0.0, 5.0)
+	hero_level_bar.show_percentage = false
+	hero_level_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var background := StyleBoxFlat.new()
+	background.bg_color = Color(0.002, 0.020, 0.026, 0.90)
+	background.corner_radius_top_left = 3
+	background.corner_radius_top_right = 3
+	background.corner_radius_bottom_left = 3
+	background.corner_radius_bottom_right = 3
+	hero_level_bar.add_theme_stylebox_override("background", background)
+
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = Color(0.20, 0.82, 0.68, 0.98)
+	fill.border_width_top = 1
+	fill.border_color = Color(0.96, 0.76, 0.30, 0.92)
+	fill.corner_radius_top_left = 3
+	fill.corner_radius_top_right = 3
+	fill.corner_radius_bottom_left = 3
+	fill.corner_radius_bottom_right = 3
+	hero_level_bar.add_theme_stylebox_override("fill", fill)
+	profile_text_box.add_child(hero_level_bar)
+
+func _refresh_hero_level_profile() -> void:
+	if hero_level_label == null or hero_level_bar == null:
+		return
+	var hero_level: int = ProgressionManager.get_hero_level()
+	profile_path_label.text = tr(ProgressionManager.get_hero_rank_title())
+	if hero_level >= ProgressionManager.HERO_MAX_LEVEL:
+		hero_level_label.text = "LV %02d  •  MAX" % hero_level
+		hero_level_bar.max_value = 1.0
+		hero_level_bar.value = 1.0
+		return
+	var current_exp: int = ProgressionManager.get_hero_current_level_experience()
+	var required_exp: int = ProgressionManager.get_hero_experience_to_next_level()
+	hero_level_label.text = "LV %02d  •  %d / %d EXP" % [
+		hero_level,
+		current_exp,
+		required_exp
+	]
+	hero_level_bar.max_value = float(maxi(required_exp, 1))
+	hero_level_bar.value = float(clampi(current_exp, 0, maxi(required_exp, 1)))
+
+func _refresh_progress_guidance(
+	chapter_id: int,
+	cleared: int,
+	total: int,
+	chapter_complete: bool,
+	has_checkpoint: bool
+) -> void:
+	# FTUE stays non-modal on Home. The battlefield tutorial teaches combat;
+	# Home only tells the player what the next meaningful action is.
+	if has_checkpoint:
+		realm_status_label.text = tr("IN PROGRESS")
+		realm_status_label.add_theme_color_override("font_color", Color(0.48, 0.96, 0.83, 1.0))
+		home_hint_label.text = tr("CONTINUE RUN") + "  •  " + tr("Your path to ascension")
+		journey_button.text = tr("ENTER JOURNEY")
+		return
+
+	if chapter_complete:
+		realm_status_label.text = tr("COMPLETED")
+		realm_status_label.add_theme_color_override("font_color", Color(1.0, 0.84, 0.40, 1.0))
+		home_hint_label.text = tr("CHAPTER COMPLETE  •  Revisit any trial in Journey")
+		journey_button.text = tr("SELECT CHAPTER")
+		return
+
+	realm_status_label.text = tr("IN PROGRESS")
+	realm_status_label.add_theme_color_override("font_color", Color(0.48, 0.96, 0.83, 1.0))
+
+	if cleared <= 0:
+		home_hint_label.text = tr("BEGIN TRIAL") + "  •  " + tr("Your path to ascension")
+		journey_button.text = tr("ENTER JOURNEY")
+		return
+
+	if chapter_id == 1 and cleared == 1:
+		# Stage 1-1 first clear is the cleanest moment to teach the permanent
+		# progression loop without another blocking tutorial popup.
+		home_hint_label.text = (
+			tr("CULTIVATION")
+			+ "  •  "
+			+ tr("Permanent upgrade • persists between journeys.")
+		)
+		journey_button.text = tr("ENTER JOURNEY")
+		return
+
+	home_hint_label.text = tr("%d / %d trials cleared  •  Your path to ascension") % [
+		cleared,
+		maxi(total, 1)
+	]
+	journey_button.text = tr("ENTER JOURNEY")
 
 func _refresh_quick_action_emphasis(daily_count: int, achievement_count: int) -> void:
 	var daily_color: Color = (
@@ -97,6 +250,9 @@ func _on_journey_pressed() -> void:
 	_open_hub_scene_fast(CHAPTER_SELECT_SCENE, "Journey")
 
 func handle_system_back() -> void:
+	if profile_overlay != null and profile_overlay.visible:
+		_close_profile_sheet()
+		return
 	if not SceneTransitionManager.is_transitioning:
 		get_tree().quit()
 
@@ -242,6 +398,721 @@ func _format_amount(value: int) -> String:
 		formatted = "," + digits.right(3) + formatted
 		digits = digits.left(digits.length() - 3)
 	return sign_prefix + digits + formatted
+
+func _configure_profile_interaction() -> void:
+	profile_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	profile_panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	profile_panel.tooltip_text = tr("Open Lin Yue profile")
+	for child: Node in profile_panel.get_children():
+		_set_profile_child_mouse_ignore(child)
+	if not profile_panel.gui_input.is_connected(_on_profile_gui_input):
+		profile_panel.gui_input.connect(_on_profile_gui_input)
+
+func _set_profile_child_mouse_ignore(node: Node) -> void:
+	if node is Control:
+		(node as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for child: Node in node.get_children():
+		_set_profile_child_mouse_ignore(child)
+
+func _on_profile_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+		if (
+			mouse_event.button_index == MOUSE_BUTTON_LEFT
+			and mouse_event.pressed
+		):
+			_open_profile_sheet()
+			accept_event()
+		return
+	if event is InputEventScreenTouch:
+		var touch_event := event as InputEventScreenTouch
+		if touch_event.pressed:
+			_open_profile_sheet()
+			accept_event()
+
+func _ensure_profile_sheet() -> void:
+	if profile_overlay != null:
+		return
+
+	profile_overlay = Control.new()
+	profile_overlay.name = "LinYueProfileOverlay"
+	profile_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	profile_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	profile_overlay.z_index = 300
+	profile_overlay.visible = false
+	add_child(profile_overlay)
+
+	var dim := ColorRect.new()
+	dim.name = "Dim"
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0.001, 0.008, 0.014, 0.88)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	dim.gui_input.connect(_on_profile_dim_gui_input)
+	profile_overlay.add_child(dim)
+
+	var outer_margin := MarginContainer.new()
+	outer_margin.name = "OuterMargin"
+	outer_margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	outer_margin.add_theme_constant_override("margin_left", 18)
+	outer_margin.add_theme_constant_override("margin_top", 24)
+	outer_margin.add_theme_constant_override("margin_right", 18)
+	outer_margin.add_theme_constant_override("margin_bottom", 24)
+	outer_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	profile_overlay.add_child(outer_margin)
+
+	var center := CenterContainer.new()
+	center.name = "Center"
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	outer_margin.add_child(center)
+
+	profile_sheet_panel = PanelContainer.new()
+	profile_sheet_panel.name = "ProfileSheet"
+	profile_sheet_panel.custom_minimum_size = Vector2(350.0, 720.0)
+	profile_sheet_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	profile_sheet_panel.add_theme_stylebox_override(
+		"panel",
+		_make_profile_style(
+			Color(0.003, 0.030, 0.040, 0.985),
+			Color(0.86, 0.65, 0.22, 0.92),
+			14,
+			2
+		)
+	)
+	center.add_child(profile_sheet_panel)
+
+	var margin := MarginContainer.new()
+	margin.name = "Margin"
+	margin.add_theme_constant_override("margin_left", 18)
+	margin.add_theme_constant_override("margin_top", 16)
+	margin.add_theme_constant_override("margin_right", 18)
+	margin.add_theme_constant_override("margin_bottom", 16)
+	profile_sheet_panel.add_child(margin)
+
+	var content := VBoxContainer.new()
+	content.name = "Content"
+	content.add_theme_constant_override("separation", 8)
+	margin.add_child(content)
+
+	var header := HBoxContainer.new()
+	header.name = "Header"
+	header.add_theme_constant_override("separation", 10)
+	content.add_child(header)
+
+	var seal := TextureRect.new()
+	seal.custom_minimum_size = Vector2(52.0, 52.0)
+	seal.texture = profile_seal.texture
+	seal.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	seal.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	seal.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	header.add_child(seal)
+
+	var header_text := VBoxContainer.new()
+	header_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header_text.add_theme_constant_override("separation", -1)
+	header.add_child(header_text)
+
+	var name_label := Label.new()
+	name_label.text = "LIN YUE"
+	name_label.theme_type_variation = &"JadeHeroName"
+	name_label.add_theme_font_size_override("font_size", 22)
+	name_label.add_theme_color_override(
+		"font_color",
+		Color(0.95, 1.0, 0.98, 1.0)
+	)
+	header_text.add_child(name_label)
+
+	profile_sheet_rank_label = Label.new()
+	profile_sheet_rank_label.theme_type_variation = &"JadeSubtitle"
+	profile_sheet_rank_label.add_theme_font_size_override("font_size", 11)
+	profile_sheet_rank_label.add_theme_color_override(
+		"font_color",
+		Color(0.58, 0.95, 0.86, 1.0)
+	)
+	header_text.add_child(profile_sheet_rank_label)
+
+	profile_sheet_level_label = Label.new()
+	profile_sheet_level_label.add_theme_font_size_override("font_size", 10)
+	profile_sheet_level_label.add_theme_color_override(
+		"font_color",
+		Color(1.0, 0.83, 0.43, 1.0)
+	)
+	header_text.add_child(profile_sheet_level_label)
+
+	var close_button := Button.new()
+	close_button.name = "CloseButton"
+	close_button.custom_minimum_size = Vector2(42.0, 42.0)
+	close_button.text = "×"
+	close_button.focus_mode = Control.FOCUS_NONE
+	close_button.add_theme_font_size_override("font_size", 20)
+	close_button.add_theme_color_override(
+		"font_color",
+		Color(0.83, 0.91, 0.89, 1.0)
+	)
+	close_button.add_theme_stylebox_override(
+		"normal",
+		_make_profile_style(
+			Color(0.008, 0.055, 0.064, 0.92),
+			Color(0.22, 0.59, 0.56, 0.62),
+			9,
+			1
+		)
+	)
+	close_button.add_theme_stylebox_override(
+		"hover",
+		_make_profile_style(
+			Color(0.018, 0.110, 0.105, 0.98),
+			Color(0.92, 0.72, 0.29, 0.92),
+			9,
+			1
+		)
+	)
+	close_button.add_theme_stylebox_override(
+		"pressed",
+		close_button.get_theme_stylebox("hover")
+	)
+	close_button.pressed.connect(_close_profile_sheet)
+	header.add_child(close_button)
+
+	profile_sheet_exp_bar = ProgressBar.new()
+	profile_sheet_exp_bar.custom_minimum_size = Vector2(0.0, 7.0)
+	profile_sheet_exp_bar.show_percentage = false
+	profile_sheet_exp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	profile_sheet_exp_bar.add_theme_stylebox_override(
+		"background",
+		_make_profile_style(
+			Color(0.001, 0.014, 0.020, 0.96),
+			Color(0.12, 0.42, 0.40, 0.60),
+			4,
+			1
+		)
+	)
+	profile_sheet_exp_bar.add_theme_stylebox_override(
+		"fill",
+		_make_profile_style(
+			Color(0.12, 0.77, 0.65, 0.98),
+			Color(0.92, 0.72, 0.28, 0.85),
+			4,
+			1
+		)
+	)
+	content.add_child(profile_sheet_exp_bar)
+
+	var eyebrow := Label.new()
+	eyebrow.text = tr("PERMANENT COMBAT PROFILE")
+	eyebrow.theme_type_variation = &"JadeSubtitle"
+	eyebrow.add_theme_font_size_override("font_size", 11)
+	eyebrow.add_theme_color_override(
+		"font_color",
+		Color(0.98, 0.80, 0.39, 1.0)
+	)
+	content.add_child(eyebrow)
+
+	var subtitle := Label.new()
+	subtitle.text = tr(
+		"Permanent stats • before run-only upgrades"
+	)
+	subtitle.theme_type_variation = &"JadeMutedLabel"
+	subtitle.add_theme_font_size_override("font_size", 10)
+	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content.add_child(subtitle)
+
+	var scroll := ScrollContainer.new()
+	scroll.name = "Scroll"
+	scroll.custom_minimum_size = Vector2(0.0, 555.0)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	content.add_child(scroll)
+
+	profile_sheet_body = VBoxContainer.new()
+	profile_sheet_body.name = "Body"
+	profile_sheet_body.custom_minimum_size = Vector2(304.0, 0.0)
+	profile_sheet_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	profile_sheet_body.add_theme_constant_override("separation", 7)
+	scroll.add_child(profile_sheet_body)
+
+func _make_profile_style(
+	background_color: Color,
+	border_color: Color,
+	radius: int,
+	border_width: int
+) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = background_color
+	style.border_width_left = border_width
+	style.border_width_top = border_width
+	style.border_width_right = border_width
+	style.border_width_bottom = border_width
+	style.border_color = border_color
+	style.corner_radius_top_left = radius
+	style.corner_radius_top_right = radius
+	style.corner_radius_bottom_left = radius
+	style.corner_radius_bottom_right = radius
+	return style
+
+func _on_profile_dim_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+		if (
+			mouse_event.button_index == MOUSE_BUTTON_LEFT
+			and mouse_event.pressed
+		):
+			_close_profile_sheet()
+		return
+	if event is InputEventScreenTouch:
+		var touch_event := event as InputEventScreenTouch
+		if touch_event.pressed:
+			_close_profile_sheet()
+
+func _open_profile_sheet() -> void:
+	_ensure_profile_sheet()
+	_refresh_profile_sheet()
+	profile_overlay.visible = true
+	if SettingsManager.reduced_effects:
+		profile_sheet_panel.modulate = Color.WHITE
+		profile_sheet_panel.scale = Vector2.ONE
+		return
+
+	profile_sheet_panel.pivot_offset = profile_sheet_panel.size * 0.5
+	profile_sheet_panel.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	profile_sheet_panel.scale = Vector2(0.97, 0.97)
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(
+		profile_sheet_panel,
+		"modulate",
+		Color.WHITE,
+		0.16
+	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(
+		profile_sheet_panel,
+		"scale",
+		Vector2.ONE,
+		0.18
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+func _close_profile_sheet() -> void:
+	if profile_overlay == null or not profile_overlay.visible:
+		return
+	profile_overlay.visible = false
+
+func _refresh_profile_sheet() -> void:
+	if profile_sheet_body == null:
+		return
+
+	var hero_level: int = ProgressionManager.get_hero_level()
+	profile_sheet_rank_label.text = tr(
+		ProgressionManager.get_hero_rank_title()
+	)
+	if hero_level >= ProgressionManager.HERO_MAX_LEVEL:
+		profile_sheet_level_label.text = "LV %02d  •  MAX" % hero_level
+		profile_sheet_exp_bar.max_value = 1.0
+		profile_sheet_exp_bar.value = 1.0
+	else:
+		var current_exp: int = (
+			ProgressionManager.get_hero_current_level_experience()
+		)
+		var required_exp: int = (
+			ProgressionManager.get_hero_experience_to_next_level()
+		)
+		profile_sheet_level_label.text = (
+			"LV %02d  •  %d / %d EXP"
+			% [hero_level, current_exp, required_exp]
+		)
+		profile_sheet_exp_bar.max_value = float(maxi(required_exp, 1))
+		profile_sheet_exp_bar.value = float(
+			clampi(current_exp, 0, maxi(required_exp, 1))
+		)
+
+	for child: Node in profile_sheet_body.get_children():
+		profile_sheet_body.remove_child(child)
+		child.queue_free()
+
+	if EquipmentManager.has_preserved_active_run_loadout():
+		_add_profile_notice(
+			tr("NEXT RUN PROFILE"),
+			tr(
+				"Continue keeps the loadout saved with the active checkpoint."
+			)
+		)
+
+	var stats: Dictionary = _build_permanent_profile_snapshot()
+	_add_profile_section_title(tr("CORE STATS"))
+	_add_profile_stat_row(
+		tr("MAX HP BONUS"),
+		"+%.0f" % float(stats["max_health_bonus"]),
+		tr("Vitality and permanent equipment.")
+	)
+	_add_profile_stat_row(
+		tr("DAMAGE BONUS"),
+		"+%.1f%%" % (float(stats["damage_bonus"]) * 100.0),
+		tr("Always-on damage before run upgrades.")
+	)
+	_add_profile_stat_row(
+		tr("ATTACK SPEED"),
+		"+%.1f%%" % (float(stats["attack_speed_bonus"]) * 100.0),
+		tr("Swift Qi and permanent cooldown effects.")
+	)
+	_add_profile_stat_row(
+		tr("MOVEMENT SPEED"),
+		"+%.1f%%" % (float(stats["movement_speed_bonus"]) * 100.0),
+		tr("Permanent movement bonus from equipment.")
+	)
+	_add_profile_stat_row(
+		tr("EXP GAIN"),
+		"+%.1f%%" % (float(stats["experience_bonus"]) * 100.0),
+		tr("Permanent bonus to Qi shard experience.")
+	)
+	_add_profile_stat_row(
+		tr("CRITICAL CHANCE"),
+		"+%.1f%%" % (float(stats["critical_chance"]) * 100.0),
+		tr("Permanent critical chance before Sword Intent.")
+	)
+	_add_profile_stat_row(
+		tr("CRITICAL DAMAGE"),
+		"%.0f%%" % (float(stats["critical_damage_multiplier"]) * 100.0),
+		tr("Damage dealt by a critical hit.")
+	)
+
+	var has_signature_stat: bool = _has_profile_signature_stat(stats)
+	if has_signature_stat:
+		_add_profile_section_title(tr("SIGNATURE EFFECTS"))
+		if float(stats["attack_cooldown_reduction"]) > 0.0001:
+			_add_profile_stat_row(
+				tr("COOLDOWN REDUCTION"),
+				"-%.1f%%" % (
+					float(stats["attack_cooldown_reduction"]) * 100.0
+				),
+				tr("Reduces weapon-art cooldown time.")
+			)
+		if float(stats["pickup_radius_bonus"]) > 0.0001:
+			_add_profile_stat_row(
+				tr("PICKUP RADIUS"),
+				"+%.0f px" % float(stats["pickup_radius_bonus"]),
+				tr("Qi shards begin following Lin Yue from farther away.")
+			)
+		if float(stats["starting_shield_charges"]) > 0.0001:
+			_add_profile_stat_row(
+				tr("STARTING QI SHIELD"),
+				"+%d" % int(round(float(stats["starting_shield_charges"]))),
+				tr("Fresh runs begin with this many shield charges.")
+			)
+		if float(stats["level_up_heal"]) > 0.0001:
+			_add_profile_stat_row(
+				tr("LEVEL-UP RECOVERY"),
+				"+%.1f HP" % float(stats["level_up_heal"]),
+				tr("Healing received whenever run level increases.")
+			)
+		if float(stats["blood_qi_heal_bonus"]) > 0.0001:
+			_add_profile_stat_row(
+				tr("BLOOD QI RECOVERY"),
+				"+%.2f HP" % float(stats["blood_qi_heal_bonus"]),
+				tr("Additional healing when Blood Qi triggers.")
+			)
+		if float(stats["moving_damage_bonus"]) > 0.0001:
+			_add_profile_stat_row(
+				tr("MOVING DAMAGE"),
+				"+%.1f%%" % (
+					float(stats["moving_damage_bonus"]) * 100.0
+				),
+				tr("Conditional bonus while Lin Yue is moving.")
+			)
+		if float(stats["low_health_damage_bonus"]) > 0.0001:
+			_add_profile_stat_row(
+				tr("LOW-HP DAMAGE"),
+				"+%.1f%%" % (
+					float(stats["low_health_damage_bonus"]) * 100.0
+				),
+				tr("Conditional bonus at or below 50% HP.")
+			)
+		if float(stats["low_health_critical_chance"]) > 0.0001:
+			_add_profile_stat_row(
+				tr("LOW-HP CRITICAL"),
+				"+%.1f%%" % (
+					float(stats["low_health_critical_chance"]) * 100.0
+				),
+				tr("Extra critical chance at or below 50% HP.")
+			)
+
+	_add_profile_section_title(tr("CULTIVATION"))
+	_add_profile_stat_row(
+		tr("VITALITY"),
+		"LV %d" % ProgressionManager.vitality_level,
+		tr("Raises permanent Max HP.")
+	)
+	_add_profile_stat_row(
+		tr("SWORD POWER"),
+		"LV %d" % ProgressionManager.sword_power_level,
+		tr("Raises permanent outgoing damage.")
+	)
+	_add_profile_stat_row(
+		tr("SWIFT QI"),
+		"LV %d" % ProgressionManager.swift_qi_level,
+		tr("Shortens base weapon-art cooldowns.")
+	)
+
+	_add_profile_section_title(tr("NEXT RUN LOADOUT"))
+	for slot_id: String in EquipmentManager.get_slot_ids():
+		_add_profile_equipment_row(slot_id)
+
+	_add_profile_notice(
+		tr("RUN-ONLY STATS EXCLUDED"),
+		tr(
+			"Power, Sword Intent, Body Refinement and other breakthrough upgrades reset each run."
+		)
+	)
+
+func _build_permanent_profile_snapshot() -> Dictionary:
+	# These coefficients mirror the audited runtime authorities:
+	# PlayerHealth health_per_vitality_level = 5.0,
+	# PlayerStats Sword Power = +10% per level,
+	# PlayerStats Swift Qi cooldown = x0.95 per level.
+	var vitality_bonus: float = (
+		float(ProgressionManager.vitality_level) * 5.0
+	)
+	var equipment_health: float = (
+		EquipmentManager.get_loadout_total_max_health_bonus()
+	)
+	var sword_power_multiplier: float = (
+		1.0
+		+ (float(ProgressionManager.sword_power_level) * 0.10)
+	)
+	var equipment_damage_multiplier: float = (
+		EquipmentManager.get_loadout_damage_multiplier()
+	)
+	var damage_bonus: float = maxf(
+		(sword_power_multiplier * equipment_damage_multiplier) - 1.0,
+		0.0
+	)
+
+	var swift_qi_cooldown_multiplier: float = pow(
+		0.95,
+		float(ProgressionManager.swift_qi_level)
+	)
+	var cooldown_reduction: float = (
+		EquipmentManager.get_loadout_secondary_bonus(
+			"attack_cooldown_reduction",
+			0.10
+		)
+	)
+	var equipment_cooldown_multiplier: float = maxf(
+		1.0 - cooldown_reduction,
+		0.50
+	)
+	var combined_cooldown_multiplier: float = maxf(
+		swift_qi_cooldown_multiplier
+		* equipment_cooldown_multiplier,
+		0.0001
+	)
+	var attack_speed_bonus: float = maxf(
+		(1.0 / combined_cooldown_multiplier) - 1.0,
+		0.0
+	)
+
+	return {
+		"max_health_bonus": vitality_bonus + equipment_health,
+		"damage_bonus": damage_bonus,
+		"attack_speed_bonus": attack_speed_bonus,
+		"movement_speed_bonus": maxf(
+			EquipmentManager.get_loadout_movement_speed_multiplier() - 1.0,
+			0.0
+		),
+		"experience_bonus": maxf(
+			EquipmentManager.get_loadout_experience_multiplier() - 1.0,
+			0.0
+		),
+		"critical_chance": EquipmentManager.get_loadout_critical_chance_bonus(),
+		"critical_damage_multiplier": (
+			2.0
+			+ EquipmentManager.get_loadout_secondary_bonus(
+				"critical_damage_bonus",
+				0.15
+			)
+		),
+		"attack_cooldown_reduction": cooldown_reduction,
+		"pickup_radius_bonus": EquipmentManager.get_loadout_secondary_bonus(
+			"pickup_radius_bonus",
+			72.0
+		),
+		"starting_shield_charges": EquipmentManager.get_loadout_secondary_bonus(
+			"starting_shield_charges",
+			1.0
+		),
+		"level_up_heal": EquipmentManager.get_loadout_secondary_bonus(
+			"level_up_heal_flat",
+			4.0
+		),
+		"blood_qi_heal_bonus": EquipmentManager.get_loadout_secondary_bonus(
+			"blood_qi_heal_bonus",
+			0.75
+		),
+		"moving_damage_bonus": EquipmentManager.get_loadout_secondary_bonus(
+			"moving_damage_bonus",
+			0.08
+		),
+		"low_health_damage_bonus": EquipmentManager.get_loadout_secondary_bonus(
+			"low_health_damage_bonus",
+			0.10
+		),
+		"low_health_critical_chance": (
+			EquipmentManager.get_loadout_secondary_bonus(
+				"low_health_critical_chance_bonus",
+				0.05
+			)
+		)
+	}
+
+func _has_profile_signature_stat(stats: Dictionary) -> bool:
+	for stat_id: String in [
+		"attack_cooldown_reduction",
+		"pickup_radius_bonus",
+		"starting_shield_charges",
+		"level_up_heal",
+		"blood_qi_heal_bonus",
+		"moving_damage_bonus",
+		"low_health_damage_bonus",
+		"low_health_critical_chance"
+	]:
+		if float(stats.get(stat_id, 0.0)) > 0.0001:
+			return true
+	return false
+
+func _add_profile_section_title(title: String) -> void:
+	var label := Label.new()
+	label.text = title
+	label.theme_type_variation = &"JadeSubtitle"
+	label.add_theme_font_size_override("font_size", 11)
+	label.add_theme_color_override(
+		"font_color",
+		Color(0.98, 0.80, 0.39, 1.0)
+	)
+	label.add_theme_constant_override("outline_size", 1)
+	label.add_theme_color_override(
+		"font_outline_color",
+		Color(0.0, 0.0, 0.0, 0.75)
+	)
+	profile_sheet_body.add_child(label)
+
+func _add_profile_stat_row(
+	stat_name: String,
+	value_text: String,
+	description: String
+) -> void:
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override(
+		"panel",
+		_make_profile_style(
+			Color(0.006, 0.047, 0.055, 0.88),
+			Color(0.12, 0.45, 0.42, 0.52),
+			8,
+			1
+		)
+	)
+	profile_sheet_body.add_child(panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_theme_constant_override("margin_top", 7)
+	margin.add_theme_constant_override("margin_right", 10)
+	margin.add_theme_constant_override("margin_bottom", 7)
+	panel.add_child(margin)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	margin.add_child(row)
+
+	var text_box := VBoxContainer.new()
+	text_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text_box.add_theme_constant_override("separation", 0)
+	row.add_child(text_box)
+
+	var name_label := Label.new()
+	name_label.text = stat_name
+	name_label.theme_type_variation = &"JadeSubtitle"
+	name_label.add_theme_font_size_override("font_size", 11)
+	name_label.add_theme_color_override(
+		"font_color",
+		Color(0.83, 0.95, 0.91, 1.0)
+	)
+	text_box.add_child(name_label)
+
+	var description_label := Label.new()
+	description_label.text = description
+	description_label.theme_type_variation = &"JadeMutedLabel"
+	description_label.add_theme_font_size_override("font_size", 9)
+	description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	text_box.add_child(description_label)
+
+	var value_label := Label.new()
+	value_label.custom_minimum_size = Vector2(74.0, 0.0)
+	value_label.text = value_text
+	value_label.theme_type_variation = &"JadeHeroName"
+	value_label.add_theme_font_size_override("font_size", 12)
+	value_label.add_theme_color_override(
+		"font_color",
+		Color(1.0, 0.84, 0.45, 1.0)
+	)
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(value_label)
+
+func _add_profile_equipment_row(slot_id: String) -> void:
+	var item_id: String = EquipmentManager.get_loadout_equipped_item_id(
+		slot_id
+	)
+	var item_text: String = tr("EMPTY")
+	var value_text: String = "—"
+	if not item_id.is_empty():
+		var item_data: Dictionary = EquipmentManager.get_item_data(item_id)
+		item_text = str(item_data.get("display_name", item_id))
+		value_text = "%d★" % EquipmentManager.get_loadout_item_star(item_id)
+
+	_add_profile_stat_row(
+		tr(slot_id.to_upper()),
+		value_text,
+		item_text
+	)
+
+func _add_profile_notice(title: String, body: String) -> void:
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override(
+		"panel",
+		_make_profile_style(
+			Color(0.055, 0.043, 0.014, 0.80),
+			Color(0.86, 0.65, 0.22, 0.72),
+			8,
+			1
+		)
+	)
+	profile_sheet_body.add_child(panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_theme_constant_override("margin_top", 8)
+	margin.add_theme_constant_override("margin_right", 10)
+	margin.add_theme_constant_override("margin_bottom", 8)
+	panel.add_child(margin)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 1)
+	margin.add_child(box)
+
+	var title_label := Label.new()
+	title_label.text = title
+	title_label.theme_type_variation = &"JadeSubtitle"
+	title_label.add_theme_font_size_override("font_size", 10)
+	title_label.add_theme_color_override(
+		"font_color",
+		Color(1.0, 0.84, 0.45, 1.0)
+	)
+	box.add_child(title_label)
+
+	var body_label := Label.new()
+	body_label.text = body
+	body_label.theme_type_variation = &"JadeMutedLabel"
+	body_label.add_theme_font_size_override("font_size", 9)
+	body_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(body_label)
 
 func _on_exit_pressed() -> void:
 	get_tree().quit()

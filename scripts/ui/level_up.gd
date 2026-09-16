@@ -318,6 +318,10 @@ func get_upgrade_state_label(upgrade_id: String) -> String:
 		var weapon: Variant = weapon_manager.get_weapon_by_name(weapon_name)
 		if weapon == null:
 			return "NEW ART"
+
+		var next_level: int = int(weapon.level) + 1
+		if _is_weapon_milestone(upgrade_id, next_level):
+			return "MILESTONE"
 		return "UPGRADE"
 
 	return "REFINE"
@@ -365,9 +369,9 @@ func get_upgrade_display_name(upgrade_id: String) -> String:
 func get_upgrade_description(upgrade_id: String) -> String:
 	match upgrade_id:
 		"spirit_sword":
-			return "Refine the flying sword that hunts nearby enemies."
+			return "Refine a flying sword art. Lv.5 manifests a second sword; Lv.7 gains pierce."
 		"fire_orb":
-			return "Strengthen the fire orb launched toward nearby targets."
+			return "Launch a heavy flame orb. Lv.3+ awakens Cinder Bloom splash around the impact."
 		"power":
 			return "Condense martial force to amplify all outgoing damage."
 		"attack_speed":
@@ -379,13 +383,13 @@ func get_upgrade_description(upgrade_id: String) -> String:
 		"qi_shield":
 			return "Form a protective qi layer that negates an incoming hit."
 		"thunder_talisman":
-			return "Command chained lightning through a thunder talisman."
+			return "Command chained lightning; higher milestones extend the arc to more enemies."
 		"yin_yang_blades":
-			return "Orbit paired blades around the cultivator to cut nearby foes."
+			return "Orbit Yin-Yang blades around Lin Yue; milestone levels add another spiritual blade."
 		"heavenly_sword_rain":
-			return "Call repeated sword strikes around a chosen enemy."
+			return "Call repeated heavenly sword strikes; levels increase strike count and impact radius."
 		"eight_trigrams_formation":
-			return "Manifest a pulsing formation that damages enemies within it."
+			return "Manifest a Bagua formation; each refinement improves damage, area, duration, or count."
 		"spiritual_insight":
 			return "Deepen comprehension to gain more experience from battle."
 		"iron_body":
@@ -403,11 +407,10 @@ func get_upgrade_description(upgrade_id: String) -> String:
 	return "Refine this cultivation path for the current run."
 
 func get_upgrade_effect(upgrade_id: String) -> String:
+	if WEAPON_UPGRADE_IDS.has(upgrade_id):
+		return _get_weapon_upgrade_effect(upgrade_id)
+
 	match upgrade_id:
-		"spirit_sword":
-			return "+5 BASE DAMAGE"
-		"fire_orb":
-			return "+10 BASE DAMAGE"
 		"power":
 			return "+10% DAMAGE POWER"
 		"attack_speed":
@@ -418,22 +421,6 @@ func get_upgrade_effect(upgrade_id: String) -> String:
 			return "+2 MAX HP • +2 HP"
 		"qi_shield":
 			return "+1 SHIELD CHARGE"
-		"thunder_talisman":
-			if _is_new_weapon(upgrade_id):
-				return "GAIN THUNDER TALISMAN"
-			return "+4 BASE DAMAGE • CHAIN MILESTONES"
-		"yin_yang_blades":
-			if _is_new_weapon(upgrade_id):
-				return "GAIN 2 ORBITING BLADES"
-			return "+3 BASE DAMAGE • BLADE MILESTONES"
-		"heavenly_sword_rain":
-			if _is_new_weapon(upgrade_id):
-				return "GAIN HEAVENLY SWORD RAIN"
-			return "+4 BASE DAMAGE • STRIKE MILESTONES"
-		"eight_trigrams_formation":
-			if _is_new_weapon(upgrade_id):
-				return "GAIN EIGHT TRIGRAMS FORMATION"
-			return "REFINE FORMATION BY LEVEL"
 		"spiritual_insight":
 			return "+15% EXP MULTIPLIER"
 		"iron_body":
@@ -449,6 +436,115 @@ func get_upgrade_effect(upgrade_id: String) -> String:
 		"heavenly_tribulation":
 			return "HEAVENLY LIGHTNING ON SWORD RAIN HIT"
 	return "RUN UPGRADE"
+
+func _get_weapon_upgrade_effect(upgrade_id: String) -> String:
+	if _is_new_weapon(upgrade_id):
+		match upgrade_id:
+			"fire_orb":
+				return "GAIN FIRE ORB • HEAVY FLAME SHOT"
+			"thunder_talisman":
+				return "GAIN THUNDER TALISMAN • 2 CHAINS"
+			"yin_yang_blades":
+				return "GAIN 2 ORBITING BLADES"
+			"heavenly_sword_rain":
+				return "GAIN SWORD RAIN • 2 STRIKES"
+			"eight_trigrams_formation":
+				return "GAIN FORMATION • 80 RADIUS"
+
+	var current_level: int = _get_current_weapon_level(upgrade_id)
+	var next_level: int = current_level + 1
+
+	match upgrade_id:
+		"spirit_sword":
+			if next_level == 5:
+				return "+5 DMG • SECOND SPIRIT SWORD"
+			if next_level == 7:
+				return "+5 DMG • +1 PIERCE"
+			return "+5 BASE DAMAGE"
+
+		"fire_orb":
+			if next_level == 3:
+				return "+10 DMG • CINDER BLOOM 48R / 30%"
+			if next_level == 5:
+				return "+10 DMG • BLOOM 60R / 35%"
+			if next_level == 7:
+				return "+10 DMG • BLOOM 72R / 40%"
+			return "+10 BASE DAMAGE"
+
+		"thunder_talisman":
+			if next_level == 3:
+				return "+4 DMG • 3 CHAIN HITS"
+			if next_level == 5:
+				return "+4 DMG • 4 CHAIN HITS"
+			if next_level == 7:
+				return "+4 DMG • 5 CHAIN HITS"
+			return "+4 BASE DAMAGE"
+
+		"yin_yang_blades":
+			if next_level == 3:
+				return "+3 DMG • 3 ORBITING BLADES"
+			if next_level == 5:
+				return "+3 DMG • 4 ORBITING BLADES"
+			if next_level == 7:
+				return "+3 DMG • 5 ORBITING BLADES"
+			return "+3 BASE DAMAGE"
+
+		"heavenly_sword_rain":
+			if next_level == 3:
+				return "+4 DMG • 3 STRIKES"
+			if next_level == 4:
+				return "+4 DMG • RADIUS 32 → 38"
+			if next_level == 5:
+				return "+4 DMG • 4 STRIKES"
+			if next_level == 6:
+				return "+4 DMG • RADIUS 38 → 44"
+			if next_level == 7:
+				return "+4 DMG • 5 STRIKES"
+			return "+4 BASE DAMAGE"
+
+		"eight_trigrams_formation":
+			match next_level:
+				2:
+					return "DAMAGE 8 → 11"
+				3:
+					return "RADIUS 80 → 96"
+				4:
+					return "DAMAGE 11 → 14"
+				5:
+					return "DURATION 4s → 5s"
+				6:
+					return "DAMAGE 14 → 18"
+				7:
+					return "1 → 2 FORMATIONS"
+
+	return "WEAPON REFINEMENT"
+
+func _get_current_weapon_level(upgrade_id: String) -> int:
+	var weapon_name: String = _get_weapon_name(upgrade_id)
+	if weapon_name.is_empty():
+		return 0
+
+	var weapon: Variant = weapon_manager.get_weapon_by_name(weapon_name)
+	if weapon == null:
+		return 0
+
+	return int(weapon.level)
+
+func _is_weapon_milestone(upgrade_id: String, next_level: int) -> bool:
+	match upgrade_id:
+		"spirit_sword":
+			return next_level == 5 or next_level == 7
+		"fire_orb":
+			return next_level == 3 or next_level == 5 or next_level == 7
+		"thunder_talisman":
+			return next_level == 3 or next_level == 5 or next_level == 7
+		"yin_yang_blades":
+			return next_level == 3 or next_level == 5 or next_level == 7
+		"heavenly_sword_rain":
+			return next_level == 3 or next_level == 5 or next_level == 7
+		"eight_trigrams_formation":
+			return next_level == 7
+	return false
 
 func get_upgrade_progress(upgrade_id: String) -> String:
 	if RESONANCE_UPGRADE_IDS.has(upgrade_id):
