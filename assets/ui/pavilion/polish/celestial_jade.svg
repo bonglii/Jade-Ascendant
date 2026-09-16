@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="jade" x1="24" y1="18" x2="102" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#b9fff1"/>
+      <stop offset="0.34" stop-color="#55e9ce"/>
+      <stop offset="0.72" stop-color="#28a9b7"/>
+      <stop offset="1" stop-color="#5768d7"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="38" y1="28" x2="90" y2="104" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f5fff9"/>
+      <stop offset="1" stop-color="#77f4df"/>
+    </linearGradient>
+  </defs>
+  <path d="M64 9 99 34 109 72 82 112 46 112 19 72 29 34Z" fill="#071d28" fill-opacity=".92" stroke="#d6b966" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M64 18 91 39 98 69 77 101 51 101 30 69 37 39Z" fill="url(#jade)" stroke="url(#edge)" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M64 18 64 101M37 39 91 39M30 69 98 69M37 39 64 69 91 39M30 69 51 101M98 69 77 101" fill="none" stroke="#e9fff8" stroke-opacity=".38" stroke-width="2"/>
+  <path d="M49 33 58 26 70 27 55 38Z" fill="#fff" fill-opacity=".62"/>
+  <circle cx="64" cy="65" r="6" fill="#f7e7a7" fill-opacity=".88"/>
+</svg>

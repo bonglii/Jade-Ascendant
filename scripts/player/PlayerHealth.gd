@@ -19,6 +19,7 @@ const BLOOD_QI_BASE_KILLS_REQUIRED: int = 20
 const BLOOD_QI_KILL_REDUCTION_PER_LEVEL: int = 2
 const BLOOD_QI_HEAL_AMOUNT: float = 1.0
 const BLOOD_QI_MAX_LEVEL: int = 5
+const EquipmentSetRuntime = preload("res://scripts/data/equipment_set_runtime.gd")
 
 @export var max_health: float = 10.0
 @export var health_per_vitality_level: float = 5.0
@@ -99,7 +100,10 @@ func _on_enemy_killed() -> void:
 
 	blood_qi_kill_progress = 0
 
-	heal(BLOOD_QI_HEAL_AMOUNT + EquipmentManager.get_secondary_bonus("blood_qi_heal_bonus", 0.75))
+	heal(BLOOD_QI_HEAL_AMOUNT + EquipmentSetRuntime.get_capped_combined_secondary_bonus(
+		"blood_qi_heal_bonus",
+		0.75
+	))
 
 	DebugLogger.progression(
 		"Blood Qi Recovery | HP: %.1f/%.1f"
@@ -118,10 +122,11 @@ func apply_permanent_vitality() -> void:
 
 	max_health += vitality_bonus
 
-## Menambahkan bonus Max HP dari equipment permanen.
+## Menambahkan bonus Max HP dari equipment permanen dan set resonance.
 func apply_equipment_max_health() -> void:
 	var equipment_bonus := (
 		EquipmentManager.get_total_max_health_bonus()
+		+ EquipmentSetRuntime.get_bonus("max_health_flat")
 	)
 	max_health += equipment_bonus
 	if equipment_bonus > 0.0:

@@ -4,6 +4,8 @@ signal enemy_defeated
 
 ## Enemy 2
 ## Ranged enemy yang mengejar Player sampai berada dalam jarak serang.
+## Chapter encounter profile dapat mengganti pola tembak tanpa menduplikasi
+## scene/script: default single shot, Crimson spread, Nine Heavens prediction.
 
 const XP_GEM: PackedScene = preload(
 	"res://scenes/pickups/xp_gem.tscn"
@@ -15,6 +17,7 @@ const ENEMY_PROJECTILE: PackedScene = preload(
 
 const CAST_VISUAL_DURATION: float = 0.6
 const FACING_SWITCH_DISTANCE: float = 12.0
+const PROJECTILE_AIM_DISTANCE: float = 900.0
 
 @export var speed: float = 60.0
 @export var max_hp: float = 20.0
@@ -34,6 +37,11 @@ var facing_left: bool = false
 var damage_reduction_sources: Dictionary = {}
 var projectile_sprite_frames: SpriteFrames = null
 
+var attack_pattern: StringName = &"single"
+var spread_angle_degrees: float = 12.0
+var predictive_lead_time: float = 0.30
+var pair_angle_degrees: float = 4.0
+
 func _ready() -> void:
 	CombatFeedback.register_actor(self)
 	current_hp = max_hp
@@ -44,6 +52,19 @@ func configure_encounter_presentation(entry: Dictionary) -> void:
 	var frames := entry.get("projectile_frames") as SpriteFrames
 	if frames != null:
 		projectile_sprite_frames = frames
+
+	attack_pattern = StringName(
+		str(entry.get("attack_pattern", attack_pattern))
+	)
+	spread_angle_degrees = float(
+		entry.get("spread_angle_degrees", spread_angle_degrees)
+	)
+	predictive_lead_time = float(
+		entry.get("predictive_lead_time", predictive_lead_time)
+	)
+	pair_angle_degrees = float(
+		entry.get("pair_angle_degrees", pair_angle_degrees)
+	)
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
@@ -181,11 +202,66 @@ func try_attack() -> void:
 	shoot_projectile()
 	attack_timer = attack_cooldown
 
-## Menembakkan projectile menuju posisi Player.
+## Menembakkan pola projectile berdasarkan identity chapter.
+## Chapter 1 tetap memakai single shot legacy.
 func shoot_projectile() -> void:
 	if player == null or not is_instance_valid(player):
 		return
 
+	match attack_pattern:
+		&"spread_three":
+			_shoot_spread_three()
+		&"predictive_pair":
+			_shoot_predictive_pair()
+		_:
+			_spawn_projectile_toward(player.global_position)
+
+## Crimson Moon: tiga talisman membentuk kipas yang memaksa sidestep.
+func _shoot_spread_three() -> void:
+	var base_direction: Vector2 = global_position.direction_to(
+		player.global_position
+	)
+	if base_direction == Vector2.ZERO:
+		base_direction = Vector2.RIGHT
+
+	for angle_degrees in [
+		-spread_angle_degrees,
+		0.0,
+		spread_angle_degrees,
+	]:
+		var shot_direction: Vector2 = base_direction.rotated(
+			deg_to_rad(angle_degrees)
+		)
+		_spawn_projectile_toward(
+			global_position + shot_direction * PROJECTILE_AIM_DISTANCE
+		)
+
+## Nine Heavens: dua astral shots memimpin gerakan Player sehingga sekadar
+## lari lurus tidak selalu cukup; celah di tengah tetap memberi counterplay.
+func _shoot_predictive_pair() -> void:
+	var predicted_position: Vector2 = (
+		player.global_position
+		+ player.velocity * predictive_lead_time
+	)
+	var base_direction: Vector2 = global_position.direction_to(
+		predicted_position
+	)
+	if base_direction == Vector2.ZERO:
+		base_direction = Vector2.RIGHT
+
+	for angle_degrees in [
+		-pair_angle_degrees,
+		pair_angle_degrees,
+	]:
+		var shot_direction: Vector2 = base_direction.rotated(
+			deg_to_rad(angle_degrees)
+		)
+		_spawn_projectile_toward(
+			global_position + shot_direction * PROJECTILE_AIM_DISTANCE
+		)
+
+## Membuat satu projectile menggunakan scene dan visual yang sudah terbukti.
+func _spawn_projectile_toward(target_position: Vector2) -> void:
 	var projectile: Node = ENEMY_PROJECTILE.instantiate()
 
 	if (
@@ -203,12 +279,12 @@ func shoot_projectile() -> void:
 		(projectile as Node2D).global_position = global_position
 
 	if projectile.has_method("setup"):
-		projectile.call(
-			"setup",
-			player.global_position
-		)
+		projectile.call("setup", target_position)
 
-	DebugLogger.system(str("ENEMY 2 PROJECTILE FIRED!"))
+	DebugLogger.combat(
+		"Enemy 2 Projectile | Pattern: %s"
+		% str(attack_pattern)
+	)
 
 ## Menambahkan sumber damage reduction.
 func add_damage_reduction_source(

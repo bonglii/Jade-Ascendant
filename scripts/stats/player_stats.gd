@@ -14,6 +14,7 @@ const SWIFT_QI_COOLDOWN_MULTIPLIER: float = 0.95
 const SWORD_INTENT_CRIT_CHANCE_PER_LEVEL: float = 0.05
 const SWORD_INTENT_CRIT_DAMAGE_MULTIPLIER: float = 2.0
 const SWORD_INTENT_MAX_LEVEL: int = 5
+const EquipmentSetRuntime = preload("res://scripts/data/equipment_set_runtime.gd")
 
 var power_level: int = 0
 var power_multiplier: float = 1.0
@@ -50,20 +51,24 @@ func calculate_damage(base_damage: float) -> float:
 func calculate_damage_result(
 	base_damage: float
 ) -> Dictionary:
+	var equipment_damage_multiplier: float = (
+		EquipmentManager.get_damage_multiplier()
+		+ EquipmentSetRuntime.get_bonus("damage_bonus")
+	)
 	var final_damage: float = (
 		base_damage
 		* power_multiplier
-		* EquipmentManager.get_damage_multiplier()
+		* equipment_damage_multiplier
 	)
 
 	var conditional_damage_bonus: float = 0.0
 	if _is_player_moving():
-		conditional_damage_bonus += EquipmentManager.get_secondary_bonus(
+		conditional_damage_bonus += EquipmentSetRuntime.get_capped_combined_secondary_bonus(
 			"moving_damage_bonus",
 			0.08
 		)
 	if _is_low_health():
-		conditional_damage_bonus += EquipmentManager.get_secondary_bonus(
+		conditional_damage_bonus += EquipmentSetRuntime.get_capped_combined_secondary_bonus(
 			"low_health_damage_bonus",
 			0.10
 		)
@@ -74,7 +79,10 @@ func calculate_damage_result(
 	if is_critical:
 		final_damage *= (
 			SWORD_INTENT_CRIT_DAMAGE_MULTIPLIER
-			+ EquipmentManager.get_secondary_bonus("critical_damage_bonus", 0.15)
+			+ EquipmentSetRuntime.get_capped_combined_secondary_bonus(
+				"critical_damage_bonus",
+				0.15
+			)
 		)
 
 		DebugLogger.combat(
@@ -106,9 +114,10 @@ func get_critical_chance() -> float:
 			* SWORD_INTENT_CRIT_CHANCE_PER_LEVEL
 		)
 		+ EquipmentManager.get_critical_chance_bonus()
+		+ EquipmentSetRuntime.get_bonus("critical_chance_bonus")
 	)
 	if _is_low_health():
-		critical_chance += EquipmentManager.get_secondary_bonus(
+		critical_chance += EquipmentSetRuntime.get_capped_combined_secondary_bonus(
 			"low_health_critical_chance_bonus",
 			0.05
 		)
@@ -292,4 +301,3 @@ func can_upgrade_attack_speed() -> bool:
 		attack_cooldown
 		> minimum_attack_cooldown + 0.0001
 	)
-

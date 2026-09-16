@@ -10,6 +10,8 @@ signal weapon_attack_triggered(
 	target_position: Vector2
 )
 
+const EquipmentSetRuntime = preload("res://scripts/data/equipment_set_runtime.gd")
+
 var weapons: Array[Weapon] = []
 var attack_timers: Dictionary = {}
 
@@ -207,7 +209,7 @@ func get_weapon_cooldown(weapon: Weapon) -> float:
 	if attack_cooldown <= 0.0:
 		return base_cooldown
 
-	var cooldown_reduction: float = EquipmentManager.get_secondary_bonus(
+	var cooldown_reduction: float = EquipmentSetRuntime.get_capped_combined_secondary_bonus(
 		"attack_cooldown_reduction",
 		0.10
 	)

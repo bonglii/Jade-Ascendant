@@ -24,6 +24,30 @@
     "loop": true
   },
   {
+    "file": "assets/audio/ambience_verdant_valley.ogg",
+    "seconds": 32.0,
+    "channels": 1,
+    "peak_dbfs": -10.5,
+    "origin": "Original deterministic synthesis",
+    "loop": true
+  },
+  {
+    "file": "assets/audio/ambience_crimson_moon.ogg",
+    "seconds": 32.0,
+    "channels": 1,
+    "peak_dbfs": -10.0,
+    "origin": "Original deterministic synthesis",
+    "loop": true
+  },
+  {
+    "file": "assets/audio/ambience_nine_heavens.ogg",
+    "seconds": 32.0,
+    "channels": 1,
+    "peak_dbfs": -11.0,
+    "origin": "Original deterministic synthesis",
+    "loop": true
+  },
+  {
     "file": "assets/audio/ui.wav",
     "seconds": 0.09,
     "channels": 1,

@@ -24,7 +24,7 @@ const ITEM_ICON_PATHS: Dictionary = {
 	"shadowstep_boots": "res://assets/ui/equipment/final/shadowstep_boots.png",
 	"starstep_boots": "res://assets/ui/equipment/final/starstep_boots.png",
 	"shrine_seal_pendant": "res://assets/ui/equipment/final/shrine_seal_pendant.png",
-	"sword_heart_pendant": "res://assets/ui/equipment/sword_heart_pendant.svg",
+	"sword_heart_pendant": "res://assets/ui/equipment/final/sword_heart_pendant.png",
 	"sovereign_mantle": "res://assets/ui/equipment/final/sovereign_mantle.png",
 	"tribulation_bracer": "res://assets/ui/equipment/final/tribulation_bracer.png",
 	"cloudtreader_boots": "res://assets/ui/equipment/final/cloudtreader_boots.png",

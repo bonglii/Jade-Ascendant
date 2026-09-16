@@ -1,10 +1,11 @@
 extends RefCounted
 
-## Chapter 3 — Nine Heavens Star Palace enemy presentation catalog.
+## Chapter 3 — Nine Heavens Star Palace encounter identity catalog.
 ##
-## Gameplay archetypes remain the proven enemy_1..enemy_6 and elite_1..elite_2
-## scenes/scripts. This catalog owns Chapter 3 names, dedicated SpriteFrames,
-## and presentation-only ability palette overrides.
+## The proven enemy_1..enemy_6 and elite_1..elite_2 scenes/scripts remain the
+## technical foundation. This catalog owns Chapter 3 art, names, ability
+## palettes, and behavior-profile deltas so the celestial roster plays
+## differently instead of being a pure visual reskin.
 
 const VISUAL_SET_ID: StringName = &"nine_heavens"
 
@@ -25,6 +26,9 @@ const ENEMIES: Dictionary = {
 			"res://assets/enemy/chapter3/enemy_2_astral_talisman_projectile_spriteframes.tres"
 		),
 		"presentation_theme": VISUAL_SET_ID,
+		"attack_pattern": &"predictive_pair",
+		"predictive_lead_time": 0.32,
+		"pair_angle_degrees": 5.0,
 		"art_ready": true,
 	},
 	3: {
@@ -32,6 +36,9 @@ const ENEMIES: Dictionary = {
 		"sprite_frames": preload(
 			"res://assets/enemy/chapter3/enemy_3_skybound_pursuer_spriteframes.tres"
 		),
+		"movement_pattern": &"sky_weave",
+		"weave_strength": 0.42,
+		"weave_frequency": 4.8,
 		"art_ready": true,
 	},
 	4: {
@@ -40,6 +47,8 @@ const ENEMIES: Dictionary = {
 			"res://assets/enemy/chapter3/enemy_4_constellation_array_adept_spriteframes.tres"
 		),
 		"presentation_theme": VISUAL_SET_ID,
+		"cast_pattern": &"constellation_ring",
+		"pattern_spacing": 78.0,
 		"art_ready": true,
 	},
 	5: {

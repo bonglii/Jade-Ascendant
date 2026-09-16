@@ -1,11 +1,10 @@
 extends RefCounted
 
-## Presentation grouping for the 25 permanent equipment items.
-## This catalog does NOT change equipment stats, rarity, ownership, save data, or balance.
-## Set gameplay bonuses are intentionally deferred to the later balance gate.
+## Presentation grouping and conservative gameplay resonance for the 25 permanent equipment items.
+## Gameplay bonuses are derived from equipped IDs only; no save fields are required.
 ##
-## Resonance tiers used by runtime presentation:
-## 0-1 pieces: no set aura
+## Resonance tiers used by runtime presentation and gameplay:
+## 0-1 pieces: no set aura / no gameplay bonus
 ## 2 pieces: awakened trace
 ## 3 pieces: stable resonance
 ## 4 pieces: strong resonance
@@ -72,6 +71,47 @@ const SETS: Dictionary = {
 	}
 }
 
+# Each tier is incremental. A 5-piece set receives the 2/3/4/5 bonuses combined.
+# Values stay intentionally small because individual equipment already contributes stats.
+const GAMEPLAY_TIERS: Dictionary = {
+	"verdant_wanderer": {
+		2: {"max_health_flat": 4.0},
+		3: {"movement_speed_bonus": 0.02},
+		4: {"blood_qi_heal_bonus": 0.10},
+		5: {"level_up_heal_flat": 0.75}
+	},
+	"mistbound_disciple": {
+		2: {"movement_speed_bonus": 0.02},
+		3: {"attack_cooldown_reduction": 0.02},
+		4: {"moving_damage_bonus": 0.02},
+		5: {
+			"movement_speed_bonus": 0.01,
+			"attack_cooldown_reduction": 0.01
+		}
+	},
+	"moon_seal": {
+		2: {"experience_bonus": 0.025},
+		3: {"critical_chance_bonus": 0.01},
+		4: {"level_up_heal_flat": 0.50},
+		5: {
+			"experience_bonus": 0.015,
+			"critical_chance_bonus": 0.005
+		}
+	},
+	"crimson_shadow": {
+		2: {"damage_bonus": 0.015},
+		3: {"low_health_damage_bonus": 0.03},
+		4: {"low_health_critical_chance_bonus": 0.015},
+		5: {"critical_damage_bonus": 0.06}
+	},
+	"nine_heavens": {
+		2: {"damage_bonus": 0.01},
+		3: {"attack_cooldown_reduction": 0.015},
+		4: {"critical_chance_bonus": 0.0075},
+		5: {"experience_bonus": 0.02}
+	}
+}
+
 static func get_set_data(set_id: String) -> Dictionary:
 	if not SETS.has(set_id):
 		return {}
@@ -118,7 +158,6 @@ static func get_set_id_for_item(item_id: String) -> String:
 			return set_id
 	return ""
 
-
 static func get_piece_ids(set_id: String) -> Array[String]:
 	var result: Array[String] = []
 	var set_data: Dictionary = get_set_data(set_id)
@@ -126,7 +165,6 @@ static func get_piece_ids(set_id: String) -> Array[String]:
 	for raw_item_id in raw_items:
 		result.append(str(raw_item_id))
 	return result
-
 
 static func get_active_piece_ids(
 	set_id: String,
@@ -138,7 +176,6 @@ static func get_active_piece_ids(
 			result.append(item_id)
 	return result
 
-
 static func get_missing_piece_ids(
 	set_id: String,
 	equipped_item_ids: Array[String]
@@ -148,7 +185,6 @@ static func get_missing_piece_ids(
 		if not equipped_item_ids.has(item_id):
 			result.append(item_id)
 	return result
-
 
 static func get_resonance_label(piece_count: int) -> String:
 	match clampi(piece_count, 0, 5):
@@ -165,3 +201,23 @@ static func get_resonance_label(piece_count: int) -> String:
 		_:
 			return "NO RESONANCE"
 
+static func get_gameplay_bonus(
+	stat_id: String,
+	equipped_item_ids: Array[String]
+) -> float:
+	# Gameplay follows the same dominant-set identity used by presentation. This
+	# avoids hidden 2+2 stacking when the UI/VFX only communicates one resonance.
+	var state: Dictionary = get_dominant_set_state(equipped_item_ids)
+	var set_id: String = str(state.get("set_id", ""))
+	var piece_count: int = int(state.get("piece_count", 0))
+	if set_id.is_empty() or piece_count < 2:
+		return 0.0
+
+	var total: float = 0.0
+	var set_tiers: Dictionary = GAMEPLAY_TIERS.get(set_id, {})
+	for tier: int in [2, 3, 4, 5]:
+		if piece_count < tier:
+			break
+		var tier_data: Dictionary = set_tiers.get(tier, {})
+		total += float(tier_data.get(stat_id, 0.0))
+	return total

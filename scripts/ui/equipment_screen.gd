@@ -18,6 +18,15 @@ const SLOT_ORDER: Array[String] = [
 	"boots"
 ]
 
+const FILTER_ALL: String = "all"
+const FILTER_OWNED: String = "owned"
+const FILTER_MISSING: String = "missing"
+const FILTER_ORDER: Array[String] = [
+	FILTER_ALL,
+	FILTER_OWNED,
+	FILTER_MISSING
+]
+
 const COMPARISON_KEYS: Array[String] = [
 	"max_health_flat",
 	"damage_bonus",
@@ -59,6 +68,7 @@ const COMPARISON_KEYS: Array[String] = [
 @onready var ascend_button: Button = %AscendButton
 @onready var ascend_hint_label: Label = %AscendHintLabel
 @onready var compare_label: Label = %CompareLabel
+@onready var candidate_scroll: ScrollContainer = %CandidateScroll
 @onready var candidate_grid: GridContainer = %CandidateGrid
 @onready var action_button: Button = %ActionButton
 @onready var action_hint_label: Label = %ActionHintLabel
@@ -72,6 +82,10 @@ const COMPARISON_KEYS: Array[String] = [
 var selected_slot_id: String = "robe"
 var selected_item_id: String = ""
 var detail_open: bool = false
+var active_collection_filter: String = FILTER_OWNED
+var collection_filter_buttons: Dictionary = {}
+var collection_filter_count_label: Label
+var collection_filter_empty_label: Label
 
 func _ready() -> void:
 	SceneTransitionManager.set_back_handler(handle_system_back)
@@ -92,11 +106,142 @@ func _ready() -> void:
 		EquipmentManager.equipment_ascended.connect(_on_equipment_ascended)
 	selected_item_icon.custom_minimum_size = Vector2(90.0, 90.0)
 	_setup_hero_showcase()
+	_setup_collection_filter()
 	bonus_summary_label.clip_text = true
 	bonus_summary_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	_refresh_screen()
 	detail_panel.visible = detail_open
 	DebugLogger.system(str("Hero Equipment Hub aktif!"))
+
+
+func _setup_collection_filter() -> void:
+	var collection_vbox: VBoxContainer = candidate_scroll.get_parent() as VBoxContainer
+	if collection_vbox == null:
+		push_error("HeroEquipment: CollectionVBox tidak ditemukan untuk ownership filter.")
+		return
+
+	var filter_bar := HBoxContainer.new()
+	filter_bar.name = "CollectionFilterBar"
+	filter_bar.custom_minimum_size = Vector2(0.0, 34.0)
+	filter_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	filter_bar.add_theme_constant_override("separation", 6)
+	collection_vbox.add_child(filter_bar)
+	collection_vbox.move_child(filter_bar, candidate_scroll.get_index())
+
+	for filter_id: String in FILTER_ORDER:
+		var button := Button.new()
+		button.name = "Filter_" + filter_id
+		button.custom_minimum_size = Vector2(82.0, 32.0)
+		button.toggle_mode = true
+		button.focus_mode = Control.FOCUS_NONE
+		button.text = tr(filter_id.to_upper())
+		button.add_theme_font_size_override("font_size", 10)
+		button.pressed.connect(_on_collection_filter_pressed.bind(filter_id))
+		filter_bar.add_child(button)
+		collection_filter_buttons[filter_id] = button
+
+	var spacer := Control.new()
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	filter_bar.add_child(spacer)
+
+	collection_filter_count_label = Label.new()
+	collection_filter_count_label.name = "CollectionOwnedCount"
+	collection_filter_count_label.custom_minimum_size = Vector2(118.0, 32.0)
+	collection_filter_count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	collection_filter_count_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	collection_filter_count_label.add_theme_font_size_override("font_size", 10)
+	collection_filter_count_label.add_theme_color_override("font_color", Color(0.70, 0.91, 0.87, 0.96))
+	collection_filter_count_label.add_theme_constant_override("outline_size", 2)
+	collection_filter_count_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.78))
+	filter_bar.add_child(collection_filter_count_label)
+
+	collection_filter_empty_label = Label.new()
+	collection_filter_empty_label.name = "CollectionFilterEmpty"
+	collection_filter_empty_label.custom_minimum_size = Vector2(0.0, 52.0)
+	collection_filter_empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	collection_filter_empty_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	collection_filter_empty_label.add_theme_font_size_override("font_size", 11)
+	collection_filter_empty_label.add_theme_color_override("font_color", Color(0.60, 0.79, 0.77, 0.90))
+	collection_filter_empty_label.add_theme_constant_override("outline_size", 2)
+	collection_filter_empty_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.82))
+	collection_filter_empty_label.visible = false
+	collection_vbox.add_child(collection_filter_empty_label)
+	collection_vbox.move_child(collection_filter_empty_label, candidate_scroll.get_index())
+
+	# The ownership view is the useful default. Brand-new profiles without any
+	# equipment fall back to ALL so the collection never opens as a blank panel.
+	if _get_owned_equipment_count() <= 0:
+		active_collection_filter = FILTER_ALL
+
+
+func _refresh_collection_filter() -> void:
+	if collection_filter_buttons.is_empty():
+		return
+
+	var all_item_ids: Array[String] = _get_all_equipment_item_ids()
+	var owned_count: int = _get_owned_equipment_count()
+	collection_filter_count_label.text = tr("OWNED %d / %d") % [owned_count, all_item_ids.size()]
+
+	for filter_id: String in FILTER_ORDER:
+		var button: Button = collection_filter_buttons.get(filter_id) as Button
+		if button == null:
+			continue
+		var is_active: bool = filter_id == active_collection_filter
+		button.button_pressed = is_active
+		button.add_theme_stylebox_override("normal", _make_collection_filter_style(is_active, false))
+		button.add_theme_stylebox_override("hover", _make_collection_filter_style(is_active, true))
+		button.add_theme_stylebox_override("pressed", _make_collection_filter_style(true, true))
+		button.add_theme_stylebox_override("focus", _make_collection_filter_style(true, true))
+		var font_color: Color = Color(1.0, 0.84, 0.42, 1.0) if is_active else Color(0.69, 0.86, 0.84, 0.92)
+		button.add_theme_color_override("font_color", font_color)
+		button.add_theme_color_override("font_hover_color", Color(0.92, 1.0, 0.96, 1.0))
+		button.add_theme_color_override("font_pressed_color", Color(1.0, 0.86, 0.45, 1.0))
+
+	var filtered_count: int = _get_filtered_equipment_item_ids().size()
+	var has_results: bool = filtered_count > 0
+	candidate_scroll.visible = has_results
+	collection_filter_empty_label.visible = not has_results
+	if has_results:
+		return
+	match active_collection_filter:
+		FILTER_OWNED:
+			collection_filter_empty_label.text = tr("NO OWNED EQUIPMENT YET")
+		FILTER_MISSING:
+			collection_filter_empty_label.text = tr("COLLECTION COMPLETE")
+		_:
+			collection_filter_empty_label.text = tr("NO EQUIPMENT FOUND")
+
+
+func _make_collection_filter_style(active: bool, hovered: bool) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = (
+		Color(0.020, 0.145, 0.135, 0.98)
+		if active
+		else Color(0.003, 0.030, 0.044, 0.94)
+	)
+	if hovered:
+		style.bg_color = style.bg_color.lightened(0.08)
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 2
+	style.border_color = (
+		Color(0.96, 0.75, 0.27, 0.92)
+		if active
+		else Color(0.24, 0.70, 0.63, 0.46)
+	)
+	style.corner_radius_top_left = 9
+	style.corner_radius_top_right = 9
+	style.corner_radius_bottom_left = 9
+	style.corner_radius_bottom_right = 9
+	style.content_margin_left = 8.0
+	style.content_margin_top = 4.0
+	style.content_margin_right = 8.0
+	style.content_margin_bottom = 5.0
+	style.shadow_color = Color(0.12, 0.85, 0.77, 0.16 if active else 0.06)
+	style.shadow_size = 5 if active else 2
+	return style
 
 
 func _setup_hero_showcase() -> void:
@@ -170,6 +315,7 @@ func _refresh_screen() -> void:
 	_refresh_slot_button(pendant_button, "pendant")
 	_refresh_slot_button(boots_button, "boots")
 	_validate_selected_item()
+	_refresh_collection_filter()
 	_rebuild_candidate_grid()
 	_refresh_detail_panel(can_modify)
 	detail_panel.visible = detail_open
@@ -217,10 +363,34 @@ func _get_all_equipment_item_ids() -> Array[String]:
 				result.append(item_id)
 	return result
 
+func _get_owned_equipment_count() -> int:
+	var owned_count: int = 0
+	for item_id: String in _get_all_equipment_item_ids():
+		if InventoryManager.owns_item(item_id):
+			owned_count += 1
+	return owned_count
+
+func _item_matches_collection_filter(item_id: String, filter_id: String) -> bool:
+	var owned: bool = InventoryManager.owns_item(item_id)
+	match filter_id:
+		FILTER_OWNED:
+			return owned
+		FILTER_MISSING:
+			return not owned
+		_:
+			return true
+
+func _get_filtered_equipment_item_ids() -> Array[String]:
+	var filtered_ids: Array[String] = []
+	for item_id: String in _get_all_equipment_item_ids():
+		if _item_matches_collection_filter(item_id, active_collection_filter):
+			filtered_ids.append(item_id)
+	return filtered_ids
+
 func _rebuild_candidate_grid() -> void:
 	for child: Node in candidate_grid.get_children():
 		child.queue_free()
-	for item_id: String in _get_all_equipment_item_ids():
+	for item_id: String in _get_filtered_equipment_item_ids():
 		candidate_grid.add_child(_create_candidate_button(item_id))
 
 func _create_candidate_button(item_id: String) -> Button:
@@ -728,6 +898,18 @@ func _get_equipped_count() -> int:
 
 func _get_item_stat_text(item_data: Dictionary) -> String:
 	return EquipmentVisualCatalog.get_stat_summary(item_data)
+
+func _on_collection_filter_pressed(filter_id: String) -> void:
+	if not FILTER_ORDER.has(filter_id):
+		return
+	active_collection_filter = filter_id
+	if (
+		not selected_item_id.is_empty()
+		and not _item_matches_collection_filter(selected_item_id, active_collection_filter)
+	):
+		selected_item_id = ""
+		detail_open = false
+	_refresh_screen()
 
 func _on_slot_pressed(slot_id: String) -> void:
 	if not SLOT_ORDER.has(slot_id): return

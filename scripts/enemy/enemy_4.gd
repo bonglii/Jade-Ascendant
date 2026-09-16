@@ -3,9 +3,9 @@ extends CharacterBody2D
 signal enemy_defeated
 
 ## Enemy 4 — Qi Caster
-## Ranged area-denial enemy yang mendekati Player,
-## mengunci posisi Player ketika cast dimulai,
-## lalu membuat telegraph pada posisi target tersebut.
+## Ranged area-denial enemy that locks Player position at cast start.
+## Chapter encounter profiles can reshape the telegraph layout while keeping
+## the proven explosion scene, timing, collision, and damage pipeline.
 
 const XP_GEM: PackedScene = preload(
 	"res://scenes/pickups/xp_gem.tscn"
@@ -34,6 +34,8 @@ var cast_target_position: Vector2 = Vector2.ZERO
 var facing_left: bool = true
 var damage_reduction_sources: Dictionary = {}
 var presentation_theme: StringName = &"verdant_qi"
+var cast_pattern: StringName = &"single"
+var pattern_spacing: float = 72.0
 
 @onready var player: CharacterBody2D = (
 	get_tree().get_first_node_in_group("player")
@@ -51,6 +53,13 @@ func _ready() -> void:
 func configure_encounter_presentation(entry: Dictionary) -> void:
 	presentation_theme = StringName(
 		str(entry.get("presentation_theme", presentation_theme))
+	)
+	cast_pattern = StringName(
+		str(entry.get("cast_pattern", cast_pattern))
+	)
+	pattern_spacing = maxf(
+		float(entry.get("pattern_spacing", pattern_spacing)),
+		explosion_radius * 1.25
 	)
 
 func _physics_process(delta: float) -> void:
@@ -252,12 +261,57 @@ func begin_cast() -> void:
 	spawn_telegraph()
 
 	DebugLogger.combat(
-		"Qi Caster Cast Start | Target: %s"
-		% str(cast_target_position)
+		"Qi Caster Cast Start | Pattern: %s | Target: %s"
+		% [str(cast_pattern), str(cast_target_position)]
 	)
 
-## Membuat Qi Explosion pada posisi target yang telah dikunci.
+## Membuat telegraph layout sesuai identity chapter.
+## Chapter 1: single target.
+## Crimson Moon: tiga segel melintang memotong jalur gerak.
+## Nine Heavens: empat constellation seals mengurung target dengan safe center.
 func spawn_telegraph() -> void:
+	match cast_pattern:
+		&"scarlet_trident":
+			_spawn_scarlet_trident()
+		&"constellation_ring":
+			_spawn_constellation_ring()
+		_:
+			_spawn_qi_explosion_at(cast_target_position)
+
+func _spawn_scarlet_trident() -> void:
+	var forward: Vector2 = global_position.direction_to(cast_target_position)
+	if forward == Vector2.ZERO:
+		forward = Vector2.RIGHT
+	var perpendicular := Vector2(-forward.y, forward.x)
+
+	_spawn_qi_explosion_at(cast_target_position)
+	_spawn_qi_explosion_at(
+		cast_target_position + perpendicular * pattern_spacing
+	)
+	_spawn_qi_explosion_at(
+		cast_target_position - perpendicular * pattern_spacing
+	)
+
+func _spawn_constellation_ring() -> void:
+	var base_direction: Vector2 = global_position.direction_to(
+		cast_target_position
+	)
+	if base_direction == Vector2.ZERO:
+		base_direction = Vector2.RIGHT
+
+	## Rotate by 45 degrees so the formation reads as a celestial diamond,
+	## not the same horizontal/vertical shape as Crimson Moon.
+	base_direction = base_direction.rotated(PI * 0.25)
+
+	for quarter_turn in range(4):
+		var offset_direction: Vector2 = base_direction.rotated(
+			float(quarter_turn) * PI * 0.5
+		)
+		_spawn_qi_explosion_at(
+			cast_target_position + offset_direction * pattern_spacing
+		)
+
+func _spawn_qi_explosion_at(target_position: Vector2) -> void:
 	var qi_explosion: QiExplosion = (
 		QI_EXPLOSION.instantiate()
 		as QiExplosion
@@ -281,7 +335,7 @@ func spawn_telegraph() -> void:
 		return
 
 	current_scene.add_child(qi_explosion)
-	qi_explosion.global_position = cast_target_position
+	qi_explosion.global_position = target_position
 
 ## Mengelola durasi cast sebelum serangan selesai.
 func update_cast(delta: float) -> void:

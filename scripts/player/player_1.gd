@@ -9,6 +9,7 @@ signal level_changed(new_level: int)
 const MOVEMENT_SPEED_MULTIPLIER: float = 1.10
 const SPIRITUAL_INSIGHT_BONUS: float = 0.15
 const SPIRITUAL_INSIGHT_MAX_LEVEL: int = 5
+const EquipmentSetRuntime = preload("res://scripts/data/equipment_set_runtime.gd")
 
 @export var speed: float = 200.0
 
@@ -47,9 +48,10 @@ func _physics_process(_delta: float) -> void:
 	update_animation(direction)
 
 func get_effective_movement_speed() -> float:
+	var set_bonus: float = EquipmentSetRuntime.get_bonus("movement_speed_bonus")
 	return (
 		speed
-		* EquipmentManager.get_movement_speed_multiplier()
+		* (EquipmentManager.get_movement_speed_multiplier() + set_bonus)
 	)
 
 func update_facing(direction: Vector2) -> void:
@@ -147,9 +149,10 @@ func get_experience_multiplier() -> float:
 			* SPIRITUAL_INSIGHT_BONUS
 		)
 	)
+	var set_bonus: float = EquipmentSetRuntime.get_bonus("experience_bonus")
 	return (
 		insight_multiplier
-		* EquipmentManager.get_experience_multiplier()
+		* (EquipmentManager.get_experience_multiplier() + set_bonus)
 	)
 
 func level_up() -> void:
@@ -172,7 +175,7 @@ func level_up() -> void:
 
 
 func _apply_level_up_equipment_recovery() -> void:
-	var heal_amount: float = EquipmentManager.get_secondary_bonus(
+	var heal_amount: float = EquipmentSetRuntime.get_capped_combined_secondary_bonus(
 		"level_up_heal_flat",
 		4.0
 	)

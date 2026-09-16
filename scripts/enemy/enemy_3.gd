@@ -3,8 +3,9 @@ extends CharacterBody2D
 signal enemy_defeated
 
 ## Enemy 3
-## Fast melee enemy dengan HP rendah dan movement cepat.
-## Dirancang untuk memberikan tekanan dengan mengejar Player secara agresif.
+## Fast melee pressure unit. The base direct chase remains Chapter 1 behavior;
+## encounter profiles can turn the same proven scene into chapter-specific
+## movement pressure without duplicating collision/death/XP logic.
 
 const XP_GEM: PackedScene = preload(
 	"res://scenes/pickups/xp_gem.tscn"
@@ -28,11 +29,41 @@ var contact_damage_timer: float = 0.0
 var damage_reduction_sources: Dictionary = {}
 var facing_left: bool = false
 
+var movement_pattern: StringName = &"direct"
+var frenzy_threshold: float = 0.45
+var frenzy_speed_multiplier: float = 1.35
+var weave_strength: float = 0.35
+var weave_frequency: float = 4.5
+var movement_age: float = 0.0
+
 func _ready() -> void:
 	CombatFeedback.register_actor(self)
 	current_hp = max_hp
 	_update_visual_facing()
 	_play_run_animation()
+
+func configure_encounter_presentation(entry: Dictionary) -> void:
+	movement_pattern = StringName(
+		str(entry.get("movement_pattern", movement_pattern))
+	)
+	frenzy_threshold = clampf(
+		float(entry.get("frenzy_threshold", frenzy_threshold)),
+		0.05,
+		0.95
+	)
+	frenzy_speed_multiplier = maxf(
+		float(entry.get("frenzy_speed_multiplier", frenzy_speed_multiplier)),
+		1.0
+	)
+	weave_strength = clampf(
+		float(entry.get("weave_strength", weave_strength)),
+		0.0,
+		0.75
+	)
+	weave_frequency = maxf(
+		float(entry.get("weave_frequency", weave_frequency)),
+		0.1
+	)
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
@@ -46,6 +77,7 @@ func _physics_process(delta: float) -> void:
 
 		return
 
+	movement_age += delta
 	_update_visual_facing()
 	move_toward_player()
 	_play_run_animation()
@@ -88,15 +120,32 @@ func _play_run_animation() -> void:
 	):
 		animated_sprite.play(animation_name)
 
-## Mengejar Player menggunakan movement cepat.
+## Mengejar Player menggunakan movement pressure sesuai chapter identity.
 func move_toward_player() -> void:
-	var direction: Vector2 = (
-		global_position.direction_to(
-			player.global_position
-		)
+	var direction: Vector2 = global_position.direction_to(
+		player.global_position
 	)
+	if direction == Vector2.ZERO:
+		direction = Vector2.RIGHT
 
-	velocity = direction * speed
+	var speed_multiplier: float = 1.0
+
+	match movement_pattern:
+		&"blood_frenzy":
+			var health_ratio: float = current_hp / maxf(max_hp, 0.001)
+			if health_ratio <= frenzy_threshold:
+				speed_multiplier = frenzy_speed_multiplier
+		&"sky_weave":
+			var lateral: Vector2 = Vector2(
+				-direction.y,
+				direction.x
+			)
+			var weave_offset: float = sin(
+				movement_age * weave_frequency
+			) * weave_strength
+			direction = (direction + lateral * weave_offset).normalized()
+
+	velocity = direction * speed * speed_multiplier
 	move_and_slide()
 
 ## Mengelola cooldown dan pemeriksaan contact damage.
