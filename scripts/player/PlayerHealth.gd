@@ -37,7 +37,10 @@ func _ready() -> void:
 	apply_permanent_vitality()
 	apply_equipment_max_health()
 	current_health = max_health
-	qi_shield_charges = int(EquipmentManager.get_secondary_bonus("starting_shield_charges", 1.0))
+	qi_shield_charges = int(EquipmentSetRuntime.get_capped_combined_secondary_bonus(
+		"starting_shield_charges",
+		2.0
+	))
 
 	health_changed.emit(
 		current_health,

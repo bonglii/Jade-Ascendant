@@ -467,39 +467,39 @@ func _ensure_profile_sheet() -> void:
 
 	profile_sheet_panel = PanelContainer.new()
 	profile_sheet_panel.name = "ProfileSheet"
-	profile_sheet_panel.custom_minimum_size = Vector2(350.0, 720.0)
+	profile_sheet_panel.custom_minimum_size = Vector2(588.0, 930.0)
 	profile_sheet_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	profile_sheet_panel.add_theme_stylebox_override(
-		"panel",
-		_make_profile_style(
-			Color(0.003, 0.030, 0.040, 0.985),
-			Color(0.86, 0.65, 0.22, 0.92),
-			14,
-			2
-		)
+	var sheet_style := _make_profile_style(
+		Color(0.003, 0.030, 0.040, 0.992),
+		Color(0.90, 0.69, 0.25, 0.96),
+		18,
+		2
 	)
+	sheet_style.shadow_color = Color(0.0, 0.0, 0.0, 0.72)
+	sheet_style.shadow_size = 18
+	profile_sheet_panel.add_theme_stylebox_override("panel", sheet_style)
 	center.add_child(profile_sheet_panel)
 
 	var margin := MarginContainer.new()
 	margin.name = "Margin"
-	margin.add_theme_constant_override("margin_left", 18)
-	margin.add_theme_constant_override("margin_top", 16)
-	margin.add_theme_constant_override("margin_right", 18)
-	margin.add_theme_constant_override("margin_bottom", 16)
+	margin.add_theme_constant_override("margin_left", 24)
+	margin.add_theme_constant_override("margin_top", 22)
+	margin.add_theme_constant_override("margin_right", 24)
+	margin.add_theme_constant_override("margin_bottom", 22)
 	profile_sheet_panel.add_child(margin)
 
 	var content := VBoxContainer.new()
 	content.name = "Content"
-	content.add_theme_constant_override("separation", 8)
+	content.add_theme_constant_override("separation", 10)
 	margin.add_child(content)
 
 	var header := HBoxContainer.new()
 	header.name = "Header"
-	header.add_theme_constant_override("separation", 10)
+	header.add_theme_constant_override("separation", 14)
 	content.add_child(header)
 
 	var seal := TextureRect.new()
-	seal.custom_minimum_size = Vector2(52.0, 52.0)
+	seal.custom_minimum_size = Vector2(70.0, 70.0)
 	seal.texture = profile_seal.texture
 	seal.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	seal.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -508,13 +508,13 @@ func _ensure_profile_sheet() -> void:
 
 	var header_text := VBoxContainer.new()
 	header_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header_text.add_theme_constant_override("separation", -1)
+	header_text.add_theme_constant_override("separation", 1)
 	header.add_child(header_text)
 
 	var name_label := Label.new()
 	name_label.text = "LIN YUE"
 	name_label.theme_type_variation = &"JadeHeroName"
-	name_label.add_theme_font_size_override("font_size", 22)
+	name_label.add_theme_font_size_override("font_size", 30)
 	name_label.add_theme_color_override(
 		"font_color",
 		Color(0.95, 1.0, 0.98, 1.0)
@@ -523,7 +523,7 @@ func _ensure_profile_sheet() -> void:
 
 	profile_sheet_rank_label = Label.new()
 	profile_sheet_rank_label.theme_type_variation = &"JadeSubtitle"
-	profile_sheet_rank_label.add_theme_font_size_override("font_size", 11)
+	profile_sheet_rank_label.add_theme_font_size_override("font_size", 15)
 	profile_sheet_rank_label.add_theme_color_override(
 		"font_color",
 		Color(0.58, 0.95, 0.86, 1.0)
@@ -531,7 +531,7 @@ func _ensure_profile_sheet() -> void:
 	header_text.add_child(profile_sheet_rank_label)
 
 	profile_sheet_level_label = Label.new()
-	profile_sheet_level_label.add_theme_font_size_override("font_size", 10)
+	profile_sheet_level_label.add_theme_font_size_override("font_size", 14)
 	profile_sheet_level_label.add_theme_color_override(
 		"font_color",
 		Color(1.0, 0.83, 0.43, 1.0)
@@ -540,10 +540,10 @@ func _ensure_profile_sheet() -> void:
 
 	var close_button := Button.new()
 	close_button.name = "CloseButton"
-	close_button.custom_minimum_size = Vector2(42.0, 42.0)
+	close_button.custom_minimum_size = Vector2(48.0, 48.0)
 	close_button.text = "×"
 	close_button.focus_mode = Control.FOCUS_NONE
-	close_button.add_theme_font_size_override("font_size", 20)
+	close_button.add_theme_font_size_override("font_size", 24)
 	close_button.add_theme_color_override(
 		"font_color",
 		Color(0.83, 0.91, 0.89, 1.0)
@@ -553,7 +553,7 @@ func _ensure_profile_sheet() -> void:
 		_make_profile_style(
 			Color(0.008, 0.055, 0.064, 0.92),
 			Color(0.22, 0.59, 0.56, 0.62),
-			9,
+			11,
 			1
 		)
 	)
@@ -562,7 +562,7 @@ func _ensure_profile_sheet() -> void:
 		_make_profile_style(
 			Color(0.018, 0.110, 0.105, 0.98),
 			Color(0.92, 0.72, 0.29, 0.92),
-			9,
+			11,
 			1
 		)
 	)
@@ -574,7 +574,7 @@ func _ensure_profile_sheet() -> void:
 	header.add_child(close_button)
 
 	profile_sheet_exp_bar = ProgressBar.new()
-	profile_sheet_exp_bar.custom_minimum_size = Vector2(0.0, 7.0)
+	profile_sheet_exp_bar.custom_minimum_size = Vector2(0.0, 10.0)
 	profile_sheet_exp_bar.show_percentage = false
 	profile_sheet_exp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	profile_sheet_exp_bar.add_theme_stylebox_override(
@@ -600,7 +600,7 @@ func _ensure_profile_sheet() -> void:
 	var eyebrow := Label.new()
 	eyebrow.text = tr("PERMANENT COMBAT PROFILE")
 	eyebrow.theme_type_variation = &"JadeSubtitle"
-	eyebrow.add_theme_font_size_override("font_size", 11)
+	eyebrow.add_theme_font_size_override("font_size", 16)
 	eyebrow.add_theme_color_override(
 		"font_color",
 		Color(0.98, 0.80, 0.39, 1.0)
@@ -612,13 +612,13 @@ func _ensure_profile_sheet() -> void:
 		"Permanent stats • before run-only upgrades"
 	)
 	subtitle.theme_type_variation = &"JadeMutedLabel"
-	subtitle.add_theme_font_size_override("font_size", 10)
+	subtitle.add_theme_font_size_override("font_size", 14)
 	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(subtitle)
 
 	var scroll := ScrollContainer.new()
 	scroll.name = "Scroll"
-	scroll.custom_minimum_size = Vector2(0.0, 555.0)
+	scroll.custom_minimum_size = Vector2(0.0, 0.0)
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
@@ -626,9 +626,9 @@ func _ensure_profile_sheet() -> void:
 
 	profile_sheet_body = VBoxContainer.new()
 	profile_sheet_body.name = "Body"
-	profile_sheet_body.custom_minimum_size = Vector2(304.0, 0.0)
+	profile_sheet_body.custom_minimum_size = Vector2(0.0, 0.0)
 	profile_sheet_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	profile_sheet_body.add_theme_constant_override("separation", 7)
+	profile_sheet_body.add_theme_constant_override("separation", 10)
 	scroll.add_child(profile_sheet_body)
 
 func _make_profile_style(
@@ -728,50 +728,42 @@ func _refresh_profile_sheet() -> void:
 		profile_sheet_body.remove_child(child)
 		child.queue_free()
 
-	if EquipmentManager.has_preserved_active_run_loadout():
-		_add_profile_notice(
-			tr("NEXT RUN PROFILE"),
-			tr(
-				"Continue keeps the loadout saved with the active checkpoint."
-			)
-		)
-
 	var stats: Dictionary = _build_permanent_profile_snapshot()
 	_add_profile_section_title(tr("CORE STATS"))
 	_add_profile_stat_row(
 		tr("MAX HP BONUS"),
 		"+%.0f" % float(stats["max_health_bonus"]),
-		tr("Vitality and permanent equipment.")
+		""
 	)
 	_add_profile_stat_row(
 		tr("DAMAGE BONUS"),
 		"+%.1f%%" % (float(stats["damage_bonus"]) * 100.0),
-		tr("Always-on damage before run upgrades.")
+		""
 	)
 	_add_profile_stat_row(
 		tr("ATTACK SPEED"),
 		"+%.1f%%" % (float(stats["attack_speed_bonus"]) * 100.0),
-		tr("Swift Qi and permanent cooldown effects.")
+		""
 	)
 	_add_profile_stat_row(
 		tr("MOVEMENT SPEED"),
 		"+%.1f%%" % (float(stats["movement_speed_bonus"]) * 100.0),
-		tr("Permanent movement bonus from equipment.")
+		""
 	)
 	_add_profile_stat_row(
 		tr("EXP GAIN"),
 		"+%.1f%%" % (float(stats["experience_bonus"]) * 100.0),
-		tr("Permanent bonus to Qi shard experience.")
+		""
 	)
 	_add_profile_stat_row(
 		tr("CRITICAL CHANCE"),
 		"+%.1f%%" % (float(stats["critical_chance"]) * 100.0),
-		tr("Permanent critical chance before Sword Intent.")
+		""
 	)
 	_add_profile_stat_row(
 		tr("CRITICAL DAMAGE"),
 		"%.0f%%" % (float(stats["critical_damage_multiplier"]) * 100.0),
-		tr("Damage dealt by a critical hit.")
+		""
 	)
 
 	var has_signature_stat: bool = _has_profile_signature_stat(stats)
@@ -835,32 +827,23 @@ func _refresh_profile_sheet() -> void:
 			)
 
 	_add_profile_section_title(tr("CULTIVATION"))
-	_add_profile_stat_row(
+	_add_profile_cultivation_row(
 		tr("VITALITY"),
 		"LV %d" % ProgressionManager.vitality_level,
 		tr("Raises permanent Max HP.")
 	)
-	_add_profile_stat_row(
+	_add_profile_cultivation_row(
 		tr("SWORD POWER"),
 		"LV %d" % ProgressionManager.sword_power_level,
 		tr("Raises permanent outgoing damage.")
 	)
-	_add_profile_stat_row(
+	_add_profile_cultivation_row(
 		tr("SWIFT QI"),
 		"LV %d" % ProgressionManager.swift_qi_level,
 		tr("Shortens base weapon-art cooldowns.")
 	)
 
-	_add_profile_section_title(tr("NEXT RUN LOADOUT"))
-	for slot_id: String in EquipmentManager.get_slot_ids():
-		_add_profile_equipment_row(slot_id)
-
-	_add_profile_notice(
-		tr("RUN-ONLY STATS EXCLUDED"),
-		tr(
-			"Power, Sword Intent, Body Refinement and other breakthrough upgrades reset each run."
-		)
-	)
+	_add_profile_milestones(hero_level)
 
 func _build_permanent_profile_snapshot() -> Dictionary:
 	# These coefficients mirror the audited runtime authorities:
@@ -980,8 +963,9 @@ func _has_profile_signature_stat(stats: Dictionary) -> bool:
 func _add_profile_section_title(title: String) -> void:
 	var label := Label.new()
 	label.text = title
+	label.custom_minimum_size = Vector2(0.0, 28.0)
 	label.theme_type_variation = &"JadeSubtitle"
-	label.add_theme_font_size_override("font_size", 11)
+	label.add_theme_font_size_override("font_size", 16)
 	label.add_theme_color_override(
 		"font_color",
 		Color(0.98, 0.80, 0.39, 1.0)
@@ -989,8 +973,9 @@ func _add_profile_section_title(title: String) -> void:
 	label.add_theme_constant_override("outline_size", 1)
 	label.add_theme_color_override(
 		"font_outline_color",
-		Color(0.0, 0.0, 0.0, 0.75)
+		Color(0.0, 0.0, 0.0, 0.78)
 	)
+	label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	profile_sheet_body.add_child(label)
 
 func _add_profile_stat_row(
@@ -1002,52 +987,53 @@ func _add_profile_stat_row(
 	panel.add_theme_stylebox_override(
 		"panel",
 		_make_profile_style(
-			Color(0.006, 0.047, 0.055, 0.88),
-			Color(0.12, 0.45, 0.42, 0.52),
-			8,
+			Color(0.006, 0.047, 0.055, 0.92),
+			Color(0.15, 0.55, 0.50, 0.60),
+			11,
 			1
 		)
 	)
 	profile_sheet_body.add_child(panel)
 
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 10)
-	margin.add_theme_constant_override("margin_top", 7)
-	margin.add_theme_constant_override("margin_right", 10)
-	margin.add_theme_constant_override("margin_bottom", 7)
+	margin.add_theme_constant_override("margin_left", 14)
+	margin.add_theme_constant_override("margin_top", 10)
+	margin.add_theme_constant_override("margin_right", 14)
+	margin.add_theme_constant_override("margin_bottom", 10)
 	panel.add_child(margin)
 
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 8)
+	row.add_theme_constant_override("separation", 12)
 	margin.add_child(row)
 
 	var text_box := VBoxContainer.new()
 	text_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	text_box.add_theme_constant_override("separation", 0)
+	text_box.add_theme_constant_override("separation", 2)
 	row.add_child(text_box)
 
 	var name_label := Label.new()
 	name_label.text = stat_name
 	name_label.theme_type_variation = &"JadeSubtitle"
-	name_label.add_theme_font_size_override("font_size", 11)
+	name_label.add_theme_font_size_override("font_size", 17)
 	name_label.add_theme_color_override(
 		"font_color",
-		Color(0.83, 0.95, 0.91, 1.0)
+		Color(0.87, 0.97, 0.94, 1.0)
 	)
 	text_box.add_child(name_label)
 
-	var description_label := Label.new()
-	description_label.text = description
-	description_label.theme_type_variation = &"JadeMutedLabel"
-	description_label.add_theme_font_size_override("font_size", 9)
-	description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	text_box.add_child(description_label)
+	if not description.is_empty():
+		var description_label := Label.new()
+		description_label.text = description
+		description_label.theme_type_variation = &"JadeMutedLabel"
+		description_label.add_theme_font_size_override("font_size", 13)
+		description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		text_box.add_child(description_label)
 
 	var value_label := Label.new()
-	value_label.custom_minimum_size = Vector2(74.0, 0.0)
+	value_label.custom_minimum_size = Vector2(118.0, 0.0)
 	value_label.text = value_text
 	value_label.theme_type_variation = &"JadeHeroName"
-	value_label.add_theme_font_size_override("font_size", 12)
+	value_label.add_theme_font_size_override("font_size", 18)
 	value_label.add_theme_color_override(
 		"font_color",
 		Color(1.0, 0.84, 0.45, 1.0)
@@ -1056,63 +1042,260 @@ func _add_profile_stat_row(
 	value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(value_label)
 
-func _add_profile_equipment_row(slot_id: String) -> void:
-	var item_id: String = EquipmentManager.get_loadout_equipped_item_id(
-		slot_id
-	)
-	var item_text: String = tr("EMPTY")
-	var value_text: String = "—"
-	if not item_id.is_empty():
-		var item_data: Dictionary = EquipmentManager.get_item_data(item_id)
-		item_text = str(item_data.get("display_name", item_id))
-		value_text = "%d★" % EquipmentManager.get_loadout_item_star(item_id)
-
-	_add_profile_stat_row(
-		tr(slot_id.to_upper()),
-		value_text,
-		item_text
-	)
-
-func _add_profile_notice(title: String, body: String) -> void:
+func _add_profile_cultivation_row(
+	stat_name: String,
+	value_text: String,
+	description: String
+) -> void:
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override(
 		"panel",
 		_make_profile_style(
-			Color(0.055, 0.043, 0.014, 0.80),
-			Color(0.86, 0.65, 0.22, 0.72),
-			8,
+			Color(0.012, 0.064, 0.066, 0.95),
+			Color(0.76, 0.61, 0.25, 0.72),
+			12,
 			1
 		)
 	)
 	profile_sheet_body.add_child(panel)
 
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 10)
-	margin.add_theme_constant_override("margin_top", 8)
-	margin.add_theme_constant_override("margin_right", 10)
-	margin.add_theme_constant_override("margin_bottom", 8)
+	margin.add_theme_constant_override("margin_left", 14)
+	margin.add_theme_constant_override("margin_top", 11)
+	margin.add_theme_constant_override("margin_right", 14)
+	margin.add_theme_constant_override("margin_bottom", 11)
+	panel.add_child(margin)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	margin.add_child(row)
+
+	var text_box := VBoxContainer.new()
+	text_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text_box.add_theme_constant_override("separation", 2)
+	row.add_child(text_box)
+
+	var name_label := Label.new()
+	name_label.text = stat_name
+	name_label.theme_type_variation = &"JadeHeroName"
+	name_label.add_theme_font_size_override("font_size", 17)
+	name_label.add_theme_color_override(
+		"font_color",
+		Color(0.90, 1.0, 0.96, 1.0)
+	)
+	text_box.add_child(name_label)
+
+	var description_label := Label.new()
+	description_label.text = description
+	description_label.theme_type_variation = &"JadeMutedLabel"
+	description_label.add_theme_font_size_override("font_size", 13)
+	description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	text_box.add_child(description_label)
+
+	var level_label := Label.new()
+	level_label.custom_minimum_size = Vector2(118.0, 0.0)
+	level_label.text = value_text
+	level_label.theme_type_variation = &"JadeHeroName"
+	level_label.add_theme_font_size_override("font_size", 19)
+	level_label.add_theme_color_override(
+		"font_color",
+		Color(1.0, 0.82, 0.38, 1.0)
+	)
+	level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	level_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(level_label)
+
+func _add_profile_milestones(hero_level: int) -> void:
+	_add_profile_section_title(tr("HERO MILESTONES"))
+
+	var milestones: Array[int] = ProgressionManager.get_hero_milestone_levels()
+	var claimable_milestone: int = (
+		ProgressionManager.get_next_claimable_hero_milestone()
+	)
+	var next_milestone: int = ProgressionManager.get_next_hero_milestone()
+
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override(
+		"panel",
+		_make_profile_style(
+			Color(0.009, 0.052, 0.058, 0.96),
+			Color(0.62, 0.51, 0.24, 0.68),
+			12,
+			1
+		)
+	)
+	profile_sheet_body.add_child(panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 12)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_right", 12)
+	margin.add_theme_constant_override("margin_bottom", 11)
 	panel.add_child(margin)
 
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 1)
+	box.add_theme_constant_override("separation", 8)
 	margin.add_child(box)
 
-	var title_label := Label.new()
-	title_label.text = title
-	title_label.theme_type_variation = &"JadeSubtitle"
-	title_label.add_theme_font_size_override("font_size", 10)
-	title_label.add_theme_color_override(
-		"font_color",
-		Color(1.0, 0.84, 0.45, 1.0)
-	)
-	box.add_child(title_label)
+	var milestone_row := HBoxContainer.new()
+	milestone_row.add_theme_constant_override("separation", 7)
+	box.add_child(milestone_row)
 
-	var body_label := Label.new()
-	body_label.text = body
-	body_label.theme_type_variation = &"JadeMutedLabel"
-	body_label.add_theme_font_size_override("font_size", 9)
-	body_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	box.add_child(body_label)
+	for milestone_level: int in milestones:
+		var reached: bool = hero_level >= milestone_level
+		var claimed: bool = (
+			ProgressionManager.is_hero_milestone_claimed(milestone_level)
+		)
+		var is_claimable: bool = milestone_level == claimable_milestone
+		var is_next: bool = (
+			claimable_milestone <= 0
+			and milestone_level == next_milestone
+		)
+		var milestone_panel := PanelContainer.new()
+		milestone_panel.custom_minimum_size = Vector2(0.0, 52.0)
+		milestone_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var background_color := Color(0.004, 0.031, 0.037, 0.90)
+		var border_color := Color(0.13, 0.34, 0.33, 0.52)
+		var label_color := Color(0.48, 0.60, 0.58, 0.88)
+		if claimed:
+			background_color = Color(0.014, 0.100, 0.092, 0.96)
+			border_color = Color(0.31, 0.82, 0.70, 0.84)
+			label_color = Color(0.72, 1.0, 0.91, 1.0)
+		elif is_claimable:
+			background_color = Color(0.104, 0.071, 0.012, 0.98)
+			border_color = Color(1.0, 0.77, 0.26, 1.0)
+			label_color = Color(1.0, 0.91, 0.58, 1.0)
+		elif reached:
+			background_color = Color(0.056, 0.052, 0.020, 0.95)
+			border_color = Color(0.78, 0.60, 0.24, 0.78)
+			label_color = Color(0.94, 0.79, 0.45, 1.0)
+		elif is_next:
+			background_color = Color(0.082, 0.061, 0.016, 0.95)
+			border_color = Color(0.94, 0.72, 0.28, 0.96)
+			label_color = Color(1.0, 0.85, 0.46, 1.0)
+		milestone_panel.add_theme_stylebox_override(
+			"panel",
+			_make_profile_style(
+				background_color,
+				border_color,
+				9,
+				1
+			)
+		)
+		milestone_row.add_child(milestone_panel)
+
+		var milestone_label := Label.new()
+		milestone_label.text = "LV %d" % milestone_level
+		milestone_label.theme_type_variation = &"JadeHeroName"
+		milestone_label.add_theme_font_size_override("font_size", 14)
+		milestone_label.add_theme_color_override(
+			"font_color",
+			label_color
+		)
+		milestone_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		milestone_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		milestone_panel.add_child(milestone_label)
+
+	var focus_milestone: int = claimable_milestone
+	if focus_milestone <= 0:
+		focus_milestone = next_milestone
+
+	if focus_milestone > 0:
+		var reward_summary: String = (
+			RewardManager.get_hero_milestone_reward_summary(focus_milestone)
+		).replace("\n", "  •  ")
+		var reward_label := Label.new()
+		reward_label.text = "%s  •  %s" % [
+			tr(ProgressionManager.get_hero_rank_title_for_level(focus_milestone)),
+			reward_summary
+		]
+		reward_label.theme_type_variation = &"JadeMutedLabel"
+		reward_label.add_theme_font_size_override("font_size", 12)
+		reward_label.add_theme_color_override(
+			"font_color",
+			Color(0.72, 0.82, 0.78, 0.96)
+		)
+		reward_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		reward_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		box.add_child(reward_label)
+
+	var status_label := Label.new()
+	status_label.theme_type_variation = &"JadeSubtitle"
+	status_label.add_theme_font_size_override("font_size", 14)
+	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if claimable_milestone > 0:
+		status_label.text = tr("MILESTONE READY  •  LV %d") % claimable_milestone
+		status_label.add_theme_color_override(
+			"font_color",
+			Color(1.0, 0.84, 0.40, 1.0)
+		)
+	elif next_milestone > 0:
+		status_label.text = tr("NEXT MILESTONE  •  LV %d") % next_milestone
+		status_label.add_theme_color_override(
+			"font_color",
+			Color(1.0, 0.82, 0.40, 1.0)
+		)
+	else:
+		status_label.text = tr("ALL HERO MILESTONES CLAIMED")
+		status_label.add_theme_color_override(
+			"font_color",
+			Color(0.58, 0.95, 0.84, 1.0)
+		)
+	box.add_child(status_label)
+
+	if claimable_milestone > 0:
+		var claim_button := Button.new()
+		claim_button.custom_minimum_size = Vector2(0.0, 48.0)
+		claim_button.text = (
+			tr("CLAIM MILESTONE REWARD  •  LV %d") % claimable_milestone
+		)
+		claim_button.focus_mode = Control.FOCUS_NONE
+		claim_button.disabled = SaveManager.is_progress_read_only()
+		claim_button.add_theme_font_size_override("font_size", 14)
+		claim_button.add_theme_color_override(
+			"font_color",
+			Color(0.96, 1.0, 0.95, 1.0)
+		)
+		claim_button.add_theme_stylebox_override(
+			"normal",
+			_make_profile_style(
+				Color(0.025, 0.145, 0.120, 0.98),
+				Color(0.92, 0.72, 0.28, 0.92),
+				10,
+				1
+			)
+		)
+		claim_button.add_theme_stylebox_override(
+			"hover",
+			_make_profile_style(
+				Color(0.041, 0.205, 0.163, 1.0),
+				Color(1.0, 0.82, 0.34, 1.0),
+				10,
+				1
+			)
+		)
+		claim_button.add_theme_stylebox_override(
+			"pressed",
+			_make_profile_style(
+				Color(0.012, 0.098, 0.088, 1.0),
+				Color(0.83, 0.66, 0.27, 1.0),
+				10,
+				1
+			)
+		)
+		claim_button.pressed.connect(
+			_on_hero_milestone_claim_pressed.bind(claimable_milestone)
+		)
+		box.add_child(claim_button)
+
+func _on_hero_milestone_claim_pressed(milestone_level: int) -> void:
+	if SaveManager.is_progress_read_only():
+		return
+	var result: Dictionary = RewardManager.claim_hero_milestone(milestone_level)
+	if not bool(result.get("success", false)):
+		_refresh_profile_sheet()
+		return
+	_refresh_home()
 
 func _on_exit_pressed() -> void:
 	get_tree().quit()

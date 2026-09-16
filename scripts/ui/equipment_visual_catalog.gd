@@ -29,6 +29,25 @@ const ITEM_ICON_PATHS: Dictionary = {
 	"tribulation_bracer": "res://assets/ui/equipment/final/tribulation_bracer.png",
 	"cloudtreader_boots": "res://assets/ui/equipment/final/cloudtreader_boots.png",
 	"ascendant_heart": "res://assets/ui/equipment/final/ascendant_heart.png",
+
+	"mountain_ward_jian": "res://assets/ui/equipment/sets/jade_bastion/mountain_ward_jian.png",
+	"stone_meridian_robe": "res://assets/ui/equipment/sets/jade_bastion/stone_meridian_robe.png",
+	"earthseal_bracer": "res://assets/ui/equipment/sets/jade_bastion/earthseal_bracer.png",
+	"rootstep_boots": "res://assets/ui/equipment/sets/jade_bastion/rootstep_boots.png",
+	"guardian_jade_pendant": "res://assets/ui/equipment/sets/jade_bastion/guardian_jade_pendant.png",
+
+	"stillwater_mirror_blade": "res://assets/ui/equipment/sets/stillwater_mirror/stillwater_mirror_blade.png",
+	"glassmoon_robe": "res://assets/ui/equipment/sets/stillwater_mirror/glassmoon_robe.png",
+	"reflection_bracer": "res://assets/ui/equipment/sets/stillwater_mirror/reflection_bracer.png",
+	"silent_ripple_boots": "res://assets/ui/equipment/sets/stillwater_mirror/silent_ripple_boots.png",
+	"mirror_heart_pendant": "res://assets/ui/equipment/sets/stillwater_mirror/mirror_heart_pendant.png",
+
+	"sunfire_dragon_jian": "res://assets/ui/equipment/sets/solar_meridian/sunfire_dragon_jian.png",
+	"dawn_meridian_robe": "res://assets/ui/equipment/sets/solar_meridian/dawn_meridian_robe.png",
+	"solar_edict_bracer": "res://assets/ui/equipment/sets/solar_meridian/solar_edict_bracer.png",
+	"sunstride_boots": "res://assets/ui/equipment/sets/solar_meridian/sunstride_boots.png",
+	"golden_core_pendant": "res://assets/ui/equipment/sets/solar_meridian/golden_core_pendant.png",
+
 	"refinement_shard": "res://assets/ui/equipment/refinement_shard.svg"
 }
 

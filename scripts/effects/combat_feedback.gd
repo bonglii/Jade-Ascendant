@@ -26,6 +26,7 @@ var impulse_power: float = 0.0
 var impulse_clock: float = 0.0
 var camera: Camera2D
 var camera_rest: Vector2
+var feedback_active: bool = false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -136,6 +137,7 @@ func lightning(from: Vector2, to: Vector2, delay: float = 0.0, empowered: bool =
 		var bend: float = sin(float(index * 23 + arc_cursor * 7)) * 9.0 * sin(ratio * PI)
 		points.append(from.lerp(to, ratio) + tangent * bend)
 	entry.merge({"points": points, "left": 0.15 + delay, "delay": delay, "age": 0.0, "empowered": empowered})
+	_activate_feedback()
 
 func impulse(strength: float) -> void:
 	if not SettingsManager.screen_shake or SettingsManager.reduced_effects:
@@ -147,23 +149,51 @@ func impulse(strength: float) -> void:
 		camera_rest = camera.offset
 	impulse_left = 0.14
 	impulse_power = maxf(impulse_power, strength)
+	_activate_feedback()
+
+func _activate_feedback() -> void:
+	feedback_active = true
 
 func _next_effect() -> Dictionary:
 	var capacity: int = 32 if SettingsManager.reduced_effects else POOL_SIZE
 	effect_cursor = (effect_cursor + 1) % capacity
 	var entry: Dictionary = effects[effect_cursor]
 	entry.clear()
+	_activate_feedback()
 	return entry
 
 func _process(delta: float) -> void:
 	if active_scene != get_tree().current_scene:
 		_reset_feedback()
 		active_scene = get_tree().current_scene
+
+	# CombatFeedback is an autoload that also exists while menus are open.
+	# When no pooled visual or camera impulse is alive, avoid scanning every
+	# pool entry and avoid forcing a CanvasItem redraw every frame.
+	if not feedback_active:
+		return
+
+	var has_active_feedback: bool = false
+
 	for entry in effects:
-		entry["left"] = maxf(float(entry.get("left", 0.0)) - delta, 0.0)
+		var effect_left: float = float(entry.get("left", 0.0))
+		if effect_left <= 0.0:
+			continue
+		effect_left = maxf(effect_left - delta, 0.0)
+		entry["left"] = effect_left
+		if effect_left > 0.0:
+			has_active_feedback = true
+
 	for entry in arcs:
-		entry["left"] = maxf(float(entry.get("left", 0.0)) - delta, 0.0)
+		var arc_left: float = float(entry.get("left", 0.0))
+		if arc_left <= 0.0:
+			continue
+		arc_left = maxf(arc_left - delta, 0.0)
+		entry["left"] = arc_left
 		entry["age"] = float(entry.get("age", 0.0)) + delta
+		if arc_left > 0.0:
+			has_active_feedback = true
+
 	if is_instance_valid(camera):
 		impulse_left = maxf(impulse_left - delta, 0.0)
 		impulse_clock += delta * 90.0
@@ -172,7 +202,13 @@ func _process(delta: float) -> void:
 		else:
 			camera.offset = camera_rest
 			impulse_power = 0.0
+		if impulse_left > 0.0:
+			has_active_feedback = true
+
+	# Active effects still redraw exactly as before. The final active frame also
+	# redraws once after all lifetimes reach zero so expired visuals are cleared.
 	queue_redraw()
+	feedback_active = has_active_feedback
 
 func _reset_feedback() -> void:
 	for entry in effects:
@@ -184,6 +220,8 @@ func _reset_feedback() -> void:
 	camera = null
 	impulse_left = 0.0
 	impulse_power = 0.0
+	feedback_active = false
+	queue_redraw()
 
 func _draw() -> void:
 	for entry in effects:

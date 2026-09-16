@@ -1,6 +1,8 @@
 extends Control
 
-## Stage Select — mobile readability pass.
+## Stage Select — premium journey presentation pass.
+## Selected trials now receive a landmark hero showcase and each stage card exposes
+## its position along the realm path without changing JourneyManager progression.
 ## JourneyManager remains the authority for chapter/stage progression.
 ## This script owns presentation, selection flow, confirmation UI, and scene transition only.
 
@@ -18,6 +20,9 @@ const StageLandmarkPreviewScript = preload("res://scripts/ui/stage_landmark_prev
 @onready var selected_stage_label: Label = %SelectedStageLabel
 @onready var selected_stage_status_label: Label = %SelectedStageStatusLabel
 @onready var selected_realm_label: Label = %SelectedRealmLabel
+@onready var selected_panel: PanelContainer = $SafeArea/MainLayout/SelectedPanel
+@onready var selected_eyebrow: Label = $SafeArea/MainLayout/SelectedPanel/SelectedMargin/SelectedContent/SelectedTopRow/SelectedEyebrow
+@onready var selected_preview_panel: PanelContainer = %SelectedPreviewPanel
 @onready var selected_reward_label: Label = %SelectedRewardLabel
 @onready var start_button: Button = %StartButton
 @onready var back_button: Button = %BackButton
@@ -31,6 +36,8 @@ var stage_buttons: Dictionary = {}
 var stage_views: Dictionary = {}
 var chapter_id: int = 0
 var realm_profile: Dictionary = {}
+var selected_trial_preview: Control = null
+var selected_preview_stage_marker: Label = null
 
 
 func _ready() -> void:
@@ -38,6 +45,7 @@ func _ready() -> void:
 	_connect_signals()
 	SceneTransitionManager.set_back_handler(handle_system_back)
 	_apply_realm_visuals()
+	_setup_selected_trial_preview()
 	_build_stage_buttons()
 	_refresh_screen()
 
@@ -64,6 +72,28 @@ func _apply_realm_visuals() -> void:
 	realm_epithet_label.text = tr(str(
 		realm_profile.get("realm_epithet", "CULTIVATION REALM")
 	))
+
+
+func _setup_selected_trial_preview() -> void:
+	for child: Node in selected_preview_panel.get_children():
+		child.queue_free()
+
+	selected_trial_preview = StageLandmarkPreviewScript.new()
+	selected_trial_preview.custom_minimum_size = Vector2(126.0, 120.0)
+	selected_trial_preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	selected_preview_panel.add_child(selected_trial_preview)
+
+	selected_preview_stage_marker = Label.new()
+	selected_preview_stage_marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	selected_preview_stage_marker.theme_type_variation = &"JadeSubtitle"
+	selected_preview_stage_marker.add_theme_font_size_override("font_size", 13)
+	selected_preview_stage_marker.add_theme_color_override(
+		"font_color",
+		Color(1.0, 0.92, 0.66, 0.96)
+	)
+	selected_preview_stage_marker.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	selected_preview_stage_marker.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	selected_preview_panel.add_child(selected_preview_stage_marker)
 
 
 func _build_stage_buttons() -> void:
@@ -196,6 +226,13 @@ func _create_stage_card(stage_id: int) -> Button:
 	badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	badge_panel.add_child(badge)
 
+	var route_bar := ProgressBar.new()
+	route_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	route_bar.custom_minimum_size = Vector2(0.0, 5.0)
+	route_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	route_bar.show_percentage = false
+	content.add_child(route_bar)
+
 	stage_views[stage_id] = {
 		"title": title,
 		"boss_marker": boss_marker,
@@ -204,7 +241,8 @@ func _create_stage_card(stage_id: int) -> Button:
 		"badge": badge,
 		"badge_panel": badge_panel,
 		"index_panel": index_panel,
-		"index_label": index_label
+		"index_label": index_label,
+		"route_bar": route_bar
 	}
 
 	return button
@@ -247,6 +285,7 @@ func _refresh_stage_card(stage_id: int) -> void:
 	var badge_panel: PanelContainer = view.get("badge_panel") as PanelContainer
 	var index_panel: PanelContainer = view.get("index_panel") as PanelContainer
 	var index_label: Label = view.get("index_label") as Label
+	var route_bar: ProgressBar = view.get("route_bar") as ProgressBar
 
 	var stage_data: Dictionary = JourneyManager.get_stage_data(
 		chapter_id,
@@ -261,6 +300,7 @@ func _refresh_stage_card(stage_id: int) -> void:
 		button.disabled = true
 		_apply_stage_badge_color(badge, "UNAVAILABLE")
 		_apply_stage_badge_panel(badge_panel, "UNAVAILABLE")
+		_apply_route_progress_bar(route_bar, stage_id, "UNAVAILABLE", realm_profile)
 		if button.has_method("set_dimmed_visual"):
 			button.call("set_dimmed_visual", true)
 		return
@@ -283,9 +323,13 @@ func _refresh_stage_card(stage_id: int) -> void:
 
 	button.custom_minimum_size = Vector2(
 		0.0,
-		152.0 if is_boss else 138.0
+		160.0 if is_boss else 146.0
 	)
 	boss_marker.visible = is_boss
+	title.add_theme_font_size_override(
+		"font_size",
+		20 if is_selected else 19
+	)
 
 	title.text = display_name
 	encounter.text = tr(str(stage_data.get("encounter_hint", "")))
@@ -306,12 +350,15 @@ func _refresh_stage_card(stage_id: int) -> void:
 		button,
 		is_selected,
 		is_locked_visual,
-		stage_profile
+		stage_profile,
+		is_boss
 	)
 	_apply_stage_index_palette(
 		index_panel,
 		is_locked_visual,
-		stage_profile
+		stage_profile,
+		is_selected,
+		is_boss
 	)
 	_apply_stage_badge_color(
 		badge,
@@ -323,7 +370,16 @@ func _refresh_stage_card(stage_id: int) -> void:
 		"SELECTED" if is_selected else status,
 		stage_profile
 	)
+	_apply_stage_title_color(title, status, stage_profile, is_selected, is_boss)
 	_apply_meta_color(meta, status, stage_profile)
+	_apply_route_progress_bar(
+		route_bar,
+		stage_id,
+		status,
+		stage_profile,
+		is_selected,
+		is_boss
+	)
 
 	button.tooltip_text = (
 		"Chapter %d Stage %d — %s\n%s"
@@ -362,15 +418,62 @@ func _apply_stage_plaque(
 	button: Button,
 	is_selected: bool,
 	is_dimmed: bool,
-	stage_profile: Dictionary
+	stage_profile: Dictionary,
+	is_boss: bool = false
 ) -> void:
-	if button.has_method("apply_visual_state"):
-		button.call(
-			"apply_visual_state",
-			stage_profile,
-			is_selected,
-			is_dimmed
+	if not button.has_method("apply_visual_state"):
+		return
+
+	var plaque_profile: Dictionary = stage_profile.duplicate(true)
+	if not is_selected and not is_boss and not is_dimmed:
+		var accent: Color = plaque_profile.get(
+			"accent",
+			Color(0.298, 0.82, 0.647, 1.0)
 		)
+		var accent_soft: Color = plaque_profile.get(
+			"accent_soft",
+			Color(0.184, 0.62, 0.471, 1.0)
+		)
+		plaque_profile["gold"] = accent.lerp(accent_soft, 0.42).darkened(0.08)
+
+	button.call(
+		"apply_visual_state",
+		plaque_profile,
+		is_selected,
+		is_dimmed
+	)
+
+
+func _apply_stage_title_color(
+	label: Label,
+	status: String,
+	profile: Dictionary,
+	is_selected: bool,
+	is_boss: bool
+) -> void:
+	var accent: Color = profile.get(
+		"accent",
+		Color(0.298, 0.82, 0.647, 1.0)
+	)
+	var gold: Color = profile.get(
+		"gold",
+		Color(0.957, 0.78, 0.357, 1.0)
+	)
+	var title_color := Color(0.90, 0.94, 0.92, 0.98)
+	if status == "LOCKED" or status == "COMING SOON":
+		title_color = Color(0.58, 0.62, 0.62, 0.82)
+	elif is_selected:
+		title_color = Color(1.0, 0.94, 0.75, 1.0)
+	elif is_boss:
+		title_color = Color(gold.r, gold.g, gold.b, 0.98)
+	elif status == "CLEARED":
+		title_color = Color(
+			0.78 + accent.r * 0.08,
+			0.84 + accent.g * 0.06,
+			0.82 + accent.b * 0.05,
+			0.96
+		)
+	label.add_theme_color_override("font_color", title_color)
 
 
 func _apply_meta_color(
@@ -486,7 +589,9 @@ func _apply_stage_badge_panel(
 func _apply_stage_index_palette(
 	index_panel: PanelContainer,
 	is_dimmed: bool,
-	visual_profile: Dictionary = {}
+	visual_profile: Dictionary = {},
+	is_selected: bool = false,
+	is_boss: bool = false
 ) -> void:
 	if index_panel == null:
 		return
@@ -512,16 +617,100 @@ func _apply_stage_index_palette(
 		if is_dimmed:
 			style.bg_color = Color(0.04, 0.055, 0.055, 0.88)
 			style.border_color = Color(0.35, 0.38, 0.37, 0.62)
-		else:
+		elif is_selected:
 			style.bg_color = Color(
-				accent_soft.r * 0.20,
-				accent_soft.g * 0.20,
-				accent_soft.b * 0.20,
-				0.98
+				accent_soft.r * 0.28,
+				accent_soft.g * 0.28,
+				accent_soft.b * 0.28,
+				0.995
 			)
 			style.border_color = gold
+			style.border_width_left = 2
+			style.border_width_top = 2
+			style.border_width_right = 2
+			style.border_width_bottom = 3
+			style.shadow_color = Color(gold.r, gold.g, gold.b, 0.20)
+			style.shadow_size = 8
+		elif is_boss:
+			style.bg_color = Color(
+				accent_soft.r * 0.22,
+				accent_soft.g * 0.22,
+				accent_soft.b * 0.22,
+				0.99
+			)
+			style.border_color = gold
+			style.border_width_bottom = 2
+		else:
+			style.bg_color = Color(
+				accent_soft.r * 0.16,
+				accent_soft.g * 0.16,
+				accent_soft.b * 0.16,
+				0.97
+			)
+			style.border_color = Color(
+				accent_soft.r,
+				accent_soft.g,
+				accent_soft.b,
+				0.86
+			)
 
 		index_panel.add_theme_stylebox_override("panel", style)
+
+
+func _apply_route_progress_bar(
+	bar: ProgressBar,
+	stage_id: int,
+	status: String,
+	visual_profile: Dictionary,
+	is_selected: bool = false,
+	is_boss: bool = false
+) -> void:
+	if bar == null:
+		return
+
+	var stage_count: int = JourneyManager.get_stage_ids(chapter_id).size()
+	bar.max_value = float(maxi(stage_count, 1))
+	bar.value = float(clampi(stage_id, 0, stage_count))
+
+	var accent: Color = visual_profile.get(
+		"accent",
+		Color(0.298, 0.82, 0.647, 1.0)
+	)
+	var gold: Color = visual_profile.get(
+		"gold",
+		Color(0.957, 0.78, 0.357, 1.0)
+	)
+	var fill_color: Color = accent
+	if status == "LOCKED" or status == "COMING SOON" or status == "UNAVAILABLE":
+		fill_color = Color(0.34, 0.39, 0.40, 0.70)
+	elif is_selected or is_boss:
+		fill_color = gold
+	elif status == "AVAILABLE":
+		fill_color = accent.lightened(0.08)
+
+	var background := StyleBoxFlat.new()
+	background.bg_color = Color(0.01, 0.03, 0.04, 0.88)
+	background.corner_radius_top_left = 3
+	background.corner_radius_top_right = 3
+	background.corner_radius_bottom_left = 3
+	background.corner_radius_bottom_right = 3
+
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = Color(
+		fill_color.r,
+		fill_color.g,
+		fill_color.b,
+		0.92
+	)
+	fill.corner_radius_top_left = 3
+	fill.corner_radius_top_right = 3
+	fill.corner_radius_bottom_left = 3
+	fill.corner_radius_bottom_right = 3
+	fill.shadow_color = Color(fill_color.r, fill_color.g, fill_color.b, 0.18)
+	fill.shadow_size = 4
+
+	bar.add_theme_stylebox_override("background", background)
+	bar.add_theme_stylebox_override("fill", fill)
 
 
 ## Builds UI-only stage atmosphere directly from canonical stage colors.
@@ -646,6 +835,10 @@ func _refresh_selected_stage_panel() -> void:
 	)
 
 	if not can_start:
+		selected_preview_panel.visible = false
+		selected_eyebrow.text = tr("SELECTED TRIAL")
+		if selected_trial_preview != null:
+			selected_trial_preview.visible = false
 		selected_stage_label.text = tr("No playable stage selected")
 		selected_stage_status_label.text = ""
 		selected_realm_label.text = ""
@@ -676,6 +869,20 @@ func _refresh_selected_stage_panel() -> void:
 		tr("Stage %d-%d") % [chapter_id, stage_id]
 	))
 	selected_stage_status_label.text = tr(_get_stage_status(stage_id))
+	var stage_count: int = JourneyManager.get_stage_ids(chapter_id).size()
+	selected_eyebrow.text = "%s  •  %d/%d" % [
+		tr("SELECTED TRIAL"),
+		stage_id,
+		maxi(stage_count, 1)
+	]
+	selected_preview_panel.visible = true
+	if selected_trial_preview != null:
+		selected_trial_preview.visible = true
+		selected_trial_preview.set("chapter_id", chapter_id)
+		selected_trial_preview.set("stage_id", stage_id)
+		selected_trial_preview.queue_redraw()
+	if selected_preview_stage_marker != null:
+		selected_preview_stage_marker.text = "%d-%d" % [chapter_id, stage_id]
 
 	var first_clear: bool = not JourneyManager.is_stage_cleared(
 		chapter_id,
@@ -706,6 +913,14 @@ func _refresh_selected_stage_panel() -> void:
 	]
 
 	var selected_profile: Dictionary = _build_stage_visual_profile(stage_data)
+	_apply_stage_index_palette(
+		selected_preview_panel,
+		false,
+		selected_profile,
+		true,
+		bool(stage_data.get("is_chapter_boss", false))
+	)
+	_apply_selected_briefing_style(selected_profile)
 
 	_apply_stage_badge_color(
 		selected_stage_status_label,
@@ -736,6 +951,32 @@ func _refresh_selected_stage_panel() -> void:
 			true,
 			false
 		)
+
+
+func _apply_selected_briefing_style(profile: Dictionary) -> void:
+	if selected_panel == null:
+		return
+	var source: StyleBox = selected_panel.get_theme_stylebox("panel")
+	if not source is StyleBoxFlat:
+		return
+	var style: StyleBoxFlat = source.duplicate() as StyleBoxFlat
+	var accent: Color = profile.get(
+		"accent",
+		Color(0.298, 0.82, 0.647, 1.0)
+	)
+	var gold: Color = profile.get(
+		"gold",
+		Color(0.957, 0.78, 0.357, 1.0)
+	)
+	style.bg_color = Color(0.004, 0.022, 0.029, 0.985)
+	style.border_color = Color(gold.r, gold.g, gold.b, 0.90)
+	style.border_width_left = 2
+	style.border_width_top = 1
+	style.border_width_right = 2
+	style.border_width_bottom = 3
+	style.shadow_color = Color(accent.r, accent.g, accent.b, 0.16)
+	style.shadow_size = 10
+	selected_panel.add_theme_stylebox_override("panel", style)
 
 
 func _on_stage_pressed(stage_id: int) -> void:

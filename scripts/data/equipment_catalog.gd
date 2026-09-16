@@ -1,8 +1,9 @@
 extends RefCounted
 
 ## Permanent equipment catalog.
-## Existing public IDs and their core values are preserved; Gate 1.3 expands
-## the collection to five meaningful choices per permanent loadout slot.
+## The original 25 public equipment IDs keep their locked values.
+## Collection Expansion Pass adds three complete five-piece set families
+## without changing permanent loadout slots or save schema.
 const ITEMS: Dictionary = {
 	"wanderer_jade_jian": {
 		"display_name": "Wanderer's Jade Jian",
@@ -304,6 +305,209 @@ const ITEMS: Dictionary = {
 		"price": 900,
 		"forge_cost": 180,
 		"requires_chapter": 2,
+		"requires_stage": 5
+	},
+
+	# Jade Bastion — Chapter 1 defensive/sustain sidegrade.
+	"mountain_ward_jian": {
+		"display_name": "Mountain Ward Jian",
+		"slot": "armament",
+		"rarity": "rare",
+		"damage_bonus": 0.05,
+		"max_health_flat": 3.0,
+		"price": 260,
+		"forge_cost": 40,
+		"requires_chapter": 1,
+		"requires_stage": 5
+	},
+	"stone_meridian_robe": {
+		"display_name": "Stone Meridian Robe",
+		"slot": "robe",
+		"rarity": "rare",
+		"max_health_flat": 14.0,
+		"experience_bonus": 0.02,
+		"blood_qi_heal_bonus": 0.10,
+		"price": 260,
+		"forge_cost": 40,
+		"requires_chapter": 1,
+		"requires_stage": 5
+	},
+	"earthseal_bracer": {
+		"display_name": "Earthseal Bracer",
+		"slot": "bracer",
+		"rarity": "rare",
+		"damage_bonus": 0.06,
+		"critical_chance_bonus": 0.01,
+		"price": 260,
+		"forge_cost": 40,
+		"requires_chapter": 1,
+		"requires_stage": 5
+	},
+	"rootstep_boots": {
+		"display_name": "Rootstep Boots",
+		"slot": "boots",
+		"rarity": "rare",
+		"movement_speed_bonus": 0.06,
+		"max_health_flat": 3.0,
+		"price": 260,
+		"forge_cost": 40,
+		"requires_chapter": 1,
+		"requires_stage": 5
+	},
+	"guardian_jade_pendant": {
+		"display_name": "Guardian Jade Pendant",
+		"slot": "pendant",
+		"rarity": "rare",
+		"experience_bonus": 0.06,
+		"max_health_flat": 3.0,
+		"blood_qi_heal_bonus": 0.10,
+		"price": 260,
+		"forge_cost": 40,
+		"requires_chapter": 1,
+		"requires_stage": 5
+	},
+
+	# Stillwater Mirror — Chapter 2 precision set; strongest while holding position.
+	"stillwater_mirror_blade": {
+		"display_name": "Stillwater Mirror Blade",
+		"slot": "armament",
+		"rarity": "epic",
+		"damage_bonus": 0.08,
+		"critical_chance_bonus": 0.025,
+		"critical_damage_bonus": 0.05,
+		"signature_effect_name": "MIRROR EDGE",
+		"signature_effect_description": "Critical damage gains +0.05 to its multiplier.",
+		"price": 520,
+		"forge_cost": 90,
+		"requires_chapter": 2,
+		"requires_stage": 1
+	},
+	"glassmoon_robe": {
+		"display_name": "Glassmoon Robe",
+		"slot": "robe",
+		"rarity": "epic",
+		"max_health_flat": 13.0,
+		"experience_bonus": 0.03,
+		"level_up_heal_flat": 1.0,
+		"signature_effect_name": "CLEAR MERIDIAN",
+		"signature_effect_description": "Restore 1 HP whenever Lin Yue gains a run level.",
+		"price": 520,
+		"forge_cost": 90,
+		"requires_chapter": 2,
+		"requires_stage": 2
+	},
+	"reflection_bracer": {
+		"display_name": "Reflection Bracer",
+		"slot": "bracer",
+		"rarity": "epic",
+		"damage_bonus": 0.08,
+		"critical_chance_bonus": 0.03,
+		"critical_damage_bonus": 0.05,
+		"signature_effect_name": "REFLECTED INTENT",
+		"signature_effect_description": "Critical damage gains +0.05 to its multiplier.",
+		"price": 520,
+		"forge_cost": 90,
+		"requires_chapter": 2,
+		"requires_stage": 3
+	},
+	"silent_ripple_boots": {
+		"display_name": "Silent Ripple Boots",
+		"slot": "boots",
+		"rarity": "epic",
+		"movement_speed_bonus": 0.08,
+		"critical_chance_bonus": 0.015,
+		"pickup_radius_bonus": 16.0,
+		"signature_effect_name": "SILENT RIPPLE",
+		"signature_effect_description": "Qi shards begin following you from 16 additional pixels away.",
+		"price": 520,
+		"forge_cost": 90,
+		"requires_chapter": 2,
+		"requires_stage": 4
+	},
+	"mirror_heart_pendant": {
+		"display_name": "Mirror Heart Pendant",
+		"slot": "pendant",
+		"rarity": "epic",
+		"experience_bonus": 0.09,
+		"critical_chance_bonus": 0.015,
+		"attack_cooldown_reduction": 0.02,
+		"signature_effect_name": "STILLWATER HEART",
+		"signature_effect_description": "Cooldown time is reduced by 2 percent for all weapon arts.",
+		"price": 520,
+		"forge_cost": 90,
+		"requires_chapter": 2,
+		"requires_stage": 5
+	},
+
+	# Solar Meridian — Chapter 3 endgame set; rewards maintaining high health.
+	"sunfire_dragon_jian": {
+		"display_name": "Sunfire Dragon Jian",
+		"slot": "armament",
+		"rarity": "legendary",
+		"damage_bonus": 0.10,
+		"critical_chance_bonus": 0.03,
+		"attack_cooldown_reduction": 0.04,
+		"signature_effect_name": "SUNFIRE TEMPO",
+		"signature_effect_description": "Cooldown time is reduced by 4 percent for all weapon arts.",
+		"price": 1100,
+		"forge_cost": 220,
+		"requires_chapter": 3,
+		"requires_stage": 1
+	},
+	"dawn_meridian_robe": {
+		"display_name": "Dawn Meridian Robe",
+		"slot": "robe",
+		"rarity": "legendary",
+		"max_health_flat": 18.0,
+		"experience_bonus": 0.03,
+		"starting_shield_charges": 1,
+		"signature_effect_name": "DAWN MERIDIAN",
+		"signature_effect_description": "Begin a fresh run with one Qi Shield charge. Continuing never grants another charge.",
+		"price": 900,
+		"forge_cost": 180,
+		"requires_chapter": 3,
+		"requires_stage": 2
+	},
+	"solar_edict_bracer": {
+		"display_name": "Solar Edict Bracer",
+		"slot": "bracer",
+		"rarity": "legendary",
+		"damage_bonus": 0.11,
+		"critical_chance_bonus": 0.035,
+		"critical_damage_bonus": 0.10,
+		"signature_effect_name": "SOLAR EDICT",
+		"signature_effect_description": "Critical damage gains +0.10 to its multiplier.",
+		"price": 1000,
+		"forge_cost": 200,
+		"requires_chapter": 3,
+		"requires_stage": 3
+	},
+	"sunstride_boots": {
+		"display_name": "Sunstride Boots",
+		"slot": "boots",
+		"rarity": "legendary",
+		"movement_speed_bonus": 0.10,
+		"experience_bonus": 0.04,
+		"pickup_radius_bonus": 24.0,
+		"signature_effect_name": "SUNSTEP",
+		"signature_effect_description": "Qi shards begin following you from 24 additional pixels away.",
+		"price": 900,
+		"forge_cost": 180,
+		"requires_chapter": 3,
+		"requires_stage": 4
+	},
+	"golden_core_pendant": {
+		"display_name": "Golden Core Pendant",
+		"slot": "pendant",
+		"rarity": "legendary",
+		"experience_bonus": 0.11,
+		"critical_chance_bonus": 0.02,
+		"blood_qi_heal_bonus": 0.25,
+		"signature_effect_name": "GOLDEN CORE",
+		"signature_effect_description": "Blood Qi restores an additional 0.25 HP per trigger while that art is owned.",
+		"price": 1000,
+		"forge_cost": 200,
+		"requires_chapter": 3,
 		"requires_stage": 5
 	}
 }

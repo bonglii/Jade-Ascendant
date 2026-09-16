@@ -1,6 +1,6 @@
 extends RefCounted
 
-## Presentation grouping and conservative gameplay resonance for the 25 permanent equipment items.
+## Presentation grouping and conservative gameplay resonance for the permanent equipment collection.
 ## Gameplay bonuses are derived from equipped IDs only; no save fields are required.
 ##
 ## Resonance tiers used by runtime presentation and gameplay:
@@ -15,7 +15,10 @@ const SET_ORDER: Array[String] = [
 	"mistbound_disciple",
 	"moon_seal",
 	"crimson_shadow",
-	"nine_heavens"
+	"nine_heavens",
+	"jade_bastion",
+	"stillwater_mirror",
+	"solar_meridian"
 ]
 
 const SETS: Dictionary = {
@@ -68,11 +71,103 @@ const SETS: Dictionary = {
 			"cloudtreader_boots",
 			"ascendant_heart"
 		]
+	},
+	"jade_bastion": {
+		"display_name": "JADE BASTION",
+		"items": [
+			"mountain_ward_jian",
+			"stone_meridian_robe",
+			"earthseal_bracer",
+			"rootstep_boots",
+			"guardian_jade_pendant"
+		]
+	},
+	"stillwater_mirror": {
+		"display_name": "STILLWATER MIRROR",
+		"items": [
+			"stillwater_mirror_blade",
+			"glassmoon_robe",
+			"reflection_bracer",
+			"silent_ripple_boots",
+			"mirror_heart_pendant"
+		]
+	},
+	"solar_meridian": {
+		"display_name": "SOLAR MERIDIAN",
+		"items": [
+			"sunfire_dragon_jian",
+			"dawn_meridian_robe",
+			"solar_edict_bracer",
+			"sunstride_boots",
+			"golden_core_pendant"
+		]
 	}
 }
 
 # Each tier is incremental. A 5-piece set receives the 2/3/4/5 bonuses combined.
 # Values stay intentionally small because individual equipment already contributes stats.
+const SET_IDENTITIES: Dictionary = {
+	"verdant_wanderer": "Balanced survival • healing • mobility",
+	"mistbound_disciple": "Mobile tempo • cooldown • moving damage",
+	"moon_seal": "Growth • critical precision • recovery",
+	"crimson_shadow": "Low-HP aggression • critical damage",
+	"nine_heavens": "Endgame tempo • damage • critical precision",
+	"jade_bastion": "Defense • shield • sustain",
+	"stillwater_mirror": "Stationary precision • critical burst",
+	"solar_meridian": "High-HP mastery • offense • tempo"
+}
+
+const TIER_DESCRIPTIONS: Dictionary = {
+	"verdant_wanderer": {
+		2: "+4 Max HP",
+		3: "+2% Movement",
+		4: "+0.10 Blood Qi healing",
+		5: "+0.75 Level-up healing"
+	},
+	"mistbound_disciple": {
+		2: "+2% Movement",
+		3: "-2% Weapon-art cooldown",
+		4: "+2% Damage while moving",
+		5: "+1% Movement • -1% Weapon-art cooldown"
+	},
+	"moon_seal": {
+		2: "+2.5% EXP",
+		3: "+1% Critical chance",
+		4: "+0.5 Level-up healing",
+		5: "+1.5% EXP • +0.5% Critical chance"
+	},
+	"crimson_shadow": {
+		2: "+1.5% Damage",
+		3: "+3% Damage at ≤50% HP",
+		4: "+1.5% Critical chance at ≤50% HP",
+		5: "+6% Critical damage"
+	},
+	"nine_heavens": {
+		2: "+1% Damage",
+		3: "-1.5% Weapon-art cooldown",
+		4: "+0.75% Critical chance",
+		5: "+2% EXP"
+	},
+	"jade_bastion": {
+		2: "+5 Max HP",
+		3: "+1 Starting Qi Shield",
+		4: "+0.10 Blood Qi healing",
+		5: "+0.75 Level-up healing"
+	},
+	"stillwater_mirror": {
+		2: "+1% Critical chance",
+		3: "+4% Damage while stationary",
+		4: "+5% Critical damage",
+		5: "-1.5% Weapon-art cooldown"
+	},
+	"solar_meridian": {
+		2: "+1% Damage",
+		3: "+4% Damage at ≥80% HP",
+		4: "+1% Critical chance",
+		5: "-2% Weapon-art cooldown"
+	}
+}
+
 const GAMEPLAY_TIERS: Dictionary = {
 	"verdant_wanderer": {
 		2: {"max_health_flat": 4.0},
@@ -109,6 +204,24 @@ const GAMEPLAY_TIERS: Dictionary = {
 		3: {"attack_cooldown_reduction": 0.015},
 		4: {"critical_chance_bonus": 0.0075},
 		5: {"experience_bonus": 0.02}
+	},
+	"jade_bastion": {
+		2: {"max_health_flat": 5.0},
+		3: {"starting_shield_charges": 1.0},
+		4: {"blood_qi_heal_bonus": 0.10},
+		5: {"level_up_heal_flat": 0.75}
+	},
+	"stillwater_mirror": {
+		2: {"critical_chance_bonus": 0.01},
+		3: {"stationary_damage_bonus": 0.04},
+		4: {"critical_damage_bonus": 0.05},
+		5: {"attack_cooldown_reduction": 0.015}
+	},
+	"solar_meridian": {
+		2: {"damage_bonus": 0.01},
+		3: {"high_health_damage_bonus": 0.04},
+		4: {"critical_chance_bonus": 0.01},
+		5: {"attack_cooldown_reduction": 0.02}
 	}
 }
 
@@ -119,6 +232,17 @@ static func get_set_data(set_id: String) -> Dictionary:
 
 static func get_display_name(set_id: String) -> String:
 	return str(get_set_data(set_id).get("display_name", ""))
+
+static func get_identity(set_id: String) -> String:
+	return str(SET_IDENTITIES.get(set_id, ""))
+
+static func get_tier_description(set_id: String, tier: int) -> String:
+	var tier_data: Dictionary = TIER_DESCRIPTIONS.get(set_id, {})
+	return str(tier_data.get(tier, ""))
+
+static func get_tier_descriptions(set_id: String) -> Dictionary:
+	var tier_data: Dictionary = TIER_DESCRIPTIONS.get(set_id, {})
+	return tier_data.duplicate(true)
 
 static func get_piece_count(set_id: String, equipped_item_ids: Array[String]) -> int:
 	var set_data: Dictionary = get_set_data(set_id)

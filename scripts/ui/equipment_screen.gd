@@ -3,7 +3,7 @@ extends Control
 ## Hero / Equipment Hub
 ## Presentation layer only. EquipmentManager owns equipment state/save and
 ## InventoryManager owns item ownership/counts.
-## Premium Polish Pass 6: commercial finish — stronger icon presentation, cleaner hero focus and unified modern card language.
+## Premium Detail Pass 8: commercial 40-item collection + relic inspection, resonance and ascension presentation.
 
 const MAIN_MENU_SCENE: String = "res://scenes/ui/main_menu.tscn"
 const BACKPACK_SCENE: String = "res://scenes/ui/backpack_screen.tscn"
@@ -86,6 +86,15 @@ var active_collection_filter: String = FILTER_OWNED
 var collection_filter_buttons: Dictionary = {}
 var collection_filter_count_label: Label
 var collection_filter_empty_label: Label
+var collection_showcase_panel: PanelContainer
+var collection_progress_fill: ColorRect
+var collection_progress_label: Label
+var collection_resonance_label: Label
+var collection_identity_label: Label
+var collection_next_bonus_label: Label
+var detail_resonance_label: Label
+var ascension_star_track: HBoxContainer
+var detail_last_visible: bool = false
 
 func _ready() -> void:
 	SceneTransitionManager.set_back_handler(handle_system_back)
@@ -104,14 +113,148 @@ func _ready() -> void:
 		InventoryManager.inventory_changed.connect(_on_inventory_changed)
 	if not EquipmentManager.equipment_ascended.is_connected(_on_equipment_ascended):
 		EquipmentManager.equipment_ascended.connect(_on_equipment_ascended)
-	selected_item_icon.custom_minimum_size = Vector2(90.0, 90.0)
+	selected_item_icon.custom_minimum_size = Vector2(98.0, 98.0)
+	selected_item_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	selected_item_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	candidate_grid.columns = 3
+	candidate_grid.add_theme_constant_override("h_separation", 10)
+	candidate_grid.add_theme_constant_override("v_separation", 10)
 	_setup_hero_showcase()
 	_setup_collection_filter()
+	_setup_detail_premium_presentation()
 	bonus_summary_label.clip_text = true
 	bonus_summary_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	_refresh_screen()
-	detail_panel.visible = detail_open
 	DebugLogger.system(str("Hero Equipment Hub aktif!"))
+
+
+func _setup_detail_premium_presentation() -> void:
+	var inspection_text: VBoxContainer = selected_stat_label.get_parent() as VBoxContainer
+	if inspection_text != null:
+		detail_resonance_label = Label.new()
+		detail_resonance_label.name = "DetailResonanceLabel"
+		detail_resonance_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		detail_resonance_label.add_theme_font_size_override("font_size", 10)
+		detail_resonance_label.add_theme_color_override("font_color", Color(0.70, 0.90, 0.84, 0.96))
+		detail_resonance_label.add_theme_constant_override("outline_size", 1)
+		detail_resonance_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.82))
+		inspection_text.add_child(detail_resonance_label)
+		inspection_text.move_child(detail_resonance_label, selected_stat_label.get_index() + 1)
+
+	var ascension_text: VBoxContainer = ascension_status_label.get_parent() as VBoxContainer
+	if ascension_text != null:
+		ascension_star_track = HBoxContainer.new()
+		ascension_star_track.name = "AscensionStarTrack"
+		ascension_star_track.custom_minimum_size = Vector2(0.0, 18.0)
+		ascension_star_track.add_theme_constant_override("separation", 4)
+		ascension_text.add_child(ascension_star_track)
+		ascension_text.move_child(ascension_star_track, 0)
+
+	_apply_relic_button_ornaments(ascend_button, Color(0.98, 0.74, 0.24, 1.0), true)
+	_apply_relic_button_ornaments(action_button, Color(0.22, 0.92, 0.80, 1.0), true)
+	_apply_relic_button_ornaments(detail_close_button, Color(0.88, 0.68, 0.28, 1.0), false)
+
+
+func _apply_relic_button_ornaments(button: Button, accent: Color, strong: bool) -> void:
+	if button == null:
+		return
+	var overlay := Control.new()
+	overlay.name = "RelicOrnaments"
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	button.add_child(overlay)
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var ornament_color: Color = Color(accent.r, accent.g, accent.b, 0.92 if strong else 0.72)
+	for side: int in [-1, 1]:
+		var glyph := Label.new()
+		glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		glyph.text = "◆"
+		glyph.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		glyph.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		glyph.add_theme_font_size_override("font_size", 10 if strong else 8)
+		glyph.add_theme_color_override("font_color", ornament_color)
+		glyph.anchor_top = 0.5
+		glyph.anchor_bottom = 0.5
+		glyph.offset_top = -10.0
+		glyph.offset_bottom = 10.0
+		if side < 0:
+			glyph.anchor_left = 0.0
+			glyph.anchor_right = 0.0
+			glyph.offset_left = 8.0
+			glyph.offset_right = 24.0
+		else:
+			glyph.anchor_left = 1.0
+			glyph.anchor_right = 1.0
+			glyph.offset_left = -24.0
+			glyph.offset_right = -8.0
+		overlay.add_child(glyph)
+
+
+func _set_detail_visibility(should_show: bool) -> void:
+	if detail_panel == null:
+		return
+	if not should_show:
+		detail_panel.visible = false
+		detail_last_visible = false
+		return
+	var just_opened: bool = not detail_last_visible
+	detail_panel.visible = true
+	detail_last_visible = true
+	if just_opened:
+		_play_detail_open_motion()
+
+
+func _play_detail_open_motion() -> void:
+	if detail_panel == null:
+		return
+	detail_panel.pivot_offset = detail_panel.size * 0.5
+	detail_panel.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	detail_panel.scale = Vector2(0.985, 0.985)
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(detail_panel, "modulate", Color.WHITE, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(detail_panel, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _refresh_detail_resonance(item_id: String) -> void:
+	if detail_resonance_label == null:
+		return
+	if item_id.is_empty():
+		detail_resonance_label.text = ""
+		return
+	var set_id: String = EquipmentSetCatalog.get_set_id_for_item(item_id)
+	if set_id.is_empty():
+		detail_resonance_label.text = tr(EquipmentVisualCatalog.get_slot_role(selected_slot_id))
+		return
+	var equipped_ids: Array[String] = _get_equipped_item_ids()
+	var piece_count: int = EquipmentSetCatalog.get_piece_count(set_id, equipped_ids)
+	var identity: String = EquipmentSetCatalog.get_identity(set_id)
+	detail_resonance_label.text = "%s  •  %d/5\n%s" % [
+		tr(EquipmentSetCatalog.get_display_name(set_id)),
+		piece_count,
+		tr(identity)
+	]
+
+
+func _refresh_ascension_star_track(current_star: int, target_star: int = 0) -> void:
+	if ascension_star_track == null:
+		return
+	for child: Node in ascension_star_track.get_children():
+		child.queue_free()
+	for star_index: int in range(1, EquipmentManager.MAX_ASCENSION_STAR + 1):
+		var star := Label.new()
+		star.custom_minimum_size = Vector2(24.0, 16.0)
+		star.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		star.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		star.text = "★"
+		star.add_theme_font_size_override("font_size", 12)
+		var color := Color(0.30, 0.42, 0.43, 0.80)
+		if star_index <= current_star:
+			color = Color(1.0, 0.78, 0.28, 1.0)
+		elif target_star > 0 and star_index == target_star:
+			color = Color(0.28, 0.96, 0.84, 1.0)
+		star.add_theme_color_override("font_color", color)
+		star.add_theme_constant_override("outline_size", 2)
+		star.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.86))
+		ascension_star_track.add_child(star)
 
 
 func _setup_collection_filter() -> void:
@@ -120,9 +263,80 @@ func _setup_collection_filter() -> void:
 		push_error("HeroEquipment: CollectionVBox tidak ditemukan untuk ownership filter.")
 		return
 
+	collection_showcase_panel = PanelContainer.new()
+	collection_showcase_panel.name = "CollectionShowcase"
+	collection_showcase_panel.custom_minimum_size = Vector2(0.0, 68.0)
+	collection_showcase_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	collection_showcase_panel.add_theme_stylebox_override("panel", _make_collection_showcase_style())
+	collection_vbox.add_child(collection_showcase_panel)
+	collection_vbox.move_child(collection_showcase_panel, candidate_scroll.get_index())
+
+	var showcase_row := HBoxContainer.new()
+	showcase_row.add_theme_constant_override("separation", 14)
+	collection_showcase_panel.add_child(showcase_row)
+
+	var completion_box := VBoxContainer.new()
+	completion_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	completion_box.size_flags_stretch_ratio = 0.88
+	completion_box.add_theme_constant_override("separation", 4)
+	showcase_row.add_child(completion_box)
+	var completion_title := Label.new()
+	completion_title.text = tr("OWNED EQUIPMENT")
+	completion_title.add_theme_font_size_override("font_size", 10)
+	completion_title.add_theme_color_override("font_color", Color(0.38, 0.94, 0.82, 0.96))
+	completion_box.add_child(completion_title)
+	collection_progress_label = Label.new()
+	collection_progress_label.add_theme_font_size_override("font_size", 14)
+	collection_progress_label.add_theme_color_override("font_color", Color(1.0, 0.86, 0.46, 1.0))
+	completion_box.add_child(collection_progress_label)
+	var progress_track := Control.new()
+	progress_track.custom_minimum_size = Vector2(0.0, 5.0)
+	progress_track.clip_contents = true
+	completion_box.add_child(progress_track)
+	var progress_background := ColorRect.new()
+	progress_background.color = Color(0.03, 0.11, 0.12, 0.96)
+	progress_background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	progress_track.add_child(progress_background)
+	progress_background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	collection_progress_fill = ColorRect.new()
+	collection_progress_fill.color = Color(0.98, 0.76, 0.26, 0.96)
+	collection_progress_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	collection_progress_fill.anchor_left = 0.0
+	collection_progress_fill.anchor_top = 0.0
+	collection_progress_fill.anchor_right = 0.0
+	collection_progress_fill.anchor_bottom = 1.0
+	progress_track.add_child(collection_progress_fill)
+
+	var divider := ColorRect.new()
+	divider.custom_minimum_size = Vector2(1.0, 42.0)
+	divider.color = Color(0.92, 0.72, 0.28, 0.28)
+	divider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	showcase_row.add_child(divider)
+
+	var resonance_box := VBoxContainer.new()
+	resonance_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	resonance_box.size_flags_stretch_ratio = 1.35
+	resonance_box.add_theme_constant_override("separation", 1)
+	showcase_row.add_child(resonance_box)
+	collection_resonance_label = Label.new()
+	collection_resonance_label.add_theme_font_size_override("font_size", 11)
+	collection_resonance_label.add_theme_color_override("font_color", Color(1.0, 0.84, 0.42, 1.0))
+	collection_resonance_label.clip_text = true
+	resonance_box.add_child(collection_resonance_label)
+	collection_identity_label = Label.new()
+	collection_identity_label.add_theme_font_size_override("font_size", 9)
+	collection_identity_label.add_theme_color_override("font_color", Color(0.68, 0.84, 0.80, 0.94))
+	collection_identity_label.clip_text = true
+	resonance_box.add_child(collection_identity_label)
+	collection_next_bonus_label = Label.new()
+	collection_next_bonus_label.add_theme_font_size_override("font_size", 9)
+	collection_next_bonus_label.add_theme_color_override("font_color", Color(0.62, 0.79, 0.88, 0.94))
+	collection_next_bonus_label.clip_text = true
+	resonance_box.add_child(collection_next_bonus_label)
+
 	var filter_bar := HBoxContainer.new()
 	filter_bar.name = "CollectionFilterBar"
-	filter_bar.custom_minimum_size = Vector2(0.0, 34.0)
+	filter_bar.custom_minimum_size = Vector2(0.0, 36.0)
 	filter_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	filter_bar.add_theme_constant_override("separation", 6)
 	collection_vbox.add_child(filter_bar)
@@ -181,7 +395,14 @@ func _refresh_collection_filter() -> void:
 
 	var all_item_ids: Array[String] = _get_all_equipment_item_ids()
 	var owned_count: int = _get_owned_equipment_count()
-	collection_filter_count_label.text = tr("OWNED %d / %d") % [owned_count, all_item_ids.size()]
+	var total_count: int = maxi(all_item_ids.size(), 1)
+	var completion_ratio: float = clampf(float(owned_count) / float(total_count), 0.0, 1.0)
+	collection_filter_count_label.text = ""
+	if collection_progress_label != null:
+		collection_progress_label.text = "%d / %d  •  %d%%" % [owned_count, all_item_ids.size(), int(round(completion_ratio * 100.0))]
+	if collection_progress_fill != null:
+		collection_progress_fill.anchor_right = completion_ratio
+	_refresh_collection_resonance_summary()
 
 	for filter_id: String in FILTER_ORDER:
 		var button: Button = collection_filter_buttons.get(filter_id) as Button
@@ -199,6 +420,7 @@ func _refresh_collection_filter() -> void:
 		button.add_theme_color_override("font_pressed_color", Color(1.0, 0.86, 0.45, 1.0))
 
 	var filtered_count: int = _get_filtered_equipment_item_ids().size()
+	collection_filter_count_label.text = tr("SHOWING %d") % filtered_count
 	var has_results: bool = filtered_count > 0
 	candidate_scroll.visible = has_results
 	collection_filter_empty_label.visible = not has_results
@@ -211,6 +433,51 @@ func _refresh_collection_filter() -> void:
 			collection_filter_empty_label.text = tr("COLLECTION COMPLETE")
 		_:
 			collection_filter_empty_label.text = tr("NO EQUIPMENT FOUND")
+
+
+func _make_collection_showcase_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.002, 0.026, 0.038, 0.97)
+	style.border_width_left = 2
+	style.border_width_top = 1
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.border_color = Color(0.96, 0.76, 0.28, 0.58)
+	style.corner_radius_top_left = 12
+	style.corner_radius_top_right = 12
+	style.corner_radius_bottom_left = 12
+	style.corner_radius_bottom_right = 12
+	style.content_margin_left = 11.0
+	style.content_margin_top = 8.0
+	style.content_margin_right = 11.0
+	style.content_margin_bottom = 8.0
+	style.shadow_color = Color(0.18, 0.86, 0.76, 0.10)
+	style.shadow_size = 6
+	return style
+
+
+func _refresh_collection_resonance_summary() -> void:
+	if collection_resonance_label == null or collection_identity_label == null or collection_next_bonus_label == null:
+		return
+	var state: Dictionary = _get_dominant_set_state()
+	var set_id: String = str(state.get("set_id", ""))
+	var piece_count: int = int(state.get("piece_count", 0))
+	if set_id.is_empty() or piece_count <= 0:
+		collection_resonance_label.text = tr("LOADOUT RESONANCE") + "  •  —"
+		collection_identity_label.text = tr("No equipment set is currently attuned.")
+		collection_next_bonus_label.text = "2P  •  " + tr("Equip matching set pieces to awaken resonance.")
+		return
+	collection_resonance_label.text = "%s  •  %s  %d/5" % [tr("LOADOUT RESONANCE"), tr(EquipmentSetCatalog.get_display_name(set_id)), piece_count]
+	collection_identity_label.text = tr(EquipmentSetCatalog.get_identity(set_id))
+	var next_tier: int = 0
+	for tier: int in [2, 3, 4, 5]:
+		if piece_count < tier:
+			next_tier = tier
+			break
+	if next_tier <= 0:
+		collection_next_bonus_label.text = tr(EquipmentSetCatalog.get_resonance_label(piece_count))
+	else:
+		collection_next_bonus_label.text = "%dP  •  %s" % [next_tier, tr(EquipmentSetCatalog.get_tier_description(set_id, next_tier))]
 
 
 func _make_collection_filter_style(active: bool, hovered: bool) -> StyleBoxFlat:
@@ -318,7 +585,7 @@ func _refresh_screen() -> void:
 	_refresh_collection_filter()
 	_rebuild_candidate_grid()
 	_refresh_detail_panel(can_modify)
-	detail_panel.visible = detail_open
+	_set_detail_visibility(detail_open)
 
 func _refresh_slot_button(button: Button, slot_id: String) -> void:
 	var equipped_item_id: String = EquipmentManager.get_equipped_item_id(slot_id)
@@ -400,7 +667,7 @@ func _create_candidate_button(item_id: String) -> Button:
 	var equipped: bool = EquipmentManager.get_equipped_item_id(slot_id) == item_id
 	var selected: bool = detail_open and item_id == selected_item_id
 	var button: Button = Button.new()
-	button.custom_minimum_size = Vector2(128.0, 122.0)
+	button.custom_minimum_size = Vector2(170.0, 168.0)
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.icon = null
 	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -408,6 +675,7 @@ func _create_candidate_button(item_id: String) -> Button:
 	var rarity_id: String = str(item_data.get("rarity", "common"))
 	var rarity_color: Color = EquipmentVisualCatalog.get_rarity_color(rarity_id)
 	_install_card_icon(button, _load_item_icon(item_id), rarity_color, owned_count > 0)
+	_add_candidate_card_copy(button, item_id, item_data, rarity_id, owned_count > 0)
 	button.add_theme_stylebox_override("normal", _make_candidate_style(rarity_color, equipped, selected, owned_count > 0, false))
 	button.add_theme_stylebox_override("hover", _make_candidate_style(rarity_color, equipped, true, owned_count > 0, true))
 	button.add_theme_stylebox_override("pressed", _make_candidate_style(rarity_color, equipped, true, owned_count > 0, true))
@@ -415,7 +683,7 @@ func _create_candidate_button(item_id: String) -> Button:
 	_add_rarity_badge(button, rarity_id, rarity_color, owned_count > 0)
 	_add_star_badge(button, EquipmentManager.get_item_star(item_id), owned_count > 0)
 	if equipped:
-		_add_state_badge(button, "E", Color(0.28, 1.0, 0.76, 1.0))
+		_add_state_badge(button, tr("EQUIPPED"), Color(0.28, 1.0, 0.76, 1.0))
 	button.pressed.connect(_on_candidate_pressed.bind(item_id))
 	var effective_data: Dictionary = EquipmentManager.get_effective_item_data(item_id)
 	button.tooltip_text = "%s\n%s  •  %s\n%s" % [str(item_data.get("display_name", item_id)), _format_stars(EquipmentManager.get_item_star(item_id)), EquipmentVisualCatalog.get_stat_summary(effective_data), EquipmentVisualCatalog.get_signature_effect_description(item_data)]
@@ -426,25 +694,72 @@ func _install_card_icon(parent_button: Button, texture: Texture2D, rarity_color:
 	var glow := PanelContainer.new()
 	glow.name = "IconGlow"
 	glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	glow.anchor_left = 0.22
-	glow.anchor_top = 0.14
-	glow.anchor_right = 0.78
-	glow.anchor_bottom = 0.72
+	glow.anchor_left = 0.19
+	glow.anchor_top = 0.10
+	glow.anchor_right = 0.81
+	glow.anchor_bottom = 0.61
 	glow.add_theme_stylebox_override("panel", _make_icon_glow_style(rarity_color, owned))
 	parent_button.add_child(glow)
 
 	var art := TextureRect.new()
 	art.name = "ItemArt"
 	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	art.anchor_left = 0.22
-	art.anchor_top = 0.10
-	art.anchor_right = 0.78
-	art.anchor_bottom = 0.70
+	art.anchor_left = 0.18
+	art.anchor_top = 0.075
+	art.anchor_right = 0.82
+	art.anchor_bottom = 0.60
 	art.texture = texture
 	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	art.modulate = Color.WHITE if owned else Color(0.62, 0.69, 0.71, 0.78)
 	parent_button.add_child(art)
+
+func _add_candidate_card_copy(
+	parent_button: Button,
+	item_id: String,
+	item_data: Dictionary,
+	rarity_id: String,
+	owned: bool
+) -> void:
+	var rarity_color: Color = EquipmentVisualCatalog.get_rarity_color(rarity_id)
+	var name_label := Label.new()
+	name_label.name = "ItemName"
+	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	name_label.anchor_left = 0.05
+	name_label.anchor_top = 0.61
+	name_label.anchor_right = 0.95
+	name_label.anchor_bottom = 0.82
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name_label.add_theme_font_size_override("font_size", 11)
+	name_label.add_theme_constant_override("outline_size", 2)
+	name_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.88))
+	name_label.add_theme_color_override("font_color", Color(0.94, 0.97, 0.95, 1.0) if owned else Color(0.54, 0.60, 0.61, 0.88))
+	name_label.text = tr(str(item_data.get("display_name", item_id)))
+	parent_button.add_child(name_label)
+
+	var set_id: String = EquipmentSetCatalog.get_set_id_for_item(item_id)
+	var meta_label := Label.new()
+	meta_label.name = "ItemMeta"
+	meta_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	meta_label.anchor_left = 0.05
+	meta_label.anchor_top = 0.82
+	meta_label.anchor_right = 0.95
+	meta_label.anchor_bottom = 0.96
+	meta_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	meta_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	meta_label.clip_text = true
+	meta_label.add_theme_font_size_override("font_size", 8)
+	meta_label.add_theme_constant_override("outline_size", 1)
+	meta_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.78))
+	meta_label.add_theme_color_override("font_color", Color(rarity_color.r, rarity_color.g, rarity_color.b, 0.96 if owned else 0.52))
+	var set_display_name: String = EquipmentSetCatalog.get_display_name(set_id)
+	meta_label.text = tr(rarity_id.to_upper())
+	if not set_display_name.is_empty():
+		meta_label.text += "  •  " + tr(set_display_name)
+	parent_button.add_child(meta_label)
+
 
 func _make_icon_glow_style(accent: Color, owned: bool) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
@@ -514,14 +829,14 @@ func _make_candidate_style(rarity_color: Color, equipped: bool, selected: bool, 
 	style.border_width_right = border_width
 	style.border_width_bottom = border_width
 	style.border_color = border_color
-	style.corner_radius_top_left = 18
-	style.corner_radius_top_right = 18
-	style.corner_radius_bottom_left = 18
-	style.corner_radius_bottom_right = 18
-	style.content_margin_left = 7.0
-	style.content_margin_top = 9.0
-	style.content_margin_right = 7.0
-	style.content_margin_bottom = 9.0
+	style.corner_radius_top_left = 12
+	style.corner_radius_top_right = 12
+	style.corner_radius_bottom_left = 12
+	style.corner_radius_bottom_right = 12
+	style.content_margin_left = 8.0
+	style.content_margin_top = 8.0
+	style.content_margin_right = 8.0
+	style.content_margin_bottom = 10.0
 	style.shadow_color = Color(border_color.r, border_color.g, border_color.b, 0.28 if selected or equipped else 0.08)
 	style.shadow_size = 9 if selected or equipped else 3
 	return style
@@ -555,6 +870,8 @@ func _refresh_detail_panel(can_modify: bool) -> void:
 		action_button.text = tr("NO ITEM AVAILABLE")
 		action_button.disabled = true
 		action_hint_label.text = ""
+		_refresh_detail_resonance("")
+		_refresh_ascension_star_track(0)
 		return
 
 	var selected_base_data: Dictionary = EquipmentManager.get_item_data(selected_item_id)
@@ -564,14 +881,12 @@ func _refresh_detail_panel(can_modify: bool) -> void:
 	_apply_detail_rarity_style(EquipmentVisualCatalog.get_rarity_color(rarity_id))
 	selected_item_icon.texture = _load_item_icon(selected_item_id)
 	item_role_label.text = str(selected_data.get("display_name", selected_item_id))
-	var selected_set_id: String = EquipmentSetCatalog.get_set_id_for_item(selected_item_id)
-	var selected_set_name: String = EquipmentSetCatalog.get_display_name(selected_set_id)
-	selected_stat_label.text = "%s  •  %s  •  %s\nCORE  %s" % [
+	selected_stat_label.text = "%s  •  %s\nCORE  •  %s" % [
 		tr(rarity_id.to_upper()),
 		_format_stars(selected_star),
-		tr(selected_set_name) if not selected_set_name.is_empty() else tr(EquipmentVisualCatalog.get_slot_role(selected_slot_id)),
 		_get_item_stat_text(selected_data)
 	]
+	_refresh_detail_resonance(selected_item_id)
 	item_role_label.add_theme_color_override("font_color", EquipmentVisualCatalog.get_rarity_color(rarity_id))
 	signature_effect_label.text = "%s — %s\n%s" % [
 		tr("SIGNATURE"),
@@ -650,6 +965,7 @@ func _refresh_ascension_controls(can_modify: bool) -> void:
 		ascend_button.text = tr("ASCENSION LOCKED")
 		ascend_button.disabled = true
 		ascend_hint_label.text = ""
+		_refresh_ascension_star_track(0)
 		return
 	var current_star: int = EquipmentManager.get_item_star(selected_item_id)
 	var shard_balance: int = InventoryManager.get_item_count(InventoryManager.REFINEMENT_SHARD)
@@ -659,6 +975,7 @@ func _refresh_ascension_controls(can_modify: bool) -> void:
 		ascend_button.text = tr("ASCENSION LOCKED")
 		ascend_button.disabled = true
 		ascend_hint_label.text = tr("Core passives scale with stars; Signature Effects stay fixed.")
+		_refresh_ascension_star_track(current_star)
 		return
 	if current_star >= EquipmentManager.MAX_ASCENSION_STAR:
 		ascension_status_label.text = "%s  •  MAX" % _format_stars(current_star)
@@ -666,11 +983,13 @@ func _refresh_ascension_controls(can_modify: bool) -> void:
 		ascend_button.text = tr("MAX ASCENSION")
 		ascend_button.disabled = true
 		ascend_hint_label.text = tr("This relic has reached 5★ resonance.")
+		_refresh_ascension_star_track(current_star)
 		return
 	var target_star: int = current_star + 1
 	var cost: int = EquipmentManager.get_ascension_cost(selected_item_id)
 	ascension_status_label.text = "%s  →  %s\nSHARDS  %d / %d" % [_format_stars(current_star), _format_stars(target_star), shard_balance, cost]
 	ascension_preview_label.text = tr("NEXT CORE PASSIVE\n%s") % _build_ascension_stat_preview(selected_item_id, target_star)
+	_refresh_ascension_star_track(current_star, target_star)
 	ascend_button.text = tr("ASCEND TO %d★  •  %d SHARDS") % [target_star, cost]
 	if not can_modify:
 		ascend_button.text = tr("ASCENSION LOCKED")
@@ -722,17 +1041,17 @@ func _add_star_badge(parent_button: Button, star: int, owned: bool) -> void:
 	var badge: Label = Label.new()
 	badge.name = "StarBadge"
 	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	badge.anchor_left = 0.0
-	badge.anchor_top = 1.0
-	badge.anchor_right = 1.0
-	badge.anchor_bottom = 1.0
-	badge.offset_left = 5.0
-	badge.offset_top = -25.0
-	badge.offset_right = -5.0
-	badge.offset_bottom = -4.0
-	badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	badge.anchor_left = 0.04
+	badge.anchor_top = 0.0
+	badge.anchor_right = 0.62
+	badge.anchor_bottom = 0.0
+	badge.offset_left = 0.0
+	badge.offset_top = 7.0
+	badge.offset_right = 0.0
+	badge.offset_bottom = 27.0
+	badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	badge.add_theme_font_size_override("font_size", 11)
+	badge.add_theme_font_size_override("font_size", 9)
 	badge.add_theme_constant_override("outline_size", 2)
 	badge.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.82))
 	badge.add_theme_color_override("font_color", Color(1.0, 0.82, 0.22, 1.0) if owned else Color(0.46, 0.52, 0.54, 0.72))
@@ -743,17 +1062,17 @@ func _add_state_badge(parent_button: Button, text_value: String, color: Color) -
 	var badge: Label = Label.new()
 	badge.name = "StateBadge"
 	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	badge.anchor_left = 0.72
+	badge.anchor_left = 0.58
 	badge.anchor_top = 0.0
-	badge.anchor_right = 1.0
+	badge.anchor_right = 0.96
 	badge.anchor_bottom = 0.0
 	badge.offset_left = 0.0
-	badge.offset_top = 8.0
-	badge.offset_right = -9.0
-	badge.offset_bottom = 28.0
+	badge.offset_top = 7.0
+	badge.offset_right = 0.0
+	badge.offset_bottom = 27.0
 	badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	badge.add_theme_font_size_override("font_size", 10)
+	badge.add_theme_font_size_override("font_size", 8)
 	badge.add_theme_constant_override("outline_size", 2)
 	badge.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.88))
 	badge.add_theme_color_override("font_color", color)
@@ -879,10 +1198,25 @@ func _build_set_tooltip() -> String:
 
 	var active_text: String = ", ".join(active_names) if not active_names.is_empty() else tr("None")
 	var missing_text: String = ", ".join(missing_names) if not missing_names.is_empty() else tr("None")
-	return "%s  %d/5  •  %s\\n%s: %s\\n%s: %s" % [
+	var tier_lines: Array[String] = []
+	for tier: int in [2, 3, 4, 5]:
+		var tier_description: String = EquipmentSetCatalog.get_tier_description(set_id, tier)
+		if tier_description.is_empty():
+			continue
+		var state_prefix: String = "ACTIVE" if piece_count >= tier else "LOCKED"
+		tier_lines.append("%s  •  %dP  •  %s" % [
+			tr(state_prefix),
+			tier,
+			tr(tier_description)
+		])
+	var identity: String = EquipmentSetCatalog.get_identity(set_id)
+	var bonus_text: String = "\\n".join(tier_lines)
+	return "%s  %d/5  •  %s\\n%s\\n\\n%s\\n\\n%s: %s\\n%s: %s" % [
 		tr(EquipmentSetCatalog.get_display_name(set_id)),
 		piece_count,
 		tr(EquipmentSetCatalog.get_resonance_label(piece_count)),
+		tr(identity),
+		bonus_text,
 		tr("ACTIVE"),
 		active_text,
 		tr("MISSING"),
@@ -925,6 +1259,18 @@ func _on_candidate_pressed(item_id: String) -> void:
 	selected_item_id = item_id
 	detail_open = true
 	_refresh_screen()
+	call_deferred("_play_item_inspection_pulse")
+
+func _play_item_inspection_pulse() -> void:
+	if selected_item_icon == null or not detail_open:
+		return
+	selected_item_icon.pivot_offset = selected_item_icon.size * 0.5
+	selected_item_icon.scale = Vector2(0.94, 0.94)
+	selected_item_icon.modulate = Color(1.0, 1.0, 1.0, 0.72)
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(selected_item_icon, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(selected_item_icon, "modulate", Color.WHITE, 0.14).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
 
 func _close_detail() -> void:
 	detail_open = false

@@ -9,7 +9,7 @@ extends Node2D
 ## - starts at 2 matching pieces
 ## - Reduced Effects keeps a static readable version of the resonance
 ##
-## Actual numerical set bonuses are intentionally deferred to the balance gate.
+## Numerical set bonuses are owned by EquipmentSetCatalog/EquipmentSetRuntime.
 
 const EquipmentSetCatalog = preload("res://scripts/data/equipment_set_catalog.gd")
 
@@ -52,9 +52,7 @@ func _on_settings_changed() -> void:
 func _refresh_from_managers() -> void:
 	var equipped_item_ids: Array[String] = []
 	for slot_id: String in EquipmentManager.get_slot_ids():
-		var item_id: String = (
-			EquipmentManager.get_runtime_equipped_item_id(slot_id)
-		)
+		var item_id: String = EquipmentManager.get_equipped_item_id(slot_id)
 		if not item_id.is_empty():
 			equipped_item_ids.append(item_id)
 
@@ -125,6 +123,21 @@ func _get_palette(set_id: String) -> Array[Color]:
 			return [
 				Color(1.00, 0.76, 0.26, 1.0),
 				Color(0.35, 0.88, 1.00, 1.0)
+			]
+		"jade_bastion":
+			return [
+				Color(0.24, 0.92, 0.60, 1.0),
+				Color(0.96, 0.72, 0.30, 1.0)
+			]
+		"stillwater_mirror":
+			return [
+				Color(0.52, 0.90, 1.00, 1.0),
+				Color(0.70, 0.52, 1.00, 1.0)
+			]
+		"solar_meridian":
+			return [
+				Color(1.00, 0.73, 0.20, 1.0),
+				Color(1.00, 0.94, 0.64, 1.0)
 			]
 		_:
 			return [

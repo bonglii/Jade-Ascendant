@@ -27,6 +27,7 @@ const SOURCE_GAME_OVER: String = "game_over"
 const SOURCE_ACHIEVEMENT: String = "achievement"
 const SOURCE_DAILY_QUEST: String = "daily_quest"
 const SOURCE_PAVILION: String = "pavilion"
+const SOURCE_HERO_MILESTONE: String = "hero_milestone"
 
 const CLEAR_TYPE_FIRST: String = "first_clear"
 const CLEAR_TYPE_REPEAT: String = "repeat_clear"
@@ -41,6 +42,32 @@ const HERO_EXP_STAGE_BASE: Dictionary = {
 	1: [40, 50, 60, 70, 100],
 	2: [90, 110, 130, 150, 200],
 	3: [160, 190, 220, 260, 350]
+}
+
+## Hero milestones reinforce identity and long-term crafting without adding another
+## raw permanent combat multiplier. Rank titles unlock from Hero Level itself;
+## these one-time bundles accelerate cultivation/ascension but do not gate power.
+const HERO_MILESTONE_REWARD_CATALOG: Dictionary = {
+	10: {
+		"spirit_stone": 300,
+		"items": {"refinement_shard": 5}
+	},
+	20: {
+		"spirit_stone": 500,
+		"items": {"refinement_shard": 10}
+	},
+	30: {
+		"spirit_stone": 750,
+		"items": {"refinement_shard": 20}
+	},
+	40: {
+		"spirit_stone": 1000,
+		"items": {"refinement_shard": 30}
+	},
+	50: {
+		"spirit_stone": 1500,
+		"items": {"refinement_shard": 75}
+	}
 }
 
 ## Nilai first/repeat clear sengaja tetap mengikuti baseline lama.
@@ -107,7 +134,8 @@ func get_source_type_ids() -> Array[String]:
 		SOURCE_GAME_OVER,
 		SOURCE_ACHIEVEMENT,
 		SOURCE_DAILY_QUEST,
-		SOURCE_PAVILION
+		SOURCE_PAVILION,
+		SOURCE_HERO_MILESTONE
 	]
 
 func is_valid_source_type(source_type: String) -> bool:
@@ -315,6 +343,49 @@ func get_reward_summary(
 		return tr(empty_text)
 	return "\n".join(PackedStringArray(summary_lines))
 
+func get_hero_milestone_reward(milestone_level: int) -> Dictionary:
+	if not HERO_MILESTONE_REWARD_CATALOG.has(milestone_level):
+		return create_reward_data()
+	var catalog_entry: Dictionary = HERO_MILESTONE_REWARD_CATALOG[
+		milestone_level
+	]
+	var item_rewards: Dictionary = catalog_entry.get(REWARD_KEY_ITEMS, {})
+	return create_reward_data(
+		int(catalog_entry.get(REWARD_KEY_SPIRIT_STONE, 0)),
+		item_rewards
+	)
+
+func get_hero_milestone_reward_summary(milestone_level: int) -> String:
+	return get_reward_summary(
+		get_hero_milestone_reward(milestone_level),
+		"No Reward"
+	)
+
+func claim_hero_milestone(milestone_level: int) -> Dictionary:
+	if SaveManager.is_progress_read_only():
+		return _reject_reward(
+			SOURCE_HERO_MILESTONE,
+			str(milestone_level),
+			"Progress save sedang read-only."
+		)
+	if not ProgressionManager.is_valid_hero_milestone(milestone_level):
+		return _reject_reward(
+			SOURCE_HERO_MILESTONE,
+			str(milestone_level),
+			"Hero milestone tidak dikenal."
+		)
+	if not ProgressionManager.can_claim_hero_milestone(milestone_level):
+		return _reject_reward(
+			SOURCE_HERO_MILESTONE,
+			str(milestone_level),
+			"Hero milestone belum dapat diklaim atau sudah pernah diklaim."
+		)
+	return grant_reward(
+		SOURCE_HERO_MILESTONE,
+		str(milestone_level),
+		get_hero_milestone_reward(milestone_level)
+	)
+
 func get_game_over_reward_tier_id(wave: int) -> String:
 	for raw_tier_data in GAME_OVER_REWARD_TIERS:
 		var tier_data: Dictionary = raw_tier_data
@@ -412,6 +483,26 @@ func grant_reward(
 	if not validation_error.is_empty():
 		return _reject_reward(source_type, source_id, validation_error)
 	var normalized_reward: Dictionary = _normalize_reward_data(reward_data)
+	var milestone_level_for_claim: int = 0
+	if source_type == SOURCE_HERO_MILESTONE:
+		milestone_level_for_claim = int(source_id)
+		if SaveManager.is_progress_read_only():
+			return _reject_reward(
+				source_type,
+				source_id,
+				"Progress save sedang read-only."
+			)
+		if not ProgressionManager.can_claim_hero_milestone(
+			milestone_level_for_claim
+		):
+			return _reject_reward(
+				source_type,
+				source_id,
+				"Hero milestone belum dapat diklaim atau sudah pernah diklaim."
+			)
+		normalized_reward = _normalize_reward_data(
+			get_hero_milestone_reward(milestone_level_for_claim)
+		)
 	var item_rewards: Dictionary = normalized_reward.get(REWARD_KEY_ITEMS, {})
 	var spirit_stone_amount: int = int(normalized_reward.get(REWARD_KEY_SPIRIT_STONE, 0))
 	var hero_exp_amount: int = int(normalized_reward.get(REWARD_KEY_HERO_EXP, 0))
@@ -422,6 +513,17 @@ func grant_reward(
 		progression_data,
 		hero_exp_amount
 	)
+	if source_type == SOURCE_HERO_MILESTONE:
+		progression_data = ProgressionManager.preview_claim_hero_milestone(
+			progression_data,
+			milestone_level_for_claim
+		)
+		if progression_data.is_empty():
+			return _reject_reward(
+				source_type,
+				source_id,
+				"Hero milestone claim payload tidak valid."
+			)
 	var counts: Dictionary = InventoryManager.preview_add_items(item_rewards)
 	var targets: Dictionary = additional_domains.duplicate(true)
 	targets["progression"] = progression_data

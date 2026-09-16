@@ -93,16 +93,16 @@ text = "JOURNEY   •   TRIALS"
 vertical_alignment = 1
 
 [node name="HeaderPanel" type="PanelContainer" parent="SafeArea/MainLayout"]
-custom_minimum_size = Vector2(0, 128)
+custom_minimum_size = Vector2(0, 106)
 layout_mode = 2
 theme_type_variation = &"JadeJourneyHeaderPanel"
 
 [node name="HeaderMargin" type="MarginContainer" parent="SafeArea/MainLayout/HeaderPanel"]
 layout_mode = 2
 theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 11
+theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 11
+theme_override_constants/margin_bottom = 8
 
 [node name="Header" type="VBoxContainer" parent="SafeArea/MainLayout/HeaderPanel/HeaderMargin"]
 layout_mode = 2
@@ -120,7 +120,7 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeTitle"
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 24
 text = "Unknown Realm"
 horizontal_alignment = 1
 autowrap_mode = 2
@@ -174,16 +174,16 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 9
 
 [node name="SelectedPanel" type="PanelContainer" parent="SafeArea/MainLayout"]
-custom_minimum_size = Vector2(0, 206)
+custom_minimum_size = Vector2(0, 268)
 layout_mode = 2
 theme_type_variation = &"JadeSelectedTrialPanel"
 
 [node name="SelectedMargin" type="MarginContainer" parent="SafeArea/MainLayout/SelectedPanel"]
 layout_mode = 2
 theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 10
+theme_override_constants/margin_top = 11
 theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_bottom = 11
 
 [node name="SelectedContent" type="VBoxContainer" parent="SafeArea/MainLayout/SelectedPanel/SelectedMargin"]
 layout_mode = 2
@@ -208,22 +208,43 @@ layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
 theme_override_font_sizes/font_size = 12
 
-[node name="SelectedStageLabel" type="Label" parent="SafeArea/MainLayout/SelectedPanel/SelectedMargin/SelectedContent"]
+[node name="SelectedHeroRow" type="HBoxContainer" parent="SafeArea/MainLayout/SelectedPanel/SelectedMargin/SelectedContent"]
+custom_minimum_size = Vector2(0, 128)
+layout_mode = 2
+theme_override_constants/separation = 13
+
+[node name="SelectedPreviewPanel" type="PanelContainer" parent="SafeArea/MainLayout/SelectedPanel/SelectedMargin/SelectedContent/SelectedHeroRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 124)
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"JadeRealmSeal"
+
+[node name="SelectedText" type="VBoxContainer" parent="SafeArea/MainLayout/SelectedPanel/SelectedMargin/SelectedContent/SelectedHeroRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 3
+
+[node name="SelectedStageLabel" type="Label" parent="SafeArea/MainLayout/SelectedPanel/SelectedMargin/SelectedContent/SelectedHeroRow/SelectedText"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeHeroName"
-theme_override_font_sizes/font_size = 21
+theme_override_font_sizes/font_size = 23
 text = "No playable stage selected"
 autowrap_mode = 2
+max_lines_visible = 2
 
-[node name="SelectedRealmLabel" type="Label" parent="SafeArea/MainLayout/SelectedPanel/SelectedMargin/SelectedContent"]
+[node name="SelectedRealmLabel" type="Label" parent="SafeArea/MainLayout/SelectedPanel/SelectedMargin/SelectedContent/SelectedHeroRow/SelectedText"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_vertical = 3
 theme_type_variation = &"JadeMutedLabel"
 theme_override_colors/font_color = Color(0.80, 0.85, 0.85, 0.98)
 theme_override_constants/line_spacing = 3
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 13
 text = ""
+autowrap_mode = 2
+max_lines_visible = 5
 
 [node name="SelectedRewardPanel" type="PanelContainer" parent="SafeArea/MainLayout/SelectedPanel/SelectedMargin/SelectedContent"]
 layout_mode = 2
@@ -247,12 +268,12 @@ autowrap_mode = 2
 
 [node name="StartButton" type="Button" parent="SafeArea/MainLayout/SelectedPanel/SelectedMargin/SelectedContent"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 56)
+custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 theme_type_variation = &"JadePrimaryButton"
 theme_override_colors/font_color = Color(1, 0.941, 0.737, 1)
 theme_override_colors/font_hover_color = Color(1, 0.976, 0.84, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 20
 text = "BEGIN TRIAL"
 icon = ExtResource("6_trial_icon")
 icon_max_width = 26

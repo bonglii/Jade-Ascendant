@@ -67,10 +67,18 @@ func calculate_damage_result(
 			"moving_damage_bonus",
 			0.08
 		)
+	elif _is_player_stationary():
+		conditional_damage_bonus += EquipmentSetRuntime.get_bonus(
+			"stationary_damage_bonus"
+		)
 	if _is_low_health():
 		conditional_damage_bonus += EquipmentSetRuntime.get_capped_combined_secondary_bonus(
 			"low_health_damage_bonus",
 			0.10
+		)
+	elif _is_high_health():
+		conditional_damage_bonus += EquipmentSetRuntime.get_bonus(
+			"high_health_damage_bonus"
 		)
 	final_damage *= 1.0 + conditional_damage_bonus
 
@@ -130,6 +138,12 @@ func _is_player_moving() -> bool:
 		return false
 	return actor.velocity.length_squared() > 1.0
 
+func _is_player_stationary() -> bool:
+	var actor := get_parent() as CharacterBody2D
+	if actor == null:
+		return false
+	return actor.velocity.length_squared() <= 1.0
+
 func _is_low_health() -> bool:
 	var health_node: Node = get_parent().get_node_or_null("PlayerHealth")
 	if health_node == null:
@@ -139,6 +153,16 @@ func _is_low_health() -> bool:
 		return false
 	var current: float = float(health_node.get("current_health"))
 	return current / maximum <= 0.5
+
+func _is_high_health() -> bool:
+	var health_node: Node = get_parent().get_node_or_null("PlayerHealth")
+	if health_node == null:
+		return false
+	var maximum: float = float(health_node.get("max_health"))
+	if maximum <= 0.0:
+		return false
+	var current: float = float(health_node.get("current_health"))
+	return current / maximum >= 0.80
 
 ## Meningkatkan Sword Intent hingga level maksimum.
 func upgrade_sword_intent() -> void:

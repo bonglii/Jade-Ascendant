@@ -2109,26 +2109,29 @@ func _test_release_contracts() -> void:
 	var settings: Variant = root.get_node("SettingsManager")
 	var reward_manager: Variant = root.get_node("RewardManager")
 	var achievements: Variant = root.get_node("AchievementManager")
-	_check(equipment.get_item_ids().size() == 25, "Equipment V2 catalog contains twenty-five permanent items")
+	_check(equipment.get_item_ids().size() == 40, "Equipment collection contains forty permanent items after Set Expansion")
 	_check(
 		equipment.get_slot_ids() == ["armament", "robe", "bracer", "boots", "pendant"],
 		"Permanent loadout exposes one Dao Armament slot plus the four legacy slots"
 	)
 	for slot_id: String in equipment.get_slot_ids():
 		_check(
-			equipment.get_item_ids_for_slot(slot_id).size() == 5,
-			"Equipment V2 provides five collection choices for slot " + slot_id
+			equipment.get_item_ids_for_slot(slot_id).size() == 8,
+			"Equipment Set Expansion provides eight collection choices for slot " + slot_id
 		)
 	var armament_ids: Array[String] = equipment.get_item_ids_for_slot("armament")
 	_check(
 		armament_ids == [
 			"cinnabar_moon_saber",
 			"mistveil_jian",
+			"mountain_ward_jian",
 			"nine_heavens_star_sword",
 			"spirit_seal_fan",
+			"stillwater_mirror_blade",
+			"sunfire_dragon_jian",
 			"wanderer_jade_jian"
 		],
-		"Dao Armament collection exposes five distinct permanent choices"
+		"Dao Armament collection exposes the five locked identities plus three set-expansion choices"
 	)
 	var foundation_armament: Dictionary = equipment.get_item_data("wanderer_jade_jian")
 	_check(
@@ -2161,7 +2164,17 @@ func _test_release_contracts() -> void:
 		"cloudtreader_boots",
 		"shrine_seal_pendant",
 		"sword_heart_pendant",
-		"ascendant_heart"
+		"ascendant_heart",
+		"stillwater_mirror_blade",
+		"glassmoon_robe",
+		"reflection_bracer",
+		"silent_ripple_boots",
+		"mirror_heart_pendant",
+		"sunfire_dragon_jian",
+		"dawn_meridian_robe",
+		"solar_edict_bracer",
+		"sunstride_boots",
+		"golden_core_pendant"
 	]
 	for signature_item_id: String in rarity_signature_ids:
 		var signature_data: Dictionary = equipment.get_item_data(signature_item_id)
@@ -2231,6 +2244,105 @@ func _test_release_contracts() -> void:
 		int(legendary_requirement.get("chapter_id", -1)) == 2
 		and int(legendary_requirement.get("stage_id", -1)) == 5,
 		"Legendary equipment waits for Chapter 2 completion"
+	)
+
+	var expansion_set_ids: Array[String] = [
+		"jade_bastion",
+		"stillwater_mirror",
+		"solar_meridian"
+	]
+	var expansion_set_pieces: Dictionary = {
+		"jade_bastion": [
+			"mountain_ward_jian", "stone_meridian_robe", "earthseal_bracer",
+			"rootstep_boots", "guardian_jade_pendant"
+		],
+		"stillwater_mirror": [
+			"stillwater_mirror_blade", "glassmoon_robe", "reflection_bracer",
+			"silent_ripple_boots", "mirror_heart_pendant"
+		],
+		"solar_meridian": [
+			"sunfire_dragon_jian", "dawn_meridian_robe", "solar_edict_bracer",
+			"sunstride_boots", "golden_core_pendant"
+		]
+	}
+	var expected_expansion_rarity: Dictionary = {
+		"jade_bastion": "rare",
+		"stillwater_mirror": "epic",
+		"solar_meridian": "legendary"
+	}
+	for set_id: String in expansion_set_ids:
+		var raw_pieces: Array = expansion_set_pieces[set_id]
+		var set_slots: Array[String] = []
+		for raw_item_id: Variant in raw_pieces:
+			var item_id: String = str(raw_item_id)
+			var item_data: Dictionary = equipment.get_item_data(item_id)
+			_check(not item_data.is_empty(), "Set Expansion catalog resolves " + item_id)
+			var slot_id: String = str(item_data.get("slot", ""))
+			if not set_slots.has(slot_id):
+				set_slots.append(slot_id)
+			_check(
+				str(item_data.get("rarity", "")) == str(expected_expansion_rarity[set_id]),
+				"Set Expansion rarity identity holds for " + item_id
+			)
+		set_slots.sort()
+		_check(
+			set_slots == ["armament", "boots", "bracer", "pendant", "robe"],
+			"Set Expansion family covers every permanent slot: " + set_id
+		)
+
+	var bastion_requirement: Dictionary = pavilion.get_item_unlock_requirement("mountain_ward_jian")
+	var mirror_requirement: Dictionary = pavilion.get_item_unlock_requirement("stillwater_mirror_blade")
+	var solar_requirement: Dictionary = pavilion.get_item_unlock_requirement("sunfire_dragon_jian")
+	_check(
+		int(bastion_requirement.get("chapter_id", -1)) == 1
+		and int(bastion_requirement.get("stage_id", -1)) == 5,
+		"Jade Bastion enters the summon collection after Chapter 1 completion"
+	)
+	_check(
+		int(mirror_requirement.get("chapter_id", -1)) == 2
+		and int(mirror_requirement.get("stage_id", -1)) == 1,
+		"Stillwater Mirror starts entering the summon collection in Chapter 2"
+	)
+	_check(
+		int(solar_requirement.get("chapter_id", -1)) == 3
+		and int(solar_requirement.get("stage_id", -1)) == 1,
+		"Solar Meridian starts entering the summon collection in Chapter 3"
+	)
+
+	var summon_pool: Dictionary = pavilion.get_summon_pool_by_rarity()
+	var summon_pool_total: int = 0
+	for rarity_id: String in ["common", "rare", "epic", "legendary"]:
+		summon_pool_total += (summon_pool.get(rarity_id, []) as Array).size()
+	_check(summon_pool_total == 40, "Cleared v1 journey exposes all forty equipment items to the summon pool")
+	_check(
+		(summon_pool.get("common", []) as Array).size() == 5
+		and (summon_pool.get("rare", []) as Array).size() == 13
+		and (summon_pool.get("epic", []) as Array).size() == 12
+		and (summon_pool.get("legendary", []) as Array).size() == 10,
+		"Summon pool preserves rarity rates while expanding within-rarity collection diversity"
+	)
+	for set_id: String in expansion_set_ids:
+		var rarity_id: String = str(expected_expansion_rarity[set_id])
+		var rarity_pool: Array = summon_pool.get(rarity_id, [])
+		for raw_item_id: Variant in expansion_set_pieces[set_id]:
+			_check(
+				rarity_pool.has(str(raw_item_id)),
+				"Summon pool includes unlocked Set Expansion item " + str(raw_item_id)
+			)
+
+	var set_catalog_source: String = FileAccess.get_file_as_string(
+		"res://scripts/data/equipment_set_catalog.gd"
+	)
+	for set_id: String in expansion_set_ids:
+		_check(
+			set_catalog_source.contains("\"" + set_id + "\": {"),
+			"Equipment set catalog declares Set Expansion family " + set_id
+		)
+	_check(
+		set_catalog_source.contains("\"stationary_damage_bonus\": 0.04")
+		and set_catalog_source.contains("\"high_health_damage_bonus\": 0.04")
+		and set_catalog_source.contains("\"starting_shield_charges\": 1.0"),
+		"Set Expansion gameplay catalog exposes Bastion, Stillwater, and Solar identity mechanics"
 	)
 
 	# Gate 1.5 — equipment ascension is a permanent 1★–5★ progression layer.

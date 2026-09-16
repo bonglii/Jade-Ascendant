@@ -7,6 +7,7 @@ signal hero_progress_changed(
 	experience_to_next: int
 )
 signal hero_level_up(new_level: int)
+signal hero_milestone_claimed(milestone_level: int)
 
 ## Progression Manager
 ## Menyimpan permanent progression yang tetap tersedia setelah run berakhir.
@@ -35,6 +36,7 @@ const SWIFT_QI_MAX_LEVEL: int = 10
 const HERO_MAX_LEVEL: int = 50
 const HERO_EXP_BASE: int = 100
 const HERO_EXP_GROWTH: int = 25
+const HERO_MILESTONE_LEVELS: Array[int] = [10, 20, 30, 40, 50]
 
 var spirit_stone: int = 0
 
@@ -46,6 +48,7 @@ var swift_qi_level: int = 0
 ## save data cannot contain a mismatched level/EXP pair.
 var hero_experience_total: int = 0
 var hero_progression_initialized: bool = false
+var hero_milestones_claimed: Array[int] = []
 
 var last_loaded_save_version: int = SAVE_VERSION
 var progression_save_migrated: bool = false
@@ -125,19 +128,86 @@ func get_hero_progress_ratio() -> float:
 	)
 
 ## Rank title is presentation identity, not an additional combat-stat layer.
-func get_hero_rank_title() -> String:
-	var hero_level: int = get_hero_level()
-	if hero_level >= 50:
+func get_hero_rank_title_for_level(hero_level: int) -> String:
+	var safe_level: int = clampi(hero_level, 1, HERO_MAX_LEVEL)
+	if safe_level >= 50:
 		return "HEAVENLY ASCENDANT"
-	if hero_level >= 40:
+	if safe_level >= 40:
 		return "ASCENDANT"
-	if hero_level >= 30:
+	if safe_level >= 30:
 		return "DAO MASTER"
-	if hero_level >= 20:
+	if safe_level >= 20:
 		return "JADE ADEPT"
-	if hero_level >= 10:
+	if safe_level >= 10:
 		return "MERIDIAN DISCIPLE"
 	return "WANDERING CULTIVATOR"
+
+func get_hero_rank_title() -> String:
+	return get_hero_rank_title_for_level(get_hero_level())
+
+func get_hero_milestone_levels() -> Array[int]:
+	var milestone_levels: Array[int] = []
+	milestone_levels.assign(HERO_MILESTONE_LEVELS)
+	return milestone_levels
+
+func is_valid_hero_milestone(milestone_level: int) -> bool:
+	return milestone_level in HERO_MILESTONE_LEVELS
+
+func is_hero_milestone_reached(milestone_level: int) -> bool:
+	return (
+		is_valid_hero_milestone(milestone_level)
+		and get_hero_level() >= milestone_level
+	)
+
+func is_hero_milestone_claimed(milestone_level: int) -> bool:
+	return milestone_level in hero_milestones_claimed
+
+func can_claim_hero_milestone(milestone_level: int) -> bool:
+	return (
+		is_hero_milestone_reached(milestone_level)
+		and not is_hero_milestone_claimed(milestone_level)
+	)
+
+func get_next_claimable_hero_milestone() -> int:
+	for milestone_level: int in HERO_MILESTONE_LEVELS:
+		if can_claim_hero_milestone(milestone_level):
+			return milestone_level
+	return 0
+
+func get_next_hero_milestone() -> int:
+	var hero_level: int = get_hero_level()
+	for milestone_level: int in HERO_MILESTONE_LEVELS:
+		if hero_level < milestone_level:
+			return milestone_level
+	return 0
+
+func are_all_hero_milestones_claimed() -> bool:
+	for milestone_level: int in HERO_MILESTONE_LEVELS:
+		if not is_hero_milestone_claimed(milestone_level):
+			return false
+	return true
+
+func preview_claim_hero_milestone(
+	progression_data: Dictionary,
+	milestone_level: int
+) -> Dictionary:
+	if not is_valid_hero_milestone(milestone_level):
+		return {}
+	var preview: Dictionary = progression_data.duplicate(true)
+	var preview_level: int = get_hero_level_for_total_experience(
+		int(preview.get("hero_experience_total", 0))
+	)
+	if preview_level < milestone_level:
+		return {}
+	var claimed_levels: Array[int] = _normalize_hero_milestones_claimed(
+		preview.get("hero_milestones_claimed", [])
+	)
+	if milestone_level in claimed_levels:
+		return {}
+	claimed_levels.append(milestone_level)
+	claimed_levels.sort()
+	preview["hero_milestones_claimed"] = claimed_levels
+	return preview
 
 ## Pure preview used by RewardManager before its atomic multi-domain commit.
 func preview_add_hero_experience(
@@ -357,6 +427,9 @@ func build_progression_save_data() -> Dictionary:
 			hero_experience_total,
 			0,
 			get_hero_total_experience_cap()
+		),
+		"hero_milestones_claimed": _normalize_hero_milestones_claimed(
+			hero_milestones_claimed
 		)
 	}
 
@@ -400,6 +473,9 @@ func normalize_progression_save_data(save_data: Dictionary) -> Dictionary:
 			int(save_data.get("hero_experience_total", 0)),
 			0,
 			get_hero_total_experience_cap()
+		),
+		"hero_milestones_claimed": _normalize_hero_milestones_claimed(
+			save_data.get("hero_milestones_claimed", [])
 		)
 	}
 
@@ -426,6 +502,8 @@ func apply_progression_save_data(
 	)
 	var previous_hero_level: int = get_hero_level()
 	var previous_hero_total: int = hero_experience_total
+	var previous_milestones_claimed: Array[int] = []
+	previous_milestones_claimed.assign(hero_milestones_claimed)
 	swift_qi_level = clampi(
 		int(save_data["swift_qi_level"]),
 		0,
@@ -435,6 +513,9 @@ func apply_progression_save_data(
 		int(save_data.get("hero_experience_total", 0)),
 		0,
 		get_hero_total_experience_cap()
+	)
+	hero_milestones_claimed = _normalize_hero_milestones_claimed(
+		save_data.get("hero_milestones_claimed", [])
 	)
 	if emit_hero_signals and hero_experience_total != previous_hero_total:
 		var new_hero_level: int = get_hero_level()
@@ -449,7 +530,24 @@ func apply_progression_save_data(
 				new_hero_level + 1
 			):
 				hero_level_up.emit(gained_level)
+	if emit_hero_signals:
+		for milestone_level: int in hero_milestones_claimed:
+			if milestone_level not in previous_milestones_claimed:
+				hero_milestone_claimed.emit(milestone_level)
 	return true
+
+func _normalize_hero_milestones_claimed(raw_claims: Variant) -> Array[int]:
+	var normalized: Array[int] = []
+	if raw_claims is Array:
+		for raw_level: Variant in raw_claims:
+			var milestone_level: int = int(raw_level)
+			if (
+				is_valid_hero_milestone(milestone_level)
+				and milestone_level not in normalized
+			):
+				normalized.append(milestone_level)
+	normalized.sort()
+	return normalized
 
 ## Menampilkan status progression saat game mulai untuk kebutuhan debug.
 func print_progression_status() -> void:
@@ -459,6 +557,7 @@ func print_progression_status() -> void:
 	print("Sword Power Level: ", sword_power_level)
 	print("Swift Qi Level: ", swift_qi_level)
 	print("Lin Yue Hero Level: ", get_hero_level())
+	print("Hero Milestones Claimed: ", hero_milestones_claimed)
 	if get_hero_level() >= HERO_MAX_LEVEL:
 		print("Hero EXP: MAX")
 	else:

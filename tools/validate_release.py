@@ -115,8 +115,8 @@ def main() -> int:
     check(not weight_errors,'Enemy probability tables sum to 100',weight_errors)
     permanent_slots={'armament','robe','bracer','boots','pendant'}
     slot_counts=collections.Counter(v['slot'] for v in items.values())
-    check(len(items)==25 and set(slot_counts)==permanent_slots,'Equipment V2 contains twenty-five items across five permanent slots',dict(slot_counts))
-    check(all(slot_counts[slot]==5 for slot in permanent_slots),'Equipment V2 provides five collection choices per permanent slot',dict(slot_counts))
+    check(len(items)==40 and set(slot_counts)==permanent_slots,'Equipment Set Expansion contains forty items across the five locked permanent slots',dict(slot_counts))
+    check(all(slot_counts[slot]==8 for slot in permanent_slots),'Equipment Set Expansion provides eight collection choices per permanent slot',dict(slot_counts))
     equipment_manager_text=(p/'scripts/ui/equipment_manager.gd').read_text(encoding='utf-8-sig')
     slot_func=re.search(r'func\s+get_slot_ids\(\)\s*->\s*Array\[String\]:\s*\n\s*return\s*\[(.*?)\]',equipment_manager_text,re.S)
     manager_slot_constants=re.findall(r'\bSLOT_[A-Z_]+\b',slot_func.group(1)) if slot_func else []
@@ -128,13 +128,13 @@ def main() -> int:
         manager_slot_constants
     )
     armament_ids={k for k,v in items.items() if v['slot']=='armament'}
-    expected_armaments={'wanderer_jade_jian','mistveil_jian','spirit_seal_fan','cinnabar_moon_saber','nine_heavens_star_sword'}
-    check(armament_ids==expected_armaments,'Dao Armament collection contains the five approved Gate 1.3 identities',sorted(armament_ids))
+    expected_armaments={'wanderer_jade_jian','mistveil_jian','spirit_seal_fan','cinnabar_moon_saber','nine_heavens_star_sword','mountain_ward_jian','stillwater_mirror_blade','sunfire_dragon_jian'}
+    check(armament_ids==expected_armaments,'Dao Armament collection preserves the five locked identities and adds three set-expansion choices',sorted(armament_ids))
     check(items['wanderer_jade_jian']['rarity']=='common' and items['wanderer_jade_jian']['damage_bonus']==.03,'Foundation Dao Armament identity and passive preserved')
     check(items['spirit_seal_fan']['experience_bonus']==.05 and items['spirit_seal_fan']['pickup_radius_bonus']==10.0,'Spirit-Seal Fan is a utility armament rather than a damage clone')
     check(items['mirror_edge_bracer']['damage_bonus']<items['jade_edge_bracer']['damage_bonus'] and items['mirror_edge_bracer']['critical_chance_bonus']>items['jade_edge_bracer']['critical_chance_bonus'],'Mirror-Edge Bracer remains a crit-oriented sidegrade')
     rarity_counts=collections.Counter(v['rarity'] for v in items.values())
-    check(rarity_counts=={'common':5,'rare':8,'epic':7,'legendary':5},'Equipment V2 rarity distribution remains intentionally broad without inflating Legendary count',dict(rarity_counts))
+    check(rarity_counts=={'common':5,'rare':13,'epic':12,'legendary':10},'Equipment Set Expansion adds one complete Rare, Epic, and Legendary family without changing rarity-rate authority',dict(rarity_counts))
     signature_keys={'signature_effect_name','signature_effect_description'}
     common_items={k:v for k,v in items.items() if v['rarity']=='common'}
     rare_items={k:v for k,v in items.items() if v['rarity']=='rare'}
@@ -154,6 +154,49 @@ def main() -> int:
     check(items['shadowstep_boots'].get('moving_damage_bonus')==.04,'Shadowstep Boots reward active movement')
     check(items['starstep_boots'].get('level_up_heal_flat')==2.0,'Starstep Boots convert level gains into recovery')
     check(items['sword_heart_pendant'].get('low_health_critical_chance_bonus')==.03,'Sword-Heart Pendant gains critical focus under pressure')
+    legacy_ids={
+        'wanderer_jade_jian','mistveil_jian','spirit_seal_fan','cinnabar_moon_saber','nine_heavens_star_sword',
+        'verdant_qi_robe','bamboo_weave_robe','moonthread_robe','ward_keeper_robe','sovereign_mantle',
+        'jade_guard_bracer','jade_edge_bracer','mirror_edge_bracer','stormcall_bracer','tribulation_bracer',
+        'cloudstep_boots','miststride_boots','shadowstep_boots','starstep_boots','cloudtreader_boots',
+        'spirit_jade_pendant','qi_reservoir_pendant','shrine_seal_pendant','sword_heart_pendant','ascendant_heart'
+    }
+    expansion_ids={
+        'mountain_ward_jian','stone_meridian_robe','earthseal_bracer','rootstep_boots','guardian_jade_pendant',
+        'stillwater_mirror_blade','glassmoon_robe','reflection_bracer','silent_ripple_boots','mirror_heart_pendant',
+        'sunfire_dragon_jian','dawn_meridian_robe','solar_edict_bracer','sunstride_boots','golden_core_pendant'
+    }
+    check(len(legacy_ids)==25 and legacy_ids<=set(items),'All twenty-five locked equipment IDs remain present')
+    check(len(expansion_ids)==15 and set(items)==legacy_ids|expansion_ids,'Exactly fifteen new equipment IDs expand the locked collection to forty')
+    set_catalog_text=(p/'scripts/data/equipment_set_catalog.gd').read_text(encoding='utf-8-sig')
+    set_order_match=re.search(r'const\s+SET_ORDER\s*:\s*Array\[String\]\s*=\s*\[(.*?)\]',set_catalog_text,re.S)
+    set_order=re.findall(r'"([^"]+)"',set_order_match.group(1)) if set_order_match else []
+    set_definitions=constant(p/'scripts/data/equipment_set_catalog.gd','SETS')
+    gameplay_tiers=constant(p/'scripts/data/equipment_set_catalog.gd','GAMEPLAY_TIERS')
+    expected_new_sets={
+        'jade_bastion':{
+            'rarity':'rare',
+            'pieces':{'mountain_ward_jian','stone_meridian_robe','earthseal_bracer','rootstep_boots','guardian_jade_pendant'},
+            'tiers':{2:{'max_health_flat':5.0},3:{'starting_shield_charges':1.0},4:{'blood_qi_heal_bonus':0.10},5:{'level_up_heal_flat':0.75}},
+        },
+        'stillwater_mirror':{
+            'rarity':'epic',
+            'pieces':{'stillwater_mirror_blade','glassmoon_robe','reflection_bracer','silent_ripple_boots','mirror_heart_pendant'},
+            'tiers':{2:{'critical_chance_bonus':0.01},3:{'stationary_damage_bonus':0.04},4:{'critical_damage_bonus':0.05},5:{'attack_cooldown_reduction':0.015}},
+        },
+        'solar_meridian':{
+            'rarity':'legendary',
+            'pieces':{'sunfire_dragon_jian','dawn_meridian_robe','solar_edict_bracer','sunstride_boots','golden_core_pendant'},
+            'tiers':{2:{'damage_bonus':0.01},3:{'high_health_damage_bonus':0.04},4:{'critical_chance_bonus':0.01},5:{'attack_cooldown_reduction':0.02}},
+        },
+    }
+    check(len(set_order)==8 and set(set_order)==set(set_definitions)==set(gameplay_tiers),'Equipment resonance catalog contains exactly eight complete set families',set_order)
+    for set_id,spec in expected_new_sets.items():
+        pieces=set(set_definitions[set_id]['items'])
+        piece_slots={items[item_id]['slot'] for item_id in pieces}
+        check(pieces==spec['pieces'] and piece_slots==permanent_slots,'Set Expansion family covers all five permanent slots: '+set_id,sorted(pieces))
+        check(all(items[item_id]['rarity']==spec['rarity'] for item_id in pieces),'Set Expansion rarity identity is consistent: '+set_id,spec['rarity'])
+        check(gameplay_tiers[set_id]==spec['tiers'],'Set Expansion 2P/3P/4P/5P gameplay contract: '+set_id,gameplay_tiers[set_id])
     ascension_multipliers=constant(p/'scripts/ui/equipment_manager.gd','ASCENSION_CORE_MULTIPLIERS')
     ascension_cost_multipliers=constant(p/'scripts/ui/equipment_manager.gd','ASCENSION_COST_MULTIPLIERS')
     ascension_stats=constant(p/'scripts/ui/equipment_manager.gd','ASCENSION_SCALABLE_STATS')
@@ -179,9 +222,15 @@ def main() -> int:
     player_stats_text=(p/'scripts/stats/player_stats.gd').read_text(encoding='utf-8-sig')
     weapon_manager_text=(p/'scripts/weapon/weapon_manager.gd').read_text(encoding='utf-8-sig')
     player_text=(p/'scripts/player/player_1.gd').read_text(encoding='utf-8-sig')
-    check(all(key in player_stats_text for key in ('moving_damage_bonus','low_health_damage_bonus','low_health_critical_chance_bonus')),'PlayerStats consumes conditional equipment signature mechanics')
+    check(all(key in player_stats_text for key in ('moving_damage_bonus','low_health_damage_bonus','low_health_critical_chance_bonus','stationary_damage_bonus','high_health_damage_bonus')),'PlayerStats consumes legacy and Set Expansion conditional damage mechanics')
     check('attack_cooldown_reduction' in weapon_manager_text,'WeaponManager consumes Dao Armament cooldown reduction dynamically')
     check('level_up_heal_flat' in player_text,'Player consumes Starstep level-up recovery dynamically')
+    player_health_text=(p/'scripts/player/PlayerHealth.gd').read_text(encoding='utf-8-sig')
+    set_presentation_text=(p/'scripts/player/lin_yue_equipment_set_presentation.gd').read_text(encoding='utf-8-sig')
+    pavilion_manager_text=(p/'scripts/managers/pavilion_manager.gd').read_text(encoding='utf-8-sig')
+    check('starting_shield_charges' in player_health_text and 'get_capped_combined_secondary_bonus' in player_health_text,'PlayerHealth consumes Jade Bastion shield/sustain resonance through the snapshot-safe runtime')
+    check(all(set_id in set_presentation_text for set_id in expected_new_sets),'Lin Yue resonance presentation recognizes all three Set Expansion families')
+    check('func get_summon_pool_by_rarity()' in pavilion_manager_text and 'for item_id: String in EquipmentManager.get_item_ids()' in pavilion_manager_text and 'if not is_item_unlocked(item_id):' in pavilion_manager_text,'Pavilion summon pool remains catalog-driven and progression-gated for new equipment')
     check(all(v['price']>0 and v['forge_cost']>0 for v in items.values()),'Positive currency and shard prices')
     baseline_stats={'verdant_qi_robe':('max_health_flat',10),'jade_guard_bracer':('damage_bonus',.05),'cloudstep_boots':('movement_speed_bonus',.05),'spirit_jade_pendant':('experience_bonus',.05)}
     check(all(items[k][field]==value for k,(field,value) in baseline_stats.items()),'Four original equipment bonuses retained')
