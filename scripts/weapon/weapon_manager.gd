@@ -23,15 +23,26 @@ func _ready() -> void:
 	initialize_weapons()
 
 ## Membuat weapon awal yang dimiliki Player.
-## Starter production sengaja hanya Spirit Sword Lv1; weapon lain diperoleh
-## sebagai pilihan breakthrough selama run atau dipulihkan dari checkpoint.
+## Internal weapon_name tetap Spirit Sword untuk kompatibilitas checkpoint v1.
+## Armament permanen hanya mengubah combat presentation profile starter art.
 func initialize_weapons() -> void:
 	var spirit_sword := SpiritSwordWeapon.new()
+	var runtime_armament_id: String = EquipmentManager.get_runtime_equipped_item_id(
+		EquipmentManager.SLOT_ARMAMENT
+	)
+	spirit_sword.configure_armament(runtime_armament_id)
 
 	add_child(spirit_sword)
 	add_weapon(spirit_sword)
 
 	attack_timers[spirit_sword] = 0.0
+
+	DebugLogger.system(str(
+		"Starter Armament Combat Identity: ",
+		spirit_sword.get_combat_display_name(),
+		" | Equipment ID: ",
+		runtime_armament_id if not runtime_armament_id.is_empty() else "default"
+	))
 
 ## Memberikan Fire Orb kepada Player sebagai acquisition runtime.
 func add_fire_orb() -> void:

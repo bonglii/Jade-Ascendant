@@ -45,6 +45,26 @@ var profile_sheet_body: VBoxContainer = null
 var profile_sheet_rank_label: Label = null
 var profile_sheet_level_label: Label = null
 var profile_sheet_exp_bar: ProgressBar = null
+var profile_scroll: ScrollContainer = null
+
+const PROFILE_INPUT_DEBOUNCE_MSEC: int = 180
+const PROFILE_SCROLL_DEADZONE: int = 6
+const DEBUG_QA_ARMAMENT_CLEANUP_ITEM_IDS: Array[String] = [
+	"wanderer_jade_jian",
+	"mistveil_jian",
+	"spirit_seal_fan",
+	"cinnabar_moon_saber",
+	"nine_heavens_star_sword",
+	"mountain_ward_jian",
+	"stillwater_mirror_blade",
+	"sunfire_dragon_jian"
+]
+const DEBUG_QA_ARMAMENT_CLEANUP_MARKER: String = (
+	"user://qa_armament_identity_cleanup_v1.done"
+)
+var profile_close_armed: bool = false
+var profile_input_block_until_msec: int = 0
+var profile_open_tween: Tween = null
 
 func _ready() -> void:
 	continue_button.pressed.connect(_on_continue_pressed)
@@ -58,9 +78,72 @@ func _ready() -> void:
 	_configure_profile_interaction()
 	_ensure_profile_sheet()
 	_ensure_hero_progression_initialized()
+	_debug_cleanup_armament_test_grants_once()
 	_refresh_home()
 	_configure_platform_ui()
 	call_deferred("_play_intro_animation")
+
+func _debug_cleanup_armament_test_grants_once() -> void:
+	# One-time cleanup for the temporary all-armament QA grant used during the
+	# combat-identity validation pass. Production/release builds never execute it.
+	# The marker prevents future legitimate debug acquisitions from being removed.
+	if not OS.is_debug_build():
+		return
+	if FileAccess.file_exists(DEBUG_QA_ARMAMENT_CLEANUP_MARKER):
+		return
+	if SaveManager.is_progress_read_only():
+		DebugLogger.system(
+			"QA DEBUG | Armament cleanup deferred: save is read-only."
+		)
+		return
+
+	var equipped_armament: String = EquipmentManager.get_loadout_equipped_item_id(
+		EquipmentManager.SLOT_ARMAMENT
+	)
+	if equipped_armament in DEBUG_QA_ARMAMENT_CLEANUP_ITEM_IDS:
+		if not EquipmentManager.unequip_slot(EquipmentManager.SLOT_ARMAMENT):
+			DebugLogger.system(
+				"QA DEBUG | Armament cleanup deferred: could not unequip test armament."
+			)
+			return
+
+	var cleanup_ok: bool = true
+	var removed_ids: Array[String] = []
+	for item_id in DEBUG_QA_ARMAMENT_CLEANUP_ITEM_IDS:
+		var owned_count: int = InventoryManager.get_item_count(item_id)
+		if owned_count <= 0:
+			continue
+		if InventoryManager.remove_item(item_id, owned_count):
+			removed_ids.append(item_id)
+		else:
+			cleanup_ok = false
+			push_warning(
+				"QA DEBUG | Failed to remove temporary armament grant: " + item_id
+			)
+
+	if not cleanup_ok:
+		DebugLogger.system(
+			"QA DEBUG | Armament cleanup incomplete; will retry next Home load."
+		)
+		return
+
+	var marker := FileAccess.open(
+		DEBUG_QA_ARMAMENT_CLEANUP_MARKER,
+		FileAccess.WRITE
+	)
+	if marker == null:
+		push_warning(
+			"QA DEBUG | Could not persist armament cleanup marker; cleanup may retry."
+		)
+		return
+	marker.store_string("completed")
+	marker.close()
+
+	DebugLogger.system(str(
+		"QA DEBUG | Temporary armament grants cleaned up: ",
+		removed_ids.size()
+	))
+
 
 func _refresh_home() -> void:
 	spirit_stone_label.text = _format_amount(int(ProgressionManager.spirit_stone))
@@ -415,20 +498,29 @@ func _set_profile_child_mouse_ignore(node: Node) -> void:
 		_set_profile_child_mouse_ignore(child)
 
 func _on_profile_gui_input(event: InputEvent) -> void:
+	if not _is_profile_primary_press(event):
+		return
+	if profile_overlay != null and profile_overlay.visible:
+		accept_event()
+		return
+	var now_msec: int = Time.get_ticks_msec()
+	if now_msec < profile_input_block_until_msec:
+		accept_event()
+		return
+	profile_input_block_until_msec = now_msec + PROFILE_INPUT_DEBOUNCE_MSEC
+	_open_profile_sheet()
+	accept_event()
+
+func _is_profile_primary_press(event: InputEvent) -> bool:
 	if event is InputEventMouseButton:
 		var mouse_event := event as InputEventMouseButton
-		if (
+		return (
 			mouse_event.button_index == MOUSE_BUTTON_LEFT
 			and mouse_event.pressed
-		):
-			_open_profile_sheet()
-			accept_event()
-		return
+		)
 	if event is InputEventScreenTouch:
-		var touch_event := event as InputEventScreenTouch
-		if touch_event.pressed:
-			_open_profile_sheet()
-			accept_event()
+		return (event as InputEventScreenTouch).pressed
+	return false
 
 func _ensure_profile_sheet() -> void:
 	if profile_overlay != null:
@@ -616,20 +708,21 @@ func _ensure_profile_sheet() -> void:
 	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(subtitle)
 
-	var scroll := ScrollContainer.new()
-	scroll.name = "Scroll"
-	scroll.custom_minimum_size = Vector2(0.0, 0.0)
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	content.add_child(scroll)
+	profile_scroll = ScrollContainer.new()
+	profile_scroll.name = "Scroll"
+	profile_scroll.custom_minimum_size = Vector2(0.0, 0.0)
+	profile_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	profile_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	profile_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	profile_scroll.scroll_deadzone = PROFILE_SCROLL_DEADZONE
+	content.add_child(profile_scroll)
 
 	profile_sheet_body = VBoxContainer.new()
 	profile_sheet_body.name = "Body"
 	profile_sheet_body.custom_minimum_size = Vector2(0.0, 0.0)
 	profile_sheet_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	profile_sheet_body.add_theme_constant_override("separation", 10)
-	scroll.add_child(profile_sheet_body)
+	profile_scroll.add_child(profile_sheet_body)
 
 func _make_profile_style(
 	background_color: Color,
@@ -651,49 +744,68 @@ func _make_profile_style(
 	return style
 
 func _on_profile_dim_gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton:
-		var mouse_event := event as InputEventMouseButton
-		if (
-			mouse_event.button_index == MOUSE_BUTTON_LEFT
-			and mouse_event.pressed
-		):
-			_close_profile_sheet()
+	if not profile_close_armed or not _is_profile_primary_press(event):
 		return
-	if event is InputEventScreenTouch:
-		var touch_event := event as InputEventScreenTouch
-		if touch_event.pressed:
-			_close_profile_sheet()
+	profile_close_armed = false
+	_close_profile_sheet()
+	accept_event()
 
 func _open_profile_sheet() -> void:
 	_ensure_profile_sheet()
+	if profile_overlay == null or profile_sheet_panel == null:
+		return
+	if profile_overlay.visible:
+		return
+
 	_refresh_profile_sheet()
+	_kill_profile_open_tween()
+	profile_close_armed = false
+	profile_sheet_panel.modulate = Color.WHITE
+	profile_sheet_panel.scale = Vector2.ONE
 	profile_overlay.visible = true
+	call_deferred("_arm_profile_close")
+
 	if SettingsManager.reduced_effects:
-		profile_sheet_panel.modulate = Color.WHITE
-		profile_sheet_panel.scale = Vector2.ONE
 		return
 
 	profile_sheet_panel.pivot_offset = profile_sheet_panel.size * 0.5
 	profile_sheet_panel.modulate = Color(1.0, 1.0, 1.0, 0.0)
 	profile_sheet_panel.scale = Vector2(0.97, 0.97)
-	var tween := create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(
+	profile_open_tween = create_tween()
+	profile_open_tween.set_parallel(true)
+	profile_open_tween.tween_property(
 		profile_sheet_panel,
 		"modulate",
 		Color.WHITE,
 		0.16
 	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(
+	profile_open_tween.tween_property(
 		profile_sheet_panel,
 		"scale",
 		Vector2.ONE,
 		0.18
 	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
+func _arm_profile_close() -> void:
+	if profile_overlay != null and profile_overlay.visible:
+		profile_close_armed = true
+
+func _kill_profile_open_tween() -> void:
+	if profile_open_tween != null and profile_open_tween.is_valid():
+		profile_open_tween.kill()
+	profile_open_tween = null
+
 func _close_profile_sheet() -> void:
 	if profile_overlay == null or not profile_overlay.visible:
 		return
+	profile_close_armed = false
+	profile_input_block_until_msec = (
+		Time.get_ticks_msec() + PROFILE_INPUT_DEBOUNCE_MSEC
+	)
+	_kill_profile_open_tween()
+	if profile_sheet_panel != null:
+		profile_sheet_panel.modulate = Color.WHITE
+		profile_sheet_panel.scale = Vector2.ONE
 	profile_overlay.visible = false
 
 func _refresh_profile_sheet() -> void:
@@ -844,6 +956,24 @@ func _refresh_profile_sheet() -> void:
 	)
 
 	_add_profile_milestones(hero_level)
+	_configure_profile_scroll_input()
+
+func _configure_profile_scroll_input() -> void:
+	if profile_scroll == null or profile_sheet_body == null:
+		return
+	profile_scroll.scroll_deadzone = PROFILE_SCROLL_DEADZONE
+	_set_profile_scroll_mouse_pass(profile_sheet_body)
+
+func _set_profile_scroll_mouse_pass(root_node: Node) -> void:
+	if root_node is Control:
+		var root_control := root_node as Control
+		if root_control.mouse_filter == Control.MOUSE_FILTER_STOP:
+			root_control.mouse_filter = Control.MOUSE_FILTER_PASS
+
+	for child_node: Node in root_node.get_children():
+		if child_node is ScrollContainer:
+			continue
+		_set_profile_scroll_mouse_pass(child_node)
 
 func _build_permanent_profile_snapshot() -> Dictionary:
 	# These coefficients mirror the audited runtime authorities:

@@ -16,6 +16,7 @@ const FIRE_ORB_IMPACT_SCENE: PackedScene = preload(
 var direction: Vector2 = Vector2.ZERO
 var lifetime: float = 4.0
 var consumed: bool = false
+var is_critical: bool = false
 
 
 func _physics_process(delta: float) -> void:
@@ -56,6 +57,7 @@ func _on_body_entered(body: Node2D) -> void:
 		return
 
 	consumed = true
+	CombatFeedback.mark_next_hit_critical(body, is_critical)
 	body.take_damage(damage)
 	_apply_cinder_bloom(body)
 	spawn_hit_visual()
@@ -104,6 +106,7 @@ func _apply_cinder_bloom(primary_target: Node2D) -> void:
 		if distance_squared > radius_squared:
 			continue
 
+		CombatFeedback.mark_next_hit_critical(enemy, is_critical)
 		enemy.take_damage(splash_damage)
 		splash_hits += 1
 

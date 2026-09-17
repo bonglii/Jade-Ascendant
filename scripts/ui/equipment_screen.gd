@@ -21,6 +21,8 @@ const SLOT_ORDER: Array[String] = [
 const FILTER_ALL: String = "all"
 const FILTER_OWNED: String = "owned"
 const FILTER_MISSING: String = "missing"
+const CANDIDATE_BUILD_BATCH_SIZE: int = 6
+
 const FILTER_ORDER: Array[String] = [
 	FILTER_ALL,
 	FILTER_OWNED,
@@ -95,8 +97,10 @@ var collection_next_bonus_label: Label
 var detail_resonance_label: Label
 var ascension_star_track: HBoxContainer
 var detail_last_visible: bool = false
+var candidate_rebuild_generation: int = 0
 
 func _ready() -> void:
+	var startup_started_at: int = Time.get_ticks_msec()
 	SceneTransitionManager.set_back_handler(handle_system_back)
 	armament_button.pressed.connect(_on_slot_pressed.bind("armament"))
 	robe_button.pressed.connect(_on_slot_pressed.bind("robe"))
@@ -120,12 +124,26 @@ func _ready() -> void:
 	candidate_grid.add_theme_constant_override("h_separation", 10)
 	candidate_grid.add_theme_constant_override("v_separation", 10)
 	_setup_hero_showcase()
-	_setup_collection_filter()
-	_setup_detail_premium_presentation()
 	bonus_summary_label.clip_text = true
 	bonus_summary_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	_refresh_screen()
 	DebugLogger.system(str("Hero Equipment Hub aktif!"))
+	_finish_initial_equipment_setup.call_deferred(startup_started_at)
+
+
+func _finish_initial_equipment_setup(startup_started_at: int) -> void:
+	# Let the new scene become visible before constructing collection/detail
+	# chrome. Candidate cards are already populated in small frame batches.
+	await get_tree().process_frame
+	if not is_inside_tree():
+		return
+	_setup_collection_filter()
+	_setup_detail_premium_presentation()
+	_refresh_screen()
+	DebugLogger.system(str(
+		"Hero Equipment staged init selesai | ",
+		Time.get_ticks_msec() - startup_started_at,
+		" ms"
+	))
 
 
 func _setup_detail_premium_presentation() -> void:
@@ -655,10 +673,25 @@ func _get_filtered_equipment_item_ids() -> Array[String]:
 	return filtered_ids
 
 func _rebuild_candidate_grid() -> void:
+	candidate_rebuild_generation += 1
+	var rebuild_generation: int = candidate_rebuild_generation
 	for child: Node in candidate_grid.get_children():
+		candidate_grid.remove_child(child)
 		child.queue_free()
-	for item_id: String in _get_filtered_equipment_item_ids():
-		candidate_grid.add_child(_create_candidate_button(item_id))
+	var item_ids: Array[String] = _get_filtered_equipment_item_ids()
+	_populate_candidate_grid_batched.call_deferred(item_ids, rebuild_generation)
+
+
+func _populate_candidate_grid_batched(
+	item_ids: Array[String],
+	rebuild_generation: int
+) -> void:
+	for item_index: int in range(item_ids.size()):
+		if rebuild_generation != candidate_rebuild_generation or not is_inside_tree():
+			return
+		candidate_grid.add_child(_create_candidate_button(item_ids[item_index]))
+		if (item_index + 1) % CANDIDATE_BUILD_BATCH_SIZE == 0:
+			await get_tree().process_frame
 
 func _create_candidate_button(item_id: String) -> Button:
 	var item_data: Dictionary = EquipmentManager.get_item_data(item_id)

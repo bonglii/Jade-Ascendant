@@ -7,6 +7,7 @@ extends Control
 
 const EquipmentVisualCatalog = preload("res://scripts/ui/equipment_visual_catalog.gd")
 const EquipmentSetCatalog = preload("res://scripts/data/equipment_set_catalog.gd")
+const EconomyCatalog = preload("res://scripts/data/economy_catalog.gd")
 const SummonStageVisual = preload("res://scripts/ui/pavilion_summon_stage.gd")
 const SummonRevealStage = preload("res://scripts/ui/pavilion_summon_reveal_stage.gd")
 const PavilionNavOrnament = preload("res://scripts/ui/pavilion_nav_ornament.gd")
@@ -29,6 +30,7 @@ const SLOT_ICON_PATHS: Dictionary = {
 const RARITIES: Array[String] = ["common", "rare", "epic", "legendary"]
 const STANDARD_AURA_IDS: Array[String] = ["plain", "jade_aura", "golden_aura", "astral_aura"]
 const FEATURED_AURA_ID: String = "ascendant_aura"
+const PAVILION_EQUIPMENT_BUILD_BATCH_SIZE: int = 4
 const AURA_PREVIEW_PATHS: Dictionary = {
 	"plain": "res://assets/ui/pavilion/polish/aura_preview_wanderer.svg",
 	"jade_aura": "res://assets/ui/pavilion/polish/aura_preview_shrinekeeper.svg",
@@ -84,6 +86,7 @@ var status_panel: PanelContainer
 var status_label: Label
 
 var summon_state_label: Label
+var summon_unlock_hint_label: Label
 var starter_button: Button
 var lifetime_label: Label
 var ritual_panel: PanelContainer
@@ -151,20 +154,91 @@ var aura_featured: VBoxContainer
 var equipment_list: VBoxContainer
 var rarity_buttons: Dictionary = {}
 var selected_rarity: String = "common"
+var equipment_rebuild_generation: int = 0
 
 
 func _ready() -> void:
+	var startup_started_at: int = Time.get_ticks_msec()
 	content = $SafeArea/Scroll/Content
+	var pavilion_scroll := $SafeArea/Scroll as ScrollContainer
+	# Never expose partially constructed/default Pavilion controls. The wallet
+	# and backdrop may paint immediately, while the scroll body becomes visible
+	# only after its above-the-fold state has been resolved from managers.
+	pavilion_scroll.visible = false
 	SceneTransitionManager.set_back_handler(_back)
 	_configure_backdrop()
+	_prepare_pavilion_content()
 	_build_wallet_header()
-	_build_screen()
+	_sync_wallet_balances()
+	# Build the masthead immediately, then finalize status + summon state on the
+	# next frame before revealing the scroll body. Lower sections remain staged.
+	_build_hero_header()
 	_install_pavilion_nav_luxury()
+	_finish_pavilion_initialization.call_deferred(startup_started_at)
+
+
+func _prepare_pavilion_content() -> void:
+	for child: Node in content.get_children():
+		content.remove_child(child)
+		child.queue_free()
+	content.add_theme_constant_override("separation", 14)
+
+
+func _finish_pavilion_initialization(startup_started_at: int) -> void:
+	await get_tree().process_frame
+	if not is_inside_tree():
+		return
+	_build_status_banner()
+	_refresh_status()
+	_build_summon_section()
+	# Resolve lock state, pity, Wish Fate, CTA availability and visible summon
+	# copy before the player can ever see this section. This prevents the old
+	# unlocked/default -> locked visual swap on first Pavilion entry.
+	_refresh_summon_panel()
+	var pavilion_scroll := $SafeArea/Scroll as ScrollContainer
+	pavilion_scroll.visible = true
+	DebugLogger.system(str(
+		"Pavilion above-fold ready | ",
+		Time.get_ticks_msec() - startup_started_at,
+		" ms"
+	))
+
+	await get_tree().process_frame
+	if not is_inside_tree():
+		return
+	_build_meditation_section()
+
+	await get_tree().process_frame
+	if not is_inside_tree():
+		return
+	_build_aura_section()
+
+	await get_tree().process_frame
+	if not is_inside_tree():
+		return
+	_build_forge_section()
+
+	await get_tree().process_frame
+	if not is_inside_tree():
+		return
+	_build_player_trust_section()
+	_add_bottom_safe_spacer()
+
+	await get_tree().process_frame
+	if not is_inside_tree():
+		return
 	_build_summon_reveal_overlay()
+	# Do not auto-seed the debug wallet during normal Pavilion entry. A QA grant
+	# changes persistent economy state and used to create a visible 0 -> 100,000
+	# Celestial Jade jump on new-player first paint.
 	if not PavilionManager.pavilion_changed.is_connected(_refresh):
 		PavilionManager.pavilion_changed.connect(_refresh)
-	_ensure_debug_summon_test_wallet()
 	_refresh()
+	DebugLogger.system(str(
+		"Pavilion staged init selesai | ",
+		Time.get_ticks_msec() - startup_started_at,
+		" ms"
+	))
 
 
 func _install_pavilion_nav_luxury() -> void:
@@ -222,10 +296,7 @@ func _configure_backdrop() -> void:
 
 
 func _build_screen() -> void:
-	for child: Node in content.get_children():
-		content.remove_child(child)
-		child.queue_free()
-	content.add_theme_constant_override("separation", 14)
+	_prepare_pavilion_content()
 	_build_hero_header()
 	_build_status_banner()
 	_build_summon_section()
@@ -271,6 +342,19 @@ func _build_wallet_header() -> void:
 	shard_balance_label = _compact_resource_chip(wallet_grid, REFINEMENT_SHARD_ICON, tr("Refinement Shard"), CYAN)
 	jade_balance_label = _compact_resource_chip(wallet_grid, CELESTIAL_JADE_ICON, tr("Celestial Jade"), VIOLET)
 	seal_balance_label = _compact_resource_chip(wallet_grid, PAVILION_SEAL_ICON, tr("Pavilion Seal"), JADE)
+
+
+func _sync_wallet_balances() -> void:
+	if stone_balance_label != null:
+		stone_balance_label.text = _format_count(ProgressionManager.spirit_stone)
+	if shard_balance_label != null:
+		shard_balance_label.text = _format_count(
+			InventoryManager.get_item_count(InventoryManager.REFINEMENT_SHARD)
+		)
+	if jade_balance_label != null:
+		jade_balance_label.text = _format_count(PavilionManager.get_celestial_jade())
+	if seal_balance_label != null:
+		seal_balance_label.text = _format_count(PavilionManager.get_pavilion_seals())
 
 
 func _compact_resource_chip(parent_node: Node, icon_path: String, tooltip: String, accent: Color) -> Label:
@@ -391,7 +475,7 @@ func _build_summon_section() -> void:
 	header_row.add_child(header_copy)
 	_label(header_copy, tr("CELESTIAL ARMORY"), 10, Color(VIOLET.r, VIOLET.g, VIOLET.b, 0.94))
 	_label(header_copy, tr("Equipment Summon"), 28, Color(1.0, 0.88, 0.50))
-	_label(header_copy, tr("Call unlocked equipment. Pity and Wish Fate persist across sessions."), 10, Color(0.69, 0.80, 0.77, 1.0))
+	summon_unlock_hint_label = _label(header_copy, tr("Call unlocked equipment. Pity and Wish Fate persist across sessions."), 10, Color(0.69, 0.80, 0.77, 1.0))
 	summon_state_label = _state_badge(header_row, tr("LOCKED"), Color(0.48, 0.54, 0.53, 1.0))
 	summon_state_label.custom_minimum_size = Vector2(62.0, 0.0)
 
@@ -1179,10 +1263,7 @@ func _build_player_trust_section() -> void:
 
 
 func _refresh() -> void:
-	stone_balance_label.text = _format_count(ProgressionManager.spirit_stone)
-	shard_balance_label.text = _format_count(InventoryManager.get_item_count(InventoryManager.REFINEMENT_SHARD))
-	jade_balance_label.text = _format_count(PavilionManager.get_celestial_jade())
-	seal_balance_label.text = _format_count(PavilionManager.get_pavilion_seals())
+	_sync_wallet_balances()
 
 	var meditation_ready := PavilionManager.can_claim_meditation()
 	chest.disabled = not meditation_ready
@@ -1229,17 +1310,29 @@ func _refresh_summon_panel() -> void:
 	var read_only: bool = SaveManager.is_progress_read_only()
 	if unlocked:
 		summon_state_label.visible = false
+		if summon_unlock_hint_label != null:
+			summon_unlock_hint_label.text = tr("Call unlocked equipment. Pity and Wish Fate persist across sessions.")
 		starter_button.visible = not PavilionManager.has_claimed_starter_seals()
 		starter_button.disabled = not PavilionManager.can_claim_starter_seals()
 		ritual_icon.modulate = Color.WHITE
 	else:
 		summon_state_label.visible = true
-		summon_state_label.text = tr("LOCKED")
+		summon_state_label.text = tr("LOCKED • CLEAR 1-%d") % EconomyCatalog.SUMMON_UNLOCK_STAGE
+		if summon_unlock_hint_label != null:
+			summon_unlock_hint_label.text = tr(
+				"SUMMON UNLOCKS AFTER CLEARING CHAPTER %d • STAGE %d"
+			) % [
+				EconomyCatalog.SUMMON_UNLOCK_CHAPTER,
+				EconomyCatalog.SUMMON_UNLOCK_STAGE
+			]
 		summon_state_label.add_theme_color_override("font_color", Color(0.64, 0.69, 0.68, 1.0))
 		starter_button.visible = false
 		ritual_icon.texture = load(PAVILION_SEAL_ICON) as Texture2D
 		ritual_title_label.text = tr("CELESTIAL ARMORY SEALED")
-		ritual_subtitle_label.text = tr("CLEAR CHAPTER 1-5 TO AWAKEN THE ARMORY")
+		ritual_subtitle_label.text = tr("SUMMON UNLOCKS AFTER CLEARING CHAPTER %d • STAGE %d") % [
+			EconomyCatalog.SUMMON_UNLOCK_CHAPTER,
+			EconomyCatalog.SUMMON_UNLOCK_STAGE
+		]
 		ritual_title_label.add_theme_color_override("font_color", Color(0.70, 0.72, 0.70, 1.0))
 		ritual_subtitle_label.add_theme_color_override("font_color", Color(0.52, 0.58, 0.57, 1.0))
 		ritual_panel.add_theme_stylebox_override("panel", _featured_armory_style(Color(0.38, 0.44, 0.44, 1.0), false))
@@ -1281,8 +1374,12 @@ func _refresh_summon_panel() -> void:
 			wish_rule_label.add_theme_color_override("font_color", TEXT_MUTED)
 	_sync_wish_options()
 	_rebuild_drop_rates()
-	summon_one_button.text = _summon_button_text(1)
-	summon_ten_button.text = _summon_button_text(10)
+	if unlocked:
+		summon_one_button.text = _summon_button_text(1)
+		summon_ten_button.text = _summon_button_text(10)
+	else:
+		summon_one_button.text = tr("LOCKED • CLEAR 1-%d") % EconomyCatalog.SUMMON_UNLOCK_STAGE
+		summon_ten_button.text = tr("SUMMON UNLOCKS AFTER 1-%d") % EconomyCatalog.SUMMON_UNLOCK_STAGE
 	summon_one_button.disabled = read_only or not unlocked or not PavilionManager.can_summon(1)
 	summon_ten_button.disabled = read_only or not unlocked or not PavilionManager.can_summon(10)
 
@@ -1304,7 +1401,10 @@ func _sync_wish_options() -> void:
 	if current.is_empty():
 		wish_preview_icon.texture = load(PAVILION_SEAL_ICON) as Texture2D
 		wish_preview_name.text = tr("CELESTIAL ARMORY") if unlocked else tr("CELESTIAL ARMORY SEALED")
-		wish_preview_state.text = tr("NO WISH TARGET • ALL UNLOCKED EQUIPMENT SHARE THE POOL") if unlocked else tr("CLEAR CHAPTER 1-5 TO AWAKEN THE ARMORY")
+		wish_preview_state.text = tr("NO WISH TARGET • ALL UNLOCKED EQUIPMENT SHARE THE POOL") if unlocked else tr("CLEAR CHAPTER %d • STAGE %d TO UNLOCK SUMMON") % [
+			EconomyCatalog.SUMMON_UNLOCK_CHAPTER,
+			EconomyCatalog.SUMMON_UNLOCK_STAGE
+		]
 		wish_preview_state.add_theme_color_override("font_color", TEXT_MUTED)
 		wish_preview_name.add_theme_color_override("font_color", Color(1.0, 0.86, 0.48) if unlocked else Color(0.70, 0.72, 0.70, 1.0))
 		wish_preview_panel.add_theme_stylebox_override("panel", _featured_armory_style(VIOLET if unlocked else Color(0.38, 0.44, 0.44, 1.0), unlocked))
@@ -1435,6 +1535,7 @@ func _rebuild_drop_rates() -> void:
 		child.queue_free()
 	var grid := GridContainer.new()
 	grid.columns = 2
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	grid.add_theme_constant_override("h_separation", 7)
 	grid.add_theme_constant_override("v_separation", 5)
 	rates_box.add_child(grid)
@@ -1442,11 +1543,19 @@ func _rebuild_drop_rates() -> void:
 		var rarity := str(entry.get("rarity", "common"))
 		var accent := EquipmentVisualCatalog.get_rarity_color(rarity)
 		var chip := _panel(grid, _chip_style(accent))
+		chip.custom_minimum_size.y = 42.0
+		chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var row := HBoxContainer.new()
+		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_theme_constant_override("separation", 8)
 		chip.add_child(row)
 		var rarity_label := _label(row, tr(rarity.capitalize()).to_upper(), 11, accent)
+		rarity_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 		rarity_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var rate_label := _label(row, "%.2f%%" % float(entry.get("percent", 0.0)), 12, TEXT_MAIN)
+		rate_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+		rate_label.custom_minimum_size.x = 62.0
+		rate_label.size_flags_horizontal = Control.SIZE_SHRINK_END
 		rate_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_label(rates_box, tr("Rare+ ≤10 • Epic+ ≤30 • Legendary ≤50 once a Legendary pool is unlocked."), 11, Color(0.75, 0.84, 0.82, 1.0))
 	_label(rates_box, tr("Wish: natural Legendary has 50% target preference. One miss activates Wish Fate; the next Legendary is guaranteed to be that target. Changing the target clears Fate."), 11, Color(0.82, 0.72, 0.94, 1.0))
@@ -1876,6 +1985,8 @@ func _create_aura_card(cosmetic_id: String, featured: bool = false) -> PanelCont
 
 
 func _rebuild_equipment() -> void:
+	equipment_rebuild_generation += 1
+	var rebuild_generation: int = equipment_rebuild_generation
 	for child: Node in equipment_list.get_children():
 		equipment_list.remove_child(child)
 		child.queue_free()
@@ -1884,17 +1995,28 @@ func _rebuild_equipment() -> void:
 		var data := EquipmentManager.get_item_data(item_id)
 		if str(data.get("rarity", "common")) == selected_rarity:
 			visible_items.append({"item_id": item_id, "data": data})
-	var row: HBoxContainer
-	for index: int in range(visible_items.size()):
-		if index % 2 == 0:
+	_populate_equipment_batched.call_deferred(visible_items, rebuild_generation)
+
+
+func _populate_equipment_batched(
+	visible_items: Array[Dictionary],
+	rebuild_generation: int
+) -> void:
+	var row: HBoxContainer = null
+	for item_index: int in range(visible_items.size()):
+		if rebuild_generation != equipment_rebuild_generation or not is_inside_tree():
+			return
+		if item_index % 2 == 0:
 			row = HBoxContainer.new()
 			row.add_theme_constant_override("separation", 8)
 			equipment_list.add_child(row)
-		var entry: Dictionary = visible_items[index]
+		var entry: Dictionary = visible_items[item_index]
 		var entry_data: Dictionary = entry.get("data", {})
 		var card := _create_equipment_card(str(entry.get("item_id", "")), entry_data)
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(card)
+		if (item_index + 1) % PAVILION_EQUIPMENT_BUILD_BATCH_SIZE == 0:
+			await get_tree().process_frame
 
 
 func _create_equipment_card(item_id: String, data: Dictionary) -> PanelContainer:
@@ -2114,9 +2236,9 @@ func _get_aura_icon_path(cosmetic_id: String) -> String:
 func _make_summon_relic_safe_material() -> ShaderMaterial:
 	var shader := Shader.new()
 	shader.code = SUMMON_RELIC_SAFE_SHADER_CODE
-	var material := ShaderMaterial.new()
-	material.shader = shader
-	return material
+	var shader_material := ShaderMaterial.new()
+	shader_material.shader = shader
+	return shader_material
 
 
 func _get_pavilion_equipment_icon_path(item_id: String) -> String:

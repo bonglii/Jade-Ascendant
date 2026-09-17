@@ -8,6 +8,8 @@ const JADE: Color = Color(0.64, 0.94, 0.82)
 const GOLD: Color = Color(0.95, 0.79, 0.44)
 const THUNDER: Color = Color(0.62, 0.90, 1.0)
 const DANGER: Color = Color(1.0, 0.60, 0.46)
+const CRITICAL: Color = Color(1.0, 0.22, 0.20)
+const CRITICAL_HIT_META: StringName = &"jade_critical_hit_feedback"
 
 # Damage text stays inside the existing pooled CanvasItem renderer.
 # Values are tuned for the 648x1152 design viewport and remain cheap on mobile.
@@ -16,6 +18,14 @@ const DAMAGE_TEXT_LIFETIME: float = 0.68
 const DAMAGE_TEXT_RISE: float = 30.0
 const DAMAGE_TEXT_WIDTH: float = 72.0
 const DAMAGE_TEXT_FADE_START: float = 0.58
+const CRITICAL_TEXT_FONT_SIZE: int = 25
+const CRITICAL_TEXT_LIFETIME: float = 0.78
+const CRITICAL_TEXT_RISE: float = 38.0
+const CRITICAL_TEXT_WIDTH: float = 88.0
+const SHAKE_DURATION: float = 0.18
+const SHAKE_FREQUENCY: float = 42.0
+const SHAKE_MAX_POWER: float = 13.0
+const SHAKE_VERTICAL_RATIO: float = 0.72
 var effects: Array[Dictionary] = []
 var arcs: Array[Dictionary] = []
 var effect_cursor: int = 0
@@ -48,33 +58,82 @@ func actor_action(actor: Node2D, duration: float = 0.28) -> void:
 	if presentation != null:
 		presentation.call("action", duration)
 
-func hit(actor: Node2D, amount: float) -> void:
+func hit(actor: Node2D, amount: float, is_critical: bool = false) -> void:
 	if amount <= 0.0 or not is_finite(amount):
 		return
+
+	var actor_is_player: bool = actor.is_in_group("player")
+	if not actor_is_player and not is_critical:
+		is_critical = _consume_actor_critical_marker(actor)
+	if not actor_is_player and not is_critical:
+		is_critical = _consume_pending_player_critical_feedback()
+
 	var presentation: Node = actor.get_node_or_null("QiPresentation")
 	if presentation != null:
 		presentation.call("hurt")
+
 	var entry: Dictionary = _next_effect()
 	var text_color: Color = JADE
-	if actor.is_in_group("player"):
+	if actor_is_player:
 		text_color = DANGER
+	elif is_critical:
+		text_color = CRITICAL
+
 	var text_lane: float = float((effect_cursor % 5) - 2) * 3.0
+	var text_lifetime: float = CRITICAL_TEXT_LIFETIME if is_critical else DAMAGE_TEXT_LIFETIME
 	entry.merge({
 		"kind": "hit",
 		"position": actor.global_position,
-		"left": DAMAGE_TEXT_LIFETIME,
-		"duration": DAMAGE_TEXT_LIFETIME,
+		"left": text_lifetime,
+		"duration": text_lifetime,
 		"text": str(maxi(1, int(round(amount)))) if SettingsManager.damage_numbers else "",
 		"color": text_color,
-		"text_lane": text_lane
+		"text_lane": text_lane,
+		"critical": is_critical,
+		"text_font_size": CRITICAL_TEXT_FONT_SIZE if is_critical else DAMAGE_TEXT_FONT_SIZE,
+		"text_rise": CRITICAL_TEXT_RISE if is_critical else DAMAGE_TEXT_RISE,
+		"text_width": CRITICAL_TEXT_WIDTH if is_critical else DAMAGE_TEXT_WIDTH
 	}, true)
-	if actor.is_in_group("player"):
+
+	if actor_is_player:
 		AudioManager.play_sfx("hurt")
-		impulse(2.5)
+		impulse(7.0)
 		if SettingsManager.haptics and OS.has_feature("android"):
 			Input.vibrate_handheld(24)
 	else:
 		AudioManager.play_sfx("hit")
+
+
+func mark_next_hit_critical(actor: Node, is_critical: bool) -> void:
+	if actor == null or not is_instance_valid(actor):
+		return
+	if is_critical:
+		actor.set_meta(CRITICAL_HIT_META, true)
+	elif actor.has_meta(CRITICAL_HIT_META):
+		actor.remove_meta(CRITICAL_HIT_META)
+
+
+func _consume_actor_critical_marker(actor: Node) -> bool:
+	if actor == null or not is_instance_valid(actor):
+		return false
+	var marked_critical: bool = bool(actor.get_meta(CRITICAL_HIT_META, false))
+	if actor.has_meta(CRITICAL_HIT_META):
+		actor.remove_meta(CRITICAL_HIT_META)
+	return marked_critical
+
+
+func _consume_pending_player_critical_feedback() -> bool:
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null:
+		return false
+
+	var player_stats: Node = player.get_node_or_null("PlayerStats")
+	if player_stats == null:
+		return false
+	if not player_stats.has_method("consume_pending_critical_feedback"):
+		return false
+
+	return bool(player_stats.call("consume_pending_critical_feedback"))
 
 func pulse(at: Vector2, kind: String = "qi") -> void:
 	var entry: Dictionary = _next_effect()
@@ -118,7 +177,7 @@ func death(actor: Node2D, is_boss: bool = false, play_audio: bool = true) -> voi
 		entry["sprite_position"] = sprite.global_position
 		entry["sprite_scale"] = sprite.global_scale
 	if is_boss:
-		impulse(5.0)
+		impulse(12.0)
 		if play_audio:
 			AudioManager.play_sfx("boss_defeat")
 	elif play_audio:
@@ -142,13 +201,26 @@ func lightning(from: Vector2, to: Vector2, delay: float = 0.0, empowered: bool =
 func impulse(strength: float) -> void:
 	if not SettingsManager.screen_shake or SettingsManager.reduced_effects:
 		return
+	if not is_finite(strength) or strength <= 0.0:
+		return
 	if not is_instance_valid(camera):
 		camera = get_viewport().get_camera_2d()
 		if camera == null:
 			return
 		camera_rest = camera.offset
-	impulse_left = 0.14
-	impulse_power = maxf(impulse_power, strength)
+	elif impulse_left <= 0.0:
+		# Respect any legitimate camera offset change that happened after the
+		# previous impact instead of snapping back to an old baseline.
+		camera_rest = camera.offset
+
+	impulse_left = SHAKE_DURATION
+	impulse_power = minf(
+		maxf(impulse_power, strength),
+		SHAKE_MAX_POWER
+	)
+	# Move the starting phase for repeated hits so impacts do not feel like the
+	# exact same left-right motion every time. No RNG allocation is required.
+	impulse_clock = fmod(impulse_clock + 1.13, TAU * 8.0)
 	_activate_feedback()
 
 func _activate_feedback() -> void:
@@ -196,9 +268,29 @@ func _process(delta: float) -> void:
 
 	if is_instance_valid(camera):
 		impulse_left = maxf(impulse_left - delta, 0.0)
-		impulse_clock += delta * 90.0
-		if impulse_left > 0.0 and SettingsManager.screen_shake and not SettingsManager.reduced_effects:
-			camera.offset = camera_rest + Vector2(sin(impulse_clock), cos(impulse_clock * 1.7)) * impulse_power * impulse_left / 0.14
+		impulse_clock += delta * SHAKE_FREQUENCY
+		if (
+			impulse_left > 0.0
+			and SettingsManager.screen_shake
+			and not SettingsManager.reduced_effects
+		):
+			var shake_ratio: float = clampf(
+				impulse_left / SHAKE_DURATION,
+				0.0,
+				1.0
+			)
+			# Quadratic falloff makes the opening hit readable on a phone while
+			# settling faster than the old linear wobble. Less vertical travel
+			# keeps portrait gameplay readable and reduces motion discomfort.
+			var envelope: float = shake_ratio * shake_ratio
+			var shake_vector := Vector2(
+				sin(impulse_clock * 1.31),
+				cos(impulse_clock * 1.73) * SHAKE_VERTICAL_RATIO
+			)
+			camera.offset = (
+				camera_rest
+				+ shake_vector * impulse_power * envelope
+			)
 		else:
 			camera.offset = camera_rest
 			impulse_power = 0.0
@@ -235,6 +327,10 @@ func _draw() -> void:
 		var kind: String = str(entry["kind"])
 		if kind == "hit":
 			var label_text: String = str(entry["text"])
+			var is_critical: bool = bool(entry.get("critical", false))
+			var text_font_size: int = int(entry.get("text_font_size", DAMAGE_TEXT_FONT_SIZE))
+			var text_rise: float = float(entry.get("text_rise", DAMAGE_TEXT_RISE))
+			var text_width: float = float(entry.get("text_width", DAMAGE_TEXT_WIDTH))
 			if not label_text.is_empty():
 				var text_alpha: float = 1.0
 				if progress > DAMAGE_TEXT_FADE_START:
@@ -245,16 +341,16 @@ func _draw() -> void:
 				text_alpha = clampf(text_alpha, 0.0, 1.0)
 				var lane_offset: float = float(entry.get("text_lane", 0.0))
 				var label_position: Vector2 = point + Vector2(
-					-DAMAGE_TEXT_WIDTH * 0.5 + lane_offset,
-					-29.0 - progress * DAMAGE_TEXT_RISE
+					-text_width * 0.5 + lane_offset,
+					(-33.0 if is_critical else -29.0) - progress * text_rise
 				)
 				draw_string(
 					ThemeDB.fallback_font,
 					label_position + Vector2(0.0, 2.0),
 					label_text,
 					HORIZONTAL_ALIGNMENT_CENTER,
-					DAMAGE_TEXT_WIDTH,
-					DAMAGE_TEXT_FONT_SIZE,
+					text_width,
+					text_font_size,
 					Color(0.015, 0.035, 0.03, text_alpha * 0.92)
 				)
 				draw_string(
@@ -262,12 +358,17 @@ func _draw() -> void:
 					label_position,
 					label_text,
 					HORIZONTAL_ALIGNMENT_CENTER,
-					DAMAGE_TEXT_WIDTH,
-					DAMAGE_TEXT_FONT_SIZE,
+					text_width,
+					text_font_size,
 					Color(entry["color"], text_alpha)
 				)
-			if progress < 0.30:
-				_draw_rays(point, 4, 5.0 + progress * 24.0, tint)
+			if progress < (0.36 if is_critical else 0.30):
+				_draw_rays(
+					point,
+					6 if is_critical else 4,
+					(7.0 if is_critical else 5.0) + progress * (32.0 if is_critical else 24.0),
+					tint
+				)
 		elif kind == "death":
 			var texture: Texture2D = entry.get("texture") as Texture2D
 			if texture != null:

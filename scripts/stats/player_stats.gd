@@ -24,6 +24,7 @@ var attack_cooldown: float = 1.0
 var minimum_attack_cooldown: float = 0.2
 
 var sword_intent_level: int = 0
+var pending_critical_feedback: bool = false
 
 var sword_dao_resonance_unlocked: bool = false
 var yin_yang_reversal_unlocked: bool = false
@@ -40,10 +41,20 @@ func calculate_damage(base_damage: float) -> float:
 	var damage_result: Dictionary = (
 		calculate_damage_result(base_damage)
 	)
+	pending_critical_feedback = bool(
+		damage_result["is_critical"]
+	)
 
 	return float(
 		damage_result["damage"]
 	)
+
+## Mengambil metadata Critical Hit untuk legacy damage path yang masih
+## memakai calculate_damage(float). Nilai hanya berlaku untuk hit berikutnya.
+func consume_pending_critical_feedback() -> bool:
+	var was_critical: bool = pending_critical_feedback
+	pending_critical_feedback = false
+	return was_critical
 
 ## Menghasilkan damage beserta metadata Critical Hit.
 ## Digunakan oleh sistem yang membutuhkan informasi

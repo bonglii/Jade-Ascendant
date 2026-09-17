@@ -6,7 +6,9 @@ signal transition_failed(scene_path: String, error_code: int)
 
 ## Scene Transition Manager
 ## Heavy/gameplay scene changes keep the threaded Celestial Gate presentation.
-## Menu-to-menu changes use a very light jade veil + short horizontal drift.
+## Menu-to-menu changes use a lightweight jade veil without moving the scene root.
+## Keeping the root Control fixed prevents portrait UI from appearing stretched
+## or pulled during transitions on edge-to-edge Android displays.
 
 const LOADING_SCREEN_SCENE: PackedScene = preload(
 	"res://scenes/system/loading_screen.tscn"
@@ -16,7 +18,6 @@ const MENU_OUT_DURATION: float = 0.10
 const MENU_IN_DURATION: float = 0.16
 const MENU_REDUCED_OUT_DURATION: float = 0.05
 const MENU_REDUCED_IN_DURATION: float = 0.08
-const MENU_SHIFT_PIXELS: float = 10.0
 const MENU_VEIL_COLOR: Color = Color(0.004, 0.055, 0.052, 0.72)
 
 var is_transitioning: bool = false
@@ -52,7 +53,7 @@ func _on_go_back_requested() -> void:
 	back_handler.call()
 
 ## Lightweight transition intended only for UI/menu scenes.
-## direction: -1 = back/left, 0 = fade only, +1 = forward/right.
+## direction is retained for call-site compatibility; menu transitions are fade-only.
 func transition_menu_to(scene_path: String, direction: int = 1) -> Error:
 	if is_transitioning:
 		push_warning(
@@ -65,6 +66,25 @@ func transition_menu_to(scene_path: String, direction: int = 1) -> Error:
 		)
 		return ERR_FILE_NOT_FOUND
 
+	# Menu scenes used to be loaded synchronously by change_scene_to_file(),
+	# which can stall the main thread on asset-heavy Hero/Pavilion screens.
+	# Request the PackedScene first and let the existing veil animation remain
+	# responsive while ResourceLoader completes the work in the background.
+	var request_error: Error = ResourceLoader.load_threaded_request(
+		scene_path,
+		"PackedScene",
+		false,
+		ResourceLoader.CACHE_MODE_REUSE
+	)
+	if request_error != OK:
+		push_error(
+			"SceneTransitionManager: gagal memulai background load menu "
+			+ scene_path
+			+ ". Error code: "
+			+ str(request_error)
+		)
+		return request_error
+
 	target_scene_path = scene_path
 	transition_started_at = Time.get_ticks_msec()
 	is_transitioning = true
@@ -72,7 +92,7 @@ func transition_menu_to(scene_path: String, direction: int = 1) -> Error:
 	_run_menu_transition(scene_path, clampi(direction, -1, 1))
 	return OK
 
-func _run_menu_transition(scene_path: String, direction: int) -> void:
+func _run_menu_transition(scene_path: String, _direction: int) -> void:
 	var reduced_effects: bool = SettingsManager.reduced_effects
 	var out_duration: float = (
 		MENU_REDUCED_OUT_DURATION if reduced_effects else MENU_OUT_DURATION
@@ -80,14 +100,8 @@ func _run_menu_transition(scene_path: String, direction: int) -> void:
 	var in_duration: float = (
 		MENU_REDUCED_IN_DURATION if reduced_effects else MENU_IN_DURATION
 	)
-	var shift_pixels: float = 0.0 if reduced_effects else MENU_SHIFT_PIXELS
 
 	menu_overlay = _create_menu_overlay()
-	var old_scene: Node = get_tree().current_scene
-	var old_control: Control = old_scene as Control
-	var old_position: Vector2 = Vector2.ZERO
-	if old_control != null:
-		old_position = old_control.position
 
 	var out_tween: Tween = create_tween()
 	out_tween.set_parallel(true)
@@ -99,32 +113,28 @@ func _run_menu_transition(scene_path: String, direction: int) -> void:
 		MENU_VEIL_COLOR,
 		out_duration
 	)
-	if old_control != null and direction != 0 and shift_pixels > 0.0:
-		out_tween.tween_property(
-			old_control,
-			"position",
-			old_position + Vector2(-shift_pixels * float(direction), 0.0),
-			out_duration
-		)
 	await out_tween.finished
 
-	var change_error: Error = get_tree().change_scene_to_file(scene_path)
+	var packed_scene: PackedScene = await _await_menu_packed_scene(scene_path)
+	if packed_scene == null:
+		if is_transitioning and target_scene_path == scene_path:
+			_fail_menu_transition(ERR_CANT_OPEN)
+		return
+
+	DebugLogger.system(str(
+		"Menu background load ready: ",
+		scene_path,
+		" | ",
+		Time.get_ticks_msec() - transition_started_at,
+		" ms"
+	))
+
+	var change_error: Error = get_tree().change_scene_to_packed(packed_scene)
 	if change_error != OK:
-		if old_control != null and is_instance_valid(old_control):
-			old_control.position = old_position
 		_fail_menu_transition(change_error)
 		return
 
 	await get_tree().scene_changed
-	var new_scene: Node = get_tree().current_scene
-	var new_control: Control = new_scene as Control
-	var new_position: Vector2 = Vector2.ZERO
-	if new_control != null:
-		new_position = new_control.position
-		if direction != 0 and shift_pixels > 0.0:
-			new_control.position = (
-				new_position + Vector2(shift_pixels * float(direction), 0.0)
-			)
 
 	var in_tween: Tween = create_tween()
 	in_tween.set_parallel(true)
@@ -142,13 +152,6 @@ func _run_menu_transition(scene_path: String, direction: int) -> void:
 			),
 			in_duration
 		)
-	if new_control != null and direction != 0 and shift_pixels > 0.0:
-		in_tween.tween_property(
-			new_control,
-			"position",
-			new_position,
-			in_duration
-		)
 	await in_tween.finished
 
 	if is_instance_valid(menu_overlay):
@@ -158,6 +161,22 @@ func _run_menu_transition(scene_path: String, direction: int) -> void:
 	_reset_state()
 	DebugLogger.system(str("Menu transition selesai: ", completed_path))
 	transition_completed.emit(completed_path)
+
+func _await_menu_packed_scene(scene_path: String) -> PackedScene:
+	while is_transitioning and target_scene_path == scene_path:
+		var status: int = ResourceLoader.load_threaded_get_status(scene_path)
+		if status == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+			await get_tree().process_frame
+			continue
+		if status == ResourceLoader.THREAD_LOAD_LOADED:
+			return ResourceLoader.load_threaded_get(scene_path) as PackedScene
+		if status == ResourceLoader.THREAD_LOAD_FAILED:
+			return null
+		if status == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
+			return null
+		await get_tree().process_frame
+	return null
+
 
 func _create_menu_overlay() -> ColorRect:
 	var overlay: ColorRect = ColorRect.new()

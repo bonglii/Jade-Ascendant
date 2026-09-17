@@ -36,13 +36,17 @@ func attack(player: Node2D, target: Node2D) -> void:
 		return
 
 	var orb = projectile_scene.instantiate()
+	var damage_result: Dictionary = (
+		player.player_stats.calculate_damage_result(
+			base_damage
+		)
+	)
 
 	player.get_parent().add_child(orb)
 	orb.global_position = player.global_position
 
-	orb.damage = player.player_stats.calculate_damage(
-		base_damage
-	)
+	orb.damage = float(damage_result["damage"])
+	orb.is_critical = bool(damage_result["is_critical"])
 	orb.cinder_bloom_radius = get_cinder_bloom_radius()
 	orb.cinder_bloom_damage_multiplier = (
 		get_cinder_bloom_damage_multiplier()

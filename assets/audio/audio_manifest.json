@@ -49,10 +49,10 @@
   },
   {
     "file": "assets/audio/ui.wav",
-    "seconds": 0.09,
+    "seconds": 0.2,
     "channels": 1,
-    "peak_dbfs": -4.013189010928365,
-    "origin": "Original deterministic synthesis",
+    "peak_dbfs": -9.0,
+    "origin": "Original deterministic synthesis - Xianxia/Wuxia UI palette",
     "loop": false
   },
   {
@@ -173,6 +173,38 @@
     "channels": 2,
     "peak_dbfs": -4.013189010928365,
     "origin": "Original deterministic synthesis",
+    "loop": false
+  },
+  {
+    "file": "assets/audio/ui_tab.wav",
+    "seconds": 0.24,
+    "channels": 1,
+    "peak_dbfs": -9.2,
+    "origin": "Original deterministic synthesis - Xianxia/Wuxia UI palette",
+    "loop": false
+  },
+  {
+    "file": "assets/audio/ui_confirm.wav",
+    "seconds": 0.48,
+    "channels": 1,
+    "peak_dbfs": -8.200000000000001,
+    "origin": "Original deterministic synthesis - Xianxia/Wuxia UI palette",
+    "loop": false
+  },
+  {
+    "file": "assets/audio/ui_back.wav",
+    "seconds": 0.36,
+    "channels": 1,
+    "peak_dbfs": -9.0,
+    "origin": "Original deterministic synthesis - Xianxia/Wuxia UI palette",
+    "loop": false
+  },
+  {
+    "file": "assets/audio/ui_locked.wav",
+    "seconds": 0.34,
+    "channels": 1,
+    "peak_dbfs": -8.8,
+    "origin": "Original deterministic synthesis - Xianxia/Wuxia UI palette",
     "loop": false
   }
 ]

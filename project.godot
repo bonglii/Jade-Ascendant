@@ -53,6 +53,10 @@ boss=""
 elite=""
 player=""
 
+[gui]
+
+common/default_scroll_deadzone=6
+
 [input]
 
 left={

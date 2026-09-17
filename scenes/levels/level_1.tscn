@@ -21,25 +21,29 @@
 [ext_resource type="PackedScene" uid="uid://c8vlrbwsigeeh" path="res://scenes/enemy/enemy_5.tscn" id="20_gmpev"]
 [ext_resource type="PackedScene" uid="uid://cm84fi0gm23fp" path="res://scenes/enemy/enemy_6.tscn" id="21_mkypq"]
 [ext_resource type="PackedScene" uid="uid://drwo5h4u3e83l" path="res://scenes/enemy/elite_enemy_2.tscn" id="22_ndtll"]
-[ext_resource type="Theme" path="res://assets/ui/jade_ui_theme.tres" id="23_hud_theme"]
-[ext_resource type="Script" path="res://scripts/ui/mobile_safe_area.gd" id="24_safe_area"]
-[ext_resource type="Texture2D" path="res://assets/ui/wuxia/realm_frame.png" id="25_realm_frame"]
-[ext_resource type="Texture2D" path="res://assets/ui/wuxia/trial_frame.png" id="26_trial_frame"]
-[ext_resource type="Texture2D" path="res://assets/ui/wuxia/cta_jade_normal.png" id="27_cta_jade_normal"]
-[ext_resource type="Texture2D" path="res://assets/ui/wuxia/cta_jade_hover.png" id="28_cta_jade_hover"]
-[ext_resource type="Texture2D" path="res://assets/ui/wuxia/cta_jade_pressed.png" id="29_cta_jade_pressed"]
-[ext_resource type="Texture2D" path="res://assets/ui/wuxia/cta_blue_normal.png" id="30_cta_blue_normal"]
-[ext_resource type="Texture2D" path="res://assets/ui/wuxia/cta_blue_hover.png" id="31_cta_blue_hover"]
-[ext_resource type="Script" path="res://scripts/ui/tutorial_controller.gd" id="32_tutorial"]
-[ext_resource type="Script" path="res://scripts/ui/virtual_joystick.gd" id="33_virtual_joystick"]
-[ext_resource type="Shader" path="res://assets/shaders/verdant_qi_valley_ground.gdshader" id="34_verdant_ground"]
-[ext_resource type="Script" path="res://scripts/world/verdant_qi_valley_decor.gd" id="35_verdant_decor"]
-[ext_resource type="Shader" path="res://assets/shaders/verdant_qi_valley_ambient.gdshader" id="36_verdant_ambient"]
-
-[ext_resource type="Script" path="res://scripts/world/chapter_one_stage.gd" id="37_stage"]
+[ext_resource type="Theme" uid="uid://d0fwhrxw25bsx" path="res://assets/ui/jade_ui_theme.tres" id="23_hud_theme"]
+[ext_resource type="Script" uid="uid://bwa0wej15sgvf" path="res://scripts/ui/mobile_safe_area.gd" id="24_safe_area"]
+[ext_resource type="Texture2D" uid="uid://rot6l84ghrjj" path="res://assets/ui/wuxia/realm_frame.png" id="25_realm_frame"]
+[ext_resource type="Texture2D" uid="uid://db8r5vi12ni2x" path="res://assets/ui/wuxia/trial_frame.png" id="26_trial_frame"]
+[ext_resource type="Texture2D" uid="uid://bqjljaqv4jxcd" path="res://assets/ui/wuxia/cta_jade_normal.png" id="27_cta_jade_normal"]
+[ext_resource type="Texture2D" uid="uid://be2gqkoxqupki" path="res://assets/ui/wuxia/cta_jade_hover.png" id="28_cta_jade_hover"]
+[ext_resource type="Texture2D" uid="uid://55gulwuyuq2l" path="res://assets/ui/wuxia/cta_jade_pressed.png" id="29_cta_jade_pressed"]
+[ext_resource type="Texture2D" uid="uid://tmqe5bjjm8k3" path="res://assets/ui/wuxia/cta_blue_normal.png" id="30_cta_blue_normal"]
+[ext_resource type="Texture2D" uid="uid://posdjbv1lr04" path="res://assets/ui/wuxia/cta_blue_hover.png" id="31_cta_blue_hover"]
+[ext_resource type="Script" uid="uid://dhig7lo1gbfx1" path="res://scripts/ui/tutorial_controller.gd" id="32_tutorial"]
+[ext_resource type="Script" uid="uid://yk0k3pnpii2" path="res://scripts/ui/virtual_joystick.gd" id="33_virtual_joystick"]
+[ext_resource type="Shader" uid="uid://cgqwtkjrxq1wj" path="res://assets/shaders/verdant_qi_valley_ground.gdshader" id="34_verdant_ground"]
+[ext_resource type="Script" uid="uid://bvevow8u0cmy7" path="res://scripts/world/verdant_qi_valley_decor.gd" id="35_verdant_decor"]
+[ext_resource type="Shader" uid="uid://b7141qsicty5n" path="res://assets/shaders/verdant_qi_valley_ambient.gdshader" id="36_verdant_ambient"]
+[ext_resource type="Script" uid="uid://c6ghgbqo81gp4" path="res://scripts/world/chapter_one_stage.gd" id="37_stage"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_VerdantGround"]
 shader = ExtResource("34_verdant_ground")
+shader_parameter/deep_earth = Color(0.02, 0.067, 0.061, 1)
+shader_parameter/moss_jade = Color(0.041, 0.145, 0.108, 1)
+shader_parameter/wet_stone = Color(0.028, 0.087, 0.083, 1)
+shader_parameter/qi_jade = Color(0.12, 0.52, 0.365, 1)
+shader_parameter/qi_cyan = Color(0.12, 0.43, 0.43, 1)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_VerdantMistFar"]
 shader = ExtResource("36_verdant_ambient")
@@ -62,56 +66,53 @@ shader_parameter/motion_speed = 0.9
 shader_parameter/layer_phase = 2.35
 
 [sub_resource type="StyleBoxTexture" id="StyleHUDFrame"]
+content_margin_left = 16.0
+content_margin_top = 10.0
+content_margin_right = 16.0
+content_margin_bottom = 10.0
 texture = ExtResource("25_realm_frame")
 texture_margin_left = 30.0
 texture_margin_top = 24.0
 texture_margin_right = 30.0
 texture_margin_bottom = 24.0
-content_margin_left = 16.0
-content_margin_top = 10.0
-content_margin_right = 16.0
-content_margin_bottom = 10.0
-
-[sub_resource type="StyleBoxTexture" id="StyleBossFrame"]
-texture = ExtResource("26_trial_frame")
-texture_margin_left = 30.0
-texture_margin_top = 22.0
-texture_margin_right = 30.0
-texture_margin_bottom = 22.0
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-
-[sub_resource type="StyleBoxTexture" id="StylePauseFrame"]
-texture = ExtResource("26_trial_frame")
-texture_margin_left = 30.0
-texture_margin_top = 22.0
-texture_margin_right = 30.0
-texture_margin_bottom = 22.0
-content_margin_left = 24.0
-content_margin_top = 20.0
-content_margin_right = 24.0
-content_margin_bottom = 20.0
 
 [sub_resource type="StyleBoxFlat" id="StyleMetricBadge"]
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 4.0
 bg_color = Color(0.003, 0.033, 0.043, 0.88)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.20, 0.70, 0.65, 0.55)
+border_color = Color(0.2, 0.7, 0.65, 0.55)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
-corner_radius_bottom_left = 4
 corner_radius_bottom_right = 4
-content_margin_left = 8.0
-content_margin_top = 4.0
-content_margin_right = 8.0
-content_margin_bottom = 4.0
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleEXPBackground"]
+bg_color = Color(0.001, 0.014, 0.02, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.16, 0.52, 0.49, 0.82)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleEXPFill"]
+bg_color = Color(0.1, 0.72, 0.63, 0.98)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
 [sub_resource type="StyleBoxFlat" id="StylePauseButton"]
-bg_color = Color(0.003, 0.029, 0.039, 0.90)
+bg_color = Color(0.003, 0.029, 0.039, 0.9)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
@@ -119,8 +120,8 @@ border_width_bottom = 1
 border_color = Color(0.94, 0.76, 0.31, 0.72)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
-corner_radius_bottom_left = 5
 corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
 [sub_resource type="StyleBoxFlat" id="StylePauseButtonHover"]
 bg_color = Color(0.015, 0.12, 0.115, 0.96)
@@ -131,30 +132,11 @@ border_width_bottom = 1
 border_color = Color(0.98, 0.82, 0.38, 0.95)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
-corner_radius_bottom_left = 5
 corner_radius_bottom_right = 5
-
-[sub_resource type="StyleBoxFlat" id="StyleEXPBackground"]
-bg_color = Color(0.001, 0.014, 0.02, 0.90)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.16, 0.52, 0.49, 0.82)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
 corner_radius_bottom_left = 5
-corner_radius_bottom_right = 5
-
-[sub_resource type="StyleBoxFlat" id="StyleEXPFill"]
-bg_color = Color(0.10, 0.72, 0.63, 0.98)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_left = 5
-corner_radius_bottom_right = 5
 
 [sub_resource type="StyleBoxFlat" id="StyleHPBackground"]
-bg_color = Color(0.001, 0.014, 0.02, 0.90)
+bg_color = Color(0.001, 0.014, 0.02, 0.9)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
@@ -162,15 +144,26 @@ border_width_bottom = 1
 border_color = Color(0.72, 0.48, 0.22, 0.68)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
-corner_radius_bottom_left = 5
 corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
 [sub_resource type="StyleBoxFlat" id="StyleHPFill"]
 bg_color = Color(0.56, 0.075, 0.085, 0.98)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
-corner_radius_bottom_left = 5
 corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxTexture" id="StyleBossFrame"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+texture = ExtResource("26_trial_frame")
+texture_margin_left = 30.0
+texture_margin_top = 22.0
+texture_margin_right = 30.0
+texture_margin_bottom = 22.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBossHPBackground"]
 bg_color = Color(0.005, 0.012, 0.016, 0.94)
@@ -181,82 +174,92 @@ border_width_bottom = 1
 border_color = Color(0.72, 0.48, 0.18, 0.78)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
-corner_radius_bottom_left = 5
 corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
 [sub_resource type="StyleBoxFlat" id="StyleBossHPFill"]
 bg_color = Color(0.69, 0.12, 0.12, 0.98)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
-corner_radius_bottom_left = 5
 corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
-[sub_resource type="StyleBoxTexture" id="StyleResumeNormal"]
-texture = ExtResource("27_cta_jade_normal")
-texture_margin_left = 26.0
-texture_margin_top = 18.0
-texture_margin_right = 26.0
-texture_margin_bottom = 18.0
-content_margin_left = 18.0
-content_margin_top = 8.0
-content_margin_right = 18.0
-content_margin_bottom = 8.0
-
-[sub_resource type="StyleBoxTexture" id="StyleResumeHover"]
-texture = ExtResource("28_cta_jade_hover")
-texture_margin_left = 26.0
-texture_margin_top = 18.0
-texture_margin_right = 26.0
-texture_margin_bottom = 18.0
-content_margin_left = 18.0
-content_margin_top = 8.0
-content_margin_right = 18.0
-content_margin_bottom = 8.0
-
-[sub_resource type="StyleBoxTexture" id="StyleResumePressed"]
-texture = ExtResource("29_cta_jade_pressed")
-texture_margin_left = 26.0
-texture_margin_top = 18.0
-texture_margin_right = 26.0
-texture_margin_bottom = 18.0
-content_margin_left = 18.0
-content_margin_top = 8.0
-content_margin_right = 18.0
-content_margin_bottom = 8.0
-
-[sub_resource type="StyleBoxTexture" id="StyleReturnNormal"]
-texture = ExtResource("30_cta_blue_normal")
-texture_margin_left = 26.0
-texture_margin_top = 18.0
-texture_margin_right = 26.0
-texture_margin_bottom = 18.0
-content_margin_left = 18.0
-content_margin_top = 8.0
-content_margin_right = 18.0
-content_margin_bottom = 8.0
-
-[sub_resource type="StyleBoxTexture" id="StyleReturnHover"]
-texture = ExtResource("31_cta_blue_hover")
-texture_margin_left = 26.0
-texture_margin_top = 18.0
-texture_margin_right = 26.0
-texture_margin_bottom = 18.0
-content_margin_left = 18.0
-content_margin_top = 8.0
-content_margin_right = 18.0
-content_margin_bottom = 8.0
-
-
-[sub_resource type="StyleBoxTexture" id="StyleLevelUpFrame"]
+[sub_resource type="StyleBoxTexture" id="StylePauseFrame"]
+content_margin_left = 24.0
+content_margin_top = 20.0
+content_margin_right = 24.0
+content_margin_bottom = 20.0
 texture = ExtResource("26_trial_frame")
 texture_margin_left = 30.0
 texture_margin_top = 22.0
 texture_margin_right = 30.0
 texture_margin_bottom = 22.0
+
+[sub_resource type="StyleBoxTexture" id="StyleResumeNormal"]
+content_margin_left = 18.0
+content_margin_top = 8.0
+content_margin_right = 18.0
+content_margin_bottom = 8.0
+texture = ExtResource("27_cta_jade_normal")
+texture_margin_left = 26.0
+texture_margin_top = 18.0
+texture_margin_right = 26.0
+texture_margin_bottom = 18.0
+
+[sub_resource type="StyleBoxTexture" id="StyleResumePressed"]
+content_margin_left = 18.0
+content_margin_top = 8.0
+content_margin_right = 18.0
+content_margin_bottom = 8.0
+texture = ExtResource("29_cta_jade_pressed")
+texture_margin_left = 26.0
+texture_margin_top = 18.0
+texture_margin_right = 26.0
+texture_margin_bottom = 18.0
+
+[sub_resource type="StyleBoxTexture" id="StyleResumeHover"]
+content_margin_left = 18.0
+content_margin_top = 8.0
+content_margin_right = 18.0
+content_margin_bottom = 8.0
+texture = ExtResource("28_cta_jade_hover")
+texture_margin_left = 26.0
+texture_margin_top = 18.0
+texture_margin_right = 26.0
+texture_margin_bottom = 18.0
+
+[sub_resource type="StyleBoxTexture" id="StyleReturnNormal"]
+content_margin_left = 18.0
+content_margin_top = 8.0
+content_margin_right = 18.0
+content_margin_bottom = 8.0
+texture = ExtResource("30_cta_blue_normal")
+texture_margin_left = 26.0
+texture_margin_top = 18.0
+texture_margin_right = 26.0
+texture_margin_bottom = 18.0
+
+[sub_resource type="StyleBoxTexture" id="StyleReturnHover"]
+content_margin_left = 18.0
+content_margin_top = 8.0
+content_margin_right = 18.0
+content_margin_bottom = 8.0
+texture = ExtResource("31_cta_blue_hover")
+texture_margin_left = 26.0
+texture_margin_top = 18.0
+texture_margin_right = 26.0
+texture_margin_bottom = 18.0
+
+[sub_resource type="StyleBoxTexture" id="StyleLevelUpFrame"]
 content_margin_left = 24.0
 content_margin_top = 20.0
 content_margin_right = 24.0
 content_margin_bottom = 20.0
+texture = ExtResource("26_trial_frame")
+texture_margin_left = 30.0
+texture_margin_top = 22.0
+texture_margin_right = 30.0
+texture_margin_bottom = 22.0
 
 [sub_resource type="StyleBoxFlat" id="StyleChoiceNormal"]
 bg_color = Color(0.002, 0.027, 0.036, 0.96)
@@ -267,24 +270,10 @@ border_width_bottom = 1
 border_color = Color(0.18, 0.72, 0.67, 0.72)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
-corner_radius_bottom_left = 8
 corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 shadow_color = Color(0, 0, 0, 0.28)
 shadow_size = 5
-
-[sub_resource type="StyleBoxFlat" id="StyleChoiceHover"]
-bg_color = Color(0.004, 0.052, 0.060, 0.98)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.92, 0.70, 0.27, 0.94)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_left = 8
-corner_radius_bottom_right = 8
-shadow_color = Color(0.12, 0.60, 0.52, 0.18)
-shadow_size = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleChoicePressed"]
 bg_color = Color(0.006, 0.072, 0.074, 1)
@@ -292,86 +281,98 @@ border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(1, 0.80, 0.34, 1)
+border_color = Color(1, 0.8, 0.34, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
-corner_radius_bottom_left = 8
 corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
+[sub_resource type="StyleBoxFlat" id="StyleChoiceHover"]
+bg_color = Color(0.004, 0.052, 0.06, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.92, 0.7, 0.27, 0.94)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0.12, 0.6, 0.52, 0.18)
+shadow_size = 8
 
-[sub_resource type="StyleBoxTexture" id="StyleVictoryResultFrame"]
-texture = ExtResource("25_realm_frame")
-texture_margin_left = 30.0
-texture_margin_top = 24.0
-texture_margin_right = 30.0
-texture_margin_bottom = 24.0
+[sub_resource type="StyleBoxTexture" id="StyleDefeatResultFrame"]
 content_margin_left = 22.0
 content_margin_top = 18.0
 content_margin_right = 22.0
 content_margin_bottom = 18.0
-
-[sub_resource type="StyleBoxTexture" id="StyleDefeatResultFrame"]
 texture = ExtResource("26_trial_frame")
 texture_margin_left = 30.0
 texture_margin_top = 22.0
 texture_margin_right = 30.0
 texture_margin_bottom = 22.0
+
+[sub_resource type="StyleBoxFlat" id="StyleDefeatRewardPanel"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+bg_color = Color(0.03, 0.01, 0.014, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.65, 0.22, 0.2, 0.78)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[sub_resource type="StyleBoxTexture" id="StyleVictoryResultFrame"]
 content_margin_left = 22.0
 content_margin_top = 18.0
 content_margin_right = 22.0
 content_margin_bottom = 18.0
+texture = ExtResource("25_realm_frame")
+texture_margin_left = 30.0
+texture_margin_top = 24.0
+texture_margin_right = 30.0
+texture_margin_bottom = 24.0
 
 [sub_resource type="StyleBoxFlat" id="StyleVictoryRewardPanel"]
-bg_color = Color(0.002, 0.035, 0.040, 0.94)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.94, 0.74, 0.28, 0.80)
-corner_radius_top_left = 7
-corner_radius_top_right = 7
-corner_radius_bottom_left = 7
-corner_radius_bottom_right = 7
 content_margin_left = 14.0
 content_margin_top = 12.0
 content_margin_right = 14.0
 content_margin_bottom = 12.0
-
-[sub_resource type="StyleBoxFlat" id="StyleDefeatRewardPanel"]
-bg_color = Color(0.030, 0.010, 0.014, 0.94)
+bg_color = Color(0.002, 0.035, 0.04, 0.94)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.65, 0.22, 0.20, 0.78)
+border_color = Color(0.94, 0.74, 0.28, 0.8)
 corner_radius_top_left = 7
 corner_radius_top_right = 7
-corner_radius_bottom_left = 7
 corner_radius_bottom_right = 7
-content_margin_left = 14.0
-content_margin_top = 12.0
-content_margin_right = 14.0
-content_margin_bottom = 12.0
+corner_radius_bottom_left = 7
 
 [node name="Level_1" type="Node2D" unique_id=1298794486]
 script = ExtResource("37_stage")
-stage_id = 1
 
-[node name="VerdantQiValleyEnvironment" type="Polygon2D" parent="."]
+[node name="VerdantQiValleyEnvironment" type="Polygon2D" parent="." unique_id=1983691245]
 z_index = -100
 material = SubResource("ShaderMaterial_VerdantGround")
 polygon = PackedVector2Array(-16384, -16384, 16384, -16384, 16384, 16384, -16384, 16384)
 
-[node name="VerdantQiValleyMistFar" type="Polygon2D" parent="."]
+[node name="VerdantQiValleyMistFar" type="Polygon2D" parent="." unique_id=197441906]
 z_index = -85
 material = SubResource("ShaderMaterial_VerdantMistFar")
 polygon = PackedVector2Array(-16384, -16384, 16384, -16384, 16384, 16384, -16384, 16384)
 
-[node name="VerdantQiValleyDecor" type="Node2D" parent="."]
+[node name="VerdantQiValleyDecor" type="Node2D" parent="." unique_id=1134907993]
 z_index = -70
 script = ExtResource("35_verdant_decor")
 
-[node name="VerdantQiValleyQiNear" type="Polygon2D" parent="."]
+[node name="VerdantQiValleyQiNear" type="Polygon2D" parent="." unique_id=38148496]
 z_index = -60
 material = SubResource("ShaderMaterial_VerdantQiNear")
 polygon = PackedVector2Array(-16384, -16384, 16384, -16384, 16384, 16384, -16384, 16384)
@@ -379,7 +380,7 @@ polygon = PackedVector2Array(-16384, -16384, 16384, -16384, 16384, 16384, -16384
 [node name="HUD" type="CanvasLayer" parent="." unique_id=1771043185]
 script = ExtResource("1_s20gs")
 
-[node name="ScreenRoot" type="Control" parent="HUD"]
+[node name="ScreenRoot" type="Control" parent="HUD" unique_id=1895300234]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -389,7 +390,7 @@ grow_vertical = 2
 mouse_filter = 1
 theme = ExtResource("23_hud_theme")
 
-[node name="HUDSafeArea" type="Control" parent="HUD/ScreenRoot"]
+[node name="HUDSafeArea" type="Control" parent="HUD/ScreenRoot" unique_id=1359405954]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -399,14 +400,14 @@ grow_vertical = 2
 mouse_filter = 1
 script = ExtResource("24_safe_area")
 
-[node name="StageIdentity" type="Label" parent="HUD/ScreenRoot/HUDSafeArea"]
+[node name="StageIdentity" type="Label" parent="HUD/ScreenRoot/HUDSafeArea" unique_id=1216450804]
 layout_mode = 1
+anchors_preset = -1
 anchor_left = 0.035
 anchor_right = 0.965
 offset_top = 138.0
 offset_bottom = 158.0
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.80, 0.90, 0.83, 0.85)
+theme_override_colors/font_color = Color(0.8, 0.9, 0.83, 0.85)
 theme_override_colors/font_shadow_color = Color(0.005, 0.015, 0.02, 0.95)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 2
@@ -417,6 +418,7 @@ text_overrun_behavior = 3
 
 [node name="TopHUD" type="PanelContainer" parent="HUD/ScreenRoot/HUDSafeArea" unique_id=1320611754]
 layout_mode = 1
+anchors_preset = -1
 anchor_left = 0.025
 anchor_right = 0.975
 offset_top = 18.0
@@ -440,7 +442,7 @@ theme_override_constants/separation = 7
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="LevelBadge" type="PanelContainer" parent="HUD/ScreenRoot/HUDSafeArea/TopHUD/Margin/Content/StatusRow"]
+[node name="LevelBadge" type="PanelContainer" parent="HUD/ScreenRoot/HUDSafeArea/TopHUD/Margin/Content/StatusRow" unique_id=411915898]
 custom_minimum_size = Vector2(76, 42)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleMetricBadge")
@@ -454,17 +456,17 @@ text = "LV. 1"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="EXPGroup" type="VBoxContainer" parent="HUD/ScreenRoot/HUDSafeArea/TopHUD/Margin/Content/StatusRow"]
+[node name="EXPGroup" type="VBoxContainer" parent="HUD/ScreenRoot/HUDSafeArea/TopHUD/Margin/Content/StatusRow" unique_id=454636789]
 custom_minimum_size = Vector2(150, 42)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 2
 
-[node name="EXPHeader" type="HBoxContainer" parent="HUD/ScreenRoot/HUDSafeArea/TopHUD/Margin/Content/StatusRow/EXPGroup"]
+[node name="EXPHeader" type="HBoxContainer" parent="HUD/ScreenRoot/HUDSafeArea/TopHUD/Margin/Content/StatusRow/EXPGroup" unique_id=1475324411]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="EXPTag" type="Label" parent="HUD/ScreenRoot/HUDSafeArea/TopHUD/Margin/Content/StatusRow/EXPGroup/EXPHeader"]
+[node name="EXPTag" type="Label" parent="HUD/ScreenRoot/HUDSafeArea/TopHUD/Margin/Content/StatusRow/EXPGroup/EXPHeader" unique_id=836698239]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"JadeSubtitle"
@@ -472,7 +474,7 @@ theme_override_font_sizes/font_size = 11
 text = "EXP"
 vertical_alignment = 1
 
-[node name="EXPLabel" type="Label" parent="HUD/ScreenRoot/HUDSafeArea/TopHUD/Margin/Content/StatusRow/EXPGroup/EXPHeader"]
+[node name="EXPLabel" type="Label" parent="HUD/ScreenRoot/HUDSafeArea/TopHUD/Margin/Content/StatusRow/EXPGroup/EXPHeader" unique_id=1031045644]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(58, 0)
 layout_mode = 2
@@ -491,7 +493,7 @@ theme_override_styles/background = SubResource("StyleEXPBackground")
 theme_override_styles/fill = SubResource("StyleEXPFill")
 show_percentage = false
 
-[node name="WaveBadge" type="PanelContainer" parent="HUD/ScreenRoot/HUDSafeArea/TopHUD/Margin/Content/StatusRow"]
+[node name="WaveBadge" type="PanelContainer" parent="HUD/ScreenRoot/HUDSafeArea/TopHUD/Margin/Content/StatusRow" unique_id=2132900323]
 custom_minimum_size = Vector2(76, 42)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleMetricBadge")
@@ -505,7 +507,7 @@ text = "WAVE 1"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="TimerBadge" type="PanelContainer" parent="HUD/ScreenRoot/HUDSafeArea/TopHUD/Margin/Content/StatusRow"]
+[node name="TimerBadge" type="PanelContainer" parent="HUD/ScreenRoot/HUDSafeArea/TopHUD/Margin/Content/StatusRow" unique_id=427763753]
 custom_minimum_size = Vector2(66, 42)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleMetricBadge")
@@ -523,12 +525,12 @@ vertical_alignment = 1
 unique_name_in_owner = true
 custom_minimum_size = Vector2(46, 42)
 layout_mode = 2
-theme_override_font_sizes/font_size = 17
-theme_override_colors/font_color = Color(1, 0.91, 0.60, 1)
+theme_override_colors/font_color = Color(1, 0.91, 0.6, 1)
 theme_override_colors/font_hover_color = Color(1, 0.97, 0.78, 1)
+theme_override_font_sizes/font_size = 17
 theme_override_styles/normal = SubResource("StylePauseButton")
-theme_override_styles/hover = SubResource("StylePauseButtonHover")
 theme_override_styles/pressed = SubResource("StylePauseButtonHover")
+theme_override_styles/hover = SubResource("StylePauseButtonHover")
 theme_override_styles/focus = SubResource("StylePauseButtonHover")
 text = "Ⅱ"
 
@@ -554,8 +556,7 @@ theme_override_styles/background = SubResource("StyleHPBackground")
 theme_override_styles/fill = SubResource("StyleHPFill")
 show_percentage = false
 
-
-[node name="VirtualJoystick" type="Control" parent="HUD/ScreenRoot/HUDSafeArea"]
+[node name="VirtualJoystick" type="Control" parent="HUD/ScreenRoot/HUDSafeArea" unique_id=1665281473]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -565,7 +566,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("33_virtual_joystick")
 
-[node name="TutorialOverlay" type="Control" parent="HUD/ScreenRoot/HUDSafeArea"]
+[node name="TutorialOverlay" type="Control" parent="HUD/ScreenRoot/HUDSafeArea" unique_id=1557699217]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -575,10 +576,11 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("32_tutorial")
 
-[node name="TutorialPanel" type="PanelContainer" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay"]
+[node name="TutorialPanel" type="PanelContainer" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay" unique_id=791590632]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
+anchors_preset = -1
 anchor_left = 0.055
 anchor_top = 0.685
 anchor_right = 0.945
@@ -588,22 +590,22 @@ grow_vertical = 2
 mouse_filter = 1
 theme_override_styles/panel = SubResource("StyleHUDFrame")
 
-[node name="Margin" type="MarginContainer" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay/TutorialPanel"]
+[node name="Margin" type="MarginContainer" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay/TutorialPanel" unique_id=29382365]
 layout_mode = 2
 theme_override_constants/margin_left = 22
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 22
 theme_override_constants/margin_bottom = 16
 
-[node name="Content" type="VBoxContainer" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay/TutorialPanel/Margin"]
+[node name="Content" type="VBoxContainer" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay/TutorialPanel/Margin" unique_id=617979264]
 layout_mode = 2
 theme_override_constants/separation = 7
 
-[node name="TopRow" type="HBoxContainer" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay/TutorialPanel/Margin/Content"]
+[node name="TopRow" type="HBoxContainer" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay/TutorialPanel/Margin/Content" unique_id=832801801]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="TutorialStepLabel" type="Label" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay/TutorialPanel/Margin/Content/TopRow"]
+[node name="TutorialStepLabel" type="Label" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay/TutorialPanel/Margin/Content/TopRow" unique_id=250973543]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -612,28 +614,27 @@ theme_override_font_sizes/font_size = 11
 text = "DAO GUIDANCE  •  1 / 5"
 vertical_alignment = 1
 
-[node name="TutorialSkipButton" type="Button" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay/TutorialPanel/Margin/Content/TopRow"]
+[node name="TutorialSkipButton" type="Button" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay/TutorialPanel/Margin/Content/TopRow" unique_id=1932828862]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(94, 32)
 layout_mode = 2
-mouse_filter = 0
-theme_override_colors/font_color = Color(0.70, 0.82, 0.80, 1)
+theme_override_colors/font_color = Color(0.7, 0.82, 0.8, 1)
 theme_override_colors/font_hover_color = Color(1, 0.93, 0.68, 1)
 theme_override_font_sizes/font_size = 11
 theme_override_styles/normal = SubResource("StylePauseButton")
-theme_override_styles/hover = SubResource("StylePauseButtonHover")
 theme_override_styles/pressed = SubResource("StylePauseButtonHover")
+theme_override_styles/hover = SubResource("StylePauseButtonHover")
 theme_override_styles/focus = SubResource("StylePauseButtonHover")
 text = "SKIP"
 
-[node name="TutorialTitleLabel" type="Label" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay/TutorialPanel/Margin/Content"]
+[node name="TutorialTitleLabel" type="Label" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay/TutorialPanel/Margin/Content" unique_id=1742045938]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeTitle"
 theme_override_font_sizes/font_size = 19
 text = "FLOWING STEPS"
 
-[node name="TutorialBodyLabel" type="Label" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay/TutorialPanel/Margin/Content"]
+[node name="TutorialBodyLabel" type="Label" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay/TutorialPanel/Margin/Content" unique_id=1718418489]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
@@ -642,13 +643,13 @@ theme_override_font_sizes/font_size = 12
 text = "Move Lin Yue to attune with the battlefield. Staying mobile is your first defense."
 autowrap_mode = 2
 
-[node name="Divider" type="ColorRect" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay/TutorialPanel/Margin/Content"]
+[node name="Divider" type="ColorRect" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay/TutorialPanel/Margin/Content" unique_id=1228082244]
 custom_minimum_size = Vector2(0, 2)
 layout_mode = 2
 mouse_filter = 2
 color = Color(0.07, 0.72, 0.63, 0.72)
 
-[node name="TutorialStatusLabel" type="Label" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay/TutorialPanel/Margin/Content"]
+[node name="TutorialStatusLabel" type="Label" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay/TutorialPanel/Margin/Content" unique_id=490268504]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.87, 0.43, 1)
@@ -656,368 +657,25 @@ theme_override_font_sizes/font_size = 11
 text = "OBJECTIVE • MOVE TO CONTINUE"
 horizontal_alignment = 1
 
-[node name="TutorialContinueButton" type="Button" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay/TutorialPanel/Margin/Content"]
+[node name="TutorialContinueButton" type="Button" parent="HUD/ScreenRoot/HUDSafeArea/TutorialOverlay/TutorialPanel/Margin/Content" unique_id=1666012763]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 focus_mode = 1
-mouse_filter = 0
-theme_override_colors/font_color = Color(1, 0.91, 0.60, 1)
+theme_override_colors/font_color = Color(1, 0.91, 0.6, 1)
 theme_override_colors/font_hover_color = Color(1, 0.97, 0.78, 1)
 theme_override_font_sizes/font_size = 13
 theme_override_styles/normal = SubResource("StylePauseButton")
-theme_override_styles/hover = SubResource("StylePauseButtonHover")
 theme_override_styles/pressed = SubResource("StylePauseButtonHover")
+theme_override_styles/hover = SubResource("StylePauseButtonHover")
 theme_override_styles/focus = SubResource("StylePauseButtonHover")
 text = "BEGIN TRIAL"
-
-[node name="LevelUpPanel" type="Control" parent="HUD" unique_id=9695600]
-unique_name_in_owner = true
-visible = false
-process_mode = 3
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 0
-theme = ExtResource("23_hud_theme")
-script = ExtResource("2_f0wmx")
-
-[node name="Dim" type="ColorRect" parent="HUD/LevelUpPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 0
-color = Color(0.001, 0.008, 0.014, 0.84)
-
-[node name="SafeArea" type="Control" parent="HUD/LevelUpPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 1
-script = ExtResource("24_safe_area")
-
-[node name="Center" type="CenterContainer" parent="HUD/LevelUpPanel/SafeArea"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 1
-
-[node name="Frame" type="PanelContainer" parent="HUD/LevelUpPanel/SafeArea/Center"]
-custom_minimum_size = Vector2(560, 790)
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleLevelUpFrame")
-
-[node name="Margin" type="MarginContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame"]
-layout_mode = 2
-theme_override_constants/margin_left = 30
-theme_override_constants/margin_top = 26
-theme_override_constants/margin_right = 30
-theme_override_constants/margin_bottom = 24
-
-[node name="Content" type="VBoxContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin"]
-layout_mode = 2
-theme_override_constants/separation = 9
-alignment = 1
-
-[node name="Eyebrow" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content"]
-layout_mode = 2
-theme_type_variation = &"JadeSubtitle"
-theme_override_font_sizes/font_size = 12
-text = "SPIRITUAL BREAKTHROUGH • RUN CULTIVATION"
-horizontal_alignment = 1
-
-[node name="BreakthroughLevelLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"JadeHeroName"
-theme_override_colors/font_color = Color(0.92, 0.72, 0.30, 1)
-theme_override_font_sizes/font_size = 17
-text = "LEVEL 2 • BREAKTHROUGH"
-horizontal_alignment = 1
-
-[node name="Title" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content"]
-layout_mode = 2
-theme_type_variation = &"JadeTitle"
-theme_override_font_sizes/font_size = 28
-text = "CHOOSE YOUR PATH"
-horizontal_alignment = 1
-
-[node name="Subtitle" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content"]
-layout_mode = 2
-theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 12
-text = "One insight will shape the rest of this run."
-horizontal_alignment = 1
-
-[node name="Divider" type="ColorRect" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content"]
-custom_minimum_size = Vector2(0, 2)
-layout_mode = 2
-color = Color(0.23, 0.76, 0.69, 0.44)
-
-[node name="UpgradeButton1" type="Button" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content" unique_id=1914525203]
-custom_minimum_size = Vector2(0, 150)
-layout_mode = 2
-focus_mode = 1
-theme_override_styles/normal = SubResource("StyleChoiceNormal")
-theme_override_styles/hover = SubResource("StyleChoiceHover")
-theme_override_styles/pressed = SubResource("StyleChoicePressed")
-theme_override_styles/focus = SubResource("StyleChoiceHover")
-
-[node name="Margin" type="MarginContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton1"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 12
-
-[node name="Content" type="VBoxContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton1/Margin"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 5
-
-[node name="TopRow" type="HBoxContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton1/Margin/Content"]
-layout_mode = 2
-mouse_filter = 2
-
-[node name="CategoryLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton1/Margin/Content/TopRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-mouse_filter = 2
-theme_override_font_sizes/font_size = 11
-text = "WEAPON ART"
-
-[node name="StateLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton1/Margin/Content/TopRow"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_font_sizes/font_size = 11
-text = "UPGRADE"
-horizontal_alignment = 2
-
-[node name="TitleLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton1/Margin/Content"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_font_sizes/font_size = 20
-text = "Spirit Sword"
-
-[node name="DescriptionLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton1/Margin/Content"]
-layout_mode = 2
-size_flags_vertical = 3
-mouse_filter = 2
-theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 12
-text = "Refine the flying sword that hunts nearby enemies."
-autowrap_mode = 2
-
-[node name="BottomRow" type="HBoxContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton1/Margin/Content"]
-layout_mode = 2
-mouse_filter = 2
-
-[node name="EffectLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton1/Margin/Content/BottomRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.36, 0.90, 0.79, 1)
-theme_override_font_sizes/font_size = 11
-text = "+5 BASE DAMAGE"
-
-[node name="ProgressLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton1/Margin/Content/BottomRow"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.91, 0.72, 0.34, 1)
-theme_override_font_sizes/font_size = 11
-text = "LV.1 → LV.2"
-horizontal_alignment = 2
-
-[node name="UpgradeButton2" type="Button" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content" unique_id=1720361957]
-custom_minimum_size = Vector2(0, 150)
-layout_mode = 2
-focus_mode = 1
-theme_override_styles/normal = SubResource("StyleChoiceNormal")
-theme_override_styles/hover = SubResource("StyleChoiceHover")
-theme_override_styles/pressed = SubResource("StyleChoicePressed")
-theme_override_styles/focus = SubResource("StyleChoiceHover")
-
-[node name="Margin" type="MarginContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton2"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 12
-
-[node name="Content" type="VBoxContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton2/Margin"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 5
-
-[node name="TopRow" type="HBoxContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton2/Margin/Content"]
-layout_mode = 2
-mouse_filter = 2
-
-[node name="CategoryLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton2/Margin/Content/TopRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-mouse_filter = 2
-theme_override_font_sizes/font_size = 11
-text = "BODY CULTIVATION"
-
-[node name="StateLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton2/Margin/Content/TopRow"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_font_sizes/font_size = 11
-text = "REFINE"
-horizontal_alignment = 2
-
-[node name="TitleLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton2/Margin/Content"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_font_sizes/font_size = 20
-text = "Qi Shield"
-
-[node name="DescriptionLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton2/Margin/Content"]
-layout_mode = 2
-size_flags_vertical = 3
-mouse_filter = 2
-theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 12
-text = "Form a protective qi layer that negates an incoming hit."
-autowrap_mode = 2
-
-[node name="BottomRow" type="HBoxContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton2/Margin/Content"]
-layout_mode = 2
-mouse_filter = 2
-
-[node name="EffectLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton2/Margin/Content/BottomRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.36, 0.90, 0.79, 1)
-theme_override_font_sizes/font_size = 11
-text = "+1 SHIELD CHARGE"
-
-[node name="ProgressLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton2/Margin/Content/BottomRow"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.91, 0.72, 0.34, 1)
-theme_override_font_sizes/font_size = 11
-text = "LV.0 → LV.1"
-horizontal_alignment = 2
-
-[node name="UpgradeButton3" type="Button" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content" unique_id=547954382]
-custom_minimum_size = Vector2(0, 150)
-layout_mode = 2
-focus_mode = 1
-theme_override_styles/normal = SubResource("StyleChoiceNormal")
-theme_override_styles/hover = SubResource("StyleChoiceHover")
-theme_override_styles/pressed = SubResource("StyleChoicePressed")
-theme_override_styles/focus = SubResource("StyleChoiceHover")
-
-[node name="Margin" type="MarginContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton3"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 12
-
-[node name="Content" type="VBoxContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton3/Margin"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 5
-
-[node name="TopRow" type="HBoxContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton3/Margin/Content"]
-layout_mode = 2
-mouse_filter = 2
-
-[node name="CategoryLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton3/Margin/Content/TopRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-mouse_filter = 2
-theme_override_font_sizes/font_size = 11
-text = "DAO INSIGHT"
-
-[node name="StateLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton3/Margin/Content/TopRow"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_font_sizes/font_size = 11
-text = "REFINE"
-horizontal_alignment = 2
-
-[node name="TitleLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton3/Margin/Content"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_font_sizes/font_size = 20
-text = "Sword Intent"
-
-[node name="DescriptionLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton3/Margin/Content"]
-layout_mode = 2
-size_flags_vertical = 3
-mouse_filter = 2
-theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 12
-text = "Sharpen sword intent to increase critical strike chance."
-autowrap_mode = 2
-
-[node name="BottomRow" type="HBoxContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton3/Margin/Content"]
-layout_mode = 2
-mouse_filter = 2
-
-[node name="EffectLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton3/Margin/Content/BottomRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.36, 0.90, 0.79, 1)
-theme_override_font_sizes/font_size = 11
-text = "+5% CRITICAL CHANCE"
-
-[node name="ProgressLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton3/Margin/Content/BottomRow"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.91, 0.72, 0.34, 1)
-theme_override_font_sizes/font_size = 11
-text = "LV.0 → LV.1"
-horizontal_alignment = 2
-
-[node name="FooterHint" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content" unique_id=1580778811]
-layout_mode = 2
-theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 11
-text = "Choose one path. The battlefield resumes immediately after selection."
-horizontal_alignment = 1
-autowrap_mode = 2
 
 [node name="BossPanel" type="PanelContainer" parent="HUD/ScreenRoot/HUDSafeArea" unique_id=867019197]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
+anchors_preset = -1
 anchor_left = 0.075
 anchor_right = 0.925
 offset_top = 164.0
@@ -1058,7 +716,7 @@ theme_override_font_sizes/font_size = 11
 text = "PHASE 1"
 horizontal_alignment = 2
 
-[node name="BossHPLabel" type="Label" parent="HUD/ScreenRoot/HUDSafeArea/BossPanel/Margin/Content/HeaderRow"]
+[node name="BossHPLabel" type="Label" parent="HUD/ScreenRoot/HUDSafeArea/BossPanel/Margin/Content/HeaderRow" unique_id=1253360811]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(88, 0)
 layout_mode = 2
@@ -1071,22 +729,21 @@ horizontal_alignment = 2
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
-max_value = 500.0
 theme_override_styles/background = SubResource("StyleBossHPBackground")
 theme_override_styles/fill = SubResource("StyleBossHPFill")
+max_value = 500.0
 show_percentage = false
 
 [node name="PauseOverlay" type="Control" parent="HUD/ScreenRoot" unique_id=309836289]
 unique_name_in_owner = true
-visible = false
 process_mode = 3
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
 
 [node name="Dim" type="ColorRect" parent="HUD/ScreenRoot/PauseOverlay" unique_id=5285167]
 layout_mode = 1
@@ -1095,7 +752,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
 color = Color(0.001, 0.01, 0.016, 0.78)
 
 [node name="Center" type="CenterContainer" parent="HUD/ScreenRoot/PauseOverlay" unique_id=1345228779]
@@ -1105,7 +761,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 1
 
 [node name="Panel" type="PanelContainer" parent="HUD/ScreenRoot/PauseOverlay/Center" unique_id=915830529]
 custom_minimum_size = Vector2(530, 382)
@@ -1124,7 +779,7 @@ layout_mode = 2
 theme_override_constants/separation = 15
 alignment = 1
 
-[node name="Eyebrow" type="Label" parent="HUD/ScreenRoot/PauseOverlay/Center/Panel/Margin/Content"]
+[node name="Eyebrow" type="Label" parent="HUD/ScreenRoot/PauseOverlay/Center/Panel/Margin/Content" unique_id=1318562445]
 layout_mode = 2
 theme_type_variation = &"JadeSubtitle"
 theme_override_font_sizes/font_size = 12
@@ -1150,12 +805,12 @@ autowrap_mode = 2
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
-theme_override_colors/font_color = Color(1, 0.93, 0.70, 1)
+theme_override_colors/font_color = Color(1, 0.93, 0.7, 1)
 theme_override_colors/font_hover_color = Color(1, 0.98, 0.84, 1)
+theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("StyleResumeNormal")
-theme_override_styles/hover = SubResource("StyleResumeHover")
 theme_override_styles/pressed = SubResource("StyleResumePressed")
+theme_override_styles/hover = SubResource("StyleResumeHover")
 theme_override_styles/focus = SubResource("StyleResumeHover")
 text = "RESUME BATTLE"
 
@@ -1163,20 +818,342 @@ text = "RESUME BATTLE"
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
-theme_override_font_sizes/font_size = 17
 theme_override_colors/font_color = Color(0.92, 0.97, 0.96, 1)
 theme_override_colors/font_hover_color = Color(1, 0.94, 0.72, 1)
+theme_override_font_sizes/font_size = 17
 theme_override_styles/normal = SubResource("StyleReturnNormal")
-theme_override_styles/hover = SubResource("StyleReturnHover")
 theme_override_styles/pressed = SubResource("StyleReturnNormal")
+theme_override_styles/hover = SubResource("StyleReturnHover")
 theme_override_styles/focus = SubResource("StyleReturnHover")
 text = "SAVE & RETURN HOME"
 
-[node name="CheckpointHint" type="Label" parent="HUD/ScreenRoot/PauseOverlay/Center/Panel/Margin/Content"]
+[node name="CheckpointHint" type="Label" parent="HUD/ScreenRoot/PauseOverlay/Center/Panel/Margin/Content" unique_id=406323694]
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
 theme_override_font_sizes/font_size = 11
 text = "Returning home preserves the active-run checkpoint."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="LevelUpPanel" type="Control" parent="HUD" unique_id=9695600]
+unique_name_in_owner = true
+process_mode = 3
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("23_hud_theme")
+script = ExtResource("2_f0wmx")
+
+[node name="Dim" type="ColorRect" parent="HUD/LevelUpPanel" unique_id=1002447085]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.001, 0.008, 0.014, 0.84)
+
+[node name="SafeArea" type="Control" parent="HUD/LevelUpPanel" unique_id=1530014899]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("24_safe_area")
+
+[node name="Center" type="CenterContainer" parent="HUD/LevelUpPanel/SafeArea" unique_id=1669862657]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Frame" type="PanelContainer" parent="HUD/LevelUpPanel/SafeArea/Center" unique_id=2029562059]
+custom_minimum_size = Vector2(560, 790)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleLevelUpFrame")
+
+[node name="Margin" type="MarginContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame" unique_id=855715669]
+layout_mode = 2
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 26
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 24
+
+[node name="Content" type="VBoxContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin" unique_id=264990865]
+layout_mode = 2
+theme_override_constants/separation = 9
+alignment = 1
+
+[node name="Eyebrow" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content" unique_id=843049971]
+layout_mode = 2
+theme_type_variation = &"JadeSubtitle"
+theme_override_font_sizes/font_size = 12
+text = "SPIRITUAL BREAKTHROUGH • RUN CULTIVATION"
+horizontal_alignment = 1
+
+[node name="BreakthroughLevelLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content" unique_id=1278029434]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeHeroName"
+theme_override_colors/font_color = Color(0.92, 0.72, 0.3, 1)
+theme_override_font_sizes/font_size = 17
+text = "LEVEL 2 • BREAKTHROUGH"
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content" unique_id=1027603112]
+layout_mode = 2
+theme_type_variation = &"JadeTitle"
+theme_override_font_sizes/font_size = 28
+text = "CHOOSE YOUR PATH"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content" unique_id=1137197065]
+layout_mode = 2
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 12
+text = "One insight will shape the rest of this run."
+horizontal_alignment = 1
+
+[node name="Divider" type="ColorRect" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content" unique_id=409158568]
+custom_minimum_size = Vector2(0, 2)
+layout_mode = 2
+color = Color(0.23, 0.76, 0.69, 0.44)
+
+[node name="UpgradeButton1" type="Button" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content" unique_id=1914525203]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+focus_mode = 1
+theme_override_styles/normal = SubResource("StyleChoiceNormal")
+theme_override_styles/pressed = SubResource("StyleChoicePressed")
+theme_override_styles/hover = SubResource("StyleChoiceHover")
+theme_override_styles/focus = SubResource("StyleChoiceHover")
+
+[node name="Margin" type="MarginContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton1" unique_id=1470514809]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 12
+
+[node name="Content" type="VBoxContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton1/Margin" unique_id=1715018760]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 5
+
+[node name="TopRow" type="HBoxContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton1/Margin/Content" unique_id=1858663244]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="CategoryLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton1/Margin/Content/TopRow" unique_id=440960158]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+text = "WEAPON ART"
+
+[node name="StateLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton1/Margin/Content/TopRow" unique_id=2031352330]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "UPGRADE"
+horizontal_alignment = 2
+
+[node name="TitleLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton1/Margin/Content" unique_id=1232588364]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Spirit Sword"
+
+[node name="DescriptionLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton1/Margin/Content" unique_id=1871337260]
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 12
+text = "Refine the flying sword that hunts nearby enemies."
+autowrap_mode = 2
+
+[node name="BottomRow" type="HBoxContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton1/Margin/Content" unique_id=816675687]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="EffectLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton1/Margin/Content/BottomRow" unique_id=811335144]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.36, 0.9, 0.79, 1)
+theme_override_font_sizes/font_size = 11
+text = "+5 BASE DAMAGE"
+
+[node name="ProgressLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton1/Margin/Content/BottomRow" unique_id=722638558]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.91, 0.72, 0.34, 1)
+theme_override_font_sizes/font_size = 11
+text = "LV.1 → LV.2"
+horizontal_alignment = 2
+
+[node name="UpgradeButton2" type="Button" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content" unique_id=1720361957]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+focus_mode = 1
+theme_override_styles/normal = SubResource("StyleChoiceNormal")
+theme_override_styles/pressed = SubResource("StyleChoicePressed")
+theme_override_styles/hover = SubResource("StyleChoiceHover")
+theme_override_styles/focus = SubResource("StyleChoiceHover")
+
+[node name="Margin" type="MarginContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton2" unique_id=348956113]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 12
+
+[node name="Content" type="VBoxContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton2/Margin" unique_id=1615781633]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 5
+
+[node name="TopRow" type="HBoxContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton2/Margin/Content" unique_id=1271619527]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="CategoryLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton2/Margin/Content/TopRow" unique_id=513498189]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+text = "BODY CULTIVATION"
+
+[node name="StateLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton2/Margin/Content/TopRow" unique_id=61564970]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "REFINE"
+horizontal_alignment = 2
+
+[node name="TitleLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton2/Margin/Content" unique_id=2112083950]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Qi Shield"
+
+[node name="DescriptionLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton2/Margin/Content" unique_id=250413986]
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 12
+text = "Form a protective qi layer that negates an incoming hit."
+autowrap_mode = 2
+
+[node name="BottomRow" type="HBoxContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton2/Margin/Content" unique_id=336696178]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="EffectLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton2/Margin/Content/BottomRow" unique_id=722514875]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.36, 0.9, 0.79, 1)
+theme_override_font_sizes/font_size = 11
+text = "+1 SHIELD CHARGE"
+
+[node name="ProgressLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton2/Margin/Content/BottomRow" unique_id=814137240]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.91, 0.72, 0.34, 1)
+theme_override_font_sizes/font_size = 11
+text = "LV.0 → LV.1"
+horizontal_alignment = 2
+
+[node name="UpgradeButton3" type="Button" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content" unique_id=547954382]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+focus_mode = 1
+theme_override_styles/normal = SubResource("StyleChoiceNormal")
+theme_override_styles/pressed = SubResource("StyleChoicePressed")
+theme_override_styles/hover = SubResource("StyleChoiceHover")
+theme_override_styles/focus = SubResource("StyleChoiceHover")
+
+[node name="Margin" type="MarginContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton3" unique_id=6418469]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 12
+
+[node name="Content" type="VBoxContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton3/Margin" unique_id=1832322092]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 5
+
+[node name="TopRow" type="HBoxContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton3/Margin/Content" unique_id=1822099418]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="CategoryLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton3/Margin/Content/TopRow" unique_id=40534769]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+text = "DAO INSIGHT"
+
+[node name="StateLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton3/Margin/Content/TopRow" unique_id=894233681]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "REFINE"
+horizontal_alignment = 2
+
+[node name="TitleLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton3/Margin/Content" unique_id=969621018]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Sword Intent"
+
+[node name="DescriptionLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton3/Margin/Content" unique_id=2900427]
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 12
+text = "Sharpen sword intent to increase critical strike chance."
+autowrap_mode = 2
+
+[node name="BottomRow" type="HBoxContainer" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton3/Margin/Content" unique_id=1866542397]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="EffectLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton3/Margin/Content/BottomRow" unique_id=1804166735]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.36, 0.9, 0.79, 1)
+theme_override_font_sizes/font_size = 11
+text = "+5% CRITICAL CHANCE"
+
+[node name="ProgressLabel" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content/UpgradeButton3/Margin/Content/BottomRow" unique_id=124577073]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.91, 0.72, 0.34, 1)
+theme_override_font_sizes/font_size = 11
+text = "LV.0 → LV.1"
+horizontal_alignment = 2
+
+[node name="FooterHint" type="Label" parent="HUD/LevelUpPanel/SafeArea/Center/Frame/Margin/Content" unique_id=1580778811]
+layout_mode = 2
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 11
+text = "Choose one path. The battlefield resumes immediately after selection."
 horizontal_alignment = 1
 autowrap_mode = 2
 
@@ -1253,10 +1230,9 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
-color = Color(0.020, 0.004, 0.008, 0.91)
+color = Color(0.02, 0.004, 0.008, 0.91)
 
-[node name="SafeArea" type="Control" parent="GameOverUI/ColorRect"]
+[node name="SafeArea" type="Control" parent="GameOverUI/ColorRect" unique_id=622675729]
 process_mode = 3
 layout_mode = 1
 anchors_preset = 15
@@ -1268,7 +1244,7 @@ mouse_filter = 1
 theme = ExtResource("23_hud_theme")
 script = ExtResource("24_safe_area")
 
-[node name="CenterContainer" type="CenterContainer" parent="GameOverUI/ColorRect/SafeArea"]
+[node name="CenterContainer" type="CenterContainer" parent="GameOverUI/ColorRect/SafeArea" unique_id=319238590]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -1279,29 +1255,28 @@ offset_right = -18.0
 offset_bottom = -18.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 1
 
-[node name="Panel" type="PanelContainer" parent="GameOverUI/ColorRect/SafeArea/CenterContainer"]
+[node name="Panel" type="PanelContainer" parent="GameOverUI/ColorRect/SafeArea/CenterContainer" unique_id=1054338450]
 custom_minimum_size = Vector2(530, 620)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleDefeatResultFrame")
 
-[node name="Margin" type="MarginContainer" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel"]
+[node name="Margin" type="MarginContainer" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel" unique_id=249185089]
 layout_mode = 2
 theme_override_constants/margin_left = 32
 theme_override_constants/margin_top = 28
 theme_override_constants/margin_right = 32
 theme_override_constants/margin_bottom = 28
 
-[node name="Content" type="VBoxContainer" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin"]
+[node name="Content" type="VBoxContainer" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin" unique_id=1083115692]
 layout_mode = 2
 theme_override_constants/separation = 14
 alignment = 1
 
-[node name="Eyebrow" type="Label" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content"]
+[node name="Eyebrow" type="Label" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content" unique_id=1299626219]
 layout_mode = 2
 theme_type_variation = &"JadeSubtitle"
-theme_override_colors/font_color = Color(0.78, 0.34, 0.30, 1)
+theme_override_colors/font_color = Color(0.78, 0.34, 0.3, 1)
 theme_override_font_sizes/font_size = 12
 text = "DAO HEART SHAKEN • RUN ENDED"
 horizontal_alignment = 1
@@ -1314,7 +1289,7 @@ theme_override_font_sizes/font_size = 31
 text = "FALLEN IN BATTLE"
 horizontal_alignment = 1
 
-[node name="StageLabel" type="Label" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content"]
+[node name="StageLabel" type="Label" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content" unique_id=551243895]
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
 theme_override_font_sizes/font_size = 13
@@ -1322,7 +1297,7 @@ text = "VERDANT QI VALLEY • STAGE 1-1"
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="WaveLabel" type="Label" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content"]
+[node name="WaveLabel" type="Label" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content" unique_id=162883404]
 layout_mode = 2
 theme_type_variation = &"JadeSubtitle"
 theme_override_colors/font_color = Color(0.94, 0.72, 0.34, 1)
@@ -1330,40 +1305,40 @@ theme_override_font_sizes/font_size = 17
 text = "WAVE 0 REACHED"
 horizontal_alignment = 1
 
-[node name="RewardPanel" type="PanelContainer" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content"]
+[node name="RewardPanel" type="PanelContainer" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content" unique_id=1678410367]
 custom_minimum_size = Vector2(0, 132)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleDefeatRewardPanel")
 
-[node name="RewardMargin" type="MarginContainer" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content/RewardPanel"]
+[node name="RewardMargin" type="MarginContainer" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content/RewardPanel" unique_id=2049400788]
 layout_mode = 2
 theme_override_constants/margin_left = 18
 theme_override_constants/margin_top = 14
 theme_override_constants/margin_right = 18
 theme_override_constants/margin_bottom = 14
 
-[node name="RewardContent" type="VBoxContainer" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content/RewardPanel/RewardMargin"]
+[node name="RewardContent" type="VBoxContainer" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content/RewardPanel/RewardMargin" unique_id=1847732942]
 layout_mode = 2
 theme_override_constants/separation = 7
 alignment = 1
 
-[node name="RewardHeader" type="Label" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content/RewardPanel/RewardMargin/RewardContent"]
+[node name="RewardHeader" type="Label" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content/RewardPanel/RewardMargin/RewardContent" unique_id=80580630]
 layout_mode = 2
 theme_type_variation = &"JadeSubtitle"
-theme_override_colors/font_color = Color(0.82, 0.38, 0.30, 1)
+theme_override_colors/font_color = Color(0.82, 0.38, 0.3, 1)
 theme_override_font_sizes/font_size = 12
 text = "REWARD RECOVERED"
 horizontal_alignment = 1
 
-[node name="RewardSummaryLabel" type="Label" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content/RewardPanel/RewardMargin/RewardContent"]
+[node name="RewardSummaryLabel" type="Label" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content/RewardPanel/RewardMargin/RewardContent" unique_id=1648254658]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.90, 0.66, 1)
+theme_override_colors/font_color = Color(1, 0.9, 0.66, 1)
 theme_override_font_sizes/font_size = 18
 text = "No Reward Recovered"
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="BalanceLabel" type="Label" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content/RewardPanel/RewardMargin/RewardContent"]
+[node name="BalanceLabel" type="Label" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content/RewardPanel/RewardMargin/RewardContent" unique_id=1817949375]
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
 theme_override_font_sizes/font_size = 11
@@ -1373,12 +1348,12 @@ horizontal_alignment = 1
 [node name="RetryButton" type="Button" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content" unique_id=989988242]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.93, 0.70, 1)
+theme_override_colors/font_color = Color(1, 0.93, 0.7, 1)
 theme_override_colors/font_hover_color = Color(1, 0.98, 0.84, 1)
 theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("StyleResumeNormal")
-theme_override_styles/hover = SubResource("StyleResumeHover")
 theme_override_styles/pressed = SubResource("StyleResumePressed")
+theme_override_styles/hover = SubResource("StyleResumeHover")
 theme_override_styles/focus = SubResource("StyleResumeHover")
 text = "REKINDLE • RETRY"
 
@@ -1389,12 +1364,12 @@ theme_override_colors/font_color = Color(0.92, 0.97, 0.96, 1)
 theme_override_colors/font_hover_color = Color(1, 0.94, 0.72, 1)
 theme_override_font_sizes/font_size = 17
 theme_override_styles/normal = SubResource("StyleReturnNormal")
-theme_override_styles/hover = SubResource("StyleReturnHover")
 theme_override_styles/pressed = SubResource("StyleReturnNormal")
+theme_override_styles/hover = SubResource("StyleReturnHover")
 theme_override_styles/focus = SubResource("StyleReturnHover")
 text = "RETURN HOME"
 
-[node name="Hint" type="Label" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content"]
+[node name="Hint" type="Label" parent="GameOverUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content" unique_id=1345240871]
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
 theme_override_font_sizes/font_size = 11
@@ -1413,10 +1388,9 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
-color = Color(0.001, 0.012, 0.018, 0.90)
+color = Color(0.001, 0.012, 0.018, 0.9)
 
-[node name="SafeArea" type="Control" parent="VictoryUI/ColorRect"]
+[node name="SafeArea" type="Control" parent="VictoryUI/ColorRect" unique_id=1689048950]
 process_mode = 3
 layout_mode = 1
 anchors_preset = 15
@@ -1428,7 +1402,7 @@ mouse_filter = 1
 theme = ExtResource("23_hud_theme")
 script = ExtResource("24_safe_area")
 
-[node name="CenterContainer" type="CenterContainer" parent="VictoryUI/ColorRect/SafeArea"]
+[node name="CenterContainer" type="CenterContainer" parent="VictoryUI/ColorRect/SafeArea" unique_id=269231696]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -1439,26 +1413,25 @@ offset_right = -18.0
 offset_bottom = -18.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 1
 
-[node name="Panel" type="PanelContainer" parent="VictoryUI/ColorRect/SafeArea/CenterContainer"]
+[node name="Panel" type="PanelContainer" parent="VictoryUI/ColorRect/SafeArea/CenterContainer" unique_id=2064918371]
 custom_minimum_size = Vector2(530, 570)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleVictoryResultFrame")
 
-[node name="Margin" type="MarginContainer" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel"]
+[node name="Margin" type="MarginContainer" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel" unique_id=770442537]
 layout_mode = 2
 theme_override_constants/margin_left = 32
 theme_override_constants/margin_top = 28
 theme_override_constants/margin_right = 32
 theme_override_constants/margin_bottom = 28
 
-[node name="Content" type="VBoxContainer" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin"]
+[node name="Content" type="VBoxContainer" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin" unique_id=2071702534]
 layout_mode = 2
 theme_override_constants/separation = 14
 alignment = 1
 
-[node name="Eyebrow" type="Label" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content"]
+[node name="Eyebrow" type="Label" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content" unique_id=866112044]
 layout_mode = 2
 theme_type_variation = &"JadeSubtitle"
 theme_override_font_sizes/font_size = 12
@@ -1473,14 +1446,14 @@ theme_override_font_sizes/font_size = 34
 text = "VICTORY"
 horizontal_alignment = 1
 
-[node name="StageLabel" type="Label" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content"]
+[node name="StageLabel" type="Label" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content" unique_id=253248947]
 layout_mode = 2
 theme_override_font_sizes/font_size = 15
 text = "VERDANT QI VALLEY • STAGE 1-1"
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="ClearStateLabel" type="Label" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content"]
+[node name="ClearStateLabel" type="Label" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content" unique_id=1709771662]
 layout_mode = 2
 theme_type_variation = &"JadeSubtitle"
 theme_override_colors/font_color = Color(0.32, 0.86, 0.71, 1)
@@ -1488,24 +1461,24 @@ theme_override_font_sizes/font_size = 13
 text = "STAGE CLEAR • REWARD SECURED"
 horizontal_alignment = 1
 
-[node name="RewardPanel" type="PanelContainer" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content"]
+[node name="RewardPanel" type="PanelContainer" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content" unique_id=521469050]
 custom_minimum_size = Vector2(0, 154)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleVictoryRewardPanel")
 
-[node name="RewardMargin" type="MarginContainer" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content/RewardPanel"]
+[node name="RewardMargin" type="MarginContainer" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content/RewardPanel" unique_id=373274004]
 layout_mode = 2
 theme_override_constants/margin_left = 18
 theme_override_constants/margin_top = 14
 theme_override_constants/margin_right = 18
 theme_override_constants/margin_bottom = 14
 
-[node name="RewardContent" type="VBoxContainer" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content/RewardPanel/RewardMargin"]
+[node name="RewardContent" type="VBoxContainer" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content/RewardPanel/RewardMargin" unique_id=1194435341]
 layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="RewardHeader" type="Label" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content/RewardPanel/RewardMargin/RewardContent"]
+[node name="RewardHeader" type="Label" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content/RewardPanel/RewardMargin/RewardContent" unique_id=442682559]
 layout_mode = 2
 theme_type_variation = &"JadeSubtitle"
 theme_override_colors/font_color = Color(0.95, 0.73, 0.28, 1)
@@ -1513,7 +1486,7 @@ theme_override_font_sizes/font_size = 12
 text = "REWARDS SECURED"
 horizontal_alignment = 1
 
-[node name="RewardSummaryLabel" type="Label" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content/RewardPanel/RewardMargin/RewardContent"]
+[node name="RewardSummaryLabel" type="Label" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content/RewardPanel/RewardMargin/RewardContent" unique_id=2096580424]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.91, 0.67, 1)
 theme_override_font_sizes/font_size = 18
@@ -1522,7 +1495,7 @@ No Reward"
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="BalanceLabel" type="Label" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content/RewardPanel/RewardMargin/RewardContent"]
+[node name="BalanceLabel" type="Label" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content/RewardPanel/RewardMargin/RewardContent" unique_id=1322812624]
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
 theme_override_font_sizes/font_size = 11
@@ -1532,16 +1505,16 @@ horizontal_alignment = 1
 [node name="MainMenuButton" type="Button" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content" unique_id=956021213]
 custom_minimum_size = Vector2(0, 66)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.93, 0.70, 1)
+theme_override_colors/font_color = Color(1, 0.93, 0.7, 1)
 theme_override_colors/font_hover_color = Color(1, 0.98, 0.84, 1)
 theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("StyleResumeNormal")
-theme_override_styles/hover = SubResource("StyleResumeHover")
 theme_override_styles/pressed = SubResource("StyleResumePressed")
+theme_override_styles/hover = SubResource("StyleResumeHover")
 theme_override_styles/focus = SubResource("StyleResumeHover")
 text = "RETURN HOME"
 
-[node name="Hint" type="Label" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content"]
+[node name="Hint" type="Label" parent="VictoryUI/ColorRect/SafeArea/CenterContainer/Panel/Margin/Content" unique_id=2075994959]
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
 theme_override_font_sizes/font_size = 11
@@ -1551,4 +1524,3 @@ autowrap_mode = 2
 
 [node name="VictoryManager" type="Node" parent="." unique_id=1242581924]
 script = ExtResource("14_mm8aj")
-

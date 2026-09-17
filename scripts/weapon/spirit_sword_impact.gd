@@ -9,14 +9,19 @@ const RING_SEGMENTS: int = 36
 
 var critical: bool = false
 var resonance_projectile: bool = false
+var combat_style_id: StringName = &"spirit_sword"
+var combat_profile: Dictionary = {}
 
 
 func setup(
 	is_critical: bool,
-	is_resonance: bool
+	is_resonance: bool,
+	profile: Dictionary = {}
 ) -> void:
 	critical = is_critical
 	resonance_projectile = is_resonance
+	combat_profile = profile.duplicate(true)
+	combat_style_id = StringName(str(combat_profile.get("style_id", "spirit_sword")))
 
 	create_impact()
 
@@ -33,15 +38,8 @@ func create_ring_points(radius: float) -> PackedVector2Array:
 	var points := PackedVector2Array()
 
 	for index in range(RING_SEGMENTS + 1):
-		var angle: float = (
-			TAU
-			* float(index)
-			/ float(RING_SEGMENTS)
-		)
-		points.append(
-			Vector2.RIGHT.rotated(angle)
-			* radius
-		)
+		var angle: float = TAU * float(index) / float(RING_SEGMENTS)
+		points.append(Vector2.RIGHT.rotated(angle) * radius)
 
 	return points
 
@@ -61,11 +59,21 @@ func _make_line(
 
 
 func create_impact() -> void:
-	var main_color := Color(0.36, 0.96, 0.84, 0.94)
-	var core_color := Color(0.84, 1.0, 0.96, 1.0)
-	var accent := Color(0.30, 0.78, 1.0, 0.74)
-	var impact_scale: float = 1.0
+	var main_color: Color = combat_profile.get(
+		"impact_main",
+		Color(0.36, 0.96, 0.84, 0.94)
+	)
+	var core_color: Color = combat_profile.get(
+		"impact_core",
+		Color(0.84, 1.0, 0.96, 1.0)
+	)
+	var accent: Color = combat_profile.get(
+		"impact_accent",
+		Color(0.30, 0.78, 1.0, 0.74)
+	)
+	var impact_scale: float = float(combat_profile.get("impact_scale", 1.0))
 
+	# Existing critical/resonance readability keeps priority over armament tint.
 	if critical:
 		main_color = Color(1.0, 0.78, 0.22, 1.0)
 		core_color = Color(1.0, 0.98, 0.76, 1.0)
@@ -101,12 +109,7 @@ func create_impact() -> void:
 			Vector2(21.0, -14.0)
 		]),
 		10.0 if critical else 7.0,
-		Color(
-			main_color.r,
-			main_color.g,
-			main_color.b,
-			0.18
-		)
+		Color(main_color.r, main_color.g, main_color.b, 0.18)
 	)
 	glow_slash.show_behind_parent = true
 
@@ -121,36 +124,22 @@ func create_impact() -> void:
 		outer_ring = _make_line(
 			create_ring_points(15.0),
 			1.7,
-			Color(
-				accent.r,
-				accent.g,
-				accent.b,
-				0.62
-			)
+			Color(accent.r, accent.g, accent.b, 0.62)
 		)
 
 		for index in range(8):
-			var direction := Vector2.RIGHT.rotated(
-				float(index) * TAU / 8.0
-			)
+			var direction := Vector2.RIGHT.rotated(float(index) * TAU / 8.0)
 			var ray := _make_line(
 				PackedVector2Array([
 					direction * 8.0,
-					direction * (
-						27.0 * impact_scale
-					)
+					direction * (27.0 * impact_scale)
 				]),
 				1.7 if index % 2 == 0 else 1.2,
 				accent
 			)
 
 			var ray_tween := create_tween()
-			ray_tween.tween_property(
-				ray,
-				"modulate:a",
-				0.0,
-				EFFECT_DURATION
-			)
+			ray_tween.tween_property(ray, "modulate:a", 0.0, EFFECT_DURATION)
 
 	var tween := create_tween()
 	tween.set_parallel(true)
@@ -161,12 +150,7 @@ func create_impact() -> void:
 		Vector2.ONE * 2.55 * impact_scale,
 		EFFECT_DURATION
 	)
-	tween.tween_property(
-		ring,
-		"modulate:a",
-		0.0,
-		EFFECT_DURATION
-	)
+	tween.tween_property(ring, "modulate:a", 0.0, EFFECT_DURATION)
 
 	if outer_ring != null:
 		tween.tween_property(
@@ -175,12 +159,7 @@ func create_impact() -> void:
 			Vector2.ONE * 1.72 * impact_scale,
 			EFFECT_DURATION
 		)
-		tween.tween_property(
-			outer_ring,
-			"modulate:a",
-			0.0,
-			EFFECT_DURATION
-		)
+		tween.tween_property(outer_ring, "modulate:a", 0.0, EFFECT_DURATION)
 
 	for slash in [slash_a, slash_b, glow_slash]:
 		tween.tween_property(
@@ -189,9 +168,4 @@ func create_impact() -> void:
 			Vector2.ONE * 1.30 * impact_scale,
 			EFFECT_DURATION
 		)
-		tween.tween_property(
-			slash,
-			"modulate:a",
-			0.0,
-			EFFECT_DURATION
-		)
+		tween.tween_property(slash, "modulate:a", 0.0, EFFECT_DURATION)
