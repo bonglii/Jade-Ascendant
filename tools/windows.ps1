@@ -91,7 +91,12 @@ function New-QACopy {
     New-Item -ItemType Directory -Force $copy | Out-Null
     Get-ChildItem -LiteralPath $ProjectRoot -File -Recurse -Force | ForEach-Object {
         $relative = $_.FullName.Substring($ProjectRoot.Length+1)
-        if ($relative -match '(^|[\\/])(\.godot|\.git|\.local|artifacts|android|__pycache__)([\\/]|$)' -or $relative -match '\.(jks|keystore|p12|pem|zip)$') { return }
+        if (
+            $relative -match '(^|[\\/])(\.godot|\.git|\.local|artifacts|__pycache__)([\\/]|$)' -or
+            $relative -match '^android([\\/]|$)' -or
+            $relative -match '^addons[\\/]admob[\\/](csharp|gdscript)[\\/]sample([\\/]|$)' -or
+            $relative -match '\.(jks|keystore|p12|pem|zip)$'
+        ) { return }
         $target = Join-Path $copy $relative
         New-Item -ItemType Directory -Force (Split-Path -Parent $target) | Out-Null
         Copy-Item -LiteralPath $_.FullName -Destination $target

@@ -8,6 +8,10 @@
 
 config_version=5
 
+[admob]
+
+general/ios/enabled=false
+
 [application]
 
 config/name="jade-ascendant"
@@ -45,6 +49,10 @@ window/size/window_height_override=860
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/handheld/orientation=1
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/admob/plugin.cfg")
 
 [global_group]
 
