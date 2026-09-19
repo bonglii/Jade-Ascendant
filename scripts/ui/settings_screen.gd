@@ -17,12 +17,23 @@ var presentation_toggles: Dictionary = {}
 var fps_choice: OptionButton
 var language_choice: OptionButton
 
+# Debug-only Android monetization QA surface. These nodes are created only in
+# debug builds and therefore never appear in the shipping Settings experience.
+var monetization_qa_status_label: Label
+var monetization_qa_event_label: Label
+var monetization_qa_rewarded_button: Button
+var monetization_qa_privacy_button: Button
+var monetization_qa_timer: Timer
+var monetization_qa_sequence: int = 0
+
+
 func _ready() -> void:
 	_build_presentation_options()
 	_connect_signals()
 	SceneTransitionManager.set_back_handler(handle_system_back)
 	_sync_from_settings()
 	DebugLogger.system(str("Settings Screen aktif!"))
+
 
 func _connect_signals() -> void:
 	back_button.pressed.connect(_return_to_journey)
@@ -32,10 +43,12 @@ func _connect_signals() -> void:
 	sfx_slider.value_changed.connect(_on_sfx_changed)
 	SettingsManager.settings_changed.connect(_sync_from_settings)
 
+
 func handle_system_back() -> void:
 	if SceneTransitionManager.is_transitioning:
 		return
 	_return_to_journey()
+
 
 func _sync_from_settings() -> void:
 	is_syncing_ui = true
@@ -53,10 +66,12 @@ func _sync_from_settings() -> void:
 	language_choice.select(1 if SettingsManager.language == "id" else 0)
 	is_syncing_ui = false
 
+
 func _update_value_labels() -> void:
 	master_value_label.text = "%d%%" % int(round(master_slider.value))
 	music_value_label.text = "%d%%" % int(round(music_slider.value))
 	sfx_value_label.text = "%d%%" % int(round(sfx_slider.value))
+
 
 func _on_master_changed(value: float) -> void:
 	master_value_label.text = "%d%%" % int(round(value))
@@ -64,11 +79,13 @@ func _on_master_changed(value: float) -> void:
 		return
 	SettingsManager.set_master_volume(value / 100.0)
 
+
 func _on_music_changed(value: float) -> void:
 	music_value_label.text = "%d%%" % int(round(value))
 	if is_syncing_ui:
 		return
 	SettingsManager.set_music_volume(value / 100.0)
+
 
 func _on_sfx_changed(value: float) -> void:
 	sfx_value_label.text = "%d%%" % int(round(value))
@@ -76,8 +93,10 @@ func _on_sfx_changed(value: float) -> void:
 		return
 	SettingsManager.set_sfx_volume(value / 100.0)
 
+
 func _on_reset_pressed() -> void:
 	SettingsManager.reset_audio_defaults()
+
 
 func _return_to_journey() -> void:
 	if SceneTransitionManager.is_transitioning:
@@ -91,6 +110,7 @@ func _return_to_journey() -> void:
 			"SettingsScreen: gagal kembali ke Journey. Error code: "
 			+ str(change_error)
 		)
+
 
 func _build_presentation_options() -> void:
 	var parent_box: VBoxContainer = get_node("SafeArea/Scroll/Content") as VBoxContainer
@@ -140,6 +160,185 @@ func _build_presentation_options() -> void:
 	parent_box.move_child(comfort_card, parent_box.get_child_count() - 2)
 	parent_box.move_child(system_card, parent_box.get_child_count() - 2)
 
+	_build_monetization_qa(parent_box, existing_card)
+
+
+func _build_monetization_qa(
+	parent_box: VBoxContainer,
+	source_card: PanelContainer
+) -> void:
+	if not OS.is_debug_build():
+		return
+
+	var qa_card: PanelContainer = _create_settings_card(
+		parent_box,
+		source_card,
+		"DEBUG QA",
+		"Monetization Runtime",
+		"Test-only AdMob/UMP diagnostics. This card is excluded from release behavior."
+	)
+	var qa_box: VBoxContainer = qa_card.get_child(0) as VBoxContainer
+
+	monetization_qa_status_label = Label.new()
+	monetization_qa_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	monetization_qa_status_label.add_theme_font_size_override("font_size", 12)
+	monetization_qa_status_label.add_theme_color_override(
+		"font_color",
+		Color(0.76, 0.90, 0.86, 1.0)
+	)
+	qa_box.add_child(monetization_qa_status_label)
+
+	monetization_qa_event_label = Label.new()
+	monetization_qa_event_label.text = "Last event: none"
+	monetization_qa_event_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	monetization_qa_event_label.add_theme_font_size_override("font_size", 11)
+	monetization_qa_event_label.add_theme_color_override(
+		"font_color",
+		Color(0.98, 0.82, 0.42, 1.0)
+	)
+	qa_box.add_child(monetization_qa_event_label)
+
+	monetization_qa_rewarded_button = Button.new()
+	monetization_qa_rewarded_button.text = "SHOW GOOGLE TEST REWARDED"
+	monetization_qa_rewarded_button.custom_minimum_size.y = 46.0
+	monetization_qa_rewarded_button.theme_type_variation = &"JadeSecondaryButton"
+	monetization_qa_rewarded_button.pressed.connect(
+		_on_monetization_qa_rewarded_pressed
+	)
+	qa_box.add_child(monetization_qa_rewarded_button)
+
+	monetization_qa_privacy_button = Button.new()
+	monetization_qa_privacy_button.text = "OPEN PRIVACY OPTIONS"
+	monetization_qa_privacy_button.custom_minimum_size.y = 44.0
+	monetization_qa_privacy_button.theme_type_variation = &"JadeSecondaryButton"
+	monetization_qa_privacy_button.pressed.connect(
+		_on_monetization_qa_privacy_pressed
+	)
+	qa_box.add_child(monetization_qa_privacy_button)
+
+	var warning_label := Label.new()
+	warning_label.text = (
+		"QA only • reward callback is observed but no Pavilion currency is granted."
+	)
+	warning_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	warning_label.add_theme_font_size_override("font_size", 10)
+	warning_label.add_theme_color_override(
+		"font_color",
+		Color(0.64, 0.72, 0.70, 1.0)
+	)
+	qa_box.add_child(warning_label)
+
+	parent_box.move_child(qa_card, parent_box.get_child_count() - 2)
+
+	if not MonetizationManager.operation_finished.is_connected(
+		_on_monetization_qa_operation_finished
+	):
+		MonetizationManager.operation_finished.connect(
+			_on_monetization_qa_operation_finished
+		)
+	if not MonetizationManager.rewarded_completed.is_connected(
+		_on_monetization_qa_rewarded_completed
+	):
+		MonetizationManager.rewarded_completed.connect(
+			_on_monetization_qa_rewarded_completed
+		)
+
+	monetization_qa_timer = Timer.new()
+	monetization_qa_timer.wait_time = 0.5
+	monetization_qa_timer.one_shot = false
+	monetization_qa_timer.timeout.connect(_refresh_monetization_qa)
+	add_child(monetization_qa_timer)
+	monetization_qa_timer.start()
+
+	_refresh_monetization_qa()
+
+
+func _refresh_monetization_qa() -> void:
+	if (
+		not OS.is_debug_build()
+		or monetization_qa_status_label == null
+		or not is_instance_valid(monetization_qa_status_label)
+	):
+		return
+
+	var status: Dictionary = MonetizationManager.get_provider_runtime_status()
+	var provider_name: String = str(status.get("provider", "unknown"))
+	var state_name: String = str(status.get("state", "unknown"))
+	var consent_open: bool = bool(status.get("consent_gate_open", false))
+	var ads_initialized: bool = bool(status.get("ads_initialized", false))
+	var rewarded_loading: bool = bool(status.get("rewarded_loading", false))
+	var rewarded_ready: bool = bool(status.get("rewarded_ready", false))
+	var privacy_required: bool = bool(
+		status.get("privacy_options_required", false)
+	)
+
+	monetization_qa_status_label.text = (
+		"Provider: %s\nState: %s\nConsent gate: %s  •  SDK: %s\n"
+		+ "Rewarded: %s  •  Privacy options: %s"
+	) % [
+		provider_name,
+		state_name,
+		"OPEN" if consent_open else "CLOSED",
+		"READY" if ads_initialized else "WAIT",
+		(
+			"READY"
+			if rewarded_ready
+			else ("LOADING" if rewarded_loading else "WAIT")
+		),
+		"REQUIRED" if privacy_required else "NOT REQUIRED"
+	]
+
+	var placement: String = _next_monetization_qa_placement()
+	monetization_qa_rewarded_button.disabled = not (
+		OS.get_name() == "Android"
+		and MonetizationManager.rewarded_available(placement)
+	)
+	monetization_qa_privacy_button.disabled = not (
+		OS.get_name() == "Android"
+		and MonetizationManager.privacy_options_required()
+	)
+
+
+func _next_monetization_qa_placement() -> String:
+	return "qa_rewarded_%d" % (monetization_qa_sequence + 1)
+
+
+func _on_monetization_qa_rewarded_pressed() -> void:
+	var placement: String = _next_monetization_qa_placement()
+	if MonetizationManager.show_rewarded(placement):
+		monetization_qa_sequence += 1
+		monetization_qa_event_label.text = (
+			"Last event: request started • " + placement
+		)
+	else:
+		monetization_qa_event_label.text = "Last event: rewarded unavailable"
+	_refresh_monetization_qa()
+
+
+func _on_monetization_qa_privacy_pressed() -> void:
+	if MonetizationManager.show_privacy_options():
+		monetization_qa_event_label.text = "Last event: privacy options opened"
+	else:
+		monetization_qa_event_label.text = "Last event: privacy options unavailable"
+	_refresh_monetization_qa()
+
+
+func _on_monetization_qa_operation_finished(status: String) -> void:
+	if monetization_qa_event_label == null:
+		return
+	monetization_qa_event_label.text = "Last event: request finished • " + status
+	_refresh_monetization_qa()
+
+
+func _on_monetization_qa_rewarded_completed(placement: String) -> void:
+	if monetization_qa_event_label == null:
+		return
+	monetization_qa_event_label.text = (
+		"Last event: REWARD CALLBACK OK • " + placement
+	)
+	_refresh_monetization_qa()
+
+
 func _create_settings_card(parent_box: VBoxContainer, source_card: PanelContainer, eyebrow: String, title_text: String, subtitle_text: String) -> PanelContainer:
 	var card: PanelContainer = PanelContainer.new()
 	card.add_theme_stylebox_override("panel", source_card.get_theme_stylebox("panel"))
@@ -165,6 +364,7 @@ func _create_settings_card(parent_box: VBoxContainer, source_card: PanelContaine
 	parent_box.add_child(card)
 	return card
 
+
 func _open_privacy() -> void:
 	if SceneTransitionManager.is_transitioning:
 		return
@@ -178,11 +378,14 @@ func _open_privacy() -> void:
 			+ str(change_error)
 		)
 
+
 func _on_presentation_toggled(enabled: bool, key: String) -> void:
 	SettingsManager.set_presentation(key, enabled)
 
+
 func _on_fps_selected(index: int) -> void:
 	SettingsManager.set_presentation("frame_limit", 60 if index == 0 else 30)
+
 
 func _on_language_selected(index: int) -> void:
 	SettingsManager.set_presentation("language", "id" if index == 1 else "en")

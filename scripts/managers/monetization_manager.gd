@@ -1,14 +1,14 @@
 extends Node
 
-## Provider boundary for a later monetized build. The shipping offline provider
-## exposes no purchase buttons, ads or fake restore promises. Reward completion
-## is a distinct provider signal; closing an ad never grants a reward.
+## Provider boundary for monetized builds. Android may attach the AdMob adapter;
+## desktop/editor and unsupported runtimes stay on the safe offline provider.
 signal rewarded_completed(placement: String)
 signal operation_finished(status: String)
 signal entitlements_changed(product_ids: Array[String])
 signal analytics_event(event_id: String, properties: Dictionary)
 
 const OfflineProvider = preload("res://scripts/monetization/offline_provider.gd")
+const AdMobProvider = preload("res://scripts/monetization/admob_provider.gd")
 const PolicyStore = preload("res://scripts/monetization/monetization_policy_store.gd")
 
 const REWARD_COOLDOWN_MSEC: int = 60000
@@ -22,8 +22,6 @@ var active_request: int = -1
 var active_placement: String = ""
 var reward_consumed: bool = false
 
-## Monotonic guard for the current process. Persistent cooldown uses Unix time
-## below so restarting the app cannot reset the reward window.
 var last_reward_at: int = -REWARD_COOLDOWN_MSEC
 var last_reward_unix: int = 0
 var policy_day_bucket: int = -1
@@ -37,15 +35,25 @@ func _ready() -> void:
 	_load_policy_state()
 	_attach_provider(OfflineProvider.new())
 
+	if OS.get_name() == "Android":
+		call_deferred("_activate_android_provider")
+
+
+func _activate_android_provider() -> void:
+	if OS.get_name() != "Android" or active_request >= 0:
+		return
+	_attach_provider(AdMobProvider.new())
+
 
 func _attach_provider(next_provider: Node) -> void:
 	if is_instance_valid(provider):
 		provider.queue_free()
+
 	provider = next_provider
-	add_child(provider)
 	provider.connect("reward_confirmed", _on_reward_confirmed)
 	provider.connect("request_finished", _on_request_finished)
 	provider.connect("entitlements_received", _on_entitlements_received)
+	add_child(provider)
 
 
 func use_test_provider(test_provider: Node) -> bool:
@@ -72,12 +80,10 @@ func rewarded_available(placement: String) -> bool:
 
 
 func show_rewarded(placement: String) -> bool:
-	# A real adapter must also supply consent and verified entitlement handling
-	# before this can become a shipping placement. Daily caps and cross-restart
-	# cooldown persistence are already enforced by the policy store.
 	if not rewarded_available(placement):
 		operation_finished.emit("unavailable")
 		return false
+
 	request_sequence += 1
 	active_request = request_sequence
 	active_placement = placement
@@ -88,6 +94,32 @@ func show_rewarded(placement: String) -> bool:
 	return true
 
 
+func privacy_options_required() -> bool:
+	if not is_instance_valid(provider):
+		return false
+	if not provider.has_method("privacy_options_required"):
+		return false
+	return bool(provider.call("privacy_options_required"))
+
+
+func show_privacy_options() -> bool:
+	if active_request >= 0 or not is_instance_valid(provider):
+		return false
+	if not provider.has_method("show_privacy_options"):
+		return false
+	return bool(provider.call("show_privacy_options"))
+
+
+func get_provider_runtime_status() -> Dictionary:
+	if not is_instance_valid(provider):
+		return {"provider": "none", "state": "missing"}
+	if provider.has_method("get_runtime_status"):
+		var status: Variant = provider.call("get_runtime_status")
+		if status is Dictionary:
+			return (status as Dictionary).duplicate(true)
+	return {"provider": provider.name, "state": "unknown"}
+
+
 func _on_reward_confirmed(request_id: int) -> void:
 	if request_id != active_request or active_request < 0 or reward_consumed:
 		return
@@ -96,17 +128,10 @@ func _on_reward_confirmed(request_id: int) -> void:
 	last_reward_at = Time.get_ticks_msec()
 	last_reward_unix = _get_unix_time()
 	_sync_policy_day(false)
-	placement_counts[active_placement] = (
-		int(placement_counts.get(active_placement, 0)) + 1
-	)
+	placement_counts[active_placement] = int(placement_counts.get(active_placement, 0)) + 1
 
 	if not _save_policy_state():
-		# Provider-confirmed value is still delivered once. Failing closed here
-		# would make a player watch a completed ad and receive nothing. This
-		# session remains protected by reward_consumed + monotonic cooldown.
-		push_error(
-			"MonetizationManager: persistent reward policy gagal disimpan."
-		)
+		push_error("MonetizationManager: persistent reward policy gagal disimpan.")
 		analytics_event.emit(
 			"reward_policy_save_failed",
 			{"placement": active_placement}
@@ -151,19 +176,10 @@ func _process(delta: float) -> void:
 
 func _load_policy_state() -> void:
 	var state: Dictionary = policy_store.call("load_state")
-	policy_day_bucket = int(
-		state.get("day_bucket", _get_day_bucket(_get_unix_time()))
-	)
-	last_reward_unix = maxi(
-		int(state.get("last_reward_unix", 0)),
-		0
-	)
+	policy_day_bucket = int(state.get("day_bucket", _get_day_bucket(_get_unix_time())))
+	last_reward_unix = maxi(int(state.get("last_reward_unix", 0)), 0)
 	var stored_counts: Variant = state.get("placement_counts", {})
-	placement_counts = (
-		stored_counts.duplicate(true)
-		if stored_counts is Dictionary
-		else {}
-	)
+	placement_counts = stored_counts.duplicate(true) if stored_counts is Dictionary else {}
 	_sync_policy_day()
 
 
@@ -173,17 +189,13 @@ func _sync_policy_day(persist_change: bool = true) -> void:
 		policy_day_bucket = current_day
 		return
 
-	# Only advance the policy day. If the device clock moves backwards, keeping
-	# the newer bucket prevents a clock rollback from resetting the daily cap.
 	if current_day <= policy_day_bucket:
 		return
 
 	policy_day_bucket = current_day
 	placement_counts.clear()
 	if persist_change and not _save_policy_state():
-		push_warning(
-			"MonetizationManager: daily reward policy rollover belum tersimpan."
-		)
+		push_warning("MonetizationManager: daily reward policy rollover belum tersimpan.")
 
 
 func _save_policy_state() -> bool:
@@ -205,4 +217,4 @@ func _get_unix_time() -> int:
 
 
 func _get_day_bucket(unix_time: int) -> int:
-	return int(unix_time / 86400)
+	return int(float(unix_time) / 86400.0)

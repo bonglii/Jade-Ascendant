@@ -173,7 +173,7 @@ func _get_unix_time() -> int:
 
 
 func _get_day_bucket(unix_time: int) -> int:
-	return int(unix_time / 86400)
+	return int(float(unix_time) / 86400.0)
 
 
 func _rename(source_path: String, target_path: String) -> Error:
