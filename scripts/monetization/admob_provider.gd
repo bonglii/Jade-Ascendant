@@ -9,9 +9,12 @@ extends "res://scripts/monetization/offline_provider.gd"
 ##
 ## Release safety:
 ## - Debug Android uses Google's rewarded test unit.
-## - Release requires an explicit production ad-unit setting.
+## - Release requires explicit production App ID + rewarded ad unit.
+## - Sample/test IDs and mismatched publisher IDs fail closed.
 
 const TEST_REWARDED_AD_UNIT_ID: String = "ca-app-pub-3940256099942544/5224354917"
+const GOOGLE_SAMPLE_ANDROID_APP_ID: String = "ca-app-pub-3940256099942544~3347511713"
+const ANDROID_APP_ID_SETTING: String = "admob/general/android/app_id"
 const RELEASE_REWARDED_SETTING: String = "monetization/admob/rewarded_ad_unit_id"
 
 const LOAD_RETRY_INITIAL_SECONDS: float = 15.0
@@ -45,6 +48,10 @@ func _ready() -> void:
 
 	if OS.get_name() != "Android":
 		_state = "unsupported_platform"
+		return
+
+	if not OS.is_debug_build() and not _production_configuration_valid():
+		_state = "disabled_invalid_release_config"
 		return
 
 	_ad_unit_id = _resolve_rewarded_ad_unit_id()
@@ -133,6 +140,39 @@ func get_runtime_status() -> Dictionary:
 	}
 
 
+func _production_configuration_valid() -> bool:
+	var app_id: String = str(
+		ProjectSettings.get_setting(ANDROID_APP_ID_SETTING, "")
+	).strip_edges()
+	var rewarded_id: String = str(
+		ProjectSettings.get_setting(RELEASE_REWARDED_SETTING, "")
+	).strip_edges()
+
+	if not _is_valid_app_id(app_id):
+		push_error("AdMobProvider: production Android App ID tidak valid.")
+		return false
+
+	if app_id == GOOGLE_SAMPLE_ANDROID_APP_ID:
+		push_error("AdMobProvider: release build menolak Google sample App ID.")
+		return false
+
+	if not _is_valid_rewarded_id(rewarded_id):
+		push_error("AdMobProvider: production rewarded ad-unit ID tidak valid.")
+		return false
+
+	if rewarded_id == TEST_REWARDED_AD_UNIT_ID:
+		push_error("AdMobProvider: release build menolak Google rewarded test ad unit.")
+		return false
+
+	if _publisher_prefix(app_id, "~") != _publisher_prefix(rewarded_id, "/"):
+		push_error(
+			"AdMobProvider: App ID dan rewarded ad-unit ID berasal dari publisher berbeda."
+		)
+		return false
+
+	return true
+
+
 func _resolve_rewarded_ad_unit_id() -> String:
 	if OS.is_debug_build():
 		return TEST_REWARDED_AD_UNIT_ID
@@ -148,11 +188,32 @@ func _resolve_rewarded_ad_unit_id() -> String:
 		push_error("AdMobProvider: release build menolak Google rewarded test ad unit.")
 		return ""
 
-	if not configured.begins_with("ca-app-pub-") or "/" not in configured:
+	if not _is_valid_rewarded_id(configured):
 		push_error("AdMobProvider: production rewarded ad-unit ID tidak valid.")
 		return ""
 
 	return configured
+
+
+func _is_valid_app_id(value: String) -> bool:
+	var expression := RegEx.new()
+	if expression.compile("^ca-app-pub-[0-9]{16}~[0-9]{10}$") != OK:
+		return false
+	return expression.search(value) != null
+
+
+func _is_valid_rewarded_id(value: String) -> bool:
+	var expression := RegEx.new()
+	if expression.compile("^ca-app-pub-[0-9]{16}/[0-9]{10}$") != OK:
+		return false
+	return expression.search(value) != null
+
+
+func _publisher_prefix(value: String, separator: String) -> String:
+	var separator_index: int = value.find(separator)
+	if separator_index <= 0:
+		return ""
+	return value.substr(0, separator_index)
 
 
 func _native_plugins_available() -> bool:
