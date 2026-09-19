@@ -1211,7 +1211,6 @@ script = ExtResource("7_y0p5r")
 
 [node name="WaveManager" type="Node" parent="." unique_id=1392811214]
 script = ExtResource("8_38ulp")
-wave_duration = 5.0
 
 [node name="CheckPointManager" type="Node" parent="." unique_id=1956281834]
 script = ExtResource("9_ylrq0")
