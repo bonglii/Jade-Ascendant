@@ -2,8 +2,11 @@ extends Node
 
 ## Two music voices crossfade; ten SFX voices are reused. Combat cues have
 ## independent cooldowns so rapid damage never starts hundreds of sounds.
-## Menu interaction audio is classified centrally so shared/dynamic buttons
-## receive consistent feedback without coupling presentation screens to audio.
+##
+## UI audio follows an ultra-minimal mobile policy:
+## - navigation, browsing, tabs, cards, filters and back/close are silent;
+## - only claims, summon rituals and future purchase confirmation receive auto cues;
+## - combat/result and explicit semantic SFX remain independent of UI clicks.
 const MUSIC: Dictionary = {
 	"home": preload("res://assets/audio/celestial_gate.ogg"),
 	"journey": preload("res://assets/audio/verdant_journey.ogg"),
@@ -41,11 +44,9 @@ const SFX: Dictionary = {
 }
 
 const AUTO_UI_CUES: Array[String] = [
-	"ui",
-	"ui_tab",
 	"ui_confirm",
-	"ui_back",
-	"ui_locked"
+	"claim",
+	"summon_charge"
 ]
 const SEMANTIC_UI_CUES: Array[String] = [
 	"equip",
@@ -58,7 +59,7 @@ const SEMANTIC_UI_CUES: Array[String] = [
 	"summon_new",
 	"summon_duplicate"
 ]
-const AUTO_UI_SUPPRESS_MSEC: int = 90
+const AUTO_UI_SUPPRESS_MSEC: int = 110
 
 var music_players: Array[AudioStreamPlayer] = []
 var voices: Array[AudioStreamPlayer] = []
@@ -105,14 +106,16 @@ func _on_ui_button_pressed(button: BaseButton) -> void:
 	if not is_instance_valid(button):
 		return
 	var cue: String = _resolve_button_sfx(button)
+	if cue.is_empty():
+		return
 	# Run after the button's own handler. Successful semantic actions such as
-	# equip/claim/summon can then suppress this automatic click and avoid doubles.
+	# equip/claim/summon can then suppress this automatic cue and avoid doubles.
 	call_deferred("_play_auto_ui_sfx", cue)
 
 
 func _play_auto_ui_sfx(cue: String) -> void:
-	if cue not in AUTO_UI_CUES:
-		cue = "ui"
+	if cue.is_empty() or cue not in AUTO_UI_CUES:
+		return
 	if Time.get_ticks_msec() < semantic_ui_until_msec:
 		return
 	play_sfx(cue)
@@ -128,59 +131,23 @@ func _resolve_button_sfx(button: BaseButton) -> String:
 	var text_key: String = ""
 	if button is Button:
 		text_key = (button as Button).text.to_upper()
-	var tooltip_key: String = button.tooltip_text.to_upper()
-	var identity: String = name_key + " " + text_key + " " + tooltip_key
+	var identity: String = name_key + " " + text_key
 
-	# Locked CTA feedback is only applied to controls that can actually emit
-	# pressed. Disabled buttons keep Godot's normal no-input behavior.
-	if (
-		identity.contains("LOCKED")
-		or identity.contains("SEALED")
-		or identity.contains("UNAVAILABLE")
-		or identity.contains("REQUIRES ")
-	):
-		return "ui_locked"
+	# Ultra-minimal policy: browsing/navigation is intentionally silent.
+	# Reward claims keep a restrained success cue.
+	if identity.contains("CLAIM"):
+		return "claim"
 
-	if (
-		name_key.contains("BACK")
-		or name_key.contains("CLOSE")
-		or name_key.contains("CANCEL")
-		or text_key in ["BACK", "CLOSE", "CANCEL", "RETURN"]
-		or text_key.begins_with("BACK ")
-		or text_key.begins_with("RETURN ")
-	):
-		return "ui_back"
+	# Pavilion already plays its own ritual/reveal SFX. This fallback only
+	# matters if a summon CTA does not start a semantic cue before deferred audio.
+	if identity.contains("SUMMON"):
+		return "summon_charge"
 
-	if (
-		name_key.ends_with("TAB")
-		or name_key.contains("FILTER")
-		or name_key.contains("RARITYBUTTON")
-		or name_key.contains("SLOTBUTTON")
-		or name_key.contains("CATEGORY")
-	):
-		return "ui_tab"
+	# Real-money purchase CTAs will receive one quiet confirmation cue.
+	if identity.contains("PURCHASE") or identity.contains("BUY"):
+		return "ui_confirm"
 
-	for keyword: String in [
-		"START",
-		"ENTER",
-		"CONTINUE",
-		"CONFIRM",
-		"SUMMON",
-		"MEDITATE",
-		"ASCEND",
-		"UPGRADE",
-		"PURCHASE",
-		"BUY",
-		"CLAIM",
-		"EQUIP",
-		"UNEQUIP",
-		"SET WISH",
-		"SELECT"
-	]:
-		if identity.contains(keyword):
-			return "ui_confirm"
-
-	return "ui"
+	return ""
 
 
 func _process(_delta: float) -> void:
@@ -246,13 +213,13 @@ func play_sfx(cue: String) -> void:
 func _get_sfx_cooldown_msec(cue: String) -> int:
 	match cue:
 		"ui":
-			return 70
+			return 140
 		"ui_tab":
-			return 85
-		"ui_confirm", "ui_back":
-			return 100
-		"ui_locked":
 			return 150
+		"ui_confirm", "ui_back":
+			return 150
+		"ui_locked":
+			return 190
 		"hit", "pickup", "death", "chain":
 			return 80
 		_:
@@ -263,18 +230,24 @@ func _get_sfx_volume_db(cue: String) -> float:
 	match cue:
 		"hit", "death", "sword":
 			return -7.0
+		"claim":
+			return -9.0
 		"summon_charge":
-			return -7.0
+			return -8.5
 		"summon_legendary_omen":
 			return -4.0
 		"summon_legendary_reveal":
 			return -1.0
-		"ui_tab", "ui_back":
-			return -5.0
+		"ui_tab":
+			return -13.0
+		"ui_back":
+			return -11.0
+		"ui_confirm":
+			return -11.5
 		"ui_locked":
-			return -4.5
+			return -10.5
 		"ui":
-			return -4.0
+			return -13.0
 		_:
 			return -3.0
 
@@ -282,11 +255,13 @@ func _get_sfx_volume_db(cue: String) -> float:
 func _get_sfx_pitch(cue: String) -> float:
 	match cue:
 		"ui_tab":
-			return 1.035
-		"ui_back":
 			return 0.97
-		"ui_locked":
+		"ui_confirm":
+			return 0.95
+		"ui_back":
 			return 0.94
+		"ui_locked":
+			return 0.91
 		_:
 			return 1.0
 
@@ -310,9 +285,6 @@ func _clear_music_duck() -> void:
 	music_duck_tween = null
 
 
-## Releases active playback deterministically before SceneTree shutdown.
-## This is also used by the strict Phase 0 smoke runner so short SFX/music
-## cannot remain referenced while the engine prints its final leak report.
 func release_runtime_audio() -> void:
 	if crossfade != null and crossfade.is_valid():
 		crossfade.kill()

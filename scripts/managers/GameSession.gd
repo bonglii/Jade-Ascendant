@@ -1,7 +1,37 @@
 extends Node
 
+const LiveOpsManagerScript = preload(
+	"res://scripts/managers/live_ops_manager.gd"
+)
+const UiIconPolishManagerScript = preload(
+	"res://scripts/managers/ui_icon_polish_manager.gd"
+)
+
 var continue_game: bool = false
 var _lifecycle_checkpoint_in_progress: bool = false
+
+
+func _ready() -> void:
+	# Keep Live Ops outside the autoload registry so the established startup
+	# ordering and Phase 0 autoload contract remain unchanged. The deferred
+	# bootstrap runs after permanent managers (including PavilionManager) load.
+	call_deferred("_bootstrap_runtime_helpers")
+
+
+func _bootstrap_runtime_helpers() -> void:
+	var tree: SceneTree = get_tree()
+	if tree == null or tree.root == null:
+		return
+
+	if tree.root.get_node_or_null("LiveOpsManager") == null:
+		var live_ops: Node = LiveOpsManagerScript.new()
+		live_ops.name = "LiveOpsManager"
+		tree.root.add_child(live_ops)
+
+	if tree.root.get_node_or_null("UiIconPolishManager") == null:
+		var icon_polish: Node = UiIconPolishManagerScript.new()
+		icon_polish.name = "UiIconPolishManager"
+		tree.root.add_child(icon_polish)
 
 
 func _notification(what: int) -> void:

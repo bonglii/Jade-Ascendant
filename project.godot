@@ -64,7 +64,8 @@ player=""
 
 [gui]
 
-common/default_scroll_deadzone=6
+timers/tooltip_delay_sec=0.18
+common/default_scroll_deadzone=3
 
 [input]
 

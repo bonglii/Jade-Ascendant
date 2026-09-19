@@ -13,6 +13,38 @@ const RewardedEconomyCatalog = preload(
 	"res://scripts/data/economy_catalog.gd"
 )
 
+const POLISH_SUMMON_GATE: Texture2D = preload(
+	"res://assets/ui/pavilion/icons/summon_gate.png"
+)
+const POLISH_SUMMON_TALISMAN: Texture2D = preload(
+	"res://assets/ui/pavilion/icons/summon_talisman.png"
+)
+const POLISH_PAVILION_CREST: Texture2D = preload(
+	"res://assets/ui/pavilion/icons/pavilion_crest.png"
+)
+const POLISH_MEDITATION_ICON: Texture2D = preload(
+	"res://assets/ui/pavilion/icons/meditation.png"
+)
+const POLISH_REWARD_CHEST: Texture2D = preload(
+	"res://assets/ui/pavilion/icons/reward_chest.png"
+)
+
+const POLISH_SLOT_PATHS: Dictionary = {
+	"armament": "res://assets/ui/pavilion/icons/slot_armament.png",
+	"robe": "res://assets/ui/pavilion/icons/slot_robe.png",
+	"bracer": "res://assets/ui/pavilion/icons/slot_bracer.png",
+	"boots": "res://assets/ui/pavilion/icons/slot_boots.png",
+	"pendant": "res://assets/ui/pavilion/icons/slot_pendant.png",
+}
+
+const POLISH_AURA_PATHS: Dictionary = {
+	"plain": "res://assets/ui/pavilion/auras/aura_plain.png",
+	"jade_aura": "res://assets/ui/pavilion/auras/aura_jade.png",
+	"golden_aura": "res://assets/ui/pavilion/auras/aura_golden.png",
+	"astral_aura": "res://assets/ui/pavilion/auras/aura_astral.png",
+	"ascendant_aura": "res://assets/ui/pavilion/auras/aura_ascendant.png",
+}
+
 var rewarded_seal_panel: PanelContainer
 var rewarded_seal_button: Button
 var rewarded_seal_state_label: Label
@@ -115,16 +147,105 @@ func _enforce_mobile_readability(root: Node) -> void:
 		_enforce_mobile_readability(child)
 
 
+func _apply_commercial_button_icon(
+	button: Button,
+	texture: Texture2D,
+	max_width: int
+) -> void:
+	if button == null or not is_instance_valid(button):
+		return
+	button.icon = texture
+	button.expand_icon = true
+	button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	button.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+	button.add_theme_constant_override("icon_max_width", max_width)
+	button.add_theme_constant_override("h_separation", 8)
+
+
+func _get_summon_slot_icon_path(slot_id: String) -> String:
+	return str(
+		POLISH_SLOT_PATHS.get(
+			slot_id,
+			"res://assets/ui/pavilion/icons/summon_talisman.png"
+		)
+	)
+
+
+func _get_aura_preview_path(cosmetic_id: String) -> String:
+	return str(
+		POLISH_AURA_PATHS.get(
+			cosmetic_id,
+			POLISH_AURA_PATHS["plain"]
+		)
+	)
+
+
+func _get_aura_icon_path(cosmetic_id: String) -> String:
+	return _get_aura_preview_path(cosmetic_id)
+
+
+func _build_hero_header() -> void:
+	super()
+	if content == null or content.get_child_count() <= 0:
+		return
+
+	# The base header creates exactly one 54x54 icon emblem. Replace only that
+	# emblem texture; the sanctuary banner/background remains untouched.
+	var hero_stage: Node = content.get_child(content.get_child_count() - 1)
+	_replace_pavilion_header_emblem(hero_stage)
+
+
+func _replace_pavilion_header_emblem(root: Node) -> bool:
+	if root is PanelContainer:
+		var panel := root as PanelContainer
+		var min_size: Vector2 = panel.custom_minimum_size
+		if (
+			min_size.x >= 50.0
+			and min_size.x <= 58.0
+			and min_size.y >= 50.0
+			and min_size.y <= 58.0
+		):
+			for child: Node in panel.get_children():
+				if child is TextureRect:
+					(child as TextureRect).texture = POLISH_PAVILION_CREST
+					return true
+
+	for child: Node in root.get_children():
+		if _replace_pavilion_header_emblem(child):
+			return true
+	return false
+
+
 func _build_summon_section() -> void:
 	super()
+
+	if ritual_icon != null:
+		ritual_icon.texture = POLISH_SUMMON_GATE
+		ritual_icon.modulate = Color.WHITE
+
 	if summon_ten_button != null:
 		summon_ten_button.add_theme_font_size_override("font_size", 19)
+		_apply_commercial_button_icon(
+			summon_ten_button,
+			POLISH_SUMMON_TALISMAN,
+			34
+		)
 	if summon_one_button != null:
 		summon_one_button.add_theme_font_size_override("font_size", 14)
+		_apply_commercial_button_icon(
+			summon_one_button,
+			POLISH_SUMMON_TALISMAN,
+			30
+		)
 	if rates_button != null:
 		rates_button.add_theme_font_size_override("font_size", 14)
 	if starter_button != null:
 		starter_button.add_theme_font_size_override("font_size", 14)
+		_apply_commercial_button_icon(
+			starter_button,
+			POLISH_REWARD_CHEST,
+			28
+		)
 	_enforce_mobile_readability(content)
 
 
@@ -136,25 +257,57 @@ func _build_wish_selector_overlay() -> void:
 
 func _build_summon_reveal_overlay() -> void:
 	super()
+	if summon_reveal_icon != null:
+		summon_reveal_icon.texture = POLISH_SUMMON_GATE
+		summon_reveal_icon.modulate = Color.WHITE
 	if summon_reveal_overlay != null:
 		_enforce_mobile_readability(summon_reveal_overlay)
+
+
+func _reset_summon_reveal_visual() -> void:
+	super()
+	if summon_reveal_icon != null:
+		summon_reveal_icon.texture = POLISH_SUMMON_GATE
+		summon_reveal_icon.modulate = Color.WHITE
 
 
 func _build_meditation_section() -> void:
 	_build_rewarded_seal_section()
 	super()
+
+	if meditation_altar_icon != null:
+		meditation_altar_icon.texture = POLISH_MEDITATION_ICON
+		meditation_altar_icon.modulate = Color.WHITE
+
 	if cadence_label != null:
 		cadence_label.add_theme_font_size_override("font_size", 12)
 	if chest != null:
 		chest.add_theme_font_size_override("font_size", 14)
+		_apply_commercial_button_icon(
+			chest,
+			POLISH_MEDITATION_ICON,
+			32
+		)
 	_enforce_mobile_readability(content)
 
 
 func _refresh() -> void:
 	super()
+	_restore_summon_focal_if_needed()
 	_refresh_rewarded_seal_section()
 	if content != null:
 		_enforce_mobile_readability(content)
+
+
+func _restore_summon_focal_if_needed() -> void:
+	if ritual_icon == null or ritual_icon_frame == null:
+		return
+	if not ritual_icon_frame.visible:
+		return
+	if not PavilionManager.get_wish_target_item_id().is_empty():
+		return
+	ritual_icon.texture = POLISH_SUMMON_GATE
+	ritual_icon.modulate = Color.WHITE
 
 
 func _build_rewarded_seal_section() -> void:
@@ -282,7 +435,9 @@ func _refresh_rewarded_seal_section() -> void:
 		cycle_limit
 	]
 
-	rewarded_seal_button.text = tr("WATCH OPTIONAL AD • +1 PAVILION SEAL")
+	rewarded_seal_button.text = tr(
+		"WATCH OPTIONAL AD • +1 PAVILION SEAL"
+	)
 
 	if SaveManager.is_progress_read_only():
 		_set_rewarded_state(
@@ -304,18 +459,26 @@ func _refresh_rewarded_seal_section() -> void:
 			tr("CYCLE LIMIT REACHED"),
 			Color(0.60, 0.66, 0.64, 1.0)
 		)
-		rewarded_seal_button.text = tr("NO REWARDED SEALS AVAILABLE")
+		rewarded_seal_button.text = tr(
+			"NO REWARDED SEALS AVAILABLE"
+		)
 		rewarded_seal_button.disabled = true
 		_show_rewarded_message(
-			tr("This cycle has no rewarded Seal claims remaining."),
+			tr(
+				"This cycle has no rewarded Seal claims remaining."
+			),
 			Color(0.68, 0.74, 0.72, 1.0)
 		)
 		return
 
-	var policy: Dictionary = MonetizationManager.get_rewarded_policy_status(
-		RewardedBridge.PLACEMENT_ID
+	var policy: Dictionary = (
+		MonetizationManager.get_rewarded_policy_status(
+			RewardedBridge.PLACEMENT_ID
+		)
 	)
-	var placement_claims: int = int(policy.get("placement_claims", 0))
+	var placement_claims: int = int(
+		policy.get("placement_claims", 0)
+	)
 	var daily_limit: int = int(policy.get("daily_limit", 1))
 	var cooldown_remaining: int = int(
 		policy.get("cooldown_remaining_seconds", 0)
@@ -326,10 +489,15 @@ func _refresh_rewarded_seal_section() -> void:
 			tr("CLAIMED TODAY"),
 			Color(0.62, 0.72, 0.68, 1.0)
 		)
-		rewarded_seal_button.text = tr("REWARDED SEAL CLAIMED TODAY")
+		rewarded_seal_button.text = tr(
+			"REWARDED SEAL CLAIMED TODAY"
+		)
 		rewarded_seal_button.disabled = true
 		_show_rewarded_message(
-			tr("You already claimed today's rewarded Seal. Come back tomorrow."),
+			tr(
+				"You already claimed today's rewarded Seal. "
+				+ "Come back tomorrow."
+			),
 			Color(0.68, 0.76, 0.72, 1.0)
 		)
 		return
@@ -339,21 +507,31 @@ func _refresh_rewarded_seal_section() -> void:
 			tr("COOLDOWN • %d SEC") % cooldown_remaining,
 			Color(0.68, 0.76, 0.72, 1.0)
 		)
-		rewarded_seal_button.text = tr("REWARDED AD COOLING DOWN")
+		rewarded_seal_button.text = tr(
+			"REWARDED AD COOLING DOWN"
+		)
 		rewarded_seal_button.disabled = true
 		_show_rewarded_message(
-			tr("Please wait briefly before requesting another rewarded ad."),
+			tr(
+				"Please wait briefly before requesting another "
+				+ "rewarded ad."
+			),
 			Color(0.68, 0.76, 0.72, 1.0)
 		)
 		return
 
 	if bool(policy.get("available", false)):
-		_set_rewarded_state(tr("READY • OPTIONAL"), JADE)
+		_set_rewarded_state(
+			tr("READY • OPTIONAL"),
+			JADE
+		)
 		rewarded_seal_button.disabled = false
 		_show_rewarded_message("", JADE)
 		return
 
-	var runtime: Dictionary = MonetizationManager.get_provider_runtime_status()
+	var runtime: Dictionary = (
+		MonetizationManager.get_provider_runtime_status()
+	)
 	var provider_name: String = str(runtime.get("provider", ""))
 	var provider_state: String = str(runtime.get("state", ""))
 
@@ -363,14 +541,17 @@ func _refresh_rewarded_seal_section() -> void:
 		"consent_form_showing",
 		"ads_initializing",
 		"ads_initialized",
-		"rewarded_loading"
+		"rewarded_loading",
 	]:
 		_set_rewarded_state(
 			tr("REWARD PREPARING..."),
 			Color(0.70, 0.80, 0.76, 1.0)
 		)
 		_show_rewarded_message(
-			tr("Preparing rewarded ad availability. This may take a moment."),
+			tr(
+				"Preparing rewarded ad availability. "
+				+ "This may take a moment."
+			),
 			Color(0.72, 0.82, 0.78, 1.0)
 		)
 	else:
@@ -385,7 +566,10 @@ func _refresh_rewarded_seal_section() -> void:
 	rewarded_seal_button.disabled = true
 
 
-func _set_rewarded_state(text_value: String, accent: Color) -> void:
+func _set_rewarded_state(
+	text_value: String,
+	accent: Color
+) -> void:
 	if rewarded_seal_state_label == null:
 		return
 	rewarded_seal_state_label.text = text_value
@@ -427,7 +611,9 @@ func _request_rewarded_seal() -> void:
 
 	rewarded_seal_button.disabled = true
 	_show_rewarded_message(
-		tr("Reward is granted only after the ad confirms completion."),
+		tr(
+			"Reward is granted only after the ad confirms completion."
+		),
 		Color(0.76, 0.88, 0.84, 1.0)
 	)
 
@@ -470,7 +656,8 @@ func _on_rewarded_request_finished(
 		"cancelled":
 			_show_rewarded_message(
 				tr(
-					"Ad closed before reward. No Pavilion Seal granted."
+					"Ad closed before reward. "
+					+ "No Pavilion Seal granted."
 				),
 				Color(0.72, 0.80, 0.76, 1.0)
 			)

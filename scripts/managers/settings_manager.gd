@@ -6,6 +6,10 @@ extends Node
 
 signal settings_changed
 
+const UiLocalization = preload(
+	"res://scripts/managers/localization_ui_id_additions.gd"
+)
+
 const SETTINGS_PATH: String = "user://settings.cfg"
 const SETTINGS_SCHEMA_VERSION: int = 1
 const MASTER_BUS: StringName = &"Master"
@@ -27,6 +31,7 @@ var frame_limit: int = 60
 var language: String = "en"
 
 func _ready() -> void:
+	UiLocalization.install()
 	_ensure_audio_routing()
 	_load_settings()
 	_apply_all_audio()

@@ -120,14 +120,88 @@ func _ready() -> void:
 	selected_item_icon.custom_minimum_size = Vector2(98.0, 98.0)
 	selected_item_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	selected_item_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	candidate_grid.columns = 3
-	candidate_grid.add_theme_constant_override("h_separation", 10)
-	candidate_grid.add_theme_constant_override("v_separation", 10)
+	var viewport_width: float = get_viewport_rect().size.x
+	candidate_grid.columns = 2 if viewport_width <= 720.0 else 3
+	candidate_grid.add_theme_constant_override("h_separation", 12)
+	candidate_grid.add_theme_constant_override("v_separation", 12)
 	_setup_hero_showcase()
-	bonus_summary_label.clip_text = true
-	bonus_summary_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	_apply_mobile_readability_polish()
 	DebugLogger.system(str("Hero Equipment Hub aktif!"))
 	_finish_initial_equipment_setup.call_deferred(startup_started_at)
+
+
+func _apply_mobile_readability_polish() -> void:
+	# Hero must simply fit real phones first. We keep the showcase but stop
+	# forcing narrow side slots / cramped bonus copy.
+	var viewport_size: Vector2 = get_viewport_rect().size
+	var compact_mobile: bool = viewport_size.x <= 720.0
+	var left_right_inset: float = 0.008 if compact_mobile else 0.012
+	var column_width: float = 0.25 if compact_mobile else 0.235
+	var right_left: float = 1.0 - left_right_inset - column_width
+	var slot_height: float = 98.0 if compact_mobile else 94.0
+	var slot_font_size: int = 14 if compact_mobile else 13
+
+	for button: Button in [robe_button, pendant_button]:
+		_configure_slot_button(button, left_right_inset, left_right_inset + column_width, slot_height, slot_font_size)
+
+	for button: Button in [armament_button, bracer_button, boots_button]:
+		_configure_slot_button(button, right_left, 1.0 - left_right_inset, slot_height, slot_font_size)
+
+	status_label.add_theme_font_size_override("font_size", 13 if compact_mobile else 14)
+	stage_title.add_theme_font_size_override("font_size", 13 if compact_mobile else 14)
+	equipped_count_label.add_theme_font_size_override("font_size", 15 if compact_mobile else 14)
+	equipped_count_label.custom_minimum_size.y = 26.0
+	bonus_summary_label.add_theme_font_size_override("font_size", 13)
+	bonus_summary_label.custom_minimum_size = Vector2(0.0, 48.0)
+	bonus_summary_label.clip_text = false
+	bonus_summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	bonus_summary_label.max_lines_visible = 3
+	bonus_summary_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	bonus_summary_label.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+
+	var bonus_panel := bonus_summary_label.get_parent() as Control
+	if bonus_panel != null:
+		bonus_panel.custom_minimum_size.y = maxf(bonus_panel.custom_minimum_size.y, 58.0)
+
+	for label: Label in [
+		selected_slot_label,
+		equipped_item_label,
+		item_role_label,
+		selected_stat_label,
+		signature_effect_label,
+		ascension_status_label,
+		ascension_preview_label,
+		action_hint_label,
+		ascend_hint_label,
+		compare_label
+	]:
+		if label == null:
+			continue
+		if label == selected_stat_label:
+			label.add_theme_font_size_override("font_size", 12)
+			label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		else:
+			label.add_theme_font_size_override("font_size", 12 if compact_mobile else 11)
+		if label in [selected_slot_label, equipped_item_label, signature_effect_label, ascension_preview_label, compare_label]:
+			label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			label.clip_text = false
+
+
+func _configure_slot_button(
+	button: Button,
+	anchor_left_value: float,
+	anchor_right_value: float,
+	min_height: float,
+	font_size: int
+) -> void:
+	button.anchor_left = anchor_left_value
+	button.anchor_right = anchor_right_value
+	button.offset_left = 0.0
+	button.offset_right = 0.0
+	button.offset_bottom = min_height
+	button.custom_minimum_size = Vector2(0.0, min_height)
+	button.add_theme_font_size_override("font_size", font_size)
+	button.clip_text = false
 
 
 func _finish_initial_equipment_setup(startup_started_at: int) -> void:
@@ -152,7 +226,7 @@ func _setup_detail_premium_presentation() -> void:
 		detail_resonance_label = Label.new()
 		detail_resonance_label.name = "DetailResonanceLabel"
 		detail_resonance_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		detail_resonance_label.add_theme_font_size_override("font_size", 10)
+		detail_resonance_label.add_theme_font_size_override("font_size", 11)
 		detail_resonance_label.add_theme_color_override("font_color", Color(0.70, 0.90, 0.84, 0.96))
 		detail_resonance_label.add_theme_constant_override("outline_size", 1)
 		detail_resonance_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.82))
@@ -283,28 +357,29 @@ func _setup_collection_filter() -> void:
 
 	collection_showcase_panel = PanelContainer.new()
 	collection_showcase_panel.name = "CollectionShowcase"
-	collection_showcase_panel.custom_minimum_size = Vector2(0.0, 68.0)
+	collection_showcase_panel.custom_minimum_size = Vector2(0.0, 138.0)
 	collection_showcase_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	collection_showcase_panel.add_theme_stylebox_override("panel", _make_collection_showcase_style())
 	collection_vbox.add_child(collection_showcase_panel)
 	collection_vbox.move_child(collection_showcase_panel, candidate_scroll.get_index())
 
-	var showcase_row := HBoxContainer.new()
-	showcase_row.add_theme_constant_override("separation", 14)
+	var compact_mobile: bool = get_viewport_rect().size.x <= 720.0
+	var showcase_row: BoxContainer = VBoxContainer.new() if compact_mobile else HBoxContainer.new()
+	showcase_row.add_theme_constant_override("separation", 10 if compact_mobile else 12)
 	collection_showcase_panel.add_child(showcase_row)
 
 	var completion_box := VBoxContainer.new()
 	completion_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	completion_box.size_flags_stretch_ratio = 0.88
-	completion_box.add_theme_constant_override("separation", 4)
+	completion_box.add_theme_constant_override("separation", 5)
 	showcase_row.add_child(completion_box)
 	var completion_title := Label.new()
 	completion_title.text = tr("OWNED EQUIPMENT")
-	completion_title.add_theme_font_size_override("font_size", 10)
+	completion_title.add_theme_font_size_override("font_size", 12)
 	completion_title.add_theme_color_override("font_color", Color(0.38, 0.94, 0.82, 0.96))
 	completion_box.add_child(completion_title)
 	collection_progress_label = Label.new()
-	collection_progress_label.add_theme_font_size_override("font_size", 14)
+	collection_progress_label.add_theme_font_size_override("font_size", 16)
 	collection_progress_label.add_theme_color_override("font_color", Color(1.0, 0.86, 0.46, 1.0))
 	completion_box.add_child(collection_progress_label)
 	var progress_track := Control.new()
@@ -325,49 +400,56 @@ func _setup_collection_filter() -> void:
 	collection_progress_fill.anchor_bottom = 1.0
 	progress_track.add_child(collection_progress_fill)
 
-	var divider := ColorRect.new()
-	divider.custom_minimum_size = Vector2(1.0, 42.0)
-	divider.color = Color(0.92, 0.72, 0.28, 0.28)
-	divider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	showcase_row.add_child(divider)
+	if not compact_mobile:
+		var divider := ColorRect.new()
+		divider.custom_minimum_size = Vector2(1.0, 54.0)
+		divider.color = Color(0.92, 0.72, 0.28, 0.28)
+		divider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		showcase_row.add_child(divider)
 
 	var resonance_box := VBoxContainer.new()
 	resonance_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	resonance_box.size_flags_stretch_ratio = 1.35
-	resonance_box.add_theme_constant_override("separation", 1)
+	resonance_box.add_theme_constant_override("separation", 3)
 	showcase_row.add_child(resonance_box)
 	collection_resonance_label = Label.new()
-	collection_resonance_label.add_theme_font_size_override("font_size", 11)
+	collection_resonance_label.add_theme_font_size_override("font_size", 13)
 	collection_resonance_label.add_theme_color_override("font_color", Color(1.0, 0.84, 0.42, 1.0))
-	collection_resonance_label.clip_text = true
+	collection_resonance_label.clip_text = false
+	collection_resonance_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	collection_resonance_label.max_lines_visible = 3
 	resonance_box.add_child(collection_resonance_label)
 	collection_identity_label = Label.new()
-	collection_identity_label.add_theme_font_size_override("font_size", 9)
+	collection_identity_label.add_theme_font_size_override("font_size", 11)
 	collection_identity_label.add_theme_color_override("font_color", Color(0.68, 0.84, 0.80, 0.94))
-	collection_identity_label.clip_text = true
+	collection_identity_label.clip_text = false
+	collection_identity_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	collection_identity_label.max_lines_visible = 3
 	resonance_box.add_child(collection_identity_label)
 	collection_next_bonus_label = Label.new()
-	collection_next_bonus_label.add_theme_font_size_override("font_size", 9)
+	collection_next_bonus_label.add_theme_font_size_override("font_size", 11)
 	collection_next_bonus_label.add_theme_color_override("font_color", Color(0.62, 0.79, 0.88, 0.94))
-	collection_next_bonus_label.clip_text = true
+	collection_next_bonus_label.clip_text = false
+	collection_next_bonus_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	collection_next_bonus_label.max_lines_visible = 3
 	resonance_box.add_child(collection_next_bonus_label)
 
 	var filter_bar := HBoxContainer.new()
 	filter_bar.name = "CollectionFilterBar"
-	filter_bar.custom_minimum_size = Vector2(0.0, 36.0)
+	filter_bar.custom_minimum_size = Vector2(0.0, 44.0)
 	filter_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	filter_bar.add_theme_constant_override("separation", 6)
+	filter_bar.add_theme_constant_override("separation", 8)
 	collection_vbox.add_child(filter_bar)
 	collection_vbox.move_child(filter_bar, candidate_scroll.get_index())
 
 	for filter_id: String in FILTER_ORDER:
 		var button := Button.new()
 		button.name = "Filter_" + filter_id
-		button.custom_minimum_size = Vector2(82.0, 32.0)
+		button.custom_minimum_size = Vector2(92.0, 38.0)
 		button.toggle_mode = true
 		button.focus_mode = Control.FOCUS_NONE
 		button.text = tr(filter_id.to_upper())
-		button.add_theme_font_size_override("font_size", 10)
+		button.add_theme_font_size_override("font_size", 13)
 		button.pressed.connect(_on_collection_filter_pressed.bind(filter_id))
 		filter_bar.add_child(button)
 		collection_filter_buttons[filter_id] = button
@@ -379,10 +461,10 @@ func _setup_collection_filter() -> void:
 
 	collection_filter_count_label = Label.new()
 	collection_filter_count_label.name = "CollectionOwnedCount"
-	collection_filter_count_label.custom_minimum_size = Vector2(118.0, 32.0)
+	collection_filter_count_label.custom_minimum_size = Vector2(118.0, 38.0)
 	collection_filter_count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	collection_filter_count_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	collection_filter_count_label.add_theme_font_size_override("font_size", 10)
+	collection_filter_count_label.add_theme_font_size_override("font_size", 12)
 	collection_filter_count_label.add_theme_color_override("font_color", Color(0.70, 0.91, 0.87, 0.96))
 	collection_filter_count_label.add_theme_constant_override("outline_size", 2)
 	collection_filter_count_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.78))
@@ -390,10 +472,10 @@ func _setup_collection_filter() -> void:
 
 	collection_filter_empty_label = Label.new()
 	collection_filter_empty_label.name = "CollectionFilterEmpty"
-	collection_filter_empty_label.custom_minimum_size = Vector2(0.0, 52.0)
+	collection_filter_empty_label.custom_minimum_size = Vector2(0.0, 56.0)
 	collection_filter_empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	collection_filter_empty_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	collection_filter_empty_label.add_theme_font_size_override("font_size", 11)
+	collection_filter_empty_label.add_theme_font_size_override("font_size", 12)
 	collection_filter_empty_label.add_theme_color_override("font_color", Color(0.60, 0.79, 0.77, 0.90))
 	collection_filter_empty_label.add_theme_constant_override("outline_size", 2)
 	collection_filter_empty_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.82))
@@ -1122,9 +1204,14 @@ func _add_slot_caption(button: Button, slot_title: String, filled: bool, rarity_
 	caption.name = "SlotCaption"
 	caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	caption.anchor_left = 0.0; caption.anchor_top = 1.0; caption.anchor_right = 1.0; caption.anchor_bottom = 1.0
-	caption.offset_left = 4.0; caption.offset_top = -22.0; caption.offset_right = -4.0; caption.offset_bottom = -3.0
+	caption.offset_left = 6.0; caption.offset_top = -46.0; caption.offset_right = -6.0; caption.offset_bottom = -4.0
 	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	caption.add_theme_font_size_override("font_size", 9)
+	caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	caption.max_lines_visible = 3
+	caption.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	caption.clip_text = false
+	caption.add_theme_font_size_override("font_size", 11)
 	caption.add_theme_constant_override("outline_size", 2)
 	caption.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.86))
 	caption.add_theme_color_override("font_color", rarity_color.lightened(0.24) if filled else Color(0.65, 0.82, 0.80, 0.92))
