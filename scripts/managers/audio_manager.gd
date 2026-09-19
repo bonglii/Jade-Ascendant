@@ -220,8 +220,14 @@ func _get_sfx_cooldown_msec(cue: String) -> int:
 			return 150
 		"ui_locked":
 			return 190
-		"hit", "pickup", "death", "chain":
+		"hit", "death", "chain":
 			return 80
+		"pickup":
+			# XP shards can arrive in bursts. A slightly wider gate prevents
+			# machine-gun chirping while preserving responsive collection feedback.
+			return 95
+		"level":
+			return 260
 		_:
 			return 120
 
@@ -230,6 +236,12 @@ func _get_sfx_volume_db(cue: String) -> float:
 	match cue:
 		"hit", "death", "sword":
 			return -7.0
+		"pickup":
+			# Restrained tactile layer under combat; audible without dominating.
+			return -10.5
+		"level":
+			# Breakthrough cue should read clearly but never become a victory fanfare.
+			return -7.5
 		"claim":
 			return -9.0
 		"summon_charge":

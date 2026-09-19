@@ -18,13 +18,13 @@ const PAVILION_SEAL_ICON: String = "res://assets/ui/pavilion/polish/pavilion_sea
 const CELESTIAL_JADE_ICON: String = "res://assets/ui/pavilion/polish/celestial_jade.svg"
 const PAVILION_JADE_JIAN_ICON: String = "res://assets/ui/pavilion/polish/wanderer_jade_jian.svg"
 const SANCTUARY_BANNER: String = "res://assets/ui/pavilion/polish/pavilion_sanctuary_banner.svg"
-const MEDITATION_ALTAR: String = "res://assets/ui/pavilion/polish/meditation_altar.svg"
+const MEDITATION_ALTAR: String = "res://assets/ui/pavilion/icons/meditation.png"
 const SLOT_ICON_PATHS: Dictionary = {
-	"armament": "res://assets/ui/pavilion/polish/slot_armament.svg",
-	"robe": "res://assets/ui/pavilion/polish/slot_robe.svg",
-	"bracer": "res://assets/ui/pavilion/polish/slot_bracer.svg",
-	"boots": "res://assets/ui/pavilion/polish/slot_boots.svg",
-	"pendant": "res://assets/ui/pavilion/polish/slot_pendant.svg"
+	"armament": "res://assets/ui/pavilion/icons/slot_armament.png",
+	"robe": "res://assets/ui/pavilion/icons/slot_robe.png",
+	"bracer": "res://assets/ui/pavilion/icons/slot_bracer.png",
+	"boots": "res://assets/ui/pavilion/icons/slot_boots.png",
+	"pendant": "res://assets/ui/pavilion/icons/slot_pendant.png"
 }
 
 const RARITIES: Array[String] = ["common", "rare", "epic", "legendary"]

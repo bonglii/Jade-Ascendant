@@ -2733,8 +2733,8 @@ func _test_hero_hub_overhaul_contracts() -> void:
 			)
 		var candidate_grid: Node = equipment_root.find_child("CandidateGrid", true, false)
 		_check(
-			candidate_grid is GridContainer and int((candidate_grid as GridContainer).columns) == 4,
-			"Hero Equipment collection uses a compact four-column icon grid"
+			candidate_grid is GridContainer and int((candidate_grid as GridContainer).columns) == 3,
+			"Hero Equipment collection uses the approved three-column mobile grid"
 		)
 		var candidate_scroll: Node = equipment_root.find_child("CandidateScroll", true, false)
 		_check(

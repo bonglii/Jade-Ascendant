@@ -29,6 +29,20 @@ def tone(midi, seconds, voice="pluck"):
     y = sum(np.sin(2*np.pi*freq*k*t + k*.08) * np.exp(-t*(1.5+k*.7)) / k**1.45 for k in range(1, 9))
     return y * np.minimum(t/.005, 1) * np.minimum((seconds-t)/.04, 1) * .4
 
+def restrained_pluck(freq, seconds, decay=8.0, brightness=0.16):
+    """Low-hype pluck used for frequent/progression feedback."""
+    t = np.arange(int(seconds * RATE)) / RATE
+    attack = np.clip(t / .004, 0.0, 1.0)
+    release = np.clip((seconds - t) / .05, 0.0, 1.0)
+    env = attack * release * np.exp(-t * decay)
+    phase = 2 * np.pi * freq * t
+    y = (
+        np.sin(phase)
+        + brightness * np.sin(phase * 2 + .13)
+        + brightness * .32 * np.sin(phase * 3 + .29)
+    )
+    return y * env
+
 def drum(seconds=.5, high=False):
     t = np.arange(int(seconds * RATE)) / RATE
     if high:
@@ -41,11 +55,13 @@ def add_circular(track, sound, at, gain=1, pan=0):
     np.add.at(track[:,0], positions, sound*gain*np.sqrt((1-pan)/2))
     np.add.at(track[:,1], positions, sound*gain*np.sqrt((1+pan)/2))
 
-def save(name, samples, music=False):
+def save(name, samples, music=False, target_peak=None, origin="Original deterministic synthesis"):
     OUT.mkdir(parents=True, exist_ok=True)
     samples = np.asarray(samples)
     peak = float(np.max(np.abs(samples)))
-    samples = samples / max(peak, .01) * (.58 if music else .63)
+    default_peak = .58 if music else .63
+    normalize_peak = default_peak if target_peak is None else float(target_peak)
+    samples = samples / max(peak, .01) * normalize_peak
     pcm = np.round(samples*32767).astype('<i2')
     target = OUT / (name + (".ogg" if music else ".wav"))
     with tempfile.TemporaryDirectory() as tmp:
@@ -61,7 +77,7 @@ def save(name, samples, music=False):
             target.write_bytes(raw.read_bytes())
     MANIFEST.append({'file': target.relative_to(ROOT).as_posix(), 'seconds': len(samples)/RATE,
                      'channels': 2 if samples.ndim == 2 else 1, 'peak_dbfs': float(20*np.log10(np.max(np.abs(samples)))),
-                     'origin': 'Original deterministic synthesis', 'loop': music})
+                     'origin': origin, 'loop': music})
 
 def score(name, mode):
     length = 64
@@ -88,24 +104,74 @@ def score(name, mode):
                 add_circular(track, drum(), bar*4+beat, .38 if mode == 1 else .75)
                 if mode == 2 or beat%2 == 0:
                     add_circular(track, drum(.14,True),bar*4+beat+.5,.32,.2)
-    # Circular early reflections preserve reverb across the loop boundary.
     dry = track.copy()
     for delay, gain in [(.137,.14),(.293,.11),(.487,.07),(.751,.04)]:
         track += np.roll(dry, round(delay*RATE), axis=0)[:,::-1] * gain
     save(name, track, True)
 
+def _db_to_linear(db):
+    return 10 ** (db / 20.0)
+
+def _premium_pickup():
+    seconds = .095
+    t = np.arange(int(seconds * RATE)) / RATE
+    sound = (
+        restrained_pluck(698.46, seconds, 28.0, .11) * .82
+        + restrained_pluck(1046.50, seconds, 34.0, .06) * .18
+    )
+    sound += np.sin(2*np.pi*310*t) * np.exp(-t*70.0) * .08
+    return sound
+
+def _premium_level():
+    seconds = .82
+    track = np.zeros((int(seconds * RATE), 2), dtype=np.float64)
+    notes = [
+        (293.66, .00, -.14, .62),
+        (440.00, .13, .14, .52),
+        (587.33, .29, .00, .46),
+    ]
+    for freq, at, pan, gain in notes:
+        sound = restrained_pluck(freq, .50, 5.8, .12) * gain
+        start = round(at * RATE)
+        end = min(len(track), start + len(sound))
+        sound = sound[:end-start]
+        track[start:end, 0] += sound * np.sqrt((1-pan)/2)
+        track[start:end, 1] += sound * np.sqrt((1+pan)/2)
+
+    low = restrained_pluck(146.83, .58, 6.8, .04) * .12
+    track[:len(low), 0] += low * .72
+    track[:len(low), 1] += low * .68
+
+    dry = track.copy()
+    for delay, gain in [(.070,.11),(.145,.06)]:
+        shift = round(delay * RATE)
+        track[shift:] += dry[:-shift, ::-1] * gain
+    return track
+
 def effects():
-    for name, midi, duration in [('ui',86,.09),('pickup',91,.16),('shield',79,.35),('claim',81,.4),('equip',74,.24)]:
+    save(
+        "pickup",
+        _premium_pickup(),
+        target_peak=_db_to_linear(-7.5),
+        origin="Original deterministic synthesis - restrained Jade XP feedback",
+    )
+    for name, midi, duration in [('ui',86,.09),('shield',79,.35),('claim',81,.4),('equip',74,.24)]:
         save(name,tone(midi,duration))
     for name, freq, seconds in [('sword',820,.16),('fire',340,.3),('thunder',150,.26),('chain',580,.11),('hit',240,.10),('hurt',120,.24),('death',430,.32)]:
         t=np.arange(round(seconds*RATE))/RATE
         noise=lfilter([.2,.25,.3,.25], [1], RNG.normal(0,.6,len(t)))
         y=(noise*.4+np.sin(2*np.pi*freq*t*np.exp(-t*3))*.26)*np.sin(np.pi*t/seconds)**2*np.exp(-t*4)
         save(name,y)
-    for name, notes in [('level',[62,67,71,74]),('victory',[62,67,69,74,79]),('defeat',[67,64,62,50]),('boss_defeat',[50,57,62,69,74])]:
+
+    save(
+        "level",
+        _premium_level(),
+        target_peak=_db_to_linear(-7.0),
+        origin="Original deterministic synthesis - restrained xianxia breakthrough",
+    )
+    for name, notes in [('victory',[62,67,69,74,79]),('defeat',[67,64,62,50]),('boss_defeat',[50,57,62,69,74])]:
         track=np.zeros((int(2.8*RATE),2))
         for index, note in enumerate(notes):
-            # Tail reaches silence, no circular wrap for stingers.
             sound=tone(note,1.5)
             at=round(index*.22*RATE)
             track[at:at+len(sound),:]+=sound[:,None]*.36

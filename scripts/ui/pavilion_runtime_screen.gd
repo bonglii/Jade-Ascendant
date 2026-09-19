@@ -51,6 +51,70 @@ var rewarded_seal_state_label: Label
 var rewarded_seal_remaining_label: Label
 var rewarded_seal_message_label: Label
 var rewarded_refresh_timer: Timer
+var polish_bootstrap_complete: bool = false
+
+
+func _ready() -> void:
+	super()
+	if content != null:
+		content.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	call_deferred("_finish_polish_bootstrap")
+
+
+func _finish_polish_bootstrap() -> void:
+	if polish_bootstrap_complete:
+		return
+
+	var wait_frames: int = 0
+	while wait_frames < 8:
+		# Smoke/off-tree QA can release Pavilion immediately after opening the
+		# next hub screen. Never call get_tree() once this node is detached;
+		# Godot reports that access as an engine ERROR even though QA checks pass.
+		if not is_inside_tree():
+			return
+		if (
+			content != null
+			and ritual_icon != null
+			and meditation_altar_icon != null
+		):
+			break
+
+		wait_frames += 1
+		var scene_tree: SceneTree = get_tree()
+		if scene_tree == null:
+			return
+		await scene_tree.process_frame
+
+	if not is_inside_tree():
+		return
+	_apply_first_frame_polish()
+	polish_bootstrap_complete = true
+	if content != null:
+		var reveal: Tween = create_tween()
+		reveal.tween_property(content, "modulate", Color.WHITE, 0.10).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+
+func _apply_first_frame_polish() -> void:
+	if content == null:
+		return
+	_replace_pavilion_header_emblem(content)
+	if ritual_icon != null:
+		ritual_icon.texture = POLISH_SUMMON_GATE
+		ritual_icon.modulate = Color.WHITE
+	if summon_reveal_icon != null:
+		summon_reveal_icon.texture = POLISH_SUMMON_GATE
+		summon_reveal_icon.modulate = Color.WHITE
+	if meditation_altar_icon != null:
+		meditation_altar_icon.texture = POLISH_MEDITATION_ICON
+		meditation_altar_icon.modulate = Color.WHITE
+	if summon_ten_button != null:
+		_apply_commercial_button_icon(summon_ten_button, POLISH_SUMMON_TALISMAN, 34)
+	if summon_one_button != null:
+		_apply_commercial_button_icon(summon_one_button, POLISH_SUMMON_TALISMAN, 30)
+	if starter_button != null:
+		_apply_commercial_button_icon(starter_button, POLISH_REWARD_CHEST, 28)
+	_restore_summon_focal_if_needed()
+	_enforce_mobile_readability(content)
 
 
 func _readable_font_size(requested_size: int) -> int:

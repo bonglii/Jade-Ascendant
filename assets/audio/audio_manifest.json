@@ -57,10 +57,10 @@
   },
   {
     "file": "assets/audio/pickup.wav",
-    "seconds": 0.16,
+    "seconds": 0.095,
     "channels": 1,
-    "peak_dbfs": -4.013189010928365,
-    "origin": "Original deterministic synthesis",
+    "peak_dbfs": -7.5,
+    "origin": "Original deterministic synthesis - restrained Jade XP feedback",
     "loop": false
   },
   {
@@ -145,10 +145,10 @@
   },
   {
     "file": "assets/audio/level.wav",
-    "seconds": 2.8,
+    "seconds": 0.82,
     "channels": 2,
-    "peak_dbfs": -4.013189010928365,
-    "origin": "Original deterministic synthesis",
+    "peak_dbfs": -7.0,
+    "origin": "Original deterministic synthesis - restrained xianxia breakthrough",
     "loop": false
   },
   {
