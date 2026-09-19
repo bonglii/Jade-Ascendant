@@ -28,6 +28,7 @@ var monetization_qa_sequence: int = 0
 
 
 func _ready() -> void:
+	_apply_static_readability_polish()
 	_build_presentation_options()
 	_connect_signals()
 	SceneTransitionManager.set_back_handler(handle_system_back)
@@ -48,6 +49,17 @@ func handle_system_back() -> void:
 	if SceneTransitionManager.is_transitioning:
 		return
 	_return_to_journey()
+
+
+func _apply_static_readability_polish() -> void:
+	back_button.custom_minimum_size.y = max(back_button.custom_minimum_size.y, 48.0)
+	back_button.add_theme_font_size_override("font_size", 14)
+	reset_button.custom_minimum_size.y = max(reset_button.custom_minimum_size.y, 50.0)
+	reset_button.add_theme_font_size_override("font_size", 15)
+	routing_status_label.add_theme_font_size_override("font_size", 12)
+	master_value_label.add_theme_font_size_override("font_size", 15)
+	music_value_label.add_theme_font_size_override("font_size", 15)
+	sfx_value_label.add_theme_font_size_override("font_size", 15)
 
 
 func _sync_from_settings() -> void:
@@ -128,8 +140,8 @@ func _build_presentation_options() -> void:
 		var key: String = str(raw_key)
 		var toggle: CheckButton = CheckButton.new()
 		toggle.text = str(options[key])
-		toggle.custom_minimum_size.y = 44.0
-		toggle.add_theme_font_size_override("font_size", 14)
+		toggle.custom_minimum_size.y = 50.0
+		toggle.add_theme_font_size_override("font_size", 16)
 		comfort_box.add_child(toggle)
 		toggle.toggled.connect(_on_presentation_toggled.bind(key))
 		presentation_toggles[key] = toggle
@@ -139,20 +151,22 @@ func _build_presentation_options() -> void:
 	fps_choice = OptionButton.new()
 	fps_choice.add_item(tr("60 FPS  •  SMOOTH"))
 	fps_choice.add_item(tr("30 FPS  •  BATTERY SAVER"))
-	fps_choice.custom_minimum_size.y = 44.0
+	fps_choice.custom_minimum_size.y = 50.0
+	fps_choice.add_theme_font_size_override("font_size", 15)
 	fps_choice.item_selected.connect(_on_fps_selected)
 	system_box.add_child(fps_choice)
 	language_choice = OptionButton.new()
 	language_choice.add_item("English")
 	language_choice.add_item("Bahasa Indonesia")
-	language_choice.custom_minimum_size.y = 44.0
+	language_choice.custom_minimum_size.y = 50.0
+	language_choice.add_theme_font_size_override("font_size", 15)
 	language_choice.item_selected.connect(_on_language_selected)
 	system_box.add_child(language_choice)
 	var privacy: Button = Button.new()
 	privacy.text = tr("PRIVACY, SUPPORT & CREDITS")
-	privacy.custom_minimum_size.y = 44.0
+	privacy.custom_minimum_size.y = 48.0
 	privacy.theme_type_variation = &"JadeSecondaryButton"
-	privacy.add_theme_font_size_override("font_size", 13)
+	privacy.add_theme_font_size_override("font_size", 14)
 	privacy.pressed.connect(_open_privacy)
 	system_box.add_child(privacy)
 
@@ -181,7 +195,7 @@ func _build_monetization_qa(
 
 	monetization_qa_status_label = Label.new()
 	monetization_qa_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	monetization_qa_status_label.add_theme_font_size_override("font_size", 12)
+	monetization_qa_status_label.add_theme_font_size_override("font_size", 13)
 	monetization_qa_status_label.add_theme_color_override(
 		"font_color",
 		Color(0.76, 0.90, 0.86, 1.0)
@@ -191,7 +205,7 @@ func _build_monetization_qa(
 	monetization_qa_event_label = Label.new()
 	monetization_qa_event_label.text = "Last event: none"
 	monetization_qa_event_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	monetization_qa_event_label.add_theme_font_size_override("font_size", 11)
+	monetization_qa_event_label.add_theme_font_size_override("font_size", 12)
 	monetization_qa_event_label.add_theme_color_override(
 		"font_color",
 		Color(0.98, 0.82, 0.42, 1.0)
@@ -200,8 +214,9 @@ func _build_monetization_qa(
 
 	monetization_qa_rewarded_button = Button.new()
 	monetization_qa_rewarded_button.text = "SHOW GOOGLE TEST REWARDED"
-	monetization_qa_rewarded_button.custom_minimum_size.y = 46.0
+	monetization_qa_rewarded_button.custom_minimum_size.y = 48.0
 	monetization_qa_rewarded_button.theme_type_variation = &"JadeSecondaryButton"
+	monetization_qa_rewarded_button.add_theme_font_size_override("font_size", 14)
 	monetization_qa_rewarded_button.pressed.connect(
 		_on_monetization_qa_rewarded_pressed
 	)
@@ -209,8 +224,9 @@ func _build_monetization_qa(
 
 	monetization_qa_privacy_button = Button.new()
 	monetization_qa_privacy_button.text = "OPEN PRIVACY OPTIONS"
-	monetization_qa_privacy_button.custom_minimum_size.y = 44.0
+	monetization_qa_privacy_button.custom_minimum_size.y = 46.0
 	monetization_qa_privacy_button.theme_type_variation = &"JadeSecondaryButton"
+	monetization_qa_privacy_button.add_theme_font_size_override("font_size", 14)
 	monetization_qa_privacy_button.pressed.connect(
 		_on_monetization_qa_privacy_pressed
 	)
@@ -221,7 +237,7 @@ func _build_monetization_qa(
 		"QA only • reward callback is observed but no Pavilion currency is granted."
 	)
 	warning_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	warning_label.add_theme_font_size_override("font_size", 10)
+	warning_label.add_theme_font_size_override("font_size", 11)
 	warning_label.add_theme_color_override(
 		"font_color",
 		Color(0.64, 0.72, 0.70, 1.0)
@@ -343,22 +359,22 @@ func _create_settings_card(parent_box: VBoxContainer, source_card: PanelContaine
 	var card: PanelContainer = PanelContainer.new()
 	card.add_theme_stylebox_override("panel", source_card.get_theme_stylebox("panel"))
 	var box: VBoxContainer = VBoxContainer.new()
-	box.add_theme_constant_override("separation", 6)
+	box.add_theme_constant_override("separation", 8)
 	card.add_child(box)
 	var eyebrow_label: Label = Label.new()
 	eyebrow_label.text = eyebrow
-	eyebrow_label.add_theme_font_size_override("font_size", 10)
+	eyebrow_label.add_theme_font_size_override("font_size", 11)
 	eyebrow_label.add_theme_color_override("font_color", Color(0.34, 0.90, 0.78, 1.0))
 	box.add_child(eyebrow_label)
 	var title_label: Label = Label.new()
 	title_label.text = title_text
-	title_label.add_theme_font_size_override("font_size", 19)
+	title_label.add_theme_font_size_override("font_size", 22)
 	title_label.add_theme_color_override("font_color", Color(0.98, 0.82, 0.42, 1.0))
 	box.add_child(title_label)
 	var subtitle_label: Label = Label.new()
 	subtitle_label.text = subtitle_text
 	subtitle_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	subtitle_label.add_theme_font_size_override("font_size", 11)
+	subtitle_label.add_theme_font_size_override("font_size", 13)
 	subtitle_label.add_theme_color_override("font_color", Color(0.62, 0.72, 0.70, 1.0))
 	box.add_child(subtitle_label)
 	parent_box.add_child(card)

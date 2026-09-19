@@ -1,6 +1,6 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://scripts/ui/pavilion_screen.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/ui/pavilion_runtime_screen.gd" id="1_script"]
 [ext_resource type="Theme" path="res://assets/ui/jade_ui_theme.tres" id="2_theme"]
 [ext_resource type="Script" path="res://scripts/ui/wuxia_realm_backdrop.gd" id="3_bg"]
 [ext_resource type="Script" path="res://scripts/ui/mobile_safe_area.gd" id="4_safe"]
@@ -40,7 +40,7 @@ horizontal_scroll_mode = 0
 [node name="Content" type="VBoxContainer" parent="SafeArea/Scroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 12
+theme_override_constants/separation = 16
 
 [node name="HubNav" type="Control" parent="SafeArea"]
 layout_mode = 1

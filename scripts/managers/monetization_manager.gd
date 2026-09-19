@@ -3,12 +3,23 @@ extends Node
 ## Provider boundary for monetized builds. Android may attach the AdMob adapter;
 ## desktop/editor and unsupported runtimes stay on the safe offline provider.
 signal rewarded_completed(placement: String)
+signal verified_rewarded_completed(placement: String, grant_id: String)
+signal rewarded_request_finished(placement: String, status: String)
+signal reward_delivery_finished(
+	placement: String,
+	success: bool,
+	amount: int,
+	message: String
+)
 signal operation_finished(status: String)
 signal entitlements_changed(product_ids: Array[String])
 signal analytics_event(event_id: String, properties: Dictionary)
 
 const OfflineProvider = preload("res://scripts/monetization/offline_provider.gd")
 const AdMobProvider = preload("res://scripts/monetization/admob_provider.gd")
+const PavilionRewardedBridge = preload(
+	"res://scripts/monetization/pavilion_rewarded_bridge.gd"
+)
 const PolicyStore = preload("res://scripts/monetization/monetization_policy_store.gd")
 
 const REWARD_COOLDOWN_MSEC: int = 60000
@@ -20,6 +31,7 @@ var policy_store: RefCounted
 var request_sequence: int = 0
 var active_request: int = -1
 var active_placement: String = ""
+var active_grant_id: String = ""
 var reward_consumed: bool = false
 
 var last_reward_at: int = -REWARD_COOLDOWN_MSEC
@@ -34,6 +46,10 @@ func _ready() -> void:
 	policy_store = PolicyStore.new()
 	_load_policy_state()
 	_attach_provider(OfflineProvider.new())
+
+	var pavilion_rewarded_bridge: Node = PavilionRewardedBridge.new()
+	pavilion_rewarded_bridge.name = "PavilionRewardedBridge"
+	add_child(pavilion_rewarded_bridge)
 
 	if OS.get_name() == "Android":
 		call_deferred("_activate_android_provider")
@@ -79,14 +95,47 @@ func rewarded_available(placement: String) -> bool:
 	)
 
 
+func get_rewarded_policy_status(placement: String) -> Dictionary:
+	_sync_policy_day()
+	var now_unix: int = _get_unix_time()
+	var placement_claims: int = int(placement_counts.get(placement, 0))
+	var cooldown_remaining: int = 0
+	if last_reward_unix > 0:
+		cooldown_remaining = maxi(
+			REWARD_COOLDOWN_SECONDS - (now_unix - last_reward_unix),
+			0
+		)
+	var provider_ready: bool = bool(
+		provider.call("rewarded_available", placement)
+	)
+	return {
+		"available": (
+			active_request < 0
+			and placement_claims < DAILY_PLACEMENT_LIMIT
+			and cooldown_remaining <= 0
+			and provider_ready
+		),
+		"placement_claims": placement_claims,
+		"daily_limit": DAILY_PLACEMENT_LIMIT,
+		"cooldown_remaining_seconds": cooldown_remaining,
+		"provider_ready": provider_ready
+	}
+
+
 func show_rewarded(placement: String) -> bool:
 	if not rewarded_available(placement):
 		operation_finished.emit("unavailable")
 		return false
 
+	var grant_id: String = _create_reward_grant_id()
+	if grant_id.is_empty():
+		operation_finished.emit("internal_error")
+		return false
+
 	request_sequence += 1
 	active_request = request_sequence
 	active_placement = placement
+	active_grant_id = grant_id
 	reward_consumed = false
 	timeout_left = 90.0
 	analytics_event.emit("reward_requested", {"placement": placement})
@@ -120,6 +169,20 @@ func get_provider_runtime_status() -> Dictionary:
 	return {"provider": provider.name, "state": "unknown"}
 
 
+func publish_reward_delivery_result(
+	placement: String,
+	success: bool,
+	amount: int,
+	message: String
+) -> void:
+	reward_delivery_finished.emit(
+		placement,
+		success,
+		amount,
+		message
+	)
+
+
 func _on_reward_confirmed(request_id: int) -> void:
 	if request_id != active_request or active_request < 0 or reward_consumed:
 		return
@@ -137,19 +200,34 @@ func _on_reward_confirmed(request_id: int) -> void:
 			{"placement": active_placement}
 		)
 
-	rewarded_completed.emit(active_placement)
+	var completed_placement: String = active_placement
+	var completed_grant_id: String = active_grant_id
+	if completed_grant_id.is_empty():
+		push_error(
+			"MonetizationManager: verified rewarded callback tanpa grant id."
+		)
+	else:
+		verified_rewarded_completed.emit(
+			completed_placement,
+			completed_grant_id
+		)
+
+	rewarded_completed.emit(completed_placement)
 	analytics_event.emit(
 		"reward_confirmed",
-		{"placement": active_placement}
+		{"placement": completed_placement}
 	)
 
 
 func _on_request_finished(request_id: int, status: String) -> void:
 	if request_id != active_request:
 		return
+	var finished_placement: String = active_placement
 	active_request = -1
 	active_placement = ""
+	active_grant_id = ""
 	timeout_left = 0.0
+	rewarded_request_finished.emit(finished_placement, status)
 	operation_finished.emit(status)
 
 
@@ -210,6 +288,17 @@ func _save_policy_state() -> bool:
 			}
 		)
 	)
+
+
+func _create_reward_grant_id() -> String:
+	var crypto := Crypto.new()
+	var random_bytes: PackedByteArray = crypto.generate_random_bytes(16)
+	if random_bytes.size() != 16:
+		push_error(
+			"MonetizationManager: gagal membuat rewarded grant nonce."
+		)
+		return ""
+	return random_bytes.hex_encode()
 
 
 func _get_unix_time() -> int:
