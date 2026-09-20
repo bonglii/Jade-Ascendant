@@ -9,8 +9,26 @@ extends Node
 
 signal pavilion_changed
 signal summon_completed(result: Dictionary)
+signal store_products_updated(products: Dictionary)
+signal billing_purchase_state_changed(
+	product_id: String,
+	status: String,
+	message: String
+)
+signal purchase_delivery_finished(
+	product_id: String,
+	success: bool,
+	message: String
+)
+signal billing_entitlements_changed(product_ids: Array[String])
 
 const EconomyCatalog = preload("res://scripts/data/economy_catalog.gd")
+const OfflineBillingProvider = preload(
+	"res://scripts/monetization/offline_billing_provider.gd"
+)
+const GooglePlayBillingProvider = preload(
+	"res://scripts/monetization/google_play_billing_provider.gd"
+)
 
 const MEDITATION_REWARD: int = 20
 const PAYMENT_AUTO: String = "auto"
@@ -89,12 +107,18 @@ const DEFAULT_STATE: Dictionary = {
 var state: Dictionary = DEFAULT_STATE.duplicate(true)
 var last_error: String = ""
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+var billing_provider: Node = null
+var billing_store_products: Dictionary = {}
+var billing_owned_product_ids: Array[String] = []
 
 
 func _ready() -> void:
 	rng.randomize()
 	if not EconomyCatalog.is_valid():
 		push_error("PavilionManager: EconomyCatalog v2 cadence tidak valid.")
+	_attach_billing_provider(OfflineBillingProvider.new())
+	if OS.get_name() == "Android":
+		call_deferred("_activate_android_billing_provider")
 	var result: Dictionary = SaveManager.read_save_data("pavilion")
 	if bool(result.get("success", false)):
 		_apply_loaded_state(result.get("data", {}))
@@ -316,6 +340,146 @@ func get_iap_product_data(product_id: String) -> Dictionary:
 	return EconomyCatalog.get_iap_product(product_id)
 
 
+func has_claimed_one_time_product(product_id: String) -> bool:
+	return product_id in _normalize_string_array(
+		state.get("claimed_one_time_product_ids", [])
+	)
+
+
+func get_iap_store_products() -> Dictionary:
+	return billing_store_products.duplicate(true)
+
+
+func get_billing_runtime_status() -> Dictionary:
+	if not is_instance_valid(billing_provider):
+		return {
+			"provider": "none",
+			"state": "missing",
+			"ready": false,
+		}
+	var raw: Variant = billing_provider.call("get_runtime_status")
+	if raw is Dictionary:
+		return (raw as Dictionary).duplicate(true)
+	return {}
+
+
+func is_iap_purchase_supported(product_id: String) -> bool:
+	return (
+		is_instance_valid(billing_provider)
+		and bool(
+			billing_provider.call(
+				"supports_product",
+				product_id
+			)
+		)
+	)
+
+
+func is_iap_product_owned(product_id: String) -> bool:
+	return product_id in billing_owned_product_ids
+
+
+func refresh_iap_store_products() -> void:
+	if is_instance_valid(billing_provider):
+		billing_provider.call("refresh_products")
+
+
+func purchase_iap(product_id: String) -> bool:
+	if not is_instance_valid(billing_provider):
+		return false
+	return bool(billing_provider.call("purchase", product_id))
+
+
+func restore_iap_purchases() -> void:
+	if is_instance_valid(billing_provider):
+		billing_provider.call("restore_purchases")
+
+
+func _activate_android_billing_provider() -> void:
+	if OS.get_name() != "Android":
+		return
+	_attach_billing_provider(GooglePlayBillingProvider.new())
+
+
+func _attach_billing_provider(next_provider: Node) -> void:
+	if is_instance_valid(billing_provider):
+		billing_provider.queue_free()
+	billing_provider = next_provider
+	billing_provider.connect(
+		"store_products_updated",
+		_on_billing_store_products_updated
+	)
+	billing_provider.connect(
+		"purchase_ready",
+		_on_billing_purchase_ready
+	)
+	billing_provider.connect(
+		"purchase_state_changed",
+		_on_billing_purchase_state_changed
+	)
+	billing_provider.connect(
+		"entitlements_received",
+		_on_billing_entitlements_received
+	)
+	add_child(billing_provider)
+
+
+func _on_billing_store_products_updated(
+	products: Dictionary
+) -> void:
+	billing_store_products = products.duplicate(true)
+	store_products_updated.emit(
+		billing_store_products.duplicate(true)
+	)
+
+
+func _on_billing_purchase_state_changed(
+	product_id: String,
+	status: String,
+	message: String
+) -> void:
+	billing_purchase_state_changed.emit(
+		product_id,
+		status,
+		message
+	)
+
+
+func _on_billing_entitlements_received(
+	product_ids: Array[String]
+) -> void:
+	billing_owned_product_ids = product_ids.duplicate()
+	billing_entitlements_changed.emit(
+		billing_owned_product_ids.duplicate()
+	)
+
+
+func _on_billing_purchase_ready(
+	product_id: String,
+	purchase_token: String,
+	_order_id: String
+) -> void:
+	var granted: bool = apply_verified_iap_purchase(
+		product_id,
+		purchase_token
+	)
+	billing_provider.call(
+		"finalize_purchase",
+		product_id,
+		purchase_token,
+		granted
+	)
+	purchase_delivery_finished.emit(
+		product_id,
+		granted,
+		(
+			"Purchase saved successfully."
+			if granted
+			else last_error
+		)
+	)
+
+
 ## Billing-ready entry point. The game UI must never call this directly from a
 ## button press; a platform billing adapter calls it only after receipt/token
 ## verification succeeds.
@@ -332,6 +496,12 @@ func apply_verified_iap_purchase(
 	if transaction_id.is_empty():
 		last_error = "Verified billing transaction id is required."
 		return false
+	var grant_id: String = "iap:" + product_id + ":" + transaction_id
+	var already_processed: Array = _normalize_string_array(
+		state.get("processed_grant_ids", [])
+	)
+	if grant_id in already_processed:
+		return true
 	var product_type: String = str(product.get("type", ""))
 	var next_state: Dictionary = state.duplicate(true)
 	var jade_amount: int = 0
@@ -371,7 +541,6 @@ func apply_verified_iap_purchase(
 	else:
 		last_error = "Unsupported billing product type."
 		return false
-	var grant_id: String = "iap:" + product_id + ":" + transaction_id
 	if not _commit_currency_grant(next_state, grant_id, jade_amount, seal_amount):
 		return false
 	pavilion_changed.emit()

@@ -95,6 +95,8 @@ var _home_left_dock: VBoxContainer = null
 var _home_right_dock: VBoxContainer = null
 var _mail_badge: Button = null
 var _login_badge: Button = null
+var _active_live_popup: Control = null
+var _active_live_popup_scene: String = ""
 var _date_check_elapsed: float = 0.0
 var _last_date_key: String = ""
 
@@ -661,17 +663,42 @@ func _refresh_home_badges() -> void:
 
 
 func _open_live_scene(scene_path: String) -> void:
-	if SceneTransitionManager.is_transitioning:
+	open_live_popup(scene_path)
+
+
+func open_live_popup(scene_path: String) -> void:
+	if SceneTransitionManager.is_transitioning or not ResourceLoader.exists(scene_path, "PackedScene"):
 		return
-	if not ResourceLoader.exists(scene_path, "PackedScene"):
-		push_error("LiveOpsManager: scene tidak ditemukan: " + scene_path)
+	var tree := get_tree()
+	if tree == null or tree.current_scene == null or tree.current_scene.scene_file_path != MAIN_MENU_SCENE:
+		SceneTransitionManager.transition_menu_to(scene_path, 1)
 		return
-	var change_error: Error = SceneTransitionManager.transition_menu_to(
-		scene_path,
-		1
-	)
-	if change_error != OK:
-		push_error(
-			"LiveOpsManager: gagal membuka scene. Error code: "
-			+ str(change_error)
-		)
+	if is_instance_valid(_active_live_popup):
+		_active_live_popup.hide()
+		_active_live_popup.queue_free()
+	var packed := load(scene_path) as PackedScene
+	if packed == null:
+		return
+	var popup := packed.instantiate() as Control
+	if popup == null:
+		return
+	popup.set_meta("liveops_popup", true)
+	popup.z_index = 100
+	tree.current_scene.add_child(popup)
+	popup.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_active_live_popup = popup
+	_active_live_popup_scene = scene_path
+	SceneTransitionManager.set_back_handler(close_live_popup)
+
+
+func close_live_popup() -> void:
+	var popup := _active_live_popup
+	_active_live_popup = null
+	_active_live_popup_scene = ""
+	if is_instance_valid(popup):
+		popup.hide()
+		popup.queue_free()
+	_refresh_home_badges()
+	var tree := get_tree()
+	if tree != null and tree.current_scene != null and tree.current_scene.has_method("handle_system_back"):
+		SceneTransitionManager.set_back_handler(Callable(tree.current_scene, "handle_system_back"))

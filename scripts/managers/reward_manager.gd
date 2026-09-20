@@ -28,6 +28,7 @@ const SOURCE_ACHIEVEMENT: String = "achievement"
 const SOURCE_DAILY_QUEST: String = "daily_quest"
 const SOURCE_PAVILION: String = "pavilion"
 const SOURCE_HERO_MILESTONE: String = "hero_milestone"
+const SOURCE_IDLE_CULTIVATION: String = "idle_cultivation"
 
 const CLEAR_TYPE_FIRST: String = "first_clear"
 const CLEAR_TYPE_REPEAT: String = "repeat_clear"
@@ -39,7 +40,7 @@ const ChapterThreeCatalog = preload("res://scripts/data/chapter_three_catalog.gd
 ## purchased. First clears accelerate discovery; repeats remain useful.
 const HERO_EXP_FIRST_CLEAR_MULTIPLIER: float = 1.5
 const HERO_EXP_STAGE_BASE: Dictionary = {
-	1: [40, 50, 60, 70, 100],
+	1: [40, 50, 60, 70, 100, 130],
 	2: [90, 110, 130, 150, 200],
 	3: [160, 190, 220, 260, 350]
 }
@@ -135,7 +136,8 @@ func get_source_type_ids() -> Array[String]:
 		SOURCE_ACHIEVEMENT,
 		SOURCE_DAILY_QUEST,
 		SOURCE_PAVILION,
-		SOURCE_HERO_MILESTONE
+		SOURCE_HERO_MILESTONE,
+		SOURCE_IDLE_CULTIVATION
 	]
 
 func is_valid_source_type(source_type: String) -> bool:

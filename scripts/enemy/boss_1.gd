@@ -37,7 +37,9 @@ const SOVEREIGN_SPRITE_FRAMES: SpriteFrames = preload(
 )
 
 const SOVEREIGN_STYLE: int = 0
+const ASCENDED_SOVEREIGN_STYLE: int = 4
 const SOVEREIGN_DISPLAY_NAME: String = "Jade Valley Sovereign"
+const ASCENDED_SOVEREIGN_DISPLAY_NAME: String = "Jade Valley Sovereign · Ascended"
 const SOVEREIGN_VISUAL_POSITION: Vector2 = Vector2(0.0, -27.0)
 const SOVEREIGN_VISUAL_SCALE: Vector2 = Vector2(1.65, 1.65)
 const SOVEREIGN_FOOTPRINT_RADIUS: float = 22.0
@@ -194,6 +196,7 @@ const PHASE_TWO_VISUAL_DURATION: float = 0.90
 const RANGED_SINGLE_PROJECTILE: int = 0
 const RANGED_RADIAL_BURST: int = 1
 const RANGED_HEAVENLY_LIGHTNING: int = 2
+const RANGED_ASCENDED_CROSS: int = 3
 
 @export var speed: float = 50.0
 @export var reward_source_id: String = "boss_1"
@@ -216,8 +219,12 @@ const RANGED_HEAVENLY_LIGHTNING: int = 2
 @export var shockwave_radius: float = 150.0
 @export var shockwave_telegraph_duration: float = 0.65
 @export var shockwave_cooldown: float = 4.0
+@export var ascended_cross_damage: float = 8.0
+@export var ascended_cross_radius: float = 52.0
+@export var ascended_cross_spacing: float = 112.0
+@export var ascended_cross_telegraph_duration: float = 1.10
 @export var encounter_display_name: String = "Jade Valley Sovereign"
-@export_enum("Sovereign", "Mistblade", "Shrine Keeper", "Storm Herald") var encounter_style: int = 0
+@export_enum("Sovereign", "Mistblade", "Shrine Keeper", "Storm Herald", "Ascended Sovereign") var encounter_style: int = 0
 
 var current_hp: float
 var player: Node2D = null
@@ -249,7 +256,9 @@ func configure_encounter(profile: Dictionary) -> void:
 			"phase_two_hp_ratio", "phase_transition_invulnerability",
 			"lightning_damage", "lightning_radius", "lightning_telegraph_duration",
 			"shockwave_damage", "shockwave_radius", "shockwave_cooldown",
-			"shockwave_telegraph_duration"]:
+			"shockwave_telegraph_duration", "ascended_cross_damage",
+			"ascended_cross_radius", "ascended_cross_spacing",
+			"ascended_cross_telegraph_duration"]:
 			set(key, stats[key])
 
 func get_encounter_display_name() -> String:
@@ -288,6 +297,17 @@ func _apply_encounter_presentation() -> void:
 		sovereign_footprint.height = SOVEREIGN_FOOTPRINT_HEIGHT
 		collision_shape.position = SOVEREIGN_FOOTPRINT_POSITION
 		collision_shape.shape = sovereign_footprint
+		return
+
+	if encounter_style == ASCENDED_SOVEREIGN_STYLE and encounter_display_name == ASCENDED_SOVEREIGN_DISPLAY_NAME:
+		animated_sprite.sprite_frames = SOVEREIGN_SPRITE_FRAMES
+		animated_sprite.position = SOVEREIGN_VISUAL_POSITION
+		animated_sprite.scale = Vector2(1.78, 1.78)
+		var ascended_footprint := CapsuleShape2D.new()
+		ascended_footprint.radius = SOVEREIGN_FOOTPRINT_RADIUS
+		ascended_footprint.height = SOVEREIGN_FOOTPRINT_HEIGHT
+		collision_shape.position = SOVEREIGN_FOOTPRINT_POSITION
+		collision_shape.shape = ascended_footprint
 		return
 
 	if encounter_display_name == BLOODWOOD_MOONSTALKER_DISPLAY_NAME:
@@ -561,6 +581,11 @@ func _draw() -> void:
 		ward_secondary = Color(1.0, 0.79, 0.30, 0.78)
 		ward_fill = Color(0.44, 0.92, 0.55, 0.060)
 
+	if encounter_style == ASCENDED_SOVEREIGN_STYLE:
+		ward_primary = Color(0.68, 1.0, 0.78, 0.94)
+		ward_secondary = Color(1.0, 0.84, 0.36, 0.82)
+		ward_fill = Color(0.42, 0.98, 0.64, 0.072)
+
 	# Stormpeak Herald keeps the same defensive phase-gate mechanic but speaks
 	# the hostile storm palette instead of borrowing the Shrine Keeper's jade.
 	# The rings stay tight to the body so this never reads as a dodge telegraph.
@@ -787,6 +812,15 @@ func update_behavior() -> void:
 			try_ranged_attack()
 			_play_walk_animation()
 			return
+		if encounter_style == ASCENDED_SOVEREIGN_STYLE and current_phase == PHASE_TWO:
+			var ascend_direction: Vector2 = global_position.direction_to(player.global_position)
+			var ascend_sign: float = -1.0 if last_ranged_pattern % 2 == 0 else 1.0
+			velocity = (ascend_direction * 0.12 + ascend_direction.orthogonal() * ascend_sign).normalized() * speed * 0.72
+			move_and_slide()
+			_update_facing_to_player()
+			try_ranged_attack()
+			_play_walk_animation()
+			return
 		velocity = Vector2.ZERO
 		_update_facing_to_player()
 		try_ranged_attack()
@@ -876,6 +910,8 @@ func try_ranged_attack() -> void:
 			shoot_radial_projectiles()
 		RANGED_HEAVENLY_LIGHTNING:
 			cast_heavenly_lightning()
+		RANGED_ASCENDED_CROSS:
+			cast_ascended_cross()
 
 	last_ranged_pattern = attack_pattern
 	ranged_attack_timer = get_current_ranged_attack_cooldown()
@@ -907,6 +943,9 @@ func choose_ranged_pattern() -> int:
 		available_patterns = [RANGED_HEAVENLY_LIGHTNING, RANGED_SINGLE_PROJECTILE]
 		if current_phase == PHASE_TWO:
 			available_patterns = [RANGED_HEAVENLY_LIGHTNING, RANGED_RADIAL_BURST]
+	elif encounter_style == ASCENDED_SOVEREIGN_STYLE:
+		if current_phase == PHASE_TWO:
+			available_patterns = [RANGED_RADIAL_BURST, RANGED_HEAVENLY_LIGHTNING, RANGED_ASCENDED_CROSS]
 
 	if last_ranged_pattern in available_patterns:
 		available_patterns.erase(last_ranged_pattern)
@@ -999,6 +1038,26 @@ func cast_heavenly_lightning() -> void:
 		"Boss Heavenly Lightning Cast | Target: %s"
 		% target_position
 	)
+
+
+func cast_ascended_cross() -> void:
+	if player == null or not is_instance_valid(player):
+		return
+	var target: Vector2 = player.global_position
+	var axis: Vector2 = global_position.direction_to(target).orthogonal().normalized()
+	if axis.length_squared() < 0.001:
+		axis = Vector2.RIGHT
+	_update_facing_to_position(target)
+	_play_action_animation("lightning", ascended_cross_telegraph_duration)
+	for offset_index: int in [-1, 0, 1]:
+		var strike = LIGHTNING_STRIKE_SCENE.instantiate()
+		strike.base_damage = ascended_cross_damage
+		strike.strike_radius = ascended_cross_radius
+		strike.telegraph_duration = ascended_cross_telegraph_duration
+		strike.set("presentation_theme", _get_attack_presentation_theme())
+		get_tree().current_scene.add_child(strike)
+		strike.global_position = target + axis * ascended_cross_spacing * float(offset_index)
+	DebugLogger.combat("Boss Ascended Cross Cast | Target: %s" % target)
 
 ## Membuat Qi Shockwave pada snapshot posisi Boss.
 func cast_qi_shockwave() -> void:

@@ -123,7 +123,7 @@ func _test_autoloads() -> void:
 		count += 1
 		var autoload_name: String = key.trim_prefix("autoload/")
 		_check(root.get_node_or_null(autoload_name) != null, "Autoload " + autoload_name)
-	_check(count == 17, "Release candidate contains 17 autoloads")
+	_check(count == 18, "Release candidate contains 18 autoloads")
 
 
 func _test_resources(directory_path: String) -> void:
@@ -163,9 +163,49 @@ func _test_resources(directory_path: String) -> void:
 func _test_catalogs() -> void:
 	var audit: Dictionary = saver.audit_save_architecture()
 	_check(bool(audit.get("valid", false)), "Save catalog valid")
-	_check(int(audit.get("domain_count", 0)) == 8, "Eight save domains")
-	_check(int(audit.get("permanent_domain_count", 0)) == 7, "Seven permanent domains")
+	_check(int(audit.get("domain_count", 0)) == 9, "Nine save domains")
+	_check(int(audit.get("permanent_domain_count", 0)) == 8, "Eight permanent domains")
 	_check(int(audit.get("active_run_domain_count", 0)) == 1, "One active-run domain")
+	_check(saver.has_save_domain("idle_cultivation"), "Offline Cultivation owns a permanent save domain")
+	var idle: Variant = root.get_node("IdleCultivationManager")
+	_check(int(idle.get_accrual_cap_seconds()) == 43200, "Offline Cultivation caps accrual at twelve hours")
+	_check(int(idle.get_claim_unit_seconds()) == 600, "Offline Cultivation preserves ten-minute claim units")
+	var idle_rates: Dictionary = idle.get_rates_for_tier(6)
+	_check(
+		int(idle_rates.get("spirit_stone_per_hour", 0)) == 78
+		and int(idle_rates.get("hero_exp_per_hour", 0)) == 18,
+		"Stage-6 progression tier has the audited idle economy rate"
+	)
+	var idle_preview: Dictionary = idle.preview_reward_for_seconds(7200, 6, 0)
+	var idle_reward: Dictionary = idle_preview.get("reward_data", {})
+	_check(
+		int(idle_reward.get("spirit_stone", 0)) == 156
+		and int(idle_reward.get("hero_exp", 0)) == 36
+		and int(idle_reward.get("items", {}).get("refinement_shard", 0)) == 1,
+		"Two hours at Stage-6 tier deterministically previews idle rewards"
+	)
+	var idle_double_preview: Dictionary = (
+		idle.preview_rewarded_double_for_seconds(7200, 6, 0)
+	)
+	var idle_double_reward: Dictionary = (
+		idle_double_preview.get("reward_data", {})
+	)
+	_check(
+		int(idle_double_reward.get("spirit_stone", 0)) == 312
+		and int(idle_double_reward.get("hero_exp", 0)) == 72
+		and int(
+			idle_double_reward.get("items", {}).get(
+				"refinement_shard",
+				0
+			)
+		) == 2,
+		"Rewarded meditation preview doubles the exact claim payload"
+	)
+	var idle_reward_manager: Variant = root.get_node("RewardManager")
+	_check(
+		idle_reward_manager.is_valid_source_type("idle_cultivation"),
+		"RewardManager recognizes Offline Cultivation as a first-class source"
+	)
 	var landmark_script: GDScript = ResourceLoader.load(STAGE_LANDMARK_PREVIEW_PATH) as GDScript
 	if _check(landmark_script != null, "Chapter-aware StageLandmarkPreview script loads"):
 		var landmark_preview: Control = landmark_script.new() as Control
@@ -407,7 +447,7 @@ func _test_catalogs() -> void:
 			else:
 				placeholders += 1
 				_check(not journey.select_stage(chapter_id, stage_id), "Placeholder %d-%d cannot be selected" % [chapter_id, stage_id])
-	_check(implemented == 15, "All fifteen v1.0 stages are implemented")
+	_check(implemented == 16, "All sixteen current stages are implemented")
 	_check(placeholders == 0, "No v1.0 Journey stage remains a placeholder")
 	var stage_one: Dictionary = journey.get_stage_data(1, 1)
 	var stage_two: Dictionary = journey.get_stage_data(1, 2)
@@ -456,11 +496,18 @@ func _test_catalogs() -> void:
 		for animation_name: StringName in [&"idle_left", &"idle_right", &"walk_left", &"walk_right", &"melee_left", &"melee_right", &"projectile_left", &"projectile_right", &"radial_left", &"radial_right", &"lightning_left", &"lightning_right", &"shockwave_left", &"shockwave_right", &"phase2_left", &"phase2_right"]:
 			_check(sovereign_frames.has_animation(animation_name), "Sovereign animation contract: " + str(animation_name))
 	var sovereign_boss_stats: Dictionary = stage_five.get("boss_stats", {})
-	_check(bool(stage_five.get("is_chapter_boss", false)), "Stage 1-5 remains the Chapter 1 finale")
-	_check(float(sovereign_boss_stats.get("max_hp", 0.0)) >= 5000.0, "Stage 1-5 Sovereign has finale-grade boss durability")
-	_check(float(sovereign_boss_stats.get("max_hp", 0.0)) > float(herald_boss_stats.get("max_hp", 0.0)), "Chapter finale boss remains tougher than Stage 1-4")
+	_check(not bool(stage_five.get("is_chapter_boss", false)), "Stage 1-5 becomes the Sovereign gate trial")
+	_check(float(sovereign_boss_stats.get("max_hp", 0.0)) >= 5000.0, "Stage 1-5 Sovereign keeps gate-trial durability")
+	_check(float(sovereign_boss_stats.get("max_hp", 0.0)) > float(herald_boss_stats.get("max_hp", 0.0)), "Stage 1-5 Sovereign remains tougher than Stage 1-4")
 	_check(float(sovereign_boss_stats.get("phase_transition_invulnerability", 0.0)) > 0.0, "Stage 1-5 Sovereign protects its awakened phase from burst")
 	_check(int(stage_five.get("hazard_kind", 0)) == 1 and float(stage_five.get("hazard_interval", 0.0)) > 0.0, "Stage 1-5 keeps its Celestial seal hazard")
+	var stage_six: Dictionary = journey.get_stage_data(1, 6)
+	var ascended_stats: Dictionary = stage_six.get("boss_stats", {})
+	_check(int(stage_six.get("boss_style", -1)) == 4, "Stage 1-6 owns the Ascended Sovereign style")
+	_check(str(stage_six.get("boss_name", "")) == "Jade Valley Sovereign · Ascended", "Stage 1-6 owns the Ascended Sovereign identity")
+	_check(bool(stage_six.get("is_chapter_boss", false)), "Stage 1-6 is the expanded Chapter 1 finale")
+	_check(float(ascended_stats.get("max_hp", 0.0)) >= 8000.0, "Stage 1-6 has capstone boss durability")
+	_check(int(stage_six.get("secondary_hazard_kind", 0)) == 1, "Stage 1-6 combines two learned hazards")
 	_check(
 		journey.has_chapter(2),
 		"Chapter 2 Crimson Moon Sect is registered"
@@ -671,7 +718,7 @@ func _test_catalogs() -> void:
 	)
 
 	var reward_manager: Variant = root.get_node("RewardManager")
-	for stage_id: int in range(1, 6):
+	for stage_id: int in range(1, 7):
 		var stage_data: Dictionary = journey.get_stage_data(1, stage_id)
 		var first_reward: Dictionary = reward_manager.get_stage_clear_reward(1, stage_id, true)
 		var repeat_reward: Dictionary = reward_manager.get_stage_clear_reward(1, stage_id, false)
@@ -1067,13 +1114,86 @@ func _test_runtime_flow() -> void:
 	_check(journey.has_active_run(), "Continue restores active journey")
 	var health: Variant = player.get_node("PlayerHealth")
 	health.take_damage(1000000.0)
-	_check(bool(current_scene.get_node("GameOverManager").get("game_over_triggered")), "Player defeat triggers Game Over")
+	var game_over_manager: Node = current_scene.get_node("GameOverManager")
+	_check(bool(game_over_manager.get("game_over_triggered")), "Player defeat triggers Game Over")
 	var game_over_ui: CanvasLayer = current_scene.get_node("GameOverUI") as CanvasLayer
 	_check(game_over_ui != null and game_over_ui.visible, "Defeat result UI becomes visible")
 	_check(game_over_ui.get("intro_tween") != null, "Defeat result UI starts presentation cadence")
+	_check(
+		game_over_ui.find_child("RewardedReviveButton", true, false) != null,
+		"Defeat result UI exposes the optional rewarded revive"
+	)
 	var defeated_sprite: AnimatedSprite2D = player.get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
 	_check(defeated_sprite != null and not defeated_sprite.visible, "Player source sprite yields to pooled death presentation")
-	_check(not saver.has_save_file("checkpoint") and not saver.has_save_backup("checkpoint"), "Defeat clears checkpoint and backup")
+
+	var pending_checkpoint_result: Dictionary = saver.read_save_data("checkpoint")
+	var pending_checkpoint: Dictionary = pending_checkpoint_result.get("data", {})
+	_check(
+		bool(pending_checkpoint_result.get("success", false))
+		and bool(pending_checkpoint.get("defeat_pending", false)),
+		"Defeat preserves a checkpoint only as non-resumable defeat_pending state"
+	)
+	_check(
+		not CheckpointData.is_checkpoint_resumable(pending_checkpoint),
+		"Main Menu Continue contract rejects a defeat-pending checkpoint"
+	)
+	_check(
+		bool(game_over_manager.call("can_request_rewarded_revive")),
+		"First defeat allows one rewarded revive"
+	)
+	_check(
+		bool(game_over_manager.call("prepare_rewarded_revive")),
+		"Rewarded revive can snapshot the pending defeat"
+	)
+	var revive_result: Dictionary = game_over_manager.call(
+		"apply_verified_rewarded_revive",
+		"qa-smoke-revive"
+	)
+	_check(
+		bool(revive_result.get("success", false)),
+		"Verified rewarded revive restores the active run"
+	)
+	_check(
+		not bool(health.get("is_dead"))
+		and is_equal_approx(
+			float(health.get("current_health")),
+			float(health.get("max_health")) * 0.60
+		),
+		"Rewarded revive restores exactly sixty percent HP"
+	)
+	_check(not game_over_ui.visible, "Successful revive closes the defeat result UI")
+	_check(not paused, "Successful revive resumes the battlefield")
+
+	var revived_checkpoint_result: Dictionary = saver.read_save_data("checkpoint")
+	var revived_checkpoint: Dictionary = revived_checkpoint_result.get("data", {})
+	_check(
+		bool(revived_checkpoint_result.get("success", false))
+		and not bool(revived_checkpoint.get("defeat_pending", true))
+		and bool(revived_checkpoint.get("rewarded_revive_used", false)),
+		"Revived checkpoint persists live state and the one-revive-per-run flag"
+	)
+	_check(
+		not bool(game_over_manager.call("can_request_rewarded_revive")),
+		"Rewarded revive cannot be used twice in the same run"
+	)
+
+	# Clear the brief protection window so the smoke can exercise the second
+	# terminal defeat without waiting real-time.
+	health.set("rewarded_revive_invulnerable_until_msec", 0)
+	health.take_damage(1000000.0)
+	_check(bool(game_over_manager.get("game_over_triggered")), "Second defeat re-enters Game Over")
+	_check(
+		not bool(game_over_manager.call("can_request_rewarded_revive")),
+		"Second defeat keeps rewarded revive locked for the run"
+	)
+	var second_pending_result: Dictionary = saver.read_save_data("checkpoint")
+	_check(
+		not CheckpointData.is_checkpoint_resumable(
+			second_pending_result.get("data", {})
+		),
+		"Force-close after a defeated run still cannot expose Main Menu Continue"
+	)
+
 	current_scene.get_node("VictoryManager").call("_on_boss_defeated")
 	_check(not bool(current_scene.get_node("VictoryManager").get("victory_processed")), "Defeat blocks a competing Victory callback")
 	current_scene.get_node("GameOverUI").call("_on_retry_pressed")
@@ -1160,7 +1280,7 @@ func _open_journey_from_home() -> bool:
 
 
 func _test_added_stages() -> void:
-	for stage_id: int in range(2, 6):
+	for stage_id: int in range(2, 7):
 		_check(journey.is_stage_unlocked(1, stage_id), "Previous clear unlocks stage 1-%d" % stage_id)
 		_check(journey.select_stage(1, stage_id), "Select stage 1-%d" % stage_id)
 		var profile: Dictionary = journey.get_stage_data(1, stage_id)
@@ -1179,6 +1299,7 @@ func _test_added_stages() -> void:
 				3: "ruined_jade_shrine",
 				4: "storm_peak_approach",
 				5: "sovereign_celestial_gate",
+				6: "heart_of_verdant_heaven",
 			}
 			_check(
 				stage_decor.has_method("get_visual_signature")
@@ -1305,7 +1426,16 @@ func _test_added_stages() -> void:
 					and sovereign_collision.position.is_equal_approx(Vector2(0.0, 15.0)),
 					"Sovereign collider matches the audited ceremonial lower-body footprint"
 				)
-		boss.take_damage(float(boss.max_hp) * 0.45)
+		var phase_two_ratio: float = clampf(
+			float(boss.get("phase_two_hp_ratio")),
+			0.05,
+			0.95
+		)
+		var threshold_cross_damage: float = (
+			float(boss.max_hp)
+			* clampf(1.0 - phase_two_ratio + 0.02, 0.01, 0.95)
+		)
+		boss.take_damage(threshold_cross_damage)
 		_check(int(boss.current_phase) == 2, "Stage boss enters the second phase")
 		if float(boss.get("phase_transition_invulnerability")) > 0.0:
 			var warded_hp: float = float(boss.current_hp)
@@ -1323,8 +1453,8 @@ func _test_added_stages() -> void:
 		current_scene.get_node("VictoryUI").call("_on_main_menu_pressed")
 		if not await _wait_for_scene(HUB_PATH):
 			return
-	_check(int(journey.get_chapter_progress(1)["cleared_stages"]) == 5, "All five Chapter 1 stages cleared")
-	_check(not journey.is_stage_unlocked(1, 6), "Final clear creates no phantom stage")
+	_check(int(journey.get_chapter_progress(1)["cleared_stages"]) == 6, "All six Chapter 1 stages cleared")
+	_check(not journey.is_stage_unlocked(1, 7), "Chapter 1 final clear creates no phantom Stage 1-7")
 
 
 func _test_chapter_two_stages() -> void:
@@ -2042,8 +2172,8 @@ func _test_chapter_three_stages() -> void:
 	_check(
 		int(journey.get_chapter_progress(1).get("cleared_stages", 0))
 		+ int(journey.get_chapter_progress(2).get("cleared_stages", 0))
-		+ int(journey.get_chapter_progress(3).get("cleared_stages", 0)) == 15,
-		"Automated progression clears all fifteen v1.0 stages"
+		+ int(journey.get_chapter_progress(3).get("cleared_stages", 0)) == 16,
+		"Automated progression clears all sixteen current stages"
 	)
 
 
@@ -2435,11 +2565,15 @@ func _test_release_contracts() -> void:
 		int(reward_manager.get_game_over_reward(10).get("spirit_stone", 0)) == 30,
 		"Wave 10 boss failure grants the late consolation reward"
 	)
-	_check(achievements.get_achievement_ids().size() >= 18, "At least eighteen achievements after replay progression expansion")
+	_check(achievements.get_achievement_ids().size() >= 39, "Achievement expansion exposes at least thirty-nine records")
+	_check(achievements.get_target("stage_1_6_clear") == 1, "Stage 1-6 owns a dedicated achievement")
+	_check(achievements.get_target("verdant_heaven_ascendant") == 6, "Expanded Chapter 1 mastery tracks six trials")
 	_check(achievements.get_target("chapter_two_master") == 5, "Chapter 2 completion achievement tracks five unique stages")
 	_check(achievements.get_target("chapter_three_master") == 5, "Chapter 3 completion achievement tracks five unique stages")
-	_check(achievements.get_target("jade_ascendant") == 15, "Jade Ascendant achievement tracks all fifteen unique stages")
-	_check(achievements.get_target("trial_veteran_30") == 30, "Replay veteran achievement tracks thirty total stage clears")
+	_check(achievements.get_target("jade_ascendant") == 15, "Legacy Jade Ascendant milestone remains save-compatible")
+	_check(achievements.get_target("journey_complete_16") == 16, "Expanded Journey mastery tracks all sixteen stages")
+	_check(achievements.get_target("trial_veteran_30") == 30, "Replay veteran tracks thirty clears")
+	_check(achievements.get_target("trial_veteran_100") == 100, "Long-term replay record tracks one hundred clears")
 	_check(daily.get_daily_quest_ids().size() == 3, "Three active daily disciplines")
 	# Duplicate conversion must be deterministic and must not depend on equipment
 	# previously granted by stage rewards. Stage clears no longer grant equipment,
@@ -2832,6 +2966,34 @@ func _test_ui_master_polish_contracts() -> void:
 
 func _test_provider_contract() -> void:
 	var monetization: Variant = root.get_node("MonetizationManager")
+	_check(
+		monetization.get_node_or_null(
+			"OfflineCultivationRewardedBridge"
+		) != null,
+		"Monetization owns the verified Offline Cultivation bridge"
+	)
+	_check(
+		monetization.get_node_or_null(
+			"GameOverRewardedBridge"
+		) != null,
+		"Monetization owns the verified Game Over revive bridge"
+	)
+	_check(
+		int(
+			monetization.get_rewarded_daily_limit(
+				"game_over_revive"
+			)
+		) > 1,
+		"Game Over revive is governed per run instead of a once-daily placement cap"
+	)
+	_check(
+		int(
+			monetization.get_rewarded_cooldown_seconds(
+				"game_over_revive"
+			)
+		) == 0,
+		"Life-saving revive is not blocked by the cross-placement ad cooldown"
+	)
 	_check(not monetization.rewarded_available("qa"), "Offline build has no rewarded ad availability")
 	var provider_script: GDScript = load("res://scripts/monetization/debug_provider.gd") as GDScript
 	_check(monetization.use_test_provider(provider_script.new()), "Debug provider only attaches in a debug test")

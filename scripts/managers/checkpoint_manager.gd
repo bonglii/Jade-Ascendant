@@ -31,8 +31,8 @@ const OPTIONAL_NUMERIC_SAVE_KEYS: Array[String] = [
 const OPTIONAL_BOOL_SAVE_KEYS: Array[String] = [
 	"sword_dao_resonance_owned", "yin_yang_reversal_owned", "heavenly_tribulation_owned",
 	"fire_orb_owned", "thunder_talisman_owned", "yin_yang_blades_owned",
-	"heavenly_sword_rain_owned",
-	"eight_trigrams_formation_owned"
+	"heavenly_sword_rain_owned", "eight_trigrams_formation_owned",
+	"defeat_pending", "rewarded_revive_used"
 ]
 
 @onready var player = get_tree().get_first_node_in_group("player")
@@ -45,6 +45,9 @@ const OPTIONAL_BOOL_SAVE_KEYS: Array[String] = [
 @onready var difficulty_manager = get_parent().get_node_or_null(
 	"DifficultyManager"
 )
+
+var defeat_pending: bool = false
+var rewarded_revive_used: bool = false
 
 func _ready() -> void:
 	DebugLogger.system(str("CheckpointManager aktif!"))
@@ -121,7 +124,9 @@ func save_checkpoint() -> bool:
 		return false
 
 	var save_data: Dictionary = {
-		"version": SAVE_VERSION
+		"version": SAVE_VERSION,
+		"defeat_pending": false,
+		"rewarded_revive_used": rewarded_revive_used
 	}
 
 	if JourneyManager.has_active_run():
@@ -506,6 +511,14 @@ func _write_checkpoint_data(save_data: Dictionary) -> bool:
 
 ## Shared read contract for the hub and runtime. Legacy normalization is in
 ## memory here; the runtime commits a v0 migration through shared atomic I/O.
+static func is_checkpoint_resumable(save_data: Dictionary) -> bool:
+	return (
+		not save_data.is_empty()
+		and save_data.get("ended", false) != true
+		and save_data.get("defeat_pending", false) != true
+	)
+
+
 static func read_checkpoint_result() -> Dictionary:
 	var io_result: Dictionary = SaveManager.read_save_data("checkpoint")
 	if not bool(io_result.get("success", false)):
@@ -587,6 +600,12 @@ static func normalize_checkpoint_save_data(
 	# always owned. New checkpoints always write fire_orb_owned explicitly.
 	if not normalized_data.has("fire_orb_owned"):
 		normalized_data["fire_orb_owned"] = true
+	normalized_data["defeat_pending"] = bool(
+		save_data.get("defeat_pending", false)
+	)
+	normalized_data["rewarded_revive_used"] = bool(
+		save_data.get("rewarded_revive_used", false)
+	)
 	normalized_data["version"] = SAVE_VERSION
 	normalized_data["survival_time"] = maxf(
 		float(save_data.get("survival_time", 0.0)),
@@ -701,6 +720,15 @@ func load_checkpoint() -> bool:
 		return false
 	var source_version: int = int(io_result.get("source_version", SAVE_VERSION))
 	var save_data: Dictionary = io_result.get("data", {})
+	if not is_checkpoint_resumable(save_data):
+		DebugLogger.system(
+			"Checkpoint: Continue ditolak karena run sudah berada di Game Over."
+		)
+		return false
+	rewarded_revive_used = bool(
+		save_data.get("rewarded_revive_used", false)
+	)
+	defeat_pending = false
 	if source_version < SAVE_VERSION:
 		if _write_checkpoint_data(save_data):
 			DebugLogger.system(str(
@@ -1336,6 +1364,36 @@ func load_checkpoint() -> bool:
 	DebugLogger.system(str("=========================================="))
 	return true
 
+func mark_defeat_pending() -> bool:
+	defeat_pending = true
+	if not SaveManager.has_save_file("checkpoint"):
+		return true
+	var io_result: Dictionary = SaveManager.read_save_data("checkpoint")
+	if not bool(io_result.get("success", false)):
+		return false
+	var save_data: Dictionary = io_result.get("data", {}).duplicate(true)
+	save_data["version"] = SAVE_VERSION
+	save_data["defeat_pending"] = true
+	save_data["rewarded_revive_used"] = rewarded_revive_used
+	var write_result: Dictionary = SaveManager.write_save_data(
+		"checkpoint",
+		save_data
+	)
+	return bool(write_result.get("success", false))
+
+
+func can_use_rewarded_revive() -> bool:
+	return not rewarded_revive_used
+
+
+func mark_rewarded_revive_used() -> void:
+	rewarded_revive_used = true
+
+
+func clear_defeat_pending() -> void:
+	defeat_pending = false
+
+
 func delete_checkpoint() -> bool:
 	DebugLogger.system(str("Mencoba menghapus checkpoint..."))
 	var absolute_path := ProjectSettings.globalize_path(
@@ -1359,4 +1417,6 @@ func delete_checkpoint() -> bool:
 		"Checkpoint masih ada setelah delete? ",
 		FileAccess.file_exists(SAVE_PATH)
 	))
+	if bool(delete_result.get("success", false)):
+		defeat_pending = false
 	return bool(delete_result.get("success", false))

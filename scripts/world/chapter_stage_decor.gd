@@ -7,9 +7,10 @@ const VISUAL_SIGNATURES: Dictionary = {
 	3: "ruined_jade_shrine",
 	4: "storm_peak_approach",
 	5: "sovereign_celestial_gate",
+	6: "heart_of_verdant_heaven",
 }
 
-@export_range(2, 5, 1) var stage_id: int = 2
+@export_range(2, 6, 1) var stage_id: int = 2
 var feature_instances: Array[Vector3] = []
 
 
@@ -39,7 +40,7 @@ func _build_distribution() -> void:
 
 	# Storm Peak and the Celestial Gate should read as harsher stone spaces,
 	# not the same lush valley with a different tint.
-	if stage_id == 4 or stage_id == 5:
+	if stage_id == 4 or stage_id == 5 or stage_id == 6:
 		grass_instances.resize(int(grass_instances.size() * 0.28))
 		spirit_plant_instances.resize(int(spirit_plant_instances.size() * 0.22))
 	elif stage_id == 3:
@@ -90,6 +91,14 @@ func _get_signature_landmarks() -> Array[Vector3]:
 				Vector3(-320.0, -115.0, 0.76),
 				Vector3(320.0, 115.0, 0.76),
 			]
+		6:
+			return [
+				Vector3(-285.0, -245.0, 1.18),
+				Vector3(285.0, -245.0, 1.18),
+				Vector3(-285.0, 245.0, 1.18),
+				Vector3(285.0, 245.0, 1.18),
+				Vector3(0.0, -500.0, 1.48),
+			]
 		_:
 			return []
 
@@ -104,6 +113,8 @@ func _get_scatter_count() -> int:
 			return 24
 		5:
 			return 8
+		6:
+			return 10
 		_:
 			return 24
 
@@ -119,6 +130,8 @@ func _draw() -> void:
 	if stage_id == 5:
 		_draw_gate_approach()
 		_draw_sovereign_processional_arches()
+	if stage_id == 6:
+		_draw_ascension_sanctum()
 	for data: Vector3 in feature_instances:
 		StageMotifs.draw_motif(self, stage_id, Vector2(data.x, data.y), data.z)
 	if stage_id == 3:
@@ -235,3 +248,19 @@ func _draw_sovereign_processional_arches() -> void:
 			draw_line(Vector2(x, y - 19.0), Vector2(x, y + 2.0), gold_soft, 2.0, true)
 			draw_line(Vector2(x - 7.0, y - 9.0), Vector2(x + 7.0, y - 9.0), gold_soft, 1.5, true)
 
+
+func _draw_ascension_sanctum() -> void:
+	var center: Vector2 = START_POSITION
+	var jade: Color = Color(0.30, 0.70, 0.52, 0.24)
+	var gold: Color = Color(0.86, 0.68, 0.28, 0.28)
+	for radius: float in [150.0, 235.0, 330.0]:
+		draw_arc(center, radius, 0.0, TAU, 64, jade, 3.0, true)
+	for index: int in range(8):
+		var direction: Vector2 = Vector2.RIGHT.rotated(TAU * float(index) / 8.0)
+		draw_line(center + direction * 110.0, center + direction * 355.0, gold, 2.0, true)
+	var diamond := PackedVector2Array([
+		center + Vector2(0.0, -112.0), center + Vector2(112.0, 0.0),
+		center + Vector2(0.0, 112.0), center + Vector2(-112.0, 0.0),
+		center + Vector2(0.0, -112.0),
+	])
+	draw_polyline(diamond, Color(0.70, 0.91, 0.63, 0.30), 3.0, true)

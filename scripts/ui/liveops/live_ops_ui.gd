@@ -14,6 +14,9 @@ static func build_shell(
 	subtitle_text: String,
 	hero_icon: Texture2D = null
 ) -> Dictionary:
+	if bool(root.get_meta("liveops_popup", false)):
+		return _build_popup_shell(root, eyebrow_text, title_text, subtitle_text, hero_icon)
+
 	var background := TextureRect.new()
 	background.name = "Background"
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -171,6 +174,126 @@ static func build_shell(
 		"content": content,
 		"scroll": scroll,
 	}
+
+
+static func _build_popup_shell(root: Control, eyebrow_text: String, title_text: String, subtitle_text: String, hero_icon: Texture2D) -> Dictionary:
+	root.mouse_filter = Control.MOUSE_FILTER_STOP
+	var scrim := ColorRect.new()
+	scrim.name = "ModalScrim"
+	scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scrim.mouse_filter = Control.MOUSE_FILTER_STOP
+	scrim.color = Color(0.0, 0.0, 0.0, 0.66)
+	root.add_child(scrim)
+
+	var panel := PanelContainer.new()
+	panel.name = "LiveOpsPopup"
+	panel.anchor_left = 0.065
+	panel.anchor_top = 0.10
+	panel.anchor_right = 0.935
+	panel.anchor_bottom = 0.90
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	var style := make_panel_style(Color(0.002, 0.018, 0.027, 0.99), Color(0.90, 0.70, 0.30, 0.72), 20)
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.72)
+	style.shadow_size = 18
+	panel.add_theme_stylebox_override("panel", style)
+	root.add_child(panel)
+
+	var margin := MarginContainer.new()
+	for side: String in ["left", "top", "right", "bottom"]:
+		margin.add_theme_constant_override("margin_" + side, 16)
+	panel.add_child(margin)
+	var outer := VBoxContainer.new()
+	outer.add_theme_constant_override("separation", 10)
+	margin.add_child(outer)
+
+	var top := HBoxContainer.new()
+	top.custom_minimum_size.y = 44.0
+	outer.add_child(top)
+	var tag := Label.new()
+	tag.text = root.tr("LIVE SERVICES")
+	tag.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	tag.add_theme_font_size_override("font_size", 11)
+	tag.add_theme_color_override("font_color", Color(0.50, 0.86, 0.78, 1.0))
+	top.add_child(tag)
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top.add_child(spacer)
+	var close := Button.new()
+	close.custom_minimum_size = Vector2(44.0, 44.0)
+	close.text = "×"
+	close.focus_mode = Control.FOCUS_NONE
+	close.add_theme_font_size_override("font_size", 23)
+	close.add_theme_stylebox_override("normal", make_button_style(Color(0.002, 0.030, 0.040, 0.94), Color(0.34, 0.78, 0.70, 0.50)))
+	top.add_child(close)
+
+	var hero := PanelContainer.new()
+	hero.add_theme_stylebox_override("panel", make_panel_style(Color(0.004, 0.030, 0.040, 0.94), Color(0.30, 0.82, 0.72, 0.38), 14))
+	outer.add_child(hero)
+	var hm := MarginContainer.new()
+	hm.add_theme_constant_override("margin_left", 14)
+	hm.add_theme_constant_override("margin_top", 10)
+	hm.add_theme_constant_override("margin_right", 14)
+	hm.add_theme_constant_override("margin_bottom", 10)
+	hero.add_child(hm)
+	var hr := HBoxContainer.new()
+	hr.add_theme_constant_override("separation", 10)
+	hm.add_child(hr)
+	if hero_icon != null:
+		var icon := TextureRect.new()
+		icon.custom_minimum_size = Vector2(64.0, 64.0)
+		icon.texture = hero_icon
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		hr.add_child(icon)
+	var ht := VBoxContainer.new()
+	ht.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hr.add_child(ht)
+	var eyebrow := Label.new()
+	eyebrow.text = eyebrow_text
+	eyebrow.add_theme_font_size_override("font_size", 10)
+	eyebrow.add_theme_color_override("font_color", Color(0.36, 0.90, 0.80, 1.0))
+	ht.add_child(eyebrow)
+	var title := Label.new()
+	title.text = title_text
+	title.add_theme_font_size_override("font_size", 22)
+	title.add_theme_color_override("font_color", Color(0.98, 0.82, 0.40, 1.0))
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	ht.add_child(title)
+	var subtitle := Label.new()
+	subtitle.text = subtitle_text
+	subtitle.add_theme_font_size_override("font_size", 12)
+	subtitle.add_theme_color_override("font_color", Color(0.72, 0.84, 0.81, 1.0))
+	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	ht.add_child(subtitle)
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.scroll_deadzone = 4
+	outer.add_child(scroll)
+	var content := VBoxContainer.new()
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.add_theme_constant_override("separation", 10)
+	scroll.add_child(content)
+	_install_scroll_guard(scroll, content)
+
+	close.pressed.connect(func() -> void: return_home(root))
+	scrim.gui_input.connect(func(event: InputEvent) -> void:
+		if (event is InputEventMouseButton and (event as InputEventMouseButton).pressed) or (event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed):
+			scrim.accept_event()
+			return_home(root)
+	)
+	scrim.modulate.a = 0.0
+	panel.modulate.a = 0.0
+	var tween := root.create_tween().set_parallel(true)
+	tween.tween_property(scrim, "modulate:a", 1.0, 0.12)
+	tween.tween_property(panel, "modulate:a", 1.0, 0.14)
+	return {"back_button": close, "content": content, "scroll": scroll, "popup": panel}
 
 
 static func _install_scroll_guard(
@@ -365,14 +488,15 @@ static func make_button_style(
 
 
 static func return_home(root: Node) -> void:
+	if bool(root.get_meta("liveops_popup", false)):
+		var manager: Node = root.get_node_or_null("/root/LiveOpsManager")
+		if manager != null and manager.has_method("close_live_popup"):
+			manager.call("close_live_popup")
+		else:
+			root.queue_free()
+		return
 	if SceneTransitionManager.is_transitioning:
 		return
-	var change_error: Error = SceneTransitionManager.transition_menu_to(
-		MAIN_MENU_SCENE,
-		-1
-	)
+	var change_error: Error = SceneTransitionManager.transition_menu_to(MAIN_MENU_SCENE, -1)
 	if change_error != OK:
-		push_error(
-			"LiveOps UI: gagal kembali ke Home. Error code: "
-			+ str(change_error)
-		)
+		push_error("LiveOps UI: gagal kembali ke Home. Error code: " + str(change_error))

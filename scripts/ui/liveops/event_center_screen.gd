@@ -168,6 +168,11 @@ func _build_cards() -> void:
 
 
 func _open(scene_path: String) -> void:
+	if bool(get_meta("liveops_popup", false)) and scene_path == NEW_PLAYER_SCENE:
+		var manager: Node = get_node_or_null("/root/LiveOpsManager")
+		if manager != null and manager.has_method("open_live_popup"):
+			manager.call("open_live_popup", scene_path)
+			return
 	if SceneTransitionManager.is_transitioning:
 		return
 	var change_error: Error = SceneTransitionManager.transition_menu_to(

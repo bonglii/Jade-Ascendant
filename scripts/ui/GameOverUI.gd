@@ -8,6 +8,12 @@ const DEFEAT_BACKDROP_ART: String = "res://assets/ui/results/defeat_sanctum.svg"
 const DEFEAT_SEAL_ART: String = "res://assets/ui/results/defeat_seal.svg"
 const SPIRIT_STONE_ICON: String = "res://assets/ui/icons/spirit_stone.svg"
 const EndRunAtmosphereScript = preload("res://scripts/ui/end_run_atmosphere.gd")
+const RewardedBridge = preload(
+	"res://scripts/monetization/game_over_rewarded_bridge.gd"
+)
+const RewardedLocalization = preload(
+	"res://scripts/monetization/monetization_localization.gd"
+)
 
 const DEFEAT_BACKDROP_FADE_DURATION: float = 0.52
 const DEFEAT_PANEL_DELAY: float = 0.16
@@ -59,20 +65,47 @@ var intro_tween: Tween = null
 var defeat_seal: TextureRect = null
 var result_atmosphere: Control = null
 var recovery_chip: PanelContainer = null
+var revive_button: Button = null
+var revive_refresh_left: float = 0.0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	RewardedLocalization.install()
 	_apply_premium_visuals()
 	retry_button.pressed.connect(_on_retry_pressed)
 	main_menu_button.pressed.connect(_on_main_menu_pressed)
 	if not RewardManager.reward_granted.is_connected(_on_reward_granted):
 		RewardManager.reward_granted.connect(_on_reward_granted)
+	if not MonetizationManager.reward_delivery_finished.is_connected(
+		_on_reward_delivery_finished
+	):
+		MonetizationManager.reward_delivery_finished.connect(
+			_on_reward_delivery_finished
+		)
+	if not MonetizationManager.rewarded_request_finished.is_connected(
+		_on_rewarded_request_finished
+	):
+		MonetizationManager.rewarded_request_finished.connect(
+			_on_rewarded_request_finished
+		)
 	hide()
 
 
+func _process(delta: float) -> void:
+	if not visible or revive_button == null:
+		return
+	revive_refresh_left -= delta
+	if revive_refresh_left > 0.0:
+		return
+	revive_refresh_left = 0.75
+	_refresh_revive_button()
+
+
 func show_game_over() -> void:
+	last_game_over_reward.clear()
 	_refresh_stage_identity()
 	_refresh_reward_summary()
+	_refresh_revive_button()
 	retry_button.disabled = SaveManager.is_progress_read_only()
 	if retry_button.disabled:
 		reward_summary_label.visible = true
@@ -89,6 +122,8 @@ func show_game_over() -> void:
 	defeat_panel.modulate.a = 0.0
 	wave_label.modulate.a = 0.0
 	reward_panel.modulate.a = 0.0
+	if revive_button != null:
+		revive_button.modulate.a = 0.0
 	retry_button.modulate.a = 0.0
 	main_menu_button.modulate.a = 0.0
 
@@ -149,18 +184,25 @@ func show_game_over() -> void:
 		1.0,
 		0.24
 	).set_delay(0.34)
+	if revive_button != null:
+		intro_tween.tween_property(
+			revive_button,
+			"modulate:a",
+			1.0,
+			0.22
+		).set_delay(0.42)
 	intro_tween.tween_property(
 		retry_button,
 		"modulate:a",
 		1.0,
 		0.22
-	).set_delay(0.42)
+	).set_delay(0.47)
 	intro_tween.tween_property(
 		main_menu_button,
 		"modulate:a",
 		1.0,
 		0.22
-	).set_delay(0.48)
+	).set_delay(0.52)
 
 
 func _on_reward_granted(
@@ -197,17 +239,13 @@ func _refresh_reward_summary() -> void:
 		"reward_data",
 		{}
 	)
+	if reward_data.is_empty():
+		reward_data = RewardManager.get_game_over_reward(reached_wave)
 	wave_label.text = tr("WAVE %d REACHED") % reached_wave
-	var recovered_stones: int = int(
-		reward_data.get(
-			RewardManager.REWARD_KEY_SPIRIT_STONE,
-			0
-		)
-	)
 	reward_header_label.text = (
-		tr("REWARD RECOVERED")
-		if recovered_stones > 0
-		else tr("RECOVERY RESULT")
+		tr("RECOVERY IF RUN ENDS")
+		if last_game_over_reward.is_empty()
+		else tr("REWARD RECOVERED")
 	)
 	reward_summary_label.text = RewardManager.get_reward_summary(
 		reward_data,
@@ -236,8 +274,9 @@ func _apply_premium_visuals() -> void:
 	_ensure_atmosphere()
 	_ensure_result_seal()
 	_ensure_recovery_chip()
+	_ensure_revive_button()
 
-	defeat_panel.custom_minimum_size = Vector2(530.0, 720.0)
+	defeat_panel.custom_minimum_size = Vector2(530.0, 780.0)
 	defeat_panel.add_theme_stylebox_override(
 		"panel",
 		_make_panel_style(
@@ -257,7 +296,7 @@ func _apply_premium_visuals() -> void:
 	margin.add_theme_constant_override("margin_bottom", 26)
 	content.add_theme_constant_override("separation", 12)
 
-	eyebrow_label.text = tr("DAO HEART SHAKEN • RUN ENDED")
+	eyebrow_label.text = tr("DAO HEART SHAKEN • REVIVE WINDOW")
 	eyebrow_label.add_theme_color_override(
 		"font_color",
 		Color(0.92, 0.48, 0.40, 1.0)
@@ -427,7 +466,7 @@ func _apply_premium_visuals() -> void:
 	)
 
 	hint_label.text = tr(
-		"Retry begins the selected stage from the start. Permanent progression remains intact."
+		"Revive keeps this run. Retry starts the stage over. Return Home ends the run."
 	)
 	hint_label.add_theme_color_override(
 		"font_color",
@@ -435,6 +474,201 @@ func _apply_premium_visuals() -> void:
 	)
 	hint_label.add_theme_font_size_override("font_size", 13)
 	hint_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+func _ensure_revive_button() -> void:
+	if revive_button != null and is_instance_valid(revive_button):
+		return
+	revive_button = Button.new()
+	revive_button.name = "RewardedReviveButton"
+	revive_button.custom_minimum_size = Vector2(0.0, 64.0)
+	revive_button.focus_mode = Control.FOCUS_ALL
+	revive_button.text = tr("REVIVE • WATCH AD")
+	revive_button.add_theme_font_size_override("font_size", 17)
+	revive_button.add_theme_color_override(
+		"font_color",
+		Color(0.95, 1.0, 0.82, 1.0)
+	)
+	revive_button.add_theme_color_override(
+		"font_hover_color",
+		Color(1.0, 0.94, 0.62, 1.0)
+	)
+	revive_button.add_theme_color_override(
+		"font_disabled_color",
+		Color(0.48, 0.54, 0.52, 1.0)
+	)
+	revive_button.add_theme_stylebox_override(
+		"normal",
+		_make_button_style(
+			Color(0.030, 0.18, 0.14, 0.98),
+			Color(0.35, 0.92, 0.72, 0.92),
+			16,
+			2
+		)
+	)
+	revive_button.add_theme_stylebox_override(
+		"hover",
+		_make_button_style(
+			Color(0.045, 0.24, 0.18, 1.0),
+			Color(0.96, 0.76, 0.34, 1.0),
+			16,
+			2
+		)
+	)
+	revive_button.add_theme_stylebox_override(
+		"pressed",
+		_make_button_style(
+			Color(0.020, 0.13, 0.11, 1.0),
+			Color(0.75, 0.56, 0.25, 1.0),
+			16,
+			2
+		)
+	)
+	revive_button.add_theme_stylebox_override(
+		"focus",
+		_make_button_style(
+			Color(0.030, 0.18, 0.14, 0.98),
+			Color(1.0, 0.84, 0.42, 1.0),
+			16,
+			2
+		)
+	)
+	revive_button.add_theme_stylebox_override(
+		"disabled",
+		_make_button_style(
+			Color(0.055, 0.070, 0.072, 0.94),
+			Color(0.28, 0.35, 0.34, 0.80),
+			16
+		)
+	)
+	revive_button.pressed.connect(_on_revive_pressed)
+	content.add_child(revive_button)
+	content.move_child(
+		revive_button,
+		retry_button.get_index()
+	)
+
+
+func _refresh_revive_button() -> void:
+	if revive_button == null or not is_instance_valid(revive_button):
+		return
+	var game_over_manager: Node = get_parent().get_node_or_null(
+		"GameOverManager"
+	)
+	if game_over_manager == null:
+		revive_button.disabled = true
+		revive_button.text = tr("REVIVE UNAVAILABLE")
+		return
+
+	if bool(game_over_manager.call("has_rewarded_revive_been_used")):
+		revive_button.disabled = true
+		revive_button.text = tr("REVIVE USED")
+		return
+
+	if SaveManager.is_progress_read_only():
+		revive_button.disabled = true
+		revive_button.text = tr("REVIVE UNAVAILABLE")
+		return
+
+	if MonetizationManager.is_rewarded_request_active(
+		RewardedBridge.PLACEMENT_ID
+	):
+		revive_button.disabled = true
+		revive_button.text = tr("REVIVING...")
+		return
+
+	var policy: Dictionary = MonetizationManager.get_rewarded_policy_status(
+		RewardedBridge.PLACEMENT_ID
+	)
+	if bool(policy.get("available", false)):
+		revive_button.disabled = false
+		revive_button.text = tr("REVIVE • WATCH AD")
+		return
+
+	revive_button.disabled = true
+	var runtime: Dictionary = MonetizationManager.get_provider_runtime_status()
+	var provider_state: String = str(runtime.get("state", ""))
+	if provider_state in [
+		"consent_updating",
+		"consent_form_loading",
+		"consent_form_showing",
+		"ads_initializing",
+		"ads_initialized",
+		"rewarded_loading",
+	]:
+		revive_button.text = tr("REVIVE • PREPARING")
+	else:
+		revive_button.text = tr("REVIVE UNAVAILABLE")
+
+
+func _on_revive_pressed() -> void:
+	var game_over_manager: Node = get_parent().get_node_or_null(
+		"GameOverManager"
+	)
+	if (
+		game_over_manager == null
+		or not bool(game_over_manager.call("prepare_rewarded_revive"))
+	):
+		hint_label.text = tr("Rewarded revive is not available for this run.")
+		_refresh_revive_button()
+		return
+
+	if not MonetizationManager.show_rewarded(
+		RewardedBridge.PLACEMENT_ID
+	):
+		game_over_manager.call("cancel_pending_rewarded_revive")
+		hint_label.text = tr("Rewarded ad unavailable. Try again shortly.")
+		_refresh_revive_button()
+		return
+
+	hint_label.text = tr(
+		"Watch the optional ad to revive at 60% HP with brief protection."
+	)
+	_refresh_revive_button()
+
+
+func _on_reward_delivery_finished(
+	placement: String,
+	success: bool,
+	_amount: int,
+	message: String
+) -> void:
+	if placement != RewardedBridge.PLACEMENT_ID:
+		return
+	if success:
+		return
+	hint_label.text = (
+		message
+		if not message.is_empty()
+		else tr("Rewarded revive failed. You can still Retry or Return Home.")
+	)
+	_refresh_revive_button()
+
+
+func _on_rewarded_request_finished(
+	placement: String,
+	status: String
+) -> void:
+	if placement != RewardedBridge.PLACEMENT_ID:
+		return
+	if status != "completed":
+		var game_over_manager: Node = get_parent().get_node_or_null(
+			"GameOverManager"
+		)
+		if game_over_manager != null:
+			game_over_manager.call("cancel_pending_rewarded_revive")
+		hint_label.text = (
+			tr("Ad closed before revive. Retry and Return Home remain available.")
+			if status == "cancelled"
+			else tr("Rewarded ad unavailable. Try again shortly.")
+		)
+	_refresh_revive_button()
+
+
+func hide_after_revive() -> void:
+	_reset_intro_visual_state()
+	last_game_over_reward.clear()
+	hide()
+
 
 func _ensure_backdrop_art() -> void:
 	if defeat_backdrop.has_node("ResultBackdropArt"):
@@ -591,9 +825,13 @@ func _refresh_recovery_chip(reward_data: Dictionary) -> void:
 
 	var caption_label := Label.new()
 	caption_label.text = (
-		tr("REWARD RECOVERED")
-		if has_reward
-		else tr("DAO ESSENCE COULD NOT BE RECOVERED")
+		tr("RECOVERY PREVIEW")
+		if last_game_over_reward.is_empty() and has_reward
+		else (
+			tr("REWARD RECOVERED")
+			if has_reward
+			else tr("DAO ESSENCE COULD NOT BE RECOVERED")
+		)
 	)
 	caption_label.theme_type_variation = &"JadeMutedLabel"
 	caption_label.add_theme_font_size_override("font_size", 10)
@@ -730,6 +968,8 @@ func _reset_intro_visual_state() -> void:
 	defeat_panel.modulate.a = 1.0
 	wave_label.modulate.a = 1.0
 	reward_panel.modulate.a = 1.0
+	if revive_button != null:
+		revive_button.modulate.a = 1.0
 	retry_button.modulate.a = 1.0
 	main_menu_button.modulate.a = 1.0
 	if defeat_seal != null:
@@ -742,6 +982,15 @@ func _on_retry_pressed() -> void:
 	if SceneTransitionManager.is_transitioning:
 		return
 	_reset_intro_visual_state()
+	var game_over_manager: Node = get_parent().get_node_or_null("GameOverManager")
+	if (
+		game_over_manager == null
+		or not bool(game_over_manager.call("finalize_defeat"))
+	):
+		hint_label.text = tr(
+			"Run end could not be saved. Please try again."
+		)
+		return
 	var selected_stage_data: Dictionary = JourneyManager.get_selected_stage_data()
 	if selected_stage_data.is_empty():
 		push_error("GameOverUI: data stage untuk Retry tidak ditemukan.")
@@ -792,6 +1041,15 @@ func _on_main_menu_pressed() -> void:
 	if SceneTransitionManager.is_transitioning:
 		return
 	_reset_intro_visual_state()
+	var game_over_manager: Node = get_parent().get_node_or_null("GameOverManager")
+	if (
+		game_over_manager == null
+		or not bool(game_over_manager.call("finalize_defeat"))
+	):
+		hint_label.text = tr(
+			"Run end could not be saved. Please try again."
+		)
+		return
 	var change_error: Error = SceneTransitionManager.transition_to(
 		MAIN_MENU_SCENE,
 		{

@@ -9,6 +9,7 @@ static func draw_motif(canvas: CanvasItem, stage_id: int, center: Vector2, scale
 		3: _shrine(canvas)
 		4: _storm_pillar(canvas)
 		5: _gate(canvas)
+		6: _ascension_sanctum(canvas)
 		_: _valley_marker(canvas)
 	canvas.draw_set_transform(Vector2.ZERO)
 
@@ -120,6 +121,23 @@ static func _gate(c: CanvasItem) -> void:
 	c.draw_line(Vector2(0, -59), Vector2(0, -37), gold, 2.0)
 	c.draw_line(Vector2(-34, -17), Vector2(34, -17), Color(0.86, 0.67, 0.29, 0.48), 2.0, true)
 
+
+
+static func _ascension_sanctum(c: CanvasItem) -> void:
+	var jade := Color(0.22, 0.56, 0.42, 0.86)
+	var gold := Color(0.82, 0.65, 0.28, 0.82)
+	for side: int in [-1, 1]:
+		var x := float(side) * 48.0
+		c.draw_rect(Rect2(x - 8.0, -92.0, 16.0, 92.0), Color(0.08, 0.20, 0.17, 0.94))
+		c.draw_line(Vector2(x, -84.0), Vector2(x, -8.0), gold, 2.0, true)
+	c.draw_arc(Vector2(0, -42), 34, 0, TAU, 40, jade, 3.0, true)
+	c.draw_arc(Vector2(0, -42), 21, 0, TAU, 32, gold, 2.0, true)
+	var seal := PackedVector2Array([
+		Vector2(0,-61), Vector2(19,-42), Vector2(0,-23),
+		Vector2(-19,-42), Vector2(0,-61)
+	])
+	c.draw_polyline(seal, Color(0.72, 0.94, 0.72, 0.90), 2.0, true)
+	c.draw_line(Vector2(-70, 7), Vector2(70, 7), Color(0.12,0.30,0.24,0.88), 8.0, true)
 
 static func _valley_marker(c: CanvasItem) -> void:
 	c.draw_colored_polygon(PackedVector2Array([

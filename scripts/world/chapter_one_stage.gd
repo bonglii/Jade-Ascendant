@@ -5,7 +5,7 @@ extends Node2D
 const ChapterOneCatalog = preload("res://scripts/data/chapter_one_catalog.gd")
 const StageHazard = preload("res://scripts/world/stage_hazard.gd")
 
-@export_range(1, 5, 1) var stage_id: int = 1
+@export_range(1, 6, 1) var stage_id: int = 1
 
 var stage_profile: Dictionary = {}
 var hazard_timer: float = 10.0
@@ -70,6 +70,15 @@ func _process(delta: float) -> void:
 	if get_tree().get_nodes_in_group("stage_hazard").size() >= 4:
 		return
 	var target: Vector2 = player.global_position
+	if stage_id == 6:
+		var secondary_kind: int = int(stage_profile.get("secondary_hazard_kind", 1))
+		var active_kind: int = kind if hazard_cycle % 2 == 1 else secondary_kind
+		_spawn_hazard(target, active_kind)
+		if wave_manager.current_wave >= 6:
+			var flank: Vector2 = Vector2.LEFT if hazard_cycle % 2 == 0 else Vector2.RIGHT
+			var flank_kind: int = secondary_kind if active_kind == kind else kind
+			_spawn_hazard(target + flank * 165.0, flank_kind)
+		return
 	_spawn_hazard(target, kind)
 	if stage_id == 5 and wave_manager.current_wave >= 6:
 		var flank: Vector2 = Vector2.LEFT if hazard_cycle % 2 == 0 else Vector2.RIGHT

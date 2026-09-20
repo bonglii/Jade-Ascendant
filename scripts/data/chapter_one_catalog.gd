@@ -122,7 +122,7 @@ const STAGES: Dictionary = {
 	5: {
 		"display_name": "Sovereign's Celestial Gate",
 		"scene_path": "res://scenes/levels/stage_1_5.tscn",
-		"implemented": true, "is_chapter_boss": true,
+		"implemented": true, "is_chapter_boss": false,
 		"description": "Cross the golden seals and face the Jade Valley Sovereign's awakened phase.",
 		"encounter_hint": "Mixed disciples • Celestial seals • Two-phase Sovereign",
 		"accent": Color(0.94, 0.79, 0.40),
@@ -140,7 +140,7 @@ const STAGES: Dictionary = {
 		"elite_schedule": {4: 1, 6: 2, 8: 2},
 		"hazard_kind": 1, "hazard_interval": 14.0,
 		"boss_name": "Jade Valley Sovereign", "boss_style": 0,
-		# Chapter finale: preserve the Sovereign's full three-pattern kit, but give
+		# Sovereign gate trial: preserve the full three-pattern kit, but give
 		# both phases enough effective life to be played. The short ceremonial ward
 		# prevents a mature Wave-10 build from deleting Phase 2 on the threshold hit.
 		"boss_stats": {"max_hp": 6000.0, "attack_damage": 8.0,
@@ -148,6 +148,54 @@ const STAGES: Dictionary = {
 			"ranged_attack_cooldown": 2.8, "phase_two_ranged_attack_cooldown": 2.1},
 		"first_clear_stones": 300, "repeat_clear_stones": 150,
 		"repeat_clear_shards": 3,
+	},
+	6: {
+		"display_name": "Heart of Verdant Heaven",
+		"scene_path": "res://scenes/levels/stage_1_6.tscn",
+		"implemented": true, "is_chapter_boss": true,
+		"description": "Beyond the Celestial Gate, the valley's heart opens into an ascension crucible.",
+		"encounter_hint": "Ascendant disciples • Twin seals • Ascended Sovereign",
+		"accent": Color(0.50, 0.94, 0.76),
+		"ground": Color(0.012, 0.040, 0.039),
+		"moss": Color(0.055, 0.12, 0.095),
+		"stone": Color(0.085, 0.14, 0.13),
+		"mist": Color(0.32, 0.52, 0.39),
+		"wave_duration": 28.0, "difficulty_interval": 80.0,
+		"spawn_interval": 1.75, "enemy_cap": 104,
+		"enemy_hp_multiplier": 1.28, "enemy_speed_multiplier": 1.05,
+		"elite_hp_multiplier": 1.35, "elite_speed_multiplier": 1.08,
+		"enemy_bands": [
+			{"from_wave": 1, "weights": [25, 20, 15, 15, 10, 15]},
+			{"from_wave": 4, "weights": [15, 15, 15, 20, 15, 20]},
+			{"from_wave": 7, "weights": [8, 12, 15, 20, 20, 25]}
+		],
+		"elite_schedule": {3: 1, 5: 2, 7: 1, 9: 2},
+		"hazard_kind": 2, "secondary_hazard_kind": 1,
+		"hazard_interval": 9.5,
+		"boss_name": "Jade Valley Sovereign · Ascended", "boss_style": 4,
+		"boss_stats": {
+			"max_hp": 8200.0, "speed": 62.0,
+			"melee_distance": 105.0, "ranged_distance": 365.0,
+			"attack_damage": 9.0, "attack_cooldown": 1.25,
+			"projectile_damage": 3.5,
+			"ranged_attack_cooldown": 2.45,
+			"phase_two_ranged_attack_cooldown": 1.75,
+			"radial_projectile_count": 8,
+			"phase_two_radial_projectile_count": 12,
+			"phase_two_hp_ratio": 0.52,
+			"phase_transition_invulnerability": 1.15,
+			"lightning_damage": 9.0, "lightning_radius": 58.0,
+			"lightning_telegraph_duration": 1.05,
+			"shockwave_damage": 8.0, "shockwave_radius": 155.0,
+			"shockwave_cooldown": 3.2,
+			"shockwave_telegraph_duration": 0.78,
+			"ascended_cross_damage": 8.0,
+			"ascended_cross_radius": 52.0,
+			"ascended_cross_spacing": 112.0,
+			"ascended_cross_telegraph_duration": 1.10
+		},
+		"first_clear_stones": 450, "repeat_clear_stones": 180,
+		"repeat_clear_shards": 4,
 	}
 }
 

@@ -17,61 +17,52 @@ const SAVE_PATH: String = "user://achievements.save"
 const SAVE_VERSION: int = 1
 
 const ACHIEVEMENTS: Dictionary = {
-	"first_blood": {
-		"title": "First Blood",
-		"description": "Defeat your first enemy.",
-		"category": "combat",
-		"target": 1,
-		"reward": 20
-	},
-	"enemy_slayer_50": {
-		"title": "Enemy Slayer",
-		"description": "Defeat 50 enemies.",
-		"category": "combat",
-		"target": 50,
-		"reward": 50
-	},
-	"cultivator_level_5": {
-		"title": "Rising Cultivator",
-		"description": "Reach Level 5 during a run.",
-		"category": "progression",
-		"target": 5,
-		"reward": 50
-	},
-	"first_stage_clear": {
-		"title": "Path Opened",
-		"description": "Clear your first stage.",
-		"category": "journey",
-		"target": 1,
-		"reward": 100
-	},
-	"first_boss_defeat": {
-		"title": "Boss Breaker",
-		"description": "Defeat your first Stage Boss.",
-		"category": "boss",
-		"target": 1,
-		"reward": 100
-	},
-	"cultivation_initiate": {
-		"title": "Cultivation Initiate",
-		"description": "Purchase your first permanent cultivation upgrade.",
-		"category": "cultivation",
-		"target": 1,
-		"reward": 50
-	},
-	"enemy_slayer_250": {"title": "Valley Sentinel", "description": "Defeat 250 enemies.", "category": "combat", "target": 250, "reward": 100},
-	"enemy_slayer_1000": {"title": "Thousandfold Intent", "description": "Defeat 1,000 enemies.", "category": "combat", "target": 1000, "reward": 250},
-	"cultivator_level_10": {"title": "Qi Condensation", "description": "Reach Level 10 during a run.", "category": "progression", "target": 10, "reward": 100},
-	"cultivator_level_20": {"title": "Boundless Comprehension", "description": "Reach Level 20 during a run.", "category": "progression", "target": 20, "reward": 200},
-	"chapter_one_master": {"title": "Sovereign of the Valley", "description": "Clear all five Chapter 1 trials.", "category": "journey", "target": 5, "reward": 300},
-	"boss_slayer_10": {"title": "Ten Seals Broken", "description": "Defeat 10 stage guardians.", "category": "boss", "target": 10, "reward": 180},
-	"cultivation_adept": {"title": "Meridian Adept", "description": "Own 10 permanent cultivation levels in total.", "category": "cultivation", "target": 10, "reward": 150},
-	"art_master": {"title": "Sevenfold Art", "description": "Refine any combat art to Level 7.", "category": "progression", "target": 1, "reward": 100},
-	"chapter_two_master": {"title": "Crimson Moon Conqueror", "description": "Clear all five Chapter 2 trials.", "category": "journey", "target": 5, "reward": 450},
-	"chapter_three_master": {"title": "Ascendant of Nine Heavens", "description": "Clear all five Chapter 3 trials.", "category": "journey", "target": 5, "reward": 650},
-	"jade_ascendant": {"title": "Jade Ascendant", "description": "Clear all fifteen journey stages.", "category": "journey", "target": 15, "reward": 900},
-	"trial_veteran_30": {"title": "Thirty Trials Tempered", "description": "Complete 30 stages, including repeats.", "category": "journey", "target": 30, "reward": 300}
+	"first_blood":{"title":"First Blood","description":"Defeat your first enemy.","category":"combat","target":1,"reward":20},
+	"enemy_slayer_50":{"title":"Enemy Slayer","description":"Defeat 50 enemies.","category":"combat","target":50,"reward":50},
+	"cultivator_level_5":{"title":"Rising Cultivator","description":"Reach Level 5 during a run.","category":"progression","target":5,"reward":50},
+	"first_stage_clear":{"title":"Path Opened","description":"Clear your first stage.","category":"journey","target":1,"reward":100},
+	"first_boss_defeat":{"title":"Boss Breaker","description":"Defeat your first Stage Boss.","category":"boss","target":1,"reward":100},
+	"cultivation_initiate":{"title":"Cultivation Initiate","description":"Purchase your first permanent cultivation upgrade.","category":"cultivation","target":1,"reward":50},
+	"enemy_slayer_250":{"title":"Valley Sentinel","description":"Defeat 250 enemies.","category":"combat","target":250,"reward":100},
+	"enemy_slayer_500":{"title":"Five Hundred Cuts","description":"Defeat 500 enemies.","category":"combat","target":500,"reward":160},
+	"enemy_slayer_1000":{"title":"Thousandfold Intent","description":"Defeat 1,000 enemies.","category":"combat","target":1000,"reward":250},
+	"enemy_slayer_2500":{"title":"Army-Breaking Intent","description":"Defeat 2,500 enemies.","category":"combat","target":2500,"reward":400},
+	"enemy_slayer_5000":{"title":"Ten Thousand Blades' Echo","description":"Defeat 5,000 enemies.","category":"combat","target":5000,"reward":650},
+	"cultivator_level_10":{"title":"Qi Condensation","description":"Reach Level 10 during a run.","category":"progression","target":10,"reward":100},
+	"cultivator_level_15":{"title":"Golden Meridian","description":"Reach Level 15 during a run.","category":"progression","target":15,"reward":150},
+	"cultivator_level_20":{"title":"Boundless Comprehension","description":"Reach Level 20 during a run.","category":"progression","target":20,"reward":200},
+	"cultivator_level_25":{"title":"Heavenward Insight","description":"Reach Level 25 during a run.","category":"progression","target":25,"reward":320},
+	"art_master":{"title":"Sevenfold Art","description":"Refine any combat art to Level 7.","category":"progression","target":1,"reward":100},
+	"stage_1_1_clear":{"title":"Verdant First Step","description":"Clear Stage 1-1: Verdant Awakening.","category":"journey","target":1,"reward":40},
+	"stage_1_2_clear":{"title":"Mist Piercer","description":"Clear Stage 1-2: Bamboo Mist Pass.","category":"journey","target":1,"reward":60},
+	"stage_1_3_clear":{"title":"Broken Seal Mended","description":"Clear Stage 1-3: Ruined Jade Shrine.","category":"journey","target":1,"reward":80},
+	"stage_1_4_clear":{"title":"Storm-Treader","description":"Clear Stage 1-4: Storm Peak Approach.","category":"journey","target":1,"reward":110},
+	"stage_1_5_clear":{"title":"Celestial Gatebreaker","description":"Clear Stage 1-5: Sovereign's Celestial Gate.","category":"journey","target":1,"reward":150},
+	"stage_1_6_clear":{"title":"Heart of Verdant Heaven","description":"Clear Stage 1-6 and defeat the Ascended Sovereign.","category":"journey","target":1,"reward":250},
+	"chapter_one_master":{"title":"Sovereign Gate Conqueror","description":"Clear the first five Chapter 1 trials.","category":"journey","target":5,"reward":300},
+	"verdant_heaven_ascendant":{"title":"Verdant Heaven Ascendant","description":"Clear all six Verdant Qi Valley trials.","category":"journey","target":6,"reward":450},
+	"chapter_two_master":{"title":"Crimson Moon Conqueror","description":"Clear all five Chapter 2 trials.","category":"journey","target":5,"reward":450},
+	"chapter_three_master":{"title":"Ascendant of Nine Heavens","description":"Clear all five Chapter 3 trials.","category":"journey","target":5,"reward":650},
+	"jade_ascendant":{"title":"Jade Ascendant","description":"Clear fifteen unique journey stages.","category":"journey","target":15,"reward":900},
+	"journey_complete_16":{"title":"Heaven-Treading Ascendant","description":"Clear all sixteen current journey stages.","category":"journey","target":16,"reward":1100},
+	"trial_veteran_5":{"title":"Five Trials Tempered","description":"Complete 5 stages, including repeats.","category":"journey","target":5,"reward":80},
+	"trial_veteran_10":{"title":"Ten Trials Tempered","description":"Complete 10 stages, including repeats.","category":"journey","target":10,"reward":140},
+	"trial_veteran_30":{"title":"Thirty Trials Tempered","description":"Complete 30 stages, including repeats.","category":"journey","target":30,"reward":300},
+	"trial_veteran_60":{"title":"Sixty Trials Tempered","description":"Complete 60 stages, including repeats.","category":"journey","target":60,"reward":520},
+	"trial_veteran_100":{"title":"Hundredfold Tempering","description":"Complete 100 stages, including repeats.","category":"journey","target":100,"reward":850},
+	"boss_slayer_10":{"title":"Ten Seals Broken","description":"Defeat 10 stage guardians.","category":"boss","target":10,"reward":180},
+	"boss_slayer_25":{"title":"Guardian Breaker","description":"Defeat 25 stage guardians.","category":"boss","target":25,"reward":320},
+	"boss_slayer_50":{"title":"Fifty Thrones Fallen","description":"Defeat 50 stage guardians.","category":"boss","target":50,"reward":600},
+	"cultivation_adept":{"title":"Meridian Adept","description":"Own 10 permanent cultivation levels in total.","category":"cultivation","target":10,"reward":150},
+	"cultivation_master_20":{"title":"Jade Meridian Master","description":"Own 20 permanent cultivation levels in total.","category":"cultivation","target":20,"reward":280},
+	"cultivation_master_30":{"title":"Dao Foundation Eternal","description":"Own 30 permanent cultivation levels in total.","category":"cultivation","target":30,"reward":500},
 }
+
+const STAGE_CLEAR_ACHIEVEMENTS: Dictionary = {
+	"1-1":"stage_1_1_clear","1-2":"stage_1_2_clear","1-3":"stage_1_3_clear",
+	"1-4":"stage_1_4_clear","1-5":"stage_1_5_clear","1-6":"stage_1_6_clear",
+}
+
 
 var _progress_dirty: bool = false
 var _save_left: float = 2.0
@@ -219,24 +210,22 @@ func _try_connect_player(node: Node) -> void:
 		)
 	var current_level = node.get("level")
 	if current_level != null:
-		set_progress_at_least(
-			"cultivator_level_5",
-			int(current_level)
-		)
+		_on_player_level_changed(int(current_level))
 
 func _on_enemy_killed() -> void:
 	set_progress_at_least("first_blood", 1)
-	add_progress("enemy_slayer_50", 1)
-	add_progress("enemy_slayer_250", 1)
-	add_progress("enemy_slayer_1000", 1)
+	for achievement_id: String in [
+		"enemy_slayer_50","enemy_slayer_250","enemy_slayer_500",
+		"enemy_slayer_1000","enemy_slayer_2500","enemy_slayer_5000"
+	]:
+		add_progress(achievement_id, 1)
 
 func _on_player_level_changed(new_level: int) -> void:
-	set_progress_at_least("cultivator_level_10", new_level)
-	set_progress_at_least("cultivator_level_20", new_level)
-	set_progress_at_least(
-		"cultivator_level_5",
-		new_level
-	)
+	for achievement_id: String in [
+		"cultivator_level_5","cultivator_level_10","cultivator_level_15",
+		"cultivator_level_20","cultivator_level_25"
+	]:
+		set_progress_at_least(achievement_id, new_level)
 
 func _on_boss_spawned(boss: Node) -> void:
 	if boss == null:
@@ -258,16 +247,24 @@ func _on_boss_spawned(boss: Node) -> void:
 	)
 
 func _on_boss_defeated() -> void:
-	add_progress("boss_slayer_10", 1)
 	set_progress_at_least("first_boss_defeat", 1)
+	for achievement_id: String in ["boss_slayer_10","boss_slayer_25","boss_slayer_50"]:
+		add_progress(achievement_id, 1)
 
 func _on_stage_completed(
-	_chapter_id: int,
-	_stage_id: int,
+	chapter_id: int,
+	stage_id: int,
 	_was_first_clear: bool
 ) -> void:
 	set_progress_at_least("first_stage_clear", 1)
-	add_progress("trial_veteran_30", 1)
+	var stage_key: String = JourneyManager.get_stage_key(chapter_id, stage_id)
+	if STAGE_CLEAR_ACHIEVEMENTS.has(stage_key):
+		set_progress_at_least(str(STAGE_CLEAR_ACHIEVEMENTS[stage_key]), 1)
+	for achievement_id: String in [
+		"trial_veteran_5","trial_veteran_10","trial_veteran_30",
+		"trial_veteran_60","trial_veteran_100"
+	]:
+		add_progress(achievement_id, 1)
 	_sync_journey_achievement_progress()
 
 func _on_cultivation_upgraded(
@@ -561,17 +558,58 @@ func print_achievement_status() -> void:
 
 func _sync_extended_progress() -> void:
 	_sync_journey_achievement_progress()
-	# Existing saves cannot reconstruct historical repeat clears. Seed the replay
-	# milestone from unique clears so veteran progress never starts below the
-	# player's proven campaign progress, then count every future completion.
-	set_progress_at_least("trial_veteran_30", JourneyManager.cleared_stage_keys.size())
-	set_progress_at_least("cultivation_adept", ProgressionManager.vitality_level + ProgressionManager.sword_power_level + ProgressionManager.swift_qi_level)
+
+	var replay_seed: int = maxi(
+		JourneyManager.cleared_stage_keys.size(),
+		get_progress("trial_veteran_30")
+	)
+	for achievement_id: String in [
+		"trial_veteran_5","trial_veteran_10","trial_veteran_30",
+		"trial_veteran_60","trial_veteran_100"
+	]:
+		set_progress_at_least(achievement_id, replay_seed)
+
+	var permanent_levels: int = (
+		ProgressionManager.vitality_level
+		+ ProgressionManager.sword_power_level
+		+ ProgressionManager.swift_qi_level
+	)
+	for achievement_id: String in [
+		"cultivation_adept","cultivation_master_20","cultivation_master_30"
+	]:
+		set_progress_at_least(achievement_id, permanent_levels)
+
+	var boss_seed: int = maxi(
+		JourneyManager.cleared_stage_keys.size(),
+		get_progress("boss_slayer_10")
+	)
+	for achievement_id: String in ["boss_slayer_10","boss_slayer_25","boss_slayer_50"]:
+		set_progress_at_least(achievement_id, boss_seed)
+
+	var kill_seed: int = get_progress("enemy_slayer_1000")
+	for achievement_id: String in ["enemy_slayer_500","enemy_slayer_2500","enemy_slayer_5000"]:
+		set_progress_at_least(achievement_id, kill_seed)
+
+	var level_seed: int = get_progress("cultivator_level_20")
+	set_progress_at_least("cultivator_level_15", level_seed)
+	set_progress_at_least("cultivator_level_25", level_seed)
+
 
 func _sync_journey_achievement_progress() -> void:
-	set_progress_at_least("chapter_one_master", _get_cleared_stage_count(1))
+	for raw_stage_key: Variant in STAGE_CLEAR_ACHIEVEMENTS.keys():
+		var stage_key := str(raw_stage_key)
+		if stage_key in JourneyManager.cleared_stage_keys:
+			set_progress_at_least(str(STAGE_CLEAR_ACHIEVEMENTS[stage_key]), 1)
+
+	var chapter_one_clears: int = _get_cleared_stage_count(1)
+	set_progress_at_least("chapter_one_master", chapter_one_clears)
+	set_progress_at_least("verdant_heaven_ascendant", chapter_one_clears)
 	set_progress_at_least("chapter_two_master", _get_cleared_stage_count(2))
 	set_progress_at_least("chapter_three_master", _get_cleared_stage_count(3))
-	set_progress_at_least("jade_ascendant", JourneyManager.cleared_stage_keys.size())
+
+	var unique_clears: int = JourneyManager.cleared_stage_keys.size()
+	set_progress_at_least("jade_ascendant", unique_clears)
+	set_progress_at_least("journey_complete_16", unique_clears)
 
 func _get_cleared_stage_count(chapter_id: int) -> int:
 	var cleared_count := 0

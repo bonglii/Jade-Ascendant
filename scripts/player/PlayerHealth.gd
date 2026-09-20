@@ -19,6 +19,8 @@ const BLOOD_QI_BASE_KILLS_REQUIRED: int = 20
 const BLOOD_QI_KILL_REDUCTION_PER_LEVEL: int = 2
 const BLOOD_QI_HEAL_AMOUNT: float = 1.0
 const BLOOD_QI_MAX_LEVEL: int = 5
+const REWARDED_REVIVE_HEALTH_RATIO: float = 0.60
+const REWARDED_REVIVE_INVULNERABILITY_MSEC: int = 2500
 const EquipmentSetRuntime = preload("res://scripts/data/equipment_set_runtime.gd")
 
 @export var max_health: float = 10.0
@@ -32,6 +34,7 @@ var qi_shield_charges: int = 0
 var iron_body_level: int = 0
 var blood_qi_level: int = 0
 var blood_qi_kill_progress: int = 0
+var rewarded_revive_invulnerable_until_msec: int = 0
 
 func _ready() -> void:
 	apply_permanent_vitality()
@@ -220,6 +223,8 @@ func get_iron_body_reduction() -> float:
 func take_damage(amount: float) -> void:
 	if is_dead or amount <= 0 or not is_finite(amount):
 		return
+	if is_rewarded_revive_invulnerable():
+		return
 
 	if qi_shield_charges > 0:
 		consume_qi_shield()
@@ -338,6 +343,47 @@ func can_upgrade_blood_qi() -> bool:
 		blood_qi_level
 		< BLOOD_QI_MAX_LEVEL
 	)
+
+func is_rewarded_revive_invulnerable() -> bool:
+	return (
+		Time.get_ticks_msec()
+		< rewarded_revive_invulnerable_until_msec
+	)
+
+
+func revive_from_rewarded() -> bool:
+	if not is_dead:
+		return false
+	is_dead = false
+	current_health = clampf(
+		max_health * REWARDED_REVIVE_HEALTH_RATIO,
+		1.0,
+		max_health
+	)
+	rewarded_revive_invulnerable_until_msec = (
+		Time.get_ticks_msec()
+		+ REWARDED_REVIVE_INVULNERABILITY_MSEC
+	)
+	var sprite: CanvasItem = (
+		get_parent().get_node_or_null("AnimatedSprite2D")
+		as CanvasItem
+	)
+	if sprite != null:
+		sprite.show()
+	health_changed.emit(current_health, max_health)
+	CombatFeedback.pulse(get_parent().global_position, "reversal")
+	AudioManager.play_sfx("claim")
+	DebugLogger.system(str(
+		"REWARDED REVIVE | HP: ",
+		current_health,
+		"/",
+		max_health,
+		" | Protection: ",
+		float(REWARDED_REVIVE_INVULNERABILITY_MSEC) / 1000.0,
+		"s"
+	))
+	return true
+
 
 ## Menangani kematian Player.
 func die() -> void:

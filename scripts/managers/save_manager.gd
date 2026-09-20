@@ -83,6 +83,18 @@ const SAVE_DOMAINS: Dictionary = {
 		"schema_version": 1,
 		"required_keys": ["item_counts"]
 	},
+	"idle_cultivation": {
+		"owner": "IdleCultivationManager",
+		"scope": SCOPE_PERMANENT,
+		"path": "user://idle_cultivation.save",
+		"schema_version": 1,
+		"required_keys": [
+			"last_claim_unix",
+			"last_observed_unix",
+			"lifetime_claim_seconds",
+			"shard_progress_units"
+		]
+	},
 	"checkpoint": {
 		"owner": "CheckpointManager",
 		"scope": SCOPE_ACTIVE_RUN,
@@ -1001,6 +1013,14 @@ func _domain_value_types_valid(path: String, data: Dictionary) -> bool:
 		"pavilion":
 			array_keys = ["owned_cosmetics"]
 			string_keys = ["meditation_date", "cosmetic_id"]
+		"idle_cultivation":
+			number_keys = [
+				"last_claim_unix",
+				"last_observed_unix",
+				"lifetime_claim_seconds",
+				"shard_progress_units"
+			]
+			array_keys = ["processed_rewarded_grant_ids"]
 	for key in number_keys:
 		if not _is_integral_number(data.get(key)):
 			return false

@@ -9,6 +9,7 @@ const MAIN_MENU_SCENE: String = "res://scenes/ui/main_menu.tscn"
 const BACKPACK_SCENE: String = "res://scenes/ui/backpack_screen.tscn"
 const EquipmentVisualCatalog = preload("res://scripts/ui/equipment_visual_catalog.gd")
 const EquipmentSetCatalog = preload("res://scripts/data/equipment_set_catalog.gd")
+const DETAIL_RELIC_BACKDROP: Texture2D = preload("res://assets/ui/equipment/polish/relic_vault_backdrop.svg")
 
 const SLOT_ORDER: Array[String] = [
 	"armament",
@@ -112,6 +113,7 @@ var collection_identity_label: Label
 var collection_next_bonus_label: Label
 var detail_resonance_label: Label
 var ascension_star_track: HBoxContainer
+var detail_rarity_line: ColorRect
 var detail_last_visible: bool = false
 var candidate_rebuild_generation: int = 0
 
@@ -133,7 +135,7 @@ func _ready() -> void:
 		InventoryManager.inventory_changed.connect(_on_inventory_changed)
 	if not EquipmentManager.equipment_ascended.is_connected(_on_equipment_ascended):
 		EquipmentManager.equipment_ascended.connect(_on_equipment_ascended)
-	selected_item_icon.custom_minimum_size = Vector2(98.0, 98.0)
+	selected_item_icon.custom_minimum_size = Vector2(86.0, 86.0)
 	selected_item_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	selected_item_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	# Commercial portrait layout: dense enough to feel like an equipment game,
@@ -165,22 +167,35 @@ func _apply_mobile_readability_polish() -> void:
 	bonus_summary_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	bonus_summary_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 
-	for label: Label in [
-		selected_slot_label,
-		equipped_item_label,
-		item_role_label,
-		selected_stat_label,
-		signature_effect_label,
-		ascension_status_label,
-		ascension_preview_label,
-		action_hint_label,
-		ascend_hint_label,
-		compare_label
-	]:
+	var detail_font_sizes: Dictionary = {
+		selected_slot_label: 12,
+		equipped_item_label: 9,
+		item_role_label: 15,
+		selected_stat_label: 10,
+		signature_effect_label: 10,
+		ascension_status_label: 10,
+		ascension_preview_label: 9,
+		action_hint_label: 8,
+		ascend_hint_label: 8,
+		compare_label: 9,
+	}
+	for label_variant: Variant in detail_font_sizes.keys():
+		var label := label_variant as Label
 		if label == null:
 			continue
-		label.add_theme_font_size_override("font_size", 11 if label != item_role_label else 15)
-		if label in [selected_slot_label, equipped_item_label, selected_stat_label, signature_effect_label, ascension_preview_label, compare_label]:
+		label.add_theme_font_size_override(
+			"font_size",
+			int(detail_font_sizes[label_variant])
+		)
+		label.add_theme_constant_override("line_spacing", 1)
+		if label in [
+			selected_slot_label,
+			equipped_item_label,
+			selected_stat_label,
+			signature_effect_label,
+			ascension_preview_label,
+			compare_label
+		]:
 			label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			label.clip_text = false
 
@@ -265,12 +280,60 @@ func _audit_runtime_layout() -> void:
 
 
 func _setup_detail_premium_presentation() -> void:
+	# Relic-grade presentation: authored vault texture provides depth without
+	# increasing information density.
+	if detail_panel.get_node_or_null("RelicVaultBackdrop") == null:
+		var backdrop := TextureRect.new()
+		backdrop.name = "RelicVaultBackdrop"
+		backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		backdrop.texture = DETAIL_RELIC_BACKDROP
+		backdrop.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		backdrop.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		backdrop.modulate = Color(0.52, 0.78, 0.75, 0.13)
+		detail_panel.add_child(backdrop)
+		detail_panel.move_child(backdrop, 0)
+
+	var detail_scroll := detail_panel.get_node_or_null("DetailScroll") as ScrollContainer
+	if detail_scroll != null:
+		var detail_bar := detail_scroll.get_v_scroll_bar()
+		if detail_bar != null:
+			# Keep touch/wheel scrolling but remove the desktop-white scrollbar.
+			detail_bar.modulate = Color(1.0, 1.0, 1.0, 0.0)
+			detail_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			detail_bar.custom_minimum_size.x = 0.0
+
+	var detail_header := selected_slot_label.get_parent() as VBoxContainer
+	if detail_header != null and detail_header.get_node_or_null("RelicEyebrow") == null:
+		var eyebrow := Label.new()
+		eyebrow.name = "RelicEyebrow"
+		eyebrow.text = tr("CELESTIAL RELIC INSPECTION")
+		eyebrow.add_theme_font_size_override("font_size", 8)
+		eyebrow.add_theme_constant_override("letter_spacing", 1)
+		eyebrow.add_theme_color_override(
+			"font_color",
+			Color(0.96, 0.76, 0.32, 0.88)
+		)
+		detail_header.add_child(eyebrow)
+		detail_header.move_child(eyebrow, 0)
+
 	var inspection_text: VBoxContainer = selected_stat_label.get_parent() as VBoxContainer
 	if inspection_text != null:
+		if inspection_text.get_node_or_null("RarityLine") == null:
+			detail_rarity_line = ColorRect.new()
+			detail_rarity_line.name = "RarityLine"
+			detail_rarity_line.custom_minimum_size = Vector2(0.0, 2.0)
+			detail_rarity_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			detail_rarity_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			inspection_text.add_child(detail_rarity_line)
+			inspection_text.move_child(
+				detail_rarity_line,
+				item_role_label.get_index() + 1
+			)
 		detail_resonance_label = Label.new()
 		detail_resonance_label.name = "DetailResonanceLabel"
 		detail_resonance_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		detail_resonance_label.add_theme_font_size_override("font_size", 11)
+		detail_resonance_label.add_theme_font_size_override("font_size", 9)
 		detail_resonance_label.add_theme_color_override("font_color", Color(0.70, 0.90, 0.84, 0.96))
 		detail_resonance_label.add_theme_constant_override("outline_size", 1)
 		detail_resonance_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.82))
@@ -1299,10 +1362,33 @@ func _add_rarity_badge(parent_button: Button, _rarity_id: String, color: Color, 
 	parent_button.add_child(stripe)
 
 func _apply_detail_rarity_style(rarity_color: Color) -> void:
-	detail_panel.add_theme_stylebox_override("panel", _make_detail_surface(rarity_color, 0.98, 14))
-	inspection_card.add_theme_stylebox_override("panel", _make_detail_surface(rarity_color, 0.88, 8))
-	signature_panel.add_theme_stylebox_override("panel", _make_detail_surface(rarity_color, 0.72, 6))
-	ascension_panel.add_theme_stylebox_override("panel", _make_detail_surface(Color(0.96, 0.72, 0.20, 1.0), 0.82, 8))
+	detail_panel.add_theme_stylebox_override(
+		"panel",
+		_make_detail_surface(rarity_color, 0.985, 18)
+	)
+	inspection_card.add_theme_stylebox_override(
+		"panel",
+		_make_detail_surface(rarity_color, 0.90, 10)
+	)
+	signature_panel.add_theme_stylebox_override(
+		"panel",
+		_make_detail_surface(
+			rarity_color.lerp(Color(0.22, 0.92, 0.82, 1.0), 0.46),
+			0.78,
+			7
+		)
+	)
+	ascension_panel.add_theme_stylebox_override(
+		"panel",
+		_make_detail_surface(Color(0.96, 0.72, 0.20, 1.0), 0.86, 10)
+	)
+	if detail_rarity_line != null:
+		detail_rarity_line.color = Color(
+			rarity_color.r,
+			rarity_color.g,
+			rarity_color.b,
+			0.92
+		)
 
 func _make_detail_surface(accent: Color, opacity: float, glow: int) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
@@ -1310,7 +1396,7 @@ func _make_detail_surface(accent: Color, opacity: float, glow: int) -> StyleBoxF
 	style.border_width_left = 2; style.border_width_top = 2; style.border_width_right = 2; style.border_width_bottom = 2
 	style.border_color = Color(accent.r, accent.g, accent.b, 0.82)
 	style.corner_radius_top_left = 14; style.corner_radius_top_right = 14; style.corner_radius_bottom_left = 14; style.corner_radius_bottom_right = 14
-	style.content_margin_left = 12.0; style.content_margin_top = 9.0; style.content_margin_right = 12.0; style.content_margin_bottom = 9.0
+	style.content_margin_left = 11.0; style.content_margin_top = 7.0; style.content_margin_right = 11.0; style.content_margin_bottom = 7.0
 	style.shadow_color = Color(accent.r, accent.g, accent.b, 0.22)
 	style.shadow_size = glow
 	return style

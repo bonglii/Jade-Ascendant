@@ -11,6 +11,7 @@ const STAGE_TEXTURES: Dictionary = {
 	"1:3": preload("res://assets/ui/journey/stages/stage_1_3_ruined_jade_shrine.png"),
 	"1:4": preload("res://assets/ui/journey/stages/stage_1_4_storm_peak_approach.png"),
 	"1:5": preload("res://assets/ui/journey/stages/stage_1_5_sovereigns_celestial_gate.png"),
+	"1:6": preload("res://assets/ui/journey/stages/stage_1_6_heart_of_verdant_heaven.svg"),
 }
 
 const REALM_TEXTURES: Dictionary = {
@@ -95,7 +96,7 @@ func _draw_background(ground: Color, accent: Color) -> void:
 
 func _draw_authored_stage(
 	texture: Texture2D,
-	accent: Color,
+	_accent: Color,
 	gold: Color,
 	is_boss: bool
 ) -> void:
@@ -147,7 +148,7 @@ func _draw_generic_stage_symbol(accent: Color, gold: Color) -> void:
 
 
 func _draw_stage_progress_marks(accent: Color, gold: Color) -> void:
-	var count: int = clampi(stage_id, 1, 5)
+	var count: int = clampi(stage_id, 1, 6)
 	var spacing: float = minf(size.x * 0.085, 9.0)
 	var y: float = size.y * 0.91
 	var start_x: float = size.x * 0.5 - spacing * float(count - 1) * 0.5

@@ -391,7 +391,10 @@ func _get_continue_checkpoint_data() -> Dictionary:
 	var io_result: Dictionary = CheckpointData.read_checkpoint_result()
 	if not bool(io_result.get("success", false)):
 		return {}
-	return io_result.get("data", {})
+	var checkpoint_data: Dictionary = io_result.get("data", {})
+	if not CheckpointData.is_checkpoint_resumable(checkpoint_data):
+		return {}
+	return checkpoint_data
 
 func _resolve_continue_scene_path(checkpoint_data: Dictionary) -> String:
 	if checkpoint_data.is_empty():

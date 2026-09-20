@@ -20,11 +20,19 @@ const AdMobProvider = preload("res://scripts/monetization/admob_provider.gd")
 const PavilionRewardedBridge = preload(
 	"res://scripts/monetization/pavilion_rewarded_bridge.gd"
 )
+const OfflineCultivationRewardedBridge = preload(
+	"res://scripts/monetization/offline_cultivation_rewarded_bridge.gd"
+)
+const GameOverRewardedBridge = preload(
+	"res://scripts/monetization/game_over_rewarded_bridge.gd"
+)
 const PolicyStore = preload("res://scripts/monetization/monetization_policy_store.gd")
 
 const REWARD_COOLDOWN_MSEC: int = 60000
 const REWARD_COOLDOWN_SECONDS: int = 60
 const DAILY_PLACEMENT_LIMIT: int = 1
+const GAME_OVER_REVIVE_PLACEMENT: String = "game_over_revive"
+const GAME_OVER_REVIVE_DAILY_LIMIT: int = 999999
 
 var provider: Node
 var policy_store: RefCounted
@@ -50,6 +58,16 @@ func _ready() -> void:
 	var pavilion_rewarded_bridge: Node = PavilionRewardedBridge.new()
 	pavilion_rewarded_bridge.name = "PavilionRewardedBridge"
 	add_child(pavilion_rewarded_bridge)
+
+	var idle_rewarded_bridge: Node = (
+		OfflineCultivationRewardedBridge.new()
+	)
+	idle_rewarded_bridge.name = "OfflineCultivationRewardedBridge"
+	add_child(idle_rewarded_bridge)
+
+	var game_over_rewarded_bridge: Node = GameOverRewardedBridge.new()
+	game_over_rewarded_bridge.name = "GameOverRewardedBridge"
+	add_child(game_over_rewarded_bridge)
 
 	if OS.get_name() == "Android":
 		call_deferred("_activate_android_provider")
@@ -79,19 +97,45 @@ func use_test_provider(test_provider: Node) -> bool:
 	return true
 
 
+func get_rewarded_daily_limit(placement: String) -> int:
+	if placement == GAME_OVER_REVIVE_PLACEMENT:
+		return GAME_OVER_REVIVE_DAILY_LIMIT
+	return DAILY_PLACEMENT_LIMIT
+
+
+func get_rewarded_cooldown_seconds(placement: String) -> int:
+	if placement == GAME_OVER_REVIVE_PLACEMENT:
+		return 0
+	return REWARD_COOLDOWN_SECONDS
+
+
+func get_rewarded_cooldown_msec(placement: String) -> int:
+	return get_rewarded_cooldown_seconds(placement) * 1000
+
+
 func rewarded_available(placement: String) -> bool:
 	_sync_policy_day()
 	var now_unix: int = _get_unix_time()
+	var cooldown_seconds: int = get_rewarded_cooldown_seconds(placement)
+	var cooldown_msec: int = get_rewarded_cooldown_msec(placement)
+	var daily_limit: int = get_rewarded_daily_limit(placement)
 	var persistent_cooldown_ready: bool = (
 		last_reward_unix <= 0
-		or now_unix - last_reward_unix >= REWARD_COOLDOWN_SECONDS
+		or now_unix - last_reward_unix >= cooldown_seconds
 	)
 	return (
 		active_request < 0
-		and int(placement_counts.get(placement, 0)) < DAILY_PLACEMENT_LIMIT
-		and Time.get_ticks_msec() - last_reward_at >= REWARD_COOLDOWN_MSEC
+		and int(placement_counts.get(placement, 0)) < daily_limit
+		and Time.get_ticks_msec() - last_reward_at >= cooldown_msec
 		and persistent_cooldown_ready
 		and bool(provider.call("rewarded_available", placement))
+	)
+
+
+func is_rewarded_request_active(placement: String) -> bool:
+	return (
+		active_request >= 0
+		and active_placement == placement
 	)
 
 
@@ -99,10 +143,12 @@ func get_rewarded_policy_status(placement: String) -> Dictionary:
 	_sync_policy_day()
 	var now_unix: int = _get_unix_time()
 	var placement_claims: int = int(placement_counts.get(placement, 0))
+	var daily_limit: int = get_rewarded_daily_limit(placement)
+	var cooldown_seconds: int = get_rewarded_cooldown_seconds(placement)
 	var cooldown_remaining: int = 0
-	if last_reward_unix > 0:
+	if last_reward_unix > 0 and cooldown_seconds > 0:
 		cooldown_remaining = maxi(
-			REWARD_COOLDOWN_SECONDS - (now_unix - last_reward_unix),
+			cooldown_seconds - (now_unix - last_reward_unix),
 			0
 		)
 	var provider_ready: bool = bool(
@@ -111,12 +157,12 @@ func get_rewarded_policy_status(placement: String) -> Dictionary:
 	return {
 		"available": (
 			active_request < 0
-			and placement_claims < DAILY_PLACEMENT_LIMIT
+			and placement_claims < daily_limit
 			and cooldown_remaining <= 0
 			and provider_ready
 		),
 		"placement_claims": placement_claims,
-		"daily_limit": DAILY_PLACEMENT_LIMIT,
+		"daily_limit": daily_limit,
 		"cooldown_remaining_seconds": cooldown_remaining,
 		"provider_ready": provider_ready
 	}
