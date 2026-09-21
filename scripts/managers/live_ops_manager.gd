@@ -493,9 +493,10 @@ func _build_home_live_ui(home_ui: Control) -> void:
 	)
 	_home_left_dock.add_child(event_button)
 
-	# Keep the unfinished real-money entry out of release builds until Google
-	# Play Billing is connected and purchase recovery has passed device QA.
-	if OS.is_debug_build():
+	# Treasury is available on Android builds, including Internal Testing and
+	# release. Keep it available on debug desktop for QA, but fail closed on
+	# non-Android release builds.
+	if OS.get_name() == "Android" or OS.is_debug_build():
 		_home_right_dock = VBoxContainer.new()
 		_home_right_dock.name = "LiveOpsRightDock"
 		_home_right_dock.anchor_left = 1.0

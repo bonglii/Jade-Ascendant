@@ -17,6 +17,26 @@ const PRODUCT_TYPE_INAPP := 0
 const PURCHASED := 1
 const PENDING := 2
 
+# Canonical game IDs stay stable for economy, reward, UI, and save contracts.
+# Five Google Play Console products use jade_pouch_* IDs, so translation happens
+# only at this provider boundary.
+const PLAY_PRODUCT_ID_BY_INTERNAL: Dictionary = {
+	"jade_pouch_100": "jade_pouch_100",
+	"jade_satchel_550": "jade_pouch_550",
+	"jade_casket_1200": "jade_pouch_1200",
+	"jade_vault_2500": "jade_pouch_2500",
+	"jade_treasury_6500": "jade_pouch_6500",
+	"jade_ascendant_14000": "jade_pouch_14000",
+}
+const INTERNAL_PRODUCT_ID_BY_PLAY: Dictionary = {
+	"jade_pouch_100": "jade_pouch_100",
+	"jade_pouch_550": "jade_satchel_550",
+	"jade_pouch_1200": "jade_casket_1200",
+	"jade_pouch_2500": "jade_vault_2500",
+	"jade_pouch_6500": "jade_treasury_6500",
+	"jade_pouch_14000": "jade_ascendant_14000",
+}
+
 var billing_client: Node
 var state := "boot"
 var store_products: Dictionary = {}
@@ -75,11 +95,27 @@ func supports_product(product_id: String) -> bool:
 		!= EconomyCatalog.PRODUCT_TYPE_MONTHLY_BLESSING
 	)
 
+func _to_play_product_id(product_id: String) -> String:
+	return str(
+		PLAY_PRODUCT_ID_BY_INTERNAL.get(product_id, product_id)
+	)
+
+
+func _to_internal_product_id(product_id: String) -> String:
+	return str(
+		INTERNAL_PRODUCT_ID_BY_PLAY.get(product_id, product_id)
+	)
+
+
 func _supported_ids() -> PackedStringArray:
 	var ids := PackedStringArray()
 	for product_id: String in EconomyCatalog.get_iap_products().keys():
-		if supports_product(product_id):
-			ids.append(product_id)
+		if not supports_product(product_id):
+			continue
+		var play_product_id := _to_play_product_id(product_id)
+		if play_product_id.is_empty() or ids.has(play_product_id):
+			continue
+		ids.append(play_product_id)
 	ids.sort()
 	return ids
 
@@ -131,8 +167,15 @@ func _on_product_details(response: Dictionary) -> void:
 	state = "ready"
 	_publish_catalog()
 
+func _optional_string(value: Variant) -> String:
+	if value == null:
+		return ""
+	return str(value)
+
+
 func _normalize_product(detail: Dictionary) -> Dictionary:
-	var product_id := str(detail.get("product_id", ""))
+	var play_product_id := str(detail.get("product_id", ""))
+	var product_id := _to_internal_product_id(play_product_id)
 	if not supports_product(product_id):
 		return {}
 	var offers: Variant = detail.get(
@@ -147,13 +190,21 @@ func _normalize_product(detail: Dictionary) -> Dictionary:
 	var offer := first as Dictionary
 	return {
 		"product_id": product_id,
+		"play_product_id": play_product_id,
 		"title": str(detail.get("title", product_id)),
 		"description": str(detail.get("description", "")),
 		"formatted_price": str(offer.get("formatted_price", "")),
 		"price_currency_code": str(offer.get("price_currency_code", "")),
 		"price_amount_micros": int(offer.get("price_amount_micros", 0)),
-		"purchase_option_id": str(offer.get("purchase_option_id", "")),
-		"offer_id": str(offer.get("offer_id", "")),
+		"purchase_option_id": _optional_string(
+			offer.get("purchase_option_id", null)
+		),
+		"offer_id": _optional_string(
+			offer.get("offer_id", null)
+		),
+		"offer_token": _optional_string(
+			offer.get("offer_token", null)
+		),
 	}
 
 func _publish_catalog() -> void:
@@ -186,6 +237,12 @@ func purchase(product_id: String) -> bool:
 		refresh_products()
 		return false
 	var detail: Dictionary = store_products[product_id]
+	var play_product_id := str(
+		detail.get(
+			"play_product_id",
+			_to_play_product_id(product_id)
+		)
+	)
 	active_product_id = product_id
 	purchase_state_changed.emit(
 		product_id,
@@ -194,7 +251,7 @@ func purchase(product_id: String) -> bool:
 	)
 	var raw: Variant = billing_client.call(
 		"purchase",
-		product_id,
+		play_product_id,
 		str(detail.get("purchase_option_id", "")),
 		str(detail.get("offer_id", "")),
 		false
@@ -284,7 +341,10 @@ func _product_ids(purchase_data: Dictionary) -> Array[String]:
 	var raw_ids: Variant = purchase_data.get("product_ids", [])
 	if raw_ids is Array or raw_ids is PackedStringArray:
 		for raw: Variant in raw_ids:
-			var product_id := str(raw)
+			var play_product_id := str(raw)
+			var product_id := _to_internal_product_id(
+				play_product_id
+			)
 			if (
 				not product_id.is_empty()
 				and product_id not in ids

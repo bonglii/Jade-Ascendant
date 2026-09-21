@@ -81,7 +81,30 @@ function Add-Check([string]$Name,[bool]$Passed,[string]$Details) {
 $projectPath = Join-Path $ProjectRoot 'project.godot'
 $presetPath = Join-Path $ProjectRoot 'export_presets.cfg'
 
-$androidEnabled = Read-GodotSetting $projectPath 'admob' 'general/android/enabled'
+$androidEnabledRaw = Read-GodotSetting $projectPath 'admob' 'general/android/enabled'
+$androidEnabled = $androidEnabledRaw
+$androidEnabledDetails = "project.godot admob/general/android/enabled=$androidEnabledRaw"
+
+if ([string]::IsNullOrWhiteSpace($androidEnabledRaw)) {
+    $settingsServicePath = Join-Path $ProjectRoot 'addons/admob/internal/services/project_settings_service.gd'
+    $pluginDefaultTrue = $false
+
+    if (Test-Path -LiteralPath $settingsServicePath -PathType Leaf) {
+        $settingsServiceText = [System.IO.File]::ReadAllText($settingsServicePath)
+        $enabledDefaultPattern = 'SettingDefinition\.new\(\s*get_android_setting_path\("enabled"\)\s*,\s*TYPE_BOOL\s*,\s*true\s*\)'
+        $pluginDefaultTrue = [regex]::IsMatch($settingsServiceText, $enabledDefaultPattern)
+    }
+
+    if ($pluginDefaultTrue) {
+        $androidEnabled = 'true'
+        $androidEnabledDetails = 'project.godot omits default; installed AdMob plugin default=true'
+    }
+    else {
+        $androidEnabled = ''
+        $androidEnabledDetails = 'project.godot omits value; AdMob plugin default=true could not be verified'
+    }
+}
+
 $appId = Read-GodotSetting $projectPath 'admob' 'general/android/app_id'
 $rewardedId = Read-GodotSetting $projectPath 'monetization' 'admob/rewarded_ad_unit_id'
 $packageId = Read-GodotSetting $presetPath 'preset.0.options' 'package/unique_name'
@@ -101,9 +124,7 @@ $publisherMatch = (
     (Get-PublisherPrefix $rewardedId '/')
 )
 
-Add-Check 'AdMob Android enabled' ($androidEnabled -eq 'true') (
-    "project.godot admob/general/android/enabled=$androidEnabled"
-)
+Add-Check 'AdMob Android enabled' ($androidEnabled -eq 'true') $androidEnabledDetails
 Add-Check 'AdMob production App ID' $appIdValid $appId
 Add-Check 'Rewarded production Ad Unit ID' $rewardedIdValid $rewardedId
 Add-Check 'AdMob publisher identity match' $publisherMatch (

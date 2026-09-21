@@ -36,9 +36,10 @@ var product_buttons: Dictionary = {}
 
 
 func _ready() -> void:
-	# Keep the storefront QA-only until Google Play purchase/recovery has
-	# passed device testing. Existing LiveOpsManager still owns that gate.
-	if not OS.is_debug_build():
+	# Treasury must remain reachable in Android release/Internal Testing builds.
+	# Keep non-Android release builds fail-closed; debug desktop stays available
+	# for QA.
+	if OS.get_name() != "Android" and not OS.is_debug_build():
 		_back()
 		return
 	SceneTransitionManager.set_back_handler(_back)
@@ -366,9 +367,8 @@ func _request_purchase(product_id: String) -> void:
 		"Waiting for Google Play purchase result..."
 	)
 	if not PavilionManager.purchase_iap(product_id):
-		message_label.text = tr(
-			"Purchase is not available right now."
-		)
+		# The billing provider already emitted the concrete Google Play error.
+		# Preserve it on screen so Internal Testing can diagnose launch failures.
 		_refresh_storefront()
 
 

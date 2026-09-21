@@ -10,7 +10,7 @@ if not "%JADE_GUARD_EXIT%"=="0" (
     exit /b %JADE_GUARD_EXIT%
 )
 
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\windows.ps1" -Mode Build
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\build_aab_resilient.ps1"
 set "JADE_EXIT=%ERRORLEVEL%"
 if not "%JADE_EXIT%"=="0" echo Proses belum selesai. Baca pesan di atas dan folder artifacts.
 pause
