@@ -1,58 +1,75 @@
-# Audio Identity V2 — QA Report
+# Audio Identity V2.1 — QA Report
 
-Source authority audited before this pass:
+Source authority audited before this patch:
 
 - Repository: `bonglii/Jade-Ascendant`
-- Checkpoint: `checkpoint/billing-runtime-pass-20260922`
-- Commit: `7f3199a0c7d3f86cb64cb17f425a78a8a28fa6f8`
+- Branch: `checkpoint/billing-runtime-pass-20260922`
+- Base commit: `7d82cdb30f8c48d6f3dc96f065d7c3560c02b07b`
+- Base commit message: `checkpoint: latest audio presentation v2 local pass`
+- User-reported baseline: `PERIKSA_GAME.bat` PASS before V2.1.
 
 ## Scope
 
-This pass replaces the **active runtime audio routing** while preserving existing gameplay cue names and call sites. Legacy files in `assets/audio/` remain untouched for rollback; `AudioManager` now loads the V2 assets under `assets/audio/presentation_v2/`.
+V2.1 is a deliberately narrow semantic-audio follow-up.
 
-The pass also adds central semantic hooks for:
+Changed runtime file:
 
-- permanent Cultivation upgrades → `upgrade`;
-- successful Google Play purchase delivery → `purchase_success`.
+- `scripts/managers/audio_manager.gd`
 
-`stage_unlock` is authored but intentionally not auto-fired yet because the current Victory path already owns a major result cue; stacking both without the later unlock ceremony would create double-fanfare feedback.
+No gameplay, save, reward, checkpoint, Billing, AdMob, balance, stage, boss-stat, or monetization-provider file is modified by this replacement patch.
 
-## Static / technical checks completed
+The pass:
 
-- 69/69 V2 audio resources referenced by `AudioManager` exist.
-- 65 WAV SFX validated as stereo, 48 kHz, PCM16.
-- 4 OGG music loops validated as stereo, 48 kHz Vorbis.
-- No WAV reaches digital clipping; measured maximum sample peak is below 0 dBFS.
-- No exact duplicate audio binaries are present in the V2 folder.
-- All 27 cue names used by the previous `AudioManager` remain available.
-- New semantic cues: `upgrade`, `stage_unlock`, `purchase_success`.
-- `AudioManager` preload paths: 69 unique references, 0 missing.
-- GDScript structural check: balanced delimiters, no duplicate function names, tab indentation, no trailing whitespace.
-- No downloaded source archives, `__MACOSX`, `.DS_Store`, or raw sound-library folders are shipped in this patch.
-- Source/license notices are retained under `docs/audio_licenses/` and `assets/audio/presentation_v2/THIRD_PARTY_AUDIO_NOTICES.md`.
+- restores `ui_locked` to automatic UI routing;
+- adds signal-driven rewarded-revive identity;
+- adds boss-spawn and boss-phase semantic overlays;
+- adds equipment equip/unequip/ascend feedback from existing manager signals;
+- adds an achievement-unlock discovery layer;
+- keeps all existing V2 audio files and legacy rollback audio untouched;
+- reuses existing curated V2 streams as layered semantic combinations, so no new raw third-party audio enters the project.
 
-## Runtime design checks
+## Dependency audit completed
 
-- Existing cue API remains compatible: game code can keep calling names such as `sword`, `fire`, `claim`, `victory`, and summon cues.
-- Frequent combat and tactile sounds use multiple variants and deterministic micro-pitch rotation.
-- Semantic actions suppress the deferred generic button tap to avoid double playback.
-- Normal browsing receives a deliberately quiet tactile cue instead of being completely silent.
-- Major result sounds duck music automatically.
-- No stock character grunt/voice asset is used.
+Verified against base commit `7d82cdb...`:
 
-## Must still be verified on the user's Windows/device build
+- `ProgressionManager.cultivation_upgraded(upgrade_id, new_level)`
+- `PavilionManager.purchase_delivery_finished(product_id, success, message)`
+- `MonetizationManager.reward_delivery_finished(placement, success, amount, message)`
+- `EquipmentManager.equipment_changed(slot_id, item_id)`
+- `EquipmentManager.equipment_ascended(item_id, old_star, new_star)`
+- `AchievementManager` runtime inherits `achievement_unlocked(achievement_id)`
+- level scenes use an `EnemySpawner` exposing `boss_spawned_signal`
+- bosses expose `phase_changed(current_phase)`
 
-This environment cannot execute the user's Windows Godot 4.7.2 build or hear the final result through the target phone speakers. Before the pass is locked, run `PERIKSA_GAME.bat` locally and perform device listening QA.
+The established direct calls remain intact, including rewarded revive's existing `claim` transient and boss Phase 2's existing `level` transient. V2.1 adds complementary layers centrally rather than editing gameplay owners.
 
-Focused device sequence:
+## Static checks completed in this environment
 
-1. Home / menu: tap several tabs, back buttons and normal cards for 2–3 minutes. Confirm tactile feedback is present but not noisy.
-2. Cultivation: perform one real permanent refinement. Confirm the dedicated breakthrough cue replaces the generic tap.
-3. Stage 1-1+: listen to Spirit Sword, Fire Orb, enemy hit/death, player hurt, pickup and shield in a crowded wave.
-4. Thunder Talisman / lightning chain: confirm primary thunder and chain remain distinguishable.
-5. Defeat and Victory: confirm result cues read clearly over music and do not clip.
-6. Pavilion: test rare/epic/legendary summon reveal and duplicate/new-result feedback.
-7. Treasury license-test purchase: confirm the opening tap is subtle and successful delivery gets the separate purchase-success cue.
-8. Check phone volume around 30%, 60%, and 100% for harshness or buried cues.
+- replacement file delimiter balance: PASS
+- duplicate function-name scan: PASS
+- indentation consistency scan: PASS
+- composite cue sources all reference cue IDs already present in the V2 `SFX` catalog
+- no new preload path was introduced
+- no new third-party audio file was introduced
+- replacement ZIP contains changed/new files only under top-level `jade-ascendant`
 
-Do not delete the old audio files until these checks pass.
+This environment does not contain the user's Windows Godot 4.7.2 executable, so it cannot truthfully claim `PERIKSA_GAME.bat` or Windows/device runtime execution for V2.1.
+
+## Required local verification
+
+Run `PERIKSA_GAME.bat` again after replacing this patch. The previous PASS belongs to base commit `7d82cdb...`, not to V2.1.
+
+Focused runtime sequence:
+
+1. Browse normal buttons, tabs, back, and a clickable locked state.
+2. Equip and unequip one item; confirm no duplicate generic tap dominates.
+3. Ascend one equipment item; confirm material seat + progression lift.
+4. Trigger one achievement unlock if practical.
+5. Enter combat and reach Boss spawn; confirm the sting does not mask the boss-music crossfade.
+6. Trigger Boss Phase 2; confirm it does not sound like an ordinary player level-up.
+7. Die once, use rewarded revive, and confirm the old claim transient is now followed/layered by a spiritual restoration identity.
+8. Confirm second death/final defeat, Continue cleanup, Victory, rewards, save, Billing and AdMob behavior remain unchanged.
+
+## Still intentionally open
+
+Chapter-specific final BGM is not locked by V2.1. Current WAFU music remains a transitional V2 mapping. Dedicated natural/jade Chapter 1 and celestial/astral Chapter 3 source material should be curated before changing music orchestration.

@@ -1,6 +1,11 @@
-# Jade Ascendant — Audio Presentation Bible V2
+# Jade Ascendant — Audio Presentation Bible V2.1
 
-Base source authority: `checkpoint/billing-runtime-pass-20260922` @ `7f3199a0c7d3f86cb64cb17f425a78a8a28fa6f8`.
+Source authority audited before this patch:
+
+- Repository: `bonglii/Jade-Ascendant`
+- Branch: `checkpoint/billing-runtime-pass-20260922`
+- Commit: `7d82cdb30f8c48d6f3dc96f065d7c3560c02b07b`
+- Baseline status: user reported `PERIKSA_GAME.bat` PASS before this V2.1 semantic patch.
 
 ## Sonic identity
 
@@ -17,21 +22,21 @@ The target is **premium xianxia mobile**, not arcade, cartoon, retro, or generic
 
 | Tier | Events | Mix behavior |
 |---|---|---|
-| Tactile | tap, tab, back | 40–170 ms, quiet, never dominates music |
+| Tactile | tap, tab, back, locked | short, quiet, never dominates music |
 | Combat frequent | hit, sword, pickup, chain | short variants + subtle pitch rotation |
-| Progression | equip, level, claim, upgrade | physical transient + jade resonance |
-| Prestige | victory, boss defeat, stage unlock, legendary summon | ritual cue + music ducking |
+| Progression | equip, ascend, level, claim, upgrade | physical transient + jade resonance |
+| Prestige | victory, boss spawn/phase/defeat, stage unlock, legendary summon | ritual layer + selective music ducking |
 | Negative | locked, defeat | low / dissonant material, no cartoon error beep |
 
 ## Active cue mapping
 
-Existing gameplay cue names remain API-compatible. `AudioManager.play_sfx()` call sites do not need migration.
+Existing direct gameplay cue names remain API-compatible. V2.1 adds semantic overlays centrally inside `AudioManager` so gameplay/save/Billing files do not need to be rewritten.
 
 - `ui` → soft tactile pair
 - `ui_tab` → crisp navigation pair
 - `ui_confirm` → confirm + jade accent
 - `ui_back` → subdued release / return
-- `ui_locked` → disabled cue + restrained metal stop
+- `ui_locked` → disabled cue + restrained metal stop; V2.1 also restores it to the automatic UI cue allowlist
 - `pickup` → three jade crystal variations
 - `shield` → crystal barrier + metal resonance
 - `claim` → success transient + jade resonance + spiritual tail
@@ -54,43 +59,76 @@ Existing gameplay cue names remain API-compatible. `AudioManager.play_sfx()` cal
 - `summon_legendary_reveal` → two legendary reveal variants
 - `summon_new` → two new-discovery variants
 - `summon_duplicate` → two duplicate-transmutation variants
+- `upgrade` → permanent Cultivation progression
+- `purchase_success` → successful Google Play reward delivery
+- `stage_unlock` → authored and routed, reserved for the later stage-unlock ceremony
 
-Additional semantic cues:
+### V2.1 semantic overlays
 
-- `upgrade` → connected centrally to permanent Cultivation upgrades.
-- `purchase_success` → connected centrally to successful Google Play reward delivery.
-- `stage_unlock` → authored and routed, but intentionally reserved for the later stage-unlock ceremony so it does not double-stack with the current Victory cue.
+These cues layer existing curated V2 material; they do not add another raw third-party pack.
 
-## Music contexts
+- `revive` → shield resonance + breakthrough rise on top of the established revive claim transient
+- `boss_spawn` → ritual charge + low thunder impact
+- `boss_phase` → restrained charge + darker thunder pressure on top of the established phase breakthrough transient
+- `equipment_ascend` → progression layer paired with EquipmentManager's established material equip transient
+- `unequip` → softened equipment release + return gesture
+- `achievement_unlock` → short discovery accent paired with the existing toast confirmation
 
-WAFU Vol.19 is intentionally mapped according to the roles documented by its author:
+## Central signal ownership
 
-- Home / hub → `The Ruler I`
-- Journey → `The River I`
-- Boss → `Judgement I`
-- Pavilion → `The Gate I`
+`AudioManager` listens only to presentation-safe signals and does not mutate gameplay state:
 
-All use the supplied seamless-loop versions. Runtime target is `-18.5 dB`, leaving headroom for combat and reward feedback.
+- `ProgressionManager.cultivation_upgraded`
+- `PavilionManager.purchase_delivery_finished`
+- `MonetizationManager.reward_delivery_finished`
+- `EquipmentManager.equipment_changed`
+- `EquipmentManager.equipment_ascended`
+- `AchievementManager.achievement_unlocked`
+- runtime `EnemySpawner.boss_spawned_signal`
+- runtime Boss `phase_changed`
+
+This keeps reward/save/Billing/combat authority in their existing managers.
+
+## Music contexts — current status
+
+Current V2 runtime mapping remains:
+
+- Home / hub → WAFU `The Ruler I`
+- Journey → WAFU `The River I`
+- Boss → WAFU `Judgement I`
+- Pavilion → WAFU `The Gate I`
+
+This mapping is **not the final chapter-music lock**. WAFU Vol.19 is underworld/dark material and must not become the sonic identity for every realm.
+
+Final music direction remains:
+
+- Chapter 1 — Verdant Qi Valley: natural / jade / spiritual
+- Chapter 2 — Crimson Moon Sect: darker / cinnabar / sect tension
+- Chapter 3 — Nine Heavens Star Palace: celestial / heavenly / astral
+
+Dedicated Chapter 1 and Chapter 3 source material is still required before chapter-specific BGM orchestration should be implemented. Do not downgrade back to deterministic legacy music merely to create different filenames.
 
 ## Runtime rules
 
 1. Frequent cues rotate variants instead of replaying one file.
-2. Frequent combat/tactile cues receive very small deterministic pitch variation (roughly ±1.4%).
-3. Semantic actions suppress the generic deferred button click, preventing double audio.
-4. Normal UI browsing is no longer silent; the default tap is deliberately very quiet and short.
-5. Victory, defeat, boss defeat, stage unlock and purchase success automatically duck music.
-6. No stock character grunts from the sword pack are used; Lin Yue voice direction remains a separate future decision.
-7. Permanent Cultivation upgrades and successful purchase delivery receive dedicated semantic cues without screen-local audio duplication.
-8. Old `assets/audio/*` files are retained for rollback until device QA passes. They are not referenced by AudioManager V2.
+2. Frequent combat/tactile cues receive very small deterministic pitch variation.
+3. Semantic actions suppress the deferred generic button tap, preventing double UI feedback.
+4. Normal UI browsing keeps a deliberately quiet tactile cue.
+5. `ui_locked` is a first-class automatic cue again.
+6. Victory, defeat, boss defeat, stage unlock, purchase success, revive and boss milestones may duck music.
+7. Semantic overlays use existing V2 assets as layers instead of shipping duplicate/raw sound-library files.
+8. No stock character grunt/voice asset is used; Lin Yue voice direction remains separate.
+9. Old `assets/audio/*` files remain rollback assets until device QA and later cleanup pass.
 
-## QA focus
+## QA focus for V2.1
 
-Device QA should specifically check:
-
-- menus do not feel noisy after 2–3 minutes of browsing;
-- rapid enemy hits do not become a wall of sound;
-- Spirit Sword, Fire Orb and Thunder Talisman remain distinguishable in crowded waves;
-- claim reward feels materially stronger than normal button presses;
-- Victory / Boss defeat remain readable over music;
-- Pavilion Legendary omen and reveal do not clip or stack into harshness;
-- music/SFX balance is comfortable on phone speakers at 30%, 60% and 100% device volume.
+- locked interactions actually play `ui_locked` where a clickable locked control exposes that semantic
+- rewarded revive reads as spiritual restoration, not a normal reward claim
+- boss appearance is clearly announced without drowning the boss-music transition
+- boss Phase 2 is audibly distinct from normal player level-up
+- equipping and unequipping equipment both produce material feedback
+- equipment ascension reads as progression, not just ordinary equip
+- achievement unlock sits above a normal UI confirm without becoming a major fanfare
+- menus do not become noisy after 2–3 minutes of browsing
+- crowded combat remains readable on the Snapdragon 680 baseline
+- no behavior, save, reward, Billing or AdMob regression occurs

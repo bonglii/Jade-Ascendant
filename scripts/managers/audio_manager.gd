@@ -1,13 +1,14 @@
 extends Node
 
-## Jade Ascendant Audio Identity V2
+## Jade Ascendant Audio Identity V2.1
 ##
 ## Goals:
 ## - every active runtime cue is routed through one coherent xianxia palette;
 ## - frequent sounds rotate through authored variants instead of repeating one file;
 ## - UI browsing is tactile again, while semantic actions suppress duplicate clicks;
 ## - major reward/result cues automatically create room in the music mix;
-## - existing call sites keep their cue names, so gameplay logic is unchanged.
+## - existing gameplay/save/billing call sites stay untouched;
+## - semantic overlays add identity to revive, boss, equipment and achievement events.
 
 const AUDIO_ROOT: String = "res://assets/audio/presentation_v2/"
 const MUSIC_TARGET_DB: float = -18.5
@@ -150,17 +151,50 @@ const SFX: Dictionary = {
 	]
 }
 
+# V2.1 semantic overlays deliberately reuse the curated V2 palette as layers
+# instead of introducing more raw third-party files. Existing direct cues remain
+# API-compatible; these combinations only add identity where one old cue was
+# carrying too many meanings.
+const COMPOSITE_SFX: Dictionary = {
+	"revive": [
+		{"source": "shield", "volume_offset_db": -3.5, "pitch_multiplier": 1.04},
+		{"source": "level", "volume_offset_db": -6.0, "pitch_multiplier": 1.06}
+	],
+	"boss_spawn": [
+		{"source": "summon_charge", "volume_offset_db": -2.0, "pitch_multiplier": 0.93},
+		{"source": "thunder", "volume_offset_db": -4.5, "pitch_multiplier": 0.88}
+	],
+	"boss_phase": [
+		{"source": "summon_charge", "volume_offset_db": -4.0, "pitch_multiplier": 0.90},
+		{"source": "thunder", "volume_offset_db": -5.0, "pitch_multiplier": 0.82}
+	],
+	"equipment_ascend": [
+		{"source": "upgrade", "volume_offset_db": -2.0, "pitch_multiplier": 1.03}
+	],
+	"unequip": [
+		{"source": "equip", "volume_offset_db": -5.5, "pitch_multiplier": 0.94},
+		{"source": "ui_back", "volume_offset_db": -2.0, "pitch_multiplier": 0.98}
+	],
+	"achievement_unlock": [
+		{"source": "summon_new", "volume_offset_db": -2.0, "pitch_multiplier": 1.02}
+	]
+}
+
 const AUTO_UI_CUES: Array[String] = [
 	"ui",
 	"ui_tab",
 	"ui_confirm",
 	"ui_back",
+	"ui_locked",
 	"claim",
 	"summon_charge"
 ]
 
 const SEMANTIC_UI_CUES: Array[String] = [
 	"equip",
+	"unequip",
+	"equipment_ascend",
+	"achievement_unlock",
 	"claim",
 	"level",
 	"upgrade",
@@ -197,6 +231,7 @@ const PITCH_SEQUENCE: Array[float] = [
 ]
 
 const AUTO_UI_SUPPRESS_MSEC: int = 125
+const EQUIPMENT_CHANGE_SUPPRESS_MSEC: int = 180
 const SFX_VOICE_COUNT: int = 14
 
 var music_players: Array[AudioStreamPlayer] = []
@@ -211,6 +246,7 @@ var music_duck_tween: Tween
 var scene_identity: String = ""
 var backgrounded: bool = false
 var semantic_ui_until_msec: int = 0
+var equipment_change_suppress_until_msec: int = 0
 
 
 func _ready() -> void:
@@ -230,9 +266,9 @@ func _ready() -> void:
 	# Buttons already present before this Autoload's ready pass still need the
 	# same tactile contract as controls created later at runtime.
 	_connect_existing_buttons(get_tree().root)
-	# PavilionManager is autoloaded after AudioManager. Connect permanent
-	# progression / purchase-result semantics on the deferred frame, once every
-	# autoload in project.godot is present.
+	# Several presentation owners load before and after AudioManager. Defer once
+	# so all autoload singletons exist, then bind semantic-only signals without
+	# moving gameplay/save responsibility into the audio layer.
 	call_deferred("_connect_semantic_runtime_signals")
 
 
@@ -257,6 +293,55 @@ func _connect_semantic_runtime_signals() -> void:
 			_on_purchase_delivery_audio
 		)
 
+	if (
+		is_instance_valid(MonetizationManager)
+		and not MonetizationManager.reward_delivery_finished.is_connected(
+			_on_reward_delivery_finished_audio
+		)
+	):
+		MonetizationManager.reward_delivery_finished.connect(
+			_on_reward_delivery_finished_audio
+		)
+
+	if (
+		is_instance_valid(EquipmentManager)
+		and not EquipmentManager.equipment_changed.is_connected(
+			_on_equipment_changed_audio
+		)
+	):
+		EquipmentManager.equipment_changed.connect(
+			_on_equipment_changed_audio
+		)
+
+	if (
+		is_instance_valid(EquipmentManager)
+		and not EquipmentManager.equipment_ascended.is_connected(
+			_on_equipment_ascended_audio
+		)
+	):
+		EquipmentManager.equipment_ascended.connect(
+			_on_equipment_ascended_audio
+		)
+
+	if (
+		is_instance_valid(AchievementManager)
+		and not AchievementManager.achievement_unlocked.is_connected(
+			_on_achievement_unlocked_audio
+		)
+	):
+		AchievementManager.achievement_unlocked.connect(
+			_on_achievement_unlocked_audio
+		)
+
+	var enemy_spawners := get_tree().root.find_children(
+		"EnemySpawner",
+		"Node",
+		true,
+		false
+	)
+	for enemy_spawner: Node in enemy_spawners:
+		_try_connect_enemy_spawner(enemy_spawner)
+
 
 func _on_cultivation_upgraded_audio(
 	_upgrade_id: String,
@@ -274,16 +359,90 @@ func _on_purchase_delivery_audio(
 		play_sfx("purchase_success")
 
 
+func _on_reward_delivery_finished_audio(
+	placement: String,
+	success: bool,
+	_amount: int,
+	_message: String
+) -> void:
+	if success and placement == "game_over_revive":
+		# PlayerHealth still owns the established claim transient. The V2.1
+		# overlay adds shield + breakthrough resonance so revive no longer reads
+		# as an ordinary reward claim, without touching revive/gameplay logic.
+		play_sfx("revive")
+
+
+func _on_equipment_ascended_audio(
+	_item_id: String,
+	_old_star: int,
+	_new_star: int
+) -> void:
+	equipment_change_suppress_until_msec = (
+		Time.get_ticks_msec() + EQUIPMENT_CHANGE_SUPPRESS_MSEC
+	)
+	# EquipmentManager already emits its material "equip" transient after this
+	# signal. Add only the progression layer here to create a distinct ascend.
+	play_sfx("equipment_ascend")
+
+
+func _on_equipment_changed_audio(
+	_slot_id: String,
+	item_id: String
+) -> void:
+	if Time.get_ticks_msec() < equipment_change_suppress_until_msec:
+		return
+	if item_id.is_empty():
+		play_sfx("unequip")
+	else:
+		play_sfx("equip")
+
+
+func _on_achievement_unlocked_audio(_achievement_id: String) -> void:
+	# The toast presenter keeps its quiet ui_confirm. This short discovery layer
+	# lifts the unlock above a normal confirmation without becoming a fanfare.
+	play_sfx("achievement_unlock")
+
+
 func _connect_existing_buttons(root: Node) -> void:
 	for child: Node in root.get_children():
 		if child is BaseButton:
 			_connect_button(child as BaseButton)
+		_try_connect_enemy_spawner(child)
 		_connect_existing_buttons(child)
 
 
 func _on_node_added(node: Node) -> void:
 	if node is BaseButton:
 		_connect_button(node as BaseButton)
+	_try_connect_enemy_spawner(node)
+
+
+func _try_connect_enemy_spawner(node: Node) -> void:
+	if node == null or node.name != "EnemySpawner":
+		return
+	if not node.has_signal("boss_spawned_signal"):
+		return
+	var callback := Callable(self, "_on_boss_spawned_audio")
+	if not node.is_connected("boss_spawned_signal", callback):
+		node.connect("boss_spawned_signal", callback)
+
+
+func _on_boss_spawned_audio(boss: Node) -> void:
+	if boss == null:
+		return
+	play_sfx("boss_spawn")
+	if not boss.has_signal("phase_changed"):
+		return
+	var callback := Callable(self, "_on_boss_phase_changed_audio")
+	if not boss.is_connected("phase_changed", callback):
+		boss.connect("phase_changed", callback)
+
+
+func _on_boss_phase_changed_audio(new_phase: int) -> void:
+	if new_phase >= 2:
+		# boss_1.gd keeps its established level/breakthrough transient; this
+		# overlay adds low thunder/ritual pressure and makes Phase 2 unmistakable.
+		play_sfx("boss_phase")
 
 
 func _connect_button(button: BaseButton) -> void:
@@ -328,6 +487,8 @@ func _resolve_button_sfx(button: BaseButton) -> String:
 		text_key = (button as Button).text.to_upper()
 	var identity := name_key + " " + text_key
 
+	if identity.contains("LOCKED"):
+		return "ui_locked"
 	if identity.contains("CLAIM") or identity.contains("COLLECT"):
 		return "claim"
 	if identity.contains("SUMMON"):
@@ -412,7 +573,13 @@ func set_context(next_context: String) -> void:
 
 
 func play_sfx(cue: String) -> void:
-	if backgrounded or not SFX.has(cue):
+	if (
+		backgrounded
+		or (
+			not SFX.has(cue)
+			and not COMPOSITE_SFX.has(cue)
+		)
+	):
 		return
 	var now := Time.get_ticks_msec()
 	if cue in SEMANTIC_UI_CUES:
@@ -425,6 +592,36 @@ func play_sfx(cue: String) -> void:
 	cooldown_until[cue] = now + _get_sfx_cooldown_msec(cue)
 	_maybe_duck_music_for_cue(cue)
 
+	if COMPOSITE_SFX.has(cue):
+		_play_composite_sfx(cue)
+		return
+	_play_sfx_variant(cue)
+
+
+func _play_composite_sfx(cue: String) -> void:
+	var raw_layers: Variant = COMPOSITE_SFX.get(cue, [])
+	if not (raw_layers is Array):
+		return
+	var layers: Array = raw_layers
+	for raw_layer: Variant in layers:
+		if not (raw_layer is Dictionary):
+			continue
+		var layer: Dictionary = raw_layer
+		var source_cue := str(layer.get("source", ""))
+		if source_cue.is_empty() or not SFX.has(source_cue):
+			continue
+		_play_sfx_variant(
+			source_cue,
+			float(layer.get("volume_offset_db", 0.0)),
+			float(layer.get("pitch_multiplier", 1.0))
+		)
+
+
+func _play_sfx_variant(
+	cue: String,
+	volume_offset_db: float = 0.0,
+	pitch_multiplier: float = 1.0
+) -> void:
 	var stream := _get_sfx_stream(cue)
 	if stream == null:
 		return
@@ -432,8 +629,8 @@ func play_sfx(cue: String) -> void:
 		if voice.playing:
 			continue
 		voice.stream = stream
-		voice.volume_db = _get_sfx_volume_db(cue)
-		voice.pitch_scale = _get_sfx_pitch(cue)
+		voice.volume_db = _get_sfx_volume_db(cue) + volume_offset_db
+		voice.pitch_scale = _get_sfx_pitch(cue) * pitch_multiplier
 		voice.play()
 		return
 
@@ -470,10 +667,20 @@ func _get_sfx_cooldown_msec(cue: String) -> int:
 			return 130
 		"pickup":
 			return 90
-		"level", "upgrade":
+		"level", "upgrade", "equipment_ascend":
 			return 260
+		"equip", "unequip":
+			return 170
 		"claim", "purchase_success":
 			return 180
+		"achievement_unlock":
+			return 350
+		"revive":
+			return 800
+		"boss_spawn":
+			return 900
+		"boss_phase":
+			return 700
 		"victory", "defeat", "boss_defeat", "stage_unlock":
 			return 600
 		_:
@@ -573,6 +780,12 @@ func _maybe_duck_music_for_cue(cue: String) -> void:
 			duck_music(2.45, -29.0)
 		"purchase_success":
 			duck_music(1.15, -25.0)
+		"revive":
+			duck_music(0.95, -25.0)
+		"boss_spawn":
+			duck_music(1.35, -29.0)
+		"boss_phase":
+			duck_music(0.95, -27.0)
 		_:
 			pass
 
@@ -635,6 +848,7 @@ func release_runtime_audio() -> void:
 	scene_identity = ""
 	backgrounded = false
 	semantic_ui_until_msec = 0
+	equipment_change_suppress_until_msec = 0
 
 
 func _exit_tree() -> void:
