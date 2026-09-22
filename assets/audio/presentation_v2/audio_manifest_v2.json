@@ -1,0 +1,278 @@
+[
+  {
+    "file": "ui_tap_01.wav",
+    "seconds": 0.08
+  },
+  {
+    "file": "ui_tap_02.wav",
+    "seconds": 0.076
+  },
+  {
+    "file": "ui_tab_01.wav",
+    "seconds": 0.04
+  },
+  {
+    "file": "ui_tab_02.wav",
+    "seconds": 0.045
+  },
+  {
+    "file": "ui_confirm_01.wav",
+    "seconds": 0.255
+  },
+  {
+    "file": "ui_confirm_02.wav",
+    "seconds": 0.252
+  },
+  {
+    "file": "ui_back_01.wav",
+    "seconds": 0.125
+  },
+  {
+    "file": "ui_back_02.wav",
+    "seconds": 0.165
+  },
+  {
+    "file": "ui_locked_01.wav",
+    "seconds": 0.218
+  },
+  {
+    "file": "ui_locked_02.wav",
+    "seconds": 0.225
+  },
+  {
+    "file": "pickup_jade_01.wav",
+    "seconds": 0.26
+  },
+  {
+    "file": "pickup_jade_02.wav",
+    "seconds": 0.26
+  },
+  {
+    "file": "pickup_jade_03.wav",
+    "seconds": 0.26
+  },
+  {
+    "file": "shield_01.wav",
+    "seconds": 0.72
+  },
+  {
+    "file": "shield_02.wav",
+    "seconds": 0.72
+  },
+  {
+    "file": "claim_01.wav",
+    "seconds": 1.235
+  },
+  {
+    "file": "claim_02.wav",
+    "seconds": 1.24
+  },
+  {
+    "file": "equip_01.wav",
+    "seconds": 0.755
+  },
+  {
+    "file": "equip_02.wav",
+    "seconds": 0.755
+  },
+  {
+    "file": "sword_01.wav",
+    "seconds": 0.62
+  },
+  {
+    "file": "sword_02.wav",
+    "seconds": 0.68
+  },
+  {
+    "file": "fire_01.wav",
+    "seconds": 0.62
+  },
+  {
+    "file": "fire_02.wav",
+    "seconds": 0.62
+  },
+  {
+    "file": "fire_03.wav",
+    "seconds": 0.62
+  },
+  {
+    "file": "thunder_01.wav",
+    "seconds": 0.82
+  },
+  {
+    "file": "thunder_02.wav",
+    "seconds": 0.82
+  },
+  {
+    "file": "thunder_03.wav",
+    "seconds": 0.82
+  },
+  {
+    "file": "chain_01.wav",
+    "seconds": 0.38
+  },
+  {
+    "file": "chain_02.wav",
+    "seconds": 0.38
+  },
+  {
+    "file": "chain_03.wav",
+    "seconds": 0.38
+  },
+  {
+    "file": "hit_01.wav",
+    "seconds": 0.28
+  },
+  {
+    "file": "hit_02.wav",
+    "seconds": 0.28
+  },
+  {
+    "file": "hit_03.wav",
+    "seconds": 0.26
+  },
+  {
+    "file": "hurt_01.wav",
+    "seconds": 0.42
+  },
+  {
+    "file": "hurt_02.wav",
+    "seconds": 0.39
+  },
+  {
+    "file": "death_01.wav",
+    "seconds": 0.44
+  },
+  {
+    "file": "death_02.wav",
+    "seconds": 0.44
+  },
+  {
+    "file": "level_01.wav",
+    "seconds": 0.92
+  },
+  {
+    "file": "level_02.wav",
+    "seconds": 0.86
+  },
+  {
+    "file": "victory_01.wav",
+    "seconds": 2.15
+  },
+  {
+    "file": "victory_02.wav",
+    "seconds": 2.15
+  },
+  {
+    "file": "defeat_01.wav",
+    "seconds": 3.9
+  },
+  {
+    "file": "defeat_02.wav",
+    "seconds": 3.9
+  },
+  {
+    "file": "boss_defeat_01.wav",
+    "seconds": 2.55
+  },
+  {
+    "file": "boss_defeat_02.wav",
+    "seconds": 2.55
+  },
+  {
+    "file": "summon_charge_01.wav",
+    "seconds": 1.18
+  },
+  {
+    "file": "summon_charge_02.wav",
+    "seconds": 1.18
+  },
+  {
+    "file": "summon_rare_01.wav",
+    "seconds": 0.75
+  },
+  {
+    "file": "summon_rare_02.wav",
+    "seconds": 0.75
+  },
+  {
+    "file": "summon_epic_01.wav",
+    "seconds": 1.65
+  },
+  {
+    "file": "summon_epic_02.wav",
+    "seconds": 1.65
+  },
+  {
+    "file": "summon_legendary_omen_01.wav",
+    "seconds": 2.85
+  },
+  {
+    "file": "summon_legendary_omen_02.wav",
+    "seconds": 2.85
+  },
+  {
+    "file": "summon_legendary_reveal_01.wav",
+    "seconds": 3.3
+  },
+  {
+    "file": "summon_legendary_reveal_02.wav",
+    "seconds": 3.3
+  },
+  {
+    "file": "summon_new_01.wav",
+    "seconds": 0.48
+  },
+  {
+    "file": "summon_new_02.wav",
+    "seconds": 0.48
+  },
+  {
+    "file": "summon_duplicate_01.wav",
+    "seconds": 0.33
+  },
+  {
+    "file": "summon_duplicate_02.wav",
+    "seconds": 0.33
+  },
+  {
+    "file": "upgrade_01.wav",
+    "seconds": 0.78
+  },
+  {
+    "file": "upgrade_02.wav",
+    "seconds": 0.78
+  },
+  {
+    "file": "stage_unlock_01.wav",
+    "seconds": 2.35
+  },
+  {
+    "file": "stage_unlock_02.wav",
+    "seconds": 2.35
+  },
+  {
+    "file": "purchase_success_01.wav",
+    "seconds": 1.01
+  },
+  {
+    "file": "purchase_success_02.wav",
+    "seconds": 1.01
+  },
+  {
+    "file": "music_home.ogg",
+    "seconds": 147.12
+  },
+  {
+    "file": "music_journey.ogg",
+    "seconds": 132.839
+  },
+  {
+    "file": "music_boss.ogg",
+    "seconds": 162.1
+  },
+  {
+    "file": "music_pavilion.ogg",
+    "seconds": 140.624
+  }
+]

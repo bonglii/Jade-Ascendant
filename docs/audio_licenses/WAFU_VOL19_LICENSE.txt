@@ -1,0 +1,47 @@
+WAFU Vol.19 - Japanese Underworld Music Pack (The Road Down)
+License Agreement (Royalty-Free)
+
+Copyright (c) 2026 WAFU Sound Works. All rights reserved.
+
+This pack is distributed free of charge. The license below is the
+same one that ships with every paid WAFU volume - being free does not
+limit it in any way.
+
+By downloading this asset pack, you are granted the following
+non-exclusive, worldwide, royalty-free license:
+
+YOU MAY:
+- Use the music and cues in unlimited commercial and non-commercial
+  projects: video games, apps, videos, streams, films, podcasts,
+  tabletop projects, and similar media.
+- Modify, edit, remix, loop, layer, or adapt the tracks to fit your
+  project. Leaving silence between passes, crossfading between
+  areas, or re-cutting the cues shorter is fine and encouraged.
+- Use the music in monetized content (YouTube, Twitch, etc.).
+- Keep using the music forever. No recurring fees, no royalties.
+
+YOU MAY NOT:
+- Resell, redistribute, or sublicense the audio files themselves,
+  whether original or modified, as standalone audio (e.g. in another
+  asset pack, sample library, sound effect library, or template).
+- Upload the tracks to music streaming or distribution platforms
+  (Spotify, Apple Music, YouTube Content ID, etc.) as your own work.
+- Claim authorship of the original compositions.
+- Use the audio files to train, fine-tune, or seed generative AI models.
+
+CREDIT:
+- Not required. If you would like to credit, "Music: WAFU Sound Works"
+  is appreciated.
+
+DISCLOSURE:
+- These tracks were produced with the assistance of generative AI
+  (Suno, commercial plan), then curated, edited, loop-engineered, and
+  level-matched by a human. The eight underworld cues were cut by hand
+  from longer generations. See the store page for details.
+
+LIABILITY:
+- This pack is provided "as is" without warranty of any kind. In no
+  event shall the author be liable for any claim or damages arising
+  from the use of this pack.
+
+Contact: syarumariann222638@gmail.com
