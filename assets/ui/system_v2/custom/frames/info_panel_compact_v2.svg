@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="612" height="132" viewBox="0 0 612 132">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#0D252D"/>
+  <stop offset="0.5" stop-color="#091A22"/>
+  <stop offset="1" stop-color="#061117"/>
+</linearGradient>
+<linearGradient id="jadeLine" x1="0" y1="0" x2="1" y2="0">
+  <stop offset="0" stop-color="#1E8D7E" stop-opacity="0.15"/>
+  <stop offset="0.5" stop-color="#45D9BE" stop-opacity="0.95"/>
+  <stop offset="1" stop-color="#1E8D7E" stop-opacity="0.15"/>
+</linearGradient>
+<linearGradient id="goldLine" x1="0" y1="0" x2="1" y2="0">
+  <stop offset="0" stop-color="#8B621D" stop-opacity="0.15"/>
+  <stop offset="0.5" stop-color="#E8BE58" stop-opacity="0.95"/>
+  <stop offset="1" stop-color="#8B621D" stop-opacity="0.15"/>
+</linearGradient>
+<filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+  <feGaussianBlur stdDeviation="3" result="blur"/>
+  <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>
+<filter id="goldGlow" x="-40%" y="-40%" width="180%" height="180%">
+  <feGaussianBlur stdDeviation="2.5" result="blur"/>
+  <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>
+</defs>
+<path d="M12 2 H600 L610 12 V120 L600 130 H12 L2 120 V12 Z" fill="#091A22" fill-opacity="0.95" stroke="#45D9BE" stroke-width="1.3"/>
+<path d="M18 8 H594" stroke="url(#goldLine)" stroke-width="1"/>
+<path d="M18 124 H594" stroke="url(#jadeLine)" stroke-width="1"/>
+<path d="M 22 4 H 11 L 4 11 V 22" fill="none" stroke="#E8BE58" stroke-width="2" opacity="0.9"/>
+<path d="M 15 8 H 15 L 8 15 V 15" fill="none" stroke="#45D9BE" stroke-width="1" opacity="0.5850000000000001"/>
+<path d="M 590 4 H 601 L 608 11 V 22" fill="none" stroke="#E8BE58" stroke-width="2" opacity="0.9"/>
+<path d="M 597 8 H 597 L 604 15 V 15" fill="none" stroke="#45D9BE" stroke-width="1" opacity="0.5850000000000001"/>
+<path d="M 22 128 H 11 L 4 121 V 110" fill="none" stroke="#E8BE58" stroke-width="2" opacity="0.9"/>
+<path d="M 15 124 H 15 L 8 117 V 117" fill="none" stroke="#45D9BE" stroke-width="1" opacity="0.5850000000000001"/>
+<path d="M 590 128 H 601 L 608 121 V 110" fill="none" stroke="#E8BE58" stroke-width="2" opacity="0.9"/>
+<path d="M 597 124 H 597 L 604 117 V 117" fill="none" stroke="#45D9BE" stroke-width="1" opacity="0.5850000000000001"/>
+</svg>

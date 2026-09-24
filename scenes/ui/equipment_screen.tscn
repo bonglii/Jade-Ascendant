@@ -1,206 +1,65 @@
-[gd_scene load_steps=33 format=3 uid="uid://bc4wx1fx20mfl"]
+[gd_scene load_steps=33 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/equipment_screen.gd" id="1_script"]
 [ext_resource type="Script" path="res://scripts/ui/mobile_safe_area.gd" id="2_safe"]
 [ext_resource type="Theme" path="res://assets/ui/jade_ui_theme.tres" id="3_theme"]
+
 [ext_resource type="Texture2D" path="res://assets/ui/hero/hero_pavilion.png" id="4_bg"]
-[ext_resource type="Texture2D" path="res://assets/ui/icons/spirit_stone.svg" id="5_stone"]
-[ext_resource type="Script" path="res://scripts/ui/wuxia_hub_nav.gd" id="6_nav"]
-[ext_resource type="Texture2D" path="res://assets/ui/wuxia/realm_frame.png" id="7_realm_frame"]
-[ext_resource type="Texture2D" path="res://assets/ui/wuxia/cta_jade_normal.png" id="9_cta_normal"]
-[ext_resource type="Texture2D" path="res://assets/ui/wuxia/cta_jade_hover.png" id="10_cta_hover"]
-[ext_resource type="Texture2D" path="res://assets/ui/wuxia/cta_jade_pressed.png" id="11_cta_pressed"]
-[ext_resource type="SpriteFrames" path="res://assets/character/player/player_lin_yue_idle_walk_spriteframes.tres" id="12_player_frames"]
-[ext_resource type="Texture2D" path="res://assets/ui/equipment/polish/cultivation_seal.svg" id="13_seal"]
-[ext_resource type="Texture2D" path="res://assets/ui/equipment/polish/ascension_emblem.svg" id="14_asc"]
-[ext_resource type="Texture2D" path="res://assets/ui/equipment/polish/hero_showcase_halo.svg" id="15_showcase"]
-[ext_resource type="Texture2D" path="res://assets/ui/equipment/polish/hero_pedestal.svg" id="16_pedestal"]
-[ext_resource type="Texture2D" path="res://assets/ui/equipment/polish/hero_showcase_arch.svg" id="17_arch"]
-[ext_resource type="Texture2D" path="res://assets/ui/equipment/polish/hero_qi_particles.svg" id="18_particles"]
-[ext_resource type="Texture2D" path="res://assets/ui/hero/lin_yue_menu_showcase_v2.png" id="19_hero_menu_art"]
+[ext_resource type="Texture2D" path="res://assets/ui/hero/lin_yue_menu_showcase_v2.png" id="5_hero"]
+[ext_resource type="Texture2D" path="res://assets/ui/equipment/polish/hero_showcase_halo.svg" id="6_halo"]
+[ext_resource type="Texture2D" path="res://assets/ui/equipment/polish/cultivation_seal.svg" id="7_seal"]
+[ext_resource type="Texture2D" path="res://assets/ui/equipment/polish/hero_pedestal.svg" id="8_pedestal"]
 
-[sub_resource type="Gradient" id="Gradient_shade"]
-offsets = PackedFloat32Array(0, 0.28, 0.62, 1)
-colors = PackedColorArray(0.001, 0.008, 0.014, 0.36, 0.001, 0.010, 0.018, 0.10, 0.001, 0.010, 0.018, 0.30, 0.001, 0.006, 0.012, 0.86)
+[ext_resource type="Texture2D" path="res://assets/ui/icons/spirit_stone.svg" id="9_stone"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/navigation/home.png" id="10_home"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/navigation/cultivate.png" id="11_cultivate"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/navigation/hero.png" id="12_hero_nav"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/navigation/trials.png" id="13_trials"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/navigation/pavilion.png" id="14_pavilion"]
 
-[sub_resource type="GradientTexture2D" id="GradientTexture_shade"]
-gradient = SubResource("Gradient_shade")
+[ext_resource type="Texture2D" path="res://assets/ui/system_v2/custom/headers/header_frame_v2.svg" id="15_header"]
+[ext_resource type="Texture2D" path="res://assets/ui/system_v2/custom/frames/showcase_frame_v2.svg" id="16_showcase"]
+[ext_resource type="Texture2D" path="res://assets/ui/system_v2/custom/frames/info_panel_compact_v2.svg" id="17_info"]
+[ext_resource type="Texture2D" path="res://assets/ui/system_v2/custom/buttons/primary_selected.svg" id="18_primary"]
+[ext_resource type="Texture2D" path="res://assets/ui/system_v2/custom/buttons/secondary_normal.svg" id="19_secondary"]
+[ext_resource type="Texture2D" path="res://assets/ui/system_v2/custom/bars/progress_track_v2.svg" id="20_track"]
+[ext_resource type="Texture2D" path="res://assets/ui/system_v2/custom/bars/progress_fill_jade_v2.svg" id="21_fill"]
+[ext_resource type="Texture2D" path="res://assets/ui/system_v2/custom/navigation/nav_shell_v2.svg" id="22_nav"]
+[ext_resource type="Texture2D" path="res://assets/ui/system_v2/custom/navigation/nav_active_cell_v2.svg" id="23_nav_active"]
+[ext_resource type="Texture2D" path="res://assets/ui/system_v2/custom/slots/relic_slot_default.svg" id="24_slot"]
+
+[ext_resource type="Script" path="res://scripts/ui/wuxia_hub_nav.gd" id="25_hub_nav"]
+[ext_resource type="SpriteFrames" path="res://assets/character/player/player_lin_yue_idle_walk_spriteframes.tres" id="26_player_frames"]
+
+[sub_resource type="Gradient" id="GradientShade"]
+offsets = PackedFloat32Array(0, 0.30, 0.68, 1)
+colors = PackedColorArray(0.001, 0.010, 0.016, 0.16, 0.001, 0.012, 0.020, 0.22, 0.001, 0.010, 0.018, 0.60, 0.001, 0.006, 0.012, 0.92)
+
+[sub_resource type="GradientTexture2D" id="GradientTextureShade"]
+gradient = SubResource("GradientShade")
 width = 648
 height = 1152
 fill_from = Vector2(0.5, 0)
 fill_to = Vector2(0.5, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleTopBar"]
-bg_color = Color(0.002, 0.025, 0.042, 0.96)
+[sub_resource type="StyleBoxFlat" id="CollectionSurface"]
+bg_color = Color(0.002, 0.022, 0.034, 0.94)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
-border_width_bottom = 2
-border_color = Color(0.96, 0.75, 0.27, 0.72)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_left = 10
-corner_radius_bottom_right = 10
-content_margin_left = 14.0
-content_margin_top = 8.0
-content_margin_right = 14.0
-content_margin_bottom = 8.0
-shadow_color = Color(0.02, 0.75, 0.72, 0.12)
-shadow_size = 8
-
-[sub_resource type="StyleBoxTexture" id="StyleHeaderFrame"]
-texture = ExtResource("7_realm_frame")
-texture_margin_left = 30.0
-texture_margin_top = 24.0
-texture_margin_right = 30.0
-texture_margin_bottom = 24.0
-content_margin_left = 18.0
-content_margin_top = 10.0
-content_margin_right = 18.0
-content_margin_bottom = 10.0
-
-[sub_resource type="StyleBoxFlat" id="StyleRack"]
-bg_color = Color(0.002, 0.022, 0.036, 0.90)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 2
-border_color = Color(0.22, 0.88, 0.78, 0.34)
-corner_radius_top_left = 15
-corner_radius_top_right = 15
-corner_radius_bottom_left = 15
-corner_radius_bottom_right = 15
+border_width_bottom = 1
+border_color = Color(0.27, 0.85, 0.78, 0.34)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_left = 14
+corner_radius_bottom_right = 14
 content_margin_left = 10.0
-content_margin_top = 8.0
-content_margin_right = 10.0
-content_margin_bottom = 8.0
-shadow_color = Color(0, 0, 0, 0.42)
-shadow_size = 6
-
-[sub_resource type="StyleBoxFlat" id="StyleDetailFrame"]
-bg_color = Color(0.002, 0.020, 0.033, 0.992)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 3
-border_color = Color(0.98, 0.72, 0.20, 0.90)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_left = 16
-corner_radius_bottom_right = 16
-content_margin_left = 12.0
 content_margin_top = 10.0
-content_margin_right = 12.0
-content_margin_bottom = 10.0
-shadow_color = Color(0.95, 0.54, 0.12, 0.22)
-shadow_size = 12
-
-[sub_resource type="StyleBoxFlat" id="StyleTabActive"]
-bg_color = Color(0.020, 0.20, 0.17, 0.98)
-border_width_left = 2
-border_width_top = 1
-border_width_right = 2
-border_width_bottom = 3
-border_color = Color(1.0, 0.77, 0.25, 0.98)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_left = 8
-corner_radius_bottom_right = 8
-shadow_color = Color(0.12, 0.85, 0.77, 0.22)
-shadow_size = 6
-
-[sub_resource type="StyleBoxFlat" id="StyleTabNormal"]
-bg_color = Color(0.003, 0.033, 0.048, 0.92)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 2
-border_color = Color(0.24, 0.66, 0.59, 0.48)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_left = 8
-corner_radius_bottom_right = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleInspection"]
-bg_color = Color(0.006, 0.050, 0.066, 0.94)
-border_width_left = 2
-border_width_top = 1
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.27, 0.90, 0.78, 0.58)
-corner_radius_top_left = 13
-corner_radius_top_right = 13
-corner_radius_bottom_left = 13
-corner_radius_bottom_right = 13
-content_margin_left = 10.0
-content_margin_top = 8.0
 content_margin_right = 10.0
-content_margin_bottom = 8.0
-shadow_color = Color(0.12, 0.85, 0.80, 0.13)
-shadow_size = 7
+content_margin_bottom = 12.0
 
-[sub_resource type="StyleBoxFlat" id="StyleHeroShowcaseCard"]
-bg_color = Color(0.0015, 0.026, 0.043, 0.70)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 2
-border_color = Color(0.32, 0.92, 0.82, 0.26)
-corner_radius_top_left = 42
-corner_radius_top_right = 42
-corner_radius_bottom_left = 28
-corner_radius_bottom_right = 28
-shadow_color = Color(0.06, 0.84, 0.78, 0.18)
-shadow_size = 16
-
-[sub_resource type="StyleBoxFlat" id="StyleBonusPill"]
-bg_color = Color(0.004, 0.055, 0.070, 0.96)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 2
-border_color = Color(0.96, 0.75, 0.27, 0.62)
-corner_radius_top_left = 11
-corner_radius_top_right = 11
-corner_radius_bottom_left = 11
-corner_radius_bottom_right = 11
-content_margin_left = 9.0
-content_margin_top = 4.0
-content_margin_right = 9.0
-content_margin_bottom = 4.0
-
-[sub_resource type="StyleBoxTexture" id="StyleActionNormal"]
-texture = ExtResource("9_cta_normal")
-texture_margin_left = 26.0
-texture_margin_top = 18.0
-texture_margin_right = 26.0
-texture_margin_bottom = 18.0
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-
-[sub_resource type="StyleBoxTexture" id="StyleActionHover"]
-texture = ExtResource("10_cta_hover")
-texture_margin_left = 26.0
-texture_margin_top = 18.0
-texture_margin_right = 26.0
-texture_margin_bottom = 18.0
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-
-[sub_resource type="StyleBoxTexture" id="StyleActionPressed"]
-texture = ExtResource("11_cta_pressed")
-texture_margin_left = 26.0
-texture_margin_top = 18.0
-texture_margin_right = 26.0
-texture_margin_bottom = 18.0
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
+[sub_resource type="StyleBoxFlat" id="EmptyStyle"]
+bg_color = Color(0, 0, 0, 0)
 
 [node name="EquipmentScreen" type="Control"]
 layout_mode = 3
@@ -223,6 +82,7 @@ mouse_filter = 2
 texture = ExtResource("4_bg")
 expand_mode = 1
 stretch_mode = 6
+modulate = Color(0.28, 0.35, 0.39, 0.20)
 
 [node name="Shade" type="TextureRect" parent="."]
 layout_mode = 1
@@ -232,7 +92,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = SubResource("GradientTexture_shade")
+texture = SubResource("GradientTextureShade")
 expand_mode = 1
 stretch_mode = 6
 
@@ -246,609 +106,1053 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_safe")
 
-[node name="TopBar" type="PanelContainer" parent="Content"]
+[node name="TopHeader" type="Control" parent="Content"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_right = 612.0
+offset_bottom = 68.0
+
+[node name="Frame" type="TextureRect" parent="Content/TopHeader"]
 layout_mode = 1
-anchor_left = 0.03
-anchor_top = 0.016
-anchor_right = 0.97
-anchor_bottom = 0.016
-offset_bottom = 60.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
-theme_override_styles/panel = SubResource("StyleTopBar")
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("15_header")
+expand_mode = 1
+stretch_mode = 0
 
-[node name="TopRow" type="HBoxContainer" parent="Content/TopBar"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="TitleBox" type="VBoxContainer" parent="Content/TopBar/TopRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = -1
-
-[node name="TopTitle" type="Label" parent="Content/TopBar/TopRow/TitleBox"]
-layout_mode = 2
+[node name="Title" type="Label" parent="Content/TopHeader"]
+layout_mode = 1
+anchor_left = 0.06
+anchor_top = 0.16
+anchor_right = 0.48
+anchor_bottom = 0.54
 theme_type_variation = &"JadeHeroName"
 theme_override_font_sizes/font_size = 20
 text = "HERO"
+vertical_alignment = 1
 
-[node name="TopSubtitle" type="Label" parent="Content/TopBar/TopRow/TitleBox"]
-layout_mode = 2
+[node name="Subtitle" type="Label" parent="Content/TopHeader"]
+layout_mode = 1
+anchor_left = 0.06
+anchor_top = 0.54
+anchor_right = 0.70
+anchor_bottom = 0.86
 theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 10
-text = "PERLENGKAPAN BELA DIRI  •  JALAN KEABADIAN"
+theme_override_font_sizes/font_size = 9
+text = "LOADOUT • RELIK • INVENTARIS TERINTEGRASI"
+vertical_alignment = 1
 
-[node name="StoneBox" type="HBoxContainer" parent="Content/TopBar/TopRow"]
-layout_mode = 2
-theme_override_constants/separation = 6
-alignment = 1
-
-[node name="StoneIcon" type="TextureRect" parent="Content/TopBar/TopRow/StoneBox"]
-custom_minimum_size = Vector2(28, 28)
-layout_mode = 2
-texture = ExtResource("5_stone")
+[node name="StoneIcon" type="TextureRect" parent="Content/TopHeader"]
+layout_mode = 1
+anchor_left = 0.80
+anchor_top = 0.25
+anchor_right = 0.85
+anchor_bottom = 0.72
+texture = ExtResource("9_stone")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="SpiritStoneLabel" type="Label" parent="Content/TopBar/TopRow/StoneBox"]
+[node name="SpiritStoneLabel" type="Label" parent="Content/TopHeader"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(68, 0)
+layout_mode = 1
+anchor_left = 0.85
+anchor_top = 0.24
+anchor_right = 0.95
+anchor_bottom = 0.74
+theme_type_variation = &"JadeCurrencyLabel"
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FixedVBox" type="VBoxContainer" parent="Content"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_right = 612.0
+offset_bottom = 656.0
+theme_override_constants/separation = 8
+
+[node name="CandidateScroll" type="ScrollContainer" parent="Content"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_right = 612.0
+offset_bottom = 960.0
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 1
+follow_focus = false
+
+[node name="MainVBox" type="VBoxContainer" parent="Content/CandidateScroll"]
+custom_minimum_size = Vector2(0, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="HeroStage" type="Control" parent="Content/FixedVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 360)
+layout_mode = 2
+size_flags_horizontal = 3
+clip_contents = true
+
+[node name="Frame" type="TextureRect" parent="Content/FixedVBox/HeroStage"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("16_showcase")
+expand_mode = 1
+stretch_mode = 0
+
+[node name="WeaponLine" type="Line2D" parent="Content/FixedVBox/HeroStage"]
+unique_name_in_owner = true
+z_index = 1
+width = 1.1
+default_color = Color(0.98, 0.78, 0.34, 0.42)
+
+[node name="RobeLine" type="Line2D" parent="Content/FixedVBox/HeroStage"]
+unique_name_in_owner = true
+z_index = 1
+width = 1.0
+default_color = Color(0.27, 0.85, 0.78, 0.16)
+
+[node name="BracerLine" type="Line2D" parent="Content/FixedVBox/HeroStage"]
+unique_name_in_owner = true
+z_index = 1
+width = 1.0
+default_color = Color(0.27, 0.85, 0.78, 0.16)
+
+[node name="PendantLine" type="Line2D" parent="Content/FixedVBox/HeroStage"]
+unique_name_in_owner = true
+z_index = 1
+width = 1.0
+default_color = Color(0.27, 0.85, 0.78, 0.16)
+
+[node name="BootsLine" type="Line2D" parent="Content/FixedVBox/HeroStage"]
+unique_name_in_owner = true
+z_index = 1
+width = 1.0
+default_color = Color(0.27, 0.85, 0.78, 0.16)
+
+[node name="HeroHalo" type="TextureRect" parent="Content/FixedVBox/HeroStage"]
+unique_name_in_owner = true
+z_index = 1
+layout_mode = 0
+offset_right = 320.0
+offset_bottom = 240.0
+mouse_filter = 2
+texture = ExtResource("6_halo")
+expand_mode = 1
+stretch_mode = 5
+modulate = Color(1, 1, 1, 0.16)
+
+[node name="HeroSeal" type="TextureRect" parent="Content/FixedVBox/HeroStage"]
+unique_name_in_owner = true
+z_index = 1
+layout_mode = 0
+offset_right = 240.0
+offset_bottom = 180.0
+mouse_filter = 2
+texture = ExtResource("7_seal")
+expand_mode = 1
+stretch_mode = 5
+modulate = Color(1, 1, 1, 0.07)
+
+[node name="HeroPedestal" type="TextureRect" parent="Content/FixedVBox/HeroStage"]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_right = 180.0
+offset_bottom = 56.0
+mouse_filter = 2
+texture = ExtResource("8_pedestal")
+expand_mode = 1
+stretch_mode = 5
+modulate = Color(1, 1, 1, 0.45)
+
+[node name="HeroArt" type="TextureRect" parent="Content/FixedVBox/HeroStage"]
+unique_name_in_owner = true
+z_index = 3
+layout_mode = 0
+offset_right = 350.0
+offset_bottom = 290.0
+mouse_filter = 2
+texture = ExtResource("5_hero")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HeroName" type="Label" parent="Content/FixedVBox/HeroStage"]
+unique_name_in_owner = true
+z_index = 7
+layout_mode = 0
+offset_right = 200.0
+offset_bottom = 22.0
+theme_type_variation = &"JadeHeroName"
+theme_override_font_sizes/font_size = 15
+text = "LIN YUE"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HeroSubtitle" type="Label" parent="Content/FixedVBox/HeroStage"]
+unique_name_in_owner = true
+z_index = 7
+layout_mode = 0
+offset_right = 270.0
+offset_bottom = 16.0
+theme_type_variation = &"JadeQiLabel"
+theme_override_font_sizes/font_size = 7
+text = "PENGEMBARA GIOK • PENYELARASAN QI"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="Content/FixedVBox/HeroStage"]
+unique_name_in_owner = true
+z_index = 20
+layout_mode = 1
+anchor_left = 0.025
+anchor_top = 0.025
+anchor_right = 0.34
+anchor_bottom = 0.025
+offset_bottom = 18.0
+theme_override_colors/font_color = Color(0.52, 1, 0.86, 0.90)
+theme_override_font_sizes/font_size = 7
+text = "LOADOUT SIAP • PILIH RELIK"
+
+[node name="ArmamentSlot" type="Control" parent="Content/FixedVBox/HeroStage"]
+unique_name_in_owner = true
+z_index = 9
+layout_mode = 0
+offset_right = 110.0
+offset_bottom = 78.0
+
+[node name="Frame" type="TextureRect" parent="Content/FixedVBox/HeroStage/ArmamentSlot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("24_slot")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Icon" type="TextureRect" parent="Content/FixedVBox/HeroStage/ArmamentSlot"]
+layout_mode = 1
+anchor_left = 0.29
+anchor_top = 0.05
+anchor_right = 0.71
+anchor_bottom = 0.52
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SlotLabel" type="Label" parent="Content/FixedVBox/HeroStage/ArmamentSlot"]
+layout_mode = 1
+anchor_left = 0.06
+anchor_top = 0.52
+anchor_right = 0.94
+anchor_bottom = 0.74
+theme_override_font_sizes/font_size = 8
+text = "SENJATA"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="StarLabel" type="Label" parent="Content/FixedVBox/HeroStage/ArmamentSlot"]
+layout_mode = 1
+anchor_left = 0.06
+anchor_top = 0.73
+anchor_right = 0.94
+anchor_bottom = 0.95
+theme_override_colors/font_color = Color(1, 0.82, 0.25, 1)
+theme_override_font_sizes/font_size = 7
+text = "★★★★★"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ArmamentButton" type="Button" parent="Content/FixedVBox/HeroStage/ArmamentSlot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
+text = ""
+
+[node name="RobeSlot" type="Control" parent="Content/FixedVBox/HeroStage"]
+unique_name_in_owner = true
+z_index = 9
+layout_mode = 0
+offset_right = 76.0
+offset_bottom = 98.0
+
+[node name="Frame" type="TextureRect" parent="Content/FixedVBox/HeroStage/RobeSlot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("24_slot")
+expand_mode = 1
+stretch_mode = 5
+[node name="Icon" type="TextureRect" parent="Content/FixedVBox/HeroStage/RobeSlot"]
+layout_mode = 1
+anchor_left = 0.16
+anchor_top = 0.09
+anchor_right = 0.84
+anchor_bottom = 0.57
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+[node name="SlotLabel" type="Label" parent="Content/FixedVBox/HeroStage/RobeSlot"]
+layout_mode = 1
+anchor_left = 0.06
+anchor_top = 0.58
+anchor_right = 0.94
+anchor_bottom = 0.77
+theme_override_font_sizes/font_size = 7
+text = "JUBAH"
+horizontal_alignment = 1
+vertical_alignment = 1
+[node name="StarLabel" type="Label" parent="Content/FixedVBox/HeroStage/RobeSlot"]
+layout_mode = 1
+anchor_left = 0.06
+anchor_top = 0.76
+anchor_right = 0.94
+anchor_bottom = 0.95
+theme_override_colors/font_color = Color(1, 0.82, 0.25, 1)
+theme_override_font_sizes/font_size = 7
+text = "★★★★★"
+horizontal_alignment = 1
+vertical_alignment = 1
+[node name="RobeButton" type="Button" parent="Content/FixedVBox/HeroStage/RobeSlot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
+text = ""
+
+[node name="BracerSlot" type="Control" parent="Content/FixedVBox/HeroStage"]
+unique_name_in_owner = true
+z_index = 9
+layout_mode = 0
+offset_right = 76.0
+offset_bottom = 98.0
+
+[node name="Frame" type="TextureRect" parent="Content/FixedVBox/HeroStage/BracerSlot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("24_slot")
+expand_mode = 1
+stretch_mode = 5
+[node name="Icon" type="TextureRect" parent="Content/FixedVBox/HeroStage/BracerSlot"]
+layout_mode = 1
+anchor_left = 0.16
+anchor_top = 0.09
+anchor_right = 0.84
+anchor_bottom = 0.57
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+[node name="SlotLabel" type="Label" parent="Content/FixedVBox/HeroStage/BracerSlot"]
+layout_mode = 1
+anchor_left = 0.06
+anchor_top = 0.58
+anchor_right = 0.94
+anchor_bottom = 0.77
+theme_override_font_sizes/font_size = 7
+text = "LENGAN"
+horizontal_alignment = 1
+vertical_alignment = 1
+[node name="StarLabel" type="Label" parent="Content/FixedVBox/HeroStage/BracerSlot"]
+layout_mode = 1
+anchor_left = 0.06
+anchor_top = 0.76
+anchor_right = 0.94
+anchor_bottom = 0.95
+theme_override_colors/font_color = Color(1, 0.82, 0.25, 1)
+theme_override_font_sizes/font_size = 7
+text = "★★★★★"
+horizontal_alignment = 1
+vertical_alignment = 1
+[node name="BracerButton" type="Button" parent="Content/FixedVBox/HeroStage/BracerSlot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
+text = ""
+
+[node name="PendantSlot" type="Control" parent="Content/FixedVBox/HeroStage"]
+unique_name_in_owner = true
+z_index = 9
+layout_mode = 0
+offset_right = 76.0
+offset_bottom = 98.0
+
+[node name="Frame" type="TextureRect" parent="Content/FixedVBox/HeroStage/PendantSlot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("24_slot")
+expand_mode = 1
+stretch_mode = 5
+[node name="Icon" type="TextureRect" parent="Content/FixedVBox/HeroStage/PendantSlot"]
+layout_mode = 1
+anchor_left = 0.16
+anchor_top = 0.09
+anchor_right = 0.84
+anchor_bottom = 0.57
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+[node name="SlotLabel" type="Label" parent="Content/FixedVBox/HeroStage/PendantSlot"]
+layout_mode = 1
+anchor_left = 0.06
+anchor_top = 0.58
+anchor_right = 0.94
+anchor_bottom = 0.77
+theme_override_font_sizes/font_size = 7
+text = "LIONTIN"
+horizontal_alignment = 1
+vertical_alignment = 1
+[node name="StarLabel" type="Label" parent="Content/FixedVBox/HeroStage/PendantSlot"]
+layout_mode = 1
+anchor_left = 0.06
+anchor_top = 0.76
+anchor_right = 0.94
+anchor_bottom = 0.95
+theme_override_colors/font_color = Color(1, 0.82, 0.25, 1)
+theme_override_font_sizes/font_size = 7
+text = "★★★★★"
+horizontal_alignment = 1
+vertical_alignment = 1
+[node name="PendantButton" type="Button" parent="Content/FixedVBox/HeroStage/PendantSlot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
+text = ""
+
+[node name="BootsSlot" type="Control" parent="Content/FixedVBox/HeroStage"]
+unique_name_in_owner = true
+z_index = 9
+layout_mode = 0
+offset_right = 76.0
+offset_bottom = 98.0
+
+[node name="Frame" type="TextureRect" parent="Content/FixedVBox/HeroStage/BootsSlot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("24_slot")
+expand_mode = 1
+stretch_mode = 5
+[node name="Icon" type="TextureRect" parent="Content/FixedVBox/HeroStage/BootsSlot"]
+layout_mode = 1
+anchor_left = 0.16
+anchor_top = 0.09
+anchor_right = 0.84
+anchor_bottom = 0.57
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+[node name="SlotLabel" type="Label" parent="Content/FixedVBox/HeroStage/BootsSlot"]
+layout_mode = 1
+anchor_left = 0.06
+anchor_top = 0.58
+anchor_right = 0.94
+anchor_bottom = 0.77
+theme_override_font_sizes/font_size = 7
+text = "SEPATU"
+horizontal_alignment = 1
+vertical_alignment = 1
+[node name="StarLabel" type="Label" parent="Content/FixedVBox/HeroStage/BootsSlot"]
+layout_mode = 1
+anchor_left = 0.06
+anchor_top = 0.76
+anchor_right = 0.94
+anchor_bottom = 0.95
+theme_override_colors/font_color = Color(1, 0.82, 0.25, 1)
+theme_override_font_sizes/font_size = 7
+text = "★★★★★"
+horizontal_alignment = 1
+vertical_alignment = 1
+[node name="BootsButton" type="Button" parent="Content/FixedVBox/HeroStage/BootsSlot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
+text = ""
+
+[node name="ResonancePanel" type="Control" parent="Content/FixedVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 132)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Frame" type="TextureRect" parent="Content/FixedVBox/ResonancePanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("17_info")
+expand_mode = 1
+stretch_mode = 0
+
+[node name="Title" type="Label" parent="Content/FixedVBox/ResonancePanel"]
+layout_mode = 1
+anchor_left = 0.035
+anchor_top = 0.04
+anchor_right = 0.46
+anchor_bottom = 0.18
+theme_type_variation = &"JadeSubtitle"
+theme_override_font_sizes/font_size = 9
+text = "RESONANSI LOADOUT"
+vertical_alignment = 1
+
+[node name="StatsRow" type="HBoxContainer" parent="Content/FixedVBox/ResonancePanel"]
+layout_mode = 1
+anchor_left = 0.035
+anchor_top = 0.18
+anchor_right = 0.965
+anchor_bottom = 0.44
+theme_override_constants/separation = 4
+
+[node name="HP" type="VBoxContainer" parent="Content/FixedVBox/ResonancePanel/StatsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = -2
+[node name="Label" type="Label" parent="Content/FixedVBox/ResonancePanel/StatsRow/HP"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 7
+text = "HP"
+horizontal_alignment = 1
+[node name="HpValue" type="Label" parent="Content/FixedVBox/ResonancePanel/StatsRow/HP"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"JadeCurrencyLabel"
-theme_override_font_sizes/font_size = 14
-text = "0"
+theme_override_font_sizes/font_size = 11
+text = "+0.0"
+horizontal_alignment = 1
+
+[node name="DMG" type="VBoxContainer" parent="Content/FixedVBox/ResonancePanel/StatsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = -2
+[node name="Label" type="Label" parent="Content/FixedVBox/ResonancePanel/StatsRow/DMG"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 7
+text = "DMG"
+horizontal_alignment = 1
+[node name="DmgValue" type="Label" parent="Content/FixedVBox/ResonancePanel/StatsRow/DMG"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeCurrencyLabel"
+theme_override_font_sizes/font_size = 11
+text = "+0.0%"
+horizontal_alignment = 1
+
+[node name="MOVE" type="VBoxContainer" parent="Content/FixedVBox/ResonancePanel/StatsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = -2
+[node name="Label" type="Label" parent="Content/FixedVBox/ResonancePanel/StatsRow/MOVE"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 7
+text = "MOVE"
+horizontal_alignment = 1
+[node name="MoveValue" type="Label" parent="Content/FixedVBox/ResonancePanel/StatsRow/MOVE"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeCurrencyLabel"
+theme_override_font_sizes/font_size = 11
+text = "+0.0%"
+horizontal_alignment = 1
+
+[node name="CRIT" type="VBoxContainer" parent="Content/FixedVBox/ResonancePanel/StatsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = -2
+[node name="Label" type="Label" parent="Content/FixedVBox/ResonancePanel/StatsRow/CRIT"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 7
+text = "CRIT"
+horizontal_alignment = 1
+[node name="CritValue" type="Label" parent="Content/FixedVBox/ResonancePanel/StatsRow/CRIT"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"JadeCurrencyLabel"
+theme_override_font_sizes/font_size = 11
+text = "+0.0%"
+horizontal_alignment = 1
+
+[node name="SetNameLabel" type="Label" parent="Content/FixedVBox/ResonancePanel"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.04
+anchor_top = 0.47
+anchor_right = 0.72
+anchor_bottom = 0.59
+theme_type_variation = &"JadeCurrencyLabel"
+theme_override_font_sizes/font_size = 9
+text = "NINE HEAVENS ASCENDANT"
+vertical_alignment = 1
+
+[node name="SetTierLabel" type="Label" parent="Content/FixedVBox/ResonancePanel"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.78
+anchor_top = 0.47
+anchor_right = 0.95
+anchor_bottom = 0.59
+theme_type_variation = &"JadeCurrencyLabel"
+theme_override_font_sizes/font_size = 9
+text = "3 / 5"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-
-[node name="SubTabs" type="HBoxContainer" parent="Content"]
-layout_mode = 1
-anchor_left = 0.03
-anchor_top = 0.528
-anchor_right = 0.97
-anchor_bottom = 0.528
-offset_bottom = 44.0
-grow_horizontal = 2
-theme_override_constants/separation = 6
-
-[node name="EquipmentTabButton" type="Button" parent="Content/SubTabs"]
-custom_minimum_size = Vector2(0, 40)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 13
-theme_override_styles/normal = SubResource("StyleTabActive")
-theme_override_styles/hover = SubResource("StyleTabActive")
-theme_override_styles/pressed = SubResource("StyleTabActive")
-theme_override_styles/focus = SubResource("StyleTabActive")
-theme_override_styles/disabled = SubResource("StyleTabActive")
-theme_override_colors/font_disabled_color = Color(1.0, 0.88, 0.56, 1.0)
-text = "PERLENGKAPAN"
-disabled = true
-
-[node name="BackpackTabButton" type="Button" parent="Content/SubTabs"]
+[node name="ResonancePathRoot" type="Control" parent="Content/FixedVBox/ResonancePanel"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 40)
+layout_mode = 1
+anchor_left = 0.10
+anchor_top = 0.59
+anchor_right = 0.90
+anchor_bottom = 0.78
+mouse_filter = 2
+
+[node name="ResonancePathBackground" type="Line2D" parent="Content/FixedVBox/ResonancePanel/ResonancePathRoot"]
+unique_name_in_owner = true
+width = 1.8
+default_color = Color(0.18, 0.40, 0.40, 0.64)
+
+[node name="ResonancePathActive" type="Line2D" parent="Content/FixedVBox/ResonancePanel/ResonancePathRoot"]
+unique_name_in_owner = true
+z_index = 1
+width = 2.2
+default_color = Color(0.96, 0.76, 0.28, 0.90)
+
+[node name="ResonanceNode1" type="PanelContainer" parent="Content/FixedVBox/ResonancePanel/ResonancePathRoot"]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_right = 22.0
+offset_bottom = 22.0
+[node name="Tier" type="Label" parent="Content/FixedVBox/ResonancePanel/ResonancePathRoot/ResonanceNode1"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 7
+text = "1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ResonanceNode2" type="PanelContainer" parent="Content/FixedVBox/ResonancePanel/ResonancePathRoot"]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_right = 22.0
+offset_bottom = 22.0
+[node name="Tier" type="Label" parent="Content/FixedVBox/ResonancePanel/ResonancePathRoot/ResonanceNode2"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 7
+text = "2"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ResonanceNode3" type="PanelContainer" parent="Content/FixedVBox/ResonancePanel/ResonancePathRoot"]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_right = 22.0
+offset_bottom = 22.0
+[node name="Tier" type="Label" parent="Content/FixedVBox/ResonancePanel/ResonancePathRoot/ResonanceNode3"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 7
+text = "3"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ResonanceNode4" type="PanelContainer" parent="Content/FixedVBox/ResonancePanel/ResonancePathRoot"]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_right = 22.0
+offset_bottom = 22.0
+[node name="Tier" type="Label" parent="Content/FixedVBox/ResonancePanel/ResonancePathRoot/ResonanceNode4"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 7
+text = "4"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ResonanceNode5" type="PanelContainer" parent="Content/FixedVBox/ResonancePanel/ResonancePathRoot"]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_right = 22.0
+offset_bottom = 22.0
+[node name="Tier" type="Label" parent="Content/FixedVBox/ResonancePanel/ResonancePathRoot/ResonanceNode5"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 7
+text = "5"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="NextResonanceLabel" type="Label" parent="Content/FixedVBox/ResonancePanel"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.04
+anchor_top = 0.80
+anchor_right = 0.96
+anchor_bottom = 0.96
+theme_type_variation = &"JadeQiLabel"
+theme_override_colors/font_color = Color(0.52, 1, 0.86, 1)
+theme_override_font_sizes/font_size = 8
+text = "NEXT • 4 / 5 → +0.75% Critical chance"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="SelectedDetail" type="Control" parent="Content/FixedVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 148)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 13
-theme_override_styles/normal = SubResource("StyleTabNormal")
-theme_override_styles/hover = SubResource("StyleTabActive")
-theme_override_styles/pressed = SubResource("StyleTabActive")
-theme_override_styles/focus = SubResource("StyleTabActive")
-text = "TAS"
 
-[node name="HeroLoadoutPanel" type="PanelContainer" parent="Content"]
+[node name="Frame" type="TextureRect" parent="Content/FixedVBox/SelectedDetail"]
 layout_mode = 1
-anchor_left = 0.03
-anchor_top = 0.083
-anchor_right = 0.97
-anchor_bottom = 0.525
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleRack")
+mouse_filter = 2
+texture = ExtResource("17_info")
+expand_mode = 1
+stretch_mode = 0
 
-[node name="HeroStage" type="Control" parent="Content/HeroLoadoutPanel"]
-layout_mode = 2
-clip_contents = true
-
-[node name="StageTitle" type="Label" parent="Content/HeroLoadoutPanel/HeroStage"]
-layout_mode = 1
-anchor_left = 0.32
-anchor_top = 0.022
-anchor_right = 0.68
-anchor_bottom = 0.022
-offset_bottom = 24.0
-theme_type_variation = &"JadeSubtitle"
-theme_override_font_sizes/font_size = 11
-text = "LOADOUT GIOK"
-horizontal_alignment = 1
-
-[node name="StatusLabel" type="Label" parent="Content/HeroLoadoutPanel/HeroStage"]
+[node name="SelectedItemIcon" type="TextureRect" parent="Content/FixedVBox/SelectedDetail"]
 unique_name_in_owner = true
 layout_mode = 1
 anchor_left = 0.035
-anchor_top = 0.024
-anchor_right = 0.305
-anchor_bottom = 0.024
-offset_bottom = 24.0
-theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 10
-text = "PERLENGKAPAN SIAP"
+anchor_top = 0.10
+anchor_right = 0.195
+anchor_bottom = 0.76
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SelectedItemName" type="Label" parent="Content/FixedVBox/SelectedDetail"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.215
+anchor_top = 0.08
+anchor_right = 0.69
+anchor_bottom = 0.25
+theme_type_variation = &"JadeHeroName"
+theme_override_font_sizes/font_size = 14
+text = "Selected Relic"
 vertical_alignment = 1
 clip_text = true
 
-[node name="EquippedCountLabel" type="Label" parent="Content/HeroLoadoutPanel/HeroStage"]
+[node name="SelectedMeta" type="Label" parent="Content/FixedVBox/SelectedDetail"]
 unique_name_in_owner = true
 layout_mode = 1
-anchor_left = 0.695
-anchor_top = 0.024
-anchor_right = 0.965
-anchor_bottom = 0.024
-offset_bottom = 24.0
+anchor_left = 0.215
+anchor_top = 0.24
+anchor_right = 0.69
+anchor_bottom = 0.38
+theme_type_variation = &"JadeQiLabel"
+theme_override_font_sizes/font_size = 8
+text = "LEGENDARY • ARMAMENT • ★★★★★"
+vertical_alignment = 1
+
+[node name="SelectedStats" type="Label" parent="Content/FixedVBox/SelectedDetail"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.215
+anchor_top = 0.39
+anchor_right = 0.69
+anchor_bottom = 0.54
+theme_type_variation = &"JadeSubtitle"
+theme_override_font_sizes/font_size = 8
+text = "+10% Damage"
+clip_text = true
+
+[node name="SelectedSet" type="Label" parent="Content/FixedVBox/SelectedDetail"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.215
+anchor_top = 0.54
+anchor_right = 0.69
+anchor_bottom = 0.68
 theme_type_variation = &"JadeCurrencyLabel"
-theme_override_font_sizes/font_size = 12
-text = "TERPASANG 0 / 5"
+theme_override_font_sizes/font_size = 8
+text = "NINE HEAVENS ASCENDANT • 3/5"
+clip_text = true
+
+[node name="SelectedEffectScroll" type="ScrollContainer" parent="Content/FixedVBox/SelectedDetail"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.215
+anchor_top = 0.68
+anchor_right = 0.69
+anchor_bottom = 0.92
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 1
+follow_focus = false
+clip_contents = true
+
+[node name="SignatureEffectLabel" type="Label" parent="Content/FixedVBox/SelectedDetail/SelectedEffectScroll"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"JadeMutedLabel"
+theme_override_font_sizes/font_size = 7
+text = "Signature effect"
+autowrap_mode = 3
+
+[node name="ActionRow" type="VBoxContainer" parent="Content/FixedVBox/SelectedDetail"]
+layout_mode = 1
+anchor_left = 0.74
+anchor_top = 0.14
+anchor_right = 0.97
+anchor_bottom = 0.66
+theme_override_constants/separation = 8
+
+[node name="ActionPrimary" type="Button" parent="Content/FixedVBox/SelectedDetail/ActionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(94, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+flat = false
+theme_override_font_sizes/font_size = 9
+text = "PAKAI"
+
+[node name="AscendButton" type="Button" parent="Content/FixedVBox/SelectedDetail/ActionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(94, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+flat = false
+theme_override_font_sizes/font_size = 9
+text = "TEMPA"
+
+[node name="ModeRow" type="HBoxContainer" parent="Content/CandidateScroll/MainVBox"]
+visible = false
+custom_minimum_size = Vector2(0, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="EquipmentModeButton" type="Button" parent="Content/CandidateScroll/MainVBox/ModeRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+text = "PERLENGKAPAN"
+
+[node name="BagModeButton" type="Button" parent="Content/CandidateScroll/MainVBox/ModeRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+text = "TAS"
+
+[node name="CollectionMeta" type="Control" parent="Content/CandidateScroll/MainVBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="OwnedSummary" type="Label" parent="Content/CandidateScroll/MainVBox/CollectionMeta"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.01
+anchor_top = 0.0
+anchor_right = 0.55
+anchor_bottom = 0.60
+theme_type_variation = &"JadeCurrencyLabel"
+theme_override_font_sizes/font_size = 9
+text = "32 JENIS • 1929 TOTAL"
+vertical_alignment = 1
+
+[node name="CodexSummary" type="Label" parent="Content/CandidateScroll/MainVBox/CollectionMeta"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.63
+anchor_top = 0.0
+anchor_right = 0.99
+anchor_bottom = 0.60
+theme_type_variation = &"JadeQiLabel"
+theme_override_font_sizes/font_size = 9
+text = "KODEKS 31 / 40"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="HeroShowcaseCard" type="PanelContainer" parent="Content/HeroLoadoutPanel/HeroStage"]
-layout_mode = 1
-anchor_left = 0.255
-anchor_top = 0.095
-anchor_right = 0.745
-anchor_bottom = 0.805
-mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleHeroShowcaseCard")
-
-[node name="HeroShowcaseArch" type="TextureRect" parent="Content/HeroLoadoutPanel/HeroStage"]
+[node name="CollectionProgressTrack" type="Control" parent="Content/CandidateScroll/MainVBox/CollectionMeta"]
 unique_name_in_owner = true
 layout_mode = 1
-anchor_left = 0.225
-anchor_top = 0.065
-anchor_right = 0.775
-anchor_bottom = 0.825
-mouse_filter = 2
-texture = ExtResource("17_arch")
-expand_mode = 1
-stretch_mode = 5
-modulate = Color(1, 1, 1, 0.18)
+anchor_left = 0.01
+anchor_top = 0.67
+anchor_right = 0.99
+anchor_bottom = 0.98
+clip_contents = true
 
-[node name="CultivationSeal" type="TextureRect" parent="Content/HeroLoadoutPanel/HeroStage"]
-unique_name_in_owner = true
+[node name="Track" type="TextureRect" parent="Content/CandidateScroll/MainVBox/CollectionMeta/CollectionProgressTrack"]
 layout_mode = 1
-anchor_left = 0.285
-anchor_top = 0.13
-anchor_right = 0.715
-anchor_bottom = 0.745
-mouse_filter = 2
-texture = ExtResource("13_seal")
-expand_mode = 1
-stretch_mode = 5
-modulate = Color(1, 1, 1, 0.055)
-
-[node name="HeroShowcaseHalo" type="TextureRect" parent="Content/HeroLoadoutPanel/HeroStage"]
-unique_name_in_owner = true
-layout_mode = 1
-anchor_left = 0.245
-anchor_top = 0.105
-anchor_right = 0.755
-anchor_bottom = 0.775
-mouse_filter = 2
-texture = ExtResource("15_showcase")
-expand_mode = 1
-stretch_mode = 5
-modulate = Color(1, 1, 1, 0.14)
-
-[node name="HeroQiParticles" type="TextureRect" parent="Content/HeroLoadoutPanel/HeroStage"]
-unique_name_in_owner = true
-layout_mode = 1
-anchor_left = 0.24
-anchor_top = 0.095
-anchor_right = 0.76
-anchor_bottom = 0.79
-mouse_filter = 2
-texture = ExtResource("18_particles")
-expand_mode = 1
-stretch_mode = 5
-modulate = Color(1, 1, 1, 0.17)
-
-[node name="HeroGhostSprite" type="AnimatedSprite2D" parent="Content/HeroLoadoutPanel/HeroStage"]
-unique_name_in_owner = true
-visible = false
-sprite_frames = ExtResource("12_player_frames")
-animation = &"idle_down"
-
-[node name="HeroPreviewSprite" type="AnimatedSprite2D" parent="Content/HeroLoadoutPanel/HeroStage"]
-unique_name_in_owner = true
-visible = false
-sprite_frames = ExtResource("12_player_frames")
-animation = &"idle_down"
-
-[node name="HeroPedestal" type="TextureRect" parent="Content/HeroLoadoutPanel/HeroStage"]
-unique_name_in_owner = true
-z_index = 1
-layout_mode = 1
-anchor_left = 0.30
-anchor_top = 0.655
-anchor_right = 0.70
-anchor_bottom = 0.79
-mouse_filter = 2
-texture = ExtResource("16_pedestal")
-expand_mode = 1
-stretch_mode = 5
-modulate = Color(1, 1, 1, 0.42)
-
-[node name="HeroMenuArt" type="TextureRect" parent="Content/HeroLoadoutPanel/HeroStage"]
-unique_name_in_owner = true
-z_index = 2
-layout_mode = 1
-anchor_left = 0.28
-anchor_top = 0.10
-anchor_right = 0.72
-anchor_bottom = 0.80
-mouse_filter = 2
-texture = ExtResource("19_hero_menu_art")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="HeroNameLabel" type="Label" parent="Content/HeroLoadoutPanel/HeroStage"]
-z_index = 3
-layout_mode = 1
-anchor_left = 0.29
-anchor_top = 0.695
-anchor_right = 0.71
-anchor_bottom = 0.695
-offset_bottom = 26.0
-theme_type_variation = &"JadeHeroName"
-theme_override_font_sizes/font_size = 18
-text = "LIN YUE"
-horizontal_alignment = 1
-
-[node name="HeroPathLabel" type="Label" parent="Content/HeroLoadoutPanel/HeroStage"]
-z_index = 3
-layout_mode = 1
-anchor_left = 0.27
-anchor_top = 0.745
-anchor_right = 0.73
-anchor_bottom = 0.745
-offset_bottom = 20.0
-theme_type_variation = &"JadeQiLabel"
-theme_override_font_sizes/font_size = 9
-text = "PENGEMBARA GIOK  •  PENYELARASAN QI"
-horizontal_alignment = 1
-clip_text = true
-
-[node name="RobeButton" type="Button" parent="Content/HeroLoadoutPanel/HeroStage"]
-unique_name_in_owner = true
-z_index = 4
-layout_mode = 1
-anchor_left = 0.14
-anchor_top = 0.22
-anchor_right = 0.14
-anchor_bottom = 0.22
-offset_left = -46.0
-offset_top = -46.0
-offset_right = 46.0
-offset_bottom = 46.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_type_variation = &"JadeSecondaryButton"
-text = ""
-[node name="PendantButton" type="Button" parent="Content/HeroLoadoutPanel/HeroStage"]
-unique_name_in_owner = true
-z_index = 4
-layout_mode = 1
-anchor_left = 0.14
-anchor_top = 0.7
-anchor_right = 0.14
-anchor_bottom = 0.7
-offset_left = -46.0
-offset_top = -46.0
-offset_right = 46.0
-offset_bottom = 46.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_type_variation = &"JadeSecondaryButton"
-text = ""
-[node name="ArmamentButton" type="Button" parent="Content/HeroLoadoutPanel/HeroStage"]
-unique_name_in_owner = true
-z_index = 4
-layout_mode = 1
-anchor_left = 0.86
-anchor_top = 0.195
-anchor_right = 0.86
-anchor_bottom = 0.195
-offset_left = -46.0
-offset_top = -46.0
-offset_right = 46.0
-offset_bottom = 46.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_type_variation = &"JadeSecondaryButton"
-text = ""
-[node name="BracerButton" type="Button" parent="Content/HeroLoadoutPanel/HeroStage"]
-unique_name_in_owner = true
-z_index = 4
-layout_mode = 1
-anchor_left = 0.86
-anchor_top = 0.46
-anchor_right = 0.86
-anchor_bottom = 0.46
-offset_left = -46.0
-offset_top = -46.0
-offset_right = 46.0
-offset_bottom = 46.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_type_variation = &"JadeSecondaryButton"
-text = ""
-[node name="BootsButton" type="Button" parent="Content/HeroLoadoutPanel/HeroStage"]
-unique_name_in_owner = true
-z_index = 4
-layout_mode = 1
-anchor_left = 0.86
-anchor_top = 0.725
-anchor_right = 0.86
-anchor_bottom = 0.725
-offset_left = -46.0
-offset_top = -46.0
-offset_right = 46.0
-offset_bottom = 46.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_type_variation = &"JadeSecondaryButton"
-text = ""
-[node name="BonusPanel" type="PanelContainer" parent="Content/HeroLoadoutPanel/HeroStage"]
-layout_mode = 1
-anchor_left = 0.255
-anchor_top = 0.825
-anchor_right = 0.745
-anchor_bottom = 0.955
-theme_override_styles/panel = SubResource("StyleBonusPill")
+mouse_filter = 2
+texture = ExtResource("20_track")
+expand_mode = 1
+stretch_mode = 0
 
-[node name="BonusSummaryLabel" type="Label" parent="Content/HeroLoadoutPanel/HeroStage/BonusPanel"]
+[node name="CollectionProgressFill" type="TextureRect" parent="Content/CandidateScroll/MainVBox/CollectionMeta/CollectionProgressTrack"]
 unique_name_in_owner = true
+layout_mode = 0
+offset_right = 320.0
+offset_bottom = 12.0
+mouse_filter = 2
+texture = ExtResource("21_fill")
+expand_mode = 1
+stretch_mode = 0
+
+[node name="FilterRow" type="HBoxContainer" parent="Content/CandidateScroll/MainVBox"]
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
-theme_type_variation = &"JadeQiLabel"
-theme_override_font_sizes/font_size = 11
-text = "TANPA BONUS PERLENGKAPAN AKTIF"
-horizontal_alignment = 1
-vertical_alignment = 1
-autowrap_mode = 2
-
-[node name="CollectionPanel" type="PanelContainer" parent="Content"]
-unique_name_in_owner = true
-layout_mode = 1
-anchor_left = 0.03
-anchor_top = 0.578
-anchor_right = 0.97
-anchor_bottom = 0.905
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleRack")
-
-[node name="CollectionVBox" type="VBoxContainer" parent="Content/CollectionPanel"]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="CandidateCaption" type="Label" parent="Content/CollectionPanel/CollectionVBox"]
-layout_mode = 2
-theme_type_variation = &"JadeSubtitle"
-theme_override_font_sizes/font_size = 11
-text = "ARSENAL GIOK  •  GESER UNTUK MENJELAJAH"
-
-[node name="CandidateScroll" type="ScrollContainer" parent="Content/CollectionPanel/CollectionVBox"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_vertical = 3
 size_flags_horizontal = 3
-horizontal_scroll_mode = 0
-vertical_scroll_mode = 2
+theme_override_constants/separation = 4
 
-[node name="CandidateGrid" type="GridContainer" parent="Content/CollectionPanel/CollectionVBox/CandidateScroll"]
+[node name="AllFilterButton" type="Button" parent="Content/CandidateScroll/MainVBox/FilterRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/h_separation = 8
-theme_override_constants/v_separation = 8
-columns = 3
+theme_override_font_sizes/font_size = 7
+text = "SEMUA"
 
-[node name="DetailPanel" type="PanelContainer" parent="Content"]
+[node name="ArmamentFilterButton" type="Button" parent="Content/CandidateScroll/MainVBox/FilterRow"]
 unique_name_in_owner = true
-visible = false
-z_index = 8
-layout_mode = 1
-anchor_left = 0.025
-anchor_top = 0.30
-anchor_right = 0.975
-anchor_bottom = 0.665
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleDetailFrame")
-
-[node name="DetailScroll" type="ScrollContainer" parent="Content/DetailPanel"]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 3
-horizontal_scroll_mode = 0
-vertical_scroll_mode = 2
+theme_override_font_sizes/font_size = 7
+text = "SENJATA"
 
-[node name="DetailVBox" type="VBoxContainer" parent="Content/DetailPanel/DetailScroll"]
+[node name="RobeFilterButton" type="Button" parent="Content/CandidateScroll/MainVBox/FilterRow"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 6
+theme_override_font_sizes/font_size = 7
+text = "JUBAH"
 
-[node name="DetailHeaderRow" type="HBoxContainer" parent="Content/DetailPanel/DetailScroll/DetailVBox"]
+[node name="BracerFilterButton" type="Button" parent="Content/CandidateScroll/MainVBox/FilterRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 7
+text = "LENGAN"
+
+[node name="PendantFilterButton" type="Button" parent="Content/CandidateScroll/MainVBox/FilterRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 7
+text = "LIONTIN"
+
+[node name="BootsFilterButton" type="Button" parent="Content/CandidateScroll/MainVBox/FilterRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 7
+text = "SEPATU"
+
+[node name="CollectionPanel" type="PanelContainer" parent="Content/CandidateScroll/MainVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("CollectionSurface")
+
+[node name="CollectionVBox" type="VBoxContainer" parent="Content/CandidateScroll/MainVBox/CollectionPanel"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="DetailHeader" type="VBoxContainer" parent="Content/DetailPanel/DetailScroll/DetailVBox/DetailHeaderRow"]
+[node name="HeadingRow" type="HBoxContainer" parent="Content/CandidateScroll/MainVBox/CollectionPanel/CollectionVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Heading" type="Label" parent="Content/CandidateScroll/MainVBox/CollectionPanel/CollectionVBox/HeadingRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 1
-
-[node name="SelectedSlotLabel" type="Label" parent="Content/DetailPanel/DetailScroll/DetailVBox/DetailHeaderRow/DetailHeader"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"JadeTitle"
-theme_override_font_sizes/font_size = 15
-text = "JUBAH  •  PERTAHANAN"
-autowrap_mode = 2
-
-[node name="EquippedItemLabel" type="Label" parent="Content/DetailPanel/DetailScroll/DetailVBox/DetailHeaderRow/DetailHeader"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"JadeSubtitle"
-theme_override_font_sizes/font_size = 10
-text = "TERPASANG  •  TIDAK ADA"
-autowrap_mode = 2
-
-[node name="DetailCloseButton" type="Button" parent="Content/DetailPanel/DetailScroll/DetailVBox/DetailHeaderRow"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(44, 40)
-layout_mode = 2
-theme_type_variation = &"JadeSecondaryButton"
-theme_override_font_sizes/font_size = 16
-text = "×"
-
-[node name="InspectionCard" type="PanelContainer" parent="Content/DetailPanel/DetailScroll/DetailVBox"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 88)
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleInspection")
-
-[node name="InspectionRow" type="HBoxContainer" parent="Content/DetailPanel/DetailScroll/DetailVBox/InspectionCard"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="SelectedItemIcon" type="TextureRect" parent="Content/DetailPanel/DetailScroll/DetailVBox/InspectionCard/InspectionRow"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(82, 82)
-layout_mode = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="InspectionText" type="VBoxContainer" parent="Content/DetailPanel/DetailScroll/DetailVBox/InspectionCard/InspectionRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 2
-
-[node name="ItemRoleLabel" type="Label" parent="Content/DetailPanel/DetailScroll/DetailVBox/InspectionCard/InspectionRow/InspectionText"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"JadeTitle"
-theme_override_font_sizes/font_size = 15
-text = "ITEM NAME"
-autowrap_mode = 2
-
-[node name="SelectedStatLabel" type="Label" parent="Content/DetailPanel/DetailScroll/DetailVBox/InspectionCard/InspectionRow/InspectionText"]
-unique_name_in_owner = true
-layout_mode = 2
 theme_type_variation = &"JadeQiLabel"
-theme_override_font_sizes/font_size = 11
-text = "RARITY  •  STARS  •  CORE PASSIVE"
-autowrap_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "KOLEKSI RELIK • KETUK UNTUK MEMERIKSA"
+vertical_alignment = 1
 
-[node name="CompareLabel" type="Label" parent="Content/DetailPanel/DetailScroll/DetailVBox/InspectionCard/InspectionRow/InspectionText"]
+[node name="SortButton" type="Button" parent="Content/CandidateScroll/MainVBox/CollectionPanel/CollectionVBox/HeadingRow"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 32)
 layout_mode = 2
-theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 10
-text = "LOADOUT IMPACT  •  NO CHANGE"
-autowrap_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "RARITAS"
 
-[node name="SignaturePanel" type="PanelContainer" parent="Content/DetailPanel/DetailScroll/DetailVBox"]
+[node name="CandidateGrid" type="GridContainer" parent="Content/CandidateScroll/MainVBox/CollectionPanel/CollectionVBox"]
 unique_name_in_owner = true
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleInspection")
-
-[node name="SignatureEffectLabel" type="Label" parent="Content/DetailPanel/DetailScroll/DetailVBox/SignaturePanel"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"JadeSubtitle"
-theme_override_font_sizes/font_size = 10
-text = "SIGNATURE EFFECT"
-autowrap_mode = 2
-
-[node name="AscensionPanel" type="PanelContainer" parent="Content/DetailPanel/DetailScroll/DetailVBox"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleInspection")
-
-[node name="AscensionRow" type="HBoxContainer" parent="Content/DetailPanel/DetailScroll/DetailVBox/AscensionPanel"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="AscensionEmblem" type="TextureRect" parent="Content/DetailPanel/DetailScroll/DetailVBox/AscensionPanel/AscensionRow"]
-custom_minimum_size = Vector2(46, 46)
-layout_mode = 2
-texture = ExtResource("14_asc")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="AscensionText" type="VBoxContainer" parent="Content/DetailPanel/DetailScroll/DetailVBox/AscensionPanel/AscensionRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 2
+columns = 3
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
 
-[node name="AscensionStatusLabel" type="Label" parent="Content/DetailPanel/DetailScroll/DetailVBox/AscensionPanel/AscensionRow/AscensionText"]
+[node name="EmptyLabel" type="Label" parent="Content/CandidateScroll/MainVBox/CollectionPanel/CollectionVBox"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
-theme_type_variation = &"JadeSubtitle"
-theme_override_font_sizes/font_size = 11
-text = "★☆☆☆☆  →  ★★☆☆☆\nSHARDS  0 / 0"
-autowrap_mode = 2
-
-[node name="AscensionPreviewLabel" type="Label" parent="Content/DetailPanel/DetailScroll/DetailVBox/AscensionPanel/AscensionRow/AscensionText"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"JadeQiLabel"
+custom_minimum_size = Vector2(0, 80)
+theme_type_variation = &"JadeMutedLabel"
 theme_override_font_sizes/font_size = 10
-text = "NEXT CORE PASSIVE\nPREVIEW"
-autowrap_mode = 2
-
-[node name="AscendButton" type="Button" parent="Content/DetailPanel/DetailScroll/DetailVBox"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 40)
-layout_mode = 2
-theme_type_variation = &"JadePrimaryButton"
-theme_override_font_sizes/font_size = 11
-text = "ASCENSION LOCKED"
-disabled = true
-
-[node name="AscendHintLabel" type="Label" parent="Content/DetailPanel/DetailScroll/DetailVBox"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 9
-text = "Core passive increases; Signature Effect stays fixed."
+text = "Tidak ada item pada filter ini."
 horizontal_alignment = 1
-autowrap_mode = 2
+vertical_alignment = 1
 
-[node name="ActionButton" type="Button" parent="Content/DetailPanel/DetailScroll/DetailVBox"]
+[node name="NavBar" type="Control" parent="Content"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 46)
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-theme_override_colors/font_color = Color(1, 0.92, 0.68, 1)
-theme_override_colors/font_hover_color = Color(1, 0.96, 0.78, 1)
-theme_override_colors/font_disabled_color = Color(0.58, 0.62, 0.58, 0.82)
-theme_override_styles/normal = SubResource("StyleActionNormal")
-theme_override_styles/hover = SubResource("StyleActionHover")
-theme_override_styles/pressed = SubResource("StyleActionPressed")
-theme_override_styles/focus = SubResource("StyleActionHover")
-theme_override_styles/disabled = SubResource("StyleActionNormal")
-text = "EQUIP ITEM"
-
-[node name="ActionHintLabel" type="Label" parent="Content/DetailPanel/DetailScroll/DetailVBox"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"JadeMutedLabel"
-theme_override_font_sizes/font_size = 9
-text = "Tap × to return to the equipment grid."
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="HubNav" type="Control" parent="Content"]
 layout_mode = 1
 anchor_left = 0.03
 anchor_top = 1.0
@@ -858,5 +1162,42 @@ offset_top = -98.0
 offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 0
-script = ExtResource("6_nav")
+script = ExtResource("25_hub_nav")
 active_tab = 2
+
+
+[node name="CompatibilityContracts" type="Control" parent="Content"]
+visible = false
+layout_mode = 0
+offset_right = 1.0
+offset_bottom = 1.0
+mouse_filter = 2
+
+[node name="HeroPreviewSprite" type="AnimatedSprite2D" parent="Content/CompatibilityContracts"]
+sprite_frames = ExtResource("26_player_frames")
+animation = &"idle_down"
+
+[node name="DetailPanel" type="PanelContainer" parent="Content/CompatibilityContracts"]
+visible = false
+layout_mode = 0
+offset_right = 1.0
+offset_bottom = 1.0
+
+[node name="DetailCloseButton" type="Button" parent="Content/CompatibilityContracts/DetailPanel"]
+layout_mode = 2
+text = ""
+
+[node name="AscensionStatusLabel" type="Label" parent="Content/CompatibilityContracts"]
+visible = false
+layout_mode = 0
+text = ""
+
+[node name="AscensionPreviewLabel" type="Label" parent="Content/CompatibilityContracts"]
+visible = false
+layout_mode = 0
+text = ""
+
+[node name="AscendHintLabel" type="Label" parent="Content/CompatibilityContracts"]
+visible = false
+layout_mode = 0
+text = ""

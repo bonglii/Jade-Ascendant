@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="292" height="58" viewBox="0 0 292 58">
+<defs>
+<linearGradient id="btn" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#123A3A"/>
+  <stop offset="1" stop-color="#07181D"/>
+</linearGradient>
+
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#0D252D"/>
+  <stop offset="0.5" stop-color="#091A22"/>
+  <stop offset="1" stop-color="#061117"/>
+</linearGradient>
+<linearGradient id="jadeLine" x1="0" y1="0" x2="1" y2="0">
+  <stop offset="0" stop-color="#1E8D7E" stop-opacity="0.15"/>
+  <stop offset="0.5" stop-color="#E8BE58" stop-opacity="0.95"/>
+  <stop offset="1" stop-color="#1E8D7E" stop-opacity="0.15"/>
+</linearGradient>
+<linearGradient id="goldLine" x1="0" y1="0" x2="1" y2="0">
+  <stop offset="0" stop-color="#8B621D" stop-opacity="0.15"/>
+  <stop offset="0.5" stop-color="#E8BE58" stop-opacity="0.95"/>
+  <stop offset="1" stop-color="#8B621D" stop-opacity="0.15"/>
+</linearGradient>
+<filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+  <feGaussianBlur stdDeviation="3" result="blur"/>
+  <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>
+<filter id="goldGlow" x="-40%" y="-40%" width="180%" height="180%">
+  <feGaussianBlur stdDeviation="2.5" result="blur"/>
+  <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>
+
+</defs>
+<g opacity="1.0" transform="translate(0,0)">
+<path d="M16 3 H276 L289 16 V42 L276 55 H16 L3 42 V16 Z" fill="url(#btn)" stroke="#E8BE58" stroke-width="1.7"/>
+<path d="M25 8 H267 L280 20 V38 L267 50 H25 L12 38 V20 Z" fill="none" stroke="#E8BE58" stroke-opacity="0.42" stroke-width="1"/>
+<path d="M18 29 H72" stroke="url(#goldLine)" stroke-width="1"/>
+<path d="M220 29 H274" stroke="url(#goldLine)" stroke-width="1"/>
+<path d="M18 25 L22 29 L18 33 L14 29 Z" fill="#061117" stroke="#E8BE58" stroke-width="1.5"/>
+<path d="M274 25 L278 29 L274 33 L270 29 Z" fill="#061117" stroke="#E8BE58" stroke-width="1.5"/>
+</g></svg>

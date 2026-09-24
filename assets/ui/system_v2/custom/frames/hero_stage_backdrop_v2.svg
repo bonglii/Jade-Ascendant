@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="612" height="770" viewBox="0 0 612 770"><defs>
+<linearGradient id="stageBg" x1="0" y1="0" x2="0" y2="1">
+ <stop offset="0" stop-color="#0D252D" stop-opacity="0.94"/>
+ <stop offset="0.45" stop-color="#091A22" stop-opacity="0.88"/>
+ <stop offset="1" stop-color="#061117" stop-opacity="0.98"/>
+</linearGradient>
+<radialGradient id="aura" cx="50%" cy="43%" r="48%">
+ <stop offset="0" stop-color="#82F7DA" stop-opacity="0.14"/>
+ <stop offset="0.45" stop-color="#45D9BE" stop-opacity="0.07"/>
+ <stop offset="1" stop-color="#45D9BE" stop-opacity="0"/>
+</radialGradient>
+<linearGradient id="goldLine" x1="0" y1="0" x2="1" y2="0">
+ <stop offset="0" stop-color="#8B621D" stop-opacity="0"/>
+ <stop offset="0.5" stop-color="#E8BE58" stop-opacity="0.7"/>
+ <stop offset="1" stop-color="#8B621D" stop-opacity="0"/>
+</linearGradient>
+</defs>
+<rect x="0" y="0" width="612" height="770" rx="18" fill="url(#stageBg)"/>
+<rect x="0" y="0" width="612" height="770" rx="18" fill="url(#aura)"/>
+<circle cx="306" cy="330" r="222" fill="none" stroke="#45D9BE" stroke-opacity="0.14" stroke-width="1.2"/>
+<circle cx="306" cy="330" r="182" fill="none" stroke="#58C8E5" stroke-opacity="0.13" stroke-width="1"/>
+<circle cx="306" cy="330" r="144" fill="none" stroke="#E8BE58" stroke-opacity="0.11" stroke-width="1"/>
+<path d="M306 85 L318 103 L306 121 L294 103 Z" fill="none" stroke="#E8BE58" stroke-opacity="0.68" stroke-width="1.5"/>
+<path d="M54 154 H160 M452 154 H558" stroke="url(#goldLine)" stroke-width="1"/>
+<path d="M54 612 H180 M432 612 H558" stroke="#45D9BE" stroke-opacity="0.22" stroke-width="1"/>
+<path d="M18 18 H88 L104 34" fill="none" stroke="#E8BE58" stroke-opacity="0.65"/>
+<path d="M594 18 H524 L508 34" fill="none" stroke="#E8BE58" stroke-opacity="0.65"/>
+<path d="M18 752 H88 L104 736" fill="none" stroke="#45D9BE" stroke-opacity="0.38"/>
+<path d="M594 752 H524 L508 736" fill="none" stroke="#45D9BE" stroke-opacity="0.38"/>
+</svg>

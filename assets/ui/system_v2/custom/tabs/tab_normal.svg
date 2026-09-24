@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="148" height="48" viewBox="0 0 148 48">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#0D252D"/>
+  <stop offset="0.5" stop-color="#091A22"/>
+  <stop offset="1" stop-color="#061117"/>
+</linearGradient>
+<linearGradient id="jadeLine" x1="0" y1="0" x2="1" y2="0">
+  <stop offset="0" stop-color="#1E8D7E" stop-opacity="0.15"/>
+  <stop offset="0.5" stop-color="#45D9BE" stop-opacity="0.95"/>
+  <stop offset="1" stop-color="#1E8D7E" stop-opacity="0.15"/>
+</linearGradient>
+<linearGradient id="goldLine" x1="0" y1="0" x2="1" y2="0">
+  <stop offset="0" stop-color="#8B621D" stop-opacity="0.15"/>
+  <stop offset="0.5" stop-color="#E8BE58" stop-opacity="0.95"/>
+  <stop offset="1" stop-color="#8B621D" stop-opacity="0.15"/>
+</linearGradient>
+<filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+  <feGaussianBlur stdDeviation="3" result="blur"/>
+  <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>
+<filter id="goldGlow" x="-40%" y="-40%" width="180%" height="180%">
+  <feGaussianBlur stdDeviation="2.5" result="blur"/>
+  <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>
+</defs>
+<path d="M8 2 H140 L146 8 V40 L140 46 H8 L2 40 V8 Z" fill="#07191F" stroke="#1D6E85" stroke-width="1.4" opacity="0.82"/>
+<path d="M14 7 H134" stroke="#58C8E5" stroke-width="1" opacity="0.42"/>
+<path d="M14 41 H134" stroke="#58C8E5" stroke-width="1" opacity="0.24"/>
+</svg>

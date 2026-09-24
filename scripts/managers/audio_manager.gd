@@ -15,7 +15,7 @@ const MUSIC_TARGET_DB: float = -18.5
 const MUSIC_OFF_DB: float = -55.0
 
 const MUSIC: Dictionary = {
-	"home": preload("res://assets/audio/presentation_v2/music_home.ogg"),
+	"home": preload(	"res://assets/audio/presentation_v2/music_home.ogg"),
 	"journey": preload("res://assets/audio/presentation_v2/music_journey.ogg"),
 	"boss": preload("res://assets/audio/presentation_v2/music_boss.ogg"),
 	"pavilion": preload("res://assets/audio/presentation_v2/music_pavilion.ogg")

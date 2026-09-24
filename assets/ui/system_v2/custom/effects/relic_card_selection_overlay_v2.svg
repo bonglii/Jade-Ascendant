@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="188" height="176" viewBox="0 0 188 176">
+<defs>
+  <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="2.8" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<path d="M11 1 H177 L187 11 V165 L177 175 H11 L1 165 V11 Z"
+ fill="none" stroke="#82F7DA" stroke-width="2.2" stroke-opacity="0.96" filter="url(#glow)"/>
+<path d="M18 6 H170" fill="none" stroke="#58C8E5" stroke-width="1.1" stroke-opacity="0.86"/>
+<path d="M18 170 H170" fill="none" stroke="#45D9BE" stroke-width="1.1" stroke-opacity="0.72"/>
+<path d="M94 2 l7 7 -7 7 -7 -7 z" fill="#061117" stroke="#FFE077" stroke-width="1.2"/>
+<path d="M94 160 l7 7 -7 7 -7 -7 z" fill="#061117" stroke="#82F7DA" stroke-width="1.1"/>
+</svg>

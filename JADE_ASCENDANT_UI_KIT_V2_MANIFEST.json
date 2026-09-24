@@ -1,0 +1,423 @@
+{
+  "name": "Jade Ascendant UI Kit V2 Custom",
+  "version": "2.0-pass1",
+  "purpose": "Reusable custom UI foundation for Jade Ascendant. Production scenes not modified.",
+  "palette": {
+    "obsidian": "#061117",
+    "obsidian2": "#091A22",
+    "obsidian3": "#0D252D",
+    "jade": "#45D9BE",
+    "jade_bright": "#82F7DA",
+    "jade_deep": "#1E8D7E",
+    "cyan": "#58C8E5",
+    "cyan_deep": "#1D6E85",
+    "gold": "#E8BE58",
+    "gold_bright": "#FFE078",
+    "gold_deep": "#8B621D",
+    "text": "#EEF7F4",
+    "muted": "#9FBAB5",
+    "common": "#7DAA99",
+    "rare": "#4CBCE6",
+    "epic": "#A66BE8",
+    "legendary": "#F0B84B",
+    "danger": "#C93B31"
+  },
+  "assets": {
+    "headers/header_frame_v2.svg": {
+      "size": [
+        612,
+        72
+      ],
+      "nine_slice": [
+        22,
+        18,
+        22,
+        18
+      ]
+    },
+    "headers/header_compact_v2.svg": {
+      "size": [
+        360,
+        56
+      ],
+      "nine_slice": [
+        18,
+        14,
+        18,
+        14
+      ]
+    },
+    "buttons/primary_normal.svg": {
+      "size": [
+        292,
+        58
+      ],
+      "nine_slice": [
+        22,
+        18,
+        22,
+        18
+      ]
+    },
+    "buttons/primary_pressed.svg": {
+      "size": [
+        292,
+        58
+      ],
+      "nine_slice": [
+        22,
+        18,
+        22,
+        18
+      ]
+    },
+    "buttons/primary_selected.svg": {
+      "size": [
+        292,
+        58
+      ],
+      "nine_slice": [
+        22,
+        18,
+        22,
+        18
+      ]
+    },
+    "buttons/primary_disabled.svg": {
+      "size": [
+        292,
+        58
+      ],
+      "nine_slice": [
+        22,
+        18,
+        22,
+        18
+      ]
+    },
+    "buttons/secondary_normal.svg": {
+      "size": [
+        292,
+        58
+      ],
+      "nine_slice": [
+        22,
+        18,
+        22,
+        18
+      ]
+    },
+    "buttons/secondary_pressed.svg": {
+      "size": [
+        292,
+        58
+      ],
+      "nine_slice": [
+        22,
+        18,
+        22,
+        18
+      ]
+    },
+    "buttons/secondary_selected.svg": {
+      "size": [
+        292,
+        58
+      ],
+      "nine_slice": [
+        22,
+        18,
+        22,
+        18
+      ]
+    },
+    "buttons/secondary_disabled.svg": {
+      "size": [
+        292,
+        58
+      ],
+      "nine_slice": [
+        22,
+        18,
+        22,
+        18
+      ]
+    },
+    "tabs/tab_normal.svg": {
+      "size": [
+        148,
+        48
+      ],
+      "nine_slice": [
+        14,
+        12,
+        14,
+        12
+      ]
+    },
+    "tabs/tab_pressed.svg": {
+      "size": [
+        148,
+        48
+      ],
+      "nine_slice": [
+        14,
+        12,
+        14,
+        12
+      ]
+    },
+    "tabs/tab_selected.svg": {
+      "size": [
+        148,
+        48
+      ],
+      "nine_slice": [
+        14,
+        12,
+        14,
+        12
+      ]
+    },
+    "slots/relic_slot_default.svg": {
+      "size": [
+        128,
+        128
+      ]
+    },
+    "slots/relic_slot_selected.svg": {
+      "size": [
+        128,
+        128
+      ]
+    },
+    "slots/relic_slot_locked.svg": {
+      "size": [
+        128,
+        128
+      ]
+    },
+    "cards/relic_card_common.svg": {
+      "size": [
+        188,
+        176
+      ],
+      "nine_slice": [
+        18,
+        18,
+        18,
+        18
+      ]
+    },
+    "cards/relic_card_rare.svg": {
+      "size": [
+        188,
+        176
+      ],
+      "nine_slice": [
+        18,
+        18,
+        18,
+        18
+      ]
+    },
+    "cards/relic_card_epic.svg": {
+      "size": [
+        188,
+        176
+      ],
+      "nine_slice": [
+        18,
+        18,
+        18,
+        18
+      ]
+    },
+    "cards/relic_card_legendary.svg": {
+      "size": [
+        188,
+        176
+      ],
+      "nine_slice": [
+        18,
+        18,
+        18,
+        18
+      ]
+    },
+    "cards/relic_card_selected.svg": {
+      "size": [
+        188,
+        176
+      ],
+      "nine_slice": [
+        18,
+        18,
+        18,
+        18
+      ]
+    },
+    "frames/showcase_frame_v2.svg": {
+      "size": [
+        612,
+        332
+      ],
+      "nine_slice": [
+        28,
+        28,
+        28,
+        28
+      ]
+    },
+    "frames/info_panel_compact_v2.svg": {
+      "size": [
+        612,
+        132
+      ],
+      "nine_slice": [
+        20,
+        18,
+        20,
+        18
+      ]
+    },
+    "frames/modal_frame_v2.svg": {
+      "size": [
+        520,
+        300
+      ],
+      "nine_slice": [
+        30,
+        26,
+        30,
+        26
+      ]
+    },
+    "dividers/divider_long_v2.svg": {
+      "size": [
+        612,
+        24
+      ]
+    },
+    "dividers/divider_short_v2.svg": {
+      "size": [
+        320,
+        24
+      ]
+    },
+    "bars/progress_track_v2.svg": {
+      "size": [
+        612,
+        24
+      ],
+      "nine_slice": [
+        18,
+        8,
+        18,
+        8
+      ]
+    },
+    "bars/progress_fill_jade_v2.svg": {
+      "size": [
+        612,
+        24
+      ],
+      "nine_slice": [
+        18,
+        8,
+        18,
+        8
+      ]
+    },
+    "bars/progress_fill_gold_v2.svg": {
+      "size": [
+        612,
+        24
+      ],
+      "nine_slice": [
+        18,
+        8,
+        18,
+        8
+      ]
+    },
+    "bars/progress_fill_cyan_v2.svg": {
+      "size": [
+        612,
+        24
+      ],
+      "nine_slice": [
+        18,
+        8,
+        18,
+        8
+      ]
+    },
+    "navigation/nav_shell_v2.svg": {
+      "size": [
+        612,
+        82
+      ],
+      "nine_slice": [
+        22,
+        18,
+        22,
+        18
+      ]
+    },
+    "navigation/nav_active_cell_v2.svg": {
+      "size": [
+        118,
+        78
+      ],
+      "nine_slice": [
+        16,
+        14,
+        16,
+        14
+      ]
+    },
+    "effects/selection_glow_v2.svg": {
+      "size": [
+        160,
+        160
+      ]
+    },
+    "badges/badge_alert_v2.svg": {
+      "size": [
+        104,
+        34
+      ],
+      "nine_slice": [
+        14,
+        10,
+        14,
+        10
+      ]
+    },
+    "badges/currency_chip_v2.svg": {
+      "size": [
+        146,
+        42
+      ],
+      "nine_slice": [
+        14,
+        12,
+        14,
+        12
+      ]
+    },
+    "frames/hero_stage_backdrop_v2.svg": {
+      "size": [
+        612,
+        770
+      ],
+      "nine_slice": [
+        24,
+        24,
+        24,
+        24
+      ]
+    }
+  }
+}
