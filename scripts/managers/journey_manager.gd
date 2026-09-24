@@ -255,7 +255,15 @@ func _unlock_next_stage(chapter_id: int, stage_id: int) -> void:
 			unlocked_stage_keys,
 			get_stage_key(chapter_id, next_stage_id)
 		)
+		# Realm 1 production presentation now ends at Stage 1-5. Keep legacy
+		# Stage 1-6 unlockable only for old saves/regression compatibility, while
+		# opening the real next Realm immediately after the visible finale.
+		if chapter_id == 1 and stage_id == 5:
+			_unlock_first_stage_of_next_chapter(chapter_id)
 		return
+	_unlock_first_stage_of_next_chapter(chapter_id)
+
+func _unlock_first_stage_of_next_chapter(chapter_id: int) -> void:
 	var chapter_ids := get_chapter_ids()
 	var chapter_index := chapter_ids.find(chapter_id)
 	if chapter_index < 0 or chapter_index + 1 >= chapter_ids.size():
