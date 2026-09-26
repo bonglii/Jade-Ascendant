@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="560" viewBox="0 0 1000 560">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#a97924"/>
+      <stop offset="0.5" stop-color="#f3d272"/>
+      <stop offset="1" stop-color="#a97924"/>
+    </linearGradient>
+    <linearGradient id="jade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1b7a69" stop-opacity="0.45"/>
+      <stop offset="0.5" stop-color="#65e9c8" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#1b7a69" stop-opacity="0.45"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="984" height="544" rx="44" fill="none" stroke="url(#jade)" stroke-width="5" opacity="0.84"/>
+  <rect x="17" y="17" width="966" height="526" rx="37" fill="none" stroke="#d1a846" stroke-width="2" opacity="0.62"/>
+  <path d="M20 92 H116 L145 48 H270" fill="none" stroke="url(#gold)" stroke-width="5" opacity="0.83"/>
+  <path d="M980 92 H884 L855 48 H730" fill="none" stroke="url(#gold)" stroke-width="5" opacity="0.83"/>
+  <path d="M20 468 H116 L145 512 H270" fill="none" stroke="url(#jade)" stroke-width="4" opacity="0.76"/>
+  <path d="M980 468 H884 L855 512 H730" fill="none" stroke="url(#jade)" stroke-width="4" opacity="0.76"/>
+  <g fill="none" stroke-linecap="round" opacity="0.34">
+    <ellipse cx="500" cy="277" rx="332" ry="104" stroke="#4fd9ba" stroke-width="4" transform="rotate(-7 500 277)"/>
+    <ellipse cx="500" cy="277" rx="250" ry="158" stroke="#e5bd57" stroke-width="3" transform="rotate(10 500 277)"/>
+  </g>
+  <g fill="#f2d16a" opacity="0.88">
+    <path d="M500 18 l9 13 l-9 13 l-9 -13 z"/>
+    <path d="M500 542 l9 -13 l-9 -13 l-9 13 z"/>
+  </g>
+</svg>

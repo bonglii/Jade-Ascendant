@@ -6,15 +6,19 @@ const LiveOpsManagerScript = preload(
 const UiIconPolishManagerScript = preload(
 	"res://scripts/managers/ui_icon_polish_manager.gd"
 )
+const HubResourceBarManagerScript = preload(
+	"res://scripts/ui/hub_resource_bar_manager.gd"
+)
 
 var continue_game: bool = false
 var _lifecycle_checkpoint_in_progress: bool = false
 
 
 func _ready() -> void:
-	# Keep Live Ops outside the autoload registry so the established startup
-	# ordering and Phase 0 autoload contract remain unchanged. The deferred
-	# bootstrap runs after permanent managers (including PavilionManager) load.
+	# Keep runtime helpers outside the autoload registry so the established
+	# startup ordering and Phase 0 autoload contract remain unchanged. The
+	# deferred bootstrap runs after permanent managers (including
+	# PavilionManager) load.
 	call_deferred("_bootstrap_runtime_helpers")
 
 
@@ -32,6 +36,11 @@ func _bootstrap_runtime_helpers() -> void:
 		var icon_polish: Node = UiIconPolishManagerScript.new()
 		icon_polish.name = "UiIconPolishManager"
 		tree.root.add_child(icon_polish)
+
+	if tree.root.get_node_or_null("HubResourceBarManager") == null:
+		var resource_bar: Node = HubResourceBarManagerScript.new()
+		resource_bar.name = "HubResourceBarManager"
+		tree.root.add_child(resource_bar)
 
 
 func _notification(what: int) -> void:

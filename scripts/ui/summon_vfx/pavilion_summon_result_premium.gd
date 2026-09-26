@@ -1,21 +1,14 @@
 extends Control
 
 ## Production premium landing/result composition for Pavilion summons.
-## v8e exact user-requested fix:
-## - remove the upper item rarity frame for every rarity
-## - enlarge only the lower equipment-name nameplate
-## - keep every other size/position/animation unchanged
+## Production-lock cleanup:
+## - obsolete hidden upper rarity-frame resources/nodes removed
+## - approved v8f item, nameplate, copy, position and animation preserved
 
 const BACKDROP_PATH: String = "res://assets/ui/pavilion/result_premium/celestial_result_backdrop.png"
 const PEDESTAL_PATH: String = "res://assets/ui/pavilion/result_premium/celestial_result_pedestal.png"
 const HALO_PATH: String = "res://assets/ui/pavilion/vfx/shared/soft_halo_premium.png"
 
-const FRAME_PATHS: Dictionary = {
-	"common": "res://assets/ui/pavilion/result_premium/frame_common.png",
-	"rare": "res://assets/ui/pavilion/result_premium/frame_rare.png",
-	"epic": "res://assets/ui/pavilion/result_premium/frame_epic.png",
-	"legendary": "res://assets/ui/pavilion/result_premium/frame_legendary.png",
-}
 
 const NAMEPLATE_PATHS: Dictionary = {
 	"common": "res://assets/ui/pavilion/result_premium/nameplate_common.png",
@@ -28,7 +21,6 @@ var _backdrop: TextureRect
 var _veil: ColorRect
 var _pedestal: TextureRect
 var _halo: TextureRect
-var _frame: TextureRect
 var _item_icon: TextureRect
 var _nameplate: TextureRect
 var _copy_clip: Control
@@ -39,7 +31,6 @@ var _description_body: Label
 var _state_panel: PanelContainer
 var _state_label: Label
 var _active_tween: Tween
-var _current_rarity: String = "common"
 
 
 func _ready() -> void:
@@ -63,14 +54,11 @@ func show_result(
 	animated: bool = true
 ) -> void:
 	var rarity: String = rarity_id.to_lower()
-	if not FRAME_PATHS.has(rarity):
+	if not NAMEPLATE_PATHS.has(rarity):
 		rarity = "common"
-	_current_rarity = rarity
 
 	_kill_active_tween()
 
-	_frame.texture = load(str(FRAME_PATHS[rarity])) as Texture2D
-	_frame.visible = false
 	_nameplate.texture = load(str(NAMEPLATE_PATHS[rarity])) as Texture2D
 	_item_icon.texture = load(item_icon_path) as Texture2D
 	_item_name.text = item_name
@@ -89,9 +77,6 @@ func show_result(
 	_pedestal.modulate = Color(1, 1, 1, 0)
 	_halo.modulate = Color(1, 1, 1, 0)
 	_halo.scale = Vector2(0.86, 0.86)
-	_frame.modulate = Color(1, 1, 1, 0)
-	_frame.visible = false
-	_frame.scale = Vector2(0.96, 0.96)
 	_item_icon.modulate = Color(1, 1, 1, 0)
 	_item_icon.scale = Vector2(0.78, 0.78)
 	_nameplate.modulate = Color(1, 1, 1, 0)
@@ -118,8 +103,6 @@ func show_result(
 		_pedestal.modulate.a = pedestal_alpha
 		_halo.modulate.a = halo_alpha
 		_halo.scale = Vector2.ONE
-		_frame.modulate.a = 0.0
-		_frame.scale = Vector2.ONE
 		_item_icon.modulate.a = 1.0
 		_item_icon.scale = Vector2.ONE
 		_nameplate.modulate.a = 1.0
@@ -181,13 +164,6 @@ func _build_visuals() -> void:
 	_halo.material = halo_material
 	add_child(_halo)
 
-	_frame = TextureRect.new()
-	_frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_frame.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_frame.z_index = 4
-	_frame.visible = false
-	add_child(_frame)
 
 	_item_icon = TextureRect.new()
 	_item_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -256,7 +232,7 @@ func _layout_visuals() -> void:
 	_veil.size = viewport_size
 
 	# EXACT ZONE CONTRACT FROM USER MARKUP:
-	# Upper large zone = equipment + rarity border only.
+	# Upper large zone = equipment hero art only.
 	# Lower compact zone = equipment name + info only.
 	var hero_center := Vector2(viewport_size.x * 0.50, viewport_size.y * 0.46)
 
@@ -268,14 +244,6 @@ func _layout_visuals() -> void:
 	)
 	_pedestal.pivot_offset = _pedestal.size * 0.5
 
-	# Border is intentionally large and tall, but shares the SAME hero center
-	# with the equipment. Optical offsets compensate for asymmetric artwork.
-	var frame_height: float = minf(viewport_size.y * 0.96, 620.0)
-	var frame_width: float = frame_height * (418.0 / 937.0)
-	_frame.size = Vector2(frame_width, frame_height)
-	var optical_offset: Vector2 = _frame_optical_offset(_current_rarity, _frame.size)
-	_frame.position = hero_center - (_frame.size * 0.5) + optical_offset
-	_frame.pivot_offset = _frame.size * 0.5
 
 	# Reward art is now truly the hero: width-driven instead of height-limited.
 	var item_size: float = minf(viewport_size.x * 0.94, 380.0)
@@ -339,22 +307,6 @@ func _layout_visuals() -> void:
 		previous_plate_y - state_height - 6.0
 	)
 
-
-func _frame_optical_offset(rarity: String, frame_size: Vector2) -> Vector2:
-	# Measured from the approved PNG alpha mass, not guessed by eye.
-	# Positive X/Y moves the artwork right/down so its VISUAL center aligns
-	# with the equipment hero center.
-	match rarity:
-		"rare":
-			return Vector2(frame_size.x * 0.032, frame_size.y * 0.056)
-		"epic":
-			return Vector2(frame_size.x * 0.029, frame_size.y * 0.023)
-		"legendary":
-			return Vector2(frame_size.x * 0.044, frame_size.y * 0.027)
-		"common":
-			return Vector2(frame_size.x * -0.007, frame_size.y * 0.044)
-		_:
-			return Vector2.ZERO
 
 
 func _apply_rarity_copy_palette(rarity: String) -> void:

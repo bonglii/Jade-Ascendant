@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="halo" cx="50%" cy="48%" r="48%">
+      <stop offset="0" stop-color="#92ffe2" stop-opacity="0.38"/>
+      <stop offset="0.48" stop-color="#26c5a5" stop-opacity="0.13"/>
+      <stop offset="1" stop-color="#07181b" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f3dc7b"/>
+      <stop offset="0.55" stop-color="#bd8e2c"/>
+      <stop offset="1" stop-color="#ffe89a"/>
+    </linearGradient>
+    <linearGradient id="jade" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5ef2cc"/>
+      <stop offset="1" stop-color="#13846f"/>
+    </linearGradient>
+  </defs>
+  <circle cx="256" cy="250" r="220" fill="url(#halo)"/>
+  <g fill="none" stroke-linecap="round">
+    <ellipse cx="256" cy="252" rx="180" ry="104" stroke="#4ce1bc" stroke-width="7" opacity="0.42" transform="rotate(-13 256 252)"/>
+    <ellipse cx="256" cy="252" rx="152" ry="188" stroke="#d9b44b" stroke-width="6" opacity="0.45" transform="rotate(26 256 252)"/>
+    <circle cx="256" cy="252" r="132" stroke="#55e4c2" stroke-width="5" opacity="0.58"/>
+    <circle cx="256" cy="252" r="160" stroke="#cda442" stroke-width="3" opacity="0.36" stroke-dasharray="16 12"/>
+  </g>
+  <g fill="url(#gold)" opacity="0.92">
+    <path d="M256 49 l10 17 l-10 17 l-10 -17 z"/>
+    <path d="M458 252 l-17 10 l-17 -10 l17 -10 z"/>
+    <path d="M256 455 l-10 -17 l10 -17 l10 17 z"/>
+    <path d="M54 252 l17 -10 l17 10 l-17 10 z"/>
+  </g>
+  <g>
+    <circle cx="256" cy="205" r="35" fill="#07171b" stroke="url(#gold)" stroke-width="6"/>
+    <path d="M196 353 C211 315 229 281 256 270 C283 281 301 315 316 353 C296 365 278 371 256 371 C234 371 216 365 196 353 Z" fill="#07171b" stroke="url(#jade)" stroke-width="7"/>
+    <path d="M205 333 C224 341 238 343 256 343 C274 343 288 341 307 333" fill="none" stroke="#d7b04a" stroke-width="5" opacity="0.78"/>
+    <path d="M170 377 C202 365 223 370 256 393 C289 370 310 365 342 377 C326 411 293 429 256 429 C219 429 186 411 170 377 Z" fill="#0a2b29" stroke="url(#gold)" stroke-width="6"/>
+    <path d="M256 284 C238 304 223 320 199 325 C213 294 232 274 256 261 C280 274 299 294 313 325 C289 320 274 304 256 284 Z" fill="#1a7e6d" opacity="0.9"/>
+  </g>
+  <circle cx="256" cy="252" r="13" fill="#86ffe0" opacity="0.95"/>
+  <circle cx="256" cy="252" r="27" fill="none" stroke="#f2d06b" stroke-width="3" opacity="0.72"/>
+</svg>
