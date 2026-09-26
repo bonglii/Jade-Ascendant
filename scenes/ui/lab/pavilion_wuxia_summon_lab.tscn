@@ -1,0 +1,65 @@
+[gd_scene format=3 uid="uid://bk45ijfe2ffaf"]
+
+[ext_resource type="Script" uid="uid://xuweimiyb4s2" path="res://scripts/ui/lab/pavilion_wuxia_summon_lab.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://d0fwhrxw25bsx" path="res://assets/ui/jade_ui_theme.tres" id="2_theme"]
+[ext_resource type="Script" uid="uid://ci1qtr1c4loi8" path="res://scripts/ui/lab/pavilion_wuxia_palace_backdrop_lab.gd" id="3_bg"]
+[ext_resource type="Script" uid="uid://bwa0wej15sgvf" path="res://scripts/ui/mobile_safe_area.gd" id="4_safe"]
+[ext_resource type="Script" uid="uid://crm4bfk0nejkr" path="res://scripts/ui/wuxia_hub_nav.gd" id="5_nav"]
+
+[node name="PavilionWuxiaSummonLAB" type="Control" unique_id=537187051]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="Backdrop" type="Control" parent="." unique_id=1251500960]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_bg")
+
+[node name="SafeArea" type="Control" parent="." unique_id=1963246899]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("4_safe")
+
+[node name="Scroll" type="ScrollContainer" parent="SafeArea" unique_id=1679863511]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.02
+anchor_right = 0.98
+anchor_bottom = 1.0
+offset_top = 8.0
+offset_bottom = -90.0
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 3
+
+[node name="Content" type="VBoxContainer" parent="SafeArea/Scroll" unique_id=1341291701]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="HubNav" type="Control" parent="SafeArea" unique_id=984780686]
+layout_mode = 1
+anchor_left = 0.02
+anchor_top = 1.0
+anchor_right = 0.98
+anchor_bottom = 1.0
+offset_top = -90.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 0
+script = ExtResource("5_nav")
+active_tab = 4

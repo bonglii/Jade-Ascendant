@@ -1,12 +1,12 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://scripts/ui/pavilion_runtime_screen_vfx.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/ui/lab/pavilion_locked_design_lab.gd" id="1_script"]
 [ext_resource type="Theme" path="res://assets/ui/jade_ui_theme.tres" id="2_theme"]
-[ext_resource type="Script" path="res://scripts/ui/wuxia_realm_backdrop.gd" id="3_bg"]
+[ext_resource type="Script" path="res://scripts/ui/lab/pavilion_palace_backdrop_lab.gd" id="3_bg"]
 [ext_resource type="Script" path="res://scripts/ui/mobile_safe_area.gd" id="4_safe"]
 [ext_resource type="Script" path="res://scripts/ui/wuxia_hub_nav.gd" id="5_nav"]
 
-[node name="JadePavilion" type="Control"]
+[node name="PavilionLockedDesignLAB" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -19,6 +19,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+mouse_filter = 2
 script = ExtResource("3_bg")
 
 [node name="SafeArea" type="Control" parent="."]
@@ -40,7 +41,7 @@ horizontal_scroll_mode = 0
 [node name="Content" type="VBoxContainer" parent="SafeArea/Scroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 16
+theme_override_constants/separation = 12
 
 [node name="HubNav" type="Control" parent="SafeArea"]
 layout_mode = 1

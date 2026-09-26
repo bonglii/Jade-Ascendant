@@ -1,0 +1,120 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/lab/pavilion_summon_vfx_sandbox.gd" id="1_lab"]
+[ext_resource type="Theme" path="res://assets/ui/jade_ui_theme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://scripts/ui/wuxia_realm_backdrop.gd" id="3_backdrop"]
+[ext_resource type="Script" path="res://scripts/ui/mobile_safe_area.gd" id="4_safe"]
+[ext_resource type="Script" path="res://scripts/ui/summon_vfx/pavilion_summon_vfx_legendary_controller.gd" id="5_controller"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_stage"]
+bg_color = Color(0.002, 0.008, 0.012, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.76, 0.24, 0.62)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+shadow_color = Color(0, 0, 0, 0.60)
+shadow_size = 14
+
+[node name="PavilionSummonVFXSandbox" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_lab")
+
+[node name="Backdrop" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_backdrop")
+
+[node name="Shade" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.001, 0.004, 0.008, 0.40)
+
+[node name="SafeArea" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("4_safe")
+
+[node name="Margin" type="MarginContainer" parent="SafeArea"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 18.0
+offset_top = 14.0
+offset_right = -18.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="Stack" type="VBoxContainer" parent="SafeArea/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="SafeArea/Margin/Stack"]
+layout_mode = 2
+text = "PAVILION SUMMON VFX SANDBOX"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 21
+
+[node name="Subtitle" type="Label" parent="SafeArea/Margin/Stack"]
+layout_mode = 2
+text = "LEGENDARY VERTICAL SLICE • Celestial Mandate Descends"
+horizontal_alignment = 1
+autowrap_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.78, 0.46, 1)
+theme_override_font_sizes/font_size = 12
+
+[node name="StageFrame" type="PanelContainer" parent="SafeArea/Margin/Stack"]
+custom_minimum_size = Vector2(0, 540)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBox_stage")
+
+[node name="VFXController" type="Control" parent="SafeArea/Margin/Stack/StageFrame"]
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("5_controller")
+
+[node name="PlayButton" type="Button" parent="SafeArea/Margin/Stack"]
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+text = "PLAY LEGENDARY SUMMON"
+theme_override_font_sizes/font_size = 17
+
+[node name="StatusLabel" type="Label" parent="SafeArea/Margin/Stack"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "READY"
+horizontal_alignment = 1
+autowrap_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.82, 0.76, 1)
+theme_override_font_sizes/font_size = 11
