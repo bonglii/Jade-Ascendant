@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://dqwvmmu4krr5m"]
+
+[ext_resource type="Script" uid="uid://dq1fu6iqd7hap" path="res://scripts/ui/lab/meditation_popup_redesign_lab.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://d0fwhrxw25bsx" path="res://assets/ui/jade_ui_theme.tres" id="2_theme"]
+
+[node name="MeditationPopupRedesignLab" type="Control" unique_id=1055615981]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
