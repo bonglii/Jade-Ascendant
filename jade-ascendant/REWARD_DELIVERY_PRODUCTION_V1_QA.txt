@@ -1,0 +1,50 @@
+JADE ASCENDANT — SHARED REWARD DELIVERY PRODUCTION INTEGRATION v1
+
+SOURCE AUTHORITY AUDITED
+Branch: checkpoint/pavilion-production-qa-20260926
+Commit: 6fa9f898e8e125d51a831a376c469bd96fdc7200
+
+CHANGED / NEW FILES
+- scripts/managers/GameSession.gd
+- scripts/ui/reward_delivery_presenter.gd
+
+DESIGN CONTRACT
+source -> travel -> semantic destination -> destination pulse -> visible value impact
+
+COVERAGE
+1. Spirit Stone -> SharedHubResourceBar Spirit Stone slot.
+2. Refinement Shard -> SharedHubResourceBar Refinement Shard slot.
+3. Celestial Jade -> SharedHubResourceBar Celestial Jade slot.
+4. Pavilion Seal -> SharedHubResourceBar Pavilion Seal slot.
+5. Permanent Hero EXP -> Hero EXP/Progress UI if present; otherwise Hero destination.
+6. In-run EXP -> HUD EXPBar.
+7. Equipment / non-material inventory acquisitions -> Hero / Inventory destination.
+8. Claim All -> gather -> merge -> semantic delivery, grouped by destination.
+9. Direct manager gains not routed through RewardManager are covered by fallback observation.
+10. reduced_effects -> motion is skipped; destination feedback remains concise.
+
+ARCHITECTURE
+- No new autoload was added.
+- RewardDeliveryPresenter is bootstrapped by GameSession like HubResourceBarManager.
+- Existing 17-autoload startup contract remains untouched.
+- Presenter never grants, spends, saves, or mutates economy/progression data.
+- RewardManager, ProgressionManager, InventoryManager and PavilionManager remain authoritative.
+
+IMPORTANT VISUAL BEHAVIOR
+Hub wallet values are visually held at their pre-reward value while the reward is
+in flight. The authoritative manager value has already been committed. On impact,
+only the visible label counts up to that authoritative value. This preserves save
+correctness while making the reward visually feel as if it enters the wallet.
+
+QA
+1. Run PERIKSA_GAME.bat.
+2. Home/Cultivate/Hero/Trials/Pavilion: confirm no startup warning/error.
+3. Trials single Claim: Spirit Stone flies to first wallet slot, pulse, then value count-up.
+4. Trials Claim All: gather -> merge -> fly; multiple reward types group by destination.
+5. Gain Refinement Shard: destination is second wallet slot.
+6. Gain Celestial Jade / Pavilion Seal: correct wallet slot, positive gains only.
+7. In a stage, gain EXP: amber EXP shard flies from player toward EXPBar.
+8. Acquire an equipment/item: presentation travels toward Hero/Inventory destination.
+9. Spend currencies: NO reward animation should play.
+10. Settings reduced effects ON: no long fly animation; destination response remains.
+11. Verify saves/economy values are identical to pre-patch behavior.
