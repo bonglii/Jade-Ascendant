@@ -50,6 +50,20 @@ const EXP_GOLD: Color = Color(1.0, 0.73, 0.24, 1.0)
 const POLL_INTERVAL: float = 0.08
 const CLAIM_ALL_BUFFER: float = 0.09
 
+# Reward-flight glyphs are deliberately capped at navbar-scale readability.
+# Every reward type uses the same compact visual language so no currency, EXP,
+# or inventory acquisition overwhelms the mobile HUD while travelling.
+const REWARD_FLIGHT_ICON_SIZE: float = 27.0
+const SINGLE_FLIGHT_ICON_SIZE: float = REWARD_FLIGHT_ICON_SIZE
+const CLAIM_ALL_MINI_ICON_SIZE: float = REWARD_FLIGHT_ICON_SIZE
+const CLAIM_ALL_CORE_ICON_SIZE: float = REWARD_FLIGHT_ICON_SIZE
+const CLAIM_ALL_FLIGHT_ICON_SIZE: float = REWARD_FLIGHT_ICON_SIZE
+const FLIGHT_EDGE_MARGIN: float = 10.0
+const FLIGHT_CURVE_SAFE_TOP: float = 76.0
+const FLIGHT_CURVE_LIFT: float = 72.0
+const TRAIL_WIDTH: float = 2.4
+const IMPACT_FLASH_SIZE: float = 46.0
+
 var _overlay_layer: CanvasLayer = null
 var _overlay: Control = null
 var _poll_elapsed: float = 0.0
@@ -483,15 +497,19 @@ func _play_single_delivery(
 	source: Vector2,
 	target: Control
 ) -> void:
-	var icon := _create_fly_icon(texture, 50.0)
-	icon.global_position = source - icon.size * 0.5
+	var safe_source: Vector2 = _clamp_flight_source(
+		source,
+		SINGLE_FLIGHT_ICON_SIZE
+	)
+	var icon := _create_fly_icon(texture, SINGLE_FLIGHT_ICON_SIZE)
+	icon.global_position = safe_source - icon.size * 0.5
 	_overlay.add_child(icon)
 
 	var trail := _create_trail(_accent_for(resource_key))
 	var target_position: Vector2 = target.get_global_rect().get_center()
-	var control_point := Vector2(
-		lerpf(source.x, target_position.x, 0.52),
-		minf(source.y, target_position.y) - 140.0
+	var control_point: Vector2 = _build_flight_control_point(
+		safe_source,
+		target_position
 	)
 
 	_play_audio("claim")
@@ -500,7 +518,7 @@ func _play_single_delivery(
 		_update_bezier.bind(
 			icon,
 			trail,
-			source,
+			safe_source,
 			control_point,
 			target_position
 		),
@@ -528,19 +546,27 @@ func _play_claim_all_delivery(
 	source_count: int
 ) -> void:
 	var count: int = clampi(source_count, 2, 6)
+	var safe_source: Vector2 = _clamp_flight_source(
+		source,
+		CLAIM_ALL_CORE_ICON_SIZE
+	)
 	var merge_point := Vector2(
-		lerpf(source.x, _viewport_center().x, 0.58),
-		lerpf(source.y, _viewport_center().y, 0.58)
+		lerpf(safe_source.x, _viewport_center().x, 0.58),
+		lerpf(safe_source.y, _viewport_center().y, 0.58)
+	)
+	merge_point = _clamp_flight_source(
+		merge_point,
+		CLAIM_ALL_CORE_ICON_SIZE
 	)
 
-	var core := _create_fly_icon(texture, 56.0)
+	var core := _create_fly_icon(texture, CLAIM_ALL_CORE_ICON_SIZE)
 	core.global_position = merge_point - core.size * 0.5
 	core.scale = Vector2(0.76, 0.76)
 	core.modulate.a = 0.80
 	_overlay.add_child(core)
 
 	var total_label := Label.new()
-	total_label.text = "+%d" % amount
+	total_label.text = "+%d" % amount	
 	total_label.size = Vector2(120.0, 32.0)
 	total_label.global_position = merge_point + Vector2(-60.0, 36.0)
 	total_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -560,32 +586,35 @@ func _play_claim_all_delivery(
 	_play_audio("claim")
 
 	for index: int in range(count):
-		var mini := _create_fly_icon(texture, 31.0)
+		var mini_icon := _create_fly_icon(texture, CLAIM_ALL_MINI_ICON_SIZE)
 		var spread_x: float = (float(index) - float(count - 1) * 0.5) * 16.0
 		var spread_y: float = -10.0 if index % 2 == 0 else 10.0
-		var mini_source := source + Vector2(spread_x, spread_y)
-		mini.global_position = mini_source - mini.size * 0.5
-		mini.scale = Vector2(0.72, 0.72)
-		_overlay.add_child(mini)
+		var mini_source := _clamp_flight_source(
+			safe_source + Vector2(spread_x, spread_y),
+			CLAIM_ALL_MINI_ICON_SIZE
+		)
+		mini_icon.global_position = mini_source - mini_icon.size * 0.5
+		mini_icon.scale = Vector2(0.72, 0.72)
+		_overlay.add_child(mini_icon)
 
 		var delay: float = float(index) * 0.055
 		var mini_tween := create_tween()
 		mini_tween.tween_interval(delay)
 		mini_tween.set_parallel(true)
 		mini_tween.tween_property(
-			mini,
+			mini_icon,
 			"global_position",
-			merge_point - mini.size * 0.5,
+			merge_point - mini_icon.size * 0.5,
 			0.22
 		).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 		mini_tween.tween_property(
-			mini,
+			mini_icon,
 			"scale",
 			Vector2(0.28, 0.28),
 			0.22
 		)
-		mini_tween.tween_property(mini, "modulate:a", 0.12, 0.22)
-		mini_tween.chain().tween_callback(mini.queue_free)
+		mini_tween.tween_property(mini_icon, "modulate:a", 0.12, 0.22)
+		mini_tween.chain().tween_callback(mini_icon.queue_free)
 
 	var gather_duration: float = 0.22 + float(count - 1) * 0.055
 	var gather_timer := get_tree().create_timer(
@@ -597,6 +626,13 @@ func _play_claim_all_delivery(
 	await gather_timer.timeout
 
 	if not is_instance_valid(core):
+		return
+	if not is_instance_valid(target):
+		core.queue_free()
+		if is_instance_valid(total_label):
+			total_label.queue_free()
+		if WALLET_INDEX.has(resource_key):
+			_release_wallet_visual_hold(resource_key, amount)
 		return
 
 	core.modulate.a = 1.0
@@ -612,6 +648,15 @@ func _play_claim_all_delivery(
 
 	await get_tree().create_timer(0.13, true, false, true).timeout
 
+	if not is_instance_valid(target):
+		if is_instance_valid(core):
+			core.queue_free()
+		if is_instance_valid(total_label):
+			total_label.queue_free()
+		if WALLET_INDEX.has(resource_key):
+			_release_wallet_visual_hold(resource_key, amount)
+		return
+
 	var launch_source: Vector2 = core.get_global_rect().get_center()
 	core.queue_free()
 
@@ -626,15 +671,15 @@ func _play_claim_all_delivery(
 	label_tween.tween_property(total_label, "modulate:a", 0.0, 0.16)
 	label_tween.chain().tween_callback(total_label.queue_free)
 
-	var main_icon := _create_fly_icon(texture, 58.0)
+	var main_icon := _create_fly_icon(texture, CLAIM_ALL_FLIGHT_ICON_SIZE)
 	main_icon.global_position = launch_source - main_icon.size * 0.5
 	_overlay.add_child(main_icon)
 
 	var trail := _create_trail(_accent_for(resource_key))
 	var target_position: Vector2 = target.get_global_rect().get_center()
-	var control_point := Vector2(
-		lerpf(launch_source.x, target_position.x, 0.50),
-		minf(launch_source.y, target_position.y) - 155.0
+	var control_point: Vector2 = _build_flight_control_point(
+		launch_source,
+		target_position
 	)
 
 	var tween := create_tween()
@@ -664,7 +709,7 @@ func _play_claim_all_delivery(
 func _on_delivery_impact(
 	resource_key: String,
 	amount: int,
-	target: Control,
+	target: Variant,
 	icon: TextureRect,
 	trail: Line2D
 ) -> void:
@@ -672,9 +717,18 @@ func _on_delivery_impact(
 		icon.queue_free()
 	_fade_trail(trail)
 
+	# A reward flight can outlive the scene that owned its destination Control.
+	# Accept the bound target as a Variant so a freed scene node cannot fail
+	# Callable argument conversion before this cleanup path gets a chance to run.
+	if not is_instance_valid(target) or not (target is Control):
+		if WALLET_INDEX.has(resource_key):
+			_release_wallet_visual_hold(resource_key, amount)
+		return
+
+	var target_control := target as Control
 	var accent: Color = _accent_for(resource_key)
-	_pulse_target(target, accent)
-	_play_impact_flash(target, accent)
+	_pulse_target(target_control, accent)
+	_play_impact_flash(target_control, accent)
 	_play_audio("pickup_jade")
 
 	if WALLET_INDEX.has(resource_key):
@@ -859,6 +913,36 @@ func _player_screen_position(player: Node) -> Vector2:
 	return _viewport_center()
 
 
+func _clamp_flight_source(point: Vector2, icon_size: float) -> Vector2:
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	var half_size: float = icon_size * 0.5
+	var min_x: float = half_size + FLIGHT_EDGE_MARGIN
+	var max_x: float = maxf(viewport_size.x - half_size - FLIGHT_EDGE_MARGIN, min_x)
+	var min_y: float = half_size + FLIGHT_EDGE_MARGIN
+	var max_y: float = maxf(viewport_size.y - half_size - FLIGHT_EDGE_MARGIN, min_y)
+	return Vector2(
+		clampf(point.x, min_x, max_x),
+		clampf(point.y, min_y, max_y)
+	)
+
+
+func _build_flight_control_point(start: Vector2, end: Vector2) -> Vector2:
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	var raw_y: float = minf(start.y, end.y) - FLIGHT_CURVE_LIFT
+	var max_safe_y: float = maxf(
+		viewport_size.y - FLIGHT_CURVE_SAFE_TOP,
+		FLIGHT_CURVE_SAFE_TOP
+	)
+	return Vector2(
+		clampf(
+			lerpf(start.x, end.x, 0.52),
+			FLIGHT_EDGE_MARGIN,
+			maxf(viewport_size.x - FLIGHT_EDGE_MARGIN, FLIGHT_EDGE_MARGIN)
+		),
+		clampf(raw_y, FLIGHT_CURVE_SAFE_TOP, max_safe_y)
+	)
+
+
 func _viewport_center() -> Vector2:
 	return get_viewport().get_visible_rect().size * 0.5
 
@@ -869,11 +953,14 @@ func _create_fly_icon(
 ) -> TextureRect:
 	var icon := TextureRect.new()
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Set sizing policy before assigning the texture. Otherwise TextureRect can
+	# adopt the authored texture's native minimum size before IGNORE_SIZE applies,
+	# making a nominal 18/27 px reward glyph render dramatically oversized.
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.texture = texture
 	icon.custom_minimum_size = Vector2(size_px, size_px)
 	icon.size = Vector2(size_px, size_px)
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.pivot_offset = icon.size * 0.5
 	icon.z_index = 4
 	return icon
@@ -881,7 +968,7 @@ func _create_fly_icon(
 
 func _create_trail(accent: Color) -> Line2D:
 	var trail := Line2D.new()
-	trail.width = 3.5
+	trail.width = TRAIL_WIDTH
 	trail.default_color = accent
 	trail.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	trail.end_cap_mode = Line2D.LINE_CAP_ROUND
@@ -966,7 +1053,7 @@ func _pulse_target(target: Control, accent: Color) -> void:
 func _play_impact_flash(target: Control, accent: Color) -> void:
 	var flash := Panel.new()
 	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	flash.size = Vector2(62.0, 62.0)
+	flash.size = Vector2(IMPACT_FLASH_SIZE, IMPACT_FLASH_SIZE)
 	flash.global_position = (
 		target.get_global_rect().get_center()
 		- flash.size * 0.5
@@ -985,10 +1072,11 @@ func _play_impact_flash(target: Control, accent: Color) -> void:
 		GOLD.b,
 		0.78
 	)
-	style.corner_radius_top_left = 31
-	style.corner_radius_top_right = 31
-	style.corner_radius_bottom_left = 31
-	style.corner_radius_bottom_right = 31
+	var flash_radius: int = int(round(IMPACT_FLASH_SIZE * 0.5))
+	style.corner_radius_top_left = flash_radius
+	style.corner_radius_top_right = flash_radius
+	style.corner_radius_bottom_left = flash_radius
+	style.corner_radius_bottom_right = flash_radius
 	style.shadow_color = Color(
 		accent.r,
 		accent.g,

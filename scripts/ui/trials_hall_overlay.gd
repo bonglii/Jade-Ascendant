@@ -3,6 +3,17 @@ class_name TrialsHallOverlay
 
 ## Low-cost decorative overlay for the Trials Hub.
 ## Adds different visual language for daily disciplines vs eternal records.
+##
+## Production scenes also use this already-present node as the bootstrap point
+## for the approved Trials presentation. The LAB scene intentionally does not.
+
+const TrialsProductionPresenterScript = preload(
+	"res://scripts/ui/trials_production_presenter.gd"
+)
+
+const DAILY_SCENE: String = "res://scenes/ui/daily_quest_screen.tscn"
+const ACHIEVEMENT_SCENE: String = "res://scenes/ui/achievement_screen.tscn"
+const PRODUCTION_PRESENTER_NAME: String = "TrialsProductionPresenter"
 
 @export_enum("daily", "records") var mode: String = "daily"
 
@@ -13,6 +24,24 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_process(not SettingsManager.reduced_effects)
 	queue_redraw()
+	call_deferred("_install_production_presenter")
+
+
+func _install_production_presenter() -> void:
+	var scene_root: Node = get_tree().current_scene
+	if scene_root == null:
+		return
+
+	var scene_path: String = scene_root.scene_file_path
+	if scene_path not in [DAILY_SCENE, ACHIEVEMENT_SCENE]:
+		return
+	if scene_root.get_node_or_null(PRODUCTION_PRESENTER_NAME) != null:
+		return
+
+	var presenter: Node = TrialsProductionPresenterScript.new()
+	presenter.name = PRODUCTION_PRESENTER_NAME
+	scene_root.add_child(presenter)
+	presenter.call_deferred("setup", scene_root)
 
 
 func _process(delta: float) -> void:
@@ -45,7 +74,7 @@ func _draw_daily(canvas_size: Vector2) -> void:
 	var center := Vector2(canvas_size.x * 0.82, canvas_size.y * 0.20)
 	var phase: float = 0.0 if SettingsManager.reduced_effects else elapsed * 0.10
 
-	for ring_index in range(3):
+	for ring_index: int in range(3):
 		draw_arc(
 			center,
 			56.0 + float(ring_index) * 17.0,
@@ -57,7 +86,7 @@ func _draw_daily(canvas_size: Vector2) -> void:
 			true
 		)
 
-	for seal_index in range(6):
+	for seal_index: int in range(6):
 		var angle: float = phase + float(seal_index) * TAU / 6.0
 		var point := center + Vector2.RIGHT.rotated(angle) * 84.0
 		draw_circle(point, 2.0, Color(0.45, 1.0, 0.84, 0.20))
@@ -68,7 +97,7 @@ func _draw_records(canvas_size: Vector2) -> void:
 	var jade := Color(0.22, 0.84, 0.68, 0.10)
 	var center := Vector2(canvas_size.x * 0.80, canvas_size.y * 0.21)
 
-	for layer_index in range(3):
+	for layer_index: int in range(3):
 		var half_extent: float = 46.0 + float(layer_index) * 19.0
 		var points := PackedVector2Array([
 			center + Vector2(0.0, -half_extent),
@@ -106,7 +135,7 @@ func _draw_motes(canvas_size: Vector2) -> void:
 		Vector2(0.91, 0.72)
 	]
 
-	for mote_index in range(positions.size()):
+	for mote_index: int in range(positions.size()):
 		var uv: Vector2 = positions[mote_index]
 		var alpha: float = 0.11 + float(mote_index % 3) * 0.025
 		draw_circle(

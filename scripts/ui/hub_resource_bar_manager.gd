@@ -14,6 +14,7 @@ const HOME_SCENE: String = "res://scenes/ui/main_menu.tscn"
 const CULTIVATION_SCENE: String = "res://scenes/ui/cultivation_menu.tscn"
 const HERO_SCENE: String = "res://scenes/ui/equipment_screen.tscn"
 const TRIALS_SCENE: String = "res://scenes/ui/daily_quest_screen.tscn"
+const TRIALS_ACHIEVEMENT_SCENE: String = "res://scenes/ui/achievement_screen.tscn"
 const PAVILION_SCENE: String = "res://scenes/ui/pavilion_screen.tscn"
 
 const HUB_SCENES: Array[String] = [
@@ -21,6 +22,7 @@ const HUB_SCENES: Array[String] = [
 	CULTIVATION_SCENE,
 	HERO_SCENE,
 	TRIALS_SCENE,
+	TRIALS_ACHIEVEMENT_SCENE,
 	PAVILION_SCENE,
 ]
 
@@ -272,7 +274,7 @@ func _enforce_bound_scene_layout() -> void:
 			_enforce_cultivation_layout(scene_root)
 		HERO_SCENE:
 			_enforce_hero_layout(scene_root)
-		TRIALS_SCENE:
+		TRIALS_SCENE, TRIALS_ACHIEVEMENT_SCENE:
 			_enforce_trials_layout(scene_root)
 		PAVILION_SCENE:
 			_enforce_pavilion_layout(scene_root)

@@ -12,6 +12,9 @@ const HubResourceBarManagerScript = preload(
 const RewardDeliveryPresenterScript = preload(
 	"res://scripts/ui/reward_delivery_presenter.gd"
 )
+const MenuReadabilityManagerScript = preload(
+	"res://scripts/ui/menu_readability_manager.gd"
+)
 
 var continue_game: bool = false
 var _lifecycle_checkpoint_in_progress: bool = false
@@ -49,6 +52,11 @@ func _bootstrap_runtime_helpers() -> void:
 		var reward_delivery: Node = RewardDeliveryPresenterScript.new()
 		reward_delivery.name = "RewardDeliveryPresenter"
 		tree.root.add_child(reward_delivery)
+
+	if tree.root.get_node_or_null("MenuReadabilityManager") == null:
+		var readability_manager: Node = MenuReadabilityManagerScript.new()
+		readability_manager.name = "MenuReadabilityManager"
+		tree.root.add_child(readability_manager)
 
 
 func _notification(what: int) -> void:
