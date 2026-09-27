@@ -8,7 +8,7 @@ class_name TrialsHallOverlay
 ## for the approved Trials presentation. The LAB scene intentionally does not.
 
 const TrialsProductionPresenterScript = preload(
-	"res://scripts/ui/trials_production_presenter.gd"
+	"res://scripts/ui/trials_production_presenter_unified_reward.gd"
 )
 
 const DAILY_SCENE: String = "res://scenes/ui/daily_quest_screen.tscn"
@@ -72,7 +72,11 @@ func _draw_daily(canvas_size: Vector2) -> void:
 	var jade := Color(0.25, 0.92, 0.72, 0.11)
 	var gold := Color(1.0, 0.78, 0.30, 0.10)
 	var center := Vector2(canvas_size.x * 0.82, canvas_size.y * 0.20)
-	var phase: float = 0.0 if SettingsManager.reduced_effects else elapsed * 0.10
+	var phase: float = (
+		0.0
+		if SettingsManager.reduced_effects
+		else elapsed * 0.10
+	)
 
 	for ring_index: int in range(3):
 		draw_arc(
@@ -87,18 +91,33 @@ func _draw_daily(canvas_size: Vector2) -> void:
 		)
 
 	for seal_index: int in range(6):
-		var angle: float = phase + float(seal_index) * TAU / 6.0
-		var point := center + Vector2.RIGHT.rotated(angle) * 84.0
-		draw_circle(point, 2.0, Color(0.45, 1.0, 0.84, 0.20))
+		var angle: float = (
+			phase
+			+ float(seal_index) * TAU / 6.0
+		)
+		var point := (
+			center
+			+ Vector2.RIGHT.rotated(angle) * 84.0
+		)
+		draw_circle(
+			point,
+			2.0,
+			Color(0.45, 1.0, 0.84, 0.20)
+		)
 
 
 func _draw_records(canvas_size: Vector2) -> void:
 	var gold := Color(1.0, 0.78, 0.30, 0.12)
 	var jade := Color(0.22, 0.84, 0.68, 0.10)
-	var center := Vector2(canvas_size.x * 0.80, canvas_size.y * 0.21)
+	var center := Vector2(
+		canvas_size.x * 0.80,
+		canvas_size.y * 0.21
+	)
 
 	for layer_index: int in range(3):
-		var half_extent: float = 46.0 + float(layer_index) * 19.0
+		var half_extent: float = (
+			46.0 + float(layer_index) * 19.0
+		)
 		var points := PackedVector2Array([
 			center + Vector2(0.0, -half_extent),
 			center + Vector2(half_extent, 0.0),
@@ -114,8 +133,14 @@ func _draw_records(canvas_size: Vector2) -> void:
 		)
 
 	draw_line(
-		Vector2(canvas_size.x * 0.08, canvas_size.y * 0.31),
-		Vector2(canvas_size.x * 0.32, canvas_size.y * 0.31),
+		Vector2(
+			canvas_size.x * 0.08,
+			canvas_size.y * 0.31
+		),
+		Vector2(
+			canvas_size.x * 0.32,
+			canvas_size.y * 0.31
+		),
 		Color(0.92, 0.72, 0.30, 0.10),
 		1.0,
 		true
@@ -137,9 +162,15 @@ func _draw_motes(canvas_size: Vector2) -> void:
 
 	for mote_index: int in range(positions.size()):
 		var uv: Vector2 = positions[mote_index]
-		var alpha: float = 0.11 + float(mote_index % 3) * 0.025
+		var alpha: float = (
+			0.11
+			+ float(mote_index % 3) * 0.025
+		)
 		draw_circle(
-			Vector2(canvas_size.x * uv.x, canvas_size.y * uv.y),
+			Vector2(
+				canvas_size.x * uv.x,
+				canvas_size.y * uv.y
+			),
 			1.2 + float(mote_index % 2) * 0.8,
 			Color(0.55, 0.96, 0.82, alpha)
 		)
@@ -164,8 +195,14 @@ func _draw_edge_accents(canvas_size: Vector2) -> void:
 		true
 	)
 	draw_line(
-		Vector2(canvas_size.x - 12.0, canvas_size.y - 16.0),
-		Vector2(canvas_size.x - 68.0, canvas_size.y - 16.0),
+		Vector2(
+			canvas_size.x - 12.0,
+			canvas_size.y - 16.0
+		),
+		Vector2(
+			canvas_size.x - 68.0,
+			canvas_size.y - 16.0
+		),
 		jade,
 		1.2,
 		true

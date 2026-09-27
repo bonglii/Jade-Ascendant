@@ -224,7 +224,6 @@ func _build_popup() -> void:
 
 	popup_body.add_child(_build_header())
 	popup_body.add_child(_build_sanctum_hero())
-	popup_body.add_child(_build_tier_ribbon())
 	popup_body.add_child(_build_status_row())
 	popup_body.add_child(_build_rewards())
 	popup_body.add_child(_build_claim_row())
@@ -348,7 +347,11 @@ func _build_sanctum_hero() -> Control:
 
 	var art := TextureRect.new()
 	art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	art.texture = SANCTUM_ART
+	art.offset_left = 0.0
+	art.offset_top = 0.0
+	art.offset_right = 0.0
+	art.offset_bottom = 0.0
+	art.texture = _load_meditation_hero_texture()
 	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -356,7 +359,7 @@ func _build_sanctum_hero() -> Control:
 
 	var shade := ColorRect.new()
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	shade.color = Color(0.0, 0.015, 0.022, 0.12)
+	shade.color = Color(0.0, 0.012, 0.018, 0.05)
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	frame.add_child(shade)
 
@@ -380,20 +383,6 @@ func _build_sanctum_hero() -> Control:
 	)
 	frame.add_child(inner_glow)
 
-	var emblem := TextureRect.new()
-	emblem.anchor_left = 0.0
-	emblem.anchor_top = 0.0
-	emblem.anchor_right = 1.0
-	emblem.anchor_bottom = 1.0
-	emblem.offset_left = 8.0
-	emblem.offset_top = 8.0
-	emblem.offset_right = -8.0
-	emblem.offset_bottom = -8.0
-	emblem.texture = MEDITATION_EMBLEM
-	emblem.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	emblem.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	emblem.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	frame.add_child(emblem)
 
 	var hero_title := _label("INNER SEA SANCTUM", 15, Color(1.0, 0.88, 0.55, 0.96))
 	hero_title.anchor_left = 0.0
@@ -687,6 +676,19 @@ func _disable_lab_navigation() -> void:
 	for child in nav.get_children():
 		if child is Button:
 			(child as Button).disabled = true
+
+
+
+func _load_meditation_hero_texture() -> Texture2D:
+	var path := "res://assets/ui/meditation/premium_popup/meditation_hero_sanctum.png"
+	var image := Image.load_from_file(path)
+	if image == null or image.is_empty():
+		return SANCTUM_ART
+	var texture := ImageTexture.create_from_image(image)
+	if texture == null:
+		return SANCTUM_ART
+	return texture
+
 
 
 func _label(text_value: String, font_size: int, color: Color) -> Label:

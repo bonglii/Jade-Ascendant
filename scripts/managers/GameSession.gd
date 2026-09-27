@@ -12,6 +12,9 @@ const HubResourceBarManagerScript = preload(
 const RewardDeliveryPresenterScript = preload(
 	"res://scripts/ui/reward_delivery_presenter.gd"
 )
+const RewardClaimResultPresenterScript = preload(
+	"res://scripts/ui/reward_claim_result_presenter.gd"
+)
 const MenuReadabilityManagerScript = preload(
 	"res://scripts/ui/menu_readability_manager.gd"
 )
@@ -52,6 +55,13 @@ func _bootstrap_runtime_helpers() -> void:
 		var reward_delivery: Node = RewardDeliveryPresenterScript.new()
 		reward_delivery.name = "RewardDeliveryPresenter"
 		tree.root.add_child(reward_delivery)
+
+	if tree.root.get_node_or_null("RewardClaimResultPresenter") == null:
+		var claim_result: Node = (
+			RewardClaimResultPresenterScript.new()
+		)
+		claim_result.name = "RewardClaimResultPresenter"
+		tree.root.add_child(claim_result)
 
 	if tree.root.get_node_or_null("MenuReadabilityManager") == null:
 		var readability_manager: Node = MenuReadabilityManagerScript.new()
@@ -96,7 +106,9 @@ func checkpoint_active_run_for_background() -> bool:
 	):
 		return false
 
-	var checkpoint_manager: Node = active_scene.get_node_or_null("CheckPointManager")
+	var checkpoint_manager: Node = active_scene.get_node_or_null(
+		"CheckPointManager"
+	)
 	if (
 		checkpoint_manager == null
 		or not checkpoint_manager.has_method("save_checkpoint")

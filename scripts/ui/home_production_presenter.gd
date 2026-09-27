@@ -7,7 +7,7 @@ extends Control
 ## - JourneyManager remains chapter/stage authority.
 ## - MainMenu keeps checkpoint/continue authority.
 ## - LiveOpsManager keeps live-event/reward authority.
-## - PavilionManager keeps Meditation/Pavilion authority.
+## - IdleCultivationManager remains Meditation reward/save authority.
 ## - HubResourceBarManager owns the shared top wallet.
 ## - WuxiaHubNav owns the bottom navigation.
 
@@ -31,6 +31,9 @@ const CLAIMABLE_BADGE: Texture2D = preload(
 )
 const SETTINGS_ICON: Texture2D = preload(
 	"res://assets/ui/icons/settings.svg"
+)
+const PremiumMeditationPresenter = preload(
+	"res://scripts/ui/idle_cultivation_presenter_premium.gd"
 )
 
 const EVENT_CENTER_SCENE: String = "res://scenes/ui/event_center_screen.tscn"
@@ -69,6 +72,7 @@ var mailbox_badge: TextureRect = null
 
 
 func _ready() -> void:
+	_install_premium_meditation_presenter()
 	_hide_legacy_home_chrome()
 	_build_readability_grounding()
 	_build_identity()
@@ -91,6 +95,48 @@ func _exit_tree() -> void:
 
 func _main_menu() -> Node:
 	return get_tree().current_scene
+
+
+func _install_premium_meditation_presenter() -> void:
+	var idle_manager: Node = get_node_or_null(
+		"/root/IdleCultivationManager"
+	)
+	if idle_manager == null:
+		push_warning(
+			"HomeProductionPresenter: IdleCultivationManager unavailable."
+		)
+		return
+
+	var current_presenter: Node = idle_manager.get_node_or_null(
+		"IdleCultivationPresenter"
+	)
+	if (
+		current_presenter != null
+		and current_presenter.has_method(
+			"is_premium_meditation_presenter"
+		)
+		and bool(
+			current_presenter.call(
+				"is_premium_meditation_presenter"
+			)
+		)
+	):
+		return
+
+	if current_presenter != null:
+		current_presenter.free()
+
+	var premium_presenter: Node = (
+		PremiumMeditationPresenter.new() as Node
+	)
+	if premium_presenter == null:
+		push_warning(
+			"HomeProductionPresenter: premium Meditation presenter failed to instantiate."
+		)
+		return
+
+	premium_presenter.name = "IdleCultivationPresenter"
+	idle_manager.add_child(premium_presenter)
 
 
 func _hide_legacy_home_chrome() -> void:
