@@ -51,6 +51,9 @@ var active_filter: String = FILTER_ALL
 var sort_mode: String = SORT_RARITY
 var selected_item_id: String = ""
 var detail_open: bool = false
+# A card's Control identity must outlive selection/filter/sort changes.
+# Inventory/equipment changes explicitly invalidate this presentation cache.
+var _item_tile_cache: Dictionary = {}
 
 func _ready() -> void:
 	SceneTransitionManager.set_back_handler(handle_system_back)
@@ -73,7 +76,7 @@ func _ready() -> void:
 	detail_panel.visible = detail_open
 	DebugLogger.system(str("Hero Backpack Hub aktif!"))
 
-func _refresh_screen() -> void:
+func _refresh_screen(refresh_inventory_tiles: bool = false) -> void:
 	spirit_stone_label.text = "%d" % ProgressionManager.spirit_stone
 	var unique_count: int = InventoryManager.get_unique_item_count()
 	var total_count: int = InventoryManager.get_total_item_count()
@@ -87,7 +90,7 @@ func _refresh_screen() -> void:
 	_refresh_filter_buttons()
 	var visible_items: Array[String] = _get_visible_item_ids()
 	_validate_selected_item(visible_items)
-	_rebuild_item_grid(visible_items)
+	_rebuild_item_grid(visible_items, refresh_inventory_tiles)
 	_refresh_detail_panel()
 	detail_panel.visible = detail_open
 
@@ -100,7 +103,10 @@ func _refresh_filter_buttons() -> void:
 
 func _apply_filter_style(button: Button, selected: bool) -> void:
 	button.theme_type_variation = &"JadePrimaryButton" if selected else &"JadeSecondaryButton"
-	button.add_theme_font_size_override("font_size", 12)
+	# Backpack's mobile readability floor is 16. Never force an already
+	# normalized filter label back down to 12 when its selection changes.
+	if button.get_theme_font_size("font_size") < 16:
+		button.add_theme_font_size_override("font_size", 16)
 
 func _get_visible_item_ids() -> Array[String]:
 	var item_ids: Array[String] = []
@@ -139,11 +145,66 @@ func _validate_selected_item(visible_items: Array[String]) -> void:
 	selected_item_id = ""
 	detail_open = false
 
-func _rebuild_item_grid(visible_items: Array[String]) -> void:
-	for child: Node in item_grid.get_children(): child.queue_free()
+func _rebuild_item_grid(visible_items: Array[String], refresh_inventory_tiles: bool = false) -> void:
+	# Changing the selected card, filter or sort must not recreate every
+	# Control. This also preserves the vertical scroll position and font
+	# normalization already applied by MenuReadabilityManager.
+	if refresh_inventory_tiles:
+		for child: Node in item_grid.get_children():
+			item_grid.remove_child(child)
+			child.queue_free()
+		_item_tile_cache.clear()
+
 	empty_label.visible = visible_items.is_empty()
+	var owned_items: Array[String] = InventoryManager.get_owned_item_ids()
+	var visible_lookup: Dictionary = {}
 	for item_id: String in visible_items:
-		item_grid.add_child(_create_item_tile(item_id))
+		visible_lookup[item_id] = true
+
+	for cached_id: Variant in _item_tile_cache.keys():
+		if owned_items.has(str(cached_id)):
+			continue
+		var obsolete_tile: Button = _item_tile_cache[cached_id] as Button
+		if is_instance_valid(obsolete_tile):
+			item_grid.remove_child(obsolete_tile)
+			obsolete_tile.queue_free()
+		_item_tile_cache.erase(cached_id)
+
+	for item_id: String in owned_items:
+		var tile: Button = _item_tile_cache.get(item_id) as Button
+		if not is_instance_valid(tile):
+			tile = _create_item_tile(item_id)
+			tile.visible = visible_lookup.has(item_id)
+			item_grid.add_child(tile)
+			_item_tile_cache[item_id] = tile
+
+		var should_show: bool = visible_lookup.has(item_id)
+		if tile.visible != should_show:
+			tile.visible = should_show
+		var should_select: bool = detail_open and selected_item_id == item_id
+		if bool(tile.get_meta(&"jade_backpack_tile_selected", false)) != should_select:
+			_refresh_tile_selection(tile, item_id, should_select)
+
+	# GridContainer skips hidden children. Only reorder the visible cards;
+	# keep every cached Button and all of its existing child labels intact.
+	for index: int in range(visible_items.size()):
+		var visible_tile: Button = _item_tile_cache[visible_items[index]] as Button
+		if item_grid.get_child(index) != visible_tile:
+			item_grid.move_child(visible_tile, index)
+
+
+func _refresh_tile_selection(tile: Button, item_id: String, selected_now: bool) -> void:
+	var item_data: Dictionary = InventoryManager.get_item_data(item_id)
+	var rarity_id: String = str(item_data.get("rarity", "common"))
+	var rarity_color: Color = EquipmentVisualCatalog.get_rarity_color(rarity_id)
+	if InventoryManager.get_item_type(item_id) == InventoryManager.ITEM_TYPE_MATERIAL:
+		rarity_color = Color(0.35, 0.82, 1.0, 1.0)
+	var equipped: bool = _is_equipped(item_id)
+	tile.add_theme_stylebox_override("normal", _make_tile_style(rarity_color, equipped, selected_now, false))
+	tile.add_theme_stylebox_override("hover", _make_tile_style(rarity_color, equipped, true, true))
+	tile.add_theme_stylebox_override("pressed", _make_tile_style(rarity_color, equipped, true, true))
+	tile.add_theme_stylebox_override("focus", _make_tile_style(rarity_color, equipped, true, true))
+	tile.set_meta(&"jade_backpack_tile_selected", selected_now)
 
 func _create_item_tile(item_id: String) -> Button:
 	var item_data: Dictionary = InventoryManager.get_item_data(item_id)
@@ -177,6 +238,7 @@ func _create_item_tile(item_id: String) -> Button:
 	if item_type == InventoryManager.ITEM_TYPE_EQUIPMENT: tooltip_detail = "%s  •  %s" % [_format_stars(EquipmentManager.get_item_star(item_id)), EquipmentVisualCatalog.get_stat_summary(EquipmentManager.get_effective_item_data(item_id))]
 	tile.tooltip_text = "%s\n%s" % [str(item_data.get("display_name", item_id)), tooltip_detail]
 	tile.pressed.connect(_on_item_pressed.bind(item_id))
+	tile.set_meta(&"jade_backpack_tile_selected", selected)
 	return tile
 
 
@@ -544,16 +606,16 @@ func _is_equipped(item_id: String) -> bool:
 func _on_ascend_pressed() -> void:
 	if selected_item_id.is_empty(): return
 	if InventoryManager.get_item_type(selected_item_id) != InventoryManager.ITEM_TYPE_EQUIPMENT: return
-	if EquipmentManager.ascend_item(selected_item_id): _refresh_screen()
+	if EquipmentManager.ascend_item(selected_item_id): _refresh_screen(true)
 
 func _on_equipment_ascended(item_id: String, _old_star: int, _new_star: int) -> void:
-	if item_id == selected_item_id: _refresh_screen()
+	if item_id == selected_item_id: _refresh_screen(true)
 
 func _on_inventory_changed(_item_id: String, _new_count: int) -> void:
-	_refresh_screen()
+	_refresh_screen(true)
 
 func _on_equipment_changed(_slot_id: String, _item_id: String) -> void:
-	_refresh_screen()
+	_refresh_screen(true)
 
 func _open_equipment() -> void:
 	if SceneTransitionManager.is_transitioning: return

@@ -27,6 +27,16 @@ var start_confirm_dialog: Control
 var confirm_stage_label: Label
 var confirm_body_label: Label
 
+# Production stage UI is built once per scene. Selection reuses live Controls,
+# preserving typography normalization, viewport geometry, and map scroll.
+var _stage_node_refs: Dictionary = {}
+var _preview_image: TextureRect = null
+var _preview_code: Label = null
+var _preview_status: Label = null
+var _preview_title: Label = null
+var _preview_hint: Label = null
+var _preview_reward: Label = null
+
 
 func _ready() -> void:
 	chapter_id = JourneyManager.selected_chapter_id
@@ -150,6 +160,7 @@ func _build_shell() -> void:
 
 
 func _refresh_screen() -> void:
+	_stage_node_refs.clear()
 	for child: Node in view_host.get_children():
 		view_host.remove_child(child)
 		child.queue_free()
@@ -275,7 +286,9 @@ func _build_stage_map(canvas: Control, accent: Color, metrics: Dictionary, stage
 		var selected := stage_id == preview_stage_id
 		var node_size := 104.0 if is_boss else 78.0
 		var point := points[index]
-		_add_stage_seal_asset(canvas, point, visual_status, is_boss, selected)
+		var seal_refs: Dictionary = _add_stage_seal_asset(
+			canvas, point, visual_status, is_boss, selected
+		)
 		var button := Button.new()
 		button.position = point - Vector2(node_size, node_size) * 0.5
 		button.size = Vector2(node_size, node_size)
@@ -286,8 +299,19 @@ func _build_stage_map(canvas: Control, accent: Color, metrics: Dictionary, stage
 		_apply_stage_node_style(button, visual_status, is_boss, selected)
 		button.pressed.connect(_on_stage_node_pressed.bind(stage_id))
 		canvas.add_child(button)
-		var rect := _add_stage_label_plate(canvas, point, data, raw_status, accent, is_boss, selected, occupied, map_height)
-		occupied.append(rect)
+		var plate_result: Dictionary = _add_stage_label_plate(
+			canvas, point, data, raw_status, accent, is_boss, selected,
+			occupied, map_height
+		)
+		var plate_rect: Rect2 = plate_result.get("rect", Rect2())
+		occupied.append(plate_rect)
+		_stage_node_refs[stage_id] = {
+			"button": button,
+			"seal_frame": seal_refs.get("frame"),
+			"halo": seal_refs.get("halo"),
+			"plate": plate_result.get("plate"),
+			"is_boss": is_boss,
+		}
 
 
 func _segment_status(from_stage: int, to_stage: int) -> String:
@@ -318,19 +342,48 @@ func _get_visual_status(stage_id: int, raw_status: String) -> String:
 	return "CURRENT"
 
 
-func _build_selected_stage_panel(accent: Color) -> PanelContainer:
+func _selected_stage_view_data() -> Dictionary:
 	var data: Dictionary = JourneyArtCatalog.apply_stage_presentation(
 		chapter_id,
 		preview_stage_id,
 		JourneyManager.get_stage_data(chapter_id, preview_stage_id)
 	)
-	var status := _get_stage_status(preview_stage_id)
-	var can_start := (
+	var status: String = _get_stage_status(preview_stage_id)
+	var can_start: bool = (
 		JourneyManager.selected_chapter_id == chapter_id
 		and JourneyManager.selected_stage_id == preview_stage_id
 		and JourneyManager.is_stage_unlocked(chapter_id, preview_stage_id)
 		and JourneyManager.is_stage_implemented(chapter_id, preview_stage_id)
 	)
+	var first_clear: bool = not JourneyManager.is_stage_cleared(
+		chapter_id, preview_stage_id
+	)
+	var reward_data: Dictionary = RewardManager.get_stage_clear_reward(
+		chapter_id, preview_stage_id, first_clear
+	)
+	var summary: String = RewardManager.get_reward_summary(
+		RewardManager.preview_received_reward(reward_data)
+	)
+	return {
+		"data": data,
+		"status": status,
+		"can_start": can_start,
+		"reward_text": (
+			("FIRST CLEAR" if first_clear else "REPLAY REWARD")
+			+ " • " + summary
+		),
+		"button_text": (
+			"BEGIN TRIAL" if can_start
+			else ("TRIAL LOCKED" if status == "LOCKED" else "SELECT TRIAL")
+		),
+	}
+
+
+func _build_selected_stage_panel(accent: Color) -> PanelContainer:
+	var state: Dictionary = _selected_stage_view_data()
+	var data: Dictionary = state.get("data", {})
+	var status: String = str(state.get("status", "LOCKED"))
+	var can_start: bool = bool(state.get("can_start", false))
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(0.0, 232.0)
 	panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.003, 0.018, 0.027, 0.95), Color(accent.r, accent.g, accent.b, 0.38), 14, 1))
@@ -392,41 +445,127 @@ func _build_selected_stage_panel(accent: Color) -> PanelContainer:
 	reward.theme_type_variation = &"JadeSubtitle"
 	reward.add_theme_font_size_override("font_size", 12)
 	reward.add_theme_color_override("font_color", Color(1.0, 0.84, 0.50, 1.0))
-	var first_clear: bool = not JourneyManager.is_stage_cleared(
-		chapter_id,
-		preview_stage_id
-	)
-	var reward_data: Dictionary = RewardManager.get_stage_clear_reward(
-		chapter_id,
-		preview_stage_id,
-		first_clear
-	)
-	var summary: String = RewardManager.get_reward_summary(
-		RewardManager.preview_received_reward(reward_data)
-	)
-	reward.text = (
-		("FIRST CLEAR" if first_clear else "REPLAY REWARD")
-		+ " • "
-		+ summary
-	)
+	reward.text = str(state.get("reward_text", ""))
 	text_box.add_child(reward)
 	start_button = Button.new()
 	start_button.custom_minimum_size = Vector2(0.0, 50.0)
 	start_button.theme_type_variation = &"JadePrimaryButton"
 	start_button.add_theme_font_size_override("font_size", 16)
-	start_button.text = "BEGIN TRIAL" if can_start else ("TRIAL LOCKED" if status == "LOCKED" else "SELECT TRIAL")
+	start_button.text = str(state.get("button_text", ""))
 	start_button.disabled = not can_start
 	start_button.focus_mode = Control.FOCUS_NONE
 	start_button.pressed.connect(_on_start_pressed)
 	text_box.add_child(start_button)
+	_preview_image = image
+	_preview_code = code
+	_preview_status = status_label
+	_preview_title = title
+	_preview_hint = hint
+	_preview_reward = reward
 	return panel
 
 
 func _on_stage_node_pressed(stage_id: int) -> void:
+	var previous_stage_id: int = preview_stage_id
 	preview_stage_id = stage_id
-	if JourneyManager.is_stage_unlocked(chapter_id, stage_id) and JourneyManager.is_stage_implemented(chapter_id, stage_id):
+	if (
+		JourneyManager.is_stage_unlocked(chapter_id, stage_id)
+		and JourneyManager.is_stage_implemented(chapter_id, stage_id)
+	):
 		JourneyManager.select_stage(chapter_id, stage_id)
-	_refresh_screen()
+
+	# Never rebuild the map, its labels, or the detail card when tapping a node.
+	# In particular, a map rebuild loses the current scroll and forces a new
+	# asynchronous mobile readability/layout pass on every label.
+	if previous_stage_id != stage_id:
+		var accent: Color = realm_profile.get(
+			"accent", Color(0.30, 0.82, 0.65, 1.0)
+		)
+		_update_stage_node(previous_stage_id, accent)
+		_update_stage_node(stage_id, accent)
+	_refresh_selected_stage_panel()
+
+
+func _update_stage_node(stage_id: int, accent: Color) -> void:
+	var refs: Dictionary = _stage_node_refs.get(stage_id, {})
+	var button: Button = refs.get("button") as Button
+	var seal_frame: TextureRect = refs.get("seal_frame") as TextureRect
+	var halo: Panel = refs.get("halo") as Panel
+	var plate: PanelContainer = refs.get("plate") as PanelContainer
+	var is_boss: bool = bool(refs.get("is_boss", false))
+	var raw_status: String = _get_stage_status(stage_id)
+	var visual_status: String = _get_visual_status(stage_id, raw_status)
+	var selected: bool = stage_id == preview_stage_id
+
+	if is_instance_valid(button):
+		_apply_stage_node_style(button, visual_status, is_boss, selected)
+	if is_instance_valid(seal_frame) and not is_boss:
+		seal_frame.texture = seal_textures.get(
+			visual_status, seal_textures.get("LOCKED")
+		) as Texture2D
+		seal_frame.modulate = (
+			Color(0.82, 0.84, 0.84, 0.92)
+			if visual_status == "LOCKED" else Color.WHITE
+		)
+	if is_instance_valid(halo):
+		halo.visible = selected and visual_status != "LOCKED"
+	if is_instance_valid(plate):
+		var border_color: Color = _stage_status_color(raw_status, accent)
+		plate.add_theme_stylebox_override(
+			"panel",
+			_make_panel_style(
+				Color(0.002, 0.014, 0.020, 0.84 if selected else 0.74),
+				Color(border_color.r, border_color.g, border_color.b, 0.24),
+				9, 1
+			)
+		)
+
+
+func _refresh_selected_stage_panel() -> void:
+	if (
+		not is_instance_valid(_preview_image)
+		or not is_instance_valid(_preview_code)
+		or not is_instance_valid(_preview_status)
+		or not is_instance_valid(_preview_title)
+		or not is_instance_valid(_preview_hint)
+		or not is_instance_valid(_preview_reward)
+		or not is_instance_valid(start_button)
+	):
+		return
+	var state: Dictionary = _selected_stage_view_data()
+	var data: Dictionary = state.get("data", {})
+	var status: String = str(state.get("status", "LOCKED"))
+	var accent: Color = realm_profile.get(
+		"accent", Color(0.30, 0.82, 0.65, 1.0)
+	)
+	var next_image: Texture2D = stage_textures.get(
+		preview_stage_id, realm_texture
+	) as Texture2D
+	if _preview_image.texture != next_image:
+		_preview_image.texture = next_image
+	var next_code: String = "TRIAL %d-%d" % [chapter_id, preview_stage_id]
+	if _preview_code.text != next_code:
+		_preview_code.text = next_code
+	if _preview_status.text != status:
+		_preview_status.text = status
+	var status_color: Color = _stage_status_color(status, accent)
+	if _preview_status.get_theme_color("font_color") != status_color:
+		_preview_status.add_theme_color_override("font_color", status_color)
+	var next_title: String = str(data.get("display_name", "Unknown Trial"))
+	if _preview_title.text != next_title:
+		_preview_title.text = next_title
+	var next_hint: String = str(data.get("description", ""))
+	if _preview_hint.text != next_hint:
+		_preview_hint.text = next_hint
+	var next_reward: String = str(state.get("reward_text", ""))
+	if _preview_reward.text != next_reward:
+		_preview_reward.text = next_reward
+	var next_button_text: String = str(state.get("button_text", ""))
+	if start_button.text != next_button_text:
+		start_button.text = next_button_text
+	var next_disabled: bool = not bool(state.get("can_start", false))
+	if start_button.disabled != next_disabled:
+		start_button.disabled = next_disabled
 
 
 func _on_start_pressed() -> void:
@@ -572,7 +711,7 @@ func _add_route_segment(canvas: Control, start: Vector2, finish: Vector2, accent
 	canvas.add_child(core)
 
 
-func _add_stage_seal_asset(canvas: Control, point: Vector2, status: String, is_boss: bool, selected: bool) -> void:
+func _add_stage_seal_asset(canvas: Control, point: Vector2, status: String, is_boss: bool, selected: bool) -> Dictionary:
 	var frame_size := 172.0 if is_boss else 124.0
 	var texture_key := "BOSS" if is_boss else status
 	var frame := TextureRect.new()
@@ -585,15 +724,18 @@ func _add_stage_seal_asset(canvas: Control, point: Vector2, status: String, is_b
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if status == "LOCKED":
 		frame.modulate = Color(0.82, 0.84, 0.84, 0.92)
-	if selected and status != "LOCKED":
+	var halo: Panel = null
+	if status != "LOCKED":
 		var halo_size := frame_size + 22.0
-		var halo := Panel.new()
+		halo = Panel.new()
 		halo.position = point - Vector2(halo_size, halo_size) * 0.5
 		halo.size = Vector2(halo_size, halo_size)
 		halo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		halo.add_theme_stylebox_override("panel", _make_panel_style(Color(GOLD.r, GOLD.g, GOLD.b, 0.02), Color(GOLD.r, GOLD.g, GOLD.b, 0.22), int(halo_size * 0.5), 1))
+		halo.visible = selected
 		canvas.add_child(halo)
 	canvas.add_child(frame)
+	return {"frame": frame, "halo": halo}
 
 
 func _apply_stage_node_style(button: Button, status: String, is_boss: bool, selected: bool) -> void:
@@ -608,7 +750,7 @@ func _apply_stage_node_style(button: Button, status: String, is_boss: bool, sele
 	button.add_theme_stylebox_override("pressed", _make_panel_style(Color(0.0, 0.008, 0.012, 0.28), border, radius, width))
 
 
-func _add_stage_label_plate(canvas: Control, point: Vector2, data: Dictionary, status: String, accent: Color, is_boss: bool, selected: bool, occupied: Array[Rect2], map_height: float) -> Rect2:
+func _add_stage_label_plate(canvas: Control, point: Vector2, data: Dictionary, status: String, accent: Color, is_boss: bool, selected: bool, occupied: Array[Rect2], map_height: float) -> Dictionary:
 	var border_color := _stage_status_color(status, accent)
 	var desired: Rect2
 	if is_boss:
@@ -653,7 +795,7 @@ func _add_stage_label_plate(canvas: Control, point: Vector2, data: Dictionary, s
 	elif point.x >= 300.0:
 		state.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	box.add_child(state)
-	return safe_rect
+	return {"rect": safe_rect, "plate": plate}
 
 
 func _resolve_stage_label_rect(desired: Rect2, occupied: Array[Rect2], map_height: float) -> Rect2:

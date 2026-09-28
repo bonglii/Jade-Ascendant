@@ -1722,12 +1722,18 @@ func _create_item_card(
 		)
 		equipped_label.anchor_left = 0.06
 		equipped_label.anchor_top = 0.04
-		equipped_label.anchor_right = 0.62
+		# Keep the equipped caption at its final font size on first paint.
+		# Give the longer Indonesian text enough width inside the card.
+		equipped_label.anchor_right = 0.98
 		equipped_label.anchor_bottom = 0.18
 		equipped_label.text = "TERPASANG"
 		equipped_label.add_theme_font_size_override(
 			"font_size",
-			9
+			16
+		)
+		equipped_label.add_theme_font_override(
+			"font",
+			ui_font
 		)
 		equipped_label.add_theme_color_override(
 			"font_color",
@@ -1757,9 +1763,16 @@ func _create_item_card(
 		VERTICAL_ALIGNMENT_CENTER
 	)
 	name_label.clip_text = true
+	# Author lower collection names at their final readable size before
+	# first paint. MenuReadabilityManager and HubResourceBarManager both
+	# leave 16 px unchanged, preventing a delayed text resize.
 	name_label.add_theme_font_size_override(
 		"font_size",
-		10
+		16
+	)
+	name_label.add_theme_font_override(
+		"font",
+		ui_font
 	)
 	name_label.add_theme_color_override(
 		"font_color",
@@ -1792,6 +1805,16 @@ func _create_item_card(
 			EquipmentManager.get_item_star(
 				item_id
 			)
+		)
+		# Keep equipment stars at their final readable size before first paint.
+		# Other footers (such as material counts) keep their prior sizing.
+		footer.add_theme_font_size_override(
+			"font_size",
+			16
+		)
+		footer.add_theme_font_override(
+			"font",
+			ui_font
 		)
 		footer.add_theme_color_override(
 			"font_color",

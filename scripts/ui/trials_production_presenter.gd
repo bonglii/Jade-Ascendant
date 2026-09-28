@@ -43,6 +43,17 @@ var achievement_tab: Button = null
 var list_host: VBoxContainer = null
 var trials_scroll: ScrollContainer = null
 
+# Both Trials sections live inside the SAME scene, with persistent card trees
+# and independent scroll offsets. Switching only toggles their visibility.
+var daily_scroll: ScrollContainer = null
+var achievement_scroll: ScrollContainer = null
+var daily_list: VBoxContainer = null
+var achievement_list: VBoxContainer = null
+var daily_card_nodes: Dictionary = {}
+var achievement_card_nodes: Dictionary = {}
+var daily_card_signatures: Dictionary = {}
+var achievement_card_signatures: Dictionary = {}
+
 var reward_overlay: Control = null
 var reward_overlay_panel: PanelContainer = null
 var reward_overlay_title: Label = null
@@ -60,6 +71,11 @@ var scroll_touch_active: bool = false
 var scroll_touch_origin: Vector2 = Vector2.ZERO
 var scroll_dragged: bool = false
 var block_claim_until_msec: int = 0
+
+# A progress signal must not recreate every visible Trials card. Keep existing
+# Controls (and their settled typography) until that record's state changes.
+var trial_card_nodes: Dictionary = {}
+var trial_card_signatures: Dictionary = {}
 
 
 func setup(new_scene_root: Node) -> void:
@@ -80,8 +96,20 @@ func setup(new_scene_root: Node) -> void:
 
 	_hide_legacy_trials_panels()
 	_build_presentation()
+	# Apply font floors before either section becomes visible.
+	_prime_trials_readability(presentation_root)
 	_build_reward_overlay()
+	_prime_trials_readability(reward_overlay)
 	_connect_manager_signals()
+
+	# Build both sections once at opening, not on the first tab tap.
+	# The current entry section (Daily or Achievements) is restored last.
+	var entry_section: String = active_section
+	_bind_trials_section("daily")
+	_refresh()
+	_bind_trials_section("achievement")
+	_refresh()
+	_bind_trials_section(entry_section)
 	_refresh()
 	call_deferred("_configure_mobile_scroll_behavior")
 	call_deferred("_play_intro")
@@ -125,19 +153,46 @@ func _build_presentation() -> void:
 	layout.add_child(_build_hero_panel())
 	layout.add_child(_build_tabs())
 
-	trials_scroll = ScrollContainer.new()
-	trials_scroll.name = "TrialsScroll"
-	trials_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	trials_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	trials_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	trials_scroll.gui_input.connect(_on_trials_scroll_gui_input)
-	layout.add_child(trials_scroll)
+	for section: String in ["daily", "achievement"]:
+		var scroll := ScrollContainer.new()
+		scroll.name = (
+			"TrialsScrollDaily" if section == "daily"
+			else "TrialsScrollAchievement"
+		)
+		scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+		scroll.gui_input.connect(_on_trials_scroll_gui_input)
+		scroll.visible = section == active_section
+		layout.add_child(scroll)
 
-	list_host = VBoxContainer.new()
-	list_host.name = "TrialsList"
-	list_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	list_host.add_theme_constant_override("separation", 10)
-	trials_scroll.add_child(list_host)
+		var section_list := VBoxContainer.new()
+		section_list.name = (
+			"TrialsListDaily" if section == "daily"
+			else "TrialsListAchievement"
+		)
+		section_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		section_list.add_theme_constant_override("separation", 10)
+		scroll.add_child(section_list)
+		if section == "daily":
+			daily_scroll = scroll
+			daily_list = section_list
+		else:
+			achievement_scroll = scroll
+			achievement_list = section_list
+
+
+func _bind_trials_section(section: String) -> void:
+	active_section = section
+	var is_daily: bool = section == "daily"
+	trials_scroll = daily_scroll if is_daily else achievement_scroll
+	list_host = daily_list if is_daily else achievement_list
+	trial_card_nodes = daily_card_nodes if is_daily else achievement_card_nodes
+	trial_card_signatures = (
+		daily_card_signatures if is_daily else achievement_card_signatures
+	)
+	daily_scroll.visible = is_daily
+	achievement_scroll.visible = not is_daily
 
 
 func _build_hero_panel() -> PanelContainer:
@@ -328,23 +383,20 @@ func _build_tabs() -> HBoxContainer:
 
 
 func _connect_manager_signals() -> void:
-	if active_section == "daily":
-		if not DailyQuestManager.daily_quest_progressed.is_connected(_queue_refresh):
-			DailyQuestManager.daily_quest_progressed.connect(_queue_refresh)
-		if not DailyQuestManager.daily_quest_completed.is_connected(_queue_refresh):
-			DailyQuestManager.daily_quest_completed.connect(_queue_refresh)
-		if not DailyQuestManager.daily_quest_claimed.is_connected(_queue_refresh):
-			DailyQuestManager.daily_quest_claimed.connect(_queue_refresh)
-		if not DailyQuestManager.daily_quests_reset.is_connected(_queue_refresh):
-			DailyQuestManager.daily_quests_reset.connect(_queue_refresh)
-	else:
-		if not AchievementManager.achievement_unlocked.is_connected(_queue_refresh):
-			AchievementManager.achievement_unlocked.connect(_queue_refresh)
-		if not AchievementManager.achievement_claimed.is_connected(_queue_refresh):
-			AchievementManager.achievement_claimed.connect(_queue_refresh)
-		if not AchievementManager.achievement_progressed.is_connected(_queue_refresh):
-			AchievementManager.achievement_progressed.connect(_queue_refresh)
-
+	if not DailyQuestManager.daily_quest_progressed.is_connected(_queue_refresh):
+		DailyQuestManager.daily_quest_progressed.connect(_queue_refresh)
+	if not DailyQuestManager.daily_quest_completed.is_connected(_queue_refresh):
+		DailyQuestManager.daily_quest_completed.connect(_queue_refresh)
+	if not DailyQuestManager.daily_quest_claimed.is_connected(_queue_refresh):
+		DailyQuestManager.daily_quest_claimed.connect(_queue_refresh)
+	if not DailyQuestManager.daily_quests_reset.is_connected(_queue_refresh):
+		DailyQuestManager.daily_quests_reset.connect(_queue_refresh)
+	if not AchievementManager.achievement_unlocked.is_connected(_queue_refresh):
+		AchievementManager.achievement_unlocked.connect(_queue_refresh)
+	if not AchievementManager.achievement_claimed.is_connected(_queue_refresh):
+		AchievementManager.achievement_claimed.connect(_queue_refresh)
+	if not AchievementManager.achievement_progressed.is_connected(_queue_refresh):
+		AchievementManager.achievement_progressed.connect(_queue_refresh)
 
 func _queue_refresh(_arg1: Variant = null, _arg2: Variant = null, _arg3: Variant = null) -> void:
 	if refresh_queued:
@@ -400,22 +452,169 @@ func _refresh() -> void:
 		else tr("ALL REWARDS SETTLED")
 	)
 
-	for child: Node in list_host.get_children():
-		child.queue_free()
+	_sync_trial_cards(_get_sorted_record_ids())
 
-	var record_ids: Array[String] = _get_sorted_record_ids()
+
+func _sync_trial_cards(record_ids: Array[String]) -> void:
+	# Preserve the scroll offset during real state transitions and reorderings.
+	# Progress-only updates never change the cards or the scroll subtree.
+	var previous_scroll: int = 0
+	if is_instance_valid(trials_scroll):
+		previous_scroll = trials_scroll.scroll_vertical
+	var changed: bool = false
+
 	if record_ids.is_empty():
-		list_host.add_child(
-			_create_empty_state(
-				tr("No Trials records are available yet.")
-			)
+		if (
+			list_host.get_child_count() == 1
+			and list_host.get_child(0).name == &"TrialsEmptyState"
+		):
+			return
+		for child: Node in list_host.get_children():
+			list_host.remove_child(child)
+			child.queue_free()
+		trial_card_nodes.clear()
+		trial_card_signatures.clear()
+		var empty_card: PanelContainer = _create_empty_state(
+			tr("No Trials records are available yet.")
 		)
+		empty_card.name = "TrialsEmptyState"
+		_prime_trials_readability(empty_card)
+		list_host.add_child(empty_card)
 		call_deferred("_configure_mobile_scroll_behavior")
+		call_deferred("_restore_trials_scroll", trials_scroll, previous_scroll)
 		return
 
-	for record_id: String in record_ids:
-		list_host.add_child(_build_trial_card(record_id))
-	call_deferred("_configure_mobile_scroll_behavior")
+	# Clear an earlier empty state when a real record becomes available.
+	for child: Node in list_host.get_children():
+		if child.name == &"TrialsEmptyState":
+			list_host.remove_child(child)
+			child.queue_free()
+			changed = true
+
+	# A daily reset may replace the quest IDs. Remove only obsolete cards.
+	for raw_id: Variant in trial_card_nodes.keys():
+		var old_id: String = str(raw_id)
+		if record_ids.has(old_id):
+			continue
+		var obsolete: PanelContainer = trial_card_nodes[old_id] as PanelContainer
+		if is_instance_valid(obsolete):
+			if obsolete.get_parent() == list_host:
+				list_host.remove_child(obsolete)
+			obsolete.queue_free()
+		trial_card_nodes.erase(old_id)
+		trial_card_signatures.erase(old_id)
+		changed = true
+
+	for index: int in range(record_ids.size()):
+		var record_id: String = record_ids[index]
+		var signature: String = _get_trial_card_signature(record_id)
+		var card: PanelContainer = trial_card_nodes.get(record_id) as PanelContainer
+		if (
+			not is_instance_valid(card)
+			or str(trial_card_signatures.get(record_id, "")) != signature
+		):
+			# Only a changed eligibility/claim state gets a fresh card.
+			if is_instance_valid(card):
+				if card.get_parent() == list_host:
+					list_host.remove_child(card)
+				card.queue_free()
+			card = _build_trial_card(record_id)
+			_prime_trials_readability(card)
+			list_host.add_child(card)
+			trial_card_nodes[record_id] = card
+			trial_card_signatures[record_id] = signature
+			changed = true
+		else:
+			_refresh_cached_trial_progress(card, record_id)
+
+		# A newly claimable record moves toward the front without rebuilding
+		# any of the cards that are merely changing their ordering.
+		if list_host.get_child(index) != card:
+			list_host.move_child(card, index)
+			changed = true
+
+	if changed:
+		call_deferred("_configure_mobile_scroll_behavior")
+		call_deferred("_restore_trials_scroll", trials_scroll, previous_scroll)
+
+
+func _get_trial_card_signature(record_id: String) -> String:
+	# Progress is intentionally excluded: it is updated on the existing nodes.
+	var data: Dictionary = _get_record_data(record_id)
+	return "%s|%s|%s|%s|%d|%d|%s|%s" % [
+		active_section,
+		str(data.get("title", record_id)),
+		str(data.get("description", "")),
+		str(data.get("category", "trial")),
+		_get_target(record_id),
+		_get_reward(record_id),
+		str(_is_claimed(record_id)),
+		str(_is_claimable(record_id)),
+	]
+
+
+func _refresh_cached_trial_progress(card: PanelContainer, record_id: String) -> void:
+	var progress: int = _get_progress(record_id)
+	var target: int = _get_target(record_id)
+	var bar: ProgressBar = card.find_child(
+		"TrialProgressBar", true, false
+	) as ProgressBar
+	if bar != null and bar.value != float(progress):
+		bar.value = float(progress)
+	var label: Label = card.find_child(
+		"TrialProgressText", true, false
+	) as Label
+	var progress_text: String = "%d / %d" % [progress, target]
+	if label != null and label.text != progress_text:
+		label.text = progress_text
+
+
+func _restore_trials_scroll(scroll: ScrollContainer, previous_scroll: int) -> void:
+	if not is_instance_valid(scroll):
+		return
+	# Do not override a touch drag while the player is actively scrolling.
+	if _is_mobile_display() and scroll_touch_active:
+		return
+	scroll.scroll_vertical = previous_scroll
+
+
+func _prime_trials_readability(root: Node) -> void:
+	# Match MenuReadabilityManager's non-Hero thresholds before showing nodes.
+	# This prevents its 0.15-second deferred pass changing card typography.
+	if root == null:
+		return
+	if root is Label:
+		var label: Label = root as Label
+		var original_size: int = label.get_theme_font_size("font_size")
+		var final_size: int = original_size
+		if original_size <= 7:
+			final_size = 12
+		elif original_size <= 9:
+			final_size = 13
+		elif original_size <= 11:
+			final_size = 14
+		elif original_size <= 13:
+			final_size = 15
+		elif original_size <= 15:
+			final_size = 16
+		if final_size > original_size:
+			label.add_theme_font_size_override("font_size", final_size)
+	elif root is BaseButton:
+		var button: BaseButton = root as BaseButton
+		var original_size: int = button.get_theme_font_size("font_size")
+		var final_size: int = original_size
+		if original_size <= 9:
+			final_size = 13
+		elif original_size <= 11:
+			final_size = 14
+		elif original_size <= 13:
+			final_size = 15
+		elif original_size <= 15:
+			final_size = 16
+		if final_size > original_size:
+			button.add_theme_font_size_override("font_size", final_size)
+	for child: Node in root.get_children():
+		_prime_trials_readability(child)
 
 
 func _get_claimable_count() -> int:
@@ -668,6 +867,7 @@ func _build_trial_card(record_id: String) -> PanelContainer:
 	body.add_child(progress_row)
 
 	var progress_bar := ProgressBar.new()
+	progress_bar.name = "TrialProgressBar"
 	progress_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	progress_bar.custom_minimum_size = Vector2(0.0, 11.0)
 	progress_bar.max_value = float(maxi(target_value, 1))
@@ -692,6 +892,7 @@ func _build_trial_card(record_id: String) -> PanelContainer:
 	progress_row.add_child(progress_bar)
 
 	var progress_text := Label.new()
+	progress_text.name = "TrialProgressText"
 	progress_text.custom_minimum_size = Vector2(64.0, 0.0)
 	progress_text.text = "%d / %d" % [progress_value, target_value]
 	progress_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -735,22 +936,14 @@ func _is_mobile_display() -> bool:
 func _configure_mobile_scroll_behavior() -> void:
 	if not _is_mobile_display():
 		return
-	if not is_instance_valid(trials_scroll):
-		return
-
-	# Match Pavilion's mobile scroll contract from mobile_safe_area.gd:
-	# direct-touch deadzone, no desktop-style scrollbar pipe, and PASS through
-	# interactive descendants so the ScrollContainer can arbitrate a drag.
-	trials_scroll.scroll_deadzone = MOBILE_SCROLL_DEADZONE
-	if (
-		trials_scroll.vertical_scroll_mode
-		!= ScrollContainer.SCROLL_MODE_DISABLED
-	):
-		trials_scroll.vertical_scroll_mode = (
-			ScrollContainer.SCROLL_MODE_SHOW_NEVER
-		)
-	_configure_scroll_descendants(trials_scroll)
-
+	# Each tab owns an independent scroll position and mobile-touch region.
+	for scroll: ScrollContainer in [daily_scroll, achievement_scroll]:
+		if not is_instance_valid(scroll):
+			continue
+		scroll.scroll_deadzone = MOBILE_SCROLL_DEADZONE
+		if scroll.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
+			scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+		_configure_scroll_descendants(scroll)
 
 func _configure_scroll_descendants(root_node: Node) -> void:
 	for child_node: Node in root_node.get_children():
@@ -1146,31 +1339,15 @@ func _hide_reward_overlay() -> void:
 
 
 func _switch_section(section: String) -> void:
-	if section == active_section:
+	if section not in ["daily", "achievement"] or section == active_section:
 		return
-	if SceneTransitionManager.is_transitioning:
+	if not is_instance_valid(presentation_root):
 		return
-
-	var scene_path: String = (
-		DAILY_SCENE
-		if section == "daily"
-		else ACHIEVEMENT_SCENE
-	)
-	if not ResourceLoader.exists(scene_path):
-		push_error("TrialsProductionPresenter: scene section tidak ditemukan: " + scene_path)
-		return
-
-	var direction: int = -1 if section == "daily" else 1
-	var change_error: Error = SceneTransitionManager.transition_menu_to(
-		scene_path,
-		direction
-	)
-	if change_error != OK:
-		push_error(
-			"TrialsProductionPresenter: gagal membuka section. Error code: "
-			+ str(change_error)
-		)
-
+	# Both scroll/card trees are already built; update only summary/tab state
+	# and any record whose actual progress/claim status changed while hidden.
+	_bind_trials_section(section)
+	_refresh()
+	_configure_mobile_scroll_behavior()
 
 func _play_intro() -> void:
 	if presentation_root == null or SettingsManager.reduced_effects:

@@ -20,6 +20,19 @@ var background_texture: TextureRect
 var view_host: Control
 var top_context_label: Label
 
+# Production preview nodes stay alive while browsing; only their display state changes.
+var _realm_panel: PanelContainer
+var _realm_eyebrow: Label
+var _realm_title: Label
+var _realm_epithet: Label
+var _realm_hint: Label
+var _realm_progress_label: Label
+var _realm_state_label: Label
+var _realm_progress_bar: ProgressBar
+var _realm_rail_count: Label
+var _realm_enter_button: Button
+var _realm_rail_borders: Dictionary = {}
+
 
 func _ready() -> void:
 	preview_chapter_id = JourneyManager.selected_chapter_id
@@ -134,7 +147,11 @@ func _build_shell() -> void:
 
 
 func _show_realm_view() -> void:
-	_clear_view_host()
+	# Construct the visual tree once. Rebuilding it on each tap caused a new
+	# layout/font normalization pass and reset the horizontal rail scroll.
+	if is_instance_valid(_realm_panel):
+		_refresh_realm_preview()
+		return
 	_apply_realm_artwork(preview_chapter_id)
 	var chapter_data := JourneyManager.get_chapter_data(preview_chapter_id)
 	var profile := JourneyVisualCatalog.get_chapter_profile(preview_chapter_id)
@@ -167,6 +184,7 @@ func _show_realm_view() -> void:
 	panel.custom_minimum_size = Vector2(0.0, 446.0)
 	panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.003, 0.018, 0.027, 0.88), Color(accent.r, accent.g, accent.b, 0.34), 16, 1))
 	layout.add_child(panel)
+	_realm_panel = panel
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 18)
@@ -185,6 +203,7 @@ func _show_realm_view() -> void:
 	eyebrow.text = "REALM %s   •   %s" % [_roman(preview_chapter_id), str(profile.get("realm_mark", "ASCEND"))]
 	eyebrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	content.add_child(eyebrow)
+	_realm_eyebrow = eyebrow
 
 	var title := Label.new()
 	title.theme_type_variation = &"JadeTitle"
@@ -193,6 +212,7 @@ func _show_realm_view() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(title)
+	_realm_title = title
 
 	var epithet := Label.new()
 	epithet.theme_type_variation = &"JadeHeroName"
@@ -201,6 +221,7 @@ func _show_realm_view() -> void:
 	epithet.text = str(profile.get("realm_epithet", "CULTIVATION REALM"))
 	epithet.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	content.add_child(epithet)
+	_realm_epithet = epithet
 
 	var hint := Label.new()
 	hint.theme_type_variation = &"JadeMutedLabel"
@@ -210,6 +231,7 @@ func _show_realm_view() -> void:
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(hint)
+	_realm_hint = hint
 
 	var progress_row := HBoxContainer.new()
 	content.add_child(progress_row)
@@ -218,6 +240,7 @@ func _show_realm_view() -> void:
 	progress_label.add_theme_font_size_override("font_size", 14)
 	progress_label.text = "%d / %d TRIALS CLEARED" % [cleared_stages, total_stages]
 	progress_row.add_child(progress_label)
+	_realm_progress_label = progress_label
 	var fill := Control.new()
 	fill.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	progress_row.add_child(fill)
@@ -227,6 +250,7 @@ func _show_realm_view() -> void:
 	state_label.add_theme_color_override("font_color", accent if is_unlocked else TEXT_MUTED)
 	state_label.text = "UNLOCKED" if is_unlocked else "LOCKED"
 	progress_row.add_child(state_label)
+	_realm_state_label = state_label
 
 	var progress_bar := ProgressBar.new()
 	progress_bar.custom_minimum_size = Vector2(0.0, 14.0)
@@ -237,6 +261,7 @@ func _show_realm_view() -> void:
 	progress_bar.add_theme_stylebox_override("background", _make_panel_style(Color(0.01, 0.04, 0.05, 0.92), Color(accent.r, accent.g, accent.b, 0.26), 7, 1))
 	progress_bar.add_theme_stylebox_override("fill", _make_panel_style(Color(accent.r, accent.g, accent.b, 0.90), Color(accent.r, accent.g, accent.b, 0.98), 7, 0))
 	content.add_child(progress_bar)
+	_realm_progress_bar = progress_bar
 
 	var rail_header := HBoxContainer.new()
 	content.add_child(rail_header)
@@ -253,6 +278,7 @@ func _show_realm_view() -> void:
 	count.add_theme_font_size_override("font_size", 12)
 	count.text = "%d / %d" % [realm_index + 1, chapter_ids.size()]
 	rail_header.add_child(count)
+	_realm_rail_count = count
 
 	var rail_scroll := ScrollContainer.new()
 	rail_scroll.custom_minimum_size = Vector2(0.0, 134.0)
@@ -274,6 +300,7 @@ func _show_realm_view() -> void:
 	enter.focus_mode = Control.FOCUS_NONE
 	enter.pressed.connect(_on_enter_realm_pressed)
 	content.add_child(enter)
+	_realm_enter_button = enter
 
 
 func _build_realm_rail(rail: HBoxContainer) -> void:
@@ -314,12 +341,15 @@ func _build_realm_rail(rail: HBoxContainer) -> void:
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		card.add_child(label)
-		if selected:
-			var border := Panel.new()
-			border.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-			border.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			border.add_theme_stylebox_override("panel", _make_panel_style(Color.TRANSPARENT, GOLD, 3, 2))
-			card.add_child(border)
+		# All selection borders exist from the first render. Selection toggles
+		# visibility only, preserving the approved border and card geometry.
+		var border := Panel.new()
+		border.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		border.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		border.add_theme_stylebox_override("panel", _make_panel_style(Color.TRANSPARENT, GOLD, 3, 2))
+		border.visible = selected
+		card.add_child(border)
+		_realm_rail_borders[chapter_id] = border
 		var click := Button.new()
 		click.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		click.flat = true
@@ -329,8 +359,72 @@ func _build_realm_rail(rail: HBoxContainer) -> void:
 
 
 func _on_realm_card_pressed(chapter_id: int) -> void:
+	if chapter_id == preview_chapter_id or not JourneyManager.has_chapter(chapter_id):
+		return
 	preview_chapter_id = chapter_id
-	_show_realm_view()
+	_refresh_realm_preview()
+
+
+func _refresh_realm_preview() -> void:
+	if not is_instance_valid(_realm_enter_button):
+		return
+
+	var chapter_data: Dictionary = JourneyManager.get_chapter_data(preview_chapter_id)
+	var profile: Dictionary = JourneyVisualCatalog.get_chapter_profile(preview_chapter_id)
+	var accent: Color = profile.get("accent", Color(0.30, 0.82, 0.65, 1.0))
+	var chapter_ids: Array = JourneyManager.get_chapter_ids()
+	var realm_index: int = chapter_ids.find(preview_chapter_id)
+	var is_unlocked: bool = JourneyManager.is_chapter_unlocked(preview_chapter_id)
+	var presentation_stage_ids: Array = JourneyArtCatalog.get_presentation_stage_ids(
+		preview_chapter_id,
+		JourneyManager.get_stage_ids(preview_chapter_id)
+	)
+	var total_stages: int = presentation_stage_ids.size()
+	var cleared_stages: int = 0
+	for raw_stage_id: Variant in presentation_stage_ids:
+		if JourneyManager.is_stage_cleared(preview_chapter_id, int(raw_stage_id)):
+			cleared_stages += 1
+
+	# Update realm identity without replacing the approved cards or scroll node.
+	_apply_realm_artwork(preview_chapter_id)
+	_realm_panel.add_theme_stylebox_override(
+		"panel", _make_panel_style(
+			Color(0.003, 0.018, 0.027, 0.88),
+			Color(accent.r, accent.g, accent.b, 0.34), 16, 1
+		)
+	)
+	_realm_eyebrow.text = "REALM %s   •   %s" % [
+		_roman(preview_chapter_id), str(profile.get("realm_mark", "ASCEND"))
+	]
+	_realm_title.text = str(chapter_data.get("display_name", "Unknown Realm")).to_upper()
+	_realm_epithet.text = str(profile.get("realm_epithet", "CULTIVATION REALM"))
+	_realm_epithet.add_theme_color_override("font_color", accent)
+	_realm_hint.text = str(profile.get("realm_hint", ""))
+	_realm_progress_label.text = "%d / %d TRIALS CLEARED" % [cleared_stages, total_stages]
+	_realm_state_label.text = "UNLOCKED" if is_unlocked else "LOCKED"
+	_realm_state_label.add_theme_color_override("font_color", accent if is_unlocked else TEXT_MUTED)
+	_realm_progress_bar.max_value = float(maxi(total_stages, 1))
+	_realm_progress_bar.value = float(cleared_stages)
+	_realm_progress_bar.add_theme_stylebox_override(
+		"background", _make_panel_style(
+			Color(0.01, 0.04, 0.05, 0.92),
+			Color(accent.r, accent.g, accent.b, 0.26), 7, 1
+		)
+	)
+	_realm_progress_bar.add_theme_stylebox_override(
+		"fill", _make_panel_style(
+			Color(accent.r, accent.g, accent.b, 0.90),
+			Color(accent.r, accent.g, accent.b, 0.98), 7, 0
+		)
+	)
+	_realm_rail_count.text = "%d / %d" % [realm_index + 1, chapter_ids.size()]
+	_realm_enter_button.text = "ENTER REALM" if is_unlocked else "REALM LOCKED"
+	_realm_enter_button.disabled = not is_unlocked
+
+	for raw_chapter_id: Variant in _realm_rail_borders.keys():
+		var border := _realm_rail_borders[raw_chapter_id] as Panel
+		if is_instance_valid(border):
+			border.visible = int(raw_chapter_id) == preview_chapter_id
 
 
 func _on_enter_realm_pressed() -> void:
@@ -352,12 +446,6 @@ func _apply_realm_artwork(chapter_id: int) -> void:
 	var profile := JourneyVisualCatalog.get_chapter_profile(chapter_id)
 	var accent: Color = profile.get("accent", Color(0.30, 0.82, 0.65, 1.0))
 	background_texture.modulate = Color(0.90 + accent.r * 0.05, 0.90 + accent.g * 0.05, 0.90 + accent.b * 0.05, 1.0)
-
-
-func _clear_view_host() -> void:
-	for child: Node in view_host.get_children():
-		view_host.remove_child(child)
-		child.queue_free()
 
 
 func _hide_scrollbar_chrome(scroll: ScrollContainer) -> void:
