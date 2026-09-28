@@ -1,7 +1,7 @@
 # Jade Ascendant — UI / Popup QA Standard
 
-**Standard:** `QA-UI-01` – `QA-UI-09`, `QA-ENG-01`  
-**Updated:** 2026-09-28 (Mail LAB V2.11 visual DESIGN LOCK + text/engine QA rules)  
+**Standard:** `QA-UI-01` – `QA-UI-10`, `QA-ENG-01` – `QA-ENG-02`
+**Updated:** 2026-09-29 (Hero font-authority / selection reflow QA added after Mail Production checkpoint)
 **Status:** permanent acceptance criteria for new/reworked UI; existing LOCKED screens change only for real regressions.  
 **Source precedence:** approved current repo / source manager authority / project handoff. This document does not modify reward/save functionality.
 
@@ -63,10 +63,23 @@
 - Empty/no-reward states must **not** insert an auto-wrapped label into a centered, unconstrained reward row where it can receive only a glyph-width allocation. Use the existing bounded notice area or an explicitly width-constrained placeholder.
 - Verify with real catalog values and stress content: empty, one reward, two rewards, long translated titles, very long mail, `×3`, `×150`, `×1000`, `×9999`, first render and after switching the selected item. Test nominal 648×1152, 405×860 and real device. Fix measured container constraints, not only `autowrap_mode`.
 
+## QA-UI-10 — Stable typography on first paint and repeated selection [NEW]
+- Text must never visibly jump **large → small** or **small → large** after a popup, menu, tab, or card becomes interactive. Test the first rendered frame, first selection and repeated rapid switching on a real Android device.
+- Treat font size, wrapping, clipping, and content bounds as a coherent layout: applying a text-size policy after cards become visible can cause a second layout pass and a visible reflow.
+- Rebuilding an entire card/list on selection is a regression risk, not an automatic bug. Prefer updating selected state on existing controls when the number and content of entries have not changed; rebuild only when the data model changes.
+- When a deferred fit is necessary, make the affected subtree non-interactive/non-visible until the final measurements and font policies settle. Do not hide a real overflow by clipping or shrinking all text.
+- Validate at 648×1152, 405×860 and on HP: Hero slots/filter/collection, 7-Day Login cards, Chapter/Stage selection, Backpack, Trials and full text localization. LOCKED screens are modified only after a reproduced regression.
+
 ## QA-ENG-01 — Godot warnings-as-errors / inherited member shadowing [LOCKED]
 - Audit local identifiers against inherited `Node`/`Control` members, properties and signals **before delivery**. In Godot 4.7.2, `ready` is an existing `Node` signal and must not be used as a local variable name; prefer explicit names such as `has_claimable_attachment`.
 - Check other inherited members and project-specific class bindings for the same shadowing class (`rotation`, `name`, etc.); do not rename unrelated identifiers without evidence. Confirm changes with GDScript parse/`PERIKSA_GAME.bat` when available; a static source audit alone does not certify Godot engine QA.
 - Warning fixes must preserve gameplay/UI logic and include a narrow before/after diff. Do not use warning cleanup as justification for redesigning any LOCKED screen.
+
+## QA-ENG-02 — One effective font policy / no competing runtime writers [NEW]
+- Record **which script owns an element's final font size**. A periodic visual-polish manager must not decrease a font already raised by a screen-specific or shared readability policy; apply a minimum size only if the current effective value is smaller.
+- Before adding a new `add_theme_font_size_override`, inspect other writers, timers and `node_added` callbacks for the same control. An unchanged font must not be rewritten on every tick; keep refresh logic idempotent and avoid repeated layout invalidation.
+- Test the production scene after the readability manager, shared resource-bar manager and screen-specific polish have all initialized. Verify no post-input font-size oscillation, clipped captions, or changed click targets.
+- This contract does **not** authorize blanket global font enlargement or restyling of approved/LOCKED screens; fix a demonstrated overlap at its actual owner, with a minimal diff and HP QA.
 
 ## QA execution / production gates
 1. Audit actual current source/scene/resources/dependencies before any patch. Protect unpushed local work; do not infer state from an old ZIP.

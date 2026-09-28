@@ -187,15 +187,20 @@ func _polish_hero_screen(scene: Node) -> void:
 			if child is Button:
 				var filter_button := child as Button
 				filter_button.custom_minimum_size.y = 38.0
-				filter_button.add_theme_font_size_override(
-					"font_size",
-					11
-				)
+				_set_hero_font_floor(filter_button, 11)
 			elif child is Label:
-				(child as Label).add_theme_font_size_override(
-					"font_size",
-					11
-				)
+				_set_hero_font_floor(child as Label, 11)
+
+
+func _set_hero_font_floor(control: Control, minimum_size: int) -> void:
+	# MenuReadabilityManager/HubResourceBarManager can already have raised
+	# the same Hero text. Never override that larger size with a smaller value
+	# on the 0.30-second polish pass. Avoid redundant theme writes as well.
+	if not is_instance_valid(control):
+		return
+	var existing_size: int = control.get_theme_font_size("font_size")
+	if existing_size < minimum_size:
+		control.add_theme_font_size_override("font_size", minimum_size)
 
 
 func _configure_left_slot(button: Button) -> void:
@@ -206,7 +211,7 @@ func _configure_left_slot(button: Button) -> void:
 	button.offset_left = 0.0
 	button.offset_right = 0.0
 	button.offset_bottom = 90.0
-	button.add_theme_font_size_override("font_size", 13)
+	_set_hero_font_floor(button, 13)
 	_polish_slot_caption(button)
 
 
@@ -218,7 +223,7 @@ func _configure_right_slot(button: Button) -> void:
 	button.offset_left = 0.0
 	button.offset_right = 0.0
 	button.offset_bottom = 90.0
-	button.add_theme_font_size_override("font_size", 13)
+	_set_hero_font_floor(button, 13)
 	_polish_slot_caption(button)
 
 
@@ -230,7 +235,7 @@ func _polish_slot_caption(button: Button) -> void:
 	caption.offset_top = -38.0
 	caption.offset_right = -5.0
 	caption.offset_bottom = -3.0
-	caption.add_theme_font_size_override("font_size", 10)
+	_set_hero_font_floor(caption, 10)
 	caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	caption.max_lines_visible = 2
 	caption.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -251,7 +256,7 @@ func _raise_label_readability(
 	) as Label
 	if label == null:
 		return
-	label.add_theme_font_size_override("font_size", font_size)
+	_set_hero_font_floor(label, font_size)
 	label.clip_text = false
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
@@ -270,25 +275,22 @@ func _polish_collection_showcase(root: Node) -> void:
 			"OWNED EQUIPMENT" in upper_text
 			or "PERLENGKAPAN DIMILIKI" in upper_text
 		):
-			label.add_theme_font_size_override("font_size", 11)
+			_set_hero_font_floor(label, 11)
 			label.autowrap_mode = TextServer.AUTOWRAP_OFF
 		elif (
 			"LOADOUT RESONANCE" in upper_text
 			or "RESONANSI LOADOUT" in upper_text
 		):
-			label.add_theme_font_size_override("font_size", 12)
+			_set_hero_font_floor(label, 12)
 		elif "/" in label.text and "%" in label.text:
-			label.add_theme_font_size_override("font_size", 15)
+			_set_hero_font_floor(label, 15)
 			label.autowrap_mode = TextServer.AUTOWRAP_OFF
 		else:
 			var current_size: int = label.get_theme_font_size(
 				"font_size"
 			)
 			if current_size < 10:
-				label.add_theme_font_size_override(
-					"font_size",
-					10
-				)
+				_set_hero_font_floor(label, 10)
 
 
 func _collect_labels(

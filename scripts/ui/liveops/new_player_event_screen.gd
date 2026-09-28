@@ -58,10 +58,16 @@ var _pressed_scroll_y: Dictionary = {}
 var _header: Control = null
 var _day_scroll: ScrollContainer = null
 var _day_strip: HBoxContainer = null
+# Keep selected/unselected plaques alive; only update their visual state.
+var _day_card_refs: Dictionary = {}
 var _active_label: Label = null
 var _day_title: Label = null
 var _day_status: Label = null
 var _reward_row: GridContainer = null
+# Preserve reward tile controls/font normalization when switching days.
+var _stone_reward_value: Label = null
+var _shard_reward_value: Label = null
+var _shard_reward_slot: PanelContainer = null
 var _action: Button = null
 var _action_art: TextureRect = null
 var _footer_note: Label = null
@@ -477,13 +483,83 @@ func _refresh() -> void:
 	_refresh_footer()
 
 func _render_day_cards() -> void:
+	var total: int = int(live_ops.LOGIN_DAY_COUNT)
+	if _day_card_refs.size() == total and _day_strip.get_child_count() == total:
+		# A different selected day does not require rebuilding seven buttons.
+		# Rebuilding gave new text a second, delayed readability/layout pass.
+		for day: int in range(1, total + 1):
+			_refresh_day_card(day)
+		call_deferred("_focus_selected_card")
+		return
+
+	_day_card_refs.clear()
 	_clear(_day_strip)
 	_pressed_scroll_x.clear()
 	_pressed_scroll_y.clear()
-	for day: int in range(1, 8):
+	for day: int in range(1, total + 1):
 		_day_strip.add_child(_make_day_card(day))
 	call_deferred("_layout_to_viewport")
 	call_deferred("_focus_selected_card")
+
+
+func _refresh_day_card(day: int) -> void:
+	var refs: Dictionary = _day_card_refs.get(day, {})
+	var card: Button = refs.get("card") as Button
+	var frame: TextureRect = refs.get("frame") as TextureRect
+	var day_label: Label = refs.get("day_label") as Label
+	var status_label: Label = refs.get("status") as Label
+	var reward_icon: TextureRect = refs.get("reward_icon") as TextureRect
+	var gift_amount: Label = refs.get("gift_amount") as Label
+	var secondary: Label = refs.get("secondary") as Label
+	if (
+		not is_instance_valid(card)
+		or not is_instance_valid(frame)
+		or not is_instance_valid(day_label)
+		or not is_instance_valid(status_label)
+		or not is_instance_valid(reward_icon)
+		or not is_instance_valid(gift_amount)
+		or not is_instance_valid(secondary)
+	):
+		return
+
+	var state: String = _state(day)
+	var selected: bool = day == _selected_day
+	var final_day: bool = day == 7
+	var accent: Color = _accent(day, state)
+	var desired_size := Vector2(170.0 if final_day else (151.0 if selected else 145.0), 247.0)
+	if card.custom_minimum_size != desired_size:
+		card.custom_minimum_size = desired_size
+	var next_texture: Texture2D = PLAQUE_CELESTIAL if final_day or selected else PLAQUE_JADE
+	if frame.texture != next_texture:
+		frame.texture = next_texture
+	var tint: Color = (
+		Color(1.0, 0.97, 0.83, 1.0)
+		if final_day or selected else (
+			Color(0.78, 0.98, 0.91, 0.98)
+			if state == "claimed" else Color(0.62, 0.70, 0.73, 0.94)
+		)
+	)
+	if frame.modulate != tint:
+		frame.modulate = tint
+	var day_color: Color = GOLD_LIGHT if selected or final_day else TEXT
+	if day_label.get_theme_color("font_color") != day_color:
+		day_label.add_theme_color_override("font_color", day_color)
+	var status_text: String = "✓ CLAIMED" if state == "claimed" else ("✦ READY" if state == "ready" else "◈ LOCKED")
+	if status_label.text != status_text:
+		status_label.text = status_text
+	if status_label.get_theme_color("font_color") != accent:
+		status_label.add_theme_color_override("font_color", accent)
+	var icon_tint: Color = Color.WHITE if state != "locked" else Color(0.66, 0.71, 0.72, 0.78)
+	if reward_icon.modulate != icon_tint:
+		reward_icon.modulate = icon_tint
+	var reward: Dictionary = _reward(day)
+	var stone_text: String = "+%d" % int(reward.get("spirit_stone", 0))
+	if gift_amount.text != stone_text:
+		gift_amount.text = stone_text
+	var shard_count: int = int(reward.get("refinement_shard", 0))
+	var secondary_text: String = "+%d SHARDS" % shard_count if shard_count > 0 else "STONES"
+	if secondary.text != secondary_text:
+		secondary.text = secondary_text
 
 
 func _make_day_card(day: int) -> Button:
@@ -582,6 +658,15 @@ func _make_day_card(day: int) -> Button:
 
 	card.button_down.connect(_capture_card_press.bind(day))
 	card.pressed.connect(_on_card_pressed.bind(day))
+	_day_card_refs[day] = {
+		"card": card,
+		"frame": frame,
+		"day_label": day_label,
+		"status": status,
+		"reward_icon": reward_icon,
+		"gift_amount": gift_amount,
+		"secondary": secondary,
+	}
 	return card
 
 
@@ -595,16 +680,28 @@ func _refresh_footer() -> void:
 	_day_status.text = _state_text(state)
 	_day_status.add_theme_color_override("font_color", _accent(_selected_day, state))
 
-	# Always keep two columns. One-column fallback caused the detail footer
-	# to grow vertically for days with a second reward.
+	# Keep the two pinned reward tiles and their normalized typography alive.
+	# Selection changes update amounts/visibility, not footer geometry.
 	_reward_row.columns = 2
-	_clear(_reward_row)
-	_reward_row.add_child(_footer_reward_item(SPIRIT_ICON, str(int(reward.get("spirit_stone", 0))), "SPIRIT STONES"))
+	if (
+		not is_instance_valid(_stone_reward_value)
+		or not is_instance_valid(_shard_reward_value)
+		or not is_instance_valid(_shard_reward_slot)
+	):
+		_clear(_reward_row)
+		var stone_tile := _footer_reward_item(SPIRIT_ICON, "0", "SPIRIT STONES")
+		_reward_row.add_child(stone_tile)
+		_stone_reward_value = stone_tile.find_child("RewardValue", true, false) as Label
+		_shard_reward_slot = _footer_reward_item(SHARD_ICON, "0", "REFINEMENT SHARDS")
+		_shard_reward_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_reward_row.add_child(_shard_reward_slot)
+		_shard_reward_value = _shard_reward_slot.find_child("RewardValue", true, false) as Label
+	if is_instance_valid(_stone_reward_value):
+		_stone_reward_value.text = str(int(reward.get("spirit_stone", 0)))
 	var shard_amount: int = int(reward.get("refinement_shard", 0))
-	if shard_amount > 0:
-		_reward_row.add_child(_footer_reward_item(SHARD_ICON, str(shard_amount), "REFINEMENT SHARDS"))
-	else:
-		_reward_row.add_child(_footer_placeholder_item())
+	if is_instance_valid(_shard_reward_value):
+		_shard_reward_value.text = str(shard_amount)
+	_shard_reward_slot.modulate.a = 1.0 if shard_amount > 0 else 0.0
 
 	var progress_locked: bool = SaveManager.is_progress_read_only()
 	if state == "ready":
@@ -663,6 +760,7 @@ func _footer_reward_item(icon_texture: Texture2D, amount: String, label_text: St
 	)
 	icon_and_value.add_child(icon)
 	var value := _label(amount, 24, GOLD_LIGHT)
+	value.name = "RewardValue"
 	value.autowrap_mode = TextServer.AUTOWRAP_OFF
 	icon_and_value.add_child(value)
 	# Two intentional words, not automatic one-character wrapping.
