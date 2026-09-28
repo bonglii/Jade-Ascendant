@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://7x6suig2waax"
-path="res://.godot/imported/hero_stage_backdrop_v2.svg-73a793a84ff504981740cb26c05dfae8.ctex"
+uid="uid://bt20nccjetr64"
+path="res://.godot/imported/seven_day_ascension_hero_portrait_bg.png-fcafa2d5074fa743fbbb51949c25eee9.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ui/system_v2/custom/frames/hero_stage_backdrop_v2.svg"
-dest_files=["res://.godot/imported/hero_stage_backdrop_v2.svg-73a793a84ff504981740cb26c05dfae8.ctex"]
+source_file="res://assets/ui/liveops/seven_day/seven_day_ascension_hero_portrait_bg.png"
+dest_files=["res://.godot/imported/seven_day_ascension_hero_portrait_bg.png-fcafa2d5074fa743fbbb51949c25eee9.ctex"]
 
 [params]
 
@@ -38,6 +38,3 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
-svg/scale=1.0
-editor/scale_with_editor_scale=false
-editor/convert_colors_with_editor_theme=false

@@ -915,19 +915,40 @@ func _premium_continue_button() -> Button:
 
 
 func _fit_popup_to_content() -> void:
-	if (
-		_panel == null
-		or not is_instance_valid(_panel)
-		or _scroll == null
-		or _body == null
+	# Capture one popup generation. A claim result may be dismissed (or a new
+	# popup opened) while this coroutine is waiting for layout frames.
+	var popup_at_start: Control = _popup
+	var panel_at_start: PanelContainer = _panel
+	var scroll_at_start: ScrollContainer = _scroll
+	var body_at_start: VBoxContainer = _body
+	if not _is_live_popup_layout(
+		popup_at_start,
+		panel_at_start,
+		scroll_at_start,
+		body_at_start
 	):
 		return
 
 	await get_tree().process_frame
+	if not _is_live_popup_layout(
+		popup_at_start,
+		panel_at_start,
+		scroll_at_start,
+		body_at_start
+	):
+		return
+
 	await get_tree().process_frame
+	if not _is_live_popup_layout(
+		popup_at_start,
+		panel_at_start,
+		scroll_at_start,
+		body_at_start
+	):
+		return
 
 	var desired_height: float = ceilf(
-		_body.get_combined_minimum_size().y
+		body_at_start.get_combined_minimum_size().y
 		+ 24.0
 	)
 	var available_height: float = maxf(
@@ -941,10 +962,10 @@ func _fit_popup_to_content() -> void:
 	)
 	var half_height: float = final_height * 0.5
 
-	_panel.offset_top = -half_height
-	_panel.offset_bottom = half_height
-	_panel.pivot_offset = Vector2(
-		_panel.size.x * 0.5,
+	panel_at_start.offset_top = -half_height
+	panel_at_start.offset_bottom = half_height
+	panel_at_start.pivot_offset = Vector2(
+		panel_at_start.size.x * 0.5,
 		final_height * 0.5
 	)
 
@@ -952,7 +973,7 @@ func _fit_popup_to_content() -> void:
 		desired_height > available_height + 1.0
 	)
 	if needs_scroll:
-		_scroll.vertical_scroll_mode = (
+		scroll_at_start.vertical_scroll_mode = (
 			ScrollContainer.SCROLL_MODE_SHOW_NEVER
 			if (
 				OS.has_feature("android")
@@ -960,11 +981,50 @@ func _fit_popup_to_content() -> void:
 			)
 			else ScrollContainer.SCROLL_MODE_AUTO
 		)
-		_make_scroll_tree_touch_safe(_body)
+		_make_scroll_tree_touch_safe(body_at_start)
 	else:
-		_scroll.vertical_scroll_mode = (
+		scroll_at_start.vertical_scroll_mode = (
 			ScrollContainer.SCROLL_MODE_DISABLED
 		)
+
+
+func _is_live_popup_layout(
+	popup_ref: Control,
+	panel_ref: PanelContainer,
+	scroll_ref: ScrollContainer,
+	body_ref: VBoxContainer
+) -> bool:
+	if (
+		popup_ref == null
+		or panel_ref == null
+		or scroll_ref == null
+		or body_ref == null
+	):
+		return false
+
+	if (
+		not is_instance_valid(popup_ref)
+		or not is_instance_valid(panel_ref)
+		or not is_instance_valid(scroll_ref)
+		or not is_instance_valid(body_ref)
+	):
+		return false
+
+	if (
+		popup_ref.is_queued_for_deletion()
+		or panel_ref.is_queued_for_deletion()
+		or scroll_ref.is_queued_for_deletion()
+		or body_ref.is_queued_for_deletion()
+	):
+		return false
+
+	# Reject a stale coroutine even if another claim popup was opened meanwhile.
+	return (
+		_popup == popup_ref
+		and _panel == panel_ref
+		and _scroll == scroll_ref
+		and _body == body_ref
+	)
 
 
 func _make_scroll_tree_touch_safe(
