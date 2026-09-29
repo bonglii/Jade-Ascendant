@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/stage_select.gd" id="1_script"]
 [ext_resource type="Theme" path="res://assets/ui/jade_ui_theme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://scripts/ui/stage_map_background_presenter.gd" id="3_stage_map"]
 
 [node name="StageSelect" type="Control"]
 layout_mode = 3
@@ -12,3 +13,11 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("2_theme")
 script = ExtResource("1_script")
+
+[node name="StageMapBackgroundPresenter" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource("3_stage_map")
