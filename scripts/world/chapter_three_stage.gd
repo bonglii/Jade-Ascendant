@@ -7,6 +7,9 @@ extends Node2D
 const CHAPTER_ID: int = 3
 const ChapterThreeCatalog = preload("res://scripts/data/chapter_three_catalog.gd")
 const StageHazard = preload("res://scripts/world/stage_hazard.gd")
+const ChapterThreeBattlefieldGround = preload("res://assets/shaders/chapter_three_battlefield_ground.gdshader")
+const ChapterThreeBattlefieldVisual = preload("res://scripts/world/chapter_three_battlefield_visual.gd")
+const ChapterThreePaintedFloor = preload("res://assets/world/chapter_three/celestial_floor_tile.png")
 
 @export_range(1, 5, 1) var stage_id: int = 1
 
@@ -36,10 +39,19 @@ func _enter_tree() -> void:
 		)
 	)
 	_apply_environment_profile()
+	_apply_shared_chapter_ground()
 
 func _ready() -> void:
 	player = get_node("player_1") as Node2D
 	wave_manager = get_node("WaveManager")
+	# Preserve the original stage decor node and per-stage visual-signature API
+	# for save compatibility / smoke tests. Only hide its legacy drawing.
+	var old_decor: CanvasItem = get_node("VerdantQiValleyDecor") as CanvasItem
+	old_decor.visible = false
+	var battlefield := ChapterThreeBattlefieldVisual.new()
+	battlefield.name = "ChapterThreeBattlefieldVisual"
+	battlefield.z_index = -72
+	add_child(battlefield)
 	var stage_label: Label = (
 		get_node("HUD/ScreenRoot/HUDSafeArea/StageIdentity") as Label
 	)
@@ -76,6 +88,29 @@ func _apply_environment_profile() -> void:
 				"mist_strength",
 				float(stage_profile.get("mist_strength", 0.08))
 			)
+
+func _apply_shared_chapter_ground() -> void:
+	# This visual override replaces only the ground material and ambience.
+	# Spawn rates, hazard colors, and stage-profile metadata remain untouched.
+	var ground: Polygon2D = get_node("VerdantQiValleyEnvironment") as Polygon2D
+	var material_instance: ShaderMaterial = ground.material.duplicate() as ShaderMaterial
+	ground.material = material_instance
+	material_instance.shader = ChapterThreeBattlefieldGround
+	material_instance.set_shader_parameter("celestial_floor", ChapterThreePaintedFloor)
+	var palette: Dictionary = ChapterThreeCatalog.get_stage(1)
+	material_instance.set_shader_parameter("deep_earth", palette["ground"])
+	material_instance.set_shader_parameter("moss_jade", palette["moss"])
+	material_instance.set_shader_parameter("wet_stone", palette["stone"])
+	material_instance.set_shader_parameter("qi_jade", palette["accent"])
+	material_instance.set_shader_parameter("qi_cyan", palette["accent"])
+	for layer_name: String in ["VerdantQiValleyMistFar", "VerdantQiValleyQiNear"]:
+		var layer: Polygon2D = get_node(layer_name) as Polygon2D
+		var layer_material: ShaderMaterial = layer.material.duplicate() as ShaderMaterial
+		layer.material = layer_material
+		layer_material.set_shader_parameter("mist_color", palette["mist"])
+		layer_material.set_shader_parameter("qi_color", palette["accent"])
+		layer_material.set_shader_parameter("motion_speed", 0.52 if layer_name == "VerdantQiValleyMistFar" else 0.88)
+		layer_material.set_shader_parameter("mist_strength", 0.055 if layer_name == "VerdantQiValleyMistFar" else 0.028)
 
 func _process(delta: float) -> void:
 	autosave_left -= delta

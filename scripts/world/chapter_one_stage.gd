@@ -4,6 +4,9 @@ extends Node2D
 ## This lets Continue load the checkpoint's scene even after browsing another trial.
 const ChapterOneCatalog = preload("res://scripts/data/chapter_one_catalog.gd")
 const StageHazard = preload("res://scripts/world/stage_hazard.gd")
+const ChapterOneBattlefieldGround = preload("res://assets/shaders/chapter_one_battlefield_ground.gdshader")
+const ChapterOneBattlefieldVisual = preload("res://scripts/world/chapter_one_battlefield_visual.gd")
+const ChapterOnePaintedFloor = preload("res://assets/world/chapter_one/forest_floor_tile.png")
 
 @export_range(1, 6, 1) var stage_id: int = 1
 
@@ -23,13 +26,51 @@ func _enter_tree() -> void:
 	get_node("DifficultyManager").set("difficulty_interval", float(stage_profile["difficulty_interval"]))
 	if stage_id > 1:
 		_apply_environment_profile()
+	if stage_id <= 5:
+		_apply_shared_chapter_ground()
 
 func _ready() -> void:
 	player = get_node("player_1") as Node2D
 	wave_manager = get_node("WaveManager")
+	# Chapter 1 trials 1-1..1-5 share a single authored battlefield.
+	# Historical 1-6 is preserved for legacy checkpoint compatibility.
+	if stage_id <= 5:
+		# Hide older stage-specific procedural art, but keep its node, script and
+		# stage identity alive for scene contracts and old QA checks.
+		var old_decor: CanvasItem = get_node("VerdantQiValleyDecor") as CanvasItem
+		old_decor.visible = false
+		var battlefield := ChapterOneBattlefieldVisual.new()
+		battlefield.name = "ChapterOneBattlefieldVisual"
+		battlefield.z_index = -72
+		add_child(battlefield)
 	var stage_label: Label = get_node("HUD/ScreenRoot/HUDSafeArea/StageIdentity") as Label
 	stage_label.text = "1-%d  /  %s" % [stage_id, str(stage_profile["display_name"]).to_upper()]
 	DebugLogger.system("Stage 1-%d | %s" % [stage_id, stage_profile["display_name"]])
+
+func _apply_shared_chapter_ground() -> void:
+	# Preserve stage identity and hazard tint, but share the same visible
+	# Verdant Qi Valley ground palette and stone-path pattern across 1-1..1-5.
+	var ground: Polygon2D = get_node("VerdantQiValleyEnvironment") as Polygon2D
+	var material_instance: ShaderMaterial = ground.material.duplicate() as ShaderMaterial
+	ground.material = material_instance
+	material_instance.shader = ChapterOneBattlefieldGround
+	material_instance.set_shader_parameter("forest_floor", ChapterOnePaintedFloor)
+	var palette: Dictionary = ChapterOneCatalog.get_stage(1)
+	material_instance.set_shader_parameter("deep_earth", palette["ground"])
+	material_instance.set_shader_parameter("moss_jade", palette["moss"])
+	material_instance.set_shader_parameter("wet_stone", palette["stone"])
+	material_instance.set_shader_parameter("qi_jade", palette["accent"])
+	material_instance.set_shader_parameter("qi_cyan", palette["accent"])
+	# Keep the same atmospheric palette on 1-1 through 1-5 as well. The
+	# encounter/hazard/weapon colors remain owned by the individual stage.
+	for layer_name: String in ["VerdantQiValleyMistFar", "VerdantQiValleyQiNear"]:
+		var layer: Polygon2D = get_node(layer_name) as Polygon2D
+		var layer_material: ShaderMaterial = layer.material.duplicate() as ShaderMaterial
+		layer.material = layer_material
+		layer_material.set_shader_parameter("mist_color", palette["mist"])
+		layer_material.set_shader_parameter("qi_color", palette["accent"])
+		layer_material.set_shader_parameter("motion_speed", 0.55 if layer_name == "VerdantQiValleyMistFar" else 0.9)
+		layer_material.set_shader_parameter("mist_strength", 0.075 if layer_name == "VerdantQiValleyMistFar" else 0.033)
 
 func _apply_environment_profile() -> void:
 	var ground: Polygon2D = get_node("VerdantQiValleyEnvironment") as Polygon2D
