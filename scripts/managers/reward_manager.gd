@@ -35,6 +35,8 @@ const CLEAR_TYPE_REPEAT: String = "repeat_clear"
 const ChapterOneCatalog = preload("res://scripts/data/chapter_one_catalog.gd")
 const ChapterTwoCatalog = preload("res://scripts/data/chapter_two_catalog.gd")
 const ChapterThreeCatalog = preload("res://scripts/data/chapter_three_catalog.gd")
+const ChapterFourCatalog = preload("res://scripts/data/chapter_four_catalog.gd")
+const ChapterFiveCatalog = preload("res://scripts/data/chapter_five_catalog.gd")
 
 ## Permanent Lin Yue EXP is intentionally earned through trials rather than
 ## purchased. First clears accelerate discovery; repeats remain useful.
@@ -174,6 +176,14 @@ func has_stage_clear_reward_definition(
 			chapter_id == 3
 			and ChapterThreeCatalog.STAGES.has(stage_id)
 		)
+		or (
+			chapter_id == 4
+			and ChapterFourCatalog.STAGES.has(stage_id)
+		)
+		or (
+			chapter_id == 5
+			and ChapterFiveCatalog.STAGES.has(stage_id)
+		)
 	)
 
 func get_default_stage_clear_reward(
@@ -191,6 +201,16 @@ func get_stage_clear_hero_exp(
 	stage_id: int,
 	was_first_clear: bool
 ) -> int:
+	# Realm IV/V permanent EXP comes from their authored stage profiles.
+	# Previous Realm I-III EXP tables intentionally remain untouched.
+	if chapter_id == 4 or chapter_id == 5:
+		var expansion_data: Dictionary = {}
+		if chapter_id == 4 and ChapterFourCatalog.STAGES.has(stage_id):
+			expansion_data = ChapterFourCatalog.get_stage(stage_id)
+		elif chapter_id == 5 and ChapterFiveCatalog.STAGES.has(stage_id):
+			expansion_data = ChapterFiveCatalog.get_stage(stage_id)
+		var authored_exp: int = maxi(int(expansion_data.get("hero_exp_base", 0)), 0)
+		return int(round(float(authored_exp) * HERO_EXP_FIRST_CLEAR_MULTIPLIER)) if was_first_clear else authored_exp
 	var chapter_values: Array = HERO_EXP_STAGE_BASE.get(chapter_id, [])
 	if stage_id <= 0 or stage_id > chapter_values.size():
 		return 0
@@ -236,6 +256,22 @@ func get_stage_clear_reward(
 	):
 		reward_data = _get_catalog_stage_clear_reward(
 			ChapterThreeCatalog.get_stage(stage_id),
+			was_first_clear
+		)
+	elif (
+		chapter_id == 4
+		and ChapterFourCatalog.STAGES.has(stage_id)
+	):
+		reward_data = _get_catalog_stage_clear_reward(
+			ChapterFourCatalog.get_stage(stage_id),
+			was_first_clear
+		)
+	elif (
+		chapter_id == 5
+		and ChapterFiveCatalog.STAGES.has(stage_id)
+	):
+		reward_data = _get_catalog_stage_clear_reward(
+			ChapterFiveCatalog.get_stage(stage_id),
 			was_first_clear
 		)
 	else:

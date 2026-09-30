@@ -18,6 +18,12 @@ const RewardClaimResultPresenterScript = preload(
 const MenuReadabilityManagerScript = preload(
 	"res://scripts/ui/menu_readability_manager.gd"
 )
+const ResourceIconUnifierScript = preload(
+	"res://scripts/ui/resource_icon_unifier.gd"
+)
+const MenuResourcePrewarmScript = preload(
+	"res://scripts/ui/menu_resource_prewarm.gd"
+)
 
 var continue_game: bool = false
 var _lifecycle_checkpoint_in_progress: bool = false
@@ -67,6 +73,19 @@ func _bootstrap_runtime_helpers() -> void:
 		var readability_manager: Node = MenuReadabilityManagerScript.new()
 		readability_manager.name = "MenuReadabilityManager"
 		tree.root.add_child(readability_manager)
+
+	# Resource icon unification and menu prewarm are runtime presentation helpers,
+	# not permanent managers. Boot them through the existing GameSession helper
+	# path so the release autoload contract remains at exactly 18 entries.
+	if tree.root.get_node_or_null("ResourceIconUnifier") == null:
+		var icon_unifier: Node = ResourceIconUnifierScript.new()
+		icon_unifier.name = "ResourceIconUnifier"
+		tree.root.add_child(icon_unifier)
+
+	if tree.root.get_node_or_null("MenuResourcePrewarm") == null:
+		var menu_prewarm: Node = MenuResourcePrewarmScript.new()
+		menu_prewarm.name = "MenuResourcePrewarm"
+		tree.root.add_child(menu_prewarm)
 
 
 func _notification(what: int) -> void:

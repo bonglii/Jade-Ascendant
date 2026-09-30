@@ -48,7 +48,7 @@ const ITEM_ICON_PATHS: Dictionary = {
 	"sunstride_boots": "res://assets/ui/equipment/sets/solar_meridian/sunstride_boots.png",
 	"golden_core_pendant": "res://assets/ui/equipment/sets/solar_meridian/golden_core_pendant.png",
 
-	"refinement_shard": "res://assets/ui/equipment/refinement_shard.svg"
+	"refinement_shard": "res://assets/ui/shared/resources/refinement_shard_premium.png"
 }
 
 const SLOT_ROLES: Dictionary = {

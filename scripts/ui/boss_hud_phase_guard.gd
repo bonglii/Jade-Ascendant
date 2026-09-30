@@ -1,11 +1,13 @@
 extends Node
 
-## Keeps the boss encounter name as a one-time arrival presentation.
-## The production HUD previously replayed the same name banner when the boss
-## entered Phase 2. This bridge preserves the persistent phase indicator while
-## preventing the arrival banner / boss-name pulse from replaying mid-fight.
+## Keep the encounter name as an arrival-only banner, while the dedicated
+## lightweight combat HUD presenter supplies bar polish and a true pre-warning.
+## Do not touch spawner timing, boss combat or permanent save state here.
+
+const CombatHudPolish = preload("res://scripts/ui/hud_combat_polish.gd")
 
 var _guarded_boss_instance_id: int = 0
+
 
 func _ready() -> void:
 	var enemy_spawner: Node = get_parent()
@@ -13,14 +15,24 @@ func _ready() -> void:
 		return
 	if not enemy_spawner.has_signal("boss_spawned_signal"):
 		return
-	var spawn_callable := Callable(self, "_on_boss_spawned")
+
+	var spawn_callable: Callable = Callable(self, "_on_boss_spawned")
 	if not enemy_spawner.is_connected("boss_spawned_signal", spawn_callable):
 		enemy_spawner.connect("boss_spawned_signal", spawn_callable)
 
+	# A presentation-only child attaches after the production HUD is ready.
+	# The spawner, level scene and HUD's original script remain untouched.
+	if get_node_or_null("HUDCombatPolish") == null:
+		var polish: Node = CombatHudPolish.new()
+		polish.name = "HUDCombatPolish"
+		add_child(polish)
+
+
 func _on_boss_spawned(boss: Node) -> void:
-	# HUD receives the same spawn signal and installs its normal boss bindings.
-	# Defer our phase-route swap until that signal dispatch has fully completed.
+	# HUD receives this signal and installs its normal boss bindings.
+	# Defer the phase-route swap until its signal dispatch has completed.
 	call_deferred("_install_phase_route", boss)
+
 
 func _install_phase_route(boss: Node) -> void:
 	if boss == null or not is_instance_valid(boss):
@@ -39,11 +51,11 @@ func _install_phase_route(boss: Node) -> void:
 	if hud == null:
 		return
 
-	var original_hud_callable := Callable(hud, "_on_boss_phase_changed")
+	var original_hud_callable: Callable = Callable(hud, "_on_boss_phase_changed")
 	if boss.is_connected("phase_changed", original_hud_callable):
 		boss.disconnect("phase_changed", original_hud_callable)
 
-	var guarded_callable := Callable(
+	var guarded_callable: Callable = Callable(
 		self,
 		"_on_guarded_boss_phase_changed"
 	).bind(hud)
@@ -55,6 +67,7 @@ func _install_phase_route(boss: Node) -> void:
 		"HUD: Boss phase presentation guard active (name banner arrival-only)."
 	)
 
+
 func _on_guarded_boss_phase_changed(
 	current_phase: int,
 	hud: Node
@@ -62,8 +75,8 @@ func _on_guarded_boss_phase_changed(
 	if hud == null or not is_instance_valid(hud):
 		return
 
-	# Keep the existing compact boss HUD current and retain the phase pulse.
-	# Deliberately do not replay _show_encounter_banner() or pulse BossNameLabel.
+	# Keep the compact boss HUD current and retain the phase pulse.
+	# Do not replay the arrival banner or boss-name pulse mid-fight.
 	if hud.has_method("_set_boss_phase"):
 		hud.call("_set_boss_phase", current_phase)
 

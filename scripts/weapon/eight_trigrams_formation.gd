@@ -7,6 +7,8 @@ extends Area2D
 const FORMATION_SEGMENTS: int = 56
 const TRIGRAM_MARKER_COUNT: int = 8
 const PULSE_VISUAL_DURATION: float = 0.24
+# Visual canvas commands are capped at 30 Hz; physics/damage remain unchanged.
+const VISUAL_REFRESH_INTERVAL: float = 1.0 / 30.0
 
 var base_damage: float = 8.0
 var radius: float = 80.0
@@ -20,6 +22,7 @@ var player_stats: Node = null
 
 var visual_age: float = 0.0
 var pulse_visual_left: float = 0.0
+var _visual_refresh_elapsed: float = 0.0
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 @onready var formation_sigil: Sprite2D = $FormationSigil
@@ -47,7 +50,16 @@ func _physics_process(delta: float) -> void:
 		queue_free()
 		return
 
-	update_formation_visual()
+	# Keep the formation's expensive CanvasItem redraw off the 60 Hz
+	# physics path. Its damage pulse, duration, and overlaps still tick
+	# every physics frame and queue their impact visuals immediately.
+	_visual_refresh_elapsed += delta
+	if _visual_refresh_elapsed >= VISUAL_REFRESH_INTERVAL:
+		_visual_refresh_elapsed = fmod(
+			_visual_refresh_elapsed,
+			VISUAL_REFRESH_INTERVAL
+		)
+		update_formation_visual()
 
 	if pulse_remaining <= 0.0:
 		_apply_damage_pulse()

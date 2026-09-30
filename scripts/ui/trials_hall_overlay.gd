@@ -152,12 +152,12 @@ func _draw_motes(canvas_size: Vector2) -> void:
 		Vector2(0.10, 0.16),
 		Vector2(0.19, 0.29),
 		Vector2(0.36, 0.12),
-		Vector2(0.51, 0.25),
-		Vector2(0.67, 0.15),
-		Vector2(0.86, 0.33),
-		Vector2(0.24, 0.56),
-		Vector2(0.72, 0.58),
-		Vector2(0.91, 0.72)
+			Vector2(0.51, 0.25),
+			Vector2(0.67, 0.15),
+			Vector2(0.86, 0.33),
+			Vector2(0.24, 0.56),
+			Vector2(0.72, 0.58),
+			Vector2(0.91, 0.72)
 	]
 
 	for mote_index: int in range(positions.size()):

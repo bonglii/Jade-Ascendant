@@ -76,31 +76,38 @@ func _play_animation_if_available(animation_name: String) -> void:
 		return
 	animated_sprite.play(animation_name)
 
-func find_nearest_enemy() -> Node2D:
+## Nearest-target lookup remains compatible with existing callers, while
+## auto-attacks can request a bounded radius. Squared distances avoid sqrt.
+func find_nearest_enemy(
+	maximum_range: float = INF,
+	boss_maximum_range: float = INF
+) -> Node2D:
 	var enemies: Array[Node] = get_tree().get_nodes_in_group("enemy")
 	var nearest_enemy: Node2D = null
-	var nearest_distance: float = INF
+	var nearest_distance_squared: float = maximum_range * maximum_range
+	var boss_distance_squared: float = boss_maximum_range * boss_maximum_range
 
 	for enemy_node: Node in enemies:
 		if not enemy_node is Node2D:
 			continue
 
 		var enemy: Node2D = enemy_node as Node2D
-
+		if enemy.is_queued_for_deletion():
+			continue
+		if bool(enemy.get("is_dead")):
+			continue
 		if not enemy.has_method("take_damage"):
 			continue
 
-		if enemy.is_queued_for_deletion():
-			continue
-
 		var distance_squared: float = (
-			global_position.distance_squared_to(
-				enemy.global_position
-			)
+			global_position.distance_squared_to(enemy.global_position)
 		)
-
-		if distance_squared < nearest_distance:
-			nearest_distance = distance_squared
+		if distance_squared > nearest_distance_squared:
+			continue
+		if distance_squared > boss_distance_squared and enemy.is_in_group("boss"):
+			continue
+		if nearest_enemy == null or distance_squared < nearest_distance_squared:
+			nearest_distance_squared = distance_squared
 			nearest_enemy = enemy
 
 	return nearest_enemy

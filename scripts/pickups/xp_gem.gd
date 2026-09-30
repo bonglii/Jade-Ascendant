@@ -16,8 +16,11 @@ func _ready() -> void:
 	add_to_group("qi_pickup")
 	player = get_tree().get_first_node_in_group("player") as Node2D
 	magnet_radius += EquipmentManager.get_secondary_bonus("pickup_radius_bonus", 72.0)
-	var pickups: Array[Node] = get_tree().get_nodes_in_group("qi_pickup")
-	if pickups.size() > MAX_PICKUPS:
+	# The normal path needs only the count. Allocate the full group array
+	# solely when the cap is exceeded and a value-preserving merge is needed.
+	# At 160 active gems this avoids a new Array on every enemy death.
+	if get_tree().get_node_count_in_group(&"qi_pickup") > MAX_PICKUPS:
+		var pickups: Array[Node] = get_tree().get_nodes_in_group(&"qi_pickup")
 		for pickup in pickups:
 			if pickup != self and is_instance_valid(pickup) and not pickup.is_queued_for_deletion() and not bool(pickup.get("collected")):
 				pickup.set("experience_value", int(pickup.get("experience_value")) + experience_value)

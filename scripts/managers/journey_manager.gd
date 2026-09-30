@@ -21,6 +21,8 @@ const NO_ACTIVE_ID := 0
 const ChapterOneCatalog = preload("res://scripts/data/chapter_one_catalog.gd")
 const ChapterTwoCatalog = preload("res://scripts/data/chapter_two_catalog.gd")
 const ChapterThreeCatalog = preload("res://scripts/data/chapter_three_catalog.gd")
+const ChapterFourCatalog = preload("res://scripts/data/chapter_four_catalog.gd")
+const ChapterFiveCatalog = preload("res://scripts/data/chapter_five_catalog.gd")
 const CHAPTERS := {
 	1: {
 		"display_name": "Verdant Qi Valley",
@@ -33,6 +35,14 @@ const CHAPTERS := {
 	3: {
 		"display_name": "Nine Heavens Star Palace",
 		"stages": ChapterThreeCatalog.STAGES
+	},
+	4: {
+		"display_name": "Frostveil Abyss",
+		"stages": ChapterFourCatalog.STAGES
+	},
+	5: {
+		"display_name": "Solar Nirvana Domain",
+		"stages": ChapterFiveCatalog.STAGES
 	}
 }
 

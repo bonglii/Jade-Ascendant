@@ -447,7 +447,7 @@ func _test_catalogs() -> void:
 			else:
 				placeholders += 1
 				_check(not journey.select_stage(chapter_id, stage_id), "Placeholder %d-%d cannot be selected" % [chapter_id, stage_id])
-	_check(implemented == 16, "All sixteen current stages are implemented")
+	_check(implemented == 26, "All 26 authored stages are implemented across five realms")
 	_check(placeholders == 0, "No v1.0 Journey stage remains a placeholder")
 	var stage_one: Dictionary = journey.get_stage_data(1, 1)
 	var stage_two: Dictionary = journey.get_stage_data(1, 2)
@@ -2166,8 +2166,8 @@ func _test_chapter_three_stages() -> void:
 		"Chapter 3 final clear creates no phantom Stage 3-6"
 	)
 	_check(
-		not journey.has_chapter(4),
-		"Chapter 3 finale creates no phantom Chapter 4"
+		journey.has_chapter(4) and journey.is_stage_unlocked(4, 1),
+		"Chapter 3 finale unlocks Frostveil Abyss Stage 4-1"
 	)
 	_check(
 		int(journey.get_chapter_progress(1).get("cleared_stages", 0))

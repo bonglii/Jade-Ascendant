@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="950" viewBox="0 0 600 950">
+<defs>
+  <linearGradient id="base" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#092f37"/><stop offset=".17" stop-color="#082732"/>
+    <stop offset=".52" stop-color="#061a24"/><stop offset=".83" stop-color="#071d27"/>
+    <stop offset="1" stop-color="#092c34"/>
+  </linearGradient>
+  <radialGradient id="vignette"><stop stop-color="#091e27" stop-opacity="0"/><stop offset=".77" stop-color="#011015" stop-opacity=".20"/><stop offset="1" stop-color="#021017" stop-opacity=".72"/></radialGradient>
+  <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#8c6325"/><stop offset=".15" stop-color="#fbde8b"/>
+    <stop offset=".35" stop-color="#bf822a"/><stop offset=".61" stop-color="#f4d474"/>
+    <stop offset=".82" stop-color="#98621d"/><stop offset="1" stop-color="#fff2ba"/>
+  </linearGradient>
+  <linearGradient id="goldSide" x1="0" y1="0" x2="0" y2="1">
+    <stop stop-color="#fff1a6" stop-opacity=".98"/><stop offset=".15" stop-color="#aa6f20" stop-opacity=".48"/>
+    <stop offset=".51" stop-color="#c29244" stop-opacity=".60"/><stop offset=".86" stop-color="#aa6f20" stop-opacity=".48"/>
+    <stop offset="1" stop-color="#fff1a6" stop-opacity=".98"/>
+  </linearGradient>
+  <linearGradient id="jadeSide" x1="0" y1="0" x2="0" y2="1">
+    <stop stop-color="#99f9de" stop-opacity=".86"/><stop offset=".30" stop-color="#27bba7" stop-opacity=".46"/>
+    <stop offset=".55" stop-color="#1ca18c" stop-opacity=".34"/><stop offset=".79" stop-color="#2bceba" stop-opacity=".54"/>
+    <stop offset="1" stop-color="#a4ffe9" stop-opacity=".86"/>
+  </linearGradient>
+  <radialGradient id="jadeJewel"><stop stop-color="#e7fff5"/><stop offset=".20" stop-color="#9effdc"/><stop offset=".55" stop-color="#23cbb6"/><stop offset=".84" stop-color="#0a605e"/><stop offset="1" stop-color="#07303b"/></radialGradient>
+  <radialGradient id="goldJewel"><stop stop-color="#fffbd8"/><stop offset=".23" stop-color="#ffeaa6"/><stop offset=".72" stop-color="#e6a942"/><stop offset="1" stop-color="#8c4e13"/></radialGradient>
+  <linearGradient id="topGlow" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#28b9a9" stop-opacity=".24"/><stop offset="1" stop-color="#28b9a9" stop-opacity="0"/></linearGradient>
+  <linearGradient id="bottomGlow" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#25b6a0" stop-opacity="0"/><stop offset="1" stop-color="#25b6a0" stop-opacity=".12"/></linearGradient>
+</defs>
+
+<!-- drop edge and layered dark stone -->
+<path d="M 38 9 H 565 L 598 39 V 915 L 565 948 H 35 L 3 915 V 37 Z" fill="#000609" fill-opacity=".65"/>
+<path d="M 35 6 H 565 L 594 35 V 915 L 565 944 H 35 L 6 915 V 35 Z" fill="url(#base)" stroke="#091518" stroke-width="7"/>
+<path d="M 46 20 H 554 L 580 46 V 904 L 554 930 H 46 L 20 904 V 46 Z" fill="url(#vignette)" opacity=".72"/>
+<path d="M 47 24 H 553 L 576 48 V 902 L 553 926 H 47 L 24 902 V 48 Z" fill="none" stroke="#225450" stroke-opacity=".31" stroke-width="1.2"/>
+<path d="M 45 24 H 555 L 576 46 V 116 H 24 V 46 Z" fill="url(#topGlow)" opacity=".55"/>
+<path d="M24 814 H576 V902 L554 926 H46 L24 902 Z" fill="url(#bottomGlow)"/>
+<!-- main raised bezel and separated inset lines -->
+<path d="M 36 9 H 564 L 591 36 V 914 L 564 941 H 36 L 9 914 V 36 Z" fill="none" stroke="#2b8b81" stroke-opacity=".24" stroke-width="8"/>
+<path d="M 36 8 H 564 L 592 36 V 914 L 564 942 H 36 L 8 914 V 36 Z" fill="none" stroke="#161410" stroke-width="7"/>
+<path d="M 36 8 H 564 L 592 36 V 914 L 564 942 H 36 L 8 914 V 36 Z" fill="none" stroke="url(#gold)" stroke-width="3.2" stroke-linejoin="bevel"/>
+<path d="M 41 16 H 559 L 584 41 V 909 L 559 934 H 41 L 16 909 V 41 Z" fill="none" stroke="#9dfce2" stroke-opacity=".89" stroke-width="2"/>
+<path d="M 49 22 H 551 L 577 48 V 902 L 551 928 H 49 L 23 902 V 48 Z" fill="none" stroke="#c89648" stroke-opacity=".48" stroke-width="1.25"/>
+<path d="M 61 33 H 539 L 566 60 V 890 L 539 918 H 61 L 34 890 V 60 Z" fill="none" stroke="#248c81" stroke-opacity=".43" stroke-width="1.35"/>
+<!-- inner dark grooves give thickness without shrinking content -->
+<path d="M37 85 V 864 M563 85 V864" stroke="#011a24" stroke-width="15" stroke-opacity=".55"/>
+<path d="M34 83 V 867 M566 83 V867" stroke="url(#jadeSide)" stroke-width="2.2"/>
+<path d="M42 112 V 839 M558 112 V839" stroke="url(#goldSide)" stroke-width="1" stroke-opacity=".72"/>
+<path d="M26 119 V833 M574 119 V833" stroke="#8cffdc" stroke-width=".6" stroke-opacity=".16"/>
+<!-- hero header and footer edge glints -->
+<path d="M 98 29 H 221 L 245 40 H 355 L 379 29 H 502" fill="none" stroke="#b98534" stroke-width="1.4" stroke-opacity=".82"/>
+<path d="M 100 33 H 212 L 240 44 H 360 L 388 33 H 500" fill="none" stroke="#3cbdac" stroke-width="1.3" stroke-opacity=".63"/>
+<path d="M 116 923 H 232 L 251 912 H 349 L 368 923 H 484" fill="none" stroke="#c99e49" stroke-width="1.5" stroke-opacity=".84"/>
+<path d="M 126 918 H 218 L 250 908 H 350 L 382 918 H 474" fill="none" stroke="#53d9c4" stroke-width="1" stroke-opacity=".47"/>
+
+<g>
+<path d="M36 56 Q45 45 57 44 Q69 40 75 48 Q78 56 69 61 Q60 64 57 57 Q55 52 61 50 Q66 49 66 53" fill="none" stroke="url(#gold)" stroke-width="2" stroke-linecap="round"/>
+<path d="M45 73 Q56 65 66 71 Q82 80 95 69 Q108 58 99 49 Q91 45 89 53 Q88 59 95 59" fill="none" stroke="#57d2b8" stroke-opacity=".74" stroke-width="1.4"/>
+<path d="M33 89 Q44 87 50 79 Q52 74 50 70 M53 38 Q54 26 64 25 Q77 21 82 30 Q86 37 79 41" fill="none" stroke="#d5aa55" stroke-opacity=".58" stroke-width="1.35"/>
+<path d="M48 47 L54 42 L60 47 L54 52 Z" fill="#042f36" stroke="#efd083" stroke-width="1.5"/>
+<path d="M54 45 L57 47 L54 50 L51 47 Z" fill="url(#jadeJewel)"/>
+<path d="M69 35 L74 29 L79 35 L74 41 Z" fill="url(#goldJewel)" stroke="#9b732a" stroke-width=".7"/>
+<path d="M36 102 Q45 95 52 97 M55 92 Q62 86 69 91" fill="none" stroke="#45b5a5" stroke-opacity=".35" stroke-width="1"/>
+</g>
+<g transform="translate(600 0) scale(-1 1)">
+<path d="M36 56 Q45 45 57 44 Q69 40 75 48 Q78 56 69 61 Q60 64 57 57 Q55 52 61 50 Q66 49 66 53" fill="none" stroke="url(#gold)" stroke-width="2" stroke-linecap="round"/>
+<path d="M45 73 Q56 65 66 71 Q82 80 95 69 Q108 58 99 49 Q91 45 89 53 Q88 59 95 59" fill="none" stroke="#57d2b8" stroke-opacity=".74" stroke-width="1.4"/>
+<path d="M33 89 Q44 87 50 79 Q52 74 50 70 M53 38 Q54 26 64 25 Q77 21 82 30 Q86 37 79 41" fill="none" stroke="#d5aa55" stroke-opacity=".58" stroke-width="1.35"/>
+<path d="M48 47 L54 42 L60 47 L54 52 Z" fill="#042f36" stroke="#efd083" stroke-width="1.5"/>
+<path d="M54 45 L57 47 L54 50 L51 47 Z" fill="url(#jadeJewel)"/>
+<path d="M69 35 L74 29 L79 35 L74 41 Z" fill="url(#goldJewel)" stroke="#9b732a" stroke-width=".7"/>
+<path d="M36 102 Q45 95 52 97 M55 92 Q62 86 69 91" fill="none" stroke="#45b5a5" stroke-opacity=".35" stroke-width="1"/>
+</g>
+<g transform="translate(0 950) scale(1 -1)">
+<path d="M36 56 Q45 45 57 44 Q69 40 75 48 Q78 56 69 61 Q60 64 57 57 Q55 52 61 50 Q66 49 66 53" fill="none" stroke="url(#gold)" stroke-width="2" stroke-linecap="round"/>
+<path d="M45 73 Q56 65 66 71 Q82 80 95 69 Q108 58 99 49 Q91 45 89 53 Q88 59 95 59" fill="none" stroke="#57d2b8" stroke-opacity=".74" stroke-width="1.4"/>
+<path d="M33 89 Q44 87 50 79 Q52 74 50 70 M53 38 Q54 26 64 25 Q77 21 82 30 Q86 37 79 41" fill="none" stroke="#d5aa55" stroke-opacity=".58" stroke-width="1.35"/>
+<path d="M48 47 L54 42 L60 47 L54 52 Z" fill="#042f36" stroke="#efd083" stroke-width="1.5"/>
+<path d="M54 45 L57 47 L54 50 L51 47 Z" fill="url(#jadeJewel)"/>
+<path d="M69 35 L74 29 L79 35 L74 41 Z" fill="url(#goldJewel)" stroke="#9b732a" stroke-width=".7"/>
+<path d="M36 102 Q45 95 52 97 M55 92 Q62 86 69 91" fill="none" stroke="#45b5a5" stroke-opacity=".35" stroke-width="1"/>
+</g>
+<g transform="translate(600 950) scale(-1 -1)">
+<path d="M36 56 Q45 45 57 44 Q69 40 75 48 Q78 56 69 61 Q60 64 57 57 Q55 52 61 50 Q66 49 66 53" fill="none" stroke="url(#gold)" stroke-width="2" stroke-linecap="round"/>
+<path d="M45 73 Q56 65 66 71 Q82 80 95 69 Q108 58 99 49 Q91 45 89 53 Q88 59 95 59" fill="none" stroke="#57d2b8" stroke-opacity=".74" stroke-width="1.4"/>
+<path d="M33 89 Q44 87 50 79 Q52 74 50 70 M53 38 Q54 26 64 25 Q77 21 82 30 Q86 37 79 41" fill="none" stroke="#d5aa55" stroke-opacity=".58" stroke-width="1.35"/>
+<path d="M48 47 L54 42 L60 47 L54 52 Z" fill="#042f36" stroke="#efd083" stroke-width="1.5"/>
+<path d="M54 45 L57 47 L54 50 L51 47 Z" fill="url(#jadeJewel)"/>
+<path d="M69 35 L74 29 L79 35 L74 41 Z" fill="url(#goldJewel)" stroke="#9b732a" stroke-width=".7"/>
+<path d="M36 102 Q45 95 52 97 M55 92 Q62 86 69 91" fill="none" stroke="#45b5a5" stroke-opacity=".35" stroke-width="1"/>
+</g>
+
+<g>
+  <path d="M267 13 Q281 10 288 4 H312 Q319 10 333 13 L318 27 L300 38 L282 27 Z" fill="#031d29" stroke="url(#gold)" stroke-width="2.2"/>
+  <path d="M279 13 L300 3 L321 13 L300 31 Z" fill="#123c3b" stroke="#51d9c5" stroke-width="1.5"/>
+  <path d="M300 6 L310 16 L300 30 L290 16 Z" fill="url(#jadeJewel)" stroke="#f7da8a" stroke-width="1.2"/>
+  <path d="M294 16 L300 10 L306 16 L300 24 Z" fill="url(#goldJewel)" opacity=".95"/>
+  <path d="M251 16 L239 16 L232 25 L246 23 M349 16 H361 L368 25 L354 23" fill="none" stroke="#c89d4c" stroke-width="1.6"/>
+  <path d="M262 32 L300 43 L338 32" fill="none" stroke="#3ed4bc" stroke-width="1.4" stroke-opacity=".64"/>
+  <circle cx="300" cy="16" r="19" fill="none" stroke="#2cd0b7" stroke-opacity=".22" stroke-width="4"/>
+</g>
+
+
+<g transform="translate(0 950) scale(1 -1)">
+  <path d="M267 13 L280 6 H320 L333 13 L317 30 L300 41 L283 30 Z" fill="#031721" stroke="#c69546" stroke-width="1.7"/>
+  <path d="M300 9 L317 22 L300 35 L283 22 Z" fill="#074746" stroke="#6be5cc" stroke-width="1.1"/>
+  <circle cx="300" cy="22" r="8" fill="url(#goldJewel)" stroke="#f9e3a4" stroke-width="1"/>
+  <path d="M300 9 V35 M287 22 H313" stroke="#fbf0b8" stroke-opacity=".61" stroke-width=".9"/>
+  <path d="M254 14 Q270 30 282 26 M346 14 Q330 30 318 26" fill="none" stroke="#dcae53" stroke-width="1.3" stroke-opacity=".82"/>
+</g>
+
+<g transform="">
+      <path d="M14 187 L23 197 L29 206 L23 215 L14 225 Z" fill="#0b3539" stroke="#b78c3b" stroke-width="1.45"/>
+      <path d="M14 195 L21 206 L14 217" fill="none" stroke="#62edcf" stroke-width="1.7"/>
+      <path d="M30 182 Q41 194 37 206 Q41 218 30 230" fill="none" stroke="#ba954a" stroke-opacity=".59" stroke-width="1.1"/>
+      <circle cx="24" cy="206" r="2.8" fill="url(#goldJewel)"/>
+    </g>
+<g transform="translate(600 0) scale(-1 1)">
+      <path d="M14 187 L23 197 L29 206 L23 215 L14 225 Z" fill="#0b3539" stroke="#b78c3b" stroke-width="1.45"/>
+      <path d="M14 195 L21 206 L14 217" fill="none" stroke="#62edcf" stroke-width="1.7"/>
+      <path d="M30 182 Q41 194 37 206 Q41 218 30 230" fill="none" stroke="#ba954a" stroke-opacity=".59" stroke-width="1.1"/>
+      <circle cx="24" cy="206" r="2.8" fill="url(#goldJewel)"/>
+    </g>
+<g transform="">
+      <path d="M14 346 L23 356 L29 365 L23 374 L14 384 Z" fill="#0b3539" stroke="#b78c3b" stroke-width="1.45"/>
+      <path d="M14 354 L21 365 L14 376" fill="none" stroke="#62edcf" stroke-width="1.7"/>
+      <path d="M30 341 Q41 353 37 365 Q41 377 30 389" fill="none" stroke="#ba954a" stroke-opacity=".59" stroke-width="1.1"/>
+      <circle cx="24" cy="365" r="2.8" fill="url(#goldJewel)"/>
+    </g>
+<g transform="translate(600 0) scale(-1 1)">
+      <path d="M14 346 L23 356 L29 365 L23 374 L14 384 Z" fill="#0b3539" stroke="#b78c3b" stroke-width="1.45"/>
+      <path d="M14 354 L21 365 L14 376" fill="none" stroke="#62edcf" stroke-width="1.7"/>
+      <path d="M30 341 Q41 353 37 365 Q41 377 30 389" fill="none" stroke="#ba954a" stroke-opacity=".59" stroke-width="1.1"/>
+      <circle cx="24" cy="365" r="2.8" fill="url(#goldJewel)"/>
+    </g>
+<g transform="">
+      <path d="M14 515 L23 525 L29 534 L23 543 L14 553 Z" fill="#0b3539" stroke="#b78c3b" stroke-width="1.45"/>
+      <path d="M14 523 L21 534 L14 545" fill="none" stroke="#62edcf" stroke-width="1.7"/>
+      <path d="M30 510 Q41 522 37 534 Q41 546 30 558" fill="none" stroke="#ba954a" stroke-opacity=".59" stroke-width="1.1"/>
+      <circle cx="24" cy="534" r="2.8" fill="url(#goldJewel)"/>
+    </g>
+<g transform="translate(600 0) scale(-1 1)">
+      <path d="M14 515 L23 525 L29 534 L23 543 L14 553 Z" fill="#0b3539" stroke="#b78c3b" stroke-width="1.45"/>
+      <path d="M14 523 L21 534 L14 545" fill="none" stroke="#62edcf" stroke-width="1.7"/>
+      <path d="M30 510 Q41 522 37 534 Q41 546 30 558" fill="none" stroke="#ba954a" stroke-opacity=".59" stroke-width="1.1"/>
+      <circle cx="24" cy="534" r="2.8" fill="url(#goldJewel)"/>
+    </g>
+<g transform="">
+      <path d="M14 684 L23 694 L29 703 L23 712 L14 722 Z" fill="#0b3539" stroke="#b78c3b" stroke-width="1.45"/>
+      <path d="M14 692 L21 703 L14 714" fill="none" stroke="#62edcf" stroke-width="1.7"/>
+      <path d="M30 679 Q41 691 37 703 Q41 715 30 727" fill="none" stroke="#ba954a" stroke-opacity=".59" stroke-width="1.1"/>
+      <circle cx="24" cy="703" r="2.8" fill="url(#goldJewel)"/>
+    </g>
+<g transform="translate(600 0) scale(-1 1)">
+      <path d="M14 684 L23 694 L29 703 L23 712 L14 722 Z" fill="#0b3539" stroke="#b78c3b" stroke-width="1.45"/>
+      <path d="M14 692 L21 703 L14 714" fill="none" stroke="#62edcf" stroke-width="1.7"/>
+      <path d="M30 679 Q41 691 37 703 Q41 715 30 727" fill="none" stroke="#ba954a" stroke-opacity=".59" stroke-width="1.1"/>
+      <circle cx="24" cy="703" r="2.8" fill="url(#goldJewel)"/>
+    </g>
+
+<path d="M 17 104 V 240 M 17 710 V 844 M583 104 V240 M583 710 V844" fill="none" stroke="#e6c479" stroke-opacity=".54" stroke-width="1.4"/>
+<path d="M 18 115 V 166 M18 768 V817 M582 115 V166 M582 768 V817" fill="none" stroke="#b2f9e3" stroke-opacity=".53" stroke-width="1.1"/>
+<path d="M 100 19 H205 M395 19 H500 M100 931 H205 M395 931 H500" fill="none" stroke="#f0cc75" stroke-opacity=".36" stroke-width=".8"/>
+</svg>

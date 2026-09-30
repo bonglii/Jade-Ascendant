@@ -73,6 +73,40 @@ const CHAPTER_PROFILES := {
 		"mountain_near": Color(0.045, 0.080, 0.16, 0.95),
 		"mist": Color(0.68, 0.82, 1.0, 0.11),
 		"moon": Color(0.98, 0.94, 0.78, 0.11)
+	},
+	4: {
+		"eyebrow": "CELESTIAL JOURNEY",
+		"realm_epithet": "FROSTVEIL ABYSS",
+		"realm_hint": "Beyond the star palace, mirrors and ancient winter seals silence the path to awakening.",
+		"trial_label": "FROSTVEIL TRIAL",
+		"realm_motif": "frostveil",
+		"realm_mark": "FROST MIRROR",
+		"accent": Color(0.41, 0.83, 0.97, 1.0),
+		"accent_soft": Color(0.27, 0.54, 0.70, 1.0),
+		"gold": Color(0.87, 0.80, 0.63, 1.0),
+		"sky_top": Color(0.012, 0.034, 0.068, 1.0),
+		"sky_bottom": Color(0.050, 0.108, 0.156, 1.0),
+		"mountain_far": Color(0.10, 0.20, 0.29, 0.80),
+		"mountain_near": Color(0.02, 0.07, 0.12, 0.97),
+		"mist": Color(0.51, 0.83, 0.98, 0.12),
+		"moon": Color(0.82, 0.94, 1.00, 0.12)
+	},
+	5: {
+		"eyebrow": "CELESTIAL JOURNEY",
+		"realm_epithet": "SOLAR NIRVANA DOMAIN",
+		"realm_hint": "Where the nine suns descend, phoenix ash and ancient forges test the limits of rebirth.",
+		"trial_label": "SOLAR NIRVANA TRIAL",
+		"realm_motif": "solar_nirvana",
+		"realm_mark": "PRIMORDIAL SUN",
+		"accent": Color(0.97, 0.59, 0.27, 1.0),
+		"accent_soft": Color(0.66, 0.29, 0.20, 1.0),
+		"gold": Color(0.98, 0.79, 0.44, 1.0),
+		"sky_top": Color(0.065, 0.021, 0.042, 1.0),
+		"sky_bottom": Color(0.17, 0.052, 0.06, 1.0),
+		"mountain_far": Color(0.29, 0.095, 0.072, 0.80),
+		"mountain_near": Color(0.11, 0.034, 0.042, 0.97),
+		"mist": Color(0.96, 0.41, 0.19, 0.11),
+		"moon": Color(1.0, 0.77, 0.39, 0.17)
 	}
 }
 

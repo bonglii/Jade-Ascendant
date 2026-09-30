@@ -836,7 +836,11 @@ func _release_wallet_visual_hold(resource_key: String, _amount: int) -> void:
 	if label == null:
 		return
 
-	var tween := create_tween()
+	# Bind the wallet-number tween to the scene-owned Label rather than to this
+	# persistent root presenter. If navigation frees the current hub screen,
+	# Godot will stop this tween with the Label instead of invoking a callable
+	# that still holds a freed typed UI object.
+	var tween := label.create_tween()
 	tween.tween_method(
 		_set_wallet_label.bind(label),
 		float(from_value),

@@ -8,6 +8,8 @@ const REALM_VISTAS: Dictionary = {
 	1: "res://assets/ui/journey/realm_vistas/realm_01.png",
 	2: "res://assets/ui/journey/realm_vistas/realm_02.png",
 	3: "res://assets/ui/journey/realm_vistas/realm_03.png",
+	4: "res://assets/ui/journey/realm_vistas/realm_04.png",
+	5: "res://assets/ui/journey/realm_vistas/realm_05.png",
 }
 
 const STAGE_ART: Dictionary = {
@@ -32,6 +34,20 @@ const STAGE_ART: Dictionary = {
 		4: "res://assets/ui/journey/stage_art/stage_3_4.png",
 		5: "res://assets/ui/journey/stage_art/stage_3_5.png",
 	},
+	4: {
+		1: "res://assets/ui/journey/stage_art/stage_4_1.png",
+		2: "res://assets/ui/journey/stage_art/stage_4_2.png",
+		3: "res://assets/ui/journey/stage_art/stage_4_3.png",
+		4: "res://assets/ui/journey/stage_art/stage_4_4.png",
+		5: "res://assets/ui/journey/stage_art/stage_4_5.png",
+	},
+	5: {
+		1: "res://assets/ui/journey/stage_art/stage_5_1.png",
+		2: "res://assets/ui/journey/stage_art/stage_5_2.png",
+		3: "res://assets/ui/journey/stage_art/stage_5_3.png",
+		4: "res://assets/ui/journey/stage_art/stage_5_4.png",
+		5: "res://assets/ui/journey/stage_art/stage_5_5.png",
+	},
 }
 
 const NODE_SEALS: Dictionary = {
@@ -52,6 +68,18 @@ const NODE_SEALS: Dictionary = {
 		"CURRENT": "res://assets/ui/journey/nodes/chapter_3/stage_seal_current.png",
 		"LOCKED": "res://assets/ui/journey/nodes/chapter_3/stage_seal_locked.png",
 		"BOSS": "res://assets/ui/journey/nodes/chapter_3/stage_seal_boss.png",
+	},
+	4: {
+		"CLEARED": "res://assets/ui/journey/nodes/chapter_4/stage_seal_cleared.png",
+		"CURRENT": "res://assets/ui/journey/nodes/chapter_4/stage_seal_current.png",
+		"LOCKED": "res://assets/ui/journey/nodes/chapter_4/stage_seal_locked.png",
+		"BOSS": "res://assets/ui/journey/nodes/chapter_4/stage_seal_boss.png",
+	},
+	5: {
+		"CLEARED": "res://assets/ui/journey/nodes/chapter_5/stage_seal_cleared.png",
+		"CURRENT": "res://assets/ui/journey/nodes/chapter_5/stage_seal_current.png",
+		"LOCKED": "res://assets/ui/journey/nodes/chapter_5/stage_seal_locked.png",
+		"BOSS": "res://assets/ui/journey/nodes/chapter_5/stage_seal_boss.png",
 	},
 }
 

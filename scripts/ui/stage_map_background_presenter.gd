@@ -52,6 +52,12 @@ func _install_into_stage_map() -> void:
 		return
 
 	var chapter_id: int = int(stage_screen.get("chapter_id"))
+	# Realms IV/V already display their approved vista through StageSelect.
+	# They have no additional scrolling stage_map artwork to install.
+	# Do not draw a duplicate panorama over the approved backdrop.
+	if chapter_id == 4 or chapter_id == 5:
+		queue_free()
+		return
 	var art_path: String = str(MAP_BACKGROUND_PATHS.get(chapter_id, ""))
 	if art_path.is_empty():
 		push_warning("StageMapBackgroundPresenter: no map artwork for chapter %d." % chapter_id)

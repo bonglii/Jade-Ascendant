@@ -13,6 +13,9 @@ var radius: float = 64.0
 var warning_duration: float = 1.25
 var elapsed: float = 0.0
 var impacted: bool = false
+# Presentation redraw only; damage timing is evaluated every process frame.
+const VISUAL_REFRESH_INTERVAL: float = 1.0 / 30.0
+var _visual_refresh_elapsed: float = 0.0
 
 func _ready() -> void:
 	add_to_group("enemy_attack")
@@ -38,13 +41,25 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	elapsed += delta
+	var impact_started: bool = false
 	if not impacted and elapsed >= warning_duration:
 		impacted = true
+		impact_started = true
 		_apply_impact()
 	if elapsed >= warning_duration + 0.22:
 		queue_free()
 		return
-	queue_redraw()
+
+	# The precise hit event above is never throttled. Only the telegraph
+	# animation is redrawn at most 30 times per second on a 60 FPS device;
+	# the hit frame is always drawn immediately.
+	_visual_refresh_elapsed += delta
+	if _visual_refresh_elapsed >= VISUAL_REFRESH_INTERVAL or impact_started:
+		_visual_refresh_elapsed = fmod(
+			_visual_refresh_elapsed,
+			VISUAL_REFRESH_INTERVAL
+		)
+		queue_redraw()
 
 func _apply_impact() -> void:
 	var player: Node2D = get_tree().get_first_node_in_group("player") as Node2D

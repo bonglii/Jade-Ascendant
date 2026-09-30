@@ -19,7 +19,11 @@ var wave_manager: Node
 
 func _enter_tree() -> void:
 	stage_profile = ChapterTwoCatalog.get_stage(stage_id)
-	get_node("EnemySpawner").call("configure_stage", stage_id)
+	var enemy_spawner: Node = get_node("EnemySpawner")
+	if enemy_spawner.has_method("configure_stage_profile"):
+		enemy_spawner.call("configure_stage_profile", stage_profile)
+	else:
+		push_error("ChapterTwoStage: EnemySpawner belum mendukung stage profile generik.")
 	get_node("WaveManager").set("wave_duration", float(stage_profile["wave_duration"]))
 	get_node("DifficultyManager").set("difficulty_interval", float(stage_profile["difficulty_interval"]))
 	if stage_id > 1:
