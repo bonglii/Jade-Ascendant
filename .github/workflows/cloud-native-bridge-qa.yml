@@ -38,7 +38,7 @@ jobs:
           java-version: '17'
 
       - name: Prepare Android SDK 36
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       - name: Install isolated Android compile platform
         run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
