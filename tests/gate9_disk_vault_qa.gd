@@ -7,6 +7,7 @@ const QA_ROOT: String = "user://jade_gate9_qa/"
 var assertions: int = 0
 var failures: int = 0
 var guard: RefCounted
+var saver: Node
 var sources: Dictionary = {}
 
 
@@ -19,7 +20,8 @@ func _run() -> void:
 		push_error("Gate 9 disk QA requires the isolated CI environment.")
 		quit(2)
 		return
-	if root.get_node_or_null("SaveManager") == null:
+	saver = root.get_node_or_null("SaveManager")
+	if saver == null:
 		push_error("SaveManager autoload is required by the file-vault QA.")
 		quit(2)
 		return
@@ -36,9 +38,11 @@ func _run() -> void:
 		quit(2)
 		return
 	guard = script.new() as RefCounted
-	var ids: Array[String] = SaveManager.get_save_domain_ids_for_scope(
-		SaveManager.SCOPE_PERMANENT
-	)
+	# A standalone --script compiles before autoload globals are registered.
+	# Match the existing phase0 smoke runner: resolve SaveManager at runtime.
+	var ids: Array[String] = []
+	for raw_id in saver.call("get_save_domain_ids_for_scope", "permanent"):
+		ids.append(str(raw_id))
 	ids.sort()
 	_expect(ids.size() == 8 and "checkpoint" not in ids,
 		"Registry contains eight permanent domains and excludes checkpoint")
@@ -157,8 +161,8 @@ func _test_guards(ids: Array[String]) -> void:
 
 
 func _fixture(id: String) -> Dictionary:
-	var data: Dictionary = {"version": SaveManager.get_save_schema_version(id)}
-	for key in SaveManager.get_save_required_keys(id):
+	var data: Dictionary = {"version": int(saver.call("get_save_schema_version", id))}
+	for key in saver.call("get_save_required_keys", id):
 		if key in ["unlocked", "claimed", "completed", "unlocked_stage_keys", "cleared_stage_keys", "owned_cosmetics"]:
 			data[key] = ["plain"] if key == "owned_cosmetics" else []
 		elif key in ["progress", "item_counts", "equipped_item_ids"]:

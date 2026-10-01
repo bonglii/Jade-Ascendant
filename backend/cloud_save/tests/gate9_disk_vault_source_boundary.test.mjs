@@ -87,6 +87,18 @@ test("Gate 9 test-only controls disallow user primary / production vault access"
   assert.doesNotMatch(workflow, /firebase deploy|service.account|firebase login/i);
 });
 
+test("Gate 9 standalone SceneTree runner resolves autoload at runtime, never as an early global", () => {
+  // Godot --script parses the SceneTree script before autoload globals exist.
+  // Dynamic Godot resource loading in _run() remains deferred until ready.
+  assert.match(qa, /saver = root\.get_node_or_null\("SaveManager"\)/);
+  assert.match(qa, /saver\.call\("get_save_domain_ids_for_scope", "permanent"\)/);
+  assert.match(qa, /saver\.call\("get_save_schema_version", id\)/);
+  assert.match(qa, /saver\.call\("get_save_required_keys", id\)/);
+  assert.doesNotMatch(qa, /\bSaveManager\.(?:get_save_domain_ids_for_scope|SCOPE_PERMANENT|get_save_schema_version|get_save_required_keys)\b/);
+  assert.match(qa, /_run\.call_deferred\(\)/);
+  assert.match(qa, /load\(SCRIPT_PATH\) as Script/);
+});
+
 test("Gate 9 cannot activate backend mutations, even after the new files are staged", () => {
   const entry = read("backend/cloud_save/functions/index.mjs");
   const gate = JSON.parse(read("backend/cloud_save/predeploy_gate.json"));
