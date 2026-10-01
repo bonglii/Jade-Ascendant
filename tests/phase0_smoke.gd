@@ -313,6 +313,7 @@ func _test_cloud_snapshot_contract() -> void:
 	_check_cloud_snapshot_rejected(contract, sample, "bad/uid", "Unsafe Firebase UID rejected")
 	_test_cloud_snapshot_capture(sample, uid)
 	_test_cloud_economy_consistency(sample)
+	_test_cloud_server_reference_model()
 
 
 func _test_cloud_snapshot_capture(sample: Dictionary, uid: String) -> void:
@@ -456,6 +457,197 @@ func _test_cloud_economy_consistency(sample: Dictionary) -> void:
 	)
 	_check(not bool(preview.get("upload_allowed", true)), "Capture remains non-uploadable after economy analysis")
 	_check(not bool(preview.get("restore_allowed", true)), "Capture remains non-restorable after economy analysis")
+
+
+func _test_cloud_server_reference_model() -> void:
+	# Synthetic-only server state machine. NOT a Firebase backend or Google
+	# Play receipt verifier. Never read/write actual player data here.
+	var model_script: Script = load(
+		"res://tests/cloud_save_server_reference_model.gd"
+	) as Script
+	if not _check(model_script != null, "Synthetic server economy model loads"):
+		return
+	var ledger: RefCounted = model_script.new() as RefCounted
+	if not _check(ledger != null, "Synthetic server economy model instantiates"):
+		return
+
+	var player_a: String = "qa_server_player_a"
+	var player_b: String = "qa_server_player_b"
+	var registered_a: Dictionary = ledger.call("create_account", player_a)
+	var registered_b: Dictionary = ledger.call("create_account", player_b)
+	_check(bool(registered_a.get("applied", false)) and bool(registered_b.get("applied", false)),
+		"Synthetic accounts initialize independently")
+	_check(not bool(ledger.call("create_account", player_a).get("applied", true)),
+		"Duplicate synthetic account initialization rejected")
+	_check(not bool(ledger.call("create_account", "bad/account").get("applied", true)),
+		"Invalid synthetic account identity rejected")
+
+	var proposed: Dictionary = {"journey": {"version": 1}}
+	var decision: Dictionary = ledger.call(
+		"propose_client_snapshot", player_a, player_a, 0, proposed
+	)
+	_check(not bool(decision.get("applied", true))
+		and str(decision.get("reason", "")) == "no_trusted_snapshot_handler",
+		"Even a current client-only snapshot cannot self-authorize cloud write")
+	_check(not bool(ledger.call(
+		"propose_client_snapshot", player_b, player_a, 0, proposed
+	).get("applied", true)), "Cross-account snapshot proposal rejected")
+	_check(str(ledger.call(
+		"propose_client_snapshot", player_a, player_a, 0,
+		{"inventory": {"item_counts": {"made_up": 9999999}}}
+	).get("reason", "")) == "economy_requires_server_reconciliation",
+		"Forged client-side item grants cannot bypass server economy")
+	_check(str(ledger.call(
+		"propose_client_snapshot", player_a, player_a, 0,
+		{"checkpoint": {"wave": 10}}
+	).get("reason", "")) == "active_run_is_device_only",
+		"Client active-run state stays device-only")
+	_check(str(ledger.call(
+		"propose_client_snapshot", player_a, player_a, 0,
+		{"progression": {"spirit_stone": 99999999}}
+	).get("reason", "")) == "economy_requires_server_reconciliation",
+		"Forged Spirit Stones require trusted economy reconciliation")
+	_check(str(ledger.call(
+		"propose_client_snapshot", player_a, player_a, 0,
+		{"unknown_domain": {}}
+	).get("reason", "")) == "unknown_domain",
+		"Unknown client save domain rejected")
+	_check(str(ledger.call(
+		"propose_client_snapshot", player_a, player_a, 0, {}
+	).get("reason", "")) == "empty_domain_proposal",
+		"Empty client save proposal rejected")
+	_check(int(ledger.call("get_summary", player_a).get("revision", -1)) == 0,
+		"Rejected client requests never advance the server revision")
+
+	var token_a: String = "qa_fake_verified_token_a"
+	_check(str(ledger.call(
+		"simulate_server_verified_purchase", player_a, player_a, 0,
+		token_a, "qa_consumable", "PENDING", 100
+	).get("reason", "")) == "not_purchased",
+		"Pending purchase cannot grant premium currency")
+	_check(str(ledger.call(
+		"simulate_server_verified_purchase", player_a, player_a, 0,
+		token_a, "qa_consumable", "CANCELED", 100
+	).get("reason", "")) == "not_purchased",
+		"Canceled purchase cannot grant premium currency")
+	_check(str(ledger.call(
+		"simulate_server_verified_purchase", player_a, player_a, 0,
+		token_a, "qa_consumable", "PURCHASED", -1
+	).get("reason", "")) == "invalid_grant_amount",
+		"Negative fake purchase grant rejected")
+	_check(str(ledger.call(
+		"simulate_server_verified_purchase", player_a, player_a, 0,
+		token_a, "qa_consumable", "PURCHASED", 0
+	).get("reason", "")) == "invalid_grant_amount",
+		"Zero fake purchase grant rejected")
+	decision = ledger.call("simulate_server_verified_purchase", player_a, player_a, 0,
+		token_a, "qa_consumable", "PURCHASED", 100)
+	_check(bool(decision.get("applied", false))
+		and int(decision.get("revision", -1)) == 1,
+		"Fake server-verified purchase advances revision atomically")
+	_check(int(ledger.call("get_summary", player_a).get("granted_units", -1)) == 100,
+		"Synthetic ledger increments balance once")
+	decision = ledger.call("simulate_server_verified_purchase", player_a, player_a, 0,
+		token_a, "qa_consumable", "PURCHASED", 100)
+	_check(not bool(decision.get("applied", true))
+		and bool(decision.get("idempotent", false))
+		and int(decision.get("revision", -1)) == 1,
+		"Lost-response replay cannot grant the same token twice")
+	_check(str(ledger.call("simulate_server_verified_purchase", player_b, player_b, 0,
+		token_a, "qa_consumable", "PURCHASED", 100).get("reason", ""))
+		== "purchase_bound_to_other_account",
+		"Same purchase token cannot be claimed by another account")
+	_check(str(ledger.call("simulate_server_verified_purchase", player_a, player_a, 0,
+		"qa_fake_verified_token_b", "qa_consumable", "PURCHASED", 2
+	).get("reason", "")) == "stale_revision",
+		"Concurrent stale grant is rejected by revision CAS")
+
+	var full_permanent: Array = [
+		"pavilion", "progression", "journey", "achievements", "daily_quests",
+		"equipment", "inventory", "idle_cultivation"
+	]
+	var partial: Array = [
+		"achievements", "daily_quests", "equipment", "inventory",
+		"journey", "progression"
+	]
+	_check(str(ledger.call("simulate_server_snapshot_commit", player_a,
+		player_a, 1, full_permanent, false).get("reason", ""))
+		== "trusted_reconciliation_missing",
+		"Complete permanent domains are insufficient without trusted reconciliation")
+	_check(str(ledger.call("simulate_server_snapshot_commit", player_a,
+		player_a, 1, partial, true).get("reason", ""))
+		== "incomplete_economy_boundary",
+		"Six-domain snapshot cannot be committed as complete account backup")
+	var duplicate_domains: Array = full_permanent.duplicate()
+	duplicate_domains[7] = "pavilion"
+	_check(str(ledger.call("simulate_server_snapshot_commit", player_a,
+		player_a, 1, duplicate_domains, true).get("reason", ""))
+		== "incomplete_economy_boundary",
+		"Duplicate domain cannot hide omitted economic dependency")
+	_check(str(ledger.call("simulate_server_snapshot_commit", player_a,
+		player_a, 0, full_permanent, true).get("reason", "")) == "stale_revision",
+		"Stale handset cannot overwrite newer server revision")
+	decision = ledger.call("simulate_server_snapshot_commit", player_a,
+		player_a, 1, full_permanent, true)
+	_check(bool(decision.get("applied", false))
+		and int(decision.get("revision", -1)) == 2,
+		"Synthetic reconciled server transaction advances revision exactly once")
+	_check(str(ledger.call("simulate_server_snapshot_commit", player_a,
+		player_a, 1, full_permanent, true).get("reason", "")) == "stale_revision",
+		"Replay of previously committed snapshot cannot rollback revisions")
+	_check(str(ledger.call("simulate_server_verified_void", player_a,
+		player_a, 2, "qa_unknown_token").get("reason", "")) == "unknown_purchase",
+		"Unknown refund cannot revoke unrelated purchases")
+	decision = ledger.call("simulate_server_verified_void", player_a,
+		player_a, 2, token_a)
+	_check(bool(decision.get("applied", false))
+		and str(decision.get("reason", "")) == "manual_reconciliation_required",
+		"Verified refund freezes economy rather than blindly subtracting spent currency")
+	_check(int(ledger.call("get_summary", player_a).get("granted_units", -1)) == 100
+		and bool(ledger.call("get_summary", player_a).get("reconciliation_required", false)),
+		"Refund avoids destructive unverified balance rollback")
+	decision = ledger.call("simulate_server_verified_void", player_a,
+		player_a, 2, token_a)
+	_check(not bool(decision.get("applied", true))
+		and bool(decision.get("idempotent", false)),
+		"Duplicate refund notification is idempotent")
+	_check(str(ledger.call("simulate_server_verified_purchase", player_a,
+		player_a, 3, token_a, "qa_consumable", "PURCHASED", 100).get("reason", ""))
+		== "purchase_voided",
+		"Voided token can never be granted again")
+	_check(str(ledger.call("simulate_server_snapshot_commit", player_a,
+		player_a, 3, full_permanent, true).get("reason", ""))
+		== "reconciliation_required",
+		"Unresolved refund blocks future account snapshot commits")
+	_check(str(ledger.call("simulate_server_verified_purchase", player_a,
+		player_a, 3, "qa_new_token", "qa_consumable", "PURCHASED", 1)
+		.get("reason", "")) == "reconciliation_required",
+		"Unresolved economy refund blocks new ledger grants")
+
+	# Model has no bounded 1024-entry replay window. Test a token older than
+	# Pavilion's local processed_grant_ids cap with entirely fake events.
+	var first_b_token: String = "qa_b_token_0"
+	for i in range(1030):
+		var result: Dictionary = ledger.call("simulate_server_verified_purchase",
+			player_b, player_b, i, "qa_b_token_" + str(i),
+			"qa_consumable", "PURCHASED", 1)
+		if not bool(result.get("applied", false)):
+			_check(false, "Synthetic ledger retains every purchase grant beyond 1024")
+			return
+	_check(int(ledger.call("get_summary", player_b).get("revision", -1)) == 1030,
+		"Synthetic ledger retains more than 1024 transaction revisions")
+	decision = ledger.call("simulate_server_verified_purchase", player_b,
+		player_b, 0, first_b_token, "qa_consumable", "PURCHASED", 1)
+	_check(not bool(decision.get("applied", true))
+		and bool(decision.get("idempotent", false))
+		and int(ledger.call("get_summary", player_b).get("granted_units", -1)) == 1030,
+		"Earliest purchase remains idempotent after 1030 later claims")
+	_check(not bool(ledger.call("propose_client_snapshot", player_b,
+		player_a, 3, {}).get("applied", true)),
+		"Authenticated second device cannot access another account")
+	_check(not bool(ledger.call("simulate_server_verified_purchase", "",
+		player_b, 1030, "qa_guest_token", "qa_consumable", "PURCHASED", 1)
+		.get("applied", true)), "Guest cannot submit a trusted ledger mutation")
 
 
 func _check_cloud_snapshot_rejected(
