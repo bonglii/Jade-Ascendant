@@ -314,6 +314,7 @@ func _test_cloud_snapshot_contract() -> void:
 	_test_cloud_snapshot_capture(sample, uid)
 	_test_cloud_economy_consistency(sample)
 	_test_cloud_server_reference_model()
+	_test_cloud_snapshot_integrity(sample, uid)
 
 
 func _test_cloud_snapshot_capture(sample: Dictionary, uid: String) -> void:
@@ -649,6 +650,229 @@ func _test_cloud_server_reference_model() -> void:
 		player_b, 1030, "qa_guest_token", "qa_consumable", "PURCHASED", 1)
 		.get("applied", true)), "Guest cannot submit a trusted ledger mutation")
 
+
+
+func _test_cloud_snapshot_integrity(sample: Dictionary, uid: String) -> void:
+	# Memory-only fixtures. No real account state, file writes or Firebase I/O.
+	var integrity_script: Script = load(
+		"res://scripts/managers/cloud_save_snapshot_integrity.gd"
+	) as Script
+	if not _check(integrity_script != null, "Cloud integrity policy loads"):
+		return
+	var integrity: RefCounted = integrity_script.new() as RefCounted
+	if not _check(integrity != null, "Cloud integrity policy instantiates"):
+		return
+	var original_json: String = JSON.stringify(sample)
+	var built: Dictionary = integrity.call("build_local_proof", sample, uid)
+	if not _check(bool(built.get("valid", false)), "Six-domain preview integrity can be computed"):
+		return
+	var proof: Dictionary = built.get("proof", {})
+	_check(str(proof.get("snapshot_sha256", "")).length() == 64,
+		"Local SHA-256 is a 64-character digest")
+	_check((proof.get("domain_sha256", {}) as Dictionary).size() == 6,
+		"Local proof binds exactly six domain digests")
+	_check(JSON.stringify(sample) == original_json,
+		"Local integrity generation does not mutate the candidate")
+	_check(not bool(built.get("upload_allowed", true))
+		and not bool(built.get("restore_allowed", true))
+		and not bool(built.get("server_verified", true)),
+		"Generating a digest never grants cloud permissions")
+	var verified: Dictionary = integrity.call("inspect_local_proof", sample, uid, proof)
+	_check(bool(verified.get("valid", false))
+		and not bool(verified.get("economy_verified", true))
+		and not bool(verified.get("trusted_revision", true)),
+		"Matching digest proves neither economy nor revision authority")
+
+	# JSON object key order cannot change the content identity.
+	var reordered: Dictionary = sample.duplicate(true)
+	var reversed_domains: Dictionary = {}
+	var domain_keys: Array = reordered["domains"].keys()
+	domain_keys.reverse()
+	for domain_id in domain_keys:
+		reversed_domains[domain_id] = reordered["domains"][domain_id]
+	reordered["domains"] = reversed_domains
+	var reversed_versions: Dictionary = {}
+	var version_keys: Array = reordered["domain_schema_versions"].keys()
+	version_keys.reverse()
+	for domain_id in version_keys:
+		reversed_versions[domain_id] = reordered["domain_schema_versions"][domain_id]
+	reordered["domain_schema_versions"] = reversed_versions
+	_check(str(integrity.call("build_local_proof", reordered, uid)
+		.get("proof", {}).get("snapshot_sha256", "")) == str(proof["snapshot_sha256"]),
+		"Hash is deterministic across reversed dictionary insertion order")
+	_check(bool(integrity.call("inspect_local_proof", reordered, uid, proof)
+		.get("valid", false)), "Reordered JSON dictionaries retain the same integrity proof")
+
+	var changed: Dictionary = sample.duplicate(true)
+	changed["domains"]["progression"]["spirit_stone"] = 6
+	_check(str(integrity.call("inspect_local_proof", changed, uid, proof)
+		.get("reason", "")) == "domain_digest_mismatch",
+		"Edited Spirit Stone is detected by the progression digest")
+	changed = sample.duplicate(true)
+	changed["saved_at_unix"] = 2
+	_check(str(integrity.call("inspect_local_proof", changed, uid, proof)
+		.get("reason", "")) == "snapshot_digest_mismatch",
+		"Timestamp changes invalidate the entire snapshot digest")
+	changed = sample.duplicate(true)
+	changed["revision"] = 2
+	_check(str(integrity.call("inspect_local_proof", changed, uid, proof)
+		.get("reason", "")) == "draft_revision_mismatch",
+		"A client-increased revision cannot reuse an older proof")
+	changed = sample.duplicate(true)
+	changed["domains"]["achievements"]["unlocked"] = ["qa_one", "qa_two"]
+	var unlocked_proof: Dictionary = integrity.call("build_local_proof", changed, uid)
+	var changed_order: Dictionary = changed.duplicate(true)
+	changed_order["domains"]["achievements"]["unlocked"] = ["qa_two", "qa_one"]
+	_check(str(integrity.call("inspect_local_proof", changed_order, uid,
+		unlocked_proof.get("proof", {})).get("reason", "")) == "domain_digest_mismatch",
+		"Array sequence changes invalidate the domain digest")
+
+	# An attacker can build a fresh valid hash around an invented balance.
+	# Such a self-consistent client proof MUST still have zero authority.
+	var forged: Dictionary = sample.duplicate(true)
+	forged["domains"]["progression"]["spirit_stone"] = 9999999
+	var forged_build: Dictionary = integrity.call("build_local_proof", forged, uid)
+	_check(bool(forged_build.get("valid", false))
+		and not bool(forged_build.get("economy_verified", true))
+		and not bool(forged_build.get("upload_allowed", true)),
+		"Recomputed hash of forged currency remains entirely untrusted")
+	var forged_inspection: Dictionary = integrity.call(
+		"inspect_local_proof", forged, uid, forged_build.get("proof", {})
+	)
+	_check(bool(forged_inspection.get("valid", false))
+		and not bool(forged_inspection.get("restore_allowed", true))
+		and not bool(forged_inspection.get("server_verified", true)),
+		"Self-consistent forged proof never authorizes restore")
+
+	var bad_proof: Dictionary = proof.duplicate(true)
+	bad_proof["integrity_format_version"] = 2
+	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
+		.get("reason", "")) == "unsupported_integrity_version",
+		"Unknown integrity proof format rejected")
+	bad_proof = proof.duplicate(true)
+	bad_proof["digest_algorithm"] = "MD5"
+	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
+		.get("reason", "")) == "unsupported_digest_algorithm",
+		"Unexpected digest algorithm rejected")
+	bad_proof = proof.duplicate(true)
+	bad_proof["canonical_encoding"] = "different_encoder"
+	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
+		.get("reason", "")) == "unsupported_encoding",
+		"Unknown JSON canonical encoding rejected")
+	bad_proof = proof.duplicate(true)
+	bad_proof["snapshot_sha256"] = "not_a_sha256"
+	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
+		.get("reason", "")) == "invalid_snapshot_digest",
+		"Malformed snapshot hash rejected")
+	bad_proof = proof.duplicate(true)
+	bad_proof["snapshot_sha256"] = "0".repeat(64)
+	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
+		.get("reason", "")) == "snapshot_digest_mismatch",
+		"Wrong-length-correct snapshot digest cannot pass")
+	bad_proof = proof.duplicate(true)
+	bad_proof["snapshot_sha256"] = str(proof["snapshot_sha256"]).to_upper()
+	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
+		.get("reason", "")) == "invalid_snapshot_digest",
+		"Noncanonical uppercase hex digest is refused")
+	bad_proof = proof.duplicate(true)
+	bad_proof["domain_sha256"]["inventory"] = "0".repeat(64)
+	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
+		.get("reason", "")) == "domain_digest_mismatch",
+		"Invented inventory domain digest is detected")
+	bad_proof = proof.duplicate(true)
+	bad_proof["snapshot_format_version"] = 2
+	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
+		.get("reason", "")) == "unsupported_snapshot_version",
+		"Proof cannot claim a future snapshot format")
+	bad_proof = proof.duplicate(true)
+	bad_proof["draft_revision"] = 1.0
+	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
+		.get("reason", "")) == "draft_revision_mismatch",
+		"Floating-point revision is not accepted as an integer")
+	bad_proof = proof.duplicate(true)
+	bad_proof["server_signature"] = "fake"
+	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
+		.get("reason", "")) == "invalid_proof_shape",
+		"No unrecognized server-signature or ledger field is accepted")
+	bad_proof = proof.duplicate(true)
+	bad_proof["domain_sha256"].erase("inventory")
+	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
+		.get("reason", "")) == "invalid_domain_set",
+		"Missing inventory integrity commitment rejected")
+	bad_proof = proof.duplicate(true)
+	bad_proof["domain_sha256"]["pavilion"] = "0".repeat(64)
+	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
+		.get("reason", "")) == "invalid_domain_set",
+		"Premium Pavilion injection into proof rejected")
+	bad_proof = proof.duplicate(true)
+	bad_proof["owner_uid"] = "qa_foreign_account"
+	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
+		.get("reason", "")) == "proof_owner_mismatch",
+		"Foreign owner cannot replay a proof")
+	changed = sample.duplicate(true)
+	changed["snapshot_format_version"] = 2
+	_check(not bool(integrity.call("build_local_proof", changed, uid)
+		.get("valid", true)), "Unknown future snapshot version fails closed")
+	changed = sample.duplicate(true)
+	changed["domain_schema_versions"]["inventory"] = 2
+	_check(not bool(integrity.call("build_local_proof", changed, uid)
+		.get("valid", true)), "Unknown future domain schema fails closed")
+	changed = sample.duplicate(true)
+	changed["domains"]["pavilion"] = {"version": 1}
+	_check(not bool(integrity.call("build_local_proof", changed, uid)
+		.get("valid", true)), "Premium domain cannot enter digest coverage")
+	_check(not bool(integrity.call("build_local_proof", sample, "bad/uid")
+		.get("valid", true)), "Unsafe account ID cannot generate proof")
+
+	# A read-only manifest is just metadata. Even a perfect match is neither
+	# a freshness attestation nor a server-signed integrity statement.
+	var manifest: Dictionary = {
+		"manifest_version": 1,
+		"owner_uid": uid,
+		"revision": sample["revision"],
+		"saved_at_unix": sample["saved_at_unix"],
+		"domain_schema_versions": sample["domain_schema_versions"].duplicate(true)
+	}
+	var aligned: Dictionary = integrity.call("inspect_manifest_alignment",
+		sample, uid, proof, manifest)
+	_check(bool(aligned.get("valid", false))
+		and not bool(aligned.get("server_freshness_verified", true))
+		and not bool(aligned.get("upload_allowed", true))
+		and not bool(aligned.get("restore_allowed", true)),
+		"Aligned untrusted metadata never enables cloud sync")
+	var mismatched: Dictionary = manifest.duplicate(true)
+	mismatched["revision"] = 2
+	_check(str(integrity.call("inspect_manifest_alignment", sample, uid,
+		proof, mismatched).get("reason", "")) == "manifest_revision_mismatch",
+		"Read-only manifest revision mismatch detected")
+	mismatched = manifest.duplicate(true)
+	mismatched["saved_at_unix"] = 2
+	_check(str(integrity.call("inspect_manifest_alignment", sample, uid,
+		proof, mismatched).get("reason", "")) == "manifest_timestamp_mismatch",
+		"Read-only manifest timestamp mismatch detected")
+	mismatched = manifest.duplicate(true)
+	mismatched["domain_schema_versions"].erase("inventory")
+	_check(str(integrity.call("inspect_manifest_alignment", sample, uid,
+		proof, mismatched).get("reason", "")) == "manifest_domain_set_mismatch",
+		"Partial manifest cannot claim to match a six-domain snapshot")
+	mismatched = manifest.duplicate(true)
+	mismatched["domain_schema_versions"]["inventory"] = 2
+	_check(not bool(integrity.call("inspect_manifest_alignment", sample, uid,
+		proof, mismatched).get("valid", true)),
+		"Manifest with future inventory schema rejected")
+	mismatched = manifest.duplicate(true)
+	mismatched["owner_uid"] = "qa_foreign_account"
+	_check(not bool(integrity.call("inspect_manifest_alignment", sample, uid,
+		proof, mismatched).get("valid", true)),
+		"Manifest from a different account rejected")
+	mismatched = manifest.duplicate(true)
+	mismatched["manifest_version"] = 2
+	_check(not bool(integrity.call("inspect_manifest_alignment", sample, uid,
+		proof, mismatched).get("valid", true)),
+		"Future manifest version is not silently migrated")
+	_check(not bool(integrity.call("inspect_manifest_alignment", sample, uid,
+		proof, {}).get("valid", true)),
+		"Absent manifest cannot be treated as synchronized")
 
 func _check_cloud_snapshot_rejected(
 	contract: RefCounted, snapshot: Dictionary, expected_uid: String, label: String
