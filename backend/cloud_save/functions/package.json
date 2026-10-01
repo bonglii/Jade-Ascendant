@@ -1,0 +1,17 @@
+{
+  "name": "jade-ascendant-cloud-save-backend",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "index.mjs",
+  "engines": {
+    "node": "22"
+  },
+  "dependencies": {
+    "firebase-functions": "7.4.0",
+    "firebase-admin": "14.5.0"
+  },
+  "scripts": {
+    "test": "node --test ../tests/read_only_policy.test.mjs ../tests/callable_factory.test.mjs"
+  }
+}
