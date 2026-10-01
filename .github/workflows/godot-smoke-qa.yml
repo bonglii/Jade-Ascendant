@@ -90,3 +90,76 @@ jobs:
             artifacts/check-*/summary.json
           if-no-files-found: warn
           retention-days: 14
+
+  cloud-backend-runtime:
+    name: Cloud Gate 4.1 / real SDK and emulator (NO DEPLOY)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    env:
+      CI: 'true'
+      GCLOUD_PROJECT: demo-jade-cloud-save-gate41
+      FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+      JADE_CLOUD_EMULATOR_TEST: '1'
+
+    steps:
+      - name: Checkout exact tested revision
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          package-manager-cache: false
+
+      - name: Check backend tracked paths for local credentials and caches
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-files backend/ | grep -Ei '(^|/)(node_modules|\.firebase)/|(^|/)(\.env($|\.)|[^/]*service.?account[^/]*\.json$|firebase-debug[^/]*|[^/]*\.keystore$|[^/]*\.jks$)' ; then
+            echo 'ERROR: unexpected tracked backend credential/cache path' >&2
+            exit 1
+          fi
+
+      - name: Install actual Firebase SDK (isolated backend only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # First Gate 4.1 run generates a reviewable candidate lockfile.
+          # It is NOT yet committed/reproducible across future runs.
+          if [[ ! -f backend/cloud_save/functions/package-lock.json ]]; then
+            echo '::warning::Candidate lockfile generated in CI; review and commit it before marking dependency reproducibility PASS.'
+            npm --prefix backend/cloud_save/functions install --package-lock-only --ignore-scripts --no-audit --no-fund
+          fi
+          npm --prefix backend/cloud_save/functions ci --ignore-scripts --no-audit --no-fund
+
+      - name: Preserve generated dependency lock evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jade-cloud-gate41-lock-${{ github.run_id }}
+          path: backend/cloud_save/functions/package-lock.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Run boundary + actual SDK discovery tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test \
+            backend/cloud_save/tests/read_only_policy.test.mjs \
+            backend/cloud_save/tests/callable_factory.test.mjs \
+            backend/cloud_save/tests/real_sdk_loading.test.mjs
+
+      - name: Run Auth + Functions emulator boundary integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Demo-only project; no login, firebase deploy, secrets, cloud billing,
+          # Firestore Emulator, or write route. CLI version pinned for this gate.
+          npx --yes firebase-tools@15.28.2 emulators:exec \
+            --project demo-jade-cloud-save-gate41 \
+            --config backend/cloud_save/firebase.json \
+            --only auth,functions \
+            'node backend/cloud_save/tests/emulator_integration.test.mjs'
