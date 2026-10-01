@@ -45,7 +45,7 @@ jobs:
             node --check $source
             if ($LASTEXITCODE -ne 0) { throw "Backend syntax check failed: $source" }
           }
-          node --test backend/cloud_save/tests/read_only_policy.test.mjs backend/cloud_save/tests/callable_factory.test.mjs
+          node --test backend/cloud_save/tests/read_only_policy.test.mjs backend/cloud_save/tests/callable_factory.test.mjs backend/cloud_save/tests/predeploy_gate43.test.mjs
           if ($LASTEXITCODE -ne 0) { throw "Backend boundary regression failed." }
 
       - name: Download and verify official Godot 4.7.2
@@ -150,7 +150,8 @@ jobs:
           node --test \
             backend/cloud_save/tests/read_only_policy.test.mjs \
             backend/cloud_save/tests/callable_factory.test.mjs \
-            backend/cloud_save/tests/real_sdk_loading.test.mjs
+            backend/cloud_save/tests/real_sdk_loading.test.mjs \
+            backend/cloud_save/tests/predeploy_gate43.test.mjs
 
       - name: Run Auth + Functions emulator boundary integration
         shell: bash

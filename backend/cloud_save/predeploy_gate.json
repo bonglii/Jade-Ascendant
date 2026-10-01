@@ -1,0 +1,27 @@
+{
+  "contract_version": 1,
+  "gate": "4.3",
+  "state": "PRE_DEPLOYMENT_ONLY",
+  "firebase_project_id": null,
+  "deployment_approved": false,
+  "cloud_mutations_approved": false,
+  "firestore_rules_changes_approved": false,
+  "approved_codebase": "jade-cloud-readonly",
+  "approved_callable_exports": ["jadeCloudSaveCapabilities"],
+  "region": "asia-southeast2",
+  "enforce_app_check": true,
+  "max_instances": 1,
+  "max_memory_mib": 256,
+  "max_timeout_seconds": 10,
+  "required_human_checks": [
+    "explicit_firebase_project_id_and_separate_test_environment",
+    "billing_plan_and_cost_estimate",
+    "billing_alerts_and_eligible_spend_cap_review",
+    "dedicated_least_privilege_runtime_service_account",
+    "android_app_check_registration_and_signing_fingerprints",
+    "live_firestore_rules_readback_and_iam_audit",
+    "android_debug_token_test_only_and_secret_handling",
+    "logging_monitoring_alerts_and_manual_rollback",
+    "named_owner_deploy_approval"
+  ]
+}
