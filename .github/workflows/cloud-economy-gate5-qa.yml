@@ -41,6 +41,11 @@ jobs:
           node --check backend/cloud_save/functions/src/snapshot/firestore_gate6_emulator_model.mjs
           node --check backend/cloud_save/tests/gate6_full_permanent_draft.test.mjs
           node --check backend/cloud_save/tests/gate6_firestore_emulator.test.mjs
+          node --check backend/cloud_save/functions/src/restore/reversible_restore_sandbox.mjs
+          node --check backend/cloud_save/functions/src/restore/firestore_gate7_readonly_model.mjs
+          node --check backend/cloud_save/tests/gate7_fixture.mjs
+          node --check backend/cloud_save/tests/gate7_reversible_restore_sandbox.test.mjs
+          node --check backend/cloud_save/tests/gate7_firestore_emulator.test.mjs
 
       - name: Run Play API V2 synthetic purchase and global dedupe invariants
         shell: bash
@@ -53,6 +58,12 @@ jobs:
         run: |
           set -euo pipefail
           node --test backend/cloud_save/tests/gate6_full_permanent_draft.test.mjs
+
+      - name: Gate 7 reversible restore and crash-fault sandbox (NO LIVE SAVE)
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test backend/cloud_save/tests/gate7_reversible_restore_sandbox.test.mjs
 
       - name: Recheck PRE_DEPLOYMENT_ONLY gate
         shell: bash
@@ -85,4 +96,4 @@ jobs:
             --project demo-jade-cloud-save-gate5 \
             --config backend/cloud_save/firebase-gate5-emulator.json \
             --only firestore \
-            'node --test backend/cloud_save/tests/gate5_firestore_emulator.test.mjs backend/cloud_save/tests/gate6_firestore_emulator.test.mjs'
+            'node --test backend/cloud_save/tests/gate5_firestore_emulator.test.mjs backend/cloud_save/tests/gate6_firestore_emulator.test.mjs backend/cloud_save/tests/gate7_firestore_emulator.test.mjs'
