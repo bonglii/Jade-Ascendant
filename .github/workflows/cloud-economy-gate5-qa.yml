@@ -1,4 +1,4 @@
-name: Jade Ascendant - Gate 5 Spark Economy Contract QA
+name: Jade Ascendant - Spark Cloud QA (Gates 5-8)
 
 on:
   push:
@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   gate5-spark-reference:
-    name: Gate 5 / Play V2 policy + ledger reference (NO DEPLOY)
+    name: Gates 5-8 / Atomic Economy + Restore (NO DEPLOY)
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
@@ -46,6 +46,9 @@ jobs:
           node --check backend/cloud_save/tests/gate7_fixture.mjs
           node --check backend/cloud_save/tests/gate7_reversible_restore_sandbox.test.mjs
           node --check backend/cloud_save/tests/gate7_firestore_emulator.test.mjs
+          node --check backend/cloud_save/functions/src/integration/firestore_gate8_closed_economy_emulator.mjs
+          node --check backend/cloud_save/tests/gate8_atomic_economy_contract.test.mjs
+          node --check backend/cloud_save/tests/gate8_firestore_emulator.test.mjs
 
       - name: Run Play API V2 synthetic purchase and global dedupe invariants
         shell: bash
@@ -64,6 +67,12 @@ jobs:
         run: |
           set -euo pipefail
           node --test backend/cloud_save/tests/gate7_reversible_restore_sandbox.test.mjs
+
+      - name: Gate 8 unified economy + snapshot contract (NO LIVE PURCHASE)
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test backend/cloud_save/tests/gate8_atomic_economy_contract.test.mjs
 
       - name: Recheck PRE_DEPLOYMENT_ONLY gate
         shell: bash
@@ -96,4 +105,4 @@ jobs:
             --project demo-jade-cloud-save-gate5 \
             --config backend/cloud_save/firebase-gate5-emulator.json \
             --only firestore \
-            'node --test backend/cloud_save/tests/gate5_firestore_emulator.test.mjs backend/cloud_save/tests/gate6_firestore_emulator.test.mjs backend/cloud_save/tests/gate7_firestore_emulator.test.mjs'
+            'node --test backend/cloud_save/tests/gate5_firestore_emulator.test.mjs backend/cloud_save/tests/gate6_firestore_emulator.test.mjs backend/cloud_save/tests/gate7_firestore_emulator.test.mjs backend/cloud_save/tests/gate8_firestore_emulator.test.mjs'

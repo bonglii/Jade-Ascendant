@@ -1,0 +1,29 @@
+# Jade Ascendant — Gate 8: atomic trusted-economy / 8-domain *reference* integration
+
+**Audited source authority:** `bonglii/Jade-Ascendant`, `qa/cloud-save-gate2-ci` @ `e1e3ab0bb66ac5b422b27a8f3da6857c0e94b462`. This patch is **QA-only**; Spark remains active. **NO Firebase deployment, live credential, player save, purchase, paid grant, public callable, restore, Godot change or Cloud Firestore production write.** QA modules are not imported by `backend/cloud_save/functions/index.mjs`. `main` remains isolated.
+
+## Why the Gate 5–7 QA did not prove complete economic atomicity
+
+- Gate 5 maintained a synthetic balance + global token ledger in `gate5_qa_*` collections; Gate 6 maintained an eight-domain draft and server revision in **separate** `gate6_qa_*` collections. Each individually passed Firestore transaction QA, but neither could prove that a purchase-grant event and the complete eight-domain snapshot advanced in **one transaction**. Gate 7 reads Gate 6 snapshots but does not restore production files.
+- The **actual Godot `PavilionManager` still locally grants a PURCHASED callback**; `apply_verified_iap_purchase` is not server-verified. `processed_grant_ids` may retain raw Play purchase tokens. This patch deliberately does not connect to or edit Android Billing. Legacy purchase and local-account migration need a separate approval and backend protocol.
+- The six-domain Godot local capture remains read-only. The eight-domain server contract is synthetic. Real income (daily, achievements, idle, ads, gacha, item ownership and refund) is not yet server reconciled.
+
+## Isolated implementation
+
+`backend/cloud_save/functions/src/integration/firestore_gate8_closed_economy_emulator.mjs` uses the existing hard `assertGate5EmulatorOnly()` (exact localhost `127.0.0.1:8080`, `GCLOUD_PROJECT=GOOGLE_CLOUD_PROJECT=demo-jade-cloud-save-gate5`, explicit `JADE_GATE5_EMULATOR_ONLY=1`). It uses its own `gate8_qa_*` collections to avoid changing Gate 5–7 tests. Only synthetic test accounts are seeded; the initial eight-domain snapshot is created as revision zero atomically.
+
+A test-produced verified Play V2 **fixture** (NOT real Google API proof) is wrapped in a process-local, nonserializable `WeakMap` account-bound synthetic authority (foreign-owner or plain copied proof rejected), then passed to a single Firestore Admin SDK transaction. It: validates synthetic authentication UID; checks global HMAC token-fingerprint ledger / void tombstone; performs server-revision CAS; validates existing immutable eight-domain snapshot, SHA-256 diagnostic digest and account balance; applies ONLY the fixed catalog's Celestial Jade amount; then atomically writes a globally unique fingerprint ledger, next immutable eight-domain snapshot, audit event and updated account head / revision. The token itself is never recorded or logged. The current snapshot derives from the **stored prior server snapshot** — NEVER a mutable Android draft. Replays are idempotent, cross-account reuse and stale writes fail closed. A QA-only injected fault after all writes are queued proves complete Firestore transaction rollback.
+
+A synthetic void before a purchase blocks any grant. A void after a grant sets an economy reconciliation hold **without blindly subtracting spent Jade**, preventing new grants and latest-head review until manual reconciliation. Restore review remains read-only and returns `restore_allowed=false`, `upload_allowed=false`.
+
+Five standalone Node tests cover production boundary, exact eight-domain shape, token leakage denial, emulator-only guards and synthetic proof. Eleven independent Firestore Emulator tests cover atomic write consistency, history immutability, HMAC dedupe, cross-owner replay, CAS and retries, fault-injection rollback, void/hold, forged proofs, corruption, overflow and concurrency. The existing workflow runs Gate 5–8 suites and existing Godot / Auth/Functions workflows must also remain green.
+
+## Still deliberately NOT DONE (do not mark full Cloud Save or IAP production PASS)
+
+1. **Real purchase proof:** Play Developer API OAuth and licensing, real obfuscatedAccountId binding to verified Firebase UID, purchased/consumed/acknowledged pending lifecycle and receipts for previously purchased unbound tokens. The synthetic reader and QA HMAC key are **NOT** credentials or actual verification.
+2. **Other server economy transitions:** summon and pity, Spirit Stone, Refinement Shards, Idle Cultivation time accrual, daily/achievement claims, cadence, stage rewards, voided purchases, refunds, ads, inventory grants, event gifts, equipment progression, and server-authoritative ownership. Currently only one synthetic in-app purchase increases Jade in an already-seeded eight-domain snapshot.
+3. **Migration and privacy:** local Pavilion `iap:` IDs can embed raw Play tokens; Gate 6 rejects their transfer, and Gate 8 does not read/strip/import them. Design an explicitly opt-in, account-bound, privacy-safe migration with permanent dedupe and rollback. Do not overwrite real saves.
+4. **Actual player recovery:** SaveManager-compatible durable multi-file checkpoint, Android crash/restart test, real-device conflict and rollback, signed Auth/App Check, reviewed Firestore Rules/IAM and live project. Spark cannot deploy Cloud Functions.
+5. **Deployment approval:** `backend/cloud_save/predeploy_gate.json` still says `PRE_DEPLOYMENT_ONLY`, `deployment_approved=false`, `cloud_mutations_approved=false`. No product endpoint, Firebase bill upgrade or Play Console permission is introduced.
+
+**Gate 8 emulator acceptance:** new SHA's Gate 8 Node contract PASS, actual Firestore Emulator Gate 8 transaction suites PASS, earlier Gate 5/6/7 + predeploy regressions PASS, Godot `JADE_PHASE0_PASS`, Auth/Functions Emulator PASS. These results prove test-model invariants only, not real-money security or production durability.
