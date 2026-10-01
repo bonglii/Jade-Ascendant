@@ -41,6 +41,7 @@ CombatFeedback="*res://scripts/effects/combat_feedback.gd"
 PavilionManager="*res://scripts/managers/pavilion_manager.gd"
 IdleCultivationManager="*res://scripts/managers/idle_cultivation_manager.gd"
 MonetizationManager="*res://scripts/managers/monetization_manager.gd"
+GoogleAccountManager="*res://scripts/managers/google_account_manager.gd"
 
 [display]
 

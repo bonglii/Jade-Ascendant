@@ -1,48 +1,37 @@
 # ==================================================
-# Jade Ascendant - Git Ignore
-# Godot 4.x Project
+# Jade Ascendant - Git Ignore / Godot 4.x
 # ==================================================
 
-# --------------------------------------------------
 # Godot generated cache
-# --------------------------------------------------
 .godot/
 /android/
 *.translation
 
-# --------------------------------------------------
 # Local machine configuration
-# --------------------------------------------------
 .local/
 
-# --------------------------------------------------
 # Generated QA / PERIKSA_GAME.bat artifacts
-# --------------------------------------------------
 artifacts/
 
-# --------------------------------------------------
-# Android / exported builds
-# --------------------------------------------------
+# Android exported builds
 *.apk
 *.aab
 
-# --------------------------------------------------
-# Signing keys / certificates
-# NEVER COMMIT THESE
-# --------------------------------------------------
+# Signing keys / certificates: never commit
 *.keystore
 *.jks
 *.p12
 
-# --------------------------------------------------
 # Environment / secrets
-# --------------------------------------------------
 .env
 .env.*
 
-# --------------------------------------------------
+# Android Firebase application config (private instance config, not a server key)
+# Keep addon sources and BOTH native .aar files version-controlled after license audit.
+/addons/GodotFirebaseAndroid/google-services.json
+/google-services.json
+
 # Temporary / operating system files
-# --------------------------------------------------
 Thumbs.db
 Desktop.ini
 .DS_Store

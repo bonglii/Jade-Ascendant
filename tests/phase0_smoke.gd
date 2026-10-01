@@ -7,6 +7,7 @@ extends SceneTree
 const CHECKPOINT_SCRIPT_PATH: String = "res://scripts/managers/checkpoint_manager.gd"
 const HUB_SCRIPT_PATH: String = "res://scripts/ui/MainMenu.gd"
 const HUB_PATH: String = "res://scenes/ui/main_menu.tscn"
+const ACCOUNT_ENTRY_PATH: String = "res://scenes/ui/google_account_entry.tscn"
 const STAGE_PATH: String = "res://scenes/levels/level_1.tscn"
 const CHAPTER_SELECT_PATH: String = "res://scenes/ui/chapter_select.tscn"
 const JOURNEY_PATH: String = "res://scenes/ui/stage_select.tscn"
@@ -123,7 +124,7 @@ func _test_autoloads() -> void:
 		count += 1
 		var autoload_name: String = key.trim_prefix("autoload/")
 		_check(root.get_node_or_null(autoload_name) != null, "Autoload " + autoload_name)
-	_check(count == 18, "Release candidate contains 18 autoloads")
+	_check(count == 19, "Release candidate contains 19 autoloads")
 
 
 func _test_resources(directory_path: String) -> void:
@@ -994,6 +995,18 @@ func _skip_tutorial_for_smoke() -> void:
 
 func _test_runtime_flow() -> void:
 	_check(change_scene_to_file("res://scenes/system/boot.tscn") == OK, "Start original Boot scene")
+	# First boot on the isolated desktop runner is signed out; production now
+	# routes to an explicit Google/Guest choice, not straight to the hub.
+	if not await _wait_for_scene(ACCOUNT_ENTRY_PATH):
+		return
+	var guest_button: Button = current_scene.get_node_or_null("%GuestButton") as Button
+	if not _check(guest_button != null, "Login gate exposes Play as Guest"):
+		return
+	if not _check(not guest_button.disabled, "Guest entry remains available without Android Firebase"):
+		return
+	# Exercise the actual Button -> pressed signal -> Guest -> Home path.
+	# PERIKSA_GAME runs with an isolated user://; real saves are untouched.
+	guest_button.pressed.emit()
 	if not await _wait_for_scene(HUB_PATH):
 		return
 	_check(not current_scene.call("_has_checkpoint"), "Clean boot has no Continue")

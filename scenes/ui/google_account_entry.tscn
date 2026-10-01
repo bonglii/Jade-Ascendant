@@ -1,0 +1,180 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/google_account_entry.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/ui/mobile_safe_area.gd" id="2_safe"]
+[ext_resource type="Theme" path="res://assets/ui/jade_ui_theme.tres" id="3_theme"]
+[ext_resource type="Texture2D" path="res://assets/ui/main_menu/main_menu_key_art_lin_yue.png" id="4_keyart"]
+[ext_resource type="Texture2D" path="res://assets/ui/main_menu/polish/sanctuary_medallion.svg" id="5_medallion"]
+
+[node name="GoogleAccountEntry" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_theme")
+script = ExtResource("1_script")
+
+[node name="KeyArt" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("4_keyart")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="DarkVeil" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.002, 0.015, 0.022, 0.48)
+
+[node name="SafeArea" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_safe")
+
+[node name="Margin" type="MarginContainer" parent="SafeArea"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 25
+theme_override_constants/margin_top = 23
+theme_override_constants/margin_right = 25
+theme_override_constants/margin_bottom = 24
+
+[node name="Layout" type="VBoxContainer" parent="SafeArea/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Brand" type="VBoxContainer" parent="SafeArea/Margin/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="Emblem" type="TextureRect" parent="SafeArea/Margin/Layout/Brand"]
+custom_minimum_size = Vector2(78, 78)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("5_medallion")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="EyebrowLabel" type="Label" parent="SafeArea/Margin/Layout/Brand"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.51, 0.96, 0.79, 1)
+theme_override_font_sizes/font_size = 14
+text = "YUNG DEV STUDIO  ·  CELESTIAL REALMS"
+horizontal_alignment = 1
+
+[node name="BrandLabel" type="Label" parent="SafeArea/Margin/Layout/Brand"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.48, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.95)
+theme_override_constants/shadow_offset_y = 3
+theme_override_font_sizes/font_size = 39
+text = "JADE ASCENDANT"
+horizontal_alignment = 1
+
+[node name="FocalSpacer" type="Control" parent="SafeArea/Margin/Layout"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="LoginPanel" type="PanelContainer" parent="SafeArea/Margin/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PanelMargins" type="MarginContainer" parent="SafeArea/Margin/Layout/LoginPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 25
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 25
+theme_override_constants/margin_bottom = 23
+
+[node name="PanelContent" type="VBoxContainer" parent="SafeArea/Margin/Layout/LoginPanel/PanelMargins"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="PanelEyebrow" type="Label" parent="SafeArea/Margin/Layout/LoginPanel/PanelMargins/PanelContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.50, 0.95, 0.80, 1)
+theme_override_font_sizes/font_size = 14
+text = "THE CELESTIAL GATE"
+horizontal_alignment = 1
+
+[node name="PanelTitle" type="Label" parent="SafeArea/Margin/Layout/LoginPanel/PanelMargins/PanelContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.87, 0.54, 1)
+theme_override_font_sizes/font_size = 27
+text = "Begin Your Ascension"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="PanelDescription" type="Label" parent="SafeArea/Margin/Layout/LoginPanel/PanelMargins/PanelContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.83, 0.90, 0.86, 1)
+theme_override_font_sizes/font_size = 16
+text = "Choose how you enter the realm. Your cultivation journey awaits."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Rule" type="ColorRect" parent="SafeArea/Margin/Layout/LoginPanel/PanelMargins/PanelContent"]
+custom_minimum_size = Vector2(0, 2)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.25, 0.70, 0.58, 0.50)
+
+[node name="AccountStatus" type="Label" parent="SafeArea/Margin/Layout/LoginPanel/PanelMargins/PanelContent"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.84, 0.79, 1)
+theme_override_font_sizes/font_size = 15
+text = "Checking Google account..."
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="GoogleButton" type="Button" parent="SafeArea/Margin/Layout/LoginPanel/PanelMargins/PanelContent"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+text = "CONTINUE WITH GOOGLE"
+
+[node name="GuestButton" type="Button" parent="SafeArea/Margin/Layout/LoginPanel/PanelMargins/PanelContent"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+text = "PLAY AS GUEST"
+
+[node name="PrivacyNote" type="Label" parent="SafeArea/Margin/Layout/LoginPanel/PanelMargins/PanelContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.70, 0.80, 0.77, 1)
+theme_override_font_sizes/font_size = 13
+text = "Google Login does not back up your progress. Cloud Save is not available yet."
+horizontal_alignment = 1
+autowrap_mode = 3
