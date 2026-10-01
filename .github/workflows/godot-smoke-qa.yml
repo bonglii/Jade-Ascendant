@@ -1,0 +1,66 @@
+name: Jade Ascendant - Godot 4.7.2 QA
+
+on:
+  push:
+    branches:
+      - 'qa/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  godot-smoke:
+    name: Godot 4.7.2 / PERIKSA_GAME
+    runs-on: windows-2022
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout exact tested revision
+        uses: actions/checkout@v4
+
+      - name: Download and verify official Godot 4.7.2
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $url = 'https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_win64.exe.zip'
+          $expectedSha256 = '731980f9608d61333e5baf54a2ef17210acc7a538446c0cb9969f002aca1e953'
+          $archive = Join-Path $env:RUNNER_TEMP 'godot-4.7.2.zip'
+          $installDir = Join-Path $env:RUNNER_TEMP 'godot-4.7.2'
+          Invoke-WebRequest -Uri $url -OutFile $archive
+          $actualSha256 = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualSha256 -ne $expectedSha256) {
+            throw "Godot binary checksum mismatch: $actualSha256"
+          }
+          Expand-Archive -LiteralPath $archive -DestinationPath $installDir -Force
+          $godot = Join-Path $installDir 'Godot_v4.7.2-stable_win64_console.exe'
+          if (-not (Test-Path -LiteralPath $godot -PathType Leaf)) {
+            throw "Official Godot console executable not found: $godot"
+          }
+          & $godot --version
+          if ($LASTEXITCODE -ne 0) { throw 'Godot --version failed.' }
+          "JADE_GODOT_EXE=$godot" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Run isolated production smoke test
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File '.\tools\windows.ps1' -Mode Check -GodotPath $env:JADE_GODOT_EXE
+          if ($LASTEXITCODE -ne 0) {
+            throw "PERIKSA_GAME failed with exit code $LASTEXITCODE. Inspect uploaded artifacts."
+          }
+
+      - name: Preserve QA evidence (success or failure)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jade-ascendant-godot-qa-${{ github.run_id }}
+          path: |
+            artifacts/check-*/import.log
+            artifacts/check-*/smoke.log
+            artifacts/check-*/summary.json
+          if-no-files-found: warn
+          retention-days: 14

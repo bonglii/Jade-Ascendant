@@ -81,6 +81,8 @@ func _run() -> void:
 		return
 	_log("QA isolated namespace: " + token)
 	_test_autoloads()
+	_test_cloud_manifest_safety()
+	_test_cloud_snapshot_contract()
 	if failures > 0:
 		await _finish()
 		return
@@ -124,7 +126,343 @@ func _test_autoloads() -> void:
 		count += 1
 		var autoload_name: String = key.trim_prefix("autoload/")
 		_check(root.get_node_or_null(autoload_name) != null, "Autoload " + autoload_name)
-	_check(count == 19, "Release candidate contains 19 autoloads")
+	# Firebase registers an extra autoload when its Android editor plugin is enabled.
+	# Both registration and total count are release prerequisites, not optional.
+	var enabled_plugins: PackedStringArray = ProjectSettings.get_setting(
+		"editor_plugins/enabled", PackedStringArray()
+	)
+	_check(
+		enabled_plugins.has("res://addons/GodotFirebaseAndroid/plugin.cfg"),
+		"Firebase Android export plugin enabled"
+	)
+	_check(
+		ProjectSettings.has_setting("autoload/Firebase"),
+		"Firebase autoload registered"
+	)
+	_check(count == 20, "Release candidate contains 20 autoloads")
+
+
+func _test_cloud_manifest_safety() -> void:
+	var account: Node = root.get_node_or_null("GoogleAccountManager")
+	if not _check(account != null, "Cloud Gate 1 keeps Google account boundary"):
+		return
+	_check(str(account.call("get_authenticated_uid")) == "", "Headless Guest exposes no cloud UID")
+	var cloud: Node = account.call("get_cloud_save_probe") as Node
+	if not _check(cloud != null and cloud.get_parent() == account, "Cloud preview has separate child manager"):
+		return
+	var status: Dictionary = cloud.call("get_preview_status")
+	_check(not bool(status.get("cloud_write_enabled", true)), "Cloud writes stay disabled")
+	_check(not bool(status.get("cloud_restore_enabled", true)), "Cloud restore stays disabled")
+	_check(not bool(status.get("server_freshness_verified", true)), "Cached reads are never treated as fresh")
+	_check(not bool(cloud.call("request_preview")), "Guest never starts a cloud read")
+	var inspector_script: Script = load(
+		"res://scripts/managers/cloud_save_manifest_inspector.gd"
+	) as Script
+	if not _check(inspector_script != null, "Cloud manifest validator loads"):
+		return
+	var inspector: RefCounted = inspector_script.new() as RefCounted
+	var uid: String = "test_UID_123"
+	var valid: Dictionary = {
+		"manifest_version": 1,
+		"owner_uid": uid,
+		"revision": 2,
+		"saved_at_unix": 1,
+		"domain_schema_versions": {"journey": 1, "achievements": 1}
+	}
+	var good: Dictionary = inspector.call("inspect_document", valid, uid)
+	_check(bool(good.get("valid", false)) and int(good.get("domain_count", 0)) == 2, "Valid read-only manifest preview")
+	_check(not bool(good.get("restore_available", true)), "Valid metadata never unlocks restore")
+	var cross_account: Dictionary = inspector.call("inspect_document", valid, "other_UID")
+	_check(not bool(cross_account.get("valid", true)), "Cross-account manifest rejected")
+	var future: Dictionary = valid.duplicate(true)
+	future["manifest_version"] = 2
+	var future_result: Dictionary = inspector.call("inspect_document", future, uid)
+	_check(not bool(future_result.get("valid", true)), "Future cloud schema rejected")
+	var premium: Dictionary = valid.duplicate(true)
+	var premium_versions: Dictionary = premium["domain_schema_versions"]
+	premium_versions["pavilion"] = 1
+	var premium_result: Dictionary = inspector.call("inspect_document", premium, uid)
+	_check(not bool(premium_result.get("valid", true)), "Premium Pavilion metadata rejected")
+	var checkpoint: Dictionary = valid.duplicate(true)
+	var checkpoint_versions: Dictionary = checkpoint["domain_schema_versions"]
+	checkpoint_versions["checkpoint"] = 1
+	var checkpoint_result: Dictionary = inspector.call("inspect_document", checkpoint, uid)
+	_check(not bool(checkpoint_result.get("valid", true)), "Active run is not cloud-restorable")
+	_check(not bool(inspector.call("is_safe_uid", "other/user")), "Unsafe document ID rejected")
+
+
+func _test_cloud_snapshot_contract() -> void:
+	# Pure synthetic data: DO NOT read, write or migrate player save files.
+	var contract_script: Script = load(
+		"res://scripts/managers/cloud_save_snapshot_contract.gd"
+	) as Script
+	if not _check(contract_script != null, "Cloud snapshot policy loads"):
+		return
+	var contract: RefCounted = contract_script.new() as RefCounted
+	if not _check(contract != null, "Cloud snapshot policy instantiates"):
+		return
+	var uid: String = "jade_qa_account_a"
+	var sample: Dictionary = {
+		"snapshot_format_version": 1,
+		"owner_uid": uid,
+		"revision": 1,
+		"saved_at_unix": 1,
+		"domain_schema_versions": {
+			"achievements": 1,
+			"daily_quests": 1,
+			"equipment": 1,
+			"inventory": 1,
+			"journey": 1,
+			"progression": 1
+		},
+		"domains": {
+			"achievements": {"version": 1, "progress": {}, "unlocked": [], "claimed": []},
+			"daily_quests": {
+				"version": 1, "date_key": "2026-10-01", "active_quest_ids": [],
+				"progress": {}, "completed": [], "claimed": []
+			},
+			"equipment": {
+				"version": 1,
+				"equipped_item_ids": {
+					"armament": "", "robe": "verdant_qi_robe",
+					"bracer": "", "boots": "", "pendant": ""
+				},
+				"ascension_stars": {"verdant_qi_robe": 1}
+			},
+			"inventory": {
+				"version": 1, "item_counts": {"verdant_qi_robe": 1}
+			},
+			"journey": {
+				"version": 1, "selected_chapter_id": 1, "selected_stage_id": 1,
+				"active_run_chapter_id": 0, "active_run_stage_id": 0,
+				"unlocked_stage_keys": [], "cleared_stage_keys": []
+			},
+			"progression": {
+				"version": 1, "spirit_stone": 5, "vitality_level": 0,
+				"sword_power_level": 0, "swift_qi_level": 0,
+				"hero_experience_total": 0, "hero_milestones_claimed": []
+			}
+		}
+	}
+	var accepted: Dictionary = contract.call("inspect_draft", sample, uid)
+	_check(bool(accepted.get("valid", false)), "Synthetic six-domain snapshot passes structural preview")
+	_check(int(accepted.get("domain_count", 0)) == 6, "Snapshot requires six coordinated permanent domains")
+	_check(not bool(accepted.get("upload_allowed", true)), "Snapshot inspection NEVER allows cloud upload")
+	_check(not bool(accepted.get("restore_allowed", true)), "Snapshot inspection NEVER allows restore")
+	_check(not bool(accepted.get("server_verified", true)), "Snapshot inspection NEVER proves server freshness")
+	_check(not bool(accepted.get("economy_verified", true)), "Snapshot inspection NEVER certifies economy")
+	_check_cloud_snapshot_rejected(contract, sample, "jade_qa_account_b", "Foreign UID snapshot is rejected")
+
+	var malformed: Dictionary = sample.duplicate(true)
+	malformed["owner_uid"] = "jade_qa_account_b"
+	_check_cloud_snapshot_rejected(contract, malformed, uid, "Snapshot owner cannot be forged")
+	malformed = sample.duplicate(true)
+	malformed["snapshot_format_version"] = 2
+	_check_cloud_snapshot_rejected(contract, malformed, uid, "Unknown snapshot version is rejected")
+	malformed = sample.duplicate(true)
+	malformed["domains"].erase("inventory")
+	_check_cloud_snapshot_rejected(contract, malformed, uid, "Partial cross-domain snapshot is rejected")
+	malformed = sample.duplicate(true)
+	malformed["domains"]["pavilion"] = {"version": 1}
+	_check_cloud_snapshot_rejected(contract, malformed, uid, "Pavilion premium domain excluded from snapshot")
+	malformed = sample.duplicate(true)
+	malformed["domains"]["checkpoint"] = {"version": 1}
+	_check_cloud_snapshot_rejected(contract, malformed, uid, "Checkpoint domain excluded from snapshot")
+	malformed = sample.duplicate(true)
+	malformed["domains"]["idle_cultivation"] = {"version": 1}
+	_check_cloud_snapshot_rejected(contract, malformed, uid, "Idle economy remains out of initial snapshot")
+	malformed = sample.duplicate(true)
+	malformed["domain_schema_versions"]["equipment"] = 2
+	_check_cloud_snapshot_rejected(contract, malformed, uid, "Unknown domain schema is rejected")
+	malformed = sample.duplicate(true)
+	malformed["domains"]["progression"]["spirit_stone"] = -1
+	_check_cloud_snapshot_rejected(contract, malformed, uid, "Negative gameplay currency rejected")
+	malformed = sample.duplicate(true)
+	malformed["domains"]["progression"]["spirit_stone"] = "9999"
+	_check_cloud_snapshot_rejected(contract, malformed, uid, "String spoofed economy counter rejected")
+	malformed = sample.duplicate(true)
+	malformed["domains"]["journey"]["active_run_chapter_id"] = 1
+	_check_cloud_snapshot_rejected(contract, malformed, uid, "Active journey identity cannot enter cloud draft")
+	malformed = sample.duplicate(true)
+	malformed["domains"]["equipment"]["active_run_loadout_snapshot"] = {}
+	_check_cloud_snapshot_rejected(contract, malformed, uid, "Active-run equipment snapshot excluded")
+	malformed = sample.duplicate(true)
+	malformed["domains"]["inventory"]["item_counts"].erase("verdant_qi_robe")
+	_check_cloud_snapshot_rejected(contract, malformed, uid, "Equipped gear must belong to inventory")
+	malformed = sample.duplicate(true)
+	malformed["domains"]["equipment"]["ascension_stars"]["verdant_qi_robe"] = 6
+	_check_cloud_snapshot_rejected(contract, malformed, uid, "Illegal equipment ascension rejected")
+	malformed = sample.duplicate(true)
+	malformed["domains"]["inventory"]["item_counts"]["unknown_item"] = 1
+	_check_cloud_snapshot_rejected(contract, malformed, uid, "Unknown inventory catalog item rejected")
+	malformed = sample.duplicate(true)
+	malformed["domains"]["progression"]["processed_grant_ids"] = []
+	_check_cloud_snapshot_rejected(contract, malformed, uid, "Unexpected premium ledger field rejected")
+	malformed = sample.duplicate(true)
+	malformed["domains"]["achievements"]["progress"]["bad"] = Color.RED
+	_check_cloud_snapshot_rejected(contract, malformed, uid, "Godot-only non-JSON Variant rejected")
+	malformed = sample.duplicate(true)
+	malformed["domains"]["daily_quests"]["completed"] = ["quest_a", "quest_a"]
+	_check_cloud_snapshot_rejected(contract, malformed, uid, "Duplicate daily quest IDs rejected")
+	malformed = sample.duplicate(true)
+	malformed["domains"]["achievements"]["progress"]["score"] = 9007199254740992
+	_check_cloud_snapshot_rejected(contract, malformed, uid, "Unsafe JSON integer rejected")
+	malformed = sample.duplicate(true)
+	malformed["domains"]["daily_quests"]["date_key"] = "x".repeat(262145)
+	_check_cloud_snapshot_rejected(contract, malformed, uid, "Oversized malicious snapshot rejected")
+	_check_cloud_snapshot_rejected(contract, sample, "bad/uid", "Unsafe Firebase UID rejected")
+	_test_cloud_snapshot_capture(sample, uid)
+	_test_cloud_economy_consistency(sample)
+
+
+func _test_cloud_snapshot_capture(sample: Dictionary, uid: String) -> void:
+	# Construct solely from synthetic data. Never capture real player state in QA.
+	var capture_script: Script = load(
+		"res://scripts/managers/cloud_save_snapshot_capture.gd"
+	) as Script
+	if not _check(capture_script != null, "Local capture preview policy loads"):
+		return
+	var capture: RefCounted = capture_script.new() as RefCounted
+	if not _check(capture != null, "Local capture preview instantiates"):
+		return
+	var source_domains: Dictionary = sample["domains"].duplicate(true)
+	var source_before: String = JSON.stringify(source_domains)
+	var result: Dictionary = capture.call(
+		"build_from_memory_for_qa", uid, source_domains, 123456
+	)
+	_check(bool(result.get("valid", false)), "Synthetic local-memory capture passes contract")
+	if not bool(result.get("valid", false)):
+		return
+	_check(str(result.get("reason", "")) == "local_memory_preview_only", "Capture result explicitly labels local-only preview")
+	_check(int(result.get("domain_count", 0)) == 6, "Capture retains exactly six candidate domains")
+	_check(not bool(result.get("upload_allowed", true)), "Capture never authorizes upload")
+	_check(not bool(result.get("restore_allowed", true)), "Capture never authorizes restore")
+	_check(not bool(result.get("economy_verified", true)), "Capture does not certify earned currency")
+	_check(not bool(result.get("server_verified", true)), "Capture does not certify server state")
+	_check(bool(result.get("local_time_untrusted", false)), "Capture marks local timestamps untrusted")
+	_check(source_before == JSON.stringify(source_domains), "Capture never mutates the input domains")
+	var draft: Dictionary = result["draft"]
+	_check(str(draft.get("owner_uid", "")) == uid, "Captured draft binds exact UID")
+	_check(int(draft.get("revision", 0)) == 1, "Captured revision is a non-authoritative placeholder")
+	_check(int(draft.get("saved_at_unix", 0)) == 123456, "Captured timestamp is only local metadata")
+	var validator_script: Script = load("res://scripts/managers/cloud_save_snapshot_contract.gd") as Script
+	var validator: RefCounted = validator_script.new() as RefCounted
+	var reinspection: Dictionary = validator.call("inspect_draft", draft, uid)
+	_check(bool(reinspection.get("valid", false)), "Captured draft revalidates independently")
+	source_domains["inventory"]["item_counts"]["verdant_qi_robe"] = 999
+	_check(int(draft["domains"]["inventory"]["item_counts"]["verdant_qi_robe"]) == 1, "Capture deep-copies inventory rather than aliasing source")
+	source_domains = sample["domains"].duplicate(true)
+	source_domains.erase("journey")
+	_check(not bool(capture.call("build_from_memory_for_qa", uid, source_domains, 123456).get("valid", true)), "Capture refuses partial domain sets")
+	source_domains = sample["domains"].duplicate(true)
+	source_domains["pavilion"] = {"version": 1}
+	_check(not bool(capture.call("build_from_memory_for_qa", uid, source_domains, 123456).get("valid", true)), "Capture refuses premium Pavilion domain")
+	source_domains = sample["domains"].duplicate(true)
+	source_domains["checkpoint"] = {"version": 1}
+	_check(not bool(capture.call("build_from_memory_for_qa", uid, source_domains, 123456).get("valid", true)), "Capture refuses checkpoint domain")
+	source_domains = sample["domains"].duplicate(true)
+	source_domains["idle_cultivation"] = {"version": 1}
+	_check(not bool(capture.call("build_from_memory_for_qa", uid, source_domains, 123456).get("valid", true)), "Capture refuses idle economy domain")
+	source_domains = sample["domains"].duplicate(true)
+	source_domains["journey"]["active_run_stage_id"] = 1
+	_check(not bool(capture.call("build_from_memory_for_qa", uid, source_domains, 123456).get("valid", true)), "Capture refuses active journey identity")
+	source_domains = sample["domains"].duplicate(true)
+	source_domains["equipment"]["active_run_loadout_snapshot"] = {"version": 1}
+	_check(not bool(capture.call("build_from_memory_for_qa", uid, source_domains, 123456).get("valid", true)), "Capture refuses active-run equipment snapshot")
+	source_domains = sample["domains"].duplicate(true)
+	source_domains["inventory"]["item_counts"].erase("verdant_qi_robe")
+	_check(not bool(capture.call("build_from_memory_for_qa", uid, source_domains, 123456).get("valid", true)), "Capture refuses mismatched inventory and equipment")
+	source_domains = sample["domains"].duplicate(true)
+	source_domains["progression"]["spirit_stone"] = -10
+	_check(not bool(capture.call("build_from_memory_for_qa", uid, source_domains, 123456).get("valid", true)), "Capture refuses invalid currency shape")
+	_check(not bool(capture.call("build_from_memory_for_qa", "bad/uid", sample["domains"], 123456).get("valid", true)), "Capture refuses unsafe UID")
+	_check(not bool(capture.call("build_from_memory_for_qa", uid, sample["domains"], 0).get("valid", true)), "Capture refuses absent local timestamp")
+	_check(not bool(capture.call("build_from_memory_for_qa", uid, sample["domains"], 9007199254740992).get("valid", true)), "Capture refuses unsafe local timestamp")
+	# Desktop authentication must fail closed; no player save file is opened.
+	_check(not bool(capture.call("capture_current_account_preview").get("valid", true)), "Desktop live capture refuses unauthenticated preview")
+
+
+func _test_cloud_economy_consistency(sample: Dictionary) -> void:
+	# All fixtures are synthetic. No account tokens, save reads, or writes.
+	var economy_script: Script = load(
+		"res://scripts/managers/cloud_save_economy_consistency.gd"
+	) as Script
+	if not _check(economy_script != null, "Cloud economy dependency graph loads"):
+		return
+	var economy: RefCounted = economy_script.new() as RefCounted
+	if not _check(economy != null, "Cloud economy dependency graph instantiates"):
+		return
+	var selected: Array = sample["domains"].keys()
+	var report: Dictionary = economy.call("inspect_domains", selected)
+	_check(bool(report.get("valid", false)), "Audited six-domain economy inspection is valid")
+	_check(not bool(report.get("transaction_closed", true)), "Six-domain candidate has split economy transactions")
+	_check(
+		"pavilion" in report.get("missing_dependency_domains", [])
+		and "idle_cultivation" in report.get("missing_dependency_domains", []),
+		"Cloud economy graph identifies omitted Pavilion and Idle dependencies"
+	)
+	_check(
+		"pavilion_summon" in report.get("split_families", [])
+		and "idle_cultivation_claim" in report.get("split_families", []),
+		"Cross-domain summons and idle reward claims cannot be silently split"
+	)
+	_check(
+		"equipment_ascension" not in report.get("split_families", []),
+		"Inventory + Equipment remain a coordinated pair"
+	)
+	_check(int(report.get("audited_family_count", 0)) == 9, "Nine inspected economy transaction families")
+	_check(not bool(report.get("upload_allowed", true)), "Economy inspector cannot authorize upload")
+	_check(not bool(report.get("restore_allowed", true)), "Economy inspector cannot authorize restore")
+	_check(not bool(report.get("trusted_ledger_present", true)), "Local graph is not a trusted ledger")
+
+	# --script loads before autoload names are compile-time globals. Use the
+	# validated live root node, never a bare SaveManager identifier here.
+	var domain_manager: Node = root.get_node_or_null("SaveManager")
+	if not _check(domain_manager != null, "Economy QA resolves SaveManager at runtime"):
+		return
+	var full_permanent: Array = domain_manager.call(
+		"get_save_domain_ids_for_scope", "permanent"
+	)
+	var all_report: Dictionary = economy.call("inspect_domains", full_permanent)
+	_check(bool(all_report.get("transaction_closed", false)), "All eight permanent domains close the audited graph")
+	_check(not bool(all_report.get("upload_allowed", true)), "Full local graph still cannot upload without trusted ledger")
+	_check(not bool(all_report.get("restore_allowed", true)), "Full local graph still cannot restore without trusted ledger")
+	_check(not bool(all_report.get("economy_verified", true)), "Graph closure does not prove economy legitimacy")
+
+	for bad_ids in [
+		[], ["checkpoint"], ["pavilion", "pavilion"], ["made_up_domain"], [123],
+		["progression", "checkpoint"]
+	]:
+		var rejected: Dictionary = economy.call("inspect_domains", bad_ids)
+		_check(
+			not bool(rejected.get("valid", true))
+			and not bool(rejected.get("upload_allowed", true)),
+			"Economy graph fails closed on unsafe selection: " + str(bad_ids)
+		)
+
+	var capture_script: Script = load(
+		"res://scripts/managers/cloud_save_snapshot_capture.gd"
+	) as Script
+	var capture: RefCounted = capture_script.new() as RefCounted
+	var preview: Dictionary = capture.call(
+		"build_from_memory_for_qa", "jade_qa_account_a", sample["domains"], 123456
+	)
+	_check(bool(preview.get("valid", false)), "Economy graph does not break memory-only structural capture")
+	_check(not bool(preview.get("economy_transaction_closed", true)), "Capture carries non-closed economy boundary")
+	_check(
+		"pavilion" in preview.get("economy_missing_domain_dependencies", [])
+		and "idle_cultivation" in preview.get("economy_missing_domain_dependencies", []),
+		"Capture explicitly reports omitted economy dependencies"
+	)
+	_check(not bool(preview.get("upload_allowed", true)), "Capture remains non-uploadable after economy analysis")
+	_check(not bool(preview.get("restore_allowed", true)), "Capture remains non-restorable after economy analysis")
+
+
+func _check_cloud_snapshot_rejected(
+	contract: RefCounted, snapshot: Dictionary, expected_uid: String, label: String
+) -> void:
+	var result: Dictionary = contract.call("inspect_draft", snapshot, expected_uid)
+	_check(not bool(result.get("valid", true)), label)
 
 
 func _test_resources(directory_path: String) -> void:

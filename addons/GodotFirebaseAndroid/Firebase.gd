@@ -8,6 +8,11 @@ var analytics = preload("res://addons/GodotFirebaseAndroid/modules/Analytics.gd"
 var remote_config = preload("res://addons/GodotFirebaseAndroid/modules/RemoteConfig.gd").new()
 
 func _ready() -> void:
+	# These Firebase module wrappers extend Node. Keep them as children so
+	# Godot frees them when the Firebase autoload exits (including headless QA).
+	for module: Node in [auth, firestore, realtimeDB, storage, analytics, remote_config]:
+		add_child(module)
+
 	if Engine.has_singleton("GodotFirebaseAndroid"):
 		var _plugin_singleton = Engine.get_singleton("GodotFirebaseAndroid")
 

@@ -42,6 +42,7 @@ PavilionManager="*res://scripts/managers/pavilion_manager.gd"
 IdleCultivationManager="*res://scripts/managers/idle_cultivation_manager.gd"
 MonetizationManager="*res://scripts/managers/monetization_manager.gd"
 GoogleAccountManager="*res://scripts/managers/google_account_manager.gd"
+Firebase="*uid://bfps2e72dlnwq"
 
 [display]
 
@@ -55,7 +56,7 @@ window/handheld/orientation=1
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/GodotGooglePlayBilling/plugin.cfg", "res://addons/admob/plugin.cfg")
+enabled=PackedStringArray("res://addons/GodotFirebaseAndroid/plugin.cfg", "res://addons/GodotGooglePlayBilling/plugin.cfg", "res://addons/admob/plugin.cfg")
 
 [global_group]
 

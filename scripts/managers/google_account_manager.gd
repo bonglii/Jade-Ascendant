@@ -9,6 +9,9 @@ signal account_state_changed(snapshot: Dictionary)
 const SETTINGS_SCENE: String = "res://scenes/ui/settings_screen.tscn"
 const ACCOUNT_CARD_PATH: String = "res://scripts/ui/google_account_card.gd"
 const NATIVE_SINGLETON: String = "GodotFirebaseAndroid"
+const CloudSaveProbeScript = preload(
+	"res://scripts/managers/cloud_save_readonly_manager.gd"
+)
 const OPERATION_TIMEOUT_SECONDS: float = 35.0
 
 var _auth: Object = null
@@ -18,6 +21,8 @@ var _busy: bool = false
 var _operation: String = ""
 var _operation_nonce: int = 0
 var _display_name: String = ""
+var _account_uid: String = ""
+var _cloud_save_probe: Node = null
 var _status: String = "Guest progress stays on this device."
 
 
@@ -71,6 +76,39 @@ func get_account_snapshot() -> Dictionary:
 		"status": _status,
 		"cloud_save_active": false
 	}
+
+
+## UID is a private identity boundary for account-owned cloud metadata.
+## Never include it in UI snapshots, debug logs, or local gameplay saves.
+## Recheck the native session on every access: a cached sign-in flag is not proof.
+func get_authenticated_uid() -> String:
+	if not _native_ready or not _signed_in or _busy or _auth == null:
+		return ""
+	if not OS.has_feature("android") or not bool(_auth.call("is_signed_in")):
+		return ""
+	var current_user: Variant = _auth.call("get_current_user_data")
+	if not (current_user is Dictionary):
+		return ""
+	var user_data: Dictionary = current_user as Dictionary
+	if bool(user_data.get("isAnonymous", false)):
+		return ""
+	var live_uid: String = str(user_data.get("uid", "")).strip_edges()
+	return _account_uid if live_uid == _account_uid else ""
+
+
+## Created lazily; no Firestore network operation occurs during startup.
+## This is deliberately NOT a new Autoload, so Phase0's 19-autoload contract
+## and the established startup ordering remain unchanged.
+func get_cloud_save_probe() -> Node:
+	if is_instance_valid(_cloud_save_probe):
+		return _cloud_save_probe
+	var candidate: Node = CloudSaveProbeScript.new() as Node
+	if candidate == null:
+		return null
+	candidate.name = "CloudSaveReadOnlyManager"
+	add_child(candidate)
+	_cloud_save_probe = candidate
+	return candidate
 
 
 func refresh_provider() -> void:
@@ -240,6 +278,7 @@ func _apply_user(data: Dictionary) -> void:
 	if uid.is_empty() or bool(data.get("isAnonymous", false)):
 		_set_guest()
 		return
+	_account_uid = uid
 	_signed_in = true
 	var account_name: Variant = data.get("name", "")
 	_display_name = account_name.strip_edges() if account_name is String else ""
@@ -250,6 +289,7 @@ func _apply_user(data: Dictionary) -> void:
 
 
 func _set_guest() -> void:
+	_account_uid = ""
 	_signed_in = false
 	_display_name = ""
 	_status = "Guest progress stays on this device."
