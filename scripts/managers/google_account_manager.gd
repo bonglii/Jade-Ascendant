@@ -8,6 +8,7 @@ signal account_state_changed(snapshot: Dictionary)
 
 const SETTINGS_SCENE: String = "res://scenes/ui/settings_screen.tscn"
 const ACCOUNT_CARD_PATH: String = "res://scripts/ui/google_account_card.gd"
+const NATIVE_QA_CARD_PATH: String = "res://scripts/ui/cloud_native_readonly_qa_card.gd"
 const NATIVE_SINGLETON: String = "GodotFirebaseAndroid"
 const CloudSaveProbeScript = preload(
 	"res://scripts/managers/cloud_save_readonly_manager.gd"
@@ -62,8 +63,19 @@ func _on_scene_changed() -> void:
 	var audio_card: Node = content.get_node_or_null("AudioCard")
 	if audio_card != null:
 		content.move_child(card, audio_card.get_index())
-	# The Settings scene is deliberately left untouched. This card is appended
-	# only in that scene; all existing settings controls remain intact.
+	# Only a manual, read-only native probe is exposed in Android DEBUG builds.
+	# This is a sibling of the Account card; there is no autoload, boot probe,
+	# persistent state, server write, or production UI addition.
+	if OS.has_feature("android") and OS.is_debug_build():
+		var qa_script: Script = load(NATIVE_QA_CARD_PATH) as Script
+		if qa_script != null:
+			var qa_card: PanelContainer = qa_script.new() as PanelContainer
+			if qa_card != null:
+				qa_card.name = "CloudNativeReadOnlyQACard"
+				content.add_child(qa_card)
+				content.move_child(qa_card, card.get_index() + 1)
+	# The Settings scene is deliberately left untouched. These cards are
+	# appended only in Settings; all existing controls remain intact.
 
 
 func get_account_snapshot() -> Dictionary:
