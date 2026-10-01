@@ -1,0 +1,81 @@
+name: Jade Ascendant - Cloud Native Bridge Build QA
+
+on:
+  push:
+    branches:
+      - 'qa/**'
+    paths:
+      - 'backend/cloud_save/android_bridge/**'
+      - 'backend/cloud_save/tests/native_bridge_contract.test.mjs'
+      - '.github/workflows/cloud-native-bridge-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-bridge-build:
+    name: Gate 4.2 / isolated Android bridge compile (NO APP EXPORT)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact tested revision
+        uses: actions/checkout@v4
+
+      - name: Node source-policy regression
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          package-manager-cache: false
+
+      - name: Fail-closed source policy QA
+        run: node --test backend/cloud_save/tests/native_bridge_contract.test.mjs
+
+      - name: Java 17 for Godot Android plugin build
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Prepare Android SDK 36
+        uses: android-actions/setup-android@v3
+
+      - name: Install isolated Android compile platform
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+
+      - name: Setup pinned Gradle 8.14.3 (no wrapper binary)
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.3'
+
+      - name: Compile BOTH variants + test fail-closed Kotlin decoder
+        run: |
+          set -euo pipefail
+          gradle -p backend/cloud_save/android_bridge \
+            :bridge:assembleDebug :bridge:assembleRelease \
+            :bridge:testDebugUnitTest :bridge:testReleaseUnitTest \
+            --no-daemon --stacktrace
+
+      - name: Verify release classpath excludes App Check debug provider
+        run: |
+          set -euo pipefail
+          gradle -p backend/cloud_save/android_bridge \
+            :bridge:dependencies --configuration releaseRuntimeClasspath \
+            --no-daemon > "$RUNNER_TEMP/bridge-release-deps.txt"
+          if grep -q 'firebase-appcheck-debug' "$RUNNER_TEMP/bridge-release-deps.txt"; then
+            echo 'ERROR: debug provider leaked into RELEASE runtime classpath' >&2
+            exit 1
+          fi
+          grep -q 'firebase-functions' "$RUNNER_TEMP/bridge-release-deps.txt"
+          grep -q 'firebase-appcheck-playintegrity' "$RUNNER_TEMP/bridge-release-deps.txt"
+          test -f backend/cloud_save/android_bridge/bridge/build/outputs/aar/JadeCloudNativeBridge-debug.aar
+          test -f backend/cloud_save/android_bridge/bridge/build/outputs/aar/JadeCloudNativeBridge-release.aar
+
+      - name: Preserve QA-only native AARs for inspection
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jade-cloud-native-gate42-${{ github.run_id }}
+          path: backend/cloud_save/android_bridge/bridge/build/outputs/aar/*.aar
+          if-no-files-found: error
+          retention-days: 14
