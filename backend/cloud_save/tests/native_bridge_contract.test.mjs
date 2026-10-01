@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
 const root = new URL("../android_bridge/", import.meta.url);
@@ -50,4 +51,35 @@ test("native QA build cannot silently register Firebase production projects or d
   assert.match(manifest, /\$\{godotPluginPackageName\}\.JadeCloudNativeBridge/);
   assert.match(shared, /org\.godotengine:godot:4\.7\.2\.stable/);
   assert.doesNotMatch(settings + manifest + shared, /firebase\.deploy|serviceAccount|google-services\.json|firebase\.json/);
+});
+
+// Candidate exporter is deliberately not enabled until combined Gradle and
+// Android sign-in regression QA. No project/Autoload mutation in this patch.
+test("candidate exporter pins read-only dependencies and keeps debug provider out of release", () => {
+  const project = readFileSync(new URL("../../../project.godot", import.meta.url), "utf8");
+  const legacy = readFileSync(new URL("../../../addons/GodotFirebaseAndroid/export_plugin.gd", import.meta.url), "utf8");
+  const candidate = readFileSync(new URL("../../../addons/JadeCloudNativeBridge/export_plugin.gd", import.meta.url), "utf8");
+  for (const dep of [
+    "com.google.firebase:firebase-auth:23.2.0",
+    "com.google.android.gms:play-services-auth:21.3.0",
+    "com.google.firebase:firebase-firestore:25.1.4",
+  ]) assert.ok(legacy.includes(dep), `legacy dependency drift: ${dep}`);
+  assert.ok(!project.includes("res://addons/JadeCloudNativeBridge/plugin.cfg"));
+  assert.match(candidate, /class AndroidExportPlugin extends EditorExportPlugin/);
+  assert.match(candidate, /firebase-functions:22\.1\.1/);
+  assert.match(candidate, /firebase-appcheck-playintegrity:19\.4\.1/);
+  assert.match(candidate, /firebase-auth:24\.2\.0/);
+  assert.match(candidate, /if debug:\s*dependencies\.append\("com\.google\.firebase:firebase-appcheck-debug:19\.4\.1"\)/);
+  assert.doesNotMatch(candidate, /add_autoload_singleton|cloud_write_enabled\s*[:=]\s*true|requestUpload|requestRestore/);
+});
+
+test("tracked QA AARs match inspected GitHub Actions artifact", () => {
+  const expected = {
+    debug: "1f81b5cd3bce6ca2522517c4a517d899cba8693f28a34bfd53d4dcc6cb397c5e",
+    release: "7a26620b5342e64636949be8c13b68a0256015222d67d21500f09af53357696b",
+  };
+  for (const variant of ["debug", "release"]) {
+    const bytes = readFileSync(new URL(`../../../addons/JadeCloudNativeBridge/bin/${variant}/JadeCloudNativeBridge-${variant}.aar`, import.meta.url));
+    assert.equal(createHash("sha256").update(bytes).digest("hex"), expected[variant]);
+  }
 });
