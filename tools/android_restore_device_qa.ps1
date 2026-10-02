@@ -11,7 +11,8 @@ $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $Artifacts = Join-Path $ProjectRoot 'artifacts'
 $LocalFolder = Join-Path $ProjectRoot '.local'
 $Utf8 = New-Object System.Text.UTF8Encoding($false)
-$QaToken = 'ANDROID_DESTRUCTIVE_QA_ONLY'
+$QaFeature = 'jade_android_restore_qa'
+$QaHeadPlaceholder = 'QA_HEAD_SHA_PLACEHOLDER'
 $QaScene = 'res://tests/android/android_restore_device_qa.tscn'
 $QaBootstrap = 'AndroidRestoreDeviceBootstrapQA="*res://tests/android/android_restore_device_bootstrap_qa.gd"'
 $QaStub = '*res://tests/android/android_restore_external_services_stub_qa.gd'
@@ -74,7 +75,8 @@ function Patch-QaWorkspace([string]$Workspace,[string]$HeadSha) {
     $projectPath = Join-Path $Workspace 'project.godot'
     $presetPath = Join-Path $Workspace 'export_presets.cfg'
     $restorePath = Join-Path $Workspace 'scripts/managers/cloud_registered_path_restore_qa.gd'
-    foreach ($path in @($projectPath,$presetPath,$restorePath)) {
+    $runnerPath = Join-Path $Workspace 'tests/android/android_restore_device_qa.gd'
+    foreach ($path in @($projectPath,$presetPath,$restorePath,$runnerPath)) {
         if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "QA archive tidak lengkap: $path" }
     }
 
@@ -92,8 +94,7 @@ function Patch-QaWorkspace([string]$Workspace,[string]$HeadSha) {
     }
     $project = Replace-ExactlyOnce $project '(?m)^enabled=PackedStringArray\([^\r\n]*\)$' 'enabled=PackedStringArray()' 'editor plugin disable'
     $project = Replace-ExactlyOnce $project '(?m)^config/name="jade-ascendant"$' 'config/name="jade-ascendant-restore-qa"' 'QA application name'
-    if ($project -match '(?m)^\[jade_android_restore_qa\]$') { throw 'QA project settings unexpectedly tracked.' }
-    $project += "`n[jade_android_restore_qa]`nenabled=true`ntoken=`"$QaToken`"`nhead_sha=`"$HeadSha`"`n"
+    if ($project -match 'jade_android_restore_qa') { throw 'QA arming settings unexpectedly tracked in production project.godot.' }
     Write-Utf8 $projectPath $project
 
     $restore = [System.IO.File]::ReadAllText($restorePath)
@@ -109,12 +110,19 @@ func _qa_enabled() -> bool:
 	return (
 		OS.has_feature("android")
 		and OS.is_debug_build()
-		and bool(ProjectSettings.get_setting("jade_android_restore_qa/enabled", false))
-		and str(ProjectSettings.get_setting("jade_android_restore_qa/token", "")) == "ANDROID_DESTRUCTIVE_QA_ONLY"
+		and OS.has_feature("jade_android_restore_qa")
+		and str(ProjectSettings.get_setting("application/run/main_scene", "")) == "res://tests/android/android_restore_device_qa.tscn"
 	)
 '@
     $restore = Replace-ExactlyOnce $restore $qaPattern $qaReplacement 'disposable Android QA activation patch'
     Write-Utf8 $restorePath $restore
+
+    $runner = [System.IO.File]::ReadAllText($runnerPath)
+    $headLine = 'const EXPECTED_HEAD_SHA: String = "'+$QaHeadPlaceholder+'"'
+    if ($runner.IndexOf($headLine) -lt 0) { throw 'Android QA runner HEAD placeholder hilang.' }
+    if ($runner.IndexOf($headLine) -ne $runner.LastIndexOf($headLine)) { throw 'Android QA runner HEAD placeholder harus tunggal.' }
+    $runner = $runner.Replace($headLine,'const EXPECTED_HEAD_SHA: String = "'+$HeadSha+'"')
+    Write-Utf8 $runnerPath $runner
 
     $preset = [System.IO.File]::ReadAllText($presetPath)
     $packageMatch = [regex]::Match($preset,'(?m)^package/unique_name="(?<id>[a-zA-Z0-9_.]+)"$')
@@ -123,6 +131,7 @@ func _qa_enabled() -> bool:
     if ($productionPackage.EndsWith('.restoreqa')) { throw 'Production package id sudah memakai suffix QA.' }
     $qaPackage = $productionPackage + '.restoreqa'
     $preset = $preset.Replace($packageMatch.Value,'package/unique_name="'+$qaPackage+'"')
+    $preset = Replace-ExactlyOnce $preset '(?m)^custom_features=""$' ('custom_features="'+$QaFeature+'"') 'QA custom export feature'
     $preset = Replace-ExactlyOnce $preset '(?m)^package/name="[^"]*"$' 'package/name="Jade Ascendant Restore QA"' 'QA package name'
     $preset = Replace-ExactlyOnce $preset '(?m)^gradle_build/export_format=1$' 'gradle_build/export_format=0' 'QA APK export format'
     $preset = Replace-ExactlyOnce $preset '(?m)^export_path="[^"]*"$' 'export_path="artifacts/JadeAscendant-RestoreQA.apk"' 'QA export path'
@@ -144,6 +153,7 @@ function Assert-QaWorkspace($Info) {
     $project = [System.IO.File]::ReadAllText((Join-Path $workspace 'project.godot'))
     $preset = [System.IO.File]::ReadAllText((Join-Path $workspace 'export_presets.cfg'))
     $restore = [System.IO.File]::ReadAllText((Join-Path $workspace 'scripts/managers/cloud_registered_path_restore_qa.gd'))
+    $runner = [System.IO.File]::ReadAllText((Join-Path $workspace 'tests/android/android_restore_device_qa.gd'))
     $saveIndex = $project.IndexOf('SaveManager="*res://scripts/managers/save_manager.gd"')
     $bootIndex = $project.IndexOf($QaBootstrap)
     $progressIndex = $project.IndexOf('ProgressionManager="*res://scripts/game/ProgressionManager.gd"')
@@ -153,7 +163,11 @@ function Assert-QaWorkspace($Info) {
     foreach ($name in @('MonetizationManager','GoogleAccountManager','Firebase')) {
         if ($project -notmatch ('(?m)^'+$name+'="\*res://tests/android/android_restore_external_services_stub_qa\.gd"$')) { throw "$name belum diarahkan ke offline QA stub." }
     }
-    if ($restore -notmatch 'OS\.has_feature\("android"\)[\s\S]*OS\.is_debug_build\(\)[\s\S]*ANDROID_DESTRUCTIVE_QA_ONLY') { throw 'Disposable restore implementation belum di-arm khusus Android debug.' }
+    if ($project -match 'jade_android_restore_qa') { throw 'Disposable project.godot tidak boleh menjadi arming authority.' }
+    if ($restore -notmatch 'OS\.has_feature\("android"\)[\s\S]*OS\.is_debug_build\(\)[\s\S]*OS\.has_feature\("jade_android_restore_qa"\)[\s\S]*application/run/main_scene') { throw 'Disposable restore implementation belum di-arm oleh export feature + QA main scene.' }
+    if ($runner -notmatch ('const EXPECTED_HEAD_SHA: String = "'+[regex]::Escape([string]$Info.head_sha)+'"')) { throw 'QA runner tidak terikat ke exact HEAD.' }
+    if ($runner -match [regex]::Escape($QaHeadPlaceholder)) { throw 'QA runner HEAD placeholder belum diganti.' }
+    if ($preset -notmatch ('(?m)^custom_features="'+[regex]::Escape($QaFeature)+'"$')) { throw 'QA custom export feature tidak aktif.' }
     if ($preset -notmatch ('(?m)^package/unique_name="'+[regex]::Escape([string]$Info.qa_package)+'"$')) { throw 'QA package id tidak terisolasi.' }
     if ($preset -notmatch '(?m)^gradle_build/export_format=0$') { throw 'QA build harus APK.' }
     $exclude = [regex]::Match($preset,'(?m)^exclude_filter="(?<value>[^"]*)"$')
@@ -306,6 +320,10 @@ function Invoke-Run([string]$InputApk,[string]$Package,[string]$HeadSha) {
                 continue
             }
             if ($clean -match 'JADE_ANDROID_RESTORE_DEVICE_PASS') {
+                if ($clean -notmatch ('head=' + [regex]::Escape($HeadSha) + '(?:\s|$)')) {
+                    $null = Save-DeviceLog $adb $prefix $logPath
+                    throw 'Android QA PASS marker berasal dari HEAD yang berbeda.'
+                }
                 $null = Save-DeviceLog $adb $prefix $logPath
                 $summary = [ordered]@{
                     status='PASS'; head_sha=$HeadSha; package=$Package; device=$serial; apk=$InputApk

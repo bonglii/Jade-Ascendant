@@ -8,7 +8,8 @@ const OWNER_ID: String = "registered_restore_bootstrap_qa"
 const ACTIVE_TX: String = "user://jade_registered_restore_qa/tx/active"
 const CONFIRMED_MARKER: String = ACTIVE_TX + "/confirmed.marker"
 const ROLLED_BACK_MARKER: String = ACTIVE_TX + "/rolled_back.marker"
-const REQUIRED_TOKEN: String = "ANDROID_DESTRUCTIVE_QA_ONLY"
+const QA_EXPORT_FEATURE: String = "jade_android_restore_qa"
+const QA_MAIN_SCENE: String = "res://tests/android/android_restore_device_qa.tscn"
 
 
 func _ready() -> void:
@@ -39,8 +40,8 @@ func _qa_enabled() -> bool:
 	return (
 		OS.has_feature("android")
 		and OS.is_debug_build()
-		and bool(ProjectSettings.get_setting("jade_android_restore_qa/enabled", false))
-		and str(ProjectSettings.get_setting("jade_android_restore_qa/token", "")) == REQUIRED_TOKEN
+		and OS.has_feature(QA_EXPORT_FEATURE)
+		and str(ProjectSettings.get_setting("application/run/main_scene", "")) == QA_MAIN_SCENE
 	)
 
 

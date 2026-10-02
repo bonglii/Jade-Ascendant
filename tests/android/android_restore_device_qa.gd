@@ -15,7 +15,9 @@ const RESTORE_SCRIPT_PATH: String = "res://scripts/managers/cloud_registered_pat
 const OWNER: String = "android_restore_device_qa_owner"
 const FOREIGN_OWNER: String = "android_restore_device_foreign_owner"
 const REMOTE_DIGEST: String = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
-const REQUIRED_TOKEN: String = "ANDROID_DESTRUCTIVE_QA_ONLY"
+const QA_EXPORT_FEATURE: String = "jade_android_restore_qa"
+const QA_MAIN_SCENE: String = "res://tests/android/android_restore_device_qa.tscn"
+const EXPECTED_HEAD_SHA: String = "QA_HEAD_SHA_PLACEHOLDER"
 const STATE_PATH: String = "user://jade_android_restore_device_state.json"
 const STATE_TMP_PATH: String = STATE_PATH + ".tmp"
 const STATE_VERSION: int = 1
@@ -48,9 +50,11 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	if not _qa_enabled():
-		_fail("QA package is not correctly armed")
+	var arm_issue: String = _qa_arm_issue()
+	if not arm_issue.is_empty():
+		_fail("QA package is not correctly armed: " + arm_issue)
 		return
+	print("JADE_ANDROID_RESTORE_ARMED | feature=", QA_EXPORT_FEATURE, " | head=", EXPECTED_HEAD_SHA)
 	saver = get_node_or_null("/root/SaveManager")
 	if saver == null:
 		_fail("SaveManager autoload missing")
@@ -593,23 +597,36 @@ func _fail(note: String) -> void:
 
 func _pass_suite() -> void:
 	stopped = true
-	var head_sha: String = str(ProjectSettings.get_setting("jade_android_restore_qa/head_sha", "unknown"))
 	var marker: String = (
 		"JADE_ANDROID_RESTORE_DEVICE_PASS | checks=" + str(state.get("checks", 0))
 		+ " | cases=" + str(CASES.size())
-		+ " | head=" + head_sha
+		+ " | head=" + EXPECTED_HEAD_SHA
 	)
-	_set_status("PASS\nAll Android destructive restore cases completed.\n" + head_sha)
+	_set_status("PASS\nAll Android destructive restore cases completed.\n" + EXPECTED_HEAD_SHA)
 	print(marker)
 
 
-func _qa_enabled() -> bool:
-	return (
-		OS.has_feature("android")
-		and OS.is_debug_build()
-		and bool(ProjectSettings.get_setting("jade_android_restore_qa/enabled", false))
-		and str(ProjectSettings.get_setting("jade_android_restore_qa/token", "")) == REQUIRED_TOKEN
-	)
+func _qa_arm_issue() -> String:
+	if not OS.has_feature("android"):
+		return "NOT_ANDROID"
+	if not OS.is_debug_build():
+		return "NOT_DEBUG_BUILD"
+	if not OS.has_feature(QA_EXPORT_FEATURE):
+		return "QA_EXPORT_FEATURE_MISSING"
+	if str(ProjectSettings.get_setting("application/run/main_scene", "")) != QA_MAIN_SCENE:
+		return "QA_MAIN_SCENE_MISMATCH"
+	if not _sha40(EXPECTED_HEAD_SHA):
+		return "HEAD_SHA_UNBOUND"
+	return ""
+
+
+func _sha40(value: String) -> bool:
+	if value.length() != 40:
+		return false
+	for character in value:
+		if not "0123456789abcdef".contains(character):
+			return false
+	return true
 
 
 func _load_state() -> Dictionary:

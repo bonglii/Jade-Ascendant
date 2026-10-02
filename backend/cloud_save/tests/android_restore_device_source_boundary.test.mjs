@@ -19,10 +19,9 @@ const workflow = read(".github/workflows/cloud-android-restore-device-bridge-qa.
 test("production project and export remain disconnected from Android destructive QA", () => {
   assert.doesNotMatch(project, /AndroidRestoreDeviceBootstrapQA|android_restore_device_qa\.tscn|jade_android_restore_qa/);
   assert.match(preset, /exclude_filter="[^"]*(?:^|,)tests\/\*(?:,|$)[^"]*"/m);
-  assert.doesNotMatch(project, /ANDROID_DESTRUCTIVE_QA_ONLY/);
-  assert.doesNotMatch(preset, /\.restoreqa/);
+  assert.doesNotMatch(preset, /\.restoreqa|jade_android_restore_qa/);
   assert.match(restore, /OS\.has_feature\("editor"\)/);
-  assert.doesNotMatch(restore, /jade_android_restore_qa\/enabled|ANDROID_DESTRUCTIVE_QA_ONLY/);
+  assert.doesNotMatch(restore, /jade_android_restore_qa|android_restore_device_qa\.tscn/);
 });
 
 
@@ -30,9 +29,14 @@ test("device runner is Android debug only and never reaches cloud or monetizatio
   for (const source of [runner, bootstrap]) {
     assert.match(source, /OS\.has_feature\("android"\)/);
     assert.match(source, /OS\.is_debug_build\(\)/);
-    assert.match(source, /ANDROID_DESTRUCTIVE_QA_ONLY/);
+    assert.match(source, /jade_android_restore_qa/);
+    assert.match(source, /application\/run\/main_scene/);
     assert.doesNotMatch(source, /Firebase|firestore|https?:\/\/|GoogleAccountManager|MonetizationManager/i);
   }
+  assert.match(runner, /QA_HEAD_SHA_PLACEHOLDER/);
+  assert.match(runner, /QA_EXPORT_FEATURE_MISSING/);
+  assert.match(runner, /QA_MAIN_SCENE_MISMATCH/);
+  assert.match(runner, /HEAD_SHA_UNBOUND/);
   assert.doesNotMatch(runner, /restore_allowed\s*[:=]\s*true|upload_allowed\s*[:=]\s*true/i);
   assert.match(stub, /Android restore QA is offline-only/);
   assert.doesNotMatch(stub, /https?:\/\/|firestore/i);
@@ -83,7 +87,11 @@ test("PowerShell tool builds only from git archive HEAD and mutates only a tempo
   assert.match(tool, /SaveManager -> bootstrap -> permanent managers/);
   assert.match(tool, /tests\/android\/android_restore_external_services_stub_qa\.gd/);
   assert.match(tool, /enabled=PackedStringArray\(\)/);
-  assert.match(tool, /ANDROID_DESTRUCTIVE_QA_ONLY/);
+  assert.match(tool, /custom_features/);
+  assert.match(tool, /jade_android_restore_qa/);
+  assert.match(tool, /QA_HEAD_SHA_PLACEHOLDER/);
+  assert.match(tool, /exact HEAD/i);
+  assert.doesNotMatch(tool, /\[jade_android_restore_qa\]/);
 });
 
 
@@ -96,6 +104,7 @@ test("ADB controller performs actual force-stop and relaunch and stores evidence
   assert.match(tool, /JADE_ANDROID_RESTORE_DEVICE_PASS/);
   assert.match(tool, /android-restore-device-qa-summary\.json/);
   assert.match(tool, /android-restore-device-qa\.log/);
+  assert.match(tool, /PASS marker berasal dari HEAD yang berbeda/);
   assert.match(tool, /uninstall/);
 });
 

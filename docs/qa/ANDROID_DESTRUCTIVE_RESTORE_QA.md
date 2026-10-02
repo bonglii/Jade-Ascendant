@@ -1,6 +1,6 @@
 # Android Destructive Restore QA
 
-Status: **DEVICE NOT RUN** until a physical Android device completes the ADB-controlled suite.
+Status: **DEVICE REWORK**. The first physical-device attempt reached the QA Android runtime but failed closed at bootstrap arming before any destructive restore case started. Re-run is required after the export-feature arming hotfix passes CI.
 
 This gate validates Android process lifecycle behavior for Jade Ascendant's already CI-proven registered-path transactional restore. It does **not** enable production cloud restore, upload, automatic sync, or Firebase writes.
 
@@ -15,13 +15,25 @@ The tracked production project remains disconnected from this harness:
 - Only inside that temporary archive, the tool:
   - selects the Android QA scene as main scene;
   - injects a startup write barrier immediately after `SaveManager`;
-  - enables the registered restore harness for Android **debug** plus an explicit QA token;
+  - adds the disposable export feature `jade_android_restore_qa`;
+  - requires Android **debug** + that export feature + the exact QA main scene before destructive code can run;
+  - binds the runner to the exact 40-character `git HEAD` embedded only in the disposable workspace;
   - exports a package with the `.restoreqa` suffix;
   - redirects Firebase, Google account, and monetization autoload names to an offline stub;
   - disables editor/export plugins;
   - includes `tests/android/*` in the QA APK.
 - The temporary archive is deleted after audit/build.
 - The normal Jade Ascendant package and its `user://` data are not installed over or opened by this test.
+
+## First physical-device attempt
+
+The first `BuildRun` attempt failed closed before case 1 with:
+
+```text
+JADE_ANDROID_RESTORE_DEVICE_FAIL | case=bootstrap | step=unknown | note=QA package is not correctly armed
+```
+
+No destructive restore case started. The original arming model depended on custom `ProjectSettings` values in the exported APK but did not identify which runtime predicate failed. The hotfix removes those custom settings as an authority. QA activation now requires the disposable export feature `jade_android_restore_qa`, Android debug mode, and the exact QA main scene. The runner also embeds the exact committed HEAD and reports a specific arming failure code if any condition is missing.
 
 ## Device cases
 
@@ -54,7 +66,7 @@ Optional explicit paths/device:
 powershell -ExecutionPolicy Bypass -File tools/android_restore_device_qa.ps1 -Action BuildRun -GodotPath "C:\path\Godot_v4.7.2-stable_win64_console.exe" -DeviceSerial "SERIAL"
 ```
 
-The controller installs only the `.restoreqa` package. It clears logcat, launches the QA app, waits for exact `JADE_ANDROID_RESTORE_FORCE_STOP` markers, performs `adb shell am force-stop`, relaunches the app, and continues until PASS or FAIL.
+The controller installs only the `.restoreqa` package. It clears logcat, launches the QA app, waits for exact `JADE_ANDROID_RESTORE_FORCE_STOP` markers, performs `adb shell am force-stop`, relaunches the app, and continues until PASS or FAIL. A PASS marker is rejected if its embedded HEAD does not exactly match the committed HEAD used to build the APK.
 
 ## PASS evidence
 
