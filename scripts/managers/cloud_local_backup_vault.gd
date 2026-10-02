@@ -1,6 +1,7 @@
 extends RefCounted
 
-## Gate 9A — LOCAL, copy-only pre-restore vault. Never overwrites a SaveManager
+## Gate 9B — LOCAL, copy-only pre-restore vault with a global SaveManager write
+## barrier. Never overwrites a SaveManager
 ## primary, backup, transaction journal, or active-run checkpoint. No network.
 ## This is a prerequisite for a future restore, NOT an authorized restore API.
 ## Deliberately unreferenced by production scenes/autoloads until later QA.
@@ -14,24 +15,56 @@ const DOMAIN_COUNT: int = 8
 
 
 ## Manual future entry point: reads existing SaveManager files only. Never
-## invoked automatically; no live UI or callsite is wired at Gate 9A.
+## invoked automatically; no live UI or callsite is wired at Gate 9B.
 func prepare_local_pre_restore_backup(owner_uid: String, explicit_consent: bool) -> Dictionary:
 	if not explicit_consent:
 		return _no("CONSENT_REQUIRED")
 	var issue: String = _live_issue(owner_uid)
 	if not issue.is_empty():
 		return _no(issue)
-	var paths: Dictionary = {}
-	for domain_id in SaveManager.get_save_domain_ids_for_scope(SaveManager.SCOPE_PERMANENT):
-		paths[domain_id] = SaveManager.get_save_path(domain_id)
-	return _copy_snapshot(paths, VAULT_ROOT, owner_uid, -1, true)
+	# One runtime-only owner token freezes every SaveManager mutation while the
+	# eight physical primaries are hashed and copied. The token is never stored
+	# in the vault and naturally disappears if the process dies.
+	var barrier_owner := "cloud_backup_" + Crypto.new().generate_random_bytes(16).hex_encode()
+	var acquired: Dictionary = SaveManager.begin_save_write_barrier(
+		barrier_owner, "cloud_local_pre_restore_backup"
+	)
+	if not bool(acquired.get("success", false)):
+		return _no("SAVE_WRITE_BARRIER_UNAVAILABLE")
+	issue = _live_issue(owner_uid, barrier_owner)
+	var result: Dictionary
+	if not issue.is_empty():
+		result = _no(issue)
+	else:
+		var paths: Dictionary = {}
+		for domain_id in SaveManager.get_save_domain_ids_for_scope(SaveManager.SCOPE_PERMANENT):
+			paths[domain_id] = SaveManager.get_save_path(domain_id)
+		result = _copy_snapshot(paths, VAULT_ROOT, owner_uid, -1, true, barrier_owner)
+	var released: Dictionary = SaveManager.end_save_write_barrier(barrier_owner)
+	if not bool(released.get("success", false)):
+		return _no("SAVE_WRITE_BARRIER_RELEASE_FAILED")
+	result["write_barrier_used"] = true
+	return result
 
 
-func _live_issue(owner_uid: String) -> String:
+func _live_issue(owner_uid: String, allowed_barrier_owner: String = "") -> String:
 	if not _safe_uid(owner_uid) or owner_uid != GoogleAccountManager.get_authenticated_uid():
 		return "IDENTITY_NOT_VERIFIED"
-	if SaveManager.has_pending_transaction() or SaveManager.is_progress_read_only():
+	if SaveManager.has_pending_transaction():
 		return "SAVE_TRANSACTION_UNSAFE"
+	if SaveManager.is_save_write_barrier_active():
+		if (
+			allowed_barrier_owner.is_empty()
+			or SaveManager.get_save_write_barrier_owner() != allowed_barrier_owner
+		):
+			return "SAVE_WRITE_BARRIER_BUSY"
+	else:
+		# Existing integrity/write blocks remain a hard stop.
+		if SaveManager.is_progress_read_only():
+			return "SAVE_TRANSACTION_UNSAFE"
+	for domain_id in SaveManager.get_save_domain_ids_for_scope(SaveManager.SCOPE_PERMANENT):
+		if SaveManager.is_save_write_blocked(domain_id):
+			return "SAVE_TRANSACTION_UNSAFE"
 	if SceneTransitionManager.is_transitioning or JourneyManager.has_active_run():
 		return "ACTIVE_GAMEPLAY_UNSAFE"
 	if SaveManager.has_save_file("checkpoint"):
@@ -73,7 +106,8 @@ func inspect_sandbox_backup_for_qa(ready_path: String) -> Dictionary:
 
 func _copy_snapshot(
 	source_paths: Dictionary, vault_root: String, owner_uid: String,
-	fault_after_file: int, live_source: bool = false
+	fault_after_file: int, live_source: bool = false,
+	barrier_owner: String = ""
 ) -> Dictionary:
 	if not _safe_uid(owner_uid):
 		return _no("INVALID_OWNER")
@@ -182,7 +216,13 @@ func _copy_snapshot(
 	# Recheck the live account and all transient SaveManager guards just before
 	# issuing a ready record. A future restore still needs a write barrier.
 	if live_source:
-		var issue: String = _live_issue(owner_uid)
+		if (
+			barrier_owner.is_empty()
+			or not SaveManager.is_save_write_barrier_active()
+			or SaveManager.get_save_write_barrier_owner() != barrier_owner
+		):
+			return _no("SAVE_WRITE_BARRIER_LOST")
+		var issue: String = _live_issue(owner_uid, barrier_owner)
 		if not issue.is_empty():
 			return _no(issue)
 	# Rename of a completed pending DIRECTORY is the sole commit marker.

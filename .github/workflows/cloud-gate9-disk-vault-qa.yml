@@ -1,4 +1,4 @@
-name: Jade Ascendant - Gate 9 Local Backup Vault QA
+name: Jade Ascendant - Gate 9 Local Safety QA
 
 on:
   push:
@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   gate9-real-file-vault:
-    name: Gate 9A / real Godot synthetic disk I/O (NO RESTORE)
+    name: Gate 9A-B / disk vault + write barrier (NO RESTORE)
     runs-on: windows-2022
     timeout-minutes: 20
     steps:
@@ -73,4 +73,23 @@ jobs:
           & $env:JADE_GATE9_GODOT --headless --path . --script 'res://tests/gate9_disk_vault_qa.gd'
           if ($LASTEXITCODE -ne 0) {
             throw "Gate 9 real-file QA failed: exit $LASTEXITCODE"
+          }
+
+      - name: Run Gate 9B SaveManager write barrier and process-restart QA
+        shell: pwsh
+        env:
+          JADE_GATE9_TEST_ONLY: '1'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # Two separate Godot processes share only the disposable runner's user://.
+          # The first intentionally exits while the runtime-only barrier is held.
+          $env:JADE_GATE9B_STAGE = 'arm'
+          & $env:JADE_GATE9_GODOT --headless --path . --script 'res://tests/gate9_write_barrier_qa.gd'
+          if ($LASTEXITCODE -ne 0) {
+            throw "Gate 9B barrier arm stage failed: exit $LASTEXITCODE"
+          }
+          $env:JADE_GATE9B_STAGE = 'verify'
+          & $env:JADE_GATE9_GODOT --headless --path . --script 'res://tests/gate9_write_barrier_qa.gd'
+          if ($LASTEXITCODE -ne 0) {
+            throw "Gate 9B restart verification failed: exit $LASTEXITCODE"
           }

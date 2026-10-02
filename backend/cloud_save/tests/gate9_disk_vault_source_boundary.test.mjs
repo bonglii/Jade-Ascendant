@@ -11,6 +11,7 @@ const read = p => readFileSync(resolve(repo, p), "utf8");
 const vault = read("scripts/managers/cloud_local_backup_vault.gd");
 const saver = read("scripts/managers/save_manager.gd");
 const qa = read("tests/gate9_disk_vault_qa.gd");
+const barrierQa = read("tests/gate9_write_barrier_qa.gd");
 const workflow = read(".github/workflows/cloud-gate9-disk-vault-qa.yml");
 
 function gdScripts(root) {
@@ -97,6 +98,54 @@ test("Gate 9 standalone SceneTree runner resolves autoload at runtime, never as 
   assert.doesNotMatch(qa, /\bSaveManager\.(?:get_save_domain_ids_for_scope|SCOPE_PERMANENT|get_save_schema_version|get_save_required_keys)\b/);
   assert.match(qa, /_run\.call_deferred\(\)/);
   assert.match(qa, /load\(SCRIPT_PATH\) as Script/);
+});
+
+
+test("Gate 9B registered save files have no direct FileAccess writer bypass", () => {
+  const cloudPath = /(?:progression|journey|pavilion|idle_cultivation|equipment|inventory|achievements|daily_quests|checkpoint)\.save|transaction\.journal/;
+  const bypasses = gdScripts(resolve(repo, "scripts"))
+    .filter(p => !p.endsWith("save_manager.gd"))
+    .filter(p => /FileAccess\.open\s*\(/.test(readFileSync(p, "utf8")))
+    .filter(p => cloudPath.test(readFileSync(p, "utf8")));
+  assert.deepEqual(bypasses, []);
+});
+
+test("Gate 9B SaveManager barrier covers every public disk mutation boundary", () => {
+  assert.match(saver, /func begin_save_write_barrier\(owner_id: String, reason: String\)/);
+  assert.match(saver, /func end_save_write_barrier\(owner_id: String\)/);
+  assert.match(saver, /func is_save_write_barrier_active\(\) -> bool/);
+  assert.match(saver, /func write_save_data[\s\S]*?if is_save_write_barrier_active\(\):/);
+  assert.match(saver, /func write_save_batch[\s\S]*?if is_save_write_barrier_active\(\):/);
+  assert.match(saver, /func delete_active_run_save[\s\S]*?if is_save_write_barrier_active\(\):/);
+  assert.match(saver, /func reset_active_run_saves[\s\S]*?if is_save_write_barrier_active\(\):/);
+  assert.match(saver, /func recover_save_from_backup[\s\S]*?if is_save_write_barrier_active\(\):/);
+  assert.match(saver, /recovery_blocked_by_write_barrier/);
+  assert.match(saver, /func is_progress_read_only[\s\S]*?is_save_write_barrier_active\(\)/);
+  assert.match(saver, /WRITE_BARRIER_OWNER_MISMATCH/);
+  assert.match(saver, /SAVE_TRANSACTION_ACTIVE/);
+});
+
+test("Gate 9B live backup owns and releases the global write barrier", () => {
+  assert.match(vault, /begin_save_write_barrier\(/);
+  assert.match(vault, /end_save_write_barrier\(/);
+  assert.match(vault, /SAVE_WRITE_BARRIER_UNAVAILABLE/);
+  assert.match(vault, /SAVE_WRITE_BARRIER_RELEASE_FAILED/);
+  assert.match(vault, /SAVE_WRITE_BARRIER_LOST/);
+  assert.match(vault, /get_save_write_barrier_owner\(\) != barrier_owner/);
+  assert.match(vault, /write_barrier_used/);
+  assert.doesNotMatch(vault, /write_save_data\(|write_save_batch\(|recover_save_from_backup\(/);
+});
+
+test("Gate 9B two-process runner proves runtime barrier cannot survive restart", () => {
+  assert.match(barrierQa, /JADE_GATE9_WRITE_BARRIER_ARM_PASS/);
+  assert.match(barrierQa, /JADE_GATE9_WRITE_BARRIER_RESTART_PASS/);
+  assert.match(barrierQa, /begin_save_write_barrier/);
+  assert.match(barrierQa, /WRITE_BARRIER_OWNER_MISMATCH/);
+  assert.match(barrierQa, /SAVE_WRITE_BARRIER_ACTIVE/);
+  assert.match(barrierQa, /Intentionally DO NOT release OWNER/);
+  assert.match(workflow, /JADE_GATE9B_STAGE = 'arm'/);
+  assert.match(workflow, /JADE_GATE9B_STAGE = 'verify'/);
+  assert.match(workflow, /gate9_write_barrier_qa\.gd/);
 });
 
 test("Gate 9 cannot activate backend mutations, even after the new files are staged", () => {

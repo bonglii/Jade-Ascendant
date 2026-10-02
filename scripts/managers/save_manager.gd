@@ -10,6 +10,7 @@ signal save_write_completed(domain_id: String, io_result: Dictionary)
 signal save_read_completed(domain_id: String, io_result: Dictionary)
 signal save_recovery_completed(domain_id: String, io_result: Dictionary)
 signal save_delete_completed(domain_id: String, io_result: Dictionary)
+signal save_write_barrier_changed(active: bool, owner_id: String, reason: String)
 
 const SAVE_ARCHITECTURE_VERSION: int = 1
 
@@ -114,9 +115,13 @@ const SAVE_DOMAINS: Dictionary = {
 
 var _write_blocked_domains: Dictionary = {}
 const TRANSACTION_PATH: String = "user://transaction.journal"
+const SAVE_WRITE_BARRIER_OWNER_MAX_LENGTH: int = 96
+const SAVE_WRITE_BARRIER_REASON_MAX_LENGTH: int = 128
 var _pending_targets: Dictionary = {}
 var _committing_batch: bool = false
 var _transaction_fault: bool = false
+var _save_write_barrier_owner: String = ""
+var _save_write_barrier_reason: String = ""
 
 func _ready() -> void:
 	_recover_pending_transaction()
@@ -216,9 +221,95 @@ func get_legacy_save_domain_ids() -> Array[String]:
 			legacy_ids.append(domain_id)
 	return legacy_ids
 
+## Gate 9B global maintenance barrier. Runtime-only on purpose: if the process
+## dies while a read-only backup is in progress, the next process starts clear.
+## A future restore transaction must use its own durable journal before writes.
+func is_save_write_barrier_active() -> bool:
+	return not _save_write_barrier_owner.is_empty()
+
+func get_save_write_barrier_owner() -> String:
+	return _save_write_barrier_owner
+
+func get_save_write_barrier_reason() -> String:
+	return _save_write_barrier_reason
+
+func begin_save_write_barrier(owner_id: String, reason: String) -> Dictionary:
+	var normalized_owner: String = owner_id.strip_edges()
+	var normalized_reason: String = reason.strip_edges()
+	if (
+		not _save_write_barrier_token_valid(normalized_owner)
+		or normalized_reason.is_empty()
+		or normalized_reason.length() > SAVE_WRITE_BARRIER_REASON_MAX_LENGTH
+	):
+		return _build_barrier_result(false, "INVALID_WRITE_BARRIER_REQUEST")
+	if _committing_batch or has_pending_transaction():
+		return _build_barrier_result(false, "SAVE_TRANSACTION_ACTIVE")
+	if is_save_write_barrier_active():
+		return _build_barrier_result(false, "WRITE_BARRIER_ALREADY_ACTIVE")
+	_save_write_barrier_owner = normalized_owner
+	_save_write_barrier_reason = normalized_reason
+	save_write_barrier_changed.emit(
+		true, _save_write_barrier_owner, _save_write_barrier_reason
+	)
+	return _build_barrier_result(true, "WRITE_BARRIER_ACQUIRED")
+
+func end_save_write_barrier(owner_id: String) -> Dictionary:
+	var normalized_owner: String = owner_id.strip_edges()
+	if not is_save_write_barrier_active():
+		return _build_barrier_result(true, "WRITE_BARRIER_ALREADY_CLEAR")
+	if normalized_owner != _save_write_barrier_owner:
+		return _build_barrier_result(false, "WRITE_BARRIER_OWNER_MISMATCH")
+	_save_write_barrier_owner = ""
+	_save_write_barrier_reason = ""
+	save_write_barrier_changed.emit(false, "", "")
+	return _build_barrier_result(true, "WRITE_BARRIER_RELEASED")
+
+func _save_write_barrier_token_valid(value: String) -> bool:
+	if value.is_empty() or value.length() > SAVE_WRITE_BARRIER_OWNER_MAX_LENGTH:
+		return false
+	for character in value:
+		if not "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.-".contains(character):
+			return false
+	return true
+
+func _build_barrier_result(success: bool, code: String) -> Dictionary:
+	return {
+		"success": success,
+		"code": code,
+		"active": is_save_write_barrier_active(),
+		"owner_id": _save_write_barrier_owner,
+		"reason": _save_write_barrier_reason
+	}
+
+func _build_write_barrier_io_result(domain_id: String) -> Dictionary:
+	var result := _build_io_result(
+		false, has_save_file(domain_id), {},
+		"save write barrier active: " + _save_write_barrier_reason
+	)
+	result["domain_id"] = domain_id
+	result["code"] = "SAVE_WRITE_BARRIER_ACTIVE"
+	result["write_barrier_active"] = true
+	result["write_barrier_owner"] = _save_write_barrier_owner
+	return result
+
+func _build_write_barrier_delete_result(domain_id: String) -> Dictionary:
+	var result := _build_delete_result(
+		false, has_save_file(domain_id), 0,
+		"save write barrier active: " + _save_write_barrier_reason
+	)
+	result["domain_id"] = domain_id
+	result["code"] = "SAVE_WRITE_BARRIER_ACTIVE"
+	result["write_barrier_active"] = true
+	result["write_barrier_owner"] = _save_write_barrier_owner
+	return result
+
 ## Menghapus satu domain active-run beserta backup dan artefak atomic-nya.
 ## Domain permanent sengaja ditolak oleh API ini.
 func delete_active_run_save(domain_id: String) -> Dictionary:
+	if is_save_write_barrier_active():
+		var barrier_result := _build_write_barrier_delete_result(domain_id)
+		save_delete_completed.emit(domain_id, barrier_result.duplicate(true))
+		return barrier_result
 	if has_pending_transaction():
 		return _build_delete_result(false, has_save_file(domain_id), 0, "Pending save transaction; restart before resetting a run.")
 	if not has_save_domain(domain_id):
@@ -265,6 +356,16 @@ func delete_active_run_save(domain_id: String) -> Dictionary:
 ## Reset New Game hanya menargetkan seluruh domain active-run terdaftar.
 func reset_active_run_saves() -> Dictionary:
 	var domain_ids := get_save_domain_ids_for_scope(SCOPE_ACTIVE_RUN)
+	if is_save_write_barrier_active():
+		return {
+			"success": false,
+			"domain_ids": domain_ids.duplicate(),
+			"domain_results": {},
+			"deleted_domain_count": 0,
+			"failed_domain_ids": domain_ids.duplicate(),
+			"code": "SAVE_WRITE_BARRIER_ACTIVE",
+			"write_barrier_active": true
+		}
 	var domain_results: Dictionary = {}
 	var failed_domain_ids: Array[String] = []
 	var deleted_domain_count: int = 0
@@ -289,6 +390,10 @@ func write_save_data(
 	domain_id: String,
 	save_data: Dictionary
 ) -> Dictionary:
+	if is_save_write_barrier_active():
+		var barrier_result := _build_write_barrier_io_result(domain_id)
+		save_write_completed.emit(domain_id, barrier_result.duplicate(true))
+		return barrier_result
 	if has_pending_transaction() and not _committing_batch:
 		return _build_io_result(false, has_save_file(domain_id), {}, "Pending save transaction; restart to recover safely.")
 	if not has_save_domain(domain_id):
@@ -332,6 +437,8 @@ func write_save_data(
 ## than adding currency again. The journal deliberately has no historical backup:
 ## an obsolete completed transaction must never be replayed over newer progress.
 func write_save_batch(targets: Dictionary) -> bool:
+	if is_save_write_barrier_active():
+		return false
 	if targets.is_empty() or has_pending_transaction():
 		return false
 	if not _validate_batch_targets(targets):
@@ -461,6 +568,12 @@ func read_save_backup(domain_id: String) -> Dictionary:
 
 ## Memulihkan primary save dari backup valid melalui atomic commit.
 func recover_save_from_backup(domain_id: String) -> Dictionary:
+	if is_save_write_barrier_active():
+		var barrier_result := _build_write_barrier_io_result(domain_id)
+		barrier_result["recovered"] = false
+		barrier_result["source"] = "backup"
+		save_recovery_completed.emit(domain_id, barrier_result.duplicate(true))
+		return barrier_result
 	if not has_save_domain(domain_id):
 		var invalid_result := _build_io_result(
 			false,
@@ -725,6 +838,11 @@ func _read_dictionary_with_recovery(
 	if str(primary_read.get("integrity_issue", "")) == (
 		"unsupported_schema"
 	):
+		return primary_read
+	# A read while Gate 9 maintenance is active must remain read-only. Corrupt
+	# primaries are reported to the caller rather than repaired from .backup.
+	if is_save_write_barrier_active():
+		primary_read["recovery_blocked_by_write_barrier"] = true
 		return primary_read
 
 	var primary_error: String = str(primary_read.get("error", ""))
@@ -1050,6 +1168,8 @@ func _is_integral_number(value: Variant) -> bool:
 	return value is float and is_finite(float(value)) and absf(float(value)) < 9007199254740992.0 and floorf(float(value)) == float(value)
 
 func is_progress_read_only() -> bool:
+	if is_save_write_barrier_active():
+		return true
 	if has_pending_transaction():
 		return true
 	for domain_id in get_save_domain_ids_for_scope(SCOPE_PERMANENT):
