@@ -6,7 +6,7 @@ extends SceneTree
 
 const SCRIPT_PATH: String = "res://scripts/managers/cloud_registered_path_restore_qa.gd"
 const OWNER: String = "registered_restore_disposable_owner"
-const REMOTE_DIGEST: String = "b".repeat(64)
+const REMOTE_DIGEST: String = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 var checks: int = 0
 var failures: int = 0
 var saver: Node

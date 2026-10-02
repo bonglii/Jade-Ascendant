@@ -60,6 +60,17 @@ test("harness remains local-only and cannot authorize production cloud transfer"
   assert.match(qa, /vault_cleanup_allowed/);
 });
 
+test("registered runner constants stay parse-safe under Godot 4.7.2", () => {
+  assert.match(
+    runner,
+    /const REMOTE_DIGEST:\s*String\s*=\s*"[0-9a-f]{64}"/
+  );
+  assert.doesNotMatch(
+    runner,
+    /const\s+[A-Z0-9_]+[^=\n]*=\s*[^\n]*\.repeat\s*\(/
+  );
+});
+
 test("real registered-path runner covers restart, rollback, confirmation and critical crash points", () => {
   assert.match(runner, /JADE_REGISTERED_RESTORE_ROLLBACK_PASS/);
   assert.match(runner, /JADE_REGISTERED_RESTORE_CONFIRM_PASS/);
