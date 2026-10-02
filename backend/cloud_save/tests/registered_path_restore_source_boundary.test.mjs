@@ -85,8 +85,10 @@ test("restart QA fences permanent-manager startup writes before recovery", () =>
   assert.doesNotMatch(bootstrap, /write_save_data|write_save_batch|recover_save_from_backup/);
   assert.doesNotMatch(bootstrap, /Firebase|firestore|https?:\/\//i);
   assert.match(qa, /BOOT_BARRIER_OWNER:\s*String\s*=\s*"registered_restore_bootstrap_qa"/);
+  assert.match(qa, /TX_BARRIER_OWNER:\s*String\s*=\s*"registered_restore_transaction_qa"/);
   assert.match(qa, /_acquire_registered_barrier/);
-  assert.match(qa, /get_save_write_barrier_owner\(\) == BOOT_BARRIER_OWNER/);
+  assert.match(qa, /active_owner in \[BOOT_BARRIER_OWNER, TX_BARRIER_OWNER\]/);
+  assert.match(qa, /borrowed_existing_barrier/);
   assert.match(runner, /Startup barrier is armed before registered recovery/);
   assert.match(workflow, /Inject disposable early restore barrier after SaveManager/);
   assert.match(workflow, /RegisteredRestoreBootstrapQA=\"\*res:\/\/scripts\/managers\/cloud_registered_restore_bootstrap_qa\.gd\"/);
