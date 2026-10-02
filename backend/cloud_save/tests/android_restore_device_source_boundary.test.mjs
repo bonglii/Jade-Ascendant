@@ -85,8 +85,14 @@ test("PowerShell tool builds only from git archive HEAD and mutates only a tempo
   assert.match(tool, /Audit mutated locked restore engine/);
   assert.match(tool, /\.restoreqa/);
   assert.match(tool, /gradle_build\/export_format=0/);
-  assert.match(tool, /--install-android-build-template --export-debug Android \$apk/);
-  assert.doesNotMatch(tool, /--install-android-build-template 2>&1 \| Out-Host/);
+  assert.match(tool, /function Invoke-NativeCaptured/);
+  assert.match(tool, /PSNativeCommandUseErrorActionPreference/);
+  assert.match(tool, /\$ErrorActionPreference = 'Continue'/);
+  assert.match(tool, /1> \$stdoutPath 2> \$stderrPath/);
+  assert.match(tool, /Invoke-NativeCaptured \$godot @\('--headless','--path',\$workspace,'--import'\)/);
+  assert.match(tool, /Invoke-NativeCaptured \$godot @\('--headless','--path',\$workspace,'--install-android-build-template','--export-debug','Android',\$apk\)/);
+  assert.doesNotMatch(tool, /\(& \$godot --headless --path \$workspace --(?:import|install-android-build-template)[^\n]*2>&1 \| Out-String\)/);
+  assert.match(tool, /Remove-Item -LiteralPath \$apk,\$buildReportPath -Force/);
   assert.match(tool, /Godot import mengeksekusi Android QA scene di host Windows/);
   assert.match(tool, /Godot export mengeksekusi Android QA scene di host Windows/);
   assert.match(tool, /JADE_ANDROID_RESTORE_\(\?:DEVICE_\|ARMED\|CASE\|FORCE_STOP\|BOOT_BARRIER\)/);

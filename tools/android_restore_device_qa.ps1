@@ -22,6 +22,47 @@ function Write-Utf8([string]$Path,[string]$Value) {
     [System.IO.File]::WriteAllText($Path,$Value,$Utf8)
 }
 
+function Invoke-NativeCaptured([string]$FilePath,[string[]]$Arguments,[string]$Label) {
+    $token = [guid]::NewGuid().ToString('N')
+    $stdoutPath = Join-Path ([System.IO.Path]::GetTempPath()) ("jade_native_" + $token + ".stdout.txt")
+    $stderrPath = Join-Path ([System.IO.Path]::GetTempPath()) ("jade_native_" + $token + ".stderr.txt")
+    $previousPreference = $ErrorActionPreference
+    $nativePreference = Get-Variable -Name PSNativeCommandUseErrorActionPreference -ErrorAction SilentlyContinue
+    $previousNativePreference = $null
+    $exitCode = -1
+    try {
+        if ($null -ne $nativePreference) {
+            $previousNativePreference = $PSNativeCommandUseErrorActionPreference
+            $PSNativeCommandUseErrorActionPreference = $false
+        }
+        $ErrorActionPreference = 'Continue'
+        & $FilePath @Arguments 1> $stdoutPath 2> $stderrPath
+        $exitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousPreference
+        if ($null -ne $nativePreference) {
+            $PSNativeCommandUseErrorActionPreference = $previousNativePreference
+        }
+    }
+
+    $parts = New-Object System.Collections.Generic.List[string]
+    if (Test-Path -LiteralPath $stdoutPath -PathType Leaf) {
+        $stdoutText = [System.IO.File]::ReadAllText($stdoutPath)
+        if ($stdoutText) { $parts.Add($stdoutText.TrimEnd()) | Out-Null }
+    }
+    if (Test-Path -LiteralPath $stderrPath -PathType Leaf) {
+        $stderrText = [System.IO.File]::ReadAllText($stderrPath)
+        if ($stderrText) { $parts.Add($stderrText.TrimEnd()) | Out-Null }
+    }
+    Remove-Item -LiteralPath $stdoutPath,$stderrPath -Force -ErrorAction SilentlyContinue
+    return [ordered]@{
+        label=$Label
+        exit_code=[int]$exitCode
+        output=($parts -join [Environment]::NewLine)
+    }
+}
+
 function Get-HeadSha {
     $sha = (& git -C $ProjectRoot rev-parse HEAD 2>$null | Out-String).Trim()
     if ($LASTEXITCODE -ne 0 -or $sha -notmatch '^[0-9a-f]{40}$') { throw 'Tidak dapat membaca git HEAD.' }
@@ -222,28 +263,30 @@ function Invoke-Build {
         $workspace = New-QaWorkspace $head
         $info = Patch-QaWorkspace $workspace $head
         Assert-QaWorkspace $info
-        $importOutput = (& $godot --headless --path $workspace --import 2>&1 | Out-String)
-        $importExit = $LASTEXITCODE
-        $importOutput | Write-Host
+        $importResult = Invoke-NativeCaptured $godot @('--headless','--path',$workspace,'--import') 'Godot import'
+        $importOutput = [string]$importResult.output
+        if ($importOutput) { $importOutput | Write-Host }
         if ($importOutput -match 'JADE_ANDROID_RESTORE_(?:DEVICE_|ARMED|CASE|FORCE_STOP|BOOT_BARRIER)') {
             throw 'Godot import mengeksekusi Android QA scene di host Windows. Build dihentikan fail-closed.'
         }
-        if ($importExit -ne 0) { throw 'Godot import QA workspace gagal.' }
+        if ([int]$importResult.exit_code -ne 0) { throw ('Godot import QA workspace gagal. Exit code: ' + $importResult.exit_code) }
         $short = $head.Substring(0,7)
         $apk = Join-Path $Artifacts ("JadeAscendant-RestoreQA-$short.apk")
-        $exportOutput = (& $godot --headless --path $workspace --install-android-build-template --export-debug Android $apk 2>&1 | Out-String)
-        $exportExit = $LASTEXITCODE
-        $exportOutput | Write-Host
+        $buildReportPath = Join-Path $Artifacts 'android-restore-device-qa-build.json'
+        Remove-Item -LiteralPath $apk,$buildReportPath -Force -ErrorAction SilentlyContinue
+        $exportResult = Invoke-NativeCaptured $godot @('--headless','--path',$workspace,'--install-android-build-template','--export-debug','Android',$apk) 'Godot Android export'
+        $exportOutput = [string]$exportResult.output
+        if ($exportOutput) { $exportOutput | Write-Host }
         if ($exportOutput -match 'JADE_ANDROID_RESTORE_(?:DEVICE_|ARMED|CASE|FORCE_STOP|BOOT_BARRIER)') {
             throw 'Godot export mengeksekusi Android QA scene di host Windows. Build dihentikan fail-closed.'
         }
-        if ($exportExit -ne 0 -or -not (Test-Path -LiteralPath $apk -PathType Leaf) -or (Get-Item -LiteralPath $apk).Length -le 0) {
-            throw 'Export debug APK gagal. Pastikan Godot 4.7.2 export templates dan Android SDK terpasang.'
+        if ([int]$exportResult.exit_code -ne 0 -or -not (Test-Path -LiteralPath $apk -PathType Leaf) -or (Get-Item -LiteralPath $apk).Length -le 0) {
+            throw ('Export debug APK gagal. Exit code: ' + $exportResult.exit_code + '. Pastikan Godot 4.7.2 export templates dan Android SDK terpasang.')
         }
         $report = New-AuditReport $info 'PASS'
         $report.apk = $apk
         $report.apk_sha256 = (Get-FileHash -LiteralPath $apk -Algorithm SHA256).Hash.ToLowerInvariant()
-        Write-Utf8 (Join-Path $Artifacts 'android-restore-device-qa-build.json') ($report | ConvertTo-Json -Depth 6)
+        Write-Utf8 $buildReportPath ($report | ConvertTo-Json -Depth 6)
         Write-Host "ANDROID_RESTORE_DEVICE_BUILD_PASS | $apk" -ForegroundColor Green
         return [ordered]@{ apk=$apk; qa_package=$info.qa_package; head_sha=$head }
     }
