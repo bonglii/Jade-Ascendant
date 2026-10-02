@@ -108,7 +108,7 @@ func _qa_enabled() -> bool:
 			and OS.get_environment("JADE_REGISTERED_RESTORE_ACK") == REQUIRED_ACK
 		)
 	return (
-		OS.has_feature("android")
+		OS.get_name() == "Android"
 		and OS.is_debug_build()
 		and OS.has_feature("jade_android_restore_qa")
 		and str(ProjectSettings.get_setting("application/run/main_scene", "")) == "res://tests/android/android_restore_device_qa.tscn"
@@ -164,7 +164,7 @@ function Assert-QaWorkspace($Info) {
         if ($project -notmatch ('(?m)^'+$name+'="\*res://tests/android/android_restore_external_services_stub_qa\.gd"$')) { throw "$name belum diarahkan ke offline QA stub." }
     }
     if ($project -match 'jade_android_restore_qa') { throw 'Disposable project.godot tidak boleh menjadi arming authority.' }
-    if ($restore -notmatch 'OS\.has_feature\("android"\)[\s\S]*OS\.is_debug_build\(\)[\s\S]*OS\.has_feature\("jade_android_restore_qa"\)[\s\S]*application/run/main_scene') { throw 'Disposable restore implementation belum di-arm oleh export feature + QA main scene.' }
+    if ($restore -notmatch 'OS\.get_name\(\) == "Android"[\s\S]*OS\.is_debug_build\(\)[\s\S]*OS\.has_feature\("jade_android_restore_qa"\)[\s\S]*application/run/main_scene') { throw 'Disposable restore implementation belum di-arm oleh export feature + QA main scene.' }
     if ($runner -notmatch ('const EXPECTED_HEAD_SHA: String = "'+[regex]::Escape([string]$Info.head_sha)+'"')) { throw 'QA runner tidak terikat ke exact HEAD.' }
     if ($runner -match [regex]::Escape($QaHeadPlaceholder)) { throw 'QA runner HEAD placeholder belum diganti.' }
     if ($preset -notmatch ('(?m)^custom_features="'+[regex]::Escape($QaFeature)+'"$')) { throw 'QA custom export feature tidak aktif.' }

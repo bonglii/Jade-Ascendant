@@ -38,7 +38,7 @@ func _ready() -> void:
 
 func _qa_enabled() -> bool:
 	return (
-		OS.has_feature("android")
+		OS.get_name() == "Android"
 		and OS.is_debug_build()
 		and OS.has_feature(QA_EXPORT_FEATURE)
 		and str(ProjectSettings.get_setting("application/run/main_scene", "")) == QA_MAIN_SCENE

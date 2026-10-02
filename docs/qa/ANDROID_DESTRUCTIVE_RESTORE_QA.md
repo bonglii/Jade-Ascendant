@@ -1,6 +1,6 @@
 # Android Destructive Restore QA
 
-Status: **DEVICE REWORK**. The first physical-device attempt reached the QA Android runtime but failed closed at bootstrap arming before any destructive restore case started. Re-run is required after the export-feature arming hotfix passes CI.
+Status: **DEVICE REWORK**. Two physical-device attempts have failed closed before destructive case 1. The second attempt proved the exported APK reached the QA runner but `OS.has_feature("android")` returned false on this runtime, so Android platform detection is being moved to `OS.get_name() == "Android"`. Re-run is required after this guard hotfix passes CI.
 
 This gate validates Android process lifecycle behavior for Jade Ascendant's already CI-proven registered-path transactional restore. It does **not** enable production cloud restore, upload, automatic sync, or Firebase writes.
 
@@ -16,7 +16,7 @@ The tracked production project remains disconnected from this harness:
   - selects the Android QA scene as main scene;
   - injects a startup write barrier immediately after `SaveManager`;
   - adds the disposable export feature `jade_android_restore_qa`;
-  - requires Android **debug** + that export feature + the exact QA main scene before destructive code can run;
+  - requires `OS.get_name() == "Android"` + Android **debug** + that export feature + the exact QA main scene before destructive code can run;
   - binds the runner to the exact 40-character `git HEAD` embedded only in the disposable workspace;
   - exports a package with the `.restoreqa` suffix;
   - redirects Firebase, Google account, and monetization autoload names to an offline stub;
@@ -33,7 +33,7 @@ The first `BuildRun` attempt failed closed before case 1 with:
 JADE_ANDROID_RESTORE_DEVICE_FAIL | case=bootstrap | step=unknown | note=QA package is not correctly armed
 ```
 
-No destructive restore case started. The original arming model depended on custom `ProjectSettings` values in the exported APK but did not identify which runtime predicate failed. The hotfix removes those custom settings as an authority. QA activation now requires the disposable export feature `jade_android_restore_qa`, Android debug mode, and the exact QA main scene. The runner also embeds the exact committed HEAD and reports a specific arming failure code if any condition is missing.
+No destructive restore case started. The original arming model depended on custom `ProjectSettings` values in the exported APK but did not identify which runtime predicate failed. The first hotfix removed those custom settings as an authority and added the disposable export feature plus exact HEAD binding. The second device attempt then failed closed with `NOT_ANDROID`, proving `OS.has_feature("android")` is not reliable for this exported runtime. The next guard uses `OS.get_name() == "Android"` consistently in the runner, startup bootstrap, and disposable restore activation patch while retaining debug-build, export-feature, QA-main-scene, isolated-package, and exact-HEAD requirements.
 
 ## Device cases
 

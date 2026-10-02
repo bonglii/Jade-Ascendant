@@ -607,8 +607,8 @@ func _pass_suite() -> void:
 
 
 func _qa_arm_issue() -> String:
-	if not OS.has_feature("android"):
-		return "NOT_ANDROID"
+	if OS.get_name() != "Android":
+		return "NOT_ANDROID_RUNTIME:" + OS.get_name()
 	if not OS.is_debug_build():
 		return "NOT_DEBUG_BUILD"
 	if not OS.has_feature(QA_EXPORT_FEATURE):

@@ -27,13 +27,15 @@ test("production project and export remain disconnected from Android destructive
 
 test("device runner is Android debug only and never reaches cloud or monetization", () => {
   for (const source of [runner, bootstrap]) {
-    assert.match(source, /OS\.has_feature\("android"\)/);
+    assert.match(source, /OS\.get_name\(\)\s*==\s*"Android"/);
+    assert.doesNotMatch(source, /OS\.has_feature\("android"\)/);
     assert.match(source, /OS\.is_debug_build\(\)/);
     assert.match(source, /jade_android_restore_qa/);
     assert.match(source, /application\/run\/main_scene/);
     assert.doesNotMatch(source, /Firebase|firestore|https?:\/\/|GoogleAccountManager|MonetizationManager/i);
   }
   assert.match(runner, /QA_HEAD_SHA_PLACEHOLDER/);
+  assert.match(runner, /NOT_ANDROID_RUNTIME/);
   assert.match(runner, /QA_EXPORT_FEATURE_MISSING/);
   assert.match(runner, /QA_MAIN_SCENE_MISMATCH/);
   assert.match(runner, /HEAD_SHA_UNBOUND/);
@@ -88,6 +90,8 @@ test("PowerShell tool builds only from git archive HEAD and mutates only a tempo
   assert.match(tool, /tests\/android\/android_restore_external_services_stub_qa\.gd/);
   assert.match(tool, /enabled=PackedStringArray\(\)/);
   assert.match(tool, /custom_features/);
+  assert.match(tool, /OS\.get_name\(\) == "Android"/);
+  assert.doesNotMatch(tool, /OS\.has_feature\("android"\)/);
   assert.match(tool, /jade_android_restore_qa/);
   assert.match(tool, /QA_HEAD_SHA_PLACEHOLDER/);
   assert.match(tool, /exact HEAD/i);
