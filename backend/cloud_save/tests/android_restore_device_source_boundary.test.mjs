@@ -110,10 +110,17 @@ test("PowerShell tool builds only from git archive HEAD and mutates only a tempo
 });
 
 
-test("ADB controller performs actual force-stop and relaunch and stores evidence", () => {
+test("ADB controller performs actual force-stop, explicit foreground relaunch and stores evidence", () => {
   assert.match(tool, /logcat/);
   assert.match(tool, /am','force-stop/);
-  assert.match(tool, /monkey','-p/);
+  assert.match(tool, /'cmd','package','resolve-activity','--brief'/);
+  assert.match(tool, /'am','start','-W','-n',\$Component/);
+  assert.match(tool, /Invoke-NativeCaptured \$Adb \$startArgs 'ADB explicit QA launch'/);
+  assert.match(tool, /topResumedActivity\|mResumedActivity/);
+  assert.match(tool, /mCurrentFocus\|mFocusedApp/);
+  assert.match(tool, /ANDROID_RESTORE_DEVICE_FOREGROUND/);
+  assert.match(tool, /package never became foreground\/resumed/);
+  assert.doesNotMatch(tool, /monkey','-p/);
   assert.match(tool, /JADE_ANDROID_RESTORE_FORCE_STOP/);
   assert.match(tool, /JADE_ANDROID_RESTORE_DEVICE_FAIL/);
   assert.match(tool, /JADE_ANDROID_RESTORE_DEVICE_PASS/);

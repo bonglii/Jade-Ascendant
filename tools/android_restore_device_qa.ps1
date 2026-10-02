@@ -325,8 +325,64 @@ function Invoke-Adb([string]$Adb,[string[]]$Prefix,[string[]]$Arguments,[bool]$I
     return $code
 }
 
-function Start-QaApp([string]$Adb,[string[]]$Prefix,[string]$Package) {
-    $null = Invoke-Adb $Adb $Prefix @('shell','monkey','-p',$Package,'-c','android.intent.category.LAUNCHER','1') $false
+function Get-QaLaunchComponent([string]$Adb,[string[]]$Prefix,[string]$Package) {
+    [string[]]$arguments = $Prefix + @(
+        'shell','cmd','package','resolve-activity','--brief',
+        '-a','android.intent.action.MAIN',
+        '-c','android.intent.category.LAUNCHER',
+        $Package
+    )
+    $resolved = Invoke-NativeCaptured $Adb $arguments 'ADB resolve QA launcher'
+    $output = ([string]$resolved.output).Trim()
+    if ([int]$resolved.exit_code -ne 0) { throw "Tidak dapat resolve launcher activity QA untuk $Package." }
+    $escapedPackage = [regex]::Escape($Package)
+    $components = @(
+        $output -split "`r?`n" |
+        ForEach-Object { $_.Trim() } |
+        Where-Object { $_ -match ('^' + $escapedPackage + '/[^\s]+$') }
+    )
+    if ($components.Count -ne 1) {
+        throw "Launcher activity QA harus resolve tepat satu component. Output: $output"
+    }
+    return [string]$components[0]
+}
+
+function Test-QaAppForeground([string]$Adb,[string[]]$Prefix,[string]$Package) {
+    $escapedPackage = [regex]::Escape($Package)
+    [string[]]$activityArgs = $Prefix + @('shell','dumpsys','activity','activities')
+    $activityResult = Invoke-NativeCaptured $Adb $activityArgs 'ADB activity foreground check'
+    if ([int]$activityResult.exit_code -eq 0) {
+        $activityPattern = '(?m)^\s*(?:topResumedActivity|mResumedActivity)=.*' + $escapedPackage + '/'
+        if ([string]$activityResult.output -match $activityPattern) { return $true }
+    }
+    [string[]]$windowArgs = $Prefix + @('shell','dumpsys','window')
+    $windowResult = Invoke-NativeCaptured $Adb $windowArgs 'ADB window foreground check'
+    if ([int]$windowResult.exit_code -eq 0) {
+        $windowPattern = '(?m)^\s*(?:mCurrentFocus|mFocusedApp)=.*' + $escapedPackage + '/'
+        if ([string]$windowResult.output -match $windowPattern) { return $true }
+    }
+    return $false
+}
+
+function Start-QaApp([string]$Adb,[string[]]$Prefix,[string]$Package,[string]$Component) {
+    for ($attempt = 1; $attempt -le 2; $attempt++) {
+        [string[]]$startArgs = $Prefix + @('shell','am','start','-W','-n',$Component)
+        $startResult = Invoke-NativeCaptured $Adb $startArgs 'ADB explicit QA launch'
+        $startOutput = [string]$startResult.output
+        if ([int]$startResult.exit_code -ne 0) {
+            throw "Explicit Android QA launch gagal untuk $Component. Output: $startOutput"
+        }
+        $foregroundDeadline = (Get-Date).AddSeconds(15)
+        while ((Get-Date) -lt $foregroundDeadline) {
+            if (Test-QaAppForeground $Adb $Prefix $Package) {
+                Write-Host "ANDROID_RESTORE_DEVICE_FOREGROUND | package=$Package | component=$Component | attempt=$attempt" -ForegroundColor DarkCyan
+                return
+            }
+            Start-Sleep -Milliseconds 250
+        }
+        if ($attempt -lt 2) { Start-Sleep -Milliseconds 500 }
+    }
+    throw "Android QA process launched but package never became foreground/resumed: $Package"
 }
 
 function Save-DeviceLog([string]$Adb,[string[]]$Prefix,[string]$Path) {
@@ -342,8 +398,9 @@ function Invoke-Run([string]$InputApk,[string]$Package,[string]$HeadSha) {
     if (-not (Test-Path -LiteralPath $InputApk -PathType Leaf)) { throw "APK QA tidak ditemukan: $InputApk" }
     $null = Invoke-Adb $adb $prefix @('uninstall',$Package) $true
     $null = Invoke-Adb $adb $prefix @('install','-r',$InputApk) $false
+    $launchComponent = Get-QaLaunchComponent $adb $prefix $Package
     $null = Invoke-Adb $adb $prefix @('logcat','-c') $false
-    Start-QaApp $adb $prefix $Package
+    Start-QaApp $adb $prefix $Package $launchComponent
 
     $seen = New-Object 'System.Collections.Generic.HashSet[string]'
     $markers = New-Object System.Collections.Generic.List[string]
@@ -367,7 +424,7 @@ function Invoke-Run([string]$InputApk,[string]$Package,[string]$HeadSha) {
             if ($clean -match 'JADE_ANDROID_RESTORE_FORCE_STOP') {
                 $null = Invoke-Adb $adb $prefix @('shell','am','force-stop',$Package) $false
                 Start-Sleep -Milliseconds 550
-                Start-QaApp $adb $prefix $Package
+                Start-QaApp $adb $prefix $Package $launchComponent
                 continue
             }
             if ($clean -match 'JADE_ANDROID_RESTORE_DEVICE_PASS') {
