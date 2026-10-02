@@ -1,0 +1,150 @@
+name: Jade Ascendant - Registered Save Restore QA
+
+on:
+  push:
+    branches:
+      - 'qa/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  registered-save-restore:
+    name: Exact SaveManager Paths / Transactional Restore (DISPOSABLE RUNNER ONLY)
+    runs-on: windows-2022
+    timeout-minutes: 20
+    env:
+      JADE_GATE9_TEST_ONLY: '1'
+      JADE_REGISTERED_RESTORE_TEST_ONLY: '1'
+      JADE_REGISTERED_RESTORE_ACK: 'DISPOSABLE_RUNNER_ONLY'
+    steps:
+      - name: Checkout exact QA revision
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22 for fail-closed source boundary
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          package-manager-cache: false
+
+      - name: Verify registered-path restore remains QA-only
+        shell: pwsh
+        run: |
+          node --test backend/cloud_save/tests/registered_path_restore_source_boundary.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Registered restore source boundary failed.' }
+
+      - name: Download and verify official Godot 4.7.2
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $url = 'https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_win64.exe.zip'
+          $expectedSha256 = '731980f9608d61333e5baf54a2ef17210acc7a538446c0cb9969f002aca1e953'
+          $archive = Join-Path $env:RUNNER_TEMP 'godot-4.7.2.zip'
+          $installDir = Join-Path $env:RUNNER_TEMP 'godot-4.7.2'
+          Invoke-WebRequest -Uri $url -OutFile $archive
+          $actualSha256 = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualSha256 -ne $expectedSha256) { throw "Official Godot binary SHA256 mismatch: $actualSha256" }
+          Expand-Archive -LiteralPath $archive -DestinationPath $installDir -Force
+          $godot = Join-Path $installDir 'Godot_v4.7.2-stable_win64_console.exe'
+          if (-not (Test-Path -LiteralPath $godot -PathType Leaf)) { throw 'Godot console executable not found.' }
+          & $godot --version
+          if ($LASTEXITCODE -ne 0) { throw 'Godot version check failed.' }
+          "JADE_REGISTERED_GODOT=$godot" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Import project resources on disposable runner
+        shell: pwsh
+        run: |
+          & $env:JADE_REGISTERED_GODOT --headless --path . --import
+          if ($LASTEXITCODE -ne 0) { throw "Registered restore project import failed: $LASTEXITCODE" }
+
+      - name: Apply rollback and confirmation across process restarts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $runner = 'res://tests/registered_path_restore_qa.gd'
+          foreach ($stage in @('apply_for_rollback','rollback_after_restart','apply_for_confirm','confirm_after_restart')) {
+            $env:JADE_REGISTERED_RESTORE_STAGE = $stage
+            $env:JADE_REGISTERED_RESTORE_FAULT = ''
+            $env:JADE_REGISTERED_RESTORE_RECOVERY_FAULT = ''
+            & $env:JADE_REGISTERED_GODOT --headless --path . --script $runner
+            if ($LASTEXITCODE -ne 0) { throw "Registered restore stage failed: $stage ($LASTEXITCODE)" }
+          }
+
+      - name: Critical commit crash matrix on exact registered paths
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $runner = 'res://tests/registered_path_restore_qa.gd'
+          $domains = @('achievements','daily_quests','equipment','idle_cultivation','inventory','journey','pavilion','progression')
+          $faults = @('after_intent','after_commit_marker')
+          foreach ($domain in $domains) {
+            $faults += "after_primary_to_rollback:$domain"
+            $faults += "after_candidate_to_primary:$domain"
+          }
+          $faults += 'after_all_domains'
+          $faults += 'after_applied_marker'
+          foreach ($fault in $faults) {
+            $env:JADE_REGISTERED_RESTORE_STAGE = 'fault'
+            $env:JADE_REGISTERED_RESTORE_FAULT = $fault
+            $env:JADE_REGISTERED_RESTORE_RECOVERY_FAULT = ''
+            & $env:JADE_REGISTERED_GODOT --headless --path . --script $runner
+            if ($LASTEXITCODE -ne 0) { throw "Registered restore fault arm failed: $fault ($LASTEXITCODE)" }
+            $env:JADE_REGISTERED_RESTORE_STAGE = 'recover'
+            & $env:JADE_REGISTERED_GODOT --headless --path . --script $runner
+            if ($LASTEXITCODE -ne 0) { throw "Registered restore recovery failed: $fault ($LASTEXITCODE)" }
+          }
+
+      - name: Interrupted rollback recovery on first middle and final domains
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $runner = 'res://tests/registered_path_restore_qa.gd'
+          $faults = @(
+            'rollback_after_target_to_discard:achievements',
+            'rollback_after_preimage_to_primary:achievements',
+            'rollback_after_target_to_discard:inventory',
+            'rollback_after_preimage_to_primary:inventory',
+            'rollback_after_target_to_discard:progression',
+            'rollback_after_preimage_to_primary:progression'
+          )
+          foreach ($fault in $faults) {
+            $env:JADE_REGISTERED_RESTORE_STAGE = 'fault'
+            $env:JADE_REGISTERED_RESTORE_FAULT = 'after_primary_to_rollback:achievements'
+            $env:JADE_REGISTERED_RESTORE_RECOVERY_FAULT = ''
+            & $env:JADE_REGISTERED_GODOT --headless --path . --script $runner
+            if ($LASTEXITCODE -ne 0) { throw "Registered rollback setup failed: $fault ($LASTEXITCODE)" }
+            $env:JADE_REGISTERED_RESTORE_STAGE = 'recover_fault'
+            $env:JADE_REGISTERED_RESTORE_RECOVERY_FAULT = $fault
+            & $env:JADE_REGISTERED_GODOT --headless --path . --script $runner
+            if ($LASTEXITCODE -ne 0) { throw "Registered rollback fault failed: $fault ($LASTEXITCODE)" }
+            $env:JADE_REGISTERED_RESTORE_STAGE = 'recover'
+            $env:JADE_REGISTERED_RESTORE_RECOVERY_FAULT = ''
+            & $env:JADE_REGISTERED_GODOT --headless --path . --script $runner
+            if ($LASTEXITCODE -ne 0) { throw "Registered rollback final recovery failed: $fault ($LASTEXITCODE)" }
+          }
+
+      - name: Interrupted manual rollback after applied state
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $runner = 'res://tests/registered_path_restore_qa.gd'
+          $faults = @(
+            'rollback_after_target_to_discard:achievements',
+            'rollback_after_preimage_to_primary:inventory',
+            'rollback_after_cleanup:progression'
+          )
+          foreach ($fault in $faults) {
+            $env:JADE_REGISTERED_RESTORE_STAGE = 'manual_rollback_fault'
+            $env:JADE_REGISTERED_RESTORE_FAULT = ''
+            $env:JADE_REGISTERED_RESTORE_RECOVERY_FAULT = $fault
+            & $env:JADE_REGISTERED_GODOT --headless --path . --script $runner
+            if ($LASTEXITCODE -ne 0) { throw "Registered manual rollback fault failed: $fault ($LASTEXITCODE)" }
+            $env:JADE_REGISTERED_RESTORE_STAGE = 'recover'
+            $env:JADE_REGISTERED_RESTORE_RECOVERY_FAULT = ''
+            & $env:JADE_REGISTERED_GODOT --headless --path . --script $runner
+            if ($LASTEXITCODE -ne 0) { throw "Registered manual rollback recovery failed: $fault ($LASTEXITCODE)" }
+          }
