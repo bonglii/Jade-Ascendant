@@ -26,8 +26,9 @@ test("production project and export remain disconnected from Android destructive
 
 
 test("device runner is Android debug only and never reaches cloud or monetization", () => {
+  assert.match(runner, /OS\.get_name\(\)\s*!=\s*"Android"/);
+  assert.match(bootstrap, /OS\.get_name\(\)\s*==\s*"Android"/);
   for (const source of [runner, bootstrap]) {
-    assert.match(source, /OS\.get_name\(\)\s*==\s*"Android"/);
     assert.doesNotMatch(source, /OS\.has_feature\("android"\)/);
     assert.match(source, /OS\.is_debug_build\(\)/);
     assert.match(source, /jade_android_restore_qa/);
