@@ -1,6 +1,6 @@
 # Android Destructive Restore QA
 
-Status: **DEVICE REWORK**. Two physical-device attempts have failed closed before destructive case 1. The second attempt proved the exported APK reached the QA runner but `OS.has_feature("android")` returned false on this runtime, so Android platform detection is being moved to `OS.get_name() == "Android"`. Re-run is required after this guard hotfix passes CI.
+Status: **DEVICE REWORK**. Three attempts have failed closed before destructive case 1. The latest attempt proved the disposable QA main scene was being executed by the Windows Godot build process before ADB/device launch. The build tool now installs the Android build template only in conjunction with `--export-debug`, and it fails closed if any Android QA runtime marker appears during host-side import/export.
 
 This gate validates Android process lifecycle behavior for Jade Ascendant's already CI-proven registered-path transactional restore. It does **not** enable production cloud restore, upload, automatic sync, or Firebase writes.
 
@@ -33,7 +33,7 @@ The first `BuildRun` attempt failed closed before case 1 with:
 JADE_ANDROID_RESTORE_DEVICE_FAIL | case=bootstrap | step=unknown | note=QA package is not correctly armed
 ```
 
-No destructive restore case started. The original arming model depended on custom `ProjectSettings` values in the exported APK but did not identify which runtime predicate failed. The first hotfix removed those custom settings as an authority and added the disposable export feature plus exact HEAD binding. The second device attempt then failed closed with `NOT_ANDROID`, proving `OS.has_feature("android")` is not reliable for this exported runtime. The next guard uses `OS.get_name() == "Android"` consistently in the runner, startup bootstrap, and disposable restore activation patch while retaining debug-build, export-feature, QA-main-scene, isolated-package, and exact-HEAD requirements.
+No destructive restore case started. The original arming model depended on custom `ProjectSettings` values in the exported APK but did not identify which runtime predicate failed. The first hotfix removed those custom settings as an authority and added the disposable export feature plus exact HEAD binding. The second attempt exposed the Android runtime predicate issue and moved the runner, startup bootstrap, and disposable restore activation patch to `OS.get_name() == "Android"`. The third attempt then reported `NOT_ANDROID_RUNTIME:Windows`, which proved the QA main scene was being executed by the Windows Godot build process itself. Root cause: the build helper invoked `--install-android-build-template` as a standalone command after replacing the disposable project's main scene. Godot documents that flag for use together with `--export-release` or `--export-debug`. The helper now combines template installation and `--export-debug` in one host process and rejects any Android QA runtime marker emitted during host-side import/export.
 
 ## Device cases
 

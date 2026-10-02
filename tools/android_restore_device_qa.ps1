@@ -222,14 +222,22 @@ function Invoke-Build {
         $workspace = New-QaWorkspace $head
         $info = Patch-QaWorkspace $workspace $head
         Assert-QaWorkspace $info
-        & $godot --headless --path $workspace --import 2>&1 | Out-Host
-        if ($LASTEXITCODE -ne 0) { throw 'Godot import QA workspace gagal.' }
-        & $godot --headless --path $workspace --install-android-build-template 2>&1 | Out-Host
-        if ($LASTEXITCODE -ne 0) { throw 'Pemasangan Android build template di workspace QA gagal.' }
+        $importOutput = (& $godot --headless --path $workspace --import 2>&1 | Out-String)
+        $importExit = $LASTEXITCODE
+        $importOutput | Write-Host
+        if ($importOutput -match 'JADE_ANDROID_RESTORE_(?:DEVICE_|ARMED|CASE|FORCE_STOP|BOOT_BARRIER)') {
+            throw 'Godot import mengeksekusi Android QA scene di host Windows. Build dihentikan fail-closed.'
+        }
+        if ($importExit -ne 0) { throw 'Godot import QA workspace gagal.' }
         $short = $head.Substring(0,7)
         $apk = Join-Path $Artifacts ("JadeAscendant-RestoreQA-$short.apk")
-        & $godot --headless --path $workspace --export-debug Android $apk 2>&1 | Out-Host
-        if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $apk -PathType Leaf) -or (Get-Item -LiteralPath $apk).Length -le 0) {
+        $exportOutput = (& $godot --headless --path $workspace --install-android-build-template --export-debug Android $apk 2>&1 | Out-String)
+        $exportExit = $LASTEXITCODE
+        $exportOutput | Write-Host
+        if ($exportOutput -match 'JADE_ANDROID_RESTORE_(?:DEVICE_|ARMED|CASE|FORCE_STOP|BOOT_BARRIER)') {
+            throw 'Godot export mengeksekusi Android QA scene di host Windows. Build dihentikan fail-closed.'
+        }
+        if ($exportExit -ne 0 -or -not (Test-Path -LiteralPath $apk -PathType Leaf) -or (Get-Item -LiteralPath $apk).Length -le 0) {
             throw 'Export debug APK gagal. Pastikan Godot 4.7.2 export templates dan Android SDK terpasang.'
         }
         $report = New-AuditReport $info 'PASS'
