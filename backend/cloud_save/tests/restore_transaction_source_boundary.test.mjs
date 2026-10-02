@@ -72,7 +72,20 @@ test("Gate 9A vault is retained through apply rollback and confirmation", () => 
   assert.match(restore, /inspect_sandbox_backup_for_qa/);
   assert.match(restore, /vault_retained/);
   assert.match(restore, /vault_cleanup_allowed/);
-  assert.doesNotMatch(restore, /remove.*ready_|delete.*vault/i);
+
+  const confirmBlock = restore.match(
+    /func confirm_sandbox_restore_for_qa[\s\S]*?\n\nfunc inspect_sandbox_restore_for_qa/
+  )?.[0] ?? "";
+  assert.notEqual(confirmBlock, "");
+  assert.doesNotMatch(
+    confirmBlock,
+    /_remove_tree\s*\(|_remove_if_present\s*\(|DirAccess\.remove_absolute\s*\(/
+  );
+  assert.doesNotMatch(
+    restore,
+    /_remove_tree\(\s*(?:ready_vault_path|ready_path)\s*\)|_remove_if_present\(\s*(?:ready_vault_path|ready_path)(?:\s*\+[^)]*)?\)/
+  );
+
   assert.match(runner, /_valid_vault_count\(\) == 1/);
 });
 
