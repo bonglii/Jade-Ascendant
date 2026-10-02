@@ -26,6 +26,7 @@ const ROLLED_BACK_MARKER: String = ACTIVE_TX + "/rolled_back.marker"
 const MAX_DOMAIN_BYTES: int = 1048576
 const REQUIRED_ACK: String = "DISPOSABLE_RUNNER_ONLY"
 const BOOT_BARRIER_OWNER: String = "registered_restore_bootstrap_qa"
+const TX_BARRIER_OWNER: String = "registered_restore_transaction_qa"
 
 
 func qa_root() -> String:
@@ -117,7 +118,7 @@ func begin_registered_restore_for_qa(
 		source_hashes[id] = preimage_hash
 		candidate_hashes[id] = FileAccess.get_sha256(candidate)
 		candidate_names[id] = id + ".candidate.bin"
-	var barrier_owner: String = _barrier_owner("registered_restore")
+	var barrier_owner: String = TX_BARRIER_OWNER
 	var acquired: Dictionary = SaveManager.begin_save_write_barrier(
 		barrier_owner, "registered_restore_qa_commit"
 	)
@@ -750,18 +751,20 @@ func _read_var_dictionary(path: String) -> Dictionary:
 
 
 func _acquire_registered_barrier(prefix: String, reason: String) -> Dictionary:
-	# Restart QA installs a CI-only autoload immediately after SaveManager. It
-	# owns this exact barrier before permanent managers can perform startup writes.
-	# Reuse that owner until the durable restore journal is resolved.
+	# An unresolved restore owns a runtime write fence for its whole process.
+	# After restart the CI-only bootstrap recreates that fence before permanent
+	# managers initialize. Both known owners are safe to borrow; any other owner
+	# is an unrelated maintenance operation and remains a hard conflict.
 	if SaveManager.is_save_write_barrier_active():
-		if SaveManager.get_save_write_barrier_owner() == BOOT_BARRIER_OWNER:
+		var active_owner: String = SaveManager.get_save_write_barrier_owner()
+		if active_owner in [BOOT_BARRIER_OWNER, TX_BARRIER_OWNER]:
 			return {
 				"ok": true,
-				"owner_id": BOOT_BARRIER_OWNER,
-				"borrowed_boot_barrier": true
+				"owner_id": active_owner,
+				"borrowed_existing_barrier": true
 			}
 		return {"ok": false, "code": "SAVE_WRITE_BARRIER_BUSY"}
-	var owner_id: String = _barrier_owner(prefix)
+	var owner_id: String = TX_BARRIER_OWNER
 	var acquired: Dictionary = SaveManager.begin_save_write_barrier(owner_id, reason)
 	if not bool(acquired.get("success", false)):
 		return {
@@ -771,15 +774,31 @@ func _acquire_registered_barrier(prefix: String, reason: String) -> Dictionary:
 	return {
 		"ok": true,
 		"owner_id": owner_id,
-		"borrowed_boot_barrier": false
+		"borrowed_existing_barrier": false
 	}
 
 
+func _restore_transaction_unresolved() -> bool:
+	return (
+		DirAccess.dir_exists_absolute(ACTIVE_TX)
+		and not FileAccess.file_exists(CONFIRMED_MARKER)
+		and not FileAccess.file_exists(ROLLED_BACK_MARKER)
+	)
+
+
 func _finish_barrier(barrier_owner: String, result: Dictionary) -> Dictionary:
+	# Never reopen SaveManager writes while a restore is still prepared,
+	# committing, faulted, or awaiting explicit confirmation. This also protects
+	# the interval between the final QA assertion and process termination.
+	if _restore_transaction_unresolved():
+		result["write_barrier_used"] = true
+		result["write_barrier_retained"] = true
+		return result
 	var released: Dictionary = SaveManager.end_save_write_barrier(barrier_owner)
 	if not bool(released.get("success", false)):
 		return _no("SAVE_WRITE_BARRIER_RELEASE_FAILED")
 	result["write_barrier_used"] = true
+	result["write_barrier_retained"] = false
 	return result
 
 

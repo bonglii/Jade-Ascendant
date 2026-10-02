@@ -60,6 +60,8 @@ func _stage_apply_for_rollback() -> void:
 	var result: Dictionary = _begin("")
 	_expect(result.get("ok") == true, "Apply candidate to exact registered paths")
 	_expect(result.get("write_barrier_used") == true, "Registered apply owns SaveManager barrier")
+	_expect(result.get("write_barrier_retained") == true, "Applied restore keeps writes fenced pending decision")
+	_expect(bool(saver.call("is_save_write_barrier_active")), "Applied restore remains read-only until restart or decision")
 	_expect(_live_state() == "candidate", "All eight registered paths become candidate")
 	_expect(_sidecars_intact(), "Existing .backup sidecars remain byte-identical")
 	_finish("JADE_REGISTERED_RESTORE_ROLLBACK_ARM_PASS")
@@ -69,10 +71,12 @@ func _stage_rollback_after_restart() -> void:
 	_expect(_boot_barrier_active(), "Startup barrier is armed before registered recovery")
 	var recovered: Dictionary = restore.call("recover_registered_restore_for_qa", OWNER)
 	_expect(recovered.get("ok") == true, "Restart reopens registered-path candidate state")
+	_expect(bool(saver.call("is_save_write_barrier_active")), "Pending candidate keeps startup barrier armed")
 	var wrong: Dictionary = restore.call("rollback_registered_restore_for_qa", "foreign_owner")
 	_expect(wrong.get("code") == "RESTORE_INTENT_INVALID", "Foreign owner cannot open durable intent")
 	var rolled: Dictionary = restore.call("rollback_registered_restore_for_qa", OWNER)
 	_expect(rolled.get("ok") == true, "Same owner rolls back exact registered paths")
+	_expect(not bool(saver.call("is_save_write_barrier_active")), "Terminal rollback releases write barrier")
 	_expect(_live_state() == "preimage", "Rollback restores all eight registered preimages")
 	_expect(_sidecars_intact(), "Rollback never rotates existing SaveManager .backup sidecars")
 	_finish("JADE_REGISTERED_RESTORE_ROLLBACK_PASS")
@@ -84,6 +88,8 @@ func _stage_apply_for_confirm() -> void:
 		return
 	var result: Dictionary = _begin("")
 	_expect(result.get("ok") == true, "Confirmation scenario applies candidate")
+	_expect(result.get("write_barrier_retained") == true, "Confirmation scenario remains fenced before restart")
+	_expect(bool(saver.call("is_save_write_barrier_active")), "Pending confirmation blocks runtime writes")
 	_expect(_live_state() == "candidate", "Confirmation scenario has exact candidate state")
 	_finish("JADE_REGISTERED_RESTORE_CONFIRM_ARM_PASS")
 
@@ -92,8 +98,10 @@ func _stage_confirm_after_restart() -> void:
 	_expect(_boot_barrier_active(), "Startup barrier is armed before registered recovery")
 	var recovered: Dictionary = restore.call("recover_registered_restore_for_qa", OWNER)
 	_expect(recovered.get("ok") == true, "Restart reopens pending confirmation")
+	_expect(bool(saver.call("is_save_write_barrier_active")), "Pending confirmation retains startup barrier")
 	var confirmed: Dictionary = restore.call("confirm_registered_restore_for_qa", OWNER)
 	_expect(confirmed.get("ok") == true, "Same owner confirms registered restore")
+	_expect(not bool(saver.call("is_save_write_barrier_active")), "Terminal confirmation releases write barrier")
 	_expect(confirmed.get("vault_cleanup_allowed") == true, "Confirmation only marks cleanup eligible")
 	_expect(_live_state() == "candidate", "Confirmation does not rewrite primaries")
 	_expect(_sidecars_intact(), "Confirmation preserves prior .backup sidecars")
@@ -110,7 +118,8 @@ func _stage_fault() -> void:
 	var result: Dictionary = _begin(point)
 	_expect(result.get("code") == "QA_FAULT_INJECTED", "Inject exact registered-path fault: " + point)
 	_expect(str(result.get("fault_point", "")) == point, "Fault result identifies boundary")
-	_expect(not bool(saver.call("is_save_write_barrier_active")), "Returned fault releases runtime barrier before process exit")
+	_expect(bool(saver.call("is_save_write_barrier_active")), "Unresolved commit fault keeps runtime barrier until process exit")
+	_expect(result.get("write_barrier_retained") == true, "Fault result records retained write fence")
 	_expect(_sidecars_intact(), "Injected commit fault does not touch .backup sidecars")
 	_finish("JADE_REGISTERED_RESTORE_FAULT_ARM_PASS")
 
@@ -122,7 +131,15 @@ func _stage_recover() -> void:
 	var state: String = _live_state()
 	_expect(state in ["preimage", "candidate"], "Recovery never leaves mixed registered save")
 	_expect(_sidecars_intact(), "Recovery preserves .backup sidecars")
-	_expect(not bool(saver.call("is_save_write_barrier_active")), "Recovery releases barrier")
+	if state == "candidate":
+		_expect(bool(saver.call("is_save_write_barrier_active")), "Recovered candidate remains fenced pending decision")
+		var resolved: Dictionary = restore.call("rollback_registered_restore_for_qa", OWNER)
+		_expect(resolved.get("ok") == true, "Crash-matrix candidate is explicitly rolled back before next case")
+		_expect(_live_state() == "preimage", "Crash-matrix cleanup returns to preimage")
+	else:
+		_expect(not bool(saver.call("is_save_write_barrier_active")), "Recovered terminal rollback releases barrier")
+	_expect(_sidecars_intact(), "Terminal recovery preserves .backup sidecars")
+	_expect(not bool(saver.call("is_save_write_barrier_active")), "Recovery case ends with barrier clear")
 	_finish("JADE_REGISTERED_RESTORE_RESTART_RECOVERY_PASS")
 
 
@@ -132,6 +149,7 @@ func _stage_recover_fault() -> void:
 	var result: Dictionary = restore.call("recover_registered_restore_for_qa", OWNER, point)
 	_expect(result.get("code") == "QA_FAULT_INJECTED", "Inject rollback recovery fault")
 	_expect(str(result.get("fault_point", "")) == point, "Recovery fault boundary is exact")
+	_expect(bool(saver.call("is_save_write_barrier_active")), "Interrupted rollback keeps startup fence armed")
 	_expect(_sidecars_intact(), "Interrupted rollback preserves .backup sidecars")
 	_finish("JADE_REGISTERED_RESTORE_RECOVERY_FAULT_PASS")
 
@@ -142,10 +160,12 @@ func _stage_manual_rollback_fault() -> void:
 		return
 	var applied: Dictionary = _begin("")
 	_expect(applied.get("ok") == true, "Manual rollback fault case first applies candidate")
+	_expect(bool(saver.call("is_save_write_barrier_active")), "Applied manual-rollback case remains fenced")
 	var point: String = OS.get_environment("JADE_REGISTERED_RESTORE_RECOVERY_FAULT")
 	var result: Dictionary = restore.call("rollback_registered_restore_for_qa", OWNER, point)
 	_expect(result.get("code") == "QA_FAULT_INJECTED", "Inject manual rollback fault")
 	_expect(str(result.get("fault_point", "")) == point, "Manual rollback boundary is exact")
+	_expect(bool(saver.call("is_save_write_barrier_active")), "Interrupted manual rollback keeps runtime fence armed")
 	_expect(_sidecars_intact(), "Interrupted manual rollback preserves .backup sidecars")
 	_finish("JADE_REGISTERED_RESTORE_MANUAL_ROLLBACK_FAULT_PASS")
 

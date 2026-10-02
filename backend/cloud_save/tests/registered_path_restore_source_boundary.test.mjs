@@ -55,6 +55,15 @@ test("registered mutation owns the SaveManager global barrier and bypasses no pu
   assert.doesNotMatch(qa, /SaveManager\.recover_save_from_backup\s*\(/);
 });
 
+test("unresolved registered restore retains the SaveManager write fence", () => {
+  assert.match(qa, /const TX_BARRIER_OWNER:\s*String\s*=\s*"registered_restore_transaction_qa"/);
+  assert.match(qa, /func _restore_transaction_unresolved\(\) -> bool/);
+  assert.match(qa, /if _restore_transaction_unresolved\(\):[\s\S]*?write_barrier_retained/);
+  assert.match(runner, /Applied restore remains read-only until restart or decision/);
+  assert.match(runner, /Unresolved commit fault keeps runtime barrier until process exit/);
+  assert.match(runner, /Recovered candidate remains fenced pending decision/);
+});
+
 test("harness remains local-only and cannot authorize production cloud transfer", () => {
   assert.doesNotMatch(qa, /GoogleAccountManager|Firebase|firestore|https?:\/\//i);
   assert.doesNotMatch(qa, /"restore_allowed"\s*:\s*true/);
