@@ -25,6 +25,7 @@ const CONFIRMED_MARKER: String = ACTIVE_TX + "/confirmed.marker"
 const ROLLED_BACK_MARKER: String = ACTIVE_TX + "/rolled_back.marker"
 const MAX_DOMAIN_BYTES: int = 1048576
 const REQUIRED_ACK: String = "DISPOSABLE_RUNNER_ONLY"
+const BOOT_BARRIER_OWNER: String = "registered_restore_bootstrap_qa"
 
 
 func qa_root() -> String:
@@ -146,12 +147,12 @@ func recover_registered_restore_for_qa(owner_uid: String, fault_point: String = 
 			_remove_tree(ACTIVE_TX)
 			return _yes("RESTORE_INCOMPLETE_PREPARE_CLEARED")
 		return _no("RESTORE_INTENT_INVALID")
-	var barrier_owner: String = _barrier_owner("registered_recovery")
-	var acquired: Dictionary = SaveManager.begin_save_write_barrier(
-		barrier_owner, "registered_restore_qa_recovery"
+	var barrier: Dictionary = _acquire_registered_barrier(
+		"registered_recovery", "registered_restore_qa_recovery"
 	)
-	if not bool(acquired.get("success", false)):
+	if not bool(barrier.get("ok", false)):
 		return _no("SAVE_WRITE_BARRIER_UNAVAILABLE")
+	var barrier_owner: String = str(barrier["owner_id"])
 	var issue: String = _registered_boundary_issue(intent["source_paths"], barrier_owner, true)
 	var result: Dictionary = _no(issue) if not issue.is_empty() else _recover_under_barrier(
 		intent, fault_point
@@ -171,12 +172,12 @@ func rollback_registered_restore_for_qa(
 		return _no("RESTORE_ALREADY_CONFIRMED")
 	if not FileAccess.file_exists(APPLIED_MARKER):
 		return _no("NO_APPLIED_RESTORE")
-	var barrier_owner: String = _barrier_owner("registered_rollback")
-	var acquired: Dictionary = SaveManager.begin_save_write_barrier(
-		barrier_owner, "registered_restore_qa_manual_rollback"
+	var barrier: Dictionary = _acquire_registered_barrier(
+		"registered_rollback", "registered_restore_qa_manual_rollback"
 	)
-	if not bool(acquired.get("success", false)):
+	if not bool(barrier.get("ok", false)):
 		return _no("SAVE_WRITE_BARRIER_UNAVAILABLE")
+	var barrier_owner: String = str(barrier["owner_id"])
 	var issue: String = _registered_boundary_issue(intent["source_paths"], barrier_owner, true)
 	if not issue.is_empty():
 		return _finish_barrier(barrier_owner, _no(issue))
@@ -202,12 +203,12 @@ func confirm_registered_restore_for_qa(owner_uid: String) -> Dictionary:
 		return _no("RESTORE_ALREADY_ROLLED_BACK")
 	if not FileAccess.file_exists(APPLIED_MARKER):
 		return _no("NO_APPLIED_RESTORE")
-	var barrier_owner: String = _barrier_owner("registered_confirm")
-	var acquired: Dictionary = SaveManager.begin_save_write_barrier(
-		barrier_owner, "registered_restore_qa_confirm"
+	var barrier: Dictionary = _acquire_registered_barrier(
+		"registered_confirm", "registered_restore_qa_confirm"
 	)
-	if not bool(acquired.get("success", false)):
+	if not bool(barrier.get("ok", false)):
 		return _no("SAVE_WRITE_BARRIER_UNAVAILABLE")
+	var barrier_owner: String = str(barrier["owner_id"])
 	var issue: String = _registered_boundary_issue(intent["source_paths"], barrier_owner, true)
 	if not issue.is_empty():
 		return _finish_barrier(barrier_owner, _no(issue))
@@ -746,6 +747,32 @@ func _read_var_dictionary(path: String) -> Dictionary:
 	var value: Variant = file.get_var(false)
 	file.close()
 	return value if value is Dictionary else {}
+
+
+func _acquire_registered_barrier(prefix: String, reason: String) -> Dictionary:
+	# Restart QA installs a CI-only autoload immediately after SaveManager. It
+	# owns this exact barrier before permanent managers can perform startup writes.
+	# Reuse that owner until the durable restore journal is resolved.
+	if SaveManager.is_save_write_barrier_active():
+		if SaveManager.get_save_write_barrier_owner() == BOOT_BARRIER_OWNER:
+			return {
+				"ok": true,
+				"owner_id": BOOT_BARRIER_OWNER,
+				"borrowed_boot_barrier": true
+			}
+		return {"ok": false, "code": "SAVE_WRITE_BARRIER_BUSY"}
+	var owner_id: String = _barrier_owner(prefix)
+	var acquired: Dictionary = SaveManager.begin_save_write_barrier(owner_id, reason)
+	if not bool(acquired.get("success", false)):
+		return {
+			"ok": false,
+			"code": str(acquired.get("code", "SAVE_WRITE_BARRIER_UNAVAILABLE"))
+		}
+	return {
+		"ok": true,
+		"owner_id": owner_id,
+		"borrowed_boot_barrier": false
+	}
 
 
 func _finish_barrier(barrier_owner: String, result: Dictionary) -> Dictionary:

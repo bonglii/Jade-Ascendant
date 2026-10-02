@@ -7,6 +7,7 @@ import { resolve, join } from "node:path";
 const repo = fileURLToPath(new URL("../../../", import.meta.url));
 const read = p => readFileSync(resolve(repo, p), "utf8");
 const qa = read("scripts/managers/cloud_registered_path_restore_qa.gd");
+const bootstrap = read("scripts/managers/cloud_registered_restore_bootstrap_qa.gd");
 const runner = read("tests/registered_path_restore_qa.gd");
 const project = read("project.godot");
 const workflow = read(".github/workflows/cloud-registered-restore-qa.yml");
@@ -28,8 +29,10 @@ test("registered-path harness is editor-only, explicitly armed, and disconnected
   assert.match(qa, /JADE_REGISTERED_RESTORE_ACK/);
   assert.match(qa, /DISPOSABLE_RUNNER_ONLY/);
   assert.doesNotMatch(project, /cloud_registered_path_restore_qa/);
+  assert.doesNotMatch(project, /cloud_registered_restore_bootstrap_qa|RegisteredRestoreBootstrapQA/);
   const refs = gdScripts(resolve(repo, "scripts"))
     .filter(p => !p.endsWith("cloud_registered_path_restore_qa.gd"))
+    .filter(p => !p.endsWith("cloud_registered_restore_bootstrap_qa.gd"))
     .filter(p => /cloud_registered_path_restore_qa|begin_registered_restore_for_qa/.test(readFileSync(p, "utf8")));
   assert.deepEqual(refs, []);
 });
@@ -58,6 +61,28 @@ test("harness remains local-only and cannot authorize production cloud transfer"
   assert.doesNotMatch(qa, /"upload_allowed"\s*:\s*true/);
   assert.match(qa, /user:\/\/jade_registered_restore_qa\//);
   assert.match(qa, /vault_cleanup_allowed/);
+});
+
+test("restart QA fences permanent-manager startup writes before recovery", () => {
+  assert.match(bootstrap, /OS\.has_feature\("editor"\)/);
+  assert.match(bootstrap, /JADE_REGISTERED_RESTORE_TEST_ONLY/);
+  assert.match(bootstrap, /DISPOSABLE_RUNNER_ONLY/);
+  assert.match(bootstrap, /rollback_after_restart/);
+  assert.match(bootstrap, /confirm_after_restart/);
+  assert.match(bootstrap, /recover_fault/);
+  assert.match(bootstrap, /begin_save_write_barrier/);
+  assert.match(bootstrap, /registered_restore_bootstrap_qa/);
+  assert.doesNotMatch(bootstrap, /FileAccess\.open|DirAccess\.(?:remove|rename)_absolute/);
+  assert.doesNotMatch(bootstrap, /write_save_data|write_save_batch|recover_save_from_backup/);
+  assert.doesNotMatch(bootstrap, /Firebase|firestore|https?:\/\//i);
+  assert.match(qa, /BOOT_BARRIER_OWNER:\s*String\s*=\s*"registered_restore_bootstrap_qa"/);
+  assert.match(qa, /_acquire_registered_barrier/);
+  assert.match(qa, /get_save_write_barrier_owner\(\) == BOOT_BARRIER_OWNER/);
+  assert.match(runner, /Startup barrier is armed before registered recovery/);
+  assert.match(workflow, /Inject disposable early restore barrier after SaveManager/);
+  assert.match(workflow, /RegisteredRestoreBootstrapQA=\"\*res:\/\/scripts\/managers\/cloud_registered_restore_bootstrap_qa\.gd\"/);
+  assert.match(workflow, /SaveManager autoload anchor missing/);
+  assert.match(workflow, /Disposable bootstrap autoload ordering is unsafe/);
 });
 
 test("registered runner constants stay parse-safe under Godot 4.7.2", () => {

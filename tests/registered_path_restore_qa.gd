@@ -66,6 +66,7 @@ func _stage_apply_for_rollback() -> void:
 
 
 func _stage_rollback_after_restart() -> void:
+	_expect(_boot_barrier_active(), "Startup barrier is armed before registered recovery")
 	var recovered: Dictionary = restore.call("recover_registered_restore_for_qa", OWNER)
 	_expect(recovered.get("ok") == true, "Restart reopens registered-path candidate state")
 	var wrong: Dictionary = restore.call("rollback_registered_restore_for_qa", "foreign_owner")
@@ -88,6 +89,7 @@ func _stage_apply_for_confirm() -> void:
 
 
 func _stage_confirm_after_restart() -> void:
+	_expect(_boot_barrier_active(), "Startup barrier is armed before registered recovery")
 	var recovered: Dictionary = restore.call("recover_registered_restore_for_qa", OWNER)
 	_expect(recovered.get("ok") == true, "Restart reopens pending confirmation")
 	var confirmed: Dictionary = restore.call("confirm_registered_restore_for_qa", OWNER)
@@ -114,6 +116,7 @@ func _stage_fault() -> void:
 
 
 func _stage_recover() -> void:
+	_expect(_boot_barrier_active(), "Startup barrier is armed before registered recovery")
 	var result: Dictionary = restore.call("recover_registered_restore_for_qa", OWNER)
 	_expect(result.get("ok") == true, "Registered-path restart recovery completes")
 	var state: String = _live_state()
@@ -124,6 +127,7 @@ func _stage_recover() -> void:
 
 
 func _stage_recover_fault() -> void:
+	_expect(_boot_barrier_active(), "Startup barrier is armed before registered recovery")
 	var point: String = OS.get_environment("JADE_REGISTERED_RESTORE_RECOVERY_FAULT")
 	var result: Dictionary = restore.call("recover_registered_restore_for_qa", OWNER, point)
 	_expect(result.get("code") == "QA_FAULT_INJECTED", "Inject rollback recovery fault")
@@ -282,6 +286,14 @@ func _sidecars_intact() -> bool:
 		if not FileAccess.file_exists(path) or FileAccess.get_sha256(path) != str(raw[id]):
 			return false
 	return true
+
+
+func _boot_barrier_active() -> bool:
+	return (
+		bool(saver.call("is_save_write_barrier_active"))
+		and str(saver.call("get_save_write_barrier_owner"))
+		== "registered_restore_bootstrap_qa"
+	)
 
 
 func _write_var(path: String, value: Dictionary) -> bool:

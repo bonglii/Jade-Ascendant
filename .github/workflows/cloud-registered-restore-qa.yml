@@ -55,6 +55,26 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Godot version check failed.' }
           "JADE_REGISTERED_GODOT=$godot" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
+      - name: Inject disposable early restore barrier after SaveManager
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $path = 'project.godot'
+          $text = Get-Content -LiteralPath $path -Raw
+          $save = 'SaveManager="*res://scripts/managers/save_manager.gd"'
+          $boot = 'RegisteredRestoreBootstrapQA="*res://scripts/managers/cloud_registered_restore_bootstrap_qa.gd"'
+          $progress = 'ProgressionManager="*res://scripts/game/ProgressionManager.gd"'
+          if (-not $text.Contains($save)) { throw 'SaveManager autoload anchor missing.' }
+          if ($text.Contains($boot)) { throw 'Disposable bootstrap unexpectedly tracked already.' }
+          $text = $text.Replace($save, $save + [Environment]::NewLine + $boot)
+          $saveIndex = $text.IndexOf($save)
+          $bootIndex = $text.IndexOf($boot)
+          $progressIndex = $text.IndexOf($progress)
+          if (-not ($saveIndex -ge 0 -and $saveIndex -lt $bootIndex -and $bootIndex -lt $progressIndex)) {
+            throw 'Disposable bootstrap autoload ordering is unsafe.'
+          }
+          Set-Content -LiteralPath $path -Value $text -NoNewline -Encoding utf8
+
       - name: Import project resources on disposable runner
         shell: pwsh
         run: |
