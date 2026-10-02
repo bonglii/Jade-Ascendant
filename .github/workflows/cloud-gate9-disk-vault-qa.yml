@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   gate9-real-file-vault:
-    name: Gate 9A-B / disk vault + write barrier (NO RESTORE)
+    name: Gate 9 / vault + barrier + transactional restore sandbox (NO PRODUCTION RESTORE)
     runs-on: windows-2022
     timeout-minutes: 20
     steps:
@@ -32,6 +32,8 @@ jobs:
         run: |
           node --test backend/cloud_save/tests/gate9_disk_vault_source_boundary.test.mjs
           if ($LASTEXITCODE -ne 0) { throw 'Gate 9 source boundary failed.' }
+          node --test backend/cloud_save/tests/restore_transaction_source_boundary.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Transactional restore source boundary failed.' }
 
       - name: Download and verify official Godot 4.7.2
         shell: pwsh
@@ -68,8 +70,6 @@ jobs:
           JADE_GATE9_TEST_ONLY: '1'
         run: |
           $ErrorActionPreference = 'Stop'
-          # Standalone Godot headless runner on ephemeral Actions VM only.
-          # Every fixture path is user://jade_gate9_qa/, not any game save.
           & $env:JADE_GATE9_GODOT --headless --path . --script 'res://tests/gate9_disk_vault_qa.gd'
           if ($LASTEXITCODE -ne 0) {
             throw "Gate 9 real-file QA failed: exit $LASTEXITCODE"
@@ -81,8 +81,6 @@ jobs:
           JADE_GATE9_TEST_ONLY: '1'
         run: |
           $ErrorActionPreference = 'Stop'
-          # Two separate Godot processes share only the disposable runner's user://.
-          # The first intentionally exits while the runtime-only barrier is held.
           $env:JADE_GATE9B_STAGE = 'arm'
           & $env:JADE_GATE9_GODOT --headless --path . --script 'res://tests/gate9_write_barrier_qa.gd'
           if ($LASTEXITCODE -ne 0) {
@@ -92,4 +90,115 @@ jobs:
           & $env:JADE_GATE9_GODOT --headless --path . --script 'res://tests/gate9_write_barrier_qa.gd'
           if ($LASTEXITCODE -ne 0) {
             throw "Gate 9B restart verification failed: exit $LASTEXITCODE"
+          }
+
+      - name: Run transactional restore apply rollback and confirmation restart QA
+        shell: pwsh
+        env:
+          JADE_GATE9_TEST_ONLY: '1'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $runner = 'res://tests/restore_transaction_restart_qa.gd'
+          foreach ($stage in @('apply_for_rollback','rollback_after_restart','apply_for_confirm','confirm_after_restart')) {
+            $env:JADE_RESTORE_TX_STAGE = $stage
+            $env:JADE_RESTORE_TX_FAULT = ''
+            $env:JADE_RESTORE_TX_RECOVERY_FAULT = ''
+            & $env:JADE_GATE9_GODOT --headless --path . --script $runner
+            if ($LASTEXITCODE -ne 0) { throw "Restore transaction stage failed: $stage ($LASTEXITCODE)" }
+          }
+
+      - name: Run transactional restore commit crash matrix
+        shell: pwsh
+        env:
+          JADE_GATE9_TEST_ONLY: '1'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $runner = 'res://tests/restore_transaction_restart_qa.gd'
+          $domains = @('achievements','daily_quests','equipment','idle_cultivation','inventory','journey','pavilion','progression')
+          $faults = @('after_intent','after_commit_marker')
+          foreach ($domain in $domains) {
+            $faults += "after_tmp:$domain"
+            $faults += "after_primary_to_rollback:$domain"
+            $faults += "after_candidate_to_primary:$domain"
+            $faults += "after_domain:$domain"
+          }
+          $faults += 'after_all_domains'
+          $faults += 'after_applied_marker'
+          foreach ($fault in $faults) {
+            $env:JADE_RESTORE_TX_STAGE = 'fault'
+            $env:JADE_RESTORE_TX_FAULT = $fault
+            $env:JADE_RESTORE_TX_RECOVERY_FAULT = ''
+            & $env:JADE_GATE9_GODOT --headless --path . --script $runner
+            if ($LASTEXITCODE -ne 0) { throw "Restore fault arm failed: $fault ($LASTEXITCODE)" }
+            $env:JADE_RESTORE_TX_STAGE = 'recover'
+            & $env:JADE_GATE9_GODOT --headless --path . --script $runner
+            if ($LASTEXITCODE -ne 0) { throw "Restore restart recovery failed: $fault ($LASTEXITCODE)" }
+          }
+
+      - name: Run interrupted rollback recovery matrix
+        shell: pwsh
+        env:
+          JADE_GATE9_TEST_ONLY: '1'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $runner = 'res://tests/restore_transaction_restart_qa.gd'
+          $rollbackFaults = @(
+            'rollback_after_tmp:achievements',
+            'rollback_after_target_to_discard:achievements',
+            'rollback_after_preimage_to_primary:achievements',
+            'rollback_after_cleanup:achievements',
+            'rollback_after_tmp:inventory',
+            'rollback_after_target_to_discard:inventory',
+            'rollback_after_preimage_to_primary:inventory',
+            'rollback_after_cleanup:inventory',
+            'rollback_after_tmp:progression',
+            'rollback_after_target_to_discard:progression',
+            'rollback_after_preimage_to_primary:progression',
+            'rollback_after_cleanup:progression'
+          )
+          foreach ($rollbackFault in $rollbackFaults) {
+            # First process dies with the first primary moved aside, guaranteeing
+            # recovery must choose the whole-account rollback path.
+            $env:JADE_RESTORE_TX_STAGE = 'fault'
+            $env:JADE_RESTORE_TX_FAULT = 'after_primary_to_rollback:achievements'
+            $env:JADE_RESTORE_TX_RECOVERY_FAULT = ''
+            & $env:JADE_GATE9_GODOT --headless --path . --script $runner
+            if ($LASTEXITCODE -ne 0) { throw "Rollback setup fault failed: $rollbackFault ($LASTEXITCODE)" }
+
+            # Second process is itself interrupted during rollback.
+            $env:JADE_RESTORE_TX_STAGE = 'recover_fault'
+            $env:JADE_RESTORE_TX_RECOVERY_FAULT = $rollbackFault
+            & $env:JADE_GATE9_GODOT --headless --path . --script $runner
+            if ($LASTEXITCODE -ne 0) { throw "Rollback injected fault failed: $rollbackFault ($LASTEXITCODE)" }
+
+            # Third process must deterministically finish with no mixed state.
+            $env:JADE_RESTORE_TX_STAGE = 'recover'
+            $env:JADE_RESTORE_TX_RECOVERY_FAULT = ''
+            & $env:JADE_GATE9_GODOT --headless --path . --script $runner
+            if ($LASTEXITCODE -ne 0) { throw "Rollback restart recovery failed: $rollbackFault ($LASTEXITCODE)" }
+          }
+
+      - name: Run interrupted manual rollback after applied-state matrix
+        shell: pwsh
+        env:
+          JADE_GATE9_TEST_ONLY: '1'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $runner = 'res://tests/restore_transaction_restart_qa.gd'
+          $faults = @(
+            'rollback_after_target_to_discard:achievements',
+            'rollback_after_preimage_to_primary:inventory',
+            'rollback_after_cleanup:progression'
+          )
+          foreach ($fault in $faults) {
+            $env:JADE_RESTORE_TX_STAGE = 'manual_rollback_fault'
+            $env:JADE_RESTORE_TX_FAULT = ''
+            $env:JADE_RESTORE_TX_RECOVERY_FAULT = $fault
+            & $env:JADE_GATE9_GODOT --headless --path . --script $runner
+            if ($LASTEXITCODE -ne 0) { throw "Manual rollback injected fault failed: $fault ($LASTEXITCODE)" }
+
+            $env:JADE_RESTORE_TX_STAGE = 'recover'
+            $env:JADE_RESTORE_TX_RECOVERY_FAULT = ''
+            & $env:JADE_GATE9_GODOT --headless --path . --script $runner
+            if ($LASTEXITCODE -ne 0) { throw "Manual rollback restart recovery failed: $fault ($LASTEXITCODE)" }
           }

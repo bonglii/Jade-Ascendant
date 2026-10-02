@@ -35,11 +35,15 @@ test("Gate 9 source registry is eight permanent domains plus device-only checkpo
 });
 
 test("Gate 9 production entrypoint is not wired into scenes or autoloads", () => {
+  // The synthetic restore transaction is an allowed QA-only consumer of the
+  // disconnected vault. It is independently guarded from production runtime.
   const refs = gdScripts(resolve(repo, "scripts"))
     .filter(p => !p.endsWith("cloud_local_backup_vault.gd"))
+    .filter(p => !p.endsWith("cloud_local_restore_transaction.gd"))
     .filter(p => /cloud_local_backup_vault|prepare_local_pre_restore_backup/.test(readFileSync(p,"utf8")));
   assert.deepEqual(refs, []);
   assert.doesNotMatch(read("project.godot"), /cloud_local_backup_vault/);
+  assert.doesNotMatch(read("project.godot"), /cloud_local_restore_transaction/);
   assert.match(vault, /^extends RefCounted/m);
 });
 
@@ -75,7 +79,7 @@ test("Gate 9 on-disk vault has immutable ready marker and per-file SHA256 integr
 
 test("Gate 9 test-only controls disallow user primary / production vault access", () => {
   assert.match(vault, /OS\.get_environment\("JADE_GATE9_TEST_ONLY"\) != "1"/);
-  assert.match(vault, /QA_ROOT \+ "source\/"/);
+  assert.match(vault, /QA_ROOT \+ "source\//);
   assert.match(vault, /QA_ROOT \+ "vault"/);
   assert.match(qa, /JADE_GATE9_DISK_VAULT_PASS/);
   assert.match(qa, /fault_at in range\(1, 11\)/);
