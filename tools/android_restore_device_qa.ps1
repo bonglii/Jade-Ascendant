@@ -347,6 +347,34 @@ function Get-QaLaunchComponent([string]$Adb,[string[]]$Prefix,[string]$Package) 
     return [string]$components[0]
 }
 
+function Get-QaPid([string]$Adb,[string[]]$Prefix,[string]$Package) {
+    [string[]]$pidArgs = $Prefix + @('shell','pidof',$Package)
+    $pidResult = Invoke-NativeCaptured $Adb $pidArgs 'ADB QA pid lookup'
+    $output = ([string]$pidResult.output).Trim()
+    if ([int]$pidResult.exit_code -ne 0 -or -not $output) { return '' }
+    $pids = @($output -split '\s+' | Where-Object { $_ -match '^\d+$' })
+    if ($pids.Count -ne 1) {
+        throw "QA package harus memiliki tepat satu process saat aktif. Output pidof: $output"
+    }
+    return [string]$pids[0]
+}
+
+function Wait-QaProcessStopped([string]$Adb,[string[]]$Prefix,[string]$Package,[string]$ExpectedPid) {
+    $deadline = (Get-Date).AddSeconds(12)
+    while ((Get-Date) -lt $deadline) {
+        $currentPid = Get-QaPid $Adb $Prefix $Package
+        if (-not $currentPid) {
+            Write-Host "ANDROID_RESTORE_DEVICE_PROCESS_STOPPED | package=$Package | previous_pid=$ExpectedPid" -ForegroundColor DarkCyan
+            return
+        }
+        if ($ExpectedPid -and $currentPid -ne $ExpectedPid) {
+            throw "QA package respawned before explicit relaunch. previous_pid=$ExpectedPid current_pid=$currentPid"
+        }
+        Start-Sleep -Milliseconds 125
+    }
+    throw "Android force-stop tidak menghentikan QA process dalam batas waktu. package=$Package pid=$ExpectedPid"
+}
+
 function Test-QaAppForeground([string]$Adb,[string[]]$Prefix,[string]$Package) {
     $escapedPackage = [regex]::Escape($Package)
     [string[]]$activityArgs = $Prefix + @('shell','dumpsys','activity','activities')
@@ -364,7 +392,15 @@ function Test-QaAppForeground([string]$Adb,[string[]]$Prefix,[string]$Package) {
     return $false
 }
 
-function Start-QaApp([string]$Adb,[string[]]$Prefix,[string]$Package,[string]$Component) {
+function Test-QaNativeRuntimeReady([string]$Adb,[string[]]$Prefix,[string]$Pid) {
+    if (-not $Pid -or $Pid -notmatch '^\d+$') { return $false }
+    [string[]]$logArgs = $Prefix + @('logcat','-d',('--pid=' + $Pid),'-v','raw')
+    $logResult = Invoke-NativeCaptured $Adb $logArgs 'ADB QA native runtime check'
+    if ([int]$logResult.exit_code -ne 0) { return $false }
+    return ([string]$logResult.output -match 'Godot Engine v4\.7\.2|JADE_ANDROID_RESTORE_(?:ARMED|BOOT_BARRIER|CASE|DEVICE_)')
+}
+
+function Start-QaApp([string]$Adb,[string[]]$Prefix,[string]$Package,[string]$Component,[string]$PreviousPid='') {
     for ($attempt = 1; $attempt -le 2; $attempt++) {
         [string[]]$startArgs = $Prefix + @('shell','am','start','-W','-n',$Component)
         $startResult = Invoke-NativeCaptured $Adb $startArgs 'ADB explicit QA launch'
@@ -372,17 +408,31 @@ function Start-QaApp([string]$Adb,[string[]]$Prefix,[string]$Package,[string]$Co
         if ([int]$startResult.exit_code -ne 0) {
             throw "Explicit Android QA launch gagal untuk $Component. Output: $startOutput"
         }
-        $foregroundDeadline = (Get-Date).AddSeconds(15)
-        while ((Get-Date) -lt $foregroundDeadline) {
-            if (Test-QaAppForeground $Adb $Prefix $Package) {
-                Write-Host "ANDROID_RESTORE_DEVICE_FOREGROUND | package=$Package | component=$Component | attempt=$attempt" -ForegroundColor DarkCyan
-                return
+        $runtimeDeadline = (Get-Date).AddSeconds(20)
+        $freshPid = ''
+        $foregroundSeen = $false
+        while ((Get-Date) -lt $runtimeDeadline) {
+            $freshPid = Get-QaPid $Adb $Prefix $Package
+            if ($freshPid -and (-not $PreviousPid -or $freshPid -ne $PreviousPid)) {
+                if (Test-QaAppForeground $Adb $Prefix $Package) { $foregroundSeen = $true }
+                if ($foregroundSeen -and (Test-QaNativeRuntimeReady $Adb $Prefix $freshPid)) {
+                    Write-Host "ANDROID_RESTORE_DEVICE_FOREGROUND | package=$Package | component=$Component | attempt=$attempt | pid=$freshPid" -ForegroundColor DarkCyan
+                    Write-Host "ANDROID_RESTORE_DEVICE_RUNTIME_READY | package=$Package | pid=$freshPid | attempt=$attempt" -ForegroundColor DarkCyan
+                    return $freshPid
+                }
             }
             Start-Sleep -Milliseconds 250
         }
-        if ($attempt -lt 2) { Start-Sleep -Milliseconds 500 }
+        if ($attempt -lt 2) {
+            $currentPid = Get-QaPid $Adb $Prefix $Package
+            if ($currentPid) {
+                $null = Invoke-Adb $Adb $Prefix @('shell','am','force-stop',$Package) $false
+                Wait-QaProcessStopped $Adb $Prefix $Package $currentPid
+            }
+            Start-Sleep -Milliseconds 250
+        }
     }
-    throw "Android QA process launched but package never became foreground/resumed: $Package"
+    throw "Android QA launch tidak mencapai fresh foreground Godot runtime. package=$Package previous_pid=$PreviousPid"
 }
 
 function Save-DeviceLog([string]$Adb,[string[]]$Prefix,[string]$Path) {
@@ -400,7 +450,7 @@ function Invoke-Run([string]$InputApk,[string]$Package,[string]$HeadSha) {
     $null = Invoke-Adb $adb $prefix @('install','-r',$InputApk) $false
     $launchComponent = Get-QaLaunchComponent $adb $prefix $Package
     $null = Invoke-Adb $adb $prefix @('logcat','-c') $false
-    Start-QaApp $adb $prefix $Package $launchComponent
+    $null = Start-QaApp $adb $prefix $Package $launchComponent
 
     $seen = New-Object 'System.Collections.Generic.HashSet[string]'
     $markers = New-Object System.Collections.Generic.List[string]
@@ -422,9 +472,14 @@ function Invoke-Run([string]$InputApk,[string]$Package,[string]$HeadSha) {
                 throw 'Android destructive restore QA melaporkan FAIL. Baca artifacts/android-restore-device-qa.log.'
             }
             if ($clean -match 'JADE_ANDROID_RESTORE_FORCE_STOP') {
+                $oldPid = Get-QaPid $adb $prefix $Package
+                if (-not $oldPid) {
+                    $null = Save-DeviceLog $adb $prefix $logPath
+                    throw 'QA force-stop marker terlihat tetapi process package sudah tidak ada.'
+                }
                 $null = Invoke-Adb $adb $prefix @('shell','am','force-stop',$Package) $false
-                Start-Sleep -Milliseconds 550
-                Start-QaApp $adb $prefix $Package $launchComponent
+                Wait-QaProcessStopped $adb $prefix $Package $oldPid
+                $null = Start-QaApp $adb $prefix $Package $launchComponent $oldPid
                 continue
             }
             if ($clean -match 'JADE_ANDROID_RESTORE_DEVICE_PASS') {

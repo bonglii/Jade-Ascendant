@@ -110,16 +110,24 @@ test("PowerShell tool builds only from git archive HEAD and mutates only a tempo
 });
 
 
-test("ADB controller performs actual force-stop, explicit foreground relaunch and stores evidence", () => {
+test("ADB controller proves process death, fresh foreground Godot runtime and stores evidence", () => {
   assert.match(tool, /logcat/);
   assert.match(tool, /am','force-stop/);
+  assert.match(tool, /'shell','pidof',\$Package/);
+  assert.match(tool, /Wait-QaProcessStopped/);
+  assert.match(tool, /ANDROID_RESTORE_DEVICE_PROCESS_STOPPED/);
+  assert.match(tool, /respawned before explicit relaunch/);
   assert.match(tool, /'cmd','package','resolve-activity','--brief'/);
   assert.match(tool, /'am','start','-W','-n',\$Component/);
   assert.match(tool, /Invoke-NativeCaptured \$Adb \$startArgs 'ADB explicit QA launch'/);
   assert.match(tool, /topResumedActivity\|mResumedActivity/);
   assert.match(tool, /mCurrentFocus\|mFocusedApp/);
+  assert.match(tool, /--pid=/);
+  assert.match(tool, /Godot Engine v4\\.7\\.2/);
   assert.match(tool, /ANDROID_RESTORE_DEVICE_FOREGROUND/);
-  assert.match(tool, /package never became foreground\/resumed/);
+  assert.match(tool, /ANDROID_RESTORE_DEVICE_RUNTIME_READY/);
+  assert.match(tool, /fresh foreground Godot runtime/);
+  assert.doesNotMatch(tool, /Start-Sleep -Milliseconds 550/);
   assert.doesNotMatch(tool, /monkey','-p/);
   assert.match(tool, /JADE_ANDROID_RESTORE_FORCE_STOP/);
   assert.match(tool, /JADE_ANDROID_RESTORE_DEVICE_FAIL/);
