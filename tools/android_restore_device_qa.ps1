@@ -392,9 +392,9 @@ function Test-QaAppForeground([string]$Adb,[string[]]$Prefix,[string]$Package) {
     return $false
 }
 
-function Test-QaNativeRuntimeReady([string]$Adb,[string[]]$Prefix,[string]$Pid) {
-    if (-not $Pid -or $Pid -notmatch '^\d+$') { return $false }
-    [string[]]$logArgs = $Prefix + @('logcat','-d',('--pid=' + $Pid),'-v','raw')
+function Test-QaNativeRuntimeReady([string]$Adb,[string[]]$Prefix,[string]$ProcessId) {
+    if (-not $ProcessId -or $ProcessId -notmatch '^\d+$') { return $false }
+    [string[]]$logArgs = $Prefix + @('logcat','-d',('--pid=' + $ProcessId),'-v','raw')
     $logResult = Invoke-NativeCaptured $Adb $logArgs 'ADB QA native runtime check'
     if ([int]$logResult.exit_code -ne 0) { return $false }
     return ([string]$logResult.output -match 'Godot Engine v4\.7\.2|JADE_ANDROID_RESTORE_(?:ARMED|BOOT_BARRIER|CASE|DEVICE_)')

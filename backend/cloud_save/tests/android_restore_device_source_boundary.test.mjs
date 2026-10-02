@@ -123,6 +123,8 @@ test("ADB controller proves process death, fresh foreground Godot runtime and st
   assert.match(tool, /topResumedActivity\|mResumedActivity/);
   assert.match(tool, /mCurrentFocus\|mFocusedApp/);
   assert.match(tool, /--pid=/);
+  assert.match(tool, /Test-QaNativeRuntimeReady\(\[string\]\$Adb,\[string\[\]\]\$Prefix,\[string\]\$ProcessId\)/);
+  assert.doesNotMatch(tool, /function[^\n]*\$(?:PID|Host|HOME|PWD|PSScriptRoot|PSCommandPath|PSHOME|PSVersionTable|ShellId)\b/i);
   assert.match(tool, /Godot Engine v4\\.7\\.2/);
   assert.match(tool, /ANDROID_RESTORE_DEVICE_FOREGROUND/);
   assert.match(tool, /ANDROID_RESTORE_DEVICE_RUNTIME_READY/);
