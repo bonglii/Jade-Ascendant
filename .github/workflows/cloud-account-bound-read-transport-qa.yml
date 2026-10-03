@@ -1,0 +1,64 @@
+name: Jade Ascendant - Account-Bound Read Transport QA
+
+on:
+  push:
+    branches:
+      - 'qa/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  account-bound-read-transport:
+    name: Trusted Current Snapshot Read Transport (QA ONLY / NO DEPLOY)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact QA revision
+        uses: actions/checkout@v4
+
+      - name: Node 22 without Firebase credentials
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          package-manager-cache: false
+
+      - name: Source syntax and fail-closed boundary audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check backend/cloud_save/functions/src/transport/account_bound_read_transport_qa.mjs
+          node --check backend/cloud_save/tests/account_bound_read_transport_source_boundary.test.mjs
+          node --check backend/cloud_save/tests/account_bound_read_transport_qa.test.mjs
+          node --test backend/cloud_save/tests/account_bound_read_transport_source_boundary.test.mjs
+
+      - name: Java 21 for isolated Firestore emulator
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install pinned Firebase Admin SDK from reviewed lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm --prefix backend/cloud_save/functions ci --ignore-scripts --no-audit --no-fund
+
+      - name: Prove auth-bound exact-current read transport against localhost DEMO emulator
+        shell: bash
+        env:
+          JADE_GATE5_EMULATOR_ONLY: '1'
+          FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080'
+          GCLOUD_PROJECT: demo-jade-cloud-save-gate5
+          GOOGLE_CLOUD_PROJECT: demo-jade-cloud-save-gate5
+        run: |
+          set -euo pipefail
+          npx --yes firebase-tools@15.28.2 emulators:exec \
+            --project demo-jade-cloud-save-gate5 \
+            --config backend/cloud_save/firebase-gate5-emulator.json \
+            --only firestore \
+            'node --test backend/cloud_save/tests/account_bound_read_transport_qa.test.mjs'
