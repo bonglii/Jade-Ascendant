@@ -1,0 +1,37 @@
+name: Jade Ascendant - Cloud Production Approval Boundary QA
+
+on:
+  push:
+    branches:
+      - 'qa/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  production-approval-boundary:
+    name: E4 / Final Production Approval Fuse (NO DEPLOY / NO CREDENTIALS)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact QA revision
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          package-manager-cache: false
+
+      - name: Prove E4 production activation remains explicitly blocked
+        run: |
+          set -euo pipefail
+          node --test backend/cloud_save/tests/cloud_production_approval_boundary_source_boundary.test.mjs
+          node --test backend/cloud_save/tests/predeploy_gate43.test.mjs
+          node --test backend/cloud_save/tests/cloud_account_bound_read_client_contract_source_boundary.test.mjs
+          node --test backend/cloud_save/tests/e3cb_native_client_contract_device_source_boundary.test.mjs
+          echo 'JADE_CLOUD_PRODUCTION_APPROVAL_BOUNDARY_QA_PASS'

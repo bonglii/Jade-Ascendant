@@ -1,0 +1,43 @@
+{
+  "contract_version": 1,
+  "phase": "E4",
+  "state": "EXPLICIT_APPROVAL_REQUIRED",
+  "firebase_project_id": null,
+  "production_activation_approved": false,
+  "firebase_deployment_approved": false,
+  "billing_upgrade_approved": false,
+  "account_bound_read_endpoint_approved": false,
+  "native_release_packaging_approved": false,
+  "additional_callable_exports_approved": false,
+  "cloud_write_approved": false,
+  "restore_execution_approved": false,
+  "automatic_restore_approved": false,
+  "cloud_wins_approved": false,
+  "economy_write_approved": false,
+  "merge_to_main_approved": false,
+  "allowed_preapproval_callable_exports": [
+    "jadeCloudSaveCapabilities"
+  ],
+  "required_locked_phases": [
+    "E1",
+    "E2",
+    "E3A",
+    "E3B",
+    "E3C-A",
+    "E3C-B"
+  ],
+  "permanent_domain_count": 8,
+  "active_run_checkpoint_included": false,
+  "spark_policy": "NO_BLAZE_UPGRADE_WITHOUT_EXPLICIT_OWNER_APPROVAL",
+  "required_human_approvals": [
+    "exact_firebase_project_and_environment",
+    "billing_plan_and_cost_acceptance",
+    "runtime_service_identity_and_iam",
+    "release_app_check_and_signing_identity",
+    "live_rules_and_runtime_authorization_readback",
+    "logging_monitoring_and_manual_rollback",
+    "exact_callable_export_list",
+    "release_native_bridge_packaging",
+    "named_owner_deploy_approval"
+  ]
+}
