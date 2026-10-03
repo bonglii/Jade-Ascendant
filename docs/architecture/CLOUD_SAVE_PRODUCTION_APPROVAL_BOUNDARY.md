@@ -1,8 +1,10 @@
 # Jade Ascendant — E4 Production Approval Boundary
 
-Status: **candidate final gate / pre-activation only**.
+Status: **PASS / LOCKED — pre-activation only**.
 
 E4 is the final safety fuse for the restore/cloud-save E-series. Passing E4 does **not** deploy Firebase, activate an account-bound snapshot endpoint, package the candidate native bridge into the production app, enable restore/write, upgrade billing, or merge the QA branch to `main`. It proves those actions remain impossible without a separately reviewed human approval change.
+
+Exact locked E4 checkpoint: `8a6f7b82afc6cd741f3105ffca5325b97b20fabd`. The exact-SHA run completed 15/15 workflows successfully. E3C-B physical Android proof was already locked at `435fa5f54329dd57bd85c5bdf8e9557ae5fc007d` with 50 checks / 0 failures.
 
 ## Locked prerequisites
 
@@ -56,3 +58,9 @@ No credentials, service-account keys, App Check debug tokens, or private Firebas
 E4 **PASS / LOCKED** means the E-series architecture and its production activation boundary are complete and fail-closed. It does **not** mean cloud save is live in production.
 
 After E4 is PASS / LOCKED, QA-file cleanup may begin as a separate change. Cleanup must preserve production source, locked save semantics, the eight-domain permanent contract, release configuration, and auditable evidence in git history. Cleanup itself must pass the production build/source regressions before being considered complete.
+## Post-lock QA cleanup policy
+
+After E4 lock, executable gate-era CI/device/test harnesses may be retired because their exact-SHA evidence remains auditable in git history. Cleanup does **not** authorize production cloud activation. A permanent `cloud-production-safety.yml` guard remains to enforce the false-by-default approval policy, one-callable server boundary, disabled candidate native bridge, eight-domain permanent snapshot scope, and absence of deployment credentials or commands.
+
+Runtime/source cleanup is performed separately from evidence-harness cleanup so dangling references can be detected with normal production smoke checks before any additional QA-only script is removed.
+

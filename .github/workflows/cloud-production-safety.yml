@@ -1,0 +1,38 @@
+name: Jade Ascendant - Cloud Production Safety
+
+on:
+  push:
+    branches:
+      - 'qa/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cloud-production-safety:
+    name: Production fail-closed guard (NO DEPLOY / NO CREDENTIALS)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          package-manager-cache: false
+
+      - name: Verify permanent production safety boundary
+        run: |
+          set -euo pipefail
+          node --test backend/cloud_save/tests/cloud_production_safety.test.mjs
+          node --test backend/cloud_save/tests/predeploy_gate43.test.mjs
+          node --test backend/cloud_save/tests/callable_factory.test.mjs
+          node --test backend/cloud_save/tests/read_only_policy.test.mjs
+          node --test backend/cloud_save/tests/native_bridge_contract.test.mjs
+          echo 'JADE_CLOUD_PRODUCTION_SAFETY_PASS'

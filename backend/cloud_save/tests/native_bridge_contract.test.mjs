@@ -2,9 +2,17 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const root = new URL("../android_bridge/", import.meta.url);
+const repoRoot = fileURLToPath(new URL("../../../", import.meta.url));
 const read = (path) => readFileSync(new URL(path, root), "utf8");
+const trackedRepoRead = (path) => execFileSync(
+  "git",
+  ["show", `:${path}`],
+  { cwd: repoRoot, encoding: "utf8" },
+);
 
 test("isolated native bridge exports ONLY a fixed read-only callable", () => {
   const source = read("bridge/src/main/java/com/yungdevstudio/jadeascendant/cloudbridge/JadeCloudNativeBridge.kt");
@@ -54,9 +62,10 @@ test("native QA build cannot silently register Firebase production projects or d
 });
 
 // Candidate exporter is deliberately not enabled until combined Gradle and
-// Android sign-in regression QA. No project/Autoload mutation in this patch.
+// Android sign-in regression QA. Inspect the staged/tracked project version so
+// unrelated unstaged local project.godot work cannot invalidate this contract.
 test("candidate exporter pins read-only dependencies and keeps debug provider out of release", () => {
-  const project = readFileSync(new URL("../../../project.godot", import.meta.url), "utf8");
+  const project = trackedRepoRead("project.godot");
   const legacy = readFileSync(new URL("../../../addons/GodotFirebaseAndroid/export_plugin.gd", import.meta.url), "utf8");
   const candidate = readFileSync(new URL("../../../addons/JadeCloudNativeBridge/export_plugin.gd", import.meta.url), "utf8");
   for (const dep of [
@@ -69,7 +78,7 @@ test("candidate exporter pins read-only dependencies and keeps debug provider ou
   assert.match(candidate, /firebase-functions:22\.1\.1/);
   assert.match(candidate, /firebase-appcheck-playintegrity:19\.4\.1/);
   assert.match(candidate, /firebase-auth:24\.2\.0/);
-  assert.match(candidate, /if debug:\s*dependencies\.append\("com\.google\.firebase:firebase-appcheck-debug:19\.4\.1"\)/);
+  assert.match(candidate, /if debug:\s*\n\s*dependencies\.append\("com\.google\.firebase:firebase-appcheck-debug:19\.4\.1"\)/);
   assert.doesNotMatch(candidate, /add_autoload_singleton|cloud_write_enabled\s*[:=]\s*true|requestUpload|requestRestore/);
 });
 

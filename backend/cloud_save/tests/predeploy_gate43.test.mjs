@@ -5,7 +5,7 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { createCallableHandlers } from "../functions/src/callable_factory.mjs";
@@ -166,12 +166,17 @@ test("4.3 pinned Node dependencies and import boundary remain unchanged", () => 
   assert.doesNotMatch(runtimeSources, /\b(?:set|update|delete)Doc\s*\(|\bbatch\.commit\s*\(/);
 });
 
-test("4.3 workflows cannot auto-deploy or access production credentials", () => {
-  const workflows = [
-    source(".github/workflows/godot-smoke-qa.yml"),
-    source(".github/workflows/cloud-native-bridge-qa.yml"),
-  ];
-  for (const workflow of workflows) {
+test("4.3 remaining workflows cannot auto-deploy or access production credentials", () => {
+  const workflowDir = resolve(REPO_ROOT, ".github/workflows");
+  const workflowNames = readdirSync(workflowDir)
+    .filter(name => /(?:cloud|godot-smoke-qa).*\.ya?ml$/i.test(name))
+    .sort();
+  assert.ok(workflowNames.includes("godot-smoke-qa.yml"));
+  assert.ok(workflowNames.includes("cloud-production-safety.yml"));
+  assert.equal(workflowNames.includes("cloud-native-bridge-qa.yml"), false);
+
+  for (const name of workflowNames) {
+    const workflow = source(`.github/workflows/${name}`);
     const nonCommentLines = workflow.split(/\r?\n/)
       .map(line => line.trim())
       .filter(line => line !== "" && !line.startsWith("#"));
@@ -181,9 +186,11 @@ test("4.3 workflows cannot auto-deploy or access production credentials", () => 
     assert.doesNotMatch(executableText, /\b(?:serviceAccountKey|GOOGLE_APPLICATION_CREDENTIALS)\s*[:=]/);
     assert.match(workflow, /qa\/\*\*/);
   }
-  assert.match(workflows[0], /demo-jade-cloud-save-gate41/);
-  assert.match(workflows[0], /firebase-tools@15\.28\.2\s+emulators:exec/);
-  assert.match(workflows[0], /npm\s+--prefix\s+backend\/cloud_save\/functions\s+ci\s+--ignore-scripts/);
+
+  const godotSmoke = source(".github/workflows/godot-smoke-qa.yml");
+  assert.match(godotSmoke, /demo-jade-cloud-save-gate41/);
+  assert.match(godotSmoke, /firebase-tools@15\.28\.2\s+emulators:exec/);
+  assert.match(godotSmoke, /npm\s+--prefix\s+backend\/cloud_save\/functions\s+ci\s+--ignore-scripts/);
 });
 
 test("4.3 App Check Android provider remains variant-isolated", () => {
