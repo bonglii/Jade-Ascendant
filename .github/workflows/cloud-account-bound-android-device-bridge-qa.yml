@@ -84,14 +84,34 @@ jobs:
       - name: Reproduce disposable local-build import and plugin startup (NO APK)
         shell: pwsh
         run: |
-          $output = & ./tools/android_account_bound_transport_device_build_qa.ps1 `
-            -Action Smoke `
-            -GodotPath $env:JADE_ANDROID_ACCOUNT_BOUND_GODOT `
-            -ImportTimeoutSeconds 420 `
-            -PluginSmokeTimeoutSeconds 120 2>&1 | Out-String
-          $output | Write-Host
-          if ($LASTEXITCODE -ne 0 -or $output -notmatch 'ANDROID_ACCOUNT_BOUND_TRANSPORT_BUILD_SMOKE_PASS') {
-            throw 'Disposable Android account-bound local-build smoke failed.'
+          $ErrorActionPreference = 'Stop'
+          $smokeStdout = Join-Path $env:RUNNER_TEMP 'android-account-bound-build-smoke.stdout.log'
+          $smokeStderr = Join-Path $env:RUNNER_TEMP 'android-account-bound-build-smoke.stderr.log'
+          Remove-Item -LiteralPath $smokeStdout,$smokeStderr -Force -ErrorAction SilentlyContinue
+          $pwshPath = (Get-Command pwsh -CommandType Application -ErrorAction Stop).Source
+          $smokeScript = (Resolve-Path './tools/android_account_bound_transport_device_build_qa.ps1').Path
+          $smokeArguments = @(
+            '-NoProfile',
+            '-NonInteractive',
+            '-File', $smokeScript,
+            '-Action', 'Smoke',
+            '-GodotPath', $env:JADE_ANDROID_ACCOUNT_BOUND_GODOT,
+            '-ImportTimeoutSeconds', '420',
+            '-PluginSmokeTimeoutSeconds', '120'
+          )
+          & $pwshPath @smokeArguments 1> $smokeStdout 2> $smokeStderr
+          $smokeExitCode = $LASTEXITCODE
+          $outputParts = @()
+          if (Test-Path -LiteralPath $smokeStdout -PathType Leaf) {
+            $outputParts += [System.IO.File]::ReadAllText($smokeStdout)
+          }
+          if (Test-Path -LiteralPath $smokeStderr -PathType Leaf) {
+            $outputParts += [System.IO.File]::ReadAllText($smokeStderr)
+          }
+          $output = ($outputParts -join [Environment]::NewLine)
+          if ($output) { $output | Write-Host }
+          if ($smokeExitCode -ne 0 -or $output -notmatch 'ANDROID_ACCOUNT_BOUND_TRANSPORT_BUILD_SMOKE_PASS') {
+            throw "Disposable Android account-bound local-build smoke failed. child_exit=$smokeExitCode"
           }
 
       - name: Import production project resources

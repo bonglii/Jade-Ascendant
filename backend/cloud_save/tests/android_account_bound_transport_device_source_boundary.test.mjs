@@ -186,11 +186,17 @@ test("CI reproduces disposable import/plugin smoke before physical-device build 
   assert.match(workflow, /System\.Management\.Automation\.Language\.Parser/);
   assert.match(workflow, /android_account_bound_transport_device_build_qa\.ps1/);
   assert.match(workflow, /-Action Audit/);
-  assert.match(workflow, /-Action Smoke/);
+  assert.match(workflow, /\'-Action\', \'Smoke\'/);
+  assert.match(workflow, /Get-Command pwsh -CommandType Application/);
+  assert.match(workflow, /'-NonInteractive'/);
+  assert.match(workflow, /\$smokeExitCode = \$LASTEXITCODE/);
+  assert.match(workflow, /1> \$smokeStdout 2> \$smokeStderr/);
+  assert.doesNotMatch(workflow, /\$output\s*=\s*&\s*\.\/tools\/android_account_bound_transport_device_build_qa\.ps1/);
   assert.match(workflow, /ANDROID_ACCOUNT_BOUND_TRANSPORT_BUILD_SMOKE_PASS/);
   assert.match(workflow, /JADE_ANDROID_ACCOUNT_BOUND_TRANSPORT_PARSE_PASS/);
   assert.doesNotMatch(workflow, /--export-debug|\badb\s|firebase deploy|DEVICE_QA_PASS/i);
 
+  assert.match(nativeWorkflow, /backend\/cloud_save\/tests\/android_account_bound_transport_device_source_boundary\.test\.mjs/);
   assert.match(nativeWorkflow, /tools\/android_account_bound_transport_device_build_qa\.ps1/);
   assert.match(nativeWorkflow, /JadeAccountBoundTransportDebugBridge\.class/);
   assert.match(nativeWorkflow, /jade_account_bound_transport_device_record\.json/);
