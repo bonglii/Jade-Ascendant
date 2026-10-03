@@ -7,6 +7,7 @@ on:
     paths:
       - 'backend/cloud_save/android_bridge/**'
       - 'backend/cloud_save/tests/native_bridge_contract.test.mjs'
+      - 'backend/cloud_save/tests/android_account_bound_transport_device_fixture.test.mjs'
       - 'addons/JadeCloudNativeBridge/**'
       - '.github/workflows/cloud-native-bridge-qa.yml'
   workflow_dispatch:
@@ -30,7 +31,9 @@ jobs:
           package-manager-cache: false
 
       - name: Fail-closed source policy QA
-        run: node --test backend/cloud_save/tests/native_bridge_contract.test.mjs
+        run: |
+          node --test backend/cloud_save/tests/native_bridge_contract.test.mjs
+          node --test backend/cloud_save/tests/android_account_bound_transport_device_fixture.test.mjs
 
       - name: Java 17 for Godot Android plugin build
         uses: actions/setup-java@v4
@@ -56,6 +59,49 @@ jobs:
             :bridge:assembleDebug :bridge:assembleRelease \
             :bridge:testDebugUnitTest :bridge:testReleaseUnitTest \
             --no-daemon --stacktrace
+
+      - name: Verify account-bound device QA bridge exists ONLY in current debug AAR
+        run: |
+          set -euo pipefail
+          debug='backend/cloud_save/android_bridge/bridge/build/outputs/aar/JadeCloudNativeBridge-debug.aar'
+          release='backend/cloud_save/android_bridge/bridge/build/outputs/aar/JadeCloudNativeBridge-release.aar'
+          test -s "$debug"
+          test -s "$release"
+
+          unzip -p "$debug" AndroidManifest.xml > "$RUNNER_TEMP/current-debug-manifest.xml"
+          unzip -p "$release" AndroidManifest.xml > "$RUNNER_TEMP/current-release-manifest.xml"
+          grep -Fq 'org.godotengine.plugin.v2.JadeAccountBoundTransportDebugBridge' "$RUNNER_TEMP/current-debug-manifest.xml" || {
+            echo 'ERROR: debug AAR missing account-bound QA bridge manifest registration.' >&2
+            exit 1
+          }
+          if grep -Fq 'JadeAccountBoundTransportDebugBridge' "$RUNNER_TEMP/current-release-manifest.xml"; then
+            echo 'ERROR: release AAR contains account-bound DEBUG QA bridge manifest registration.' >&2
+            exit 1
+          fi
+
+          unzip -p "$debug" classes.jar > "$RUNNER_TEMP/current-debug-classes.jar"
+          unzip -p "$release" classes.jar > "$RUNNER_TEMP/current-release-classes.jar"
+          jar tf "$RUNNER_TEMP/current-debug-classes.jar" > "$RUNNER_TEMP/current-debug-classes.txt"
+          jar tf "$RUNNER_TEMP/current-release-classes.jar" > "$RUNNER_TEMP/current-release-classes.txt"
+          unzip -l "$debug" > "$RUNNER_TEMP/current-debug-aar.txt"
+          unzip -l "$release" > "$RUNNER_TEMP/current-release-aar.txt"
+          grep -Fq 'com/yungdevstudio/jadeascendant/cloudbridge/JadeAccountBoundTransportDebugBridge.class' "$RUNNER_TEMP/current-debug-classes.txt" || {
+            echo 'ERROR: debug AAR missing account-bound QA bridge class.' >&2
+            exit 1
+          }
+          if grep -Fq 'JadeAccountBoundTransportDebugBridge.class' "$RUNNER_TEMP/current-release-classes.txt"; then
+            echo 'ERROR: release AAR contains account-bound DEBUG QA bridge class.' >&2
+            exit 1
+          fi
+          grep -Fq 'assets/jade_account_bound_transport_device_record.json' "$RUNNER_TEMP/current-debug-aar.txt" || {
+            echo 'ERROR: debug AAR missing reviewed account-bound QA fixture.' >&2
+            exit 1
+          }
+          if grep -Fq 'jade_account_bound_transport_device_record.json' "$RUNNER_TEMP/current-release-aar.txt"; then
+            echo 'ERROR: release AAR contains account-bound DEBUG QA fixture.' >&2
+            exit 1
+          fi
+          echo 'JADE_ACCOUNT_BOUND_ANDROID_DEBUG_BRIDGE_SEPARATION_PASS'
 
       - name: Verify release classpath excludes App Check debug provider
         run: |
@@ -87,7 +133,7 @@ jobs:
           fi
           echo 'Merged Firebase dependency graph resolved; device-level APK compatibility is still pending.'
 
-      - name: Check packaged QA binary manifests and provider separation
+      - name: Check packaged baseline QA binary manifests and provider separation
         run: |
           set -euo pipefail
           for variant in debug release; do
