@@ -252,3 +252,39 @@ test("remaining workflows cannot deploy or bind production credentials", () => {
   }
   assert.equal(existsSync(resolve(repo, ".firebaserc")), false);
 });
+test("production smoke no longer executes retired cloud QA runtime", () => {
+  const smoke = read("tests/phase0_smoke.gd");
+
+  // Absence checks may legitimately contain the retired names as strings.
+  // Block executable calls/loads instead of banning those names everywhere.
+  assert.doesNotMatch(
+    smoke,
+    /\.call\(\s*["']get_cloud_save_probe["']\s*\)/,
+    "retired GoogleAccountManager cloud probe must not be invoked",
+  );
+
+  for (const retiredPath of [
+    "res://scripts/managers/cloud_save_readonly_manager.gd",
+    "res://scripts/managers/cloud_save_manifest_inspector.gd",
+    "res://scripts/managers/cloud_save_snapshot_contract.gd",
+    "res://scripts/managers/cloud_save_snapshot_capture.gd",
+    "res://scripts/managers/cloud_save_snapshot_integrity.gd",
+    "res://scripts/managers/cloud_save_economy_consistency.gd",
+    "res://scripts/managers/cloud_restore_execution_qa.gd",
+    "res://scripts/managers/cloud_restore_review_qa.gd",
+    "res://scripts/managers/cloud_restore_ux_presenter_qa.gd",
+    "res://scripts/ui/cloud_native_readonly_qa_card.gd",
+    "res://scripts/ui/cloud_restore_ux_surface_qa.gd",
+  ]) {
+    const escaped = retiredPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    assert.doesNotMatch(
+      smoke,
+      new RegExp(`(?:load|preload)\\(\\s*["']${escaped}["']\\s*\\)`),
+      `retired QA resource must not be loaded: ${retiredPath}`,
+    );
+  }
+
+  assert.match(smoke, /_test_cloud_cleanup_boundary/);
+  assert.match(smoke, /cloud_account_bound_read_client_contract\.gd/);
+  assert.match(smoke, /cloud_full_permanent_snapshot_contract\.gd/);
+});

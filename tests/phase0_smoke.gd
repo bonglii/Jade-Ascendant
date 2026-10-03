@@ -81,8 +81,7 @@ func _run() -> void:
 		return
 	_log("QA isolated namespace: " + token)
 	_test_autoloads()
-	_test_cloud_manifest_safety()
-	_test_cloud_snapshot_contract()
+	_test_cloud_cleanup_boundary()
 	if failures > 0:
 		await _finish()
 		return
@@ -142,744 +141,97 @@ func _test_autoloads() -> void:
 	_check(count == 20, "Release candidate contains 20 autoloads")
 
 
-func _test_cloud_manifest_safety() -> void:
+func _test_cloud_cleanup_boundary() -> void:
 	var account: Node = root.get_node_or_null("GoogleAccountManager")
-	if not _check(account != null, "Cloud Gate 1 keeps Google account boundary"):
+	if not _check(account != null, "Google account boundary remains available"):
 		return
-	_check(str(account.call("get_authenticated_uid")) == "", "Headless Guest exposes no cloud UID")
-	var cloud: Node = account.call("get_cloud_save_probe") as Node
-	if not _check(cloud != null and cloud.get_parent() == account, "Cloud preview has separate child manager"):
-		return
-	var status: Dictionary = cloud.call("get_preview_status")
-	_check(not bool(status.get("cloud_write_enabled", true)), "Cloud writes stay disabled")
-	_check(not bool(status.get("cloud_restore_enabled", true)), "Cloud restore stays disabled")
-	_check(not bool(status.get("server_freshness_verified", true)), "Cached reads are never treated as fresh")
-	_check(not bool(cloud.call("request_preview")), "Guest never starts a cloud read")
-	var inspector_script: Script = load(
-		"res://scripts/managers/cloud_save_manifest_inspector.gd"
-	) as Script
-	if not _check(inspector_script != null, "Cloud manifest validator loads"):
-		return
-	var inspector: RefCounted = inspector_script.new() as RefCounted
-	var uid: String = "test_UID_123"
-	var valid: Dictionary = {
-		"manifest_version": 1,
-		"owner_uid": uid,
-		"revision": 2,
-		"saved_at_unix": 1,
-		"domain_schema_versions": {"journey": 1, "achievements": 1}
-	}
-	var good: Dictionary = inspector.call("inspect_document", valid, uid)
-	_check(bool(good.get("valid", false)) and int(good.get("domain_count", 0)) == 2, "Valid read-only manifest preview")
-	_check(not bool(good.get("restore_available", true)), "Valid metadata never unlocks restore")
-	var cross_account: Dictionary = inspector.call("inspect_document", valid, "other_UID")
-	_check(not bool(cross_account.get("valid", true)), "Cross-account manifest rejected")
-	var future: Dictionary = valid.duplicate(true)
-	future["manifest_version"] = 2
-	var future_result: Dictionary = inspector.call("inspect_document", future, uid)
-	_check(not bool(future_result.get("valid", true)), "Future cloud schema rejected")
-	var premium: Dictionary = valid.duplicate(true)
-	var premium_versions: Dictionary = premium["domain_schema_versions"]
-	premium_versions["pavilion"] = 1
-	var premium_result: Dictionary = inspector.call("inspect_document", premium, uid)
-	_check(not bool(premium_result.get("valid", true)), "Premium Pavilion metadata rejected")
-	var checkpoint: Dictionary = valid.duplicate(true)
-	var checkpoint_versions: Dictionary = checkpoint["domain_schema_versions"]
-	checkpoint_versions["checkpoint"] = 1
-	var checkpoint_result: Dictionary = inspector.call("inspect_document", checkpoint, uid)
-	_check(not bool(checkpoint_result.get("valid", true)), "Active run is not cloud-restorable")
-	_check(not bool(inspector.call("is_safe_uid", "other/user")), "Unsafe document ID rejected")
-
-
-func _test_cloud_snapshot_contract() -> void:
-	# Pure synthetic data: DO NOT read, write or migrate player save files.
-	var contract_script: Script = load(
-		"res://scripts/managers/cloud_save_snapshot_contract.gd"
-	) as Script
-	if not _check(contract_script != null, "Cloud snapshot policy loads"):
-		return
-	var contract: RefCounted = contract_script.new() as RefCounted
-	if not _check(contract != null, "Cloud snapshot policy instantiates"):
-		return
-	var uid: String = "jade_qa_account_a"
-	var sample: Dictionary = {
-		"snapshot_format_version": 1,
-		"owner_uid": uid,
-		"revision": 1,
-		"saved_at_unix": 1,
-		"domain_schema_versions": {
-			"achievements": 1,
-			"daily_quests": 1,
-			"equipment": 1,
-			"inventory": 1,
-			"journey": 1,
-			"progression": 1
-		},
-		"domains": {
-			"achievements": {"version": 1, "progress": {}, "unlocked": [], "claimed": []},
-			"daily_quests": {
-				"version": 1, "date_key": "2026-10-01", "active_quest_ids": [],
-				"progress": {}, "completed": [], "claimed": []
-			},
-			"equipment": {
-				"version": 1,
-				"equipped_item_ids": {
-					"armament": "", "robe": "verdant_qi_robe",
-					"bracer": "", "boots": "", "pendant": ""
-				},
-				"ascension_stars": {"verdant_qi_robe": 1}
-			},
-			"inventory": {
-				"version": 1, "item_counts": {"verdant_qi_robe": 1}
-			},
-			"journey": {
-				"version": 1, "selected_chapter_id": 1, "selected_stage_id": 1,
-				"active_run_chapter_id": 0, "active_run_stage_id": 0,
-				"unlocked_stage_keys": [], "cleared_stage_keys": []
-			},
-			"progression": {
-				"version": 1, "spirit_stone": 5, "vitality_level": 0,
-				"sword_power_level": 0, "swift_qi_level": 0,
-				"hero_experience_total": 0, "hero_milestones_claimed": []
-			}
-		}
-	}
-	var accepted: Dictionary = contract.call("inspect_draft", sample, uid)
-	_check(bool(accepted.get("valid", false)), "Synthetic six-domain snapshot passes structural preview")
-	_check(int(accepted.get("domain_count", 0)) == 6, "Snapshot requires six coordinated permanent domains")
-	_check(not bool(accepted.get("upload_allowed", true)), "Snapshot inspection NEVER allows cloud upload")
-	_check(not bool(accepted.get("restore_allowed", true)), "Snapshot inspection NEVER allows restore")
-	_check(not bool(accepted.get("server_verified", true)), "Snapshot inspection NEVER proves server freshness")
-	_check(not bool(accepted.get("economy_verified", true)), "Snapshot inspection NEVER certifies economy")
-	_check_cloud_snapshot_rejected(contract, sample, "jade_qa_account_b", "Foreign UID snapshot is rejected")
-
-	var malformed: Dictionary = sample.duplicate(true)
-	malformed["owner_uid"] = "jade_qa_account_b"
-	_check_cloud_snapshot_rejected(contract, malformed, uid, "Snapshot owner cannot be forged")
-	malformed = sample.duplicate(true)
-	malformed["snapshot_format_version"] = 2
-	_check_cloud_snapshot_rejected(contract, malformed, uid, "Unknown snapshot version is rejected")
-	malformed = sample.duplicate(true)
-	malformed["domains"].erase("inventory")
-	_check_cloud_snapshot_rejected(contract, malformed, uid, "Partial cross-domain snapshot is rejected")
-	malformed = sample.duplicate(true)
-	malformed["domains"]["pavilion"] = {"version": 1}
-	_check_cloud_snapshot_rejected(contract, malformed, uid, "Pavilion premium domain excluded from snapshot")
-	malformed = sample.duplicate(true)
-	malformed["domains"]["checkpoint"] = {"version": 1}
-	_check_cloud_snapshot_rejected(contract, malformed, uid, "Checkpoint domain excluded from snapshot")
-	malformed = sample.duplicate(true)
-	malformed["domains"]["idle_cultivation"] = {"version": 1}
-	_check_cloud_snapshot_rejected(contract, malformed, uid, "Idle economy remains out of initial snapshot")
-	malformed = sample.duplicate(true)
-	malformed["domain_schema_versions"]["equipment"] = 2
-	_check_cloud_snapshot_rejected(contract, malformed, uid, "Unknown domain schema is rejected")
-	malformed = sample.duplicate(true)
-	malformed["domains"]["progression"]["spirit_stone"] = -1
-	_check_cloud_snapshot_rejected(contract, malformed, uid, "Negative gameplay currency rejected")
-	malformed = sample.duplicate(true)
-	malformed["domains"]["progression"]["spirit_stone"] = "9999"
-	_check_cloud_snapshot_rejected(contract, malformed, uid, "String spoofed economy counter rejected")
-	malformed = sample.duplicate(true)
-	malformed["domains"]["journey"]["active_run_chapter_id"] = 1
-	_check_cloud_snapshot_rejected(contract, malformed, uid, "Active journey identity cannot enter cloud draft")
-	malformed = sample.duplicate(true)
-	malformed["domains"]["equipment"]["active_run_loadout_snapshot"] = {}
-	_check_cloud_snapshot_rejected(contract, malformed, uid, "Active-run equipment snapshot excluded")
-	malformed = sample.duplicate(true)
-	malformed["domains"]["inventory"]["item_counts"].erase("verdant_qi_robe")
-	_check_cloud_snapshot_rejected(contract, malformed, uid, "Equipped gear must belong to inventory")
-	malformed = sample.duplicate(true)
-	malformed["domains"]["equipment"]["ascension_stars"]["verdant_qi_robe"] = 6
-	_check_cloud_snapshot_rejected(contract, malformed, uid, "Illegal equipment ascension rejected")
-	malformed = sample.duplicate(true)
-	malformed["domains"]["inventory"]["item_counts"]["unknown_item"] = 1
-	_check_cloud_snapshot_rejected(contract, malformed, uid, "Unknown inventory catalog item rejected")
-	malformed = sample.duplicate(true)
-	malformed["domains"]["progression"]["processed_grant_ids"] = []
-	_check_cloud_snapshot_rejected(contract, malformed, uid, "Unexpected premium ledger field rejected")
-	malformed = sample.duplicate(true)
-	malformed["domains"]["achievements"]["progress"]["bad"] = Color.RED
-	_check_cloud_snapshot_rejected(contract, malformed, uid, "Godot-only non-JSON Variant rejected")
-	malformed = sample.duplicate(true)
-	malformed["domains"]["daily_quests"]["completed"] = ["quest_a", "quest_a"]
-	_check_cloud_snapshot_rejected(contract, malformed, uid, "Duplicate daily quest IDs rejected")
-	malformed = sample.duplicate(true)
-	malformed["domains"]["achievements"]["progress"]["score"] = 9007199254740992
-	_check_cloud_snapshot_rejected(contract, malformed, uid, "Unsafe JSON integer rejected")
-	malformed = sample.duplicate(true)
-	malformed["domains"]["daily_quests"]["date_key"] = "x".repeat(262145)
-	_check_cloud_snapshot_rejected(contract, malformed, uid, "Oversized malicious snapshot rejected")
-	_check_cloud_snapshot_rejected(contract, sample, "bad/uid", "Unsafe Firebase UID rejected")
-	_test_cloud_snapshot_capture(sample, uid)
-	_test_cloud_economy_consistency(sample)
-	_test_cloud_server_reference_model()
-	_test_cloud_snapshot_integrity(sample, uid)
-
-
-func _test_cloud_snapshot_capture(sample: Dictionary, uid: String) -> void:
-	# Construct solely from synthetic data. Never capture real player state in QA.
-	var capture_script: Script = load(
-		"res://scripts/managers/cloud_save_snapshot_capture.gd"
-	) as Script
-	if not _check(capture_script != null, "Local capture preview policy loads"):
-		return
-	var capture: RefCounted = capture_script.new() as RefCounted
-	if not _check(capture != null, "Local capture preview instantiates"):
-		return
-	var source_domains: Dictionary = sample["domains"].duplicate(true)
-	var source_before: String = JSON.stringify(source_domains)
-	var result: Dictionary = capture.call(
-		"build_from_memory_for_qa", uid, source_domains, 123456
-	)
-	_check(bool(result.get("valid", false)), "Synthetic local-memory capture passes contract")
-	if not bool(result.get("valid", false)):
-		return
-	_check(str(result.get("reason", "")) == "local_memory_preview_only", "Capture result explicitly labels local-only preview")
-	_check(int(result.get("domain_count", 0)) == 6, "Capture retains exactly six candidate domains")
-	_check(not bool(result.get("upload_allowed", true)), "Capture never authorizes upload")
-	_check(not bool(result.get("restore_allowed", true)), "Capture never authorizes restore")
-	_check(not bool(result.get("economy_verified", true)), "Capture does not certify earned currency")
-	_check(not bool(result.get("server_verified", true)), "Capture does not certify server state")
-	_check(bool(result.get("local_time_untrusted", false)), "Capture marks local timestamps untrusted")
-	_check(source_before == JSON.stringify(source_domains), "Capture never mutates the input domains")
-	var draft: Dictionary = result["draft"]
-	_check(str(draft.get("owner_uid", "")) == uid, "Captured draft binds exact UID")
-	_check(int(draft.get("revision", 0)) == 1, "Captured revision is a non-authoritative placeholder")
-	_check(int(draft.get("saved_at_unix", 0)) == 123456, "Captured timestamp is only local metadata")
-	var validator_script: Script = load("res://scripts/managers/cloud_save_snapshot_contract.gd") as Script
-	var validator: RefCounted = validator_script.new() as RefCounted
-	var reinspection: Dictionary = validator.call("inspect_draft", draft, uid)
-	_check(bool(reinspection.get("valid", false)), "Captured draft revalidates independently")
-	source_domains["inventory"]["item_counts"]["verdant_qi_robe"] = 999
-	_check(int(draft["domains"]["inventory"]["item_counts"]["verdant_qi_robe"]) == 1, "Capture deep-copies inventory rather than aliasing source")
-	source_domains = sample["domains"].duplicate(true)
-	source_domains.erase("journey")
-	_check(not bool(capture.call("build_from_memory_for_qa", uid, source_domains, 123456).get("valid", true)), "Capture refuses partial domain sets")
-	source_domains = sample["domains"].duplicate(true)
-	source_domains["pavilion"] = {"version": 1}
-	_check(not bool(capture.call("build_from_memory_for_qa", uid, source_domains, 123456).get("valid", true)), "Capture refuses premium Pavilion domain")
-	source_domains = sample["domains"].duplicate(true)
-	source_domains["checkpoint"] = {"version": 1}
-	_check(not bool(capture.call("build_from_memory_for_qa", uid, source_domains, 123456).get("valid", true)), "Capture refuses checkpoint domain")
-	source_domains = sample["domains"].duplicate(true)
-	source_domains["idle_cultivation"] = {"version": 1}
-	_check(not bool(capture.call("build_from_memory_for_qa", uid, source_domains, 123456).get("valid", true)), "Capture refuses idle economy domain")
-	source_domains = sample["domains"].duplicate(true)
-	source_domains["journey"]["active_run_stage_id"] = 1
-	_check(not bool(capture.call("build_from_memory_for_qa", uid, source_domains, 123456).get("valid", true)), "Capture refuses active journey identity")
-	source_domains = sample["domains"].duplicate(true)
-	source_domains["equipment"]["active_run_loadout_snapshot"] = {"version": 1}
-	_check(not bool(capture.call("build_from_memory_for_qa", uid, source_domains, 123456).get("valid", true)), "Capture refuses active-run equipment snapshot")
-	source_domains = sample["domains"].duplicate(true)
-	source_domains["inventory"]["item_counts"].erase("verdant_qi_robe")
-	_check(not bool(capture.call("build_from_memory_for_qa", uid, source_domains, 123456).get("valid", true)), "Capture refuses mismatched inventory and equipment")
-	source_domains = sample["domains"].duplicate(true)
-	source_domains["progression"]["spirit_stone"] = -10
-	_check(not bool(capture.call("build_from_memory_for_qa", uid, source_domains, 123456).get("valid", true)), "Capture refuses invalid currency shape")
-	_check(not bool(capture.call("build_from_memory_for_qa", "bad/uid", sample["domains"], 123456).get("valid", true)), "Capture refuses unsafe UID")
-	_check(not bool(capture.call("build_from_memory_for_qa", uid, sample["domains"], 0).get("valid", true)), "Capture refuses absent local timestamp")
-	_check(not bool(capture.call("build_from_memory_for_qa", uid, sample["domains"], 9007199254740992).get("valid", true)), "Capture refuses unsafe local timestamp")
-	# Desktop authentication must fail closed; no player save file is opened.
-	_check(not bool(capture.call("capture_current_account_preview").get("valid", true)), "Desktop live capture refuses unauthenticated preview")
-
-
-func _test_cloud_economy_consistency(sample: Dictionary) -> void:
-	# All fixtures are synthetic. No account tokens, save reads, or writes.
-	var economy_script: Script = load(
-		"res://scripts/managers/cloud_save_economy_consistency.gd"
-	) as Script
-	if not _check(economy_script != null, "Cloud economy dependency graph loads"):
-		return
-	var economy: RefCounted = economy_script.new() as RefCounted
-	if not _check(economy != null, "Cloud economy dependency graph instantiates"):
-		return
-	var selected: Array = sample["domains"].keys()
-	var report: Dictionary = economy.call("inspect_domains", selected)
-	_check(bool(report.get("valid", false)), "Audited six-domain economy inspection is valid")
-	_check(not bool(report.get("transaction_closed", true)), "Six-domain candidate has split economy transactions")
 	_check(
-		"pavilion" in report.get("missing_dependency_domains", [])
-		and "idle_cultivation" in report.get("missing_dependency_domains", []),
-		"Cloud economy graph identifies omitted Pavilion and Idle dependencies"
+		str(account.call("get_authenticated_uid")) == "",
+		"Headless Guest exposes no cloud UID"
 	)
 	_check(
-		"pavilion_summon" in report.get("split_families", [])
-		and "idle_cultivation_claim" in report.get("split_families", []),
-		"Cross-domain summons and idle reward claims cannot be silently split"
+		not account.has_method("get_cloud_save_probe"),
+		"Retired Firestore QA probe is absent"
 	)
-	_check(
-		"equipment_ascension" not in report.get("split_families", []),
-		"Inventory + Equipment remain a coordinated pair"
-	)
-	_check(int(report.get("audited_family_count", 0)) == 9, "Nine inspected economy transaction families")
-	_check(not bool(report.get("upload_allowed", true)), "Economy inspector cannot authorize upload")
-	_check(not bool(report.get("restore_allowed", true)), "Economy inspector cannot authorize restore")
-	_check(not bool(report.get("trusted_ledger_present", true)), "Local graph is not a trusted ledger")
 
-	# --script loads before autoload names are compile-time globals. Use the
-	# validated live root node, never a bare SaveManager identifier here.
-	var domain_manager: Node = root.get_node_or_null("SaveManager")
-	if not _check(domain_manager != null, "Economy QA resolves SaveManager at runtime"):
-		return
-	var full_permanent: Array = domain_manager.call(
-		"get_save_domain_ids_for_scope", "permanent"
-	)
-	var all_report: Dictionary = economy.call("inspect_domains", full_permanent)
-	_check(bool(all_report.get("transaction_closed", false)), "All eight permanent domains close the audited graph")
-	_check(not bool(all_report.get("upload_allowed", true)), "Full local graph still cannot upload without trusted ledger")
-	_check(not bool(all_report.get("restore_allowed", true)), "Full local graph still cannot restore without trusted ledger")
-	_check(not bool(all_report.get("economy_verified", true)), "Graph closure does not prove economy legitimacy")
-
-	for bad_ids in [
-		[], ["checkpoint"], ["pavilion", "pavilion"], ["made_up_domain"], [123],
-		["progression", "checkpoint"]
-	]:
-		var rejected: Dictionary = economy.call("inspect_domains", bad_ids)
+	var retired_paths: Array[String] = [
+		"res://scripts/managers/cloud_save_readonly_manager.gd",
+		"res://scripts/managers/cloud_save_manifest_inspector.gd",
+		"res://scripts/managers/cloud_save_snapshot_contract.gd",
+		"res://scripts/managers/cloud_save_snapshot_capture.gd",
+		"res://scripts/managers/cloud_save_snapshot_integrity.gd",
+		"res://scripts/managers/cloud_save_economy_consistency.gd",
+		"res://scripts/managers/cloud_restore_execution_qa.gd",
+		"res://scripts/managers/cloud_restore_review_qa.gd",
+		"res://scripts/managers/cloud_restore_ux_presenter_qa.gd",
+		"res://scripts/ui/cloud_native_readonly_qa_card.gd",
+		"res://scripts/ui/cloud_restore_ux_surface_qa.gd",
+	]
+	for retired_path in retired_paths:
 		_check(
-			not bool(rejected.get("valid", true))
-			and not bool(rejected.get("upload_allowed", true)),
-			"Economy graph fails closed on unsafe selection: " + str(bad_ids)
+			not ResourceLoader.exists(retired_path),
+			"Retired cloud QA resource absent: " + retired_path
 		)
 
-	var capture_script: Script = load(
-		"res://scripts/managers/cloud_save_snapshot_capture.gd"
+	var client_script: Script = load(
+		"res://scripts/managers/cloud_account_bound_read_client_contract.gd"
 	) as Script
-	var capture: RefCounted = capture_script.new() as RefCounted
-	var preview: Dictionary = capture.call(
-		"build_from_memory_for_qa", "jade_qa_account_a", sample["domains"], 123456
-	)
-	_check(bool(preview.get("valid", false)), "Economy graph does not break memory-only structural capture")
-	_check(not bool(preview.get("economy_transaction_closed", true)), "Capture carries non-closed economy boundary")
+	if not _check(client_script != null, "Account-bound read client contract loads"):
+		return
+	var client: RefCounted = client_script.new() as RefCounted
+	if not _check(client != null, "Account-bound read client contract instantiates"):
+		return
+	var request: Dictionary = client.call("begin_manual_request", "jade_smoke_account")
+	_check(bool(request.get("ok", false)), "Account-bound read requires an explicit manual request")
+	var client_payload: Variant = request.get("client_payload", null)
 	_check(
-		"pavilion" in preview.get("economy_missing_domain_dependencies", [])
-		and "idle_cultivation" in preview.get("economy_missing_domain_dependencies", []),
-		"Capture explicitly reports omitted economy dependencies"
+		client_payload is Dictionary and (client_payload as Dictionary).is_empty(),
+		"Account-bound read sends no caller-controlled payload"
 	)
-	_check(not bool(preview.get("upload_allowed", true)), "Capture remains non-uploadable after economy analysis")
-	_check(not bool(preview.get("restore_allowed", true)), "Capture remains non-restorable after economy analysis")
+	_check(
+		not bool(request.get("automatic_request", true)),
+		"Account-bound read never auto-starts"
+	)
+	_check(
+		bool(request.get("explicit_user_action_required", false)),
+		"Account-bound read requires explicit user action"
+	)
+	_check(
+		not bool(request.get("restore_allowed", true))
+		and not bool(request.get("cloud_mutation_enabled", true))
+		and not bool(request.get("production_execution_allowed", true)),
+		"Account-bound read grants no restore, mutation, or production authority"
+	)
+	var safe_status: Dictionary = client.call("get_safe_status")
+	_check(
+		not bool(safe_status.get("raw_payload_included", true)),
+		"UI-safe account status never includes raw payload"
+	)
+	client.call("discard")
 
-
-func _test_cloud_server_reference_model() -> void:
-	# Synthetic-only server state machine. NOT a Firebase backend or Google
-	# Play receipt verifier. Never read/write actual player data here.
-	var model_script: Script = load(
-		"res://tests/cloud_save_server_reference_model.gd"
+	var permanent_script: Script = load(
+		"res://scripts/managers/cloud_full_permanent_snapshot_contract.gd"
 	) as Script
-	if not _check(model_script != null, "Synthetic server economy model loads"):
+	if not _check(permanent_script != null, "Eight-domain permanent snapshot contract loads"):
 		return
-	var ledger: RefCounted = model_script.new() as RefCounted
-	if not _check(ledger != null, "Synthetic server economy model instantiates"):
+	var permanent: RefCounted = permanent_script.new() as RefCounted
+	if not _check(permanent != null, "Eight-domain permanent snapshot contract instantiates"):
 		return
-
-	var player_a: String = "qa_server_player_a"
-	var player_b: String = "qa_server_player_b"
-	var registered_a: Dictionary = ledger.call("create_account", player_a)
-	var registered_b: Dictionary = ledger.call("create_account", player_b)
-	_check(bool(registered_a.get("applied", false)) and bool(registered_b.get("applied", false)),
-		"Synthetic accounts initialize independently")
-	_check(not bool(ledger.call("create_account", player_a).get("applied", true)),
-		"Duplicate synthetic account initialization rejected")
-	_check(not bool(ledger.call("create_account", "bad/account").get("applied", true)),
-		"Invalid synthetic account identity rejected")
-
-	var proposed: Dictionary = {"journey": {"version": 1}}
-	var decision: Dictionary = ledger.call(
-		"propose_client_snapshot", player_a, player_a, 0, proposed
-	)
-	_check(not bool(decision.get("applied", true))
-		and str(decision.get("reason", "")) == "no_trusted_snapshot_handler",
-		"Even a current client-only snapshot cannot self-authorize cloud write")
-	_check(not bool(ledger.call(
-		"propose_client_snapshot", player_b, player_a, 0, proposed
-	).get("applied", true)), "Cross-account snapshot proposal rejected")
-	_check(str(ledger.call(
-		"propose_client_snapshot", player_a, player_a, 0,
-		{"inventory": {"item_counts": {"made_up": 9999999}}}
-	).get("reason", "")) == "economy_requires_server_reconciliation",
-		"Forged client-side item grants cannot bypass server economy")
-	_check(str(ledger.call(
-		"propose_client_snapshot", player_a, player_a, 0,
-		{"checkpoint": {"wave": 10}}
-	).get("reason", "")) == "active_run_is_device_only",
-		"Client active-run state stays device-only")
-	_check(str(ledger.call(
-		"propose_client_snapshot", player_a, player_a, 0,
-		{"progression": {"spirit_stone": 99999999}}
-	).get("reason", "")) == "economy_requires_server_reconciliation",
-		"Forged Spirit Stones require trusted economy reconciliation")
-	_check(str(ledger.call(
-		"propose_client_snapshot", player_a, player_a, 0,
-		{"unknown_domain": {}}
-	).get("reason", "")) == "unknown_domain",
-		"Unknown client save domain rejected")
-	_check(str(ledger.call(
-		"propose_client_snapshot", player_a, player_a, 0, {}
-	).get("reason", "")) == "empty_domain_proposal",
-		"Empty client save proposal rejected")
-	_check(int(ledger.call("get_summary", player_a).get("revision", -1)) == 0,
-		"Rejected client requests never advance the server revision")
-
-	var token_a: String = "qa_fake_verified_token_a"
-	_check(str(ledger.call(
-		"simulate_server_verified_purchase", player_a, player_a, 0,
-		token_a, "qa_consumable", "PENDING", 100
-	).get("reason", "")) == "not_purchased",
-		"Pending purchase cannot grant premium currency")
-	_check(str(ledger.call(
-		"simulate_server_verified_purchase", player_a, player_a, 0,
-		token_a, "qa_consumable", "CANCELED", 100
-	).get("reason", "")) == "not_purchased",
-		"Canceled purchase cannot grant premium currency")
-	_check(str(ledger.call(
-		"simulate_server_verified_purchase", player_a, player_a, 0,
-		token_a, "qa_consumable", "PURCHASED", -1
-	).get("reason", "")) == "invalid_grant_amount",
-		"Negative fake purchase grant rejected")
-	_check(str(ledger.call(
-		"simulate_server_verified_purchase", player_a, player_a, 0,
-		token_a, "qa_consumable", "PURCHASED", 0
-	).get("reason", "")) == "invalid_grant_amount",
-		"Zero fake purchase grant rejected")
-	decision = ledger.call("simulate_server_verified_purchase", player_a, player_a, 0,
-		token_a, "qa_consumable", "PURCHASED", 100)
-	_check(bool(decision.get("applied", false))
-		and int(decision.get("revision", -1)) == 1,
-		"Fake server-verified purchase advances revision atomically")
-	_check(int(ledger.call("get_summary", player_a).get("granted_units", -1)) == 100,
-		"Synthetic ledger increments balance once")
-	decision = ledger.call("simulate_server_verified_purchase", player_a, player_a, 0,
-		token_a, "qa_consumable", "PURCHASED", 100)
-	_check(not bool(decision.get("applied", true))
-		and bool(decision.get("idempotent", false))
-		and int(decision.get("revision", -1)) == 1,
-		"Lost-response replay cannot grant the same token twice")
-	_check(str(ledger.call("simulate_server_verified_purchase", player_b, player_b, 0,
-		token_a, "qa_consumable", "PURCHASED", 100).get("reason", ""))
-		== "purchase_bound_to_other_account",
-		"Same purchase token cannot be claimed by another account")
-	_check(str(ledger.call("simulate_server_verified_purchase", player_a, player_a, 0,
-		"qa_fake_verified_token_b", "qa_consumable", "PURCHASED", 2
-	).get("reason", "")) == "stale_revision",
-		"Concurrent stale grant is rejected by revision CAS")
-
-	var full_permanent: Array = [
-		"pavilion", "progression", "journey", "achievements", "daily_quests",
-		"equipment", "inventory", "idle_cultivation"
+	var actual_ids: Array = permanent.call("get_domain_ids")
+	var expected_ids: Array = [
+		"achievements",
+		"daily_quests",
+		"equipment",
+		"idle_cultivation",
+		"inventory",
+		"journey",
+		"pavilion",
+		"progression",
 	]
-	var partial: Array = [
-		"achievements", "daily_quests", "equipment", "inventory",
-		"journey", "progression"
-	]
-	_check(str(ledger.call("simulate_server_snapshot_commit", player_a,
-		player_a, 1, full_permanent, false).get("reason", ""))
-		== "trusted_reconciliation_missing",
-		"Complete permanent domains are insufficient without trusted reconciliation")
-	_check(str(ledger.call("simulate_server_snapshot_commit", player_a,
-		player_a, 1, partial, true).get("reason", ""))
-		== "incomplete_economy_boundary",
-		"Six-domain snapshot cannot be committed as complete account backup")
-	var duplicate_domains: Array = full_permanent.duplicate()
-	duplicate_domains[7] = "pavilion"
-	_check(str(ledger.call("simulate_server_snapshot_commit", player_a,
-		player_a, 1, duplicate_domains, true).get("reason", ""))
-		== "incomplete_economy_boundary",
-		"Duplicate domain cannot hide omitted economic dependency")
-	_check(str(ledger.call("simulate_server_snapshot_commit", player_a,
-		player_a, 0, full_permanent, true).get("reason", "")) == "stale_revision",
-		"Stale handset cannot overwrite newer server revision")
-	decision = ledger.call("simulate_server_snapshot_commit", player_a,
-		player_a, 1, full_permanent, true)
-	_check(bool(decision.get("applied", false))
-		and int(decision.get("revision", -1)) == 2,
-		"Synthetic reconciled server transaction advances revision exactly once")
-	_check(str(ledger.call("simulate_server_snapshot_commit", player_a,
-		player_a, 1, full_permanent, true).get("reason", "")) == "stale_revision",
-		"Replay of previously committed snapshot cannot rollback revisions")
-	_check(str(ledger.call("simulate_server_verified_void", player_a,
-		player_a, 2, "qa_unknown_token").get("reason", "")) == "unknown_purchase",
-		"Unknown refund cannot revoke unrelated purchases")
-	decision = ledger.call("simulate_server_verified_void", player_a,
-		player_a, 2, token_a)
-	_check(bool(decision.get("applied", false))
-		and str(decision.get("reason", "")) == "manual_reconciliation_required",
-		"Verified refund freezes economy rather than blindly subtracting spent currency")
-	_check(int(ledger.call("get_summary", player_a).get("granted_units", -1)) == 100
-		and bool(ledger.call("get_summary", player_a).get("reconciliation_required", false)),
-		"Refund avoids destructive unverified balance rollback")
-	decision = ledger.call("simulate_server_verified_void", player_a,
-		player_a, 2, token_a)
-	_check(not bool(decision.get("applied", true))
-		and bool(decision.get("idempotent", false)),
-		"Duplicate refund notification is idempotent")
-	_check(str(ledger.call("simulate_server_verified_purchase", player_a,
-		player_a, 3, token_a, "qa_consumable", "PURCHASED", 100).get("reason", ""))
-		== "purchase_voided",
-		"Voided token can never be granted again")
-	_check(str(ledger.call("simulate_server_snapshot_commit", player_a,
-		player_a, 3, full_permanent, true).get("reason", ""))
-		== "reconciliation_required",
-		"Unresolved refund blocks future account snapshot commits")
-	_check(str(ledger.call("simulate_server_verified_purchase", player_a,
-		player_a, 3, "qa_new_token", "qa_consumable", "PURCHASED", 1)
-		.get("reason", "")) == "reconciliation_required",
-		"Unresolved economy refund blocks new ledger grants")
-
-	# Model has no bounded 1024-entry replay window. Test a token older than
-	# Pavilion's local processed_grant_ids cap with entirely fake events.
-	var first_b_token: String = "qa_b_token_0"
-	for i in range(1030):
-		var result: Dictionary = ledger.call("simulate_server_verified_purchase",
-			player_b, player_b, i, "qa_b_token_" + str(i),
-			"qa_consumable", "PURCHASED", 1)
-		if not bool(result.get("applied", false)):
-			_check(false, "Synthetic ledger retains every purchase grant beyond 1024")
-			return
-	_check(int(ledger.call("get_summary", player_b).get("revision", -1)) == 1030,
-		"Synthetic ledger retains more than 1024 transaction revisions")
-	decision = ledger.call("simulate_server_verified_purchase", player_b,
-		player_b, 0, first_b_token, "qa_consumable", "PURCHASED", 1)
-	_check(not bool(decision.get("applied", true))
-		and bool(decision.get("idempotent", false))
-		and int(ledger.call("get_summary", player_b).get("granted_units", -1)) == 1030,
-		"Earliest purchase remains idempotent after 1030 later claims")
-	_check(not bool(ledger.call("propose_client_snapshot", player_b,
-		player_a, 3, {}).get("applied", true)),
-		"Authenticated second device cannot access another account")
-	_check(not bool(ledger.call("simulate_server_verified_purchase", "",
-		player_b, 1030, "qa_guest_token", "qa_consumable", "PURCHASED", 1)
-		.get("applied", true)), "Guest cannot submit a trusted ledger mutation")
-
-
-
-func _test_cloud_snapshot_integrity(sample: Dictionary, uid: String) -> void:
-	# Memory-only fixtures. No real account state, file writes or Firebase I/O.
-	var integrity_script: Script = load(
-		"res://scripts/managers/cloud_save_snapshot_integrity.gd"
-	) as Script
-	if not _check(integrity_script != null, "Cloud integrity policy loads"):
-		return
-	var integrity: RefCounted = integrity_script.new() as RefCounted
-	if not _check(integrity != null, "Cloud integrity policy instantiates"):
-		return
-	var original_json: String = JSON.stringify(sample)
-	var built: Dictionary = integrity.call("build_local_proof", sample, uid)
-	if not _check(bool(built.get("valid", false)), "Six-domain preview integrity can be computed"):
-		return
-	var proof: Dictionary = built.get("proof", {})
-	_check(str(proof.get("snapshot_sha256", "")).length() == 64,
-		"Local SHA-256 is a 64-character digest")
-	_check((proof.get("domain_sha256", {}) as Dictionary).size() == 6,
-		"Local proof binds exactly six domain digests")
-	_check(JSON.stringify(sample) == original_json,
-		"Local integrity generation does not mutate the candidate")
-	_check(not bool(built.get("upload_allowed", true))
-		and not bool(built.get("restore_allowed", true))
-		and not bool(built.get("server_verified", true)),
-		"Generating a digest never grants cloud permissions")
-	var verified: Dictionary = integrity.call("inspect_local_proof", sample, uid, proof)
-	_check(bool(verified.get("valid", false))
-		and not bool(verified.get("economy_verified", true))
-		and not bool(verified.get("trusted_revision", true)),
-		"Matching digest proves neither economy nor revision authority")
-
-	# JSON object key order cannot change the content identity.
-	var reordered: Dictionary = sample.duplicate(true)
-	var reversed_domains: Dictionary = {}
-	var domain_keys: Array = reordered["domains"].keys()
-	domain_keys.reverse()
-	for domain_id in domain_keys:
-		reversed_domains[domain_id] = reordered["domains"][domain_id]
-	reordered["domains"] = reversed_domains
-	var reversed_versions: Dictionary = {}
-	var version_keys: Array = reordered["domain_schema_versions"].keys()
-	version_keys.reverse()
-	for domain_id in version_keys:
-		reversed_versions[domain_id] = reordered["domain_schema_versions"][domain_id]
-	reordered["domain_schema_versions"] = reversed_versions
-	_check(str(integrity.call("build_local_proof", reordered, uid)
-		.get("proof", {}).get("snapshot_sha256", "")) == str(proof["snapshot_sha256"]),
-		"Hash is deterministic across reversed dictionary insertion order")
-	_check(bool(integrity.call("inspect_local_proof", reordered, uid, proof)
-		.get("valid", false)), "Reordered JSON dictionaries retain the same integrity proof")
-
-	var changed: Dictionary = sample.duplicate(true)
-	changed["domains"]["progression"]["spirit_stone"] = 6
-	_check(str(integrity.call("inspect_local_proof", changed, uid, proof)
-		.get("reason", "")) == "domain_digest_mismatch",
-		"Edited Spirit Stone is detected by the progression digest")
-	changed = sample.duplicate(true)
-	changed["saved_at_unix"] = 2
-	_check(str(integrity.call("inspect_local_proof", changed, uid, proof)
-		.get("reason", "")) == "snapshot_digest_mismatch",
-		"Timestamp changes invalidate the entire snapshot digest")
-	changed = sample.duplicate(true)
-	changed["revision"] = 2
-	_check(str(integrity.call("inspect_local_proof", changed, uid, proof)
-		.get("reason", "")) == "draft_revision_mismatch",
-		"A client-increased revision cannot reuse an older proof")
-	changed = sample.duplicate(true)
-	changed["domains"]["achievements"]["unlocked"] = ["qa_one", "qa_two"]
-	var unlocked_proof: Dictionary = integrity.call("build_local_proof", changed, uid)
-	var changed_order: Dictionary = changed.duplicate(true)
-	changed_order["domains"]["achievements"]["unlocked"] = ["qa_two", "qa_one"]
-	_check(str(integrity.call("inspect_local_proof", changed_order, uid,
-		unlocked_proof.get("proof", {})).get("reason", "")) == "domain_digest_mismatch",
-		"Array sequence changes invalidate the domain digest")
-
-	# An attacker can build a fresh valid hash around an invented balance.
-	# Such a self-consistent client proof MUST still have zero authority.
-	var forged: Dictionary = sample.duplicate(true)
-	forged["domains"]["progression"]["spirit_stone"] = 9999999
-	var forged_build: Dictionary = integrity.call("build_local_proof", forged, uid)
-	_check(bool(forged_build.get("valid", false))
-		and not bool(forged_build.get("economy_verified", true))
-		and not bool(forged_build.get("upload_allowed", true)),
-		"Recomputed hash of forged currency remains entirely untrusted")
-	var forged_inspection: Dictionary = integrity.call(
-		"inspect_local_proof", forged, uid, forged_build.get("proof", {})
-	)
-	_check(bool(forged_inspection.get("valid", false))
-		and not bool(forged_inspection.get("restore_allowed", true))
-		and not bool(forged_inspection.get("server_verified", true)),
-		"Self-consistent forged proof never authorizes restore")
-
-	var bad_proof: Dictionary = proof.duplicate(true)
-	bad_proof["integrity_format_version"] = 2
-	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
-		.get("reason", "")) == "unsupported_integrity_version",
-		"Unknown integrity proof format rejected")
-	bad_proof = proof.duplicate(true)
-	bad_proof["digest_algorithm"] = "MD5"
-	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
-		.get("reason", "")) == "unsupported_digest_algorithm",
-		"Unexpected digest algorithm rejected")
-	bad_proof = proof.duplicate(true)
-	bad_proof["canonical_encoding"] = "different_encoder"
-	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
-		.get("reason", "")) == "unsupported_encoding",
-		"Unknown JSON canonical encoding rejected")
-	bad_proof = proof.duplicate(true)
-	bad_proof["snapshot_sha256"] = "not_a_sha256"
-	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
-		.get("reason", "")) == "invalid_snapshot_digest",
-		"Malformed snapshot hash rejected")
-	bad_proof = proof.duplicate(true)
-	bad_proof["snapshot_sha256"] = "0".repeat(64)
-	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
-		.get("reason", "")) == "snapshot_digest_mismatch",
-		"Wrong-length-correct snapshot digest cannot pass")
-	bad_proof = proof.duplicate(true)
-	bad_proof["snapshot_sha256"] = str(proof["snapshot_sha256"]).to_upper()
-	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
-		.get("reason", "")) == "invalid_snapshot_digest",
-		"Noncanonical uppercase hex digest is refused")
-	bad_proof = proof.duplicate(true)
-	bad_proof["domain_sha256"]["inventory"] = "0".repeat(64)
-	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
-		.get("reason", "")) == "domain_digest_mismatch",
-		"Invented inventory domain digest is detected")
-	bad_proof = proof.duplicate(true)
-	bad_proof["snapshot_format_version"] = 2
-	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
-		.get("reason", "")) == "unsupported_snapshot_version",
-		"Proof cannot claim a future snapshot format")
-	bad_proof = proof.duplicate(true)
-	bad_proof["draft_revision"] = 1.0
-	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
-		.get("reason", "")) == "draft_revision_mismatch",
-		"Floating-point revision is not accepted as an integer")
-	bad_proof = proof.duplicate(true)
-	bad_proof["server_signature"] = "fake"
-	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
-		.get("reason", "")) == "invalid_proof_shape",
-		"No unrecognized server-signature or ledger field is accepted")
-	bad_proof = proof.duplicate(true)
-	bad_proof["domain_sha256"].erase("inventory")
-	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
-		.get("reason", "")) == "invalid_domain_set",
-		"Missing inventory integrity commitment rejected")
-	bad_proof = proof.duplicate(true)
-	bad_proof["domain_sha256"]["pavilion"] = "0".repeat(64)
-	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
-		.get("reason", "")) == "invalid_domain_set",
-		"Premium Pavilion injection into proof rejected")
-	bad_proof = proof.duplicate(true)
-	bad_proof["owner_uid"] = "qa_foreign_account"
-	_check(str(integrity.call("inspect_local_proof", sample, uid, bad_proof)
-		.get("reason", "")) == "proof_owner_mismatch",
-		"Foreign owner cannot replay a proof")
-	changed = sample.duplicate(true)
-	changed["snapshot_format_version"] = 2
-	_check(not bool(integrity.call("build_local_proof", changed, uid)
-		.get("valid", true)), "Unknown future snapshot version fails closed")
-	changed = sample.duplicate(true)
-	changed["domain_schema_versions"]["inventory"] = 2
-	_check(not bool(integrity.call("build_local_proof", changed, uid)
-		.get("valid", true)), "Unknown future domain schema fails closed")
-	changed = sample.duplicate(true)
-	changed["domains"]["pavilion"] = {"version": 1}
-	_check(not bool(integrity.call("build_local_proof", changed, uid)
-		.get("valid", true)), "Premium domain cannot enter digest coverage")
-	_check(not bool(integrity.call("build_local_proof", sample, "bad/uid")
-		.get("valid", true)), "Unsafe account ID cannot generate proof")
-
-	# A read-only manifest is just metadata. Even a perfect match is neither
-	# a freshness attestation nor a server-signed integrity statement.
-	var manifest: Dictionary = {
-		"manifest_version": 1,
-		"owner_uid": uid,
-		"revision": sample["revision"],
-		"saved_at_unix": sample["saved_at_unix"],
-		"domain_schema_versions": sample["domain_schema_versions"].duplicate(true)
-	}
-	var aligned: Dictionary = integrity.call("inspect_manifest_alignment",
-		sample, uid, proof, manifest)
-	_check(bool(aligned.get("valid", false))
-		and not bool(aligned.get("server_freshness_verified", true))
-		and not bool(aligned.get("upload_allowed", true))
-		and not bool(aligned.get("restore_allowed", true)),
-		"Aligned untrusted metadata never enables cloud sync")
-	var mismatched: Dictionary = manifest.duplicate(true)
-	mismatched["revision"] = 2
-	_check(str(integrity.call("inspect_manifest_alignment", sample, uid,
-		proof, mismatched).get("reason", "")) == "manifest_revision_mismatch",
-		"Read-only manifest revision mismatch detected")
-	mismatched = manifest.duplicate(true)
-	mismatched["saved_at_unix"] = 2
-	_check(str(integrity.call("inspect_manifest_alignment", sample, uid,
-		proof, mismatched).get("reason", "")) == "manifest_timestamp_mismatch",
-		"Read-only manifest timestamp mismatch detected")
-	mismatched = manifest.duplicate(true)
-	mismatched["domain_schema_versions"].erase("inventory")
-	_check(str(integrity.call("inspect_manifest_alignment", sample, uid,
-		proof, mismatched).get("reason", "")) == "manifest_domain_set_mismatch",
-		"Partial manifest cannot claim to match a six-domain snapshot")
-	mismatched = manifest.duplicate(true)
-	mismatched["domain_schema_versions"]["inventory"] = 2
-	_check(not bool(integrity.call("inspect_manifest_alignment", sample, uid,
-		proof, mismatched).get("valid", true)),
-		"Manifest with future inventory schema rejected")
-	mismatched = manifest.duplicate(true)
-	mismatched["owner_uid"] = "qa_foreign_account"
-	_check(not bool(integrity.call("inspect_manifest_alignment", sample, uid,
-		proof, mismatched).get("valid", true)),
-		"Manifest from a different account rejected")
-	mismatched = manifest.duplicate(true)
-	mismatched["manifest_version"] = 2
-	_check(not bool(integrity.call("inspect_manifest_alignment", sample, uid,
-		proof, mismatched).get("valid", true)),
-		"Future manifest version is not silently migrated")
-	_check(not bool(integrity.call("inspect_manifest_alignment", sample, uid,
-		proof, {}).get("valid", true)),
-		"Absent manifest cannot be treated as synchronized")
-
-func _check_cloud_snapshot_rejected(
-	contract: RefCounted, snapshot: Dictionary, expected_uid: String, label: String
-) -> void:
-	var result: Dictionary = contract.call("inspect_draft", snapshot, expected_uid)
-	_check(not bool(result.get("valid", true)), label)
-
+	actual_ids.sort()
+	expected_ids.sort()
+	_check(actual_ids == expected_ids, "Permanent cloud boundary remains exactly eight domains")
+	_check("checkpoint" not in actual_ids, "Active-run checkpoint remains outside permanent cloud scope")
 
 func _test_resources(directory_path: String) -> void:
 	var directory: DirAccess = DirAccess.open(directory_path)
