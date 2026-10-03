@@ -126,6 +126,10 @@ test("PowerShell harness uses exact git archive HEAD, exact CI AAR hash, isolate
   assert.match(tool, /topResumedActivity\|mResumedActivity/);
   assert.match(tool, /mCurrentFocus\|mFocusedApp/);
   assert.match(tool, /\$processId/);
+  assert.match(tool, /\$expectedHeadLine = 'const EXPECTED_HEAD_SHA: String = "'\+\[string\]\$Info\.head_sha\+'"'/);
+  assert.match(tool, /\$placeholderDeclaration = 'const EXPECTED_HEAD_SHA: String = "'\+\$QaHeadPlaceholder\+'"'/);
+  assert.doesNotMatch(tool, /\$runner -match \[regex\]::Escape\(\$QaHeadPlaceholder\)/);
+  assert.match(runner, /EXPECTED_HEAD_SHA == "QA_HEAD_SHA_PLACEHOLDER"/);
   const forbiddenAutomaticNames = "Args|Input|Matches|Error|PID|Host|HOME|PWD|PSScriptRoot|PSCommandPath|PSHOME|PSVersionTable|ShellId";
   assert.doesNotMatch(tool, new RegExp(`function[^\\n]*\\$(?:${forbiddenAutomaticNames})\\b`, "i"));
   assert.doesNotMatch(tool, new RegExp(`^\\s*(?:\\[[^\\r\\n]+\\]\\s*)?\\$(?:${forbiddenAutomaticNames})\\s*=`, "im"));

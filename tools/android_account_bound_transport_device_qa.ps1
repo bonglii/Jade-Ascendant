@@ -173,8 +173,12 @@ function Assert-QaWorkspace($Info) {
         }
     }
     if ($project -match [regex]::Escape($QaFeature)) { throw 'Disposable project.godot tidak boleh menjadi arming authority.' }
-    if ($runner -notmatch ('const EXPECTED_HEAD_SHA: String = "'+[regex]::Escape([string]$Info.head_sha)+'"')) { throw 'QA runner tidak terikat exact HEAD.' }
-    if ($runner -match [regex]::Escape($QaHeadPlaceholder)) { throw 'HEAD placeholder belum diganti.' }
+    $expectedHeadLine = 'const EXPECTED_HEAD_SHA: String = "'+[string]$Info.head_sha+'"'
+    if ($runner.IndexOf($expectedHeadLine) -lt 0 -or $runner.IndexOf($expectedHeadLine) -ne $runner.LastIndexOf($expectedHeadLine)) {
+        throw 'QA runner exact HEAD declaration harus ada tepat satu.'
+    }
+    $placeholderDeclaration = 'const EXPECTED_HEAD_SHA: String = "'+$QaHeadPlaceholder+'"'
+    if ($runner.IndexOf($placeholderDeclaration) -ge 0) { throw 'HEAD declaration placeholder belum diganti.' }
     if ($preset -notmatch ('(?m)^custom_features="'+[regex]::Escape($QaFeature)+'"$')) { throw 'QA custom feature tidak aktif.' }
     if ($preset -notmatch ('(?m)^package/unique_name="'+[regex]::Escape([string]$Info.qa_package)+'"$')) { throw 'QA package id tidak terisolasi.' }
     if ($preset -notmatch '(?m)^gradle_build/export_format=0$') { throw 'QA build harus APK.' }
