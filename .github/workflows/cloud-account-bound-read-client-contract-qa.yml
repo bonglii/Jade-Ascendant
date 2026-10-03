@@ -1,0 +1,75 @@
+name: Jade Ascendant - Account-Bound Read Client Contract QA
+
+on:
+  push:
+    branches:
+      - 'qa/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  account-bound-read-client-contract:
+    name: E3C-A / Production-Shaped Read Contract (NO NETWORK / NO DEPLOY)
+    runs-on: windows-2022
+    timeout-minutes: 20
+    env:
+      JADE_ACCOUNT_BOUND_READ_CLIENT_CONTRACT_TEST_ONLY: '1'
+      JADE_ACCOUNT_BOUND_READ_CLIENT_CONTRACT_ACK: 'DISPOSABLE_RUNNER_ONLY'
+
+    steps:
+      - name: Checkout exact QA revision
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22 for source-boundary audit
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          package-manager-cache: false
+
+      - name: Verify E3C-A remains pre-activation read-only client contract
+        shell: pwsh
+        run: |
+          node --test backend/cloud_save/tests/cloud_account_bound_read_client_contract_source_boundary.test.mjs
+          node --test backend/cloud_save/tests/account_bound_transport_to_godot_source_boundary.test.mjs
+          node --test backend/cloud_save/tests/cloud_restore_ux_presenter_source_boundary.test.mjs
+          node --test backend/cloud_save/tests/cloud_restore_ux_integration_source_boundary.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Account-bound read client contract source boundary failed.' }
+
+      - name: Download and verify official Godot 4.7.2
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $url = 'https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_win64.exe.zip'
+          $expectedSha256 = '731980f9608d61333e5baf54a2ef17210acc7a538446c0cb9969f002aca1e953'
+          $archive = Join-Path $env:RUNNER_TEMP 'godot-4.7.2.zip'
+          $installDir = Join-Path $env:RUNNER_TEMP 'godot-4.7.2'
+          Invoke-WebRequest -Uri $url -OutFile $archive
+          $actualSha256 = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualSha256 -ne $expectedSha256) { throw "Official Godot binary SHA256 mismatch: $actualSha256" }
+          Expand-Archive -LiteralPath $archive -DestinationPath $installDir -Force
+          $godot = Join-Path $installDir 'Godot_v4.7.2-stable_win64_console.exe'
+          if (-not (Test-Path -LiteralPath $godot -PathType Leaf)) { throw 'Godot console executable not found.' }
+          & $godot --version
+          if ($LASTEXITCODE -ne 0) { throw 'Godot version check failed.' }
+          "JADE_E3CA_GODOT=$godot" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Import production project resources
+        shell: pwsh
+        run: |
+          & $env:JADE_E3CA_GODOT --headless --path . --import
+          if ($LASTEXITCODE -ne 0) { throw "E3C-A project import failed: $LASTEXITCODE" }
+
+      - name: Prove strict production-shaped read envelope and safe one-shot handoff
+        shell: pwsh
+        run: |
+          $output = & $env:JADE_E3CA_GODOT --headless --path . --script res://tests/cloud_account_bound_read_client_contract_qa.gd 2>&1 | Out-String
+          $code = $LASTEXITCODE
+          Write-Host $output
+          if ($code -ne 0 -or $output -notmatch 'JADE_ACCOUNT_BOUND_READ_CLIENT_CONTRACT_QA_PASS') {
+            throw "Account-bound read client contract QA failed: $code"
+          }
