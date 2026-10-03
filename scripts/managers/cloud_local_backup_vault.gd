@@ -1,21 +1,19 @@
 extends RefCounted
 
-## Gate 9B — LOCAL, copy-only pre-restore vault with a global SaveManager write
-## barrier. Never overwrites a SaveManager
-## primary, backup, transaction journal, or active-run checkpoint. No network.
-## This is a prerequisite for a future restore, NOT an authorized restore API.
-## Deliberately unreferenced by production scenes/autoloads until later QA.
+## LOCAL, copy-only pre-restore vault with a global SaveManager write barrier.
+## Never overwrites a SaveManager primary, backup, transaction journal, or
+## active-run checkpoint. No network. This is a disconnected safety primitive
+## for a future explicitly approved restore flow, NOT an authorized restore API.
 
 const VAULT_VERSION: int = 1
 const VAULT_ROOT: String = "user://jade_cloud_pre_restore_vault_v1"
-const QA_ROOT: String = "user://jade_gate9_qa/"
 const MAX_DOMAIN_BYTES: int = 1048576
 const MAX_ALL_BYTES: int = 8388608
 const DOMAIN_COUNT: int = 8
 
 
 ## Manual future entry point: reads existing SaveManager files only. Never
-## invoked automatically; no live UI or callsite is wired at Gate 9B.
+## invoked automatically; no live UI or restore callsite is wired.
 func prepare_local_pre_restore_backup(owner_uid: String, explicit_consent: bool) -> Dictionary:
 	if not explicit_consent:
 		return _no("CONSENT_REQUIRED")
@@ -39,7 +37,7 @@ func prepare_local_pre_restore_backup(owner_uid: String, explicit_consent: bool)
 		var paths: Dictionary = {}
 		for domain_id in SaveManager.get_save_domain_ids_for_scope(SaveManager.SCOPE_PERMANENT):
 			paths[domain_id] = SaveManager.get_save_path(domain_id)
-		result = _copy_snapshot(paths, VAULT_ROOT, owner_uid, -1, true, barrier_owner)
+		result = _copy_snapshot(paths, VAULT_ROOT, owner_uid, true, barrier_owner)
 	var released: Dictionary = SaveManager.end_save_write_barrier(barrier_owner)
 	if not bool(released.get("success", false)):
 		return _no("SAVE_WRITE_BARRIER_RELEASE_FAILED")
@@ -80,34 +78,9 @@ func _live_issue(owner_uid: String, allowed_barrier_owner: String = "") -> Strin
 	return ""
 
 
-## Synthetic-file test seam; hard-restricted to an isolated QA namespace.
-## It must NEVER accept an actual user://<domain>.save or real vault path.
-func prepare_sandbox_backup_for_qa(
-	source_paths: Dictionary, owner_uid: String,
-	fault_after_file: int = -1
-) -> Dictionary:
-	if OS.get_environment("JADE_GATE9_TEST_ONLY") != "1":
-		return _no("QA_DISABLED")
-	for raw_path in source_paths.values():
-		if not raw_path is String or not str(raw_path).begins_with(QA_ROOT + "source/"):
-			return _no("QA_SOURCE_SCOPE")
-	return _copy_snapshot(source_paths, QA_ROOT + "vault", owner_uid, fault_after_file)
-
-
-## A ready record is local, untrusted, and NEVER an upload or restore permit.
-## Rechecks the on-disk manifest AND all payload bytes. Inspect only.
-func inspect_sandbox_backup_for_qa(ready_path: String) -> Dictionary:
-	if OS.get_environment("JADE_GATE9_TEST_ONLY") != "1":
-		return _no("QA_DISABLED")
-	if not ready_path.begins_with(QA_ROOT + "vault/ready_") or ".." in ready_path:
-		return _no("QA_VAULT_SCOPE")
-	return _inspect_ready(ready_path)
-
-
 func _copy_snapshot(
 	source_paths: Dictionary, vault_root: String, owner_uid: String,
-	fault_after_file: int, live_source: bool = false,
-	barrier_owner: String = ""
+	live_source: bool = false, barrier_owner: String = ""
 ) -> Dictionary:
 	if not _safe_uid(owner_uid):
 		return _no("INVALID_OWNER")
@@ -188,8 +161,6 @@ func _copy_snapshot(
 			origin_hashes[source] = before
 			total_size += size
 			copied += 1
-			if copied == fault_after_file:
-				return _no("QA_FAULT_INJECTED")
 		recorded[domain_id] = entry
 	if recorded.size() != DOMAIN_COUNT:
 		return _no("INCOMPLETE_COPY")

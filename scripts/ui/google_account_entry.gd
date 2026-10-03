@@ -1,12 +1,10 @@
 extends Control
 
-## Optional first-entry identity screen. GoogleAccountManager owns auth state;
-## this screen only records the user's preference to bypass future prompts.
-## No gameplay SaveManager or currency API is touched.
+## Optional first-entry identity screen. GoogleAccountManager owns auth state.
+## Signed-in Firebase sessions bypass this screen; signed-out players may choose
+## Google or Guest on each fresh launch. No gameplay SaveManager or currency API
+## is touched.
 const MAIN_MENU_SCENE: String = "res://scenes/ui/main_menu.tscn"
-const AccountEntryPrefs = preload(
-	"res://scripts/managers/google_account_entry_prefs.gd"
-)
 const GOLD: Color = Color(0.99, 0.80, 0.42, 1.0)
 const JADE: Color = Color(0.30, 0.90, 0.75, 1.0)
 const IVORY: Color = Color(0.94, 0.97, 0.94, 1.0)
@@ -131,9 +129,6 @@ func _on_account_state_changed(snapshot: Dictionary) -> void:
 	if _moving_to_home or not is_inside_tree():
 		return
 	if bool(snapshot.get("signed_in", false)):
-		# Also remembers that the user has passed first-entry onboarding. If
-		# they sign out in Settings later, the game remains playable as Guest.
-		AccountEntryPrefs.mark_completed()
 		_continue_home.call_deferred()
 		return
 
@@ -189,7 +184,6 @@ func _on_guest_pressed() -> void:
 	var snapshot: Dictionary = GoogleAccountManager.get_account_snapshot()
 	if bool(snapshot.get("busy", false)):
 		return
-	AccountEntryPrefs.mark_completed()
 	_continue_home()
 
 
