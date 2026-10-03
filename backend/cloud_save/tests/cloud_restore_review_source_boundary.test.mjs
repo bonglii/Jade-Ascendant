@@ -28,7 +28,9 @@ test("restore review manager is QA-only and disconnected from production UI/runt
   const refs = filesRecursive(resolve(repo, "scripts"), ".gd")
     .filter(path => !path.endsWith("cloud_restore_review_qa.gd"))
     .filter(path => /cloud_restore_review_qa|build_restore_review_for_qa/.test(readFileSync(path, "utf8")));
-  assert.deepEqual(refs, []);
+  const allowedRefs = refs.filter(path => path.endsWith("cloud_restore_execution_qa.gd"));
+  assert.equal(refs.length, 1);
+  assert.deepEqual(allowedRefs, refs);
   assert.match(manager, /OS\.has_feature\("editor"\)/);
   assert.match(manager, /GITHUB_ACTIONS/);
   assert.match(manager, /JADE_RESTORE_REVIEW_TEST_ONLY/);

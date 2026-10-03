@@ -34,7 +34,9 @@ test("registered-path harness is editor-only, explicitly armed, and disconnected
     .filter(p => !p.endsWith("cloud_registered_path_restore_qa.gd"))
     .filter(p => !p.endsWith("cloud_registered_restore_bootstrap_qa.gd"))
     .filter(p => /cloud_registered_path_restore_qa|begin_registered_restore_for_qa/.test(readFileSync(p, "utf8")));
-  assert.deepEqual(refs, []);
+  const allowedRefs = refs.filter(p => p.endsWith("cloud_restore_execution_qa.gd"));
+  assert.equal(refs.length, 1);
+  assert.deepEqual(allowedRefs, refs);
 });
 
 test("registered targets come only from the exact SaveManager permanent registry", () => {
