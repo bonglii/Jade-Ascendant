@@ -189,6 +189,7 @@ func _validate_domain_fields(domain_id: String, payload: Dictionary) -> bool:
 				return false
 			if payload.has("hero_milestones_claimed") and not _int_array(payload["hero_milestones_claimed"], false):
 				return false
+			return true
 		"journey":
 			if not _positive_int(payload.get("selected_chapter_id")):
 				return false
@@ -202,6 +203,7 @@ func _validate_domain_fields(domain_id: String, payload: Dictionary) -> bool:
 				return false
 			if not _string_array(payload.get("cleared_stage_keys"), 2048):
 				return false
+			return true
 		"achievements":
 			return (
 				_count_map(payload.get("progress"))

@@ -57,7 +57,11 @@ func _run() -> void:
 
 	var draft: Dictionary = _candidate_draft()
 	var inspected: Dictionary = contract.call("inspect_draft", draft, OWNER)
-	_expect(inspected.get("valid") == true, "Eight-domain candidate passes local full contract")
+	_expect(
+		inspected.get("valid") == true,
+		"Eight-domain candidate passes local full contract | reason="
+		+ str(inspected.get("reason", "missing"))
+	)
 	var digest: String = str(contract.call("hash_draft", draft))
 	_expect(_sha256_shape(digest), "Canonical full-draft digest produced")
 	_expect(digest == EXPECTED_JS_DIGEST, "Godot canonical digest matches reviewed backend JavaScript fixture")

@@ -92,6 +92,12 @@ test("full permanent contract is exact eight-domain v2 and rejects unsafe payloa
   assert.match(contract, /InventoryManager\.is_known_item/);
   assert.match(contract, /EquipmentManager\.has_item_definition/);
   assert.match(contract, /HashingContext\.HASH_SHA256/);
+  const validationBlock = contract.slice(
+    contract.indexOf("func _validate_domain_fields"),
+    contract.indexOf("func _validate_pavilion"),
+  );
+  assert.match(validationBlock, /"progression":[\s\S]*?return true\s*\n\t\t"journey":/);
+  assert.match(validationBlock, /"journey":[\s\S]*?return true\s*\n\t\t"achievements":/);
   assert.doesNotMatch(contract, /Firebase|firestore|https?:\/\//i);
   assert.doesNotMatch(contract, /SaveManager\.(?:write_save_data|write_save_batch|recover_save_from_backup)\s*\(/);
 });
