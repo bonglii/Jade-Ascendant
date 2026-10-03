@@ -91,6 +91,8 @@ test("E3B runner exercises button emissions, dismiss fencing, safe rendering and
     "JADE_CLOUD_RESTORE_UX_INTEGRATION_QA_PASS",
   ]) assert.match(runner, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.doesNotMatch(runner, /FileAccess|DirAccess|SaveManager|Firebase|firestore|https?:\/\/|\badb\b/i);
+  assert.doesNotMatch(runner, /const[^\n]*\.repeat\s*\(/,
+    "Godot QA constants must use compile-time literal expressions");
 });
 
 test("E3B workflow uses official Godot 4.7.2 and has no deploy/device/restore-engine authority", () => {

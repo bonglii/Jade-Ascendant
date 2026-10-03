@@ -5,9 +5,9 @@ extends SceneTree
 ## No E1/E2 invocation, disk I/O, network, native bridge, or restore engine.
 
 const SURFACE_PATH: String = "res://scripts/ui/cloud_restore_ux_surface_qa.gd"
-const REVIEW_ID: String = "1".repeat(64)
-const LOCAL_FINGERPRINT: String = "2".repeat(64)
-const REMOTE_DIGEST: String = "3".repeat(64)
+const REVIEW_ID: String = "1111111111111111111111111111111111111111111111111111111111111111"
+const LOCAL_FINGERPRINT: String = "2222222222222222222222222222222222222222222222222222222222222222"
+const REMOTE_DIGEST: String = "3333333333333333333333333333333333333333333333333333333333333333"
 const REMOTE_REVISION: int = 31
 
 var checks: int = 0
