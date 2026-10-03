@@ -574,7 +574,7 @@ try {
     }
 }
 finally { $archive.Dispose() }
-Write-Output '[ DONE ] export'
+[Console]::Out.WriteLine('[ DONE ] export')
 [Console]::Out.Flush()
 Start-Sleep -Seconds 30
 '@
