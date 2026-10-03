@@ -64,6 +64,16 @@ jobs:
           & ./tools/android_account_bound_transport_device_build_qa.ps1 -Action Audit
           if ($LASTEXITCODE -ne 0) { throw 'Android account-bound transport build harness audit failed.' }
 
+      - name: Prove verified-export shutdown watcher with synthetic APK
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $pwshPath = (Get-Command pwsh -CommandType Application -ErrorAction Stop).Source
+          $watcherScript = (Resolve-Path './tools/android_account_bound_transport_device_build_qa.ps1').Path
+          & $pwshPath -NoProfile -NonInteractive -File $watcherScript -Action ExportWatcherSelfTest
+          $watcherExitCode = $LASTEXITCODE
+          if ($watcherExitCode -ne 0) { throw "Android account-bound export watcher self-test failed. child_exit=$watcherExitCode" }
+
       - name: Download and verify official Godot 4.7.2
         shell: pwsh
         run: |

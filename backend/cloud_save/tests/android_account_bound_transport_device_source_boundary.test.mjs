@@ -143,7 +143,7 @@ test("PowerShell device runner uses exact git archive HEAD, exact CI AAR hash, i
 
 
 test("dedicated build harness keeps plugins OFF during import, enables only bridge afterward, and hard-times native processes", () => {
-  assert.match(buildTool, /ValidateSet\('Audit','Smoke','Build'\)/);
+  assert.match(buildTool, /ValidateSet\('Audit','Smoke','ExportWatcherSelfTest','Build'\)/);
   assert.match(buildTool, /git -C \$ProjectRoot archive/);
   assert.match(buildTool, /rev-parse HEAD/);
   assert.match(buildTool, /ExpectedBridgeAarSha256/);
@@ -159,6 +159,16 @@ test("dedicated build harness keeps plugins OFF during import, enables only brid
   assert.match(buildTool, /timed_out=\[bool\]\$timedOut/);
   assert.match(buildTool, /Godot disposable import timeout/);
   assert.match(buildTool, /Godot Android export timeout/);
+  assert.match(buildTool, /function Invoke-ExportObserved/);
+  assert.match(buildTool, /ANDROID_ACCOUNT_BOUND_TRANSPORT_EXPORT_COMPLETION_SEEN/);
+  assert.match(buildTool, /ANDROID_ACCOUNT_BOUND_TRANSPORT_EXPORT_APK_VERIFIED/);
+  assert.match(buildTool, /ANDROID_ACCOUNT_BOUND_TRANSPORT_EXPORT_SHUTDOWN_FORCED_AFTER_VERIFIED_APK/);
+  assert.match(buildTool, /ANDROID_ACCOUNT_BOUND_TRANSPORT_EXPORT_WATCHER_SELFTEST_PASS/);
+  assert.match(buildTool, /function Wait-ApkStableAndValid/);
+  assert.match(buildTool, /function Test-ApkArchive/);
+  assert.match(buildTool, /AndroidManifest\.xml/);
+  assert.match(buildTool, /arm64-v8a/);
+  assert.match(buildTool, /export_shutdown_forced=\[bool\]\$exportResult\.forced_shutdown/);
   assert.doesNotMatch(buildTool, /begin_registered_restore|rollback_registered_restore/i);
   assert.doesNotMatch(buildTool, /(?:^|\n)\s*(?:&\s*)?(?:adb(?:\.exe)?|firebase(?:\.cmd|\.exe)?)\s+/im);
 
@@ -172,6 +182,11 @@ test("dedicated build harness keeps plugins OFF during import, enables only brid
   assert.ok(buildBody.indexOf("Invoke-ImportPhase") < buildBody.indexOf("Install-BridgeAar"));
   assert.ok(buildBody.indexOf("Install-BridgeAar") < buildBody.indexOf("Invoke-PluginSmoke"));
   assert.ok(buildBody.indexOf("Invoke-PluginSmoke") < buildBody.indexOf("--export-debug"));
+  assert.match(buildBody, /Invoke-ExportObserved[\s\S]*--export-debug/);
+  assert.doesNotMatch(buildBody, /Invoke-NativeTimed[\s\S]*--export-debug/);
+  assert.match(buildBody, /completion_seen/);
+  assert.match(buildBody, /apk_verified/);
+  assert.match(buildBody, /forced_shutdown/);
 
   const forbiddenAutomaticNames = "Args|Input|Matches|Error|PID|Host|HOME|PWD|PSScriptRoot|PSCommandPath|PSHOME|PSVersionTable|ShellId";
   assert.doesNotMatch(buildTool, new RegExp(`function[^\\n]*\\$(?:${forbiddenAutomaticNames})\\b`, "i"));
@@ -186,6 +201,10 @@ test("CI reproduces disposable import/plugin smoke before physical-device build 
   assert.match(workflow, /System\.Management\.Automation\.Language\.Parser/);
   assert.match(workflow, /android_account_bound_transport_device_build_qa\.ps1/);
   assert.match(workflow, /-Action Audit/);
+  assert.match(workflow, /-Action ExportWatcherSelfTest/);
+  assert.match(workflow, /synthetic APK/);
+  assert.match(workflow, /\$watcherExitCode = \$LASTEXITCODE/);
+  assert.match(workflow, /-Action ExportWatcherSelfTest/);
   assert.match(workflow, /\'-Action\', \'Smoke\'/);
   assert.match(workflow, /Get-Command pwsh -CommandType Application/);
   assert.match(workflow, /'-NonInteractive'/);

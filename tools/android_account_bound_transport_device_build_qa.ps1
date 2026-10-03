@@ -1,11 +1,12 @@
 param(
-    [ValidateSet('Audit','Smoke','Build')][string]$Action = 'Audit',
+    [ValidateSet('Audit','Smoke','ExportWatcherSelfTest','Build')][string]$Action = 'Audit',
     [string]$GodotPath = '',
     [string]$BridgeAarPath = '',
     [string]$ExpectedBridgeAarSha256 = '',
     [ValidateRange(30,1800)][int]$ImportTimeoutSeconds = 420,
     [ValidateRange(15,600)][int]$PluginSmokeTimeoutSeconds = 120,
-    [ValidateRange(60,3600)][int]$ExportTimeoutSeconds = 900
+    [ValidateRange(60,3600)][int]$ExportTimeoutSeconds = 900,
+    [ValidateRange(2,120)][int]$ExportShutdownGraceSeconds = 15
 )
 
 $ErrorActionPreference = 'Stop'
@@ -55,17 +56,7 @@ function Invoke-NativeTimed(
     $stderrTask = $process.StandardError.ReadToEndAsync()
     $timedOut = -not $process.WaitForExit($TimeoutSeconds * 1000)
     if ($timedOut) {
-        $childProcessId = $process.Id
-        try {
-            & taskkill.exe /PID $childProcessId /T /F 1>$null 2>$null
-        }
-        catch {
-            # Best effort; Process.Kill below remains the fallback.
-        }
-        if (-not $process.HasExited) {
-            try { $process.Kill() } catch { }
-        }
-        try { $process.WaitForExit() } catch { }
+        Stop-ProcessTree $process $Label
     }
 
     $stdout = $stdoutTask.GetAwaiter().GetResult()
@@ -83,6 +74,221 @@ function Invoke-NativeTimed(
         timed_out=[bool]$timedOut
         timeout_seconds=$TimeoutSeconds
         output=($parts -join [Environment]::NewLine)
+    }
+}
+
+function Stop-ProcessTree($Process,[string]$Label) {
+    if ($null -eq $Process -or $Process.HasExited) { return }
+    $childProcessId = $Process.Id
+    try {
+        & taskkill.exe /PID $childProcessId /T /F 1>$null 2>$null
+    }
+    catch {
+        # Best effort; Process.Kill below remains the fallback.
+    }
+    if (-not $Process.HasExited) {
+        try { $Process.Kill() } catch { }
+    }
+    try { $Process.WaitForExit() } catch { }
+    if (-not $Process.HasExited) { throw "$Label process tree tidak dapat dihentikan fail-closed." }
+}
+
+function Read-SharedText([string]$Path) {
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return '' }
+    $stream = $null
+    $reader = $null
+    try {
+        $stream = [System.IO.File]::Open(
+            $Path,
+            [System.IO.FileMode]::Open,
+            [System.IO.FileAccess]::Read,
+            [System.IO.FileShare]::ReadWrite
+        )
+        $reader = New-Object System.IO.StreamReader($stream)
+        return $reader.ReadToEnd()
+    }
+    finally {
+        if ($null -ne $reader) { $reader.Dispose() }
+        elseif ($null -ne $stream) { $stream.Dispose() }
+    }
+}
+
+function Test-ApkArchive([string]$Path) {
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }
+    if ((Get-Item -LiteralPath $Path).Length -le 0) { return $false }
+    try {
+        Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction Stop
+        $archive = [System.IO.Compression.ZipFile]::OpenRead($Path)
+        try {
+            $hasManifest = $false
+            $hasDex = $false
+            $hasArm64Native = $false
+            foreach ($entry in $archive.Entries) {
+                $name = [string]$entry.FullName
+                if ($name -eq 'AndroidManifest.xml') { $hasManifest = $true }
+                if ($name -match '^classes(?:[0-9]+)?\.dex$') { $hasDex = $true }
+                if ($name -match '^lib/arm64-v8a/.+\.so$') { $hasArm64Native = $true }
+            }
+            return $hasManifest -and $hasDex -and $hasArm64Native
+        }
+        finally {
+            $archive.Dispose()
+        }
+    }
+    catch {
+        return $false
+    }
+}
+
+function Wait-ApkStableAndValid([string]$Path,[int]$TimeoutSeconds=20) {
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    [long]$lastSize = -1
+    [int]$stableSamples = 0
+    while ((Get-Date) -lt $deadline) {
+        if (Test-Path -LiteralPath $Path -PathType Leaf) {
+            [long]$currentSize = (Get-Item -LiteralPath $Path).Length
+            if ($currentSize -gt 0 -and $currentSize -eq $lastSize) {
+                $stableSamples += 1
+            }
+            elseif ($currentSize -gt 0) {
+                $stableSamples = 1
+            }
+            else {
+                $stableSamples = 0
+            }
+            $lastSize = $currentSize
+            if ($stableSamples -ge 3 -and (Test-ApkArchive $Path)) {
+                return [ordered]@{
+                    valid=$true
+                    size=$currentSize
+                    sha256=(Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+                }
+            }
+        }
+        Start-Sleep -Milliseconds 1000
+    }
+    return [ordered]@{ valid=$false; size=$lastSize; sha256='' }
+}
+
+function Invoke-ExportObserved(
+    [string]$FilePath,
+    [string[]]$Arguments,
+    [string]$Label,
+    [string]$WorkingDirectory,
+    [string]$ApkPath,
+    [int]$TimeoutSeconds,
+    [int]$ShutdownGraceSeconds
+) {
+    if ($TimeoutSeconds -lt 1) { throw "$Label timeout harus positif." }
+    if ($ShutdownGraceSeconds -lt 1) { throw "$Label shutdown grace harus positif." }
+    foreach ($argument in $Arguments) {
+        if ($argument -match '[\s"]') {
+            throw "$Label menggunakan argument dengan whitespace/quote yang tidak didukung harness fail-closed: $argument"
+        }
+    }
+
+    $token = [guid]::NewGuid().ToString('N')
+    $stdoutPath = Join-Path ([System.IO.Path]::GetTempPath()) ("jade_export_" + $token + ".stdout.txt")
+    $stderrPath = Join-Path ([System.IO.Path]::GetTempPath()) ("jade_export_" + $token + ".stderr.txt")
+    Remove-Item -LiteralPath $stdoutPath,$stderrPath -Force -ErrorAction SilentlyContinue
+
+    $process = Start-Process -FilePath $FilePath -ArgumentList $Arguments -WorkingDirectory $WorkingDirectory `
+        -PassThru -NoNewWindow -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $completionSeen = $false
+    $artifactVerified = $false
+    $forcedShutdown = $false
+    $timedOut = $false
+    $validation = [ordered]@{ valid=$false; size=-1; sha256='' }
+
+    try {
+        while ((Get-Date) -lt $deadline) {
+            $process.Refresh()
+            $stdout = Read-SharedText $stdoutPath
+            $stderr = Read-SharedText $stderrPath
+            $snapshot = @($stdout,$stderr) -join [Environment]::NewLine
+
+            if (-not $completionSeen -and $snapshot -match '(?m)\[\s*DONE\s*\].*export') {
+                $completionSeen = $true
+                Write-Host 'ANDROID_ACCOUNT_BOUND_TRANSPORT_EXPORT_COMPLETION_SEEN' -ForegroundColor DarkCyan
+                $validation = Wait-ApkStableAndValid $ApkPath 20
+                if ([bool]$validation.valid) {
+                    $artifactVerified = $true
+                    Write-Host "ANDROID_ACCOUNT_BOUND_TRANSPORT_EXPORT_APK_VERIFIED | bytes=$($validation.size)" -ForegroundColor DarkCyan
+                }
+                else {
+                    Stop-ProcessTree $process $Label
+                    throw 'Godot melaporkan export DONE tetapi APK belum stabil/valid sebagai archive Android.'
+                }
+            }
+
+            if ($process.HasExited) { break }
+
+            if ($completionSeen -and $artifactVerified) {
+                $shutdownDeadline = (Get-Date).AddSeconds($ShutdownGraceSeconds)
+                while ((Get-Date) -lt $shutdownDeadline) {
+                    $process.Refresh()
+                    if ($process.HasExited) { break }
+                    Start-Sleep -Milliseconds 250
+                }
+                if (-not $process.HasExited) {
+                    Stop-ProcessTree $process $Label
+                    $forcedShutdown = $true
+                    Write-Host 'ANDROID_ACCOUNT_BOUND_TRANSPORT_EXPORT_SHUTDOWN_FORCED_AFTER_VERIFIED_APK' -ForegroundColor Yellow
+                }
+                break
+            }
+
+            Start-Sleep -Milliseconds 250
+        }
+
+        $process.Refresh()
+        if (-not $process.HasExited) {
+            $timedOut = $true
+            Stop-ProcessTree $process $Label
+        }
+        elseif (-not $completionSeen) {
+            $stdout = Read-SharedText $stdoutPath
+            $stderr = Read-SharedText $stderrPath
+            $snapshot = @($stdout,$stderr) -join [Environment]::NewLine
+            if ($snapshot -match '(?m)\[\s*DONE\s*\].*export') {
+                $completionSeen = $true
+                Write-Host 'ANDROID_ACCOUNT_BOUND_TRANSPORT_EXPORT_COMPLETION_SEEN' -ForegroundColor DarkCyan
+                $validation = Wait-ApkStableAndValid $ApkPath 20
+                $artifactVerified = [bool]$validation.valid
+                if ($artifactVerified) {
+                    Write-Host "ANDROID_ACCOUNT_BOUND_TRANSPORT_EXPORT_APK_VERIFIED | bytes=$($validation.size)" -ForegroundColor DarkCyan
+                }
+            }
+        }
+
+        $stdout = Read-SharedText $stdoutPath
+        $stderr = Read-SharedText $stderrPath
+        $parts = New-Object System.Collections.Generic.List[string]
+        if ($stdout) { $parts.Add($stdout.TrimEnd()) | Out-Null }
+        if ($stderr) { $parts.Add($stderr.TrimEnd()) | Out-Null }
+        $exitCode = 124
+        if ($process.HasExited) { $exitCode = [int]$process.ExitCode }
+
+        return [ordered]@{
+            label=$Label
+            exit_code=$exitCode
+            timed_out=[bool]$timedOut
+            timeout_seconds=$TimeoutSeconds
+            completion_seen=[bool]$completionSeen
+            apk_verified=[bool]$artifactVerified
+            apk_size=[long]$validation.size
+            apk_sha256=[string]$validation.sha256
+            forced_shutdown=[bool]$forcedShutdown
+            output=($parts -join [Environment]::NewLine)
+        }
+    }
+    finally {
+        if ($null -ne $process) {
+            if (-not $process.HasExited) { Stop-ProcessTree $process $Label }
+            $process.Dispose()
+        }
+        Remove-Item -LiteralPath $stdoutPath,$stderrPath -Force -ErrorAction SilentlyContinue
     }
 }
 
@@ -344,6 +550,49 @@ function Invoke-Smoke {
     }
 }
 
+function Invoke-ExportWatcherSelfTest {
+    $powershell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+    if (-not (Test-Path -LiteralPath $powershell -PathType Leaf)) { throw 'Windows PowerShell tidak tersedia untuk export watcher self-test.' }
+    $token = [guid]::NewGuid().ToString('N')
+    $fakeScript = Join-Path $LocalFolder ("android_export_watcher_selftest_" + $token + ".ps1")
+    $fakeApk = Join-Path $LocalFolder ("android_export_watcher_selftest_" + $token + ".apk")
+    $script = @'
+param([string]$OutputApk)
+$ErrorActionPreference = 'Stop'
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+Remove-Item -LiteralPath $OutputApk -Force -ErrorAction SilentlyContinue
+$archive = [System.IO.Compression.ZipFile]::Open($OutputApk,[System.IO.Compression.ZipArchiveMode]::Create)
+try {
+    foreach ($name in @('AndroidManifest.xml','classes.dex','lib/arm64-v8a/libfake.so')) {
+        $entry = $archive.CreateEntry($name)
+        $stream = $entry.Open()
+        try {
+            $bytes = [System.Text.Encoding]::UTF8.GetBytes('jade-export-watcher-selftest')
+            $stream.Write($bytes,0,$bytes.Length)
+        }
+        finally { $stream.Dispose() }
+    }
+}
+finally { $archive.Dispose() }
+Write-Output '[ DONE ] export'
+[Console]::Out.Flush()
+Start-Sleep -Seconds 30
+'@
+    Write-Utf8 $fakeScript $script
+    try {
+        $result = Invoke-ExportObserved $powershell @('-NoProfile','-NonInteractive','-File',$fakeScript,'-OutputApk',$fakeApk) `
+            'Synthetic export watcher self-test' $LocalFolder $fakeApk 20 2
+        if (-not [bool]$result.completion_seen) { throw 'Export watcher self-test tidak melihat completion marker.' }
+        if (-not [bool]$result.apk_verified) { throw 'Export watcher self-test tidak memverifikasi APK archive.' }
+        if (-not [bool]$result.forced_shutdown) { throw 'Export watcher self-test tidak memaksa shutdown proses yang sengaja hang.' }
+        if ([bool]$result.timed_out) { throw 'Export watcher self-test salah mengklasifikasikan verified shutdown hang sebagai timeout.' }
+        Write-Host 'ANDROID_ACCOUNT_BOUND_TRANSPORT_EXPORT_WATCHER_SELFTEST_PASS' -ForegroundColor Green
+    }
+    finally {
+        Remove-Item -LiteralPath $fakeScript,$fakeApk -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Invoke-Build {
     $head = Get-HeadSha
     $godot = Get-GodotExecutable
@@ -366,15 +615,22 @@ function Invoke-Build {
         $buildReportPath = Join-Path $Artifacts 'android-account-bound-transport-device-qa-build.json'
         Remove-Item -LiteralPath $destinationApk,$buildReportPath -Force -ErrorAction SilentlyContinue
 
-        $exportResult = Invoke-NativeTimed $godot @('--headless','--path','.','--install-android-build-template','--export-debug','Android',$relativeApk) 'Godot Android export' $workspace $ExportTimeoutSeconds
+        $exportResult = Invoke-ExportObserved $godot @('--headless','--path','.','--install-android-build-template','--export-debug','Android',$relativeApk) `
+            'Godot Android export' $workspace $workspaceApk $ExportTimeoutSeconds $ExportShutdownGraceSeconds
         $exportOutput = [string]$exportResult.output
         if ($exportOutput) { $exportOutput | Write-Host }
-        if ([bool]$exportResult.timed_out) { throw "Godot Android export timeout setelah $ExportTimeoutSeconds detik." }
+        if ([bool]$exportResult.timed_out) { throw "Godot Android export timeout sebelum completion setelah $ExportTimeoutSeconds detik." }
         if ($exportOutput -match 'JADE_ANDROID_ACCOUNT_BOUND_TRANSPORT_(?:ARMED|DEVICE_|QA_TOTAL)') {
             throw 'Godot export mengeksekusi Android device QA di host Windows.'
         }
-        if ([int]$exportResult.exit_code -ne 0 -or -not (Test-Path -LiteralPath $workspaceApk -PathType Leaf) -or (Get-Item -LiteralPath $workspaceApk).Length -le 0) {
+        if (-not [bool]$exportResult.completion_seen -or -not [bool]$exportResult.apk_verified) {
+            throw 'Godot Android export belum membuktikan completion marker + APK archive valid.'
+        }
+        if (-not [bool]$exportResult.forced_shutdown -and [int]$exportResult.exit_code -ne 0) {
             throw ('Export debug APK gagal. Exit code: ' + $exportResult.exit_code)
+        }
+        if (-not (Test-Path -LiteralPath $workspaceApk -PathType Leaf) -or (Get-Item -LiteralPath $workspaceApk).Length -le 0) {
+            throw 'APK hasil export hilang setelah completion verification.'
         }
         Copy-Item -LiteralPath $workspaceApk -Destination $destinationApk -Force
         if (-not (Test-Path -LiteralPath $destinationApk -PathType Leaf) -or (Get-Item -LiteralPath $destinationApk).Length -le 0) {
@@ -392,6 +648,10 @@ function Invoke-Build {
             import_timeout_seconds=$ImportTimeoutSeconds
             plugin_smoke_timeout_seconds=$PluginSmokeTimeoutSeconds
             export_timeout_seconds=$ExportTimeoutSeconds
+            export_shutdown_grace_seconds=$ExportShutdownGraceSeconds
+            export_completion_seen=[bool]$exportResult.completion_seen
+            export_apk_verified=[bool]$exportResult.apk_verified
+            export_shutdown_forced=[bool]$exportResult.forced_shutdown
             production_worktree_mutated=$false
             firebase_production=$false
             cloud_network=$false
@@ -411,6 +671,7 @@ try {
     switch ($Action) {
         'Audit' { Invoke-Audit }
         'Smoke' { Invoke-Smoke }
+        'ExportWatcherSelfTest' { Invoke-ExportWatcherSelfTest }
         'Build' { Invoke-Build }
     }
     exit 0

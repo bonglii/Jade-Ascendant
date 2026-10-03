@@ -35,9 +35,10 @@ The build harness intentionally separates Godot startup into phases:
 4. Only after import succeeds, install the hash-bound debug AAR into the disposable workspace.
 5. Enable **only** `res://addons/JadeCloudNativeBridge/plugin.cfg`.
 6. Run a second **warm `--import`** with only the bridge plugin enabled. This mirrors the import pass implied by `--export-debug` after the expensive first import is already complete.
-7. Export the DEBUG QA APK.
+7. Export the DEBUG QA APK. The export watcher requires Godot's `[ DONE ] export` marker, then waits for the APK file to become size-stable and verifies it opens as an APK/ZIP containing `AndroidManifest.xml`, a DEX file and an ARM64 native library.
+8. After verified export completion, Godot gets a short shutdown grace period. If the APK is already verified but the editor process hangs during shutdown/cleanup, the harness kills that process tree and records `export_shutdown_forced=true` instead of waiting for the full export timeout.
 
-Import, plugin smoke and export each have hard timeouts. A timeout kills the child process tree and fails closed instead of leaving an indefinite Godot console process.
+Import, plugin smoke and export each have hard timeouts. An export process is never accepted merely because time elapsed: only a verified completion marker + stable valid APK may use the post-export forced-shutdown path. Any pre-completion timeout or invalid/incomplete APK still fails closed.
 
 The production working tree's `project.godot`, `export_presets.cfg`, locked controlled-transfer stager and locked registered restore implementation are fingerprinted and must remain unchanged.
 
@@ -51,6 +52,7 @@ The production working tree's `project.godot`, `export_presets.cfg`, locked cont
    - disposable workspace transforms pass;
    - the **same staged local-build import path** completes with plugins OFF;
    - enabling only the bridge plugin afterward completes a headless plugin smoke;
+   - a synthetic export-watcher self-test proves that a completed, structurally valid APK can be preserved when the child process intentionally hangs only after export completion;
    - Godot 4.7.2 parses all device QA resources;
    - all existing exact-SHA regressions stay green.
 2. Only after CI is green, run the local build harness with the verified debug AAR SHA-256, then use the resulting APK for physical-device validation.
