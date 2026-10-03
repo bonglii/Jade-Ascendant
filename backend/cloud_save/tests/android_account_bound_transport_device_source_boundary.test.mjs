@@ -164,8 +164,11 @@ test("dedicated build harness keeps plugins OFF during import, enables only brid
   assert.match(buildTool, /ANDROID_ACCOUNT_BOUND_TRANSPORT_EXPORT_APK_VERIFIED/);
   assert.match(buildTool, /ANDROID_ACCOUNT_BOUND_TRANSPORT_EXPORT_SHUTDOWN_FORCED_AFTER_VERIFIED_APK/);
   assert.match(buildTool, /ANDROID_ACCOUNT_BOUND_TRANSPORT_EXPORT_WATCHER_SELFTEST_PASS/);
-  assert.match(buildTool, /\[Console\]::Out\.WriteLine\('\[ DONE \] export'\)/);
-  assert.match(buildTool, /\[Console\]::Out\.Flush\(\)/);
+  assert.match(buildTool, /\$cmd = Join-Path \$env:SystemRoot 'System32\\cmd\.exe'/);
+  assert.match(buildTool, /echo \[ DONE \] export/);
+  assert.match(buildTool, /ping 127\.0\.0\.1 -n 31 >nul/);
+  assert.match(buildTool, /Invoke-ExportObserved \$cmd @\('\/d','\/c',\$fakeCmdName\)/);
+  assert.doesNotMatch(buildTool, /\[Console\]::Out\.WriteLine/);
   assert.doesNotMatch(buildTool, /Write-Output '\[ DONE \] export'/);
   assert.match(buildTool, /function Wait-ApkStableAndValid/);
   assert.match(buildTool, /function Test-ApkArchive/);

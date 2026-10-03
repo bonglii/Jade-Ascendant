@@ -551,36 +551,38 @@ function Invoke-Smoke {
 }
 
 function Invoke-ExportWatcherSelfTest {
-    $powershell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
-    if (-not (Test-Path -LiteralPath $powershell -PathType Leaf)) { throw 'Windows PowerShell tidak tersedia untuk export watcher self-test.' }
+    $cmd = Join-Path $env:SystemRoot 'System32\cmd.exe'
+    if (-not (Test-Path -LiteralPath $cmd -PathType Leaf)) { throw 'cmd.exe tidak tersedia untuk export watcher self-test.' }
     $token = [guid]::NewGuid().ToString('N')
-    $fakeScript = Join-Path $LocalFolder ("android_export_watcher_selftest_" + $token + ".ps1")
+    $fakeCmdName = "android_export_watcher_selftest_" + $token + ".cmd"
+    $fakeCmd = Join-Path $LocalFolder $fakeCmdName
     $fakeApk = Join-Path $LocalFolder ("android_export_watcher_selftest_" + $token + ".apk")
-    $script = @'
-param([string]$OutputApk)
-$ErrorActionPreference = 'Stop'
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-Remove-Item -LiteralPath $OutputApk -Force -ErrorAction SilentlyContinue
-$archive = [System.IO.Compression.ZipFile]::Open($OutputApk,[System.IO.Compression.ZipArchiveMode]::Create)
-try {
-    foreach ($name in @('AndroidManifest.xml','classes.dex','lib/arm64-v8a/libfake.so')) {
-        $entry = $archive.CreateEntry($name)
-        $stream = $entry.Open()
-        try {
-            $bytes = [System.Text.Encoding]::UTF8.GetBytes('jade-export-watcher-selftest')
-            $stream.Write($bytes,0,$bytes.Length)
-        }
-        finally { $stream.Dispose() }
-    }
-}
-finally { $archive.Dispose() }
-[Console]::Out.WriteLine('[ DONE ] export')
-[Console]::Out.Flush()
-Start-Sleep -Seconds 30
-'@
-    Write-Utf8 $fakeScript $script
+
+    Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction Stop
+    Remove-Item -LiteralPath $fakeApk -Force -ErrorAction SilentlyContinue
+    $archive = [System.IO.Compression.ZipFile]::Open($fakeApk,[System.IO.Compression.ZipArchiveMode]::Create)
     try {
-        $result = Invoke-ExportObserved $powershell @('-NoProfile','-NonInteractive','-File',$fakeScript,'-OutputApk',$fakeApk) `
+        foreach ($name in @('AndroidManifest.xml','classes.dex','lib/arm64-v8a/libfake.so')) {
+            $entry = $archive.CreateEntry($name)
+            $stream = $entry.Open()
+            try {
+                $bytes = [System.Text.Encoding]::UTF8.GetBytes('jade-export-watcher-selftest')
+                $stream.Write($bytes,0,$bytes.Length)
+            }
+            finally { $stream.Dispose() }
+        }
+    }
+    finally { $archive.Dispose() }
+    if (-not (Test-ApkArchive $fakeApk)) { throw 'Synthetic APK self-test tidak valid sebelum watcher dijalankan.' }
+
+    $script = @'
+@echo off
+echo [ DONE ] export
+ping 127.0.0.1 -n 31 >nul
+'@
+    Write-Utf8 $fakeCmd $script
+    try {
+        $result = Invoke-ExportObserved $cmd @('/d','/c',$fakeCmdName) `
             'Synthetic export watcher self-test' $LocalFolder $fakeApk 20 2
         if (-not [bool]$result.completion_seen) { throw 'Export watcher self-test tidak melihat completion marker.' }
         if (-not [bool]$result.apk_verified) { throw 'Export watcher self-test tidak memverifikasi APK archive.' }
@@ -589,7 +591,7 @@ Start-Sleep -Seconds 30
         Write-Host 'ANDROID_ACCOUNT_BOUND_TRANSPORT_EXPORT_WATCHER_SELFTEST_PASS' -ForegroundColor Green
     }
     finally {
-        Remove-Item -LiteralPath $fakeScript,$fakeApk -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $fakeCmd,$fakeApk -Force -ErrorAction SilentlyContinue
     }
 }
 
