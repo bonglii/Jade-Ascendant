@@ -19,6 +19,7 @@ const stager = read("scripts/managers/cloud_account_bound_android_candidate_stag
 const runner = read("tests/android/android_account_bound_transport_device_qa.gd");
 const stub = read("tests/android/android_account_bound_transport_external_services_stub_qa.gd");
 const tool = read("tools/android_account_bound_transport_device_qa.ps1");
+const buildTool = read("tools/android_account_bound_transport_device_build_qa.ps1");
 const workflow = read(".github/workflows/cloud-account-bound-android-device-bridge-qa.yml");
 const nativeWorkflow = read(".github/workflows/cloud-native-bridge-qa.yml");
 
@@ -107,7 +108,7 @@ test("device runner uses only debug native bridge -> isolated candidate staging 
 });
 
 
-test("PowerShell harness uses exact git archive HEAD, exact CI AAR hash, isolated package and explicit ADB lifecycle", () => {
+test("PowerShell device runner uses exact git archive HEAD, exact CI AAR hash, isolated package and explicit ADB lifecycle", () => {
   assert.match(tool, /git -C \$ProjectRoot archive/);
   assert.match(tool, /rev-parse HEAD/);
   assert.match(tool, /GetTempPath/);
@@ -141,16 +142,56 @@ test("PowerShell harness uses exact git archive HEAD, exact CI AAR hash, isolate
 });
 
 
-test("CI bridge performs static/harness/parse QA only while native build proves debug-release class separation", () => {
+test("dedicated build harness keeps plugins OFF during import, enables only bridge afterward, and hard-times native processes", () => {
+  assert.match(buildTool, /ValidateSet\('Audit','Smoke','Build'\)/);
+  assert.match(buildTool, /git -C \$ProjectRoot archive/);
+  assert.match(buildTool, /rev-parse HEAD/);
+  assert.match(buildTool, /ExpectedBridgeAarSha256/);
+  assert.match(buildTool, /enabled=PackedStringArray\(\)/);
+  assert.match(buildTool, /function Enable-QaExportPlugin/);
+  assert.match(buildTool, /enabled=PackedStringArray\("'\+\$QaPlugin\+'"\)/);
+  assert.match(buildTool, /ANDROID_ACCOUNT_BOUND_TRANSPORT_IMPORT_PHASE_PASS/);
+  assert.match(buildTool, /ANDROID_ACCOUNT_BOUND_TRANSPORT_PLUGIN_SMOKE_PASS/);
+  assert.match(buildTool, /ANDROID_ACCOUNT_BOUND_TRANSPORT_BUILD_SMOKE_PASS/);
+  assert.match(buildTool, /ANDROID_ACCOUNT_BOUND_TRANSPORT_DEVICE_BUILD_PASS/);
+  assert.match(buildTool, /WaitForExit\(\$TimeoutSeconds \* 1000\)/);
+  assert.match(buildTool, /taskkill\.exe \/PID \$childProcessId \/T \/F/);
+  assert.match(buildTool, /timed_out=\[bool\]\$timedOut/);
+  assert.match(buildTool, /Godot disposable import timeout/);
+  assert.match(buildTool, /Godot Android export timeout/);
+  assert.doesNotMatch(buildTool, /begin_registered_restore|rollback_registered_restore/i);
+  assert.doesNotMatch(buildTool, /(?:^|\n)\s*(?:&\s*)?(?:adb(?:\.exe)?|firebase(?:\.cmd|\.exe)?)\s+/im);
+
+  const smokeStart = buildTool.indexOf("function Invoke-Smoke");
+  const buildStart = buildTool.indexOf("function Invoke-Build");
+  const switchStart = buildTool.indexOf("try {\n    Set-Location");
+  assert.ok(smokeStart >= 0 && buildStart > smokeStart && switchStart > buildStart);
+  const smokeBody = buildTool.slice(smokeStart, buildStart);
+  const buildBody = buildTool.slice(buildStart, switchStart);
+  assert.ok(smokeBody.indexOf("Invoke-ImportPhase") < smokeBody.indexOf("Invoke-PluginSmoke"));
+  assert.ok(buildBody.indexOf("Invoke-ImportPhase") < buildBody.indexOf("Install-BridgeAar"));
+  assert.ok(buildBody.indexOf("Install-BridgeAar") < buildBody.indexOf("Invoke-PluginSmoke"));
+  assert.ok(buildBody.indexOf("Invoke-PluginSmoke") < buildBody.indexOf("--export-debug"));
+
+  const forbiddenAutomaticNames = "Args|Input|Matches|Error|PID|Host|HOME|PWD|PSScriptRoot|PSCommandPath|PSHOME|PSVersionTable|ShellId";
+  assert.doesNotMatch(buildTool, new RegExp(`function[^\\n]*\\$(?:${forbiddenAutomaticNames})\\b`, "i"));
+  assert.doesNotMatch(buildTool, new RegExp(`^\\s*(?:\\[[^\\r\\n]+\\]\\s*)?\\$(?:${forbiddenAutomaticNames})\\s*=`, "im"));
+});
+
+
+test("CI reproduces disposable import/plugin smoke before physical-device build while native build proves debug-release separation", () => {
   assert.match(workflow, /Android Account-Bound Transport Device Bridge QA/);
   assert.match(workflow, /NO APK \/ NO DEVICE/);
   assert.match(workflow, /android_account_bound_transport_device_source_boundary\.test\.mjs/);
   assert.match(workflow, /System\.Management\.Automation\.Language\.Parser/);
-  assert.match(workflow, /JADE_ANDROID_ACCOUNT_BOUND_TRANSPORT_POWERSHELL_PARSE_PASS/);
+  assert.match(workflow, /android_account_bound_transport_device_build_qa\.ps1/);
   assert.match(workflow, /-Action Audit/);
+  assert.match(workflow, /-Action Smoke/);
+  assert.match(workflow, /ANDROID_ACCOUNT_BOUND_TRANSPORT_BUILD_SMOKE_PASS/);
   assert.match(workflow, /JADE_ANDROID_ACCOUNT_BOUND_TRANSPORT_PARSE_PASS/);
-  assert.doesNotMatch(workflow, /--export-debug|adb\s|firebase deploy|DEVICE_QA_PASS/i);
+  assert.doesNotMatch(workflow, /--export-debug|\badb\s|firebase deploy|DEVICE_QA_PASS/i);
 
+  assert.match(nativeWorkflow, /tools\/android_account_bound_transport_device_build_qa\.ps1/);
   assert.match(nativeWorkflow, /JadeAccountBoundTransportDebugBridge\.class/);
   assert.match(nativeWorkflow, /jade_account_bound_transport_device_record\.json/);
   assert.match(nativeWorkflow, /release AAR contains account-bound DEBUG QA bridge/);

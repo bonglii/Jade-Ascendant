@@ -16,7 +16,7 @@ jobs:
   android-account-bound-device-bridge:
     name: Android Account-Bound Transport Device Bridge (NO APK / NO DEVICE)
     runs-on: windows-2022
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - name: Checkout exact QA revision
         uses: actions/checkout@v4
@@ -35,27 +35,34 @@ jobs:
           node --test backend/cloud_save/tests/android_account_bound_transport_device_fixture.test.mjs
           if ($LASTEXITCODE -ne 0) { throw 'Android account-bound transport device fixture contract failed.' }
 
-      - name: Parse PowerShell device harness before execution
+      - name: Parse PowerShell device harnesses before execution
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $parseTokens = $null
-          $parseErrors = $null
-          $scriptPath = (Resolve-Path './tools/android_account_bound_transport_device_qa.ps1').Path
-          [System.Management.Automation.Language.Parser]::ParseFile(
-            $scriptPath, [ref]$parseTokens, [ref]$parseErrors
-          ) | Out-Null
-          if ($parseErrors.Count -ne 0) {
-            $parseErrors | ForEach-Object { Write-Host $_.Message -ForegroundColor Red }
-            throw 'Android account-bound transport device PowerShell parser audit failed.'
+          foreach ($relativePath in @(
+            './tools/android_account_bound_transport_device_qa.ps1',
+            './tools/android_account_bound_transport_device_build_qa.ps1'
+          )) {
+            $parseTokens = $null
+            $parseErrors = $null
+            $scriptPath = (Resolve-Path $relativePath).Path
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              $scriptPath, [ref]$parseTokens, [ref]$parseErrors
+            ) | Out-Null
+            if ($parseErrors.Count -ne 0) {
+              $parseErrors | ForEach-Object { Write-Host $_.Message -ForegroundColor Red }
+              throw "PowerShell parser audit failed: $relativePath"
+            }
           }
           Write-Host 'JADE_ANDROID_ACCOUNT_BOUND_TRANSPORT_POWERSHELL_PARSE_PASS'
 
-      - name: Audit disposable git-archive transform without APK or device
+      - name: Audit disposable git-archive transforms without APK or device
         shell: pwsh
         run: |
           & ./tools/android_account_bound_transport_device_qa.ps1 -Action Audit
           if ($LASTEXITCODE -ne 0) { throw 'Android account-bound transport device workspace audit failed.' }
+          & ./tools/android_account_bound_transport_device_build_qa.ps1 -Action Audit
+          if ($LASTEXITCODE -ne 0) { throw 'Android account-bound transport build harness audit failed.' }
 
       - name: Download and verify official Godot 4.7.2
         shell: pwsh
@@ -73,6 +80,19 @@ jobs:
           & $godot --version
           if ($LASTEXITCODE -ne 0) { throw 'Godot version check failed.' }
           "JADE_ANDROID_ACCOUNT_BOUND_GODOT=$godot" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Reproduce disposable local-build import and plugin startup (NO APK)
+        shell: pwsh
+        run: |
+          $output = & ./tools/android_account_bound_transport_device_build_qa.ps1 `
+            -Action Smoke `
+            -GodotPath $env:JADE_ANDROID_ACCOUNT_BOUND_GODOT `
+            -ImportTimeoutSeconds 420 `
+            -PluginSmokeTimeoutSeconds 120 2>&1 | Out-String
+          $output | Write-Host
+          if ($LASTEXITCODE -ne 0 -or $output -notmatch 'ANDROID_ACCOUNT_BOUND_TRANSPORT_BUILD_SMOKE_PASS') {
+            throw 'Disposable Android account-bound local-build smoke failed.'
+          }
 
       - name: Import production project resources
         shell: pwsh
