@@ -1,8 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application>
-        <meta-data
-            android:name="org.godotengine.plugin.v2.JadeAccountBoundTransportDebugBridge"
-            android:value="com.yungdevstudio.jadeascendant.cloudbridge.JadeAccountBoundTransportDebugBridge" />
-    </application>
+    <application />
 </manifest>

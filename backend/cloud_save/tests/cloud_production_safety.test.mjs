@@ -17,6 +17,11 @@ const index = read("backend/cloud_save/functions/index.mjs");
 const factory = read("backend/cloud_save/functions/src/callable_factory.mjs");
 const client = read("scripts/managers/cloud_account_bound_read_client_contract.gd");
 const snapshot = read("scripts/managers/cloud_full_permanent_snapshot_contract.gd");
+const localVault = read("scripts/managers/cloud_local_backup_vault.gd");
+const accountManager = read("scripts/managers/google_account_manager.gd");
+const accountCard = read("scripts/ui/google_account_card.gd");
+const debugManifest = read("backend/cloud_save/android_bridge/bridge/src/debug/AndroidManifest.xml");
+const bridgeGradle = read("backend/cloud_save/android_bridge/bridge/build.gradle.kts");
 
 const FALSE_APPROVAL_KEYS = [
   "production_activation_approved",
@@ -111,6 +116,44 @@ const RETIRED_DEVICE_TOOLS = [
   "tools/android_restore_device_qa.ps1",
 ];
 
+const RETIRED_RUNTIME_QA = [
+  "scripts/managers/cloud_account_bound_android_candidate_stager_qa.gd",
+  "scripts/managers/cloud_account_bound_transport_adapter_qa.gd",
+  "scripts/managers/cloud_local_restore_transaction.gd",
+  "scripts/managers/cloud_registered_path_restore_qa.gd",
+  "scripts/managers/cloud_registered_restore_bootstrap_qa.gd",
+  "scripts/managers/cloud_restore_execution_qa.gd",
+  "scripts/managers/cloud_restore_review_qa.gd",
+  "scripts/managers/cloud_restore_ux_presenter_qa.gd",
+  "scripts/managers/cloud_transfer_candidate_stager_qa.gd",
+  "scripts/managers/cloud_save_economy_consistency.gd",
+  "scripts/managers/cloud_save_manifest_inspector.gd",
+  "scripts/managers/cloud_save_manifest_inspector.gd.uid",
+  "scripts/managers/cloud_save_readonly_manager.gd",
+  "scripts/managers/cloud_save_readonly_manager.gd.uid",
+  "scripts/managers/cloud_save_snapshot_capture.gd",
+  "scripts/managers/cloud_save_snapshot_capture.gd.uid",
+  "scripts/managers/cloud_save_snapshot_contract.gd",
+  "scripts/managers/cloud_save_snapshot_contract.gd.uid",
+  "scripts/managers/cloud_save_snapshot_integrity.gd",
+  "scripts/ui/cloud_native_readonly_qa_card.gd",
+  "scripts/ui/cloud_native_readonly_qa_card.gd.uid",
+  "scripts/ui/cloud_restore_ux_surface_qa.gd",
+  "tests/cloud_save_server_reference_model.gd",
+];
+
+const RETIRED_BACKEND_GATE_SOURCES = [
+  "backend/cloud_save/firebase-gate5-emulator.json",
+  "backend/cloud_save/android_bridge/bridge/src/debug/assets/jade_account_bound_transport_device_record.json",
+  "backend/cloud_save/android_bridge/bridge/src/debug/java/com/yungdevstudio/jadeascendant/cloudbridge/JadeAccountBoundTransportDebugBridge.kt",
+  "backend/cloud_save/functions/src/economy/firestore_gate5_emulator_model.mjs",
+  "backend/cloud_save/functions/src/integration/firestore_gate8_closed_economy_emulator.mjs",
+  "backend/cloud_save/functions/src/restore/firestore_gate7_readonly_model.mjs",
+  "backend/cloud_save/functions/src/restore/reversible_restore_sandbox.mjs",
+  "backend/cloud_save/functions/src/snapshot/firestore_gate6_emulator_model.mjs",
+  "backend/cloud_save/functions/src/transport/account_bound_read_transport_qa.mjs",
+];
+
 test("final production approval fuse remains explicitly closed", () => {
   assert.equal(approval.contract_version, 1);
   assert.equal(approval.phase, "E4");
@@ -176,6 +219,21 @@ test("gate-era executable QA harnesses are retired after the locked E-series", (
   for (const path of RETIRED_GODOT_RUNNERS) assert.equal(existsSync(resolve(repo, path)), false, path);
   for (const path of RETIRED_DEVICE_TOOLS) assert.equal(existsSync(resolve(repo, path)), false, path);
   assert.equal(existsSync(resolve(repo, ".github/workflows/cloud-production-safety.yml")), true);
+});
+
+test("runtime and backend gate residues are retired while safety primitives remain", () => {
+  for (const path of RETIRED_RUNTIME_QA) assert.equal(existsSync(resolve(repo, path)), false, path);
+  for (const path of RETIRED_BACKEND_GATE_SOURCES) assert.equal(existsSync(resolve(repo, path)), false, path);
+
+  assert.match(localVault, /VAULT_ROOT:\s*String\s*=\s*"user:\/\/jade_cloud_pre_restore_vault_v1"/);
+  assert.match(localVault, /func prepare_local_pre_restore_backup\(/);
+
+  assert.doesNotMatch(accountManager, /NATIVE_QA_CARD_PATH|CloudSaveProbeScript|get_cloud_save_probe|CloudNativeReadOnlyQACard|cloud_save_readonly_manager/i);
+  assert.doesNotMatch(accountCard, /SnapshotCaptureScript|_cloud_qa|_capture_qa|CHECK FIRESTORE|LOCAL SNAPSHOT CHECK|cloud_save_snapshot_capture/i);
+  assert.doesNotMatch(debugManifest, /JadeAccountBoundTransportDebugBridge/);
+  assert.doesNotMatch(bridgeGradle, /qaMergedFirebaseRuntime|Gate 4\.2B diagnostic/i);
+  assert.match(bridgeGradle, /debugImplementation\("com\.google\.firebase:firebase-appcheck-debug"\)/);
+  assert.match(bridgeGradle, /implementation\("com\.google\.firebase:firebase-appcheck-playintegrity"\)/);
 });
 
 test("remaining workflows cannot deploy or bind production credentials", () => {

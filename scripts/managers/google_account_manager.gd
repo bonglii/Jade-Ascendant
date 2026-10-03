@@ -8,11 +8,7 @@ signal account_state_changed(snapshot: Dictionary)
 
 const SETTINGS_SCENE: String = "res://scenes/ui/settings_screen.tscn"
 const ACCOUNT_CARD_PATH: String = "res://scripts/ui/google_account_card.gd"
-const NATIVE_QA_CARD_PATH: String = "res://scripts/ui/cloud_native_readonly_qa_card.gd"
 const NATIVE_SINGLETON: String = "GodotFirebaseAndroid"
-const CloudSaveProbeScript = preload(
-	"res://scripts/managers/cloud_save_readonly_manager.gd"
-)
 const OPERATION_TIMEOUT_SECONDS: float = 35.0
 
 var _auth: Object = null
@@ -23,7 +19,6 @@ var _operation: String = ""
 var _operation_nonce: int = 0
 var _display_name: String = ""
 var _account_uid: String = ""
-var _cloud_save_probe: Node = null
 var _status: String = "Guest progress stays on this device."
 
 
@@ -63,18 +58,7 @@ func _on_scene_changed() -> void:
 	var audio_card: Node = content.get_node_or_null("AudioCard")
 	if audio_card != null:
 		content.move_child(card, audio_card.get_index())
-	# Only a manual, read-only native probe is exposed in Android DEBUG builds.
-	# This is a sibling of the Account card; there is no autoload, boot probe,
-	# persistent state, server write, or production UI addition.
-	if OS.has_feature("android") and OS.is_debug_build():
-		var qa_script: Script = load(NATIVE_QA_CARD_PATH) as Script
-		if qa_script != null:
-			var qa_card: PanelContainer = qa_script.new() as PanelContainer
-			if qa_card != null:
-				qa_card.name = "CloudNativeReadOnlyQACard"
-				content.add_child(qa_card)
-				content.move_child(qa_card, card.get_index() + 1)
-	# The Settings scene is deliberately left untouched. These cards are
+	# The Settings scene is deliberately left untouched. The Account card is
 	# appended only in Settings; all existing controls remain intact.
 
 
@@ -106,21 +90,6 @@ func get_authenticated_uid() -> String:
 		return ""
 	var live_uid: String = str(user_data.get("uid", "")).strip_edges()
 	return _account_uid if live_uid == _account_uid else ""
-
-
-## Created lazily; no Firestore network operation occurs during startup.
-## This is deliberately NOT a new Autoload, so Phase0's 19-autoload contract
-## and the established startup ordering remain unchanged.
-func get_cloud_save_probe() -> Node:
-	if is_instance_valid(_cloud_save_probe):
-		return _cloud_save_probe
-	var candidate: Node = CloudSaveProbeScript.new() as Node
-	if candidate == null:
-		return null
-	candidate.name = "CloudSaveReadOnlyManager"
-	add_child(candidate)
-	_cloud_save_probe = candidate
-	return candidate
 
 
 func refresh_provider() -> void:

@@ -47,26 +47,3 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
 }
-
-// Gate 4.2B diagnostic ONLY: mirrors legacy Firebase addon pins alongside the
-// proposed new export dependencies. Not proof of full APK/R8 compatibility.
-val qaMergedFirebaseRuntime by configurations.creating {
-    isCanBeResolved = true
-    isCanBeConsumed = false
-}
-
-dependencies {
-    add(qaMergedFirebaseRuntime.name, platform("com.google.firebase:firebase-bom:34.19.0"))
-    // Exact current GodotFirebaseAndroid/export_plugin.gd dependencies.
-    add(qaMergedFirebaseRuntime.name, "com.google.firebase:firebase-auth:23.2.0")
-    add(qaMergedFirebaseRuntime.name, "com.google.android.gms:play-services-auth:21.3.0")
-    add(qaMergedFirebaseRuntime.name, "com.google.firebase:firebase-firestore:25.1.4")
-    add(qaMergedFirebaseRuntime.name, "com.google.firebase:firebase-database:21.0.0")
-    add(qaMergedFirebaseRuntime.name, "com.google.firebase:firebase-storage:21.0.1")
-    add(qaMergedFirebaseRuntime.name, "com.google.firebase:firebase-analytics:22.4.0")
-    add(qaMergedFirebaseRuntime.name, "com.google.firebase:firebase-config:22.0.1")
-    // Exact new export plugin dependencies (release side, NO debug provider).
-    add(qaMergedFirebaseRuntime.name, "com.google.firebase:firebase-auth:24.2.0")
-    add(qaMergedFirebaseRuntime.name, "com.google.firebase:firebase-functions:22.1.1")
-    add(qaMergedFirebaseRuntime.name, "com.google.firebase:firebase-appcheck-playintegrity:19.4.1")
-}
