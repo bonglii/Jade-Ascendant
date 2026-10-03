@@ -1,0 +1,70 @@
+name: Jade Ascendant - Controlled Cloud Transfer QA
+
+on:
+  push:
+    branches:
+      - 'qa/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  controlled-transfer:
+    name: Reviewed 8-Domain Snapshot -> Candidate Files -> Locked Restore QA
+    runs-on: windows-2022
+    timeout-minutes: 20
+    env:
+      JADE_CONTROLLED_TRANSFER_TEST_ONLY: '1'
+      JADE_CONTROLLED_TRANSFER_ACK: 'DISPOSABLE_RUNNER_ONLY'
+      JADE_GATE9_TEST_ONLY: '1'
+      JADE_REGISTERED_RESTORE_TEST_ONLY: '1'
+      JADE_REGISTERED_RESTORE_ACK: 'DISPOSABLE_RUNNER_ONLY'
+    steps:
+      - name: Checkout exact QA revision
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22 for source-boundary audit
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          package-manager-cache: false
+
+      - name: Verify controlled-transfer staging remains disconnected and fail-closed
+        shell: pwsh
+        run: |
+          node --test backend/cloud_save/tests/controlled_transfer_source_boundary.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Controlled transfer source boundary failed.' }
+
+      - name: Download and verify official Godot 4.7.2
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $url = 'https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_win64.exe.zip'
+          $expectedSha256 = '731980f9608d61333e5baf54a2ef17210acc7a538446c0cb9969f002aca1e953'
+          $archive = Join-Path $env:RUNNER_TEMP 'godot-4.7.2.zip'
+          $installDir = Join-Path $env:RUNNER_TEMP 'godot-4.7.2'
+          Invoke-WebRequest -Uri $url -OutFile $archive
+          $actualSha256 = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualSha256 -ne $expectedSha256) { throw "Official Godot binary SHA256 mismatch: $actualSha256" }
+          Expand-Archive -LiteralPath $archive -DestinationPath $installDir -Force
+          $godot = Join-Path $installDir 'Godot_v4.7.2-stable_win64_console.exe'
+          if (-not (Test-Path -LiteralPath $godot -PathType Leaf)) { throw 'Godot console executable not found.' }
+          & $godot --version
+          if ($LASTEXITCODE -ne 0) { throw 'Godot version check failed.' }
+          "JADE_CONTROLLED_TRANSFER_GODOT=$godot" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Import production project resources
+        shell: pwsh
+        run: |
+          & $env:JADE_CONTROLLED_TRANSFER_GODOT --headless --path . --import
+          if ($LASTEXITCODE -ne 0) { throw "Controlled transfer project import failed: $LASTEXITCODE" }
+
+      - name: Stage reviewed snapshot and exercise explicit rollback through locked restore engine
+        shell: pwsh
+        run: |
+          & $env:JADE_CONTROLLED_TRANSFER_GODOT --headless --path . --script res://tests/controlled_transfer_candidate_qa.gd
+          if ($LASTEXITCODE -ne 0) { throw "Controlled transfer candidate QA failed: $LASTEXITCODE" }
