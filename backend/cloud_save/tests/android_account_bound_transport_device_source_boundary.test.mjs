@@ -126,7 +126,9 @@ test("PowerShell harness uses exact git archive HEAD, exact CI AAR hash, isolate
   assert.match(tool, /topResumedActivity\|mResumedActivity/);
   assert.match(tool, /mCurrentFocus\|mFocusedApp/);
   assert.match(tool, /\$processId/);
-  assert.doesNotMatch(tool, /function[^\n]*\$(?:PID|Host|HOME|PWD|PSScriptRoot|PSCommandPath|PSHOME|PSVersionTable|ShellId)\b/i);
+  const forbiddenAutomaticNames = "Args|Input|Matches|Error|PID|Host|HOME|PWD|PSScriptRoot|PSCommandPath|PSHOME|PSVersionTable|ShellId";
+  assert.doesNotMatch(tool, new RegExp(`function[^\\n]*\\$(?:${forbiddenAutomaticNames})\\b`, "i"));
+  assert.doesNotMatch(tool, new RegExp(`^\\s*(?:\\[[^\\r\\n]+\\]\\s*)?\\$(?:${forbiddenAutomaticNames})\\s*=`, "im"));
   assert.match(tool, /JADE_ANDROID_ACCOUNT_BOUND_TRANSPORT_DEVICE_FAIL/);
   assert.match(tool, /JADE_ANDROID_ACCOUNT_BOUND_TRANSPORT_DEVICE_PASS/);
   assert.match(tool, /android-account-bound-transport-device-qa-summary\.json/);
@@ -139,6 +141,8 @@ test("CI bridge performs static/harness/parse QA only while native build proves 
   assert.match(workflow, /Android Account-Bound Transport Device Bridge QA/);
   assert.match(workflow, /NO APK \/ NO DEVICE/);
   assert.match(workflow, /android_account_bound_transport_device_source_boundary\.test\.mjs/);
+  assert.match(workflow, /System\.Management\.Automation\.Language\.Parser/);
+  assert.match(workflow, /JADE_ANDROID_ACCOUNT_BOUND_TRANSPORT_POWERSHELL_PARSE_PASS/);
   assert.match(workflow, /-Action Audit/);
   assert.match(workflow, /JADE_ANDROID_ACCOUNT_BOUND_TRANSPORT_PARSE_PASS/);
   assert.doesNotMatch(workflow, /--export-debug|adb\s|firebase deploy|DEVICE_QA_PASS/i);

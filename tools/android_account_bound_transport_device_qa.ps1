@@ -103,8 +103,8 @@ function New-QaWorkspace([string]$HeadSha) {
 
 function Replace-ExactlyOnce([string]$Text,[string]$Pattern,[string]$Replacement,[string]$Label) {
     $regex = [regex]::new($Pattern,[System.Text.RegularExpressions.RegexOptions]::Multiline)
-    $matches = $regex.Matches($Text)
-    if ($matches.Count -ne 1) { throw "$Label harus match tepat satu kali; terbaca $($matches.Count)." }
+    $matchList = $regex.Matches($Text)
+    if ($matchList.Count -ne 1) { throw "$Label harus match tepat satu kali; terbaca $($matchList.Count)." }
     return $regex.Replace($Text,$Replacement,1)
 }
 
@@ -330,8 +330,8 @@ function Invoke-Adb([string]$Adb,[string[]]$Prefix,[string[]]$Arguments,[bool]$I
 }
 
 function Get-QaLaunchComponent([string]$Adb,[string[]]$Prefix,[string]$Package) {
-    [string[]]$args = $Prefix + @('shell','cmd','package','resolve-activity','--brief','-a','android.intent.action.MAIN','-c','android.intent.category.LAUNCHER',$Package)
-    $resolved = Invoke-NativeCaptured $Adb $args 'ADB resolve QA launcher'
+    [string[]]$adbArguments = $Prefix + @('shell','cmd','package','resolve-activity','--brief','-a','android.intent.action.MAIN','-c','android.intent.category.LAUNCHER',$Package)
+    $resolved = Invoke-NativeCaptured $Adb $adbArguments 'ADB resolve QA launcher'
     $output = ([string]$resolved.output).Trim()
     if ([int]$resolved.exit_code -ne 0) { throw "Tidak dapat resolve launcher activity QA untuk $Package." }
     $escaped = [regex]::Escape($Package)
@@ -341,8 +341,8 @@ function Get-QaLaunchComponent([string]$Adb,[string[]]$Prefix,[string]$Package) 
 }
 
 function Get-QaPid([string]$Adb,[string[]]$Prefix,[string]$Package) {
-    [string[]]$args = $Prefix + @('shell','pidof',$Package)
-    $result = Invoke-NativeCaptured $Adb $args 'ADB QA pid lookup'
+    [string[]]$adbArguments = $Prefix + @('shell','pidof',$Package)
+    $result = Invoke-NativeCaptured $Adb $adbArguments 'ADB QA pid lookup'
     $output = ([string]$result.output).Trim()
     if ([int]$result.exit_code -ne 0 -or -not $output) { return '' }
     $ids = @($output -split '\s+' | Where-Object { $_ -match '^\d+$' })
