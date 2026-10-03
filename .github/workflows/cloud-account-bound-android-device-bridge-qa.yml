@@ -32,6 +32,8 @@ jobs:
         run: |
           node --test backend/cloud_save/tests/android_account_bound_transport_device_source_boundary.test.mjs
           if ($LASTEXITCODE -ne 0) { throw 'Android account-bound transport device source boundary failed.' }
+          node --test backend/cloud_save/tests/e3cb_native_client_contract_device_source_boundary.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'E3C-B native-to-client-contract device source boundary failed.' }
           node --test backend/cloud_save/tests/android_account_bound_transport_device_fixture.test.mjs
           if ($LASTEXITCODE -ne 0) { throw 'Android account-bound transport device fixture contract failed.' }
 
