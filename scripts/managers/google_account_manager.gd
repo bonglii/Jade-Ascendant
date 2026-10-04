@@ -5,6 +5,7 @@ extends Node
 ## Depends on the optional tracked GodotFirebaseAndroid native addon; fails closed.
 
 signal account_state_changed(snapshot: Dictionary)
+signal monetization_identity_changed(ready: bool)
 
 const SETTINGS_SCENE: String = "res://scenes/ui/settings_screen.tscn"
 const ACCOUNT_CARD_PATH: String = "res://scripts/ui/google_account_card.gd"
@@ -19,6 +20,8 @@ var _operation: String = ""
 var _operation_nonce: int = 0
 var _display_name: String = ""
 var _account_uid: String = ""
+var _firebase_uid: String = ""
+var _link_source_uid: String = ""
 var _status: String = "Guest progress stays on this device."
 
 
@@ -70,6 +73,7 @@ func get_account_snapshot() -> Dictionary:
 		"operation": _operation,
 		"display_name": _display_name,
 		"status": _status,
+		"monetization_identity_ready": not get_monetization_account_binding().is_empty(),
 		"cloud_save_active": false
 	}
 
@@ -90,6 +94,58 @@ func get_authenticated_uid() -> String:
 		return ""
 	var live_uid: String = str(user_data.get("uid", "")).strip_edges()
 	return _account_uid if live_uid == _account_uid else ""
+
+
+## Purchase identity is intentionally separate from the visible Google-account
+## state. Firebase anonymous auth remains Guest in UI but gives secure backend
+## requests a stable UID. Only a SHA-256 binding leaves this manager for Play.
+func get_monetization_account_binding() -> String:
+	if not _native_ready or _auth == null:
+		return ""
+	if not OS.has_feature("android") or not bool(_auth.call("is_signed_in")):
+		return ""
+	var current_user: Variant = _auth.call("get_current_user_data")
+	if not (current_user is Dictionary):
+		return ""
+	var user_data: Dictionary = current_user as Dictionary
+	var live_uid: String = str(user_data.get("uid", "")).strip_edges()
+	if live_uid.is_empty() or live_uid != _firebase_uid:
+		return ""
+	return _sha256_hex(live_uid)
+
+
+func ensure_monetization_identity() -> bool:
+	if not OS.has_feature("android"):
+		return false
+	if not _native_ready:
+		refresh_provider()
+	if not _native_ready or _auth == null:
+		return false
+	if bool(_auth.call("is_signed_in")):
+		var current_user: Variant = _auth.call("get_current_user_data")
+		if current_user is Dictionary:
+			_apply_user(current_user as Dictionary)
+			return not get_monetization_account_binding().is_empty()
+	if _busy:
+		return false
+	_busy = true
+	_operation = "anonymous_identity"
+	_operation_nonce += 1
+	_publish()
+	_start_timeout(_operation_nonce, _operation)
+	_auth.call("sign_in_anonymously")
+	return false
+
+
+func _sha256_hex(value: String) -> String:
+	if value.is_empty():
+		return ""
+	var hashing := HashingContext.new()
+	if hashing.start(HashingContext.HASH_SHA256) != OK:
+		return ""
+	if hashing.update(value.to_utf8_buffer()) != OK:
+		return ""
+	return hashing.finish().hex_encode()
 
 
 func refresh_provider() -> void:
@@ -128,6 +184,14 @@ func refresh_provider() -> void:
 		_connect_once(&"auth_failure", Callable(self, "_on_auth_failure"))
 		_connect_once(&"auth_state_changed", Callable(self, "_on_auth_state_changed"))
 		_connect_once(&"sign_out_success", Callable(self, "_on_sign_out_success"))
+		_connect_once(
+			&"link_with_google_success",
+			Callable(self, "_on_link_with_google_success")
+		)
+		_connect_once(
+			&"link_with_google_failure",
+			Callable(self, "_on_link_with_google_failure")
+		)
 		_auth.call("add_auth_state_listener")
 	_native_ready = true
 	_sync_native_session()
@@ -144,10 +208,12 @@ func _sync_native_session() -> void:
 		return
 	if not bool(_auth.call("is_signed_in")):
 		_set_guest()
+		call_deferred("ensure_monetization_identity")
 		return
 	var data: Variant = _auth.call("get_current_user_data")
 	if not (data is Dictionary):
 		_set_guest()
+		call_deferred("ensure_monetization_identity")
 		return
 	_apply_user(data as Dictionary)
 
@@ -161,13 +227,28 @@ func request_google_sign_in() -> void:
 		return
 	if _signed_in:
 		return
+
+	var should_link_anonymous: bool = false
+	_link_source_uid = ""
+	if bool(_auth.call("is_signed_in")):
+		var current_user: Variant = _auth.call("get_current_user_data")
+		if current_user is Dictionary:
+			var user_data: Dictionary = current_user as Dictionary
+			var live_uid: String = str(user_data.get("uid", "")).strip_edges()
+			if bool(user_data.get("isAnonymous", false)) and not live_uid.is_empty():
+				should_link_anonymous = true
+				_link_source_uid = live_uid
+
 	_busy = true
-	_operation = "sign_in"
+	_operation = "link_google" if should_link_anonymous else "sign_in"
 	_status = "Opening Google sign-in..."
 	_operation_nonce += 1
 	_publish()
 	_start_timeout(_operation_nonce, _operation)
-	_auth.call("sign_in_with_google")
+	if should_link_anonymous:
+		_auth.call("link_anonymous_with_google")
+	else:
+		_auth.call("sign_in_with_google")
 
 
 func request_sign_out() -> void:
@@ -201,10 +282,13 @@ func _on_operation_timeout(nonce: int, operation: String) -> void:
 
 
 func _on_auth_success(data: Dictionary) -> void:
-	if _operation != "sign_in":
+	if _operation not in ["sign_in", "anonymous_identity"]:
 		return
+	var completed_operation: String = _operation
 	_finish_operation()
 	_apply_user(data)
+	if completed_operation == "anonymous_identity" and _firebase_uid.is_empty():
+		monetization_identity_changed.emit(false)
 
 
 func _on_auth_failure(_message: String) -> void:
@@ -212,6 +296,9 @@ func _on_auth_failure(_message: String) -> void:
 		return
 	var failed_operation: String = _operation
 	_finish_operation()
+	if failed_operation == "anonymous_identity":
+		_set_guest()
+		return
 	_status = (
 		"Google sign-in failed. Check your connection or Google configuration."
 		if failed_operation == "sign_in"
@@ -220,17 +307,47 @@ func _on_auth_failure(_message: String) -> void:
 	_publish()
 
 
+func _on_link_with_google_success(data: Dictionary) -> void:
+	if _operation != "link_google":
+		return
+	var expected_uid: String = _link_source_uid
+	var linked_uid: String = str(data.get("uid", "")).strip_edges()
+	_finish_operation()
+	if expected_uid.is_empty() or linked_uid != expected_uid:
+		_set_guest()
+		_status = "Google account link changed the secure purchase identity."
+		_publish()
+		return
+	_apply_user(data)
+
+
+func _on_link_with_google_failure(_message: String) -> void:
+	if _operation != "link_google":
+		return
+	_finish_operation()
+	_sync_native_session()
+	_status = "Google sign-in failed. Guest progress is unchanged."
+	_publish()
+
+
 func _on_auth_state_changed(signed_in: bool, user_data: Dictionary) -> void:
-	# A sign-out failure must not masquerade as success. For a sign-in attempt,
-	# wait for auth_success/auth_failure so the initial 'false' callback does
-	# not accidentally cancel an in-flight Google account picker.
-	if _operation == "sign_in" and not signed_in:
+	# Interactive Google operations finish only through their explicit result
+	# signals. This prevents an intermediate anonymous auth callback from
+	# changing the visible account state or purchase owner.
+	if _operation in ["sign_in", "link_google"]:
+		return
+	if _operation == "sign_out":
+		return
+	if _operation == "anonymous_identity":
+		if not signed_in:
+			return
+		_finish_operation()
+		_apply_user(user_data)
 		return
 	if not signed_in:
 		_finish_operation()
 		_set_guest()
-		return
-	if _operation == "sign_out":
+		call_deferred("ensure_monetization_identity")
 		return
 	_finish_operation()
 	_apply_user(user_data)
@@ -242,6 +359,7 @@ func _on_sign_out_success(succeeded: bool) -> void:
 	_finish_operation()
 	if succeeded:
 		_set_guest()
+		call_deferred("ensure_monetization_identity")
 	else:
 		_status = "Sign out failed. Your local progress is unchanged."
 		_publish()
@@ -250,15 +368,28 @@ func _on_sign_out_success(succeeded: bool) -> void:
 func _finish_operation() -> void:
 	_busy = false
 	_operation = ""
+	_link_source_uid = ""
 	_operation_nonce += 1
 
 
 func _apply_user(data: Dictionary) -> void:
-	# Firebase can also hold an anonymous session. Never label one Google.
 	var uid: String = str(data.get("uid", "")).strip_edges()
-	if uid.is_empty() or bool(data.get("isAnonymous", false)):
+	if uid.is_empty():
 		_set_guest()
 		return
+
+	# Anonymous Firebase identity is intentionally invisible to account UI.
+	# It exists only so secure purchase verification has a stable server owner.
+	_firebase_uid = uid
+	if bool(data.get("isAnonymous", false)):
+		_account_uid = ""
+		_signed_in = false
+		_display_name = ""
+		_status = "Guest progress stays on this device."
+		_publish()
+		monetization_identity_changed.emit(true)
+		return
+
 	_account_uid = uid
 	_signed_in = true
 	var account_name: Variant = data.get("name", "")
@@ -267,14 +398,17 @@ func _apply_user(data: Dictionary) -> void:
 		_display_name = "Google account"
 	_status = "Google account connected on this device."
 	_publish()
+	monetization_identity_changed.emit(true)
 
 
 func _set_guest() -> void:
+	_firebase_uid = ""
 	_account_uid = ""
 	_signed_in = false
 	_display_name = ""
 	_status = "Guest progress stays on this device."
 	_publish()
+	monetization_identity_changed.emit(false)
 
 
 func _publish() -> void:

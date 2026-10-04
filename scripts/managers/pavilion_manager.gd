@@ -101,7 +101,8 @@ const DEFAULT_STATE: Dictionary = {
 	"monthly_blessing_last_claim_date": "",
 	"monthly_blessing_daily_claims_remaining": 0,
 	"monthly_blessing_purchase_count": 0,
-	"processed_grant_ids": []
+	"processed_grant_ids": [],
+	"processed_iap_grant_ids": []
 }
 
 var state: Dictionary = DEFAULT_STATE.duplicate(true)
@@ -110,6 +111,7 @@ var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var billing_provider: Node = null
 var billing_store_products: Dictionary = {}
 var billing_owned_product_ids: Array[String] = []
+var secure_purchase_authority_ready: bool = false
 
 
 func _ready() -> void:
@@ -129,6 +131,7 @@ func _ready() -> void:
 	elif not bool(result.get("exists", false)):
 		_save_state()
 	_connect_cadence_hooks()
+	call_deferred("_connect_secure_purchase_identity")
 	call_deferred("_sync_economy_cadence")
 
 
@@ -211,9 +214,20 @@ func _apply_loaded_state(data: Dictionary) -> void:
 	state["lifetime_pulls"] = maxi(int(data.get("lifetime_pulls", 0)), 0)
 
 	var processed: Array = _normalize_string_array(data.get("processed_grant_ids", []))
+	var processed_iap: Array = _normalize_string_array(
+		data.get("processed_iap_grant_ids", [])
+	)
+	var migrated_iap: Dictionary = _migrate_legacy_iap_grant_ids(
+		processed,
+		processed_iap
+	)
+	processed = migrated_iap["generic"]
+	processed_iap = migrated_iap["iap"]
 	while processed.size() > MAX_PROCESSED_GRANT_IDS:
 		processed.pop_front()
 	state["processed_grant_ids"] = processed
+	# Paid IAP replay protection is exact and intentionally not truncated.
+	state["processed_iap_grant_ids"] = processed_iap
 
 	var loaded_cosmetic_id: String = str(state["cosmetic_id"])
 	if not is_cosmetic_owned(loaded_cosmetic_id):
@@ -236,6 +250,61 @@ func _normalize_string_array(raw_value: Variant) -> Array:
 			if not value.is_empty() and value not in normalized:
 				normalized.append(value)
 	return normalized
+
+
+func _migrate_legacy_iap_grant_ids(
+	processed: Array,
+	processed_iap: Array
+) -> Dictionary:
+	var generic: Array = []
+	var iap: Array = processed_iap.duplicate()
+	for raw_entry in processed:
+		var entry: String = str(raw_entry).strip_edges()
+		if entry.begins_with("iap:"):
+			var second_colon: int = entry.find(":", 4)
+			if second_colon > 4 and second_colon + 1 < entry.length():
+				var purchase_token: String = entry.substr(second_colon + 1)
+				var migrated_id: String = "iapv1:" + _sha256_hex(purchase_token)
+				if _is_iap_grant_id(migrated_id):
+					if migrated_id not in iap:
+						iap.append(migrated_id)
+					# Never keep a legacy raw Play purchase token in local save.
+					continue
+		if not entry.is_empty() and entry not in generic:
+			generic.append(entry)
+	return {
+		"generic": generic,
+		"iap": iap,
+	}
+
+
+func _sha256_hex(value: String) -> String:
+	if value.is_empty():
+		return ""
+	var hashing := HashingContext.new()
+	if hashing.start(HashingContext.HASH_SHA256) != OK:
+		return ""
+	if hashing.update(value.to_utf8_buffer()) != OK:
+		return ""
+	return hashing.finish().hex_encode()
+
+
+func _is_iap_grant_id(value: String) -> bool:
+	if not value.begins_with("iapv1:") or value.length() != 70:
+		return false
+	for character in value.substr(6):
+		if not "0123456789abcdef".contains(character):
+			return false
+	return true
+
+
+func _dictionary_has_exact_keys(data: Dictionary, expected: Array) -> bool:
+	if data.size() != expected.size():
+		return false
+	for raw_key in data:
+		if not (raw_key is String) or raw_key not in expected:
+			return false
+	return true
 
 
 func _save_state() -> bool:
@@ -356,16 +425,30 @@ func get_billing_runtime_status() -> Dictionary:
 			"provider": "none",
 			"state": "missing",
 			"ready": false,
+			"secure_purchase_authority_ready": false,
 		}
 	var raw: Variant = billing_provider.call("get_runtime_status")
-	if raw is Dictionary:
-		return (raw as Dictionary).duplicate(true)
-	return {}
+	if not (raw is Dictionary):
+		return {}
+	var status: Dictionary = (raw as Dictionary).duplicate(true)
+	status["secure_purchase_authority_ready"] = secure_purchase_authority_ready
+	if not secure_purchase_authority_ready:
+		status["ready"] = false
+		var account_binding: String = (
+			GoogleAccountManager.get_monetization_account_binding()
+		)
+		status["state"] = (
+			"identity_preparing"
+			if account_binding.is_empty()
+			else "secure_verification_unavailable"
+		)
+	return status
 
 
 func is_iap_purchase_supported(product_id: String) -> bool:
 	return (
-		is_instance_valid(billing_provider)
+		secure_purchase_authority_ready
+		and is_instance_valid(billing_provider)
 		and bool(
 			billing_provider.call(
 				"supports_product",
@@ -387,12 +470,73 @@ func refresh_iap_store_products() -> void:
 func purchase_iap(product_id: String) -> bool:
 	if not is_instance_valid(billing_provider):
 		return false
+	var account_binding: String = (
+		GoogleAccountManager.get_monetization_account_binding()
+	)
+	if account_binding.is_empty():
+		GoogleAccountManager.ensure_monetization_identity()
+		billing_purchase_state_changed.emit(
+			product_id,
+			"identity_preparing",
+			"Preparing secure purchase identity. Please try again shortly."
+		)
+		return false
+	_refresh_secure_purchase_context()
+	if not secure_purchase_authority_ready:
+		billing_purchase_state_changed.emit(
+			product_id,
+			"secure_verification_unavailable",
+			"Secure purchase verification is not available yet."
+		)
+		return false
 	return bool(billing_provider.call("purchase", product_id))
 
 
 func restore_iap_purchases() -> void:
-	if is_instance_valid(billing_provider):
-		billing_provider.call("restore_purchases")
+	if not is_instance_valid(billing_provider):
+		return
+	if not secure_purchase_authority_ready:
+		billing_purchase_state_changed.emit(
+			"",
+			"secure_verification_unavailable",
+			"Secure purchase recovery is not available yet."
+		)
+		return
+	billing_provider.call("restore_purchases")
+
+
+func _connect_secure_purchase_identity() -> void:
+	if GoogleAccountManager.has_signal("monetization_identity_changed"):
+		var callback := Callable(self, "_on_monetization_identity_changed")
+		if not GoogleAccountManager.is_connected(
+			"monetization_identity_changed",
+			callback
+		):
+			GoogleAccountManager.connect(
+				"monetization_identity_changed",
+				callback
+			)
+	GoogleAccountManager.ensure_monetization_identity()
+	_refresh_secure_purchase_context()
+
+
+func _on_monetization_identity_changed(_ready: bool) -> void:
+	_refresh_secure_purchase_context()
+
+
+func _refresh_secure_purchase_context() -> bool:
+	if not is_instance_valid(billing_provider):
+		return false
+	if not billing_provider.has_method("configure_secure_purchase_context"):
+		return false
+	var account_binding: String = (
+		GoogleAccountManager.get_monetization_account_binding()
+	)
+	return bool(billing_provider.call(
+		"configure_secure_purchase_context",
+		account_binding,
+		secure_purchase_authority_ready
+	))
 
 
 func _activate_android_billing_provider() -> void:
@@ -422,6 +566,7 @@ func _attach_billing_provider(next_provider: Node) -> void:
 		_on_billing_entitlements_received
 	)
 	add_child(billing_provider)
+	call_deferred("_refresh_secure_purchase_context")
 
 
 func _on_billing_store_products_updated(
@@ -456,96 +601,94 @@ func _on_billing_entitlements_received(
 
 func _on_billing_purchase_ready(
 	product_id: String,
-	purchase_token: String,
+	_purchase_token: String,
 	_order_id: String
 ) -> void:
-	var granted: bool = apply_verified_iap_purchase(
+	# M1B-1 deliberately has no production authority transport yet. Never derive
+	# entitlement from the client product id/token and never finalize on-device.
+	last_error = "Secure purchase verification is not available yet."
+	billing_purchase_state_changed.emit(
 		product_id,
-		purchase_token
-	)
-	billing_provider.call(
-		"finalize_purchase",
-		product_id,
-		purchase_token,
-		granted
+		"secure_verification_unavailable",
+		last_error
 	)
 	purchase_delivery_finished.emit(
 		product_id,
-		granted,
-		(
-			"Purchase saved successfully."
-			if granted
-			else last_error
-		)
+		false,
+		last_error
 	)
 
 
-## Billing-ready entry point. The game UI must never call this directly from a
-## button press; a platform billing adapter calls it only after receipt/token
-## verification succeeds.
-func apply_verified_iap_purchase(
-	product_id: String,
-	provider_transaction_id: String
-) -> bool:
+## Internal handoff target for M1B-2. Only a validated server grant may reach
+## this function. Purchase token, order id, UID and client-claimed amount are
+## intentionally absent from the API.
+func _apply_server_authorized_iap_grant(grant: Dictionary) -> bool:
 	last_error = ""
+	var expected_keys: Array = [
+		"purchase_contract_version",
+		"state",
+		"grant_id",
+		"internal_product_id",
+		"celestial_jade",
+	]
+	if not _dictionary_has_exact_keys(grant, expected_keys):
+		last_error = "Secure purchase grant shape is invalid."
+		return false
+	if (
+		typeof(grant.get("purchase_contract_version")) != TYPE_INT
+		or int(grant["purchase_contract_version"]) != 1
+		or str(grant.get("state", "")) != "grant_ready"
+	):
+		last_error = "Secure purchase grant contract is invalid."
+		return false
+
+	var grant_id: String = str(grant.get("grant_id", "")).strip_edges()
+	if not _is_iap_grant_id(grant_id):
+		last_error = "Secure purchase grant id is invalid."
+		return false
+
+	var product_id: String = str(
+		grant.get("internal_product_id", "")
+	).strip_edges()
 	var product: Dictionary = EconomyCatalog.get_iap_product(product_id)
-	if product.is_empty():
-		last_error = "Unknown billing product."
+	if (
+		product.is_empty()
+		or str(product.get("type", ""))
+			!= EconomyCatalog.PRODUCT_TYPE_CONSUMABLE
+	):
+		last_error = "Secure purchase product is not supported."
 		return false
-	var transaction_id: String = provider_transaction_id.strip_edges()
-	if transaction_id.is_empty():
-		last_error = "Verified billing transaction id is required."
+
+	var jade_amount: int = int(grant.get("celestial_jade", 0))
+	if (
+		typeof(grant.get("celestial_jade")) != TYPE_INT
+		or jade_amount <= 0
+		or jade_amount != int(
+			product.get(EconomyCatalog.CURRENCY_CELESTIAL_JADE, 0)
+		)
+	):
+		last_error = "Secure purchase grant amount is invalid."
 		return false
-	var grant_id: String = "iap:" + product_id + ":" + transaction_id
-	var already_processed: Array = _normalize_string_array(
-		state.get("processed_grant_ids", [])
+
+	var processed_iap: Array = _normalize_string_array(
+		state.get("processed_iap_grant_ids", [])
 	)
-	if grant_id in already_processed:
+	if grant_id in processed_iap:
 		return true
-	var product_type: String = str(product.get("type", ""))
-	var next_state: Dictionary = state.duplicate(true)
-	var jade_amount: int = 0
-	var seal_amount: int = 0
-	if product_type == EconomyCatalog.PRODUCT_TYPE_CONSUMABLE:
-		jade_amount = int(product.get(EconomyCatalog.CURRENCY_CELESTIAL_JADE, 0))
-	elif product_type == EconomyCatalog.PRODUCT_TYPE_ONE_TIME_BUNDLE:
-		var claimed_products: Array = _normalize_string_array(
-			next_state.get("claimed_one_time_product_ids", [])
-		)
-		if product_id in claimed_products:
-			last_error = "One-time support pack already claimed."
-			return false
-		claimed_products.append(product_id)
-		next_state["claimed_one_time_product_ids"] = claimed_products
-		jade_amount = int(product.get(EconomyCatalog.CURRENCY_CELESTIAL_JADE, 0))
-		seal_amount = int(product.get(EconomyCatalog.CURRENCY_PAVILION_SEAL, 0))
-	elif product_type == EconomyCatalog.PRODUCT_TYPE_MONTHLY_BLESSING:
-		var now_unix: int = int(Time.get_unix_time_from_system())
-		var current_expiry: int = maxi(
-			int(next_state.get("monthly_blessing_expires_unix", 0)),
-			0
-		)
-		var extension_start: int = maxi(now_unix, current_expiry)
-		var duration_days: int = int(product.get("duration_days", 0))
-		next_state["monthly_blessing_expires_unix"] = (
-			extension_start + duration_days * SECONDS_PER_DAY
-		)
-		next_state["monthly_blessing_daily_claims_remaining"] = (
-			maxi(int(next_state.get("monthly_blessing_daily_claims_remaining", 0)), 0)
-			+ duration_days
-		)
-		next_state["monthly_blessing_purchase_count"] = (
-			int(next_state.get("monthly_blessing_purchase_count", 0)) + 1
-		)
-		jade_amount = int(product.get("initial_celestial_jade", 0))
-	else:
-		last_error = "Unsupported billing product type."
+	if SaveManager.is_progress_read_only():
+		last_error = "Restart the game to recover a pending purchase save."
 		return false
-	if not _commit_currency_grant(next_state, grant_id, jade_amount, seal_amount):
+
+	var next_state: Dictionary = state.duplicate(true)
+	next_state["celestial_jade"] = maxi(
+		int(next_state.get("celestial_jade", 0)) + jade_amount,
+		0
+	)
+	processed_iap.append(grant_id)
+	next_state["processed_iap_grant_ids"] = processed_iap
+	if not _commit_pavilion_state(next_state):
 		return false
 	pavilion_changed.emit()
-	if product_type == EconomyCatalog.PRODUCT_TYPE_MONTHLY_BLESSING:
-		call_deferred("_sync_monthly_blessing_daily")
 	return true
 
 

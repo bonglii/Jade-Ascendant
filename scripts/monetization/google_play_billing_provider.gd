@@ -17,6 +17,15 @@ const PRODUCT_TYPE_INAPP := 0
 const PURCHASED := 1
 const PENDING := 2
 
+const SECURE_CONSUMABLE_PRODUCT_IDS: Array = [
+	"jade_pouch_100",
+	"jade_satchel_550",
+	"jade_casket_1200",
+	"jade_vault_2500",
+	"jade_treasury_6500",
+	"jade_ascendant_14000",
+]
+
 # Canonical game IDs stay stable for economy, reward, UI, and save contracts.
 # Five Google Play Console products use jade_pouch_* IDs, so translation happens
 # only at this provider boundary.
@@ -40,9 +49,10 @@ const INTERNAL_PRODUCT_ID_BY_PLAY: Dictionary = {
 var billing_client: Node
 var state := "boot"
 var store_products: Dictionary = {}
-var pending_by_token: Dictionary = {}
 var active_product_id := ""
 var restore_in_progress := false
+var secure_account_binding: String = ""
+var secure_authority_ready: bool = false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -65,8 +75,6 @@ func _ready() -> void:
 	_connect_signal("query_product_details_response", _on_product_details)
 	_connect_signal("query_purchases_response", _on_query_purchases)
 	_connect_signal("on_purchase_updated", _on_purchase_updated)
-	_connect_signal("consume_purchase_response", _on_consume_finished)
-	_connect_signal("acknowledge_purchase_response", _on_acknowledge_finished)
 	state = "connecting"
 	billing_client.call("start_connection")
 
@@ -87,13 +95,49 @@ func _connect_signal(
 			billing_client.connect(signal_name, callback)
 
 func supports_product(product_id: String) -> bool:
+	if product_id not in SECURE_CONSUMABLE_PRODUCT_IDS:
+		return false
 	var product: Dictionary = EconomyCatalog.get_iap_product(product_id)
 	if product.is_empty():
 		return false
 	return (
 		str(product.get("type", ""))
-		!= EconomyCatalog.PRODUCT_TYPE_MONTHLY_BLESSING
+		== EconomyCatalog.PRODUCT_TYPE_CONSUMABLE
 	)
+
+
+func configure_secure_purchase_context(
+	account_binding: String,
+	authority_ready: bool
+) -> bool:
+	var normalized: String = account_binding.strip_edges().to_lower()
+	secure_account_binding = normalized if _is_sha256_hex(normalized) else ""
+	secure_authority_ready = (
+		authority_ready and not secure_account_binding.is_empty()
+	)
+	if (
+		not secure_account_binding.is_empty()
+		and billing_client != null
+		and is_instance_valid(billing_client)
+		and billing_client.has_method("set_obfuscated_account_id")
+	):
+		billing_client.call(
+			"set_obfuscated_account_id",
+			secure_account_binding
+		)
+	if secure_authority_ready and _client_ready():
+		call_deferred("restore_purchases")
+	return secure_authority_ready
+
+
+func _is_sha256_hex(value: String) -> bool:
+	if value.length() != 64:
+		return false
+	for character in value:
+		if not "0123456789abcdef".contains(character):
+			return false
+	return true
+
 
 func _to_play_product_id(product_id: String) -> String:
 	return str(
@@ -122,7 +166,8 @@ func _supported_ids() -> PackedStringArray:
 func _on_connected() -> void:
 	state = "connected"
 	refresh_products()
-	restore_purchases()
+	if secure_authority_ready:
+		restore_purchases()
 
 func _on_disconnected() -> void:
 	state = "disconnected"
@@ -221,6 +266,20 @@ func purchase(product_id: String) -> bool:
 			"Product is not enabled yet."
 		)
 		return false
+	if not secure_authority_ready:
+		purchase_state_changed.emit(
+			product_id,
+			"secure_verification_unavailable",
+			"Secure purchase verification is not available yet."
+		)
+		return false
+	if not _is_sha256_hex(secure_account_binding):
+		purchase_state_changed.emit(
+			product_id,
+			"identity_unavailable",
+			"Secure purchase identity is not ready."
+		)
+		return false
 	if not _client_ready():
 		purchase_state_changed.emit(
 			product_id,
@@ -248,6 +307,10 @@ func purchase(product_id: String) -> bool:
 		product_id,
 		"opening",
 		"Opening Google Play purchase..."
+	)
+	billing_client.call(
+		"set_obfuscated_account_id",
+		secure_account_binding
 	)
 	var raw: Variant = billing_client.call(
 		"purchase",
@@ -378,14 +441,10 @@ func _process_purchase(purchase_data: Dictionary) -> void:
 				"Google Play returned an empty purchase token."
 			)
 			continue
-		pending_by_token[token] = {
-			"product_id": product_id,
-			"purchase": purchase_data.duplicate(true),
-		}
 		purchase_state_changed.emit(
 			product_id,
-			"granting",
-			"Purchase confirmed. Saving reward..."
+			"verification_required",
+			"Purchase received. Waiting for secure server verification..."
 		)
 		purchase_ready.emit(
 			product_id,
@@ -393,87 +452,25 @@ func _process_purchase(purchase_data: Dictionary) -> void:
 			str(purchase_data.get("order_id", ""))
 		)
 
-func finalize_purchase(
-	product_id: String,
-	purchase_token: String,
-	grant_accepted: bool
-) -> void:
-	var token := purchase_token.strip_edges()
-	if token.is_empty():
-		return
-	if not grant_accepted:
-		purchase_state_changed.emit(
-			product_id,
-			"save_failed",
-			"Purchase remains recoverable from Google Play."
-		)
-		return
-	if billing_client == null or not is_instance_valid(billing_client):
-		return
-	var product := EconomyCatalog.get_iap_product(product_id)
-	var product_type := str(product.get("type", ""))
-	if product_type == EconomyCatalog.PRODUCT_TYPE_CONSUMABLE:
-		state = "consuming_purchase"
-		billing_client.call("consume_purchase", token)
-		return
-	if product_type == EconomyCatalog.PRODUCT_TYPE_ONE_TIME_BUNDLE:
-		var tracked: Dictionary = pending_by_token.get(token, {})
-		var purchase_data: Dictionary = tracked.get("purchase", {})
-		if bool(purchase_data.get("is_acknowledged", false)):
-			pending_by_token.erase(token)
-			purchase_state_changed.emit(
-				product_id,
-				"completed",
-				"Purchase restored."
-			)
-			return
-		state = "acknowledging_purchase"
-		billing_client.call("acknowledge_purchase", token)
-		return
-	purchase_state_changed.emit(
-		product_id,
-		"unsupported",
-		"Purchase type is not enabled yet."
-	)
-
-func _on_consume_finished(response: Dictionary) -> void:
-	_finish_transaction(response)
-
-func _on_acknowledge_finished(response: Dictionary) -> void:
-	_finish_transaction(response)
-
-func _finish_transaction(response: Dictionary) -> void:
-	var token := str(response.get("token", "")).strip_edges()
-	var tracked: Dictionary = pending_by_token.get(token, {})
-	var product_id := str(tracked.get("product_id", ""))
-	if int(response.get("response_code", -999)) == RESPONSE_OK:
-		pending_by_token.erase(token)
-		state = (
-			"ready"
-			if not store_products.is_empty()
-			else "connected"
-		)
-		purchase_state_changed.emit(
-			product_id,
-			"completed",
-			"Purchase complete."
-		)
-		return
-	state = "finalization_failed"
-	purchase_state_changed.emit(
-		product_id,
-		"finalization_failed",
-		str(response.get(
-			"debug_message",
-			"Google Play transaction finalization failed."
-		))
-	)
-
 func get_runtime_status() -> Dictionary:
+	var purchase_ready: bool = (
+		_client_ready()
+		and secure_authority_ready
+		and _is_sha256_hex(secure_account_binding)
+	)
+	var runtime_state: String = state
+	if _client_ready() and not secure_authority_ready:
+		runtime_state = "secure_verification_unavailable"
+	elif _client_ready() and secure_account_binding.is_empty():
+		runtime_state = "identity_unavailable"
 	return {
 		"provider": "google_play_billing",
-		"state": state,
-		"ready": _client_ready(),
+		"state": runtime_state,
+		"ready": purchase_ready,
+		"billing_client_ready": _client_ready(),
+		"secure_authority_ready": secure_authority_ready,
+		"account_binding_ready": _is_sha256_hex(secure_account_binding),
+		"client_finalization_enabled": false,
 		"products_loaded": not store_products.is_empty(),
 		"product_count": store_products.size(),
 		"restore_in_progress": restore_in_progress,
