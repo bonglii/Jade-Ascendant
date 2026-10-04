@@ -45,8 +45,18 @@ func _ready() -> void:
 		tr("What stays on device"),
 		tr(
 			"Progress, equipment, achievements, daily trials, run checkpoints, "
-			+ "and preferences are stored locally. Jade Ascendant has no player "
-			+ "account or cloud save."
+			+ "and preferences are stored locally on this device. Google Login "
+			+ "does not back up this gameplay data. Cloud Save is not available."
+		)
+	)
+	_add_section(
+		content,
+		tr("OPTIONAL GOOGLE SIGN-IN"),
+		tr("Identity, not backup"),
+		tr(
+			"Guest mode is available. Google Login is optional and establishes "
+			+ "identity only. It does not back up or restore gameplay progress. "
+			+ "Cloud Save is not available."
 		)
 	)
 	_add_section(
@@ -68,6 +78,16 @@ func _ready() -> void:
 			"Rewarded ads are optional. No gameplay progress is removed for "
 			+ "declining or not completing an ad, and a reward is granted only "
 			+ "after the ad confirms completion."
+		)
+	)
+	_add_section(
+		content,
+		tr("GOOGLE PLAY PURCHASES"),
+		tr("Billing on supported Android builds"),
+		tr(
+			"Optional Celestial Jade purchases use Google Play Billing. Google "
+			+ "Play processes the payment; purchase state and token information "
+			+ "are used for local delivery, recovery, and duplicate-grant protection."
 		)
 	)
 	_add_section(

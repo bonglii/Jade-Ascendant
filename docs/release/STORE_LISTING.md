@@ -1,61 +1,89 @@
-# Teks listing edisi offline
+# Jade Ascendant — Store listing copy
 
-Gunakan setelah gameplay/build final lolos pemeriksaan. Teks menjelaskan fitur dalam sumber kandidat ini; penerbit perlu mencocokkannya dengan AAB yang benar-benar dikirim. Jangan menambahkan klaim rating, unduhan, atau jaminan performa yang belum terbukti.
+Gunakan teks ini hanya setelah dicocokkan dengan exact AAB yang akan dikirim. Jangan
+menambahkan klaim rating, jumlah download, benchmark, cloud recovery, atau service
+availability yang belum terbukti.
 
 ## English
 
-**App name**
+### Short description
 
-Jade Ascendant
+Cultivate, summon gear, and conquer five xianxia trials.
 
-**Short description**
+### Full description
 
-Master six martial arts and survive five trials in an offline xianxia roguelite
+Rise as Lin Yue and cultivate through five distinct trials in a portrait xianxia action
+journey. Move with touch controls while attacks flow automatically, collect spirit
+essence, build martial techniques, and challenge powerful guardians.
 
-**Full description**
+Strengthen permanent cultivation, collect equipment across multiple rarities, refine
+duplicates into useful resources, and use the Celestial Pavilion to summon unlocked
+equipment. Daily disciplines, achievements, meditation, and cosmetic auras add long-term
+goals between runs.
 
-Guide Lin Yue along a path of cultivation through Verdant Qi Valley. Gather spirit essence, shape your martial arts, and face the guardians of five distinct trials.
+Core gameplay progress is stored locally on your device. You can continue as Guest or
+optionally sign in with Google to establish your player identity. Google Login does not
+back up or restore gameplay progress, and Cloud Save is not currently available.
+Clearing app storage or uninstalling the game may remove local progress.
 
-Your weapons strike automatically. You control movement, evade marked attacks, and choose a new cultivation path whenever you break through to the next level.
+On supported Android builds, Jade Ascendant may offer optional rewarded ads and optional
+Celestial Jade purchases through Google Play Billing. Rewarded ads are not required to
+keep existing progress, and purchase pricing is provided by Google Play.
 
-Explore bamboo mist, ruined jade shrines, storm-swept peaks, and the Sovereign's Celestial Gate. Refine six weapon arts up to Level 7, including Spirit Sword, Fire Orb, Thunder Talisman, Yin-Yang Blades, Heavenly Sword Rain, and Eight Trigrams Formation. Discover combinations that awaken powerful resonances.
-
-Between trials, strengthen permanent meridians, collect sixteen equipment pieces across four rarities, and forge gear with resources earned through play. Duplicate equipment becomes Refinement Shards. Daily disciplines, achievement records, meditation, and unlockable cosmetic auras offer more paths to progress.
-
-Jade Ascendant is designed for portrait play, with automatic attacks, touch movement, adjustable audio, a reduced-effects option, optional vibration, and English and Indonesian interface options.
-
-This edition plays offline and includes no advertisements or real-money in-app purchases. Progress is stored on your device. There is no cloud save or account recovery; clearing app storage or uninstalling the game removes local progress.
+Features include:
+- portrait touch gameplay;
+- six martial arts with progression and resonance;
+- five Journey chapters;
+- equipment collection and refinement;
+- Celestial Pavilion summoning;
+- daily/local progression systems;
+- English and Indonesian interface options;
+- adjustable audio, vibration, reduced effects, and frame-rate options.
 
 ## Bahasa Indonesia
 
-**Nama aplikasi**
+### Deskripsi singkat
 
-Jade Ascendant
+Kultivasi, panggil gear, dan taklukkan lima ujian xianxia.
 
-**Deskripsi singkat**
+### Deskripsi lengkap
 
-Taklukkan lima ujian dengan jurus kultivasi dalam roguelite xianxia luring
+Bangkit sebagai Lin Yue dan jalani lima ujian berbeda dalam petualangan aksi xianxia
+portrait. Bergerak dengan kontrol sentuh saat serangan berlangsung otomatis, kumpulkan
+esensi roh, bangun kombinasi jurus, dan hadapi para guardian kuat.
 
-**Deskripsi lengkap**
+Perkuat cultivation permanen, kumpulkan equipment dari beberapa rarity, ubah duplikat
+menjadi resource refinement, dan gunakan Celestial Pavilion untuk memanggil equipment
+yang sudah terbuka. Daily discipline, achievement, meditation, dan aura kosmetik
+memberi tujuan jangka panjang di antara run.
 
-Ikuti perjalanan kultivasi Lin Yue di Verdant Qi Valley. Kumpulkan esensi roh, bentuk kombinasi jurus, dan hadapi para penjaga dalam lima ujian dengan suasana berbeda.
+Progres gameplay utama disimpan secara lokal di perangkat. Kamu dapat lanjut sebagai
+Guest atau memakai Google Login secara opsional untuk membentuk identitas pemain.
+Google Login tidak mencadangkan atau memulihkan progres gameplay, dan Cloud Save saat
+ini belum tersedia. Menghapus data aplikasi atau mencopot game dapat menghapus progres
+lokal.
 
-Senjatamu menyerang otomatis. Kamu mengatur gerakan, menghindari serangan bertanda, dan memilih peningkatan setiap kali mencapai terobosan level.
+Pada build Android yang mendukung, Jade Ascendant dapat menawarkan iklan berhadiah
+opsional dan pembelian Celestial Jade opsional melalui Google Play Billing. Iklan
+berhadiah tidak diwajibkan untuk mempertahankan progres yang sudah ada, dan harga
+pembelian diberikan oleh Google Play.
 
-Lintasi kabut bambu, reruntuhan kuil giok, puncak badai, hingga Sovereign's Celestial Gate. Murnikan enam jurus sampai Level 7: Spirit Sword, Fire Orb, Thunder Talisman, Yin-Yang Blades, Heavenly Sword Rain, dan Eight Trigrams Formation. Temukan perpaduan yang membangkitkan resonansi kuat.
+Fitur:
+- gameplay portrait dengan kontrol sentuh;
+- enam jurus dengan progression dan resonance;
+- lima chapter Journey;
+- koleksi dan refinement equipment;
+- summoning di Celestial Pavilion;
+- sistem progression harian/lokal;
+- antarmuka Bahasa Indonesia dan English;
+- pengaturan audio, getaran, reduced effects, dan frame rate.
 
-Di antara ujian, tingkatkan meridian permanen, kumpulkan enam belas perlengkapan dalam empat tingkat kelangkaan, dan tempa perlengkapan memakai sumber daya hasil bermain. Item duplikat berubah menjadi Pecahan Pemurnian. Ujian harian, catatan pencapaian, meditasi, dan aura kosmetik memberi tujuan tambahan dalam perjalananmu.
+## Store assets
 
-Jade Ascendant dirancang untuk layar portrait dengan serangan otomatis, gerakan sentuh, pengaturan audio, pilihan efek lebih ringan, getaran opsional, serta opsi antarmuka Inggris dan Indonesia.
+| Asset | Source |
+|---|---|
+| App icon | `release/store/play_icon_512.png` |
+| Feature graphic | `release/store/feature_graphic_1024x500.png` |
 
-Edisi ini dimainkan luring tanpa iklan atau pembelian dalam aplikasi dengan uang nyata. Progres disimpan di perangkat. Tidak ada simpanan awan atau pemulihan akun; menghapus data aplikasi atau mencopot game akan menghapus progres lokal.
-
-## Aset dan alt text
-
-| Aset | Lokasi | Alt text |
-|---|---|---|
-| Ikon aplikasi | `release/store/play_icon_512.png` | Jade sword inside an eight-sided cultivation seal |
-| Feature graphic | `release/store/feature_graphic_1024x500.png` | Jade Ascendant title above layered jade mountains |
-| Screenshot gameplay | Hasil `AMBIL_SCREENSHOT.bat` / perangkat Android | Tulis sesuai scene dan aksi yang benar-benar terlihat |
-
-Teks pendek di atas berada di bawah batas 80 karakter. Ikon dan banner disiapkan dalam ukuran/format listing; screenshot aktual belum disertakan. [Ketentuan aset Google Play](https://support.google.com/googleplay/android-developer/answer/9866151?hl=en).
+Screenshot gameplay harus berasal dari build nyata dan tidak memalsukan unlock,
+currency, purchase, atau content state.

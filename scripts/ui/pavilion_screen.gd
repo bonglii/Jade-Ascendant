@@ -633,7 +633,7 @@ func _build_summon_section() -> void:
 	rates_box.add_theme_constant_override("separation", 5)
 	rates_box.visible = false
 	summon.add_child(rates_box)
-	var billing_note := _label(rates_box, tr("Celestial Jade purchase remains unavailable until verified platform billing is integrated."), 9, Color(0.47, 0.57, 0.56, 1.0))
+	var billing_note := _label(rates_box, tr("Celestial Jade purchases use Google Play Billing on supported Android builds."), 9, Color(0.47, 0.57, 0.56, 1.0))
 	billing_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 	summon_result_box = VBoxContainer.new()
@@ -1564,7 +1564,7 @@ func _rebuild_drop_rates() -> void:
 		_label(rates_box, tr("Legendary pity is paused until a Legendary equipment item is progression-unlocked."), 11, Color(0.82, 0.68, 0.52, 1.0))
 	var billing_disclosure := _label(
 		rates_box,
-		tr("Celestial Jade purchase remains unavailable until verified platform billing is integrated."),
+		tr("Celestial Jade purchases use Google Play Billing on supported Android builds."),
 		9,
 		Color(0.47, 0.57, 0.56, 1.0)
 	)

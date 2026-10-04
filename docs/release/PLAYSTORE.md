@@ -1,76 +1,149 @@
-# Dari proyek ke Google Play
+# Jade Ascendant — Google Play release checklist
 
-Disusun 9 September 2026. Sasaran paket: Godot 4.7.2, Android portrait, ARM64, API minimum 24, target API 36, AAB release bertanda tangan. Ini jalur menyiapkan calon rilis; persetujuan Google Play belum diperoleh.
+Dokumen ini adalah checklist source/release saat ini. Jawaban final Play Console tetap
+harus diverifikasi oleh publisher terhadap **exact AAB yang diunggah** dan konfigurasi
+live Console pada saat rilis.
 
-## 1. Persiapan sekali di PC
+## 1. Current Android identity
 
-- Pasang JDK 17 dan Android SDK. Atur Java SDK Path serta Android SDK Path melalui **Editor Settings → Export → Android** di Godot.
-- Pasang export templates yang **persis cocok dengan Godot 4.7.2** melalui menu pengelola template Godot.
-- Android SDK harus memuat platform **36**. Gunakan NDK r28b (28.1.13356709) dan komponen build yang dibutuhkan template Godot. Panduan Godot masih dapat memperlihatkan SDK 35 sebagai contoh; preset paket ini menargetkan 36 karena persyaratan Play yang berlaku. [Panduan Godot Android](https://docs.godotengine.org/en/4.7/tutorials/export/exporting_for_android.html), [persyaratan target API Google Play](https://developer.android.com/google/play/requirements/target-sdk).
-- Untuk tombol pembuat kunci dan pemeriksaan tanda tangan, arahkan `JAVA_HOME` ke folder JDK atau tambahkan folder `bin` JDK ke PATH.
+- Engine: Godot 4.7.2
+- Package: `com.yungdevstudio.jadeascendant`
+- Version: `1.0.4`
+- Version code: `4`
+- Portrait
+- minSdk 24
+- targetSdk 36
+- arm64-v8a
+- Gradle build enabled
+- INTERNET permission enabled
+- VIBRATE permission enabled
 
-Android Studio menyediakan SDK Manager untuk pemasangan komponen. Proses Gradle pertama membutuhkan internet untuk dependensi build. Game yang diekspor tetap memakai konfigurasi offline.
+Jangan gunakan dokumen lama yang menyebut build offline-only, INTERNET disabled, tanpa
+ads, tanpa billing, atau tanpa account.
 
-## 1B. Android environment preflight
+## 2. Canonical local release flow
 
-Jalankan `PERIKSA_ANDROID.bat` sebelum mengisi identitas atau membuat AAB. Gate ini memeriksa JDK 17+, Android SDK, `platform-tools/adb`, Android Platform API 36, Build-Tools minimal 35.0.1, Command-line Tools, Godot 4.7.2 export templates, serta preset AAB/ARM64. Hasil terstruktur ditulis ke `artifacts/android-preflight.json`.
+1. `PERIKSA_GAME.bat`
+2. `PERIKSA_ANDROID.bat`
+3. review/update publisher values melalui `SIAPKAN_RILIS.bat`
+4. pastikan privacy policy yang dipublikasikan sama dengan build truth
+5. `BUAT_AAB.bat`
+6. verifikasi report/artifact AAB
+7. upload ke Internal testing lebih dulu
+8. jalankan `docs/release/DEVICE_QA.md` pada build yang sama
 
-Jika ada FAIL, perbaiki hanya komponen yang ditandai. Script membaca `ANDROID_HOME`, `ANDROID_SDK_ROOT`, lokasi default `%LOCALAPPDATA%\Android\Sdk`, dan Android SDK Path yang tersimpan di Godot. Untuk Java, helper juga membaca `JAVA_HOME`, PATH, dan Java SDK Path Godot.
+Build helper/preflight tidak menggantikan Play review atau device QA.
 
-## 2. Identitas dan kebijakan
+## 3. Account / Firebase Authentication
 
-Jalankan `SIAPKAN_RILIS.bat`. Isi package name yang menjadi identitas final game, nama penerbit, email dukungan, dan URL HTTPS kebijakan privasi milikmu. Script menolak contoh `com.example...` dan data kosong. Setelah aplikasi diterbitkan, mengganti package name berarti aplikasi berbeda.
+Current game:
+- Google Sign-In opsional;
+- Guest mode tersedia;
+- tidak ada forced authentication;
+- Google Login adalah identity boundary, bukan Cloud Save;
+- login/sign-out tidak boleh mengganti gameplay save lokal.
 
-Script membuat `release/privacy-policy.html` dari template EN/ID. **Baca dan sesuaikan komitmen tentang penanganan email dukungan**, lalu terbitkan HTML tersebut di URL yang kamu isi. Pastikan URL dapat dibuka tanpa login. Paket ini belum menerbitkan halaman itu. Nama penerbit, URL, dan email juga masuk ke layar privasi game.
+Sebelum release:
+- package Firebase harus sama dengan package AAB;
+- signing SHA yang relevan harus terdaftar;
+- Google provider harus aktif;
+- real-device sign-in, restored session, sign-out, dan Guest fallback harus diuji;
+- privacy policy dan Data safety harus sesuai exact SDK/data flow.
 
-`release/release_config.json` menyimpan nilai publik dan versi; tidak menyimpan password. Untuk update berikutnya, naikkan `version_code` sebelum membangun AAB baru.
+## 4. Ads / consent
 
-## 3. Kunci dan build
+Current game:
+- Google Mobile Ads terintegrasi;
+- rewarded ads bersifat opsional;
+- Google UMP menyediakan applicable privacy choices;
+- monetization debug diagnostics hanya untuk debug/test path yang memang diizinkan.
 
-1. Jalankan `BUAT_KUNCI_UPLOAD.bat` jika belum memiliki upload key. Masukkan identitas dan password melalui keytool. Gunakan password kunci yang sama dengan password keystore. Simpan cadangan pribadi; jangan masukkan ke ZIP untuk dibagikan.
-2. Jalankan `BUAT_AAB.bat`. Pemeriksaan Godot dilakukan ulang pada salinan terpisah sebelum export. Pilih keystore yang sudah kamu miliki jika memakai kunci lain. Password hanya diberikan ke proses build melalui environment, kemudian dipulihkan/dibersihkan.
-3. Bila sukses, ambil `artifacts/JadeAscendant-1.0.0.aab` dan `artifacts/aab-build-report.json`.
+Sebelum release:
+- verifikasi production AdMob app/ad-unit configuration;
+- verifikasi UMP/consent behavior pada region/device yang relevan;
+- verifikasi reward hanya diberikan setelah completion;
+- cancel/failure/no-fill tidak boleh memberi reward.
 
-AAB membutuhkan Gradle dan kunci release. Tombol menggunakan flag Godot `--install-android-build-template` bersama `--export-release`. [Export Android](https://docs.godotengine.org/en/4.7/tutorials/export/exporting_for_android.html), [CLI Godot](https://docs.godotengine.org/en/latest/tutorials/editor/command_line_tutorial.html).
+## 5. Google Play Billing
 
-Pemeriksaan bundle memeriksa keberadaan native ARM64, alignment segmen ELF minimal 16 KB, dan tanda tangan JAR. **Itu belum memeriksa APK hasil distribusi, perilaku pada perangkat 16 KB, manifest akhir, atau kelulusan Play.** Periksa APK hasil bundle dengan APK Analyzer/`zipalign` serta emulator/perangkat 16 KB. [Panduan Android 16 KB](https://developer.android.com/guide/practices/page-sizes).
+Production-shaped billing provider aktif untuk enam Celestial Jade consumable:
+- `jade_pouch_100`
+- `jade_pouch_550`
+- `jade_pouch_1200`
+- `jade_pouch_2500`
+- `jade_pouch_6500`
+- `jade_pouch_14000`
 
-## 4. Uji sebelum produksi
+Current client behavior:
+- harga uang berasal dari Google Play product details;
+- PENDING tidak memberi reward;
+- consumable difinalisasi setelah local reward/save berhasil;
+- interrupted purchase dapat dipulihkan melalui Restore Purchases;
+- exact purchase-token replay dilindungi secara lokal dari double grant.
 
-Gunakan matriks `DEVICE_QA.md`. Jalankan seluruh lima trial tanpa memaksa boss melalui script uji. Periksa portrait dengan notch, Android Back, background/resume, suara, panas, save, menang/kalah, dan semua perlengkapan. Laporan FPS serta hasil perangkat harus diisi dari pengukuran nyata.
+Security limitation:
+- production server-side purchase-token verification dengan Google Play Developer API
+  **belum terintegrasi**;
+- jangan menyebut purchase flow server-authoritative atau server-verified.
 
-`AMBIL_SCREENSHOT.bat` membuat salinan dengan save terpisah. Mainkan game dan tekan F12 untuk menangkap viewport asli. Pilih minimal dua screenshot ponsel yang representatif; utamakan gameplay. Periksa ukuran hasil, isi, dan tampilan pada Android. Jangan memakai banner sebagai screenshot gameplay. Berkas ikon 512×512 RGBA dan feature graphic 1024×500 RGB ada di `release/store/`. [Persyaratan aset listing](https://support.google.com/googleplay/android-developer/answer/9866151?hl=en).
+Publisher wajib memverifikasi product status, pricing, tester eligibility, dan purchase
+behavior di live Play Console / license-test environment.
 
-## 5. Isi Play Console
+## 6. Privacy / Data safety
 
-Buat aplikasi dari akun penerbitmu dan unggah AAB ke **Internal testing** terlebih dahulu. Bahan teks EN/ID ada di `STORE_LISTING.md`. Periksa package, version code, target SDK sebenarnya, permission, dan peringatan kompatibilitas yang dibaca Play dari AAB.
+Privacy policy harus konsisten dengan build:
+- local gameplay save;
+- optional Google Sign-In + Guest;
+- Google Login tidak membackup gameplay;
+- Cloud Save tidak tersedia;
+- optional rewarded ads + UMP;
+- Google Play Billing;
+- support email handling;
+- Google/Firebase/Ads/Billing processing mengikuti service yang relevan.
 
-| Bagian | Dasar pengisian edisi ini |
-|---|---|
-| App access | Game tidak memerlukan login atau kredensial reviewer |
-| Ads | Tidak ada iklan pada edisi offline ini |
-| Pembelian dalam aplikasi | Tidak ada integrasi pembayaran/produk uang nyata pada edisi ini |
-| Data safety | Sumber saat ini tidak memiliki SDK pengiriman data; gunakan worksheet di bawah dan cocokkan dengan bundle akhir |
-| Privacy policy | URL aktif milik penerbit, sesuai HTML yang sudah ditinjau |
-| Content rating | Jawab kuesioner berdasarkan pertarungan fantasi yang benar-benar tampil; jangan menebak rating akhirnya |
-| Target audience | Pilih audiens yang memang dituju; gaya pixel art tidak otomatis berarti ditujukan untuk anak-anak |
-| Pricing/distribution | Keputusan penerbit di Console; belum ditetapkan dalam paket |
+Jangan menyalin jawaban Data safety dari dokumen historis. Isi berdasarkan exact final
+AAB, SDK yang benar-benar terkandung di bundle, konfigurasi live, dan praktik publisher.
 
-Untuk akun developer pribadi baru yang terkena persyaratan pengujian, Google meminta closed test dengan sedikitnya **12 tester** yang tetap ikut selama **14 hari berturut-turut** sebelum permohonan akses produksi. Ikuti status yang tampil pada akunmu. [Persyaratan pengujian akun pribadi](https://support.google.com/googleplay/android-developer/answer/14151465?hl=en).
+## 7. Cloud claims
 
-## Worksheet Data safety
+Production Cloud Save/restore tetap disabled/fail-closed. Store listing, reviewer notes,
+screenshots, dan support copy tidak boleh menjanjikan:
+- cloud backup;
+- account-based gameplay recovery;
+- automatic restore;
+- cloud-wins;
+- server-authoritative economy.
 
-Paket saat ini menyimpan progres serta preferensi di perangkat, tidak memiliki HTTP client/SDK analitik aktif, dan permission internet nonaktif. Offline-only local storage berbeda dari data yang dikirim keluar perangkat. Berdasarkan sumber ini, jawaban awal untuk pengumpulan/pembagian data game adalah **tidak**; penerbit harus mencocokkannya dengan AAB final, plugin tambahan, dan kegiatan dukungan yang sebenarnya. Formulir serta kebijakan tetap perlu diisi. [Penjelasan Data safety Google Play](https://support.google.com/googleplay/android-developer/answer/10787469?hl=en).
+## 8. Live Play Console verification
 
-Jika nanti menambah iklan, billing, cloud save, analytics, atau crash reporting, tinjau ulang formulir, kebijakan, consent, serta permission. Jangan menggunakan deklarasi offline ini untuk build yang telah memiliki SDK tersebut.
+Publisher harus memeriksa langsung, karena nilai ini tidak bisa dipastikan hanya dari
+repository:
+- App access / reviewer instructions;
+- Ads declaration;
+- Data safety;
+- Content rating;
+- Target audience / children-related settings;
+- IAP product activation/pricing/availability;
+- privacy-policy URL;
+- country/device availability;
+- testing-track requirements;
+- policy warnings;
+- Play App Signing identity;
+- exact manifest/SDK findings dari uploaded AAB.
 
-## Syarat menandai rilis siap unggah
+Jangan hard-code jawaban Console yang belum diverifikasi.
 
-- Pemeriksaan Godot lulus pada revisi yang dibangun.
-- AAB release bertanda tangan berhasil dibuat dan diverifikasi.
-- Target/permission/ABI akhir sesuai, termasuk pemeriksaan native 16 KB dan APK/perangkat.
-- Uji nyata serta pre-launch report telah ditinjau dan masalah utama ditutup.
-- Screenshot berasal dari game nyata; identitas, privasi, dan hak penggunaan aset telah diperiksa.
-- Formulir Console selesai dan jalur testing akun terpenuhi.
+## 9. Release evidence before production
 
-Paket sumber ini belum memenuhi seluruh syarat di atas dari lingkungan pengerjaan. Tidak ada aplikasi yang dikirim atau dipublikasikan oleh paket ini secara otomatis.
+Minimum:
+- exact Git SHA dicatat;
+- required CI pada SHA tersebut green;
+- AAB bertanda tangan berhasil;
+- artifact SHA-256 dicatat;
+- Internal testing install berhasil;
+- device QA matrix terisi;
+- Google/Guest boundary diuji;
+- rewarded ads + UMP diuji;
+- billing purchase/PENDING/recovery diuji;
+- privacy/store copy cocok dengan shipped build;
+- Cloud Save tetap fail-closed kecuali ada approval eksplisit terpisah.

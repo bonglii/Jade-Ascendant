@@ -66,16 +66,21 @@ const INDONESIAN: Dictionary = {
 	"Your progress stays on your device.": "Progres permainan tetap tersimpan di perangkatmu.",
 	"LOCAL GAME SAVE": "SAVE GAME LOKAL",
 	"What stays on device": "Data yang tetap di perangkat",
-	"Progress, equipment, achievements, daily trials, run checkpoints, and preferences are stored locally. Jade Ascendant has no player account or cloud save.": "Progres, perlengkapan, pencapaian, ujian harian, checkpoint sesi, dan preferensi disimpan secara lokal. Jade Ascendant tidak memiliki akun pemain atau cloud save.",
+	"Progress, equipment, achievements, daily trials, run checkpoints, and preferences are stored locally on this device. Google Login does not back up this gameplay data. Cloud Save is not available.": "Progres, perlengkapan, pencapaian, ujian harian, checkpoint sesi, dan preferensi disimpan lokal di perangkat ini. Login Google tidak mencadangkan data gameplay ini. Cloud Save belum tersedia.",
+	"OPTIONAL GOOGLE SIGN-IN": "GOOGLE SIGN-IN OPSIONAL",
+	"Identity, not backup": "Identitas, bukan cadangan",
+	"Guest mode is available. Google Login is optional and establishes identity only. It does not back up or restore gameplay progress. Cloud Save is not available.": "Mode Guest tersedia. Login Google bersifat opsional dan hanya membentuk identitas. Fitur ini tidak mencadangkan atau memulihkan progres gameplay. Cloud Save belum tersedia.",
 	"OPTIONAL REWARDED ADS": "IKLAN BERHADIAH OPSIONAL",
 	"Google Mobile Ads & privacy": "Google Mobile Ads & privasi",
 	"Optional means optional": "Opsional berarti tidak wajib",
 	"On Android, optional rewarded ads use Google Mobile Ads. Google may process IP address, ad or device identifiers, ad interactions, and diagnostic information for advertising, analytics, and fraud prevention. UMP may present privacy choices where required.": "Di Android, iklan berhadiah opsional menggunakan Google Mobile Ads. Google dapat memproses alamat IP, ID iklan atau perangkat, interaksi iklan, dan informasi diagnostik untuk periklanan, analisis, serta pencegahan penipuan. UMP dapat menampilkan pilihan privasi jika diwajibkan.",
 	"Rewarded ads are optional. No gameplay progress is removed for declining or not completing an ad, and a reward is granted only after the ad confirms completion.": "Iklan berhadiah bersifat opsional. Progres permainan tidak dikurangi jika pemain menolak atau tidak menyelesaikan iklan, dan hadiah hanya diberikan setelah iklan mengonfirmasi penyelesaian.",
+	"GOOGLE PLAY PURCHASES": "PEMBELIAN GOOGLE PLAY",
+	"Billing on supported Android builds": "Billing pada build Android yang mendukung",
+	"Optional Celestial Jade purchases use Google Play Billing. Google Play processes the payment; purchase state and token information are used for local delivery, recovery, and duplicate-grant protection.": "Pembelian Giok Langit opsional menggunakan Google Play Billing. Google Play memproses pembayaran; informasi status dan token pembelian digunakan untuk pengiriman lokal, pemulihan, dan perlindungan dari hadiah ganda.",
 	"AD PRIVACY OPTIONS": "PILIHAN PRIVASI IKLAN",
 	"Privacy choices are provided by Google UMP when required for this device or region.": "Pilihan privasi disediakan oleh Google UMP jika diwajibkan untuk perangkat atau wilayah ini.",
-	"Local progress can be removed from Android app storage or by uninstalling the game. Advertising and consent data handled by Google is governed separately by Google's services and your applicable privacy choices.": "Progres lokal dapat dihapus melalui penyimpanan aplikasi Android atau dengan mencopot game. Data iklan dan persetujuan yang ditangani Google diatur secara terpisah oleh layanan Google dan pilihan privasi yang berlaku.",
-	"This version has no player account, cloud save, or real-money purchase flow.": "Versi ini tidak memiliki akun pemain, cloud save, atau alur pembelian dengan uang nyata."
+	"Local progress can be removed from Android app storage or by uninstalling the game. Advertising and consent data handled by Google is governed separately by Google's services and your applicable privacy choices.": "Progres lokal dapat dihapus melalui penyimpanan aplikasi Android atau dengan mencopot game. Data iklan dan persetujuan yang ditangani Google diatur secara terpisah oleh layanan Google dan pilihan privasi yang berlaku."
 }
 
 

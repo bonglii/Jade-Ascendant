@@ -1,20 +1,50 @@
-# Asal aset dan catatan distribusi
+# Jade Ascendant — Asset provenance
 
-Catatan ini menjelaskan berkas yang digunakan; bukan bukti kepemilikan hak atas seluruh aset unggahan.
+Dokumen ini mencatat provenance yang memang dapat dibuktikan dari source tree saat ini.
+Dokumen ini **bukan** bukti kepemilikan hak atas semua aset proyek. Untuk aset yang
+asal/lisensinya belum didokumentasikan, penerbit tetap wajib menyimpan bukti hak
+distribusi yang sesuai.
 
-| Kelompok | Asal yang diketahui | Catatan |
-|---|---|---|
-| Lin Yue, musuh, atlas boss, key art, tekstur UI/world dari baseline | Disediakan dalam ZIP proyek pengguna | Dokumen lisensi/kontrak sumber tidak disertakan. Penerbit perlu memastikan hak distribusi komersial dan atribusi yang diperlukan |
-| Tiga PNG weapon/Qi pengganti Phase 1 | Dihasilkan dalam pengerjaan proyek: jade jian, pasangan blade, Qi shard | Dipakai melalui import dan scene baru; bukan salinan weapon Arthurian yang dikecualikan |
-| Chapter 2 enemy identity sprites | Turunan internal dari sprite enemy baseline proyek, diproses ulang untuk silhouette, palette black/crimson/gold, ritual marks, veils, armor accents, dan VFX identity Crimson Moon | Mempertahankan layout frame/behavior existing; tidak menambahkan aset pihak ketiga ke build |
-| Chapter 3 enemy identity sprites | Turunan internal dari sprite enemy baseline proyek, diproses ulang untuk palette indigo/cloud-white/star-gold, celestial crests, cloud ribbons, starforged armor, dan VFX identity Nine Heavens | Mempertahankan layout frame/behavior existing; tidak menambahkan aset pihak ketiga ke build |
-| Musik dan SFX baru | Sintesis prosedural melalui `tools/generate_audio.py` | 3 Ogg + 16 WAV. Tidak memakai sampel/rekaman eksternal. Manifest audio dan generator tersedia |
-| Motif arena, trigram, arc, trails dan feedback | Geometri GDScript yang ditulis untuk proyek | Tidak memuat gambar dari layanan eksternal |
-| Ikon item tambahan | SVG yang memperluas empat ikon slot dalam proyek | Bentuk slot dipertahankan; warna/ornamen kelangkaan dibedakan |
-| Ikon aplikasi, adaptive layers, banner | SVG asli dari `tools/generate_branding.py`, diekspor memakai Inkscape | Sumber vektor tersedia. Teks pada banner memakai font sistem DejaVu saat rasterisasi; tidak mendistribusikan binary font tersebut |
-| Font lama `bitbybit` | File dari baseline tanpa dokumen lisensi terlampir | Referensi di Level_1 diganti dengan font fallback Godot; folder font legacy dikecualikan dari export |
-| Engine dan dependensi bawaannya | Godot Engine/export template yang dipakai penerbit | Layar Credits & Licenses menampilkan teks lisensi dan pemberitahuan dari Engine API pada build tersebut |
+## Visual / project assets
 
-Aset Arthurian/legacy yang sudah dipastikan tidak direferensikan oleh patch dikecualikan melalui preset. File lama tetap berada pada proyek pengguna; tidak perlu dihapus untuk menerapkan patch.
+- Aset baseline karakter, musuh, boss, UI, world, branding, serta turunannya tetap
+  dianggap aset proyek/publisher sesuai catatan proyek yang tersedia.
+- Beberapa aset visual dan branding dibuat atau diproses selama pengerjaan proyek.
+- Dokumen ini tidak menebak lisensi untuk aset yang tidak memiliki bukti/notice yang
+  tersedia di repository.
+- Vendored SDK/addon di `addons/` adalah dependency pihak ketiga dan tidak boleh
+  dianggap sebagai aset original Jade Ascendant hanya karena file-nya tracked.
 
-Sebelum distribusi, lengkapi bukti asal/hak untuk aset baseline milikmu. Jika menambahkan SDK, font, texture pack, atau musik pihak ketiga, tambahkan pula lisensi serta atribusi yang diwajibkan. Jangan menyimpulkan bahwa sebuah aset bebas digunakan hanya karena tidak mengandung watermark.
+## Audio aktif
+
+Audio aktif berada di:
+
+`assets/audio/presentation_v2/`
+
+Source notice kanonik untuk audio pihak ketiga:
+
+`assets/audio/presentation_v2/THIRD_PARTY_AUDIO_NOTICES.md`
+
+Notice tersebut saat ini mencatat sumber berikut:
+
+| Sumber | Penggunaan / catatan yang didokumentasikan |
+|---|---|
+| WAFU Sound Works — WAFU Vol.19 “The Road Down” | Music context dan layer ritual/stinger; notice proyek mencatat penggunaan komersial/nonkomersial, modifikasi/remix/loop/layering, credit opsional, dan larangan redistribusi standalone |
+| Atelier Magicae / Ririsaurus / Riri Hinasaki | Layer Fantasy UI Sound Effects / Fantasy UI SFX Vol.2; notice proyek mencatat penggunaan komersial/nonkomersial/personal, modifikasi sebagai layer, credit opsional, dan larangan redistribusi |
+| R4orce — Clean UI: 20 Minimal Interaction Sounds | Layer UI taktil; notice proyek mencatat lisensi non-exclusive/royalty-free untuk proyek personal/komersial serta modifikasi, dengan larangan redistribusi standalone |
+| lentikula — Basic Spell Impacts | Layer sumber Fire/Lightning; notice proyek mencatat CC0 |
+| rubberduck — 100 CC0 metal and wood SFX | Layer fisik kayu/logam; notice proyek mencatat CC0 melalui OpenGameArt |
+| Hove Audio — Sword Combat Sound Effects Pack Free Version | Layer sword whoosh/ring; notice proyek mencatat royalty-free game/film use dan credit tidak diwajibkan |
+
+Jangan menambahkan klaim lisensi yang lebih luas daripada notice sumber. Jika notice
+atau aset audio berubah, perbarui dokumen ini bersamaan dengan
+`THIRD_PARTY_AUDIO_NOTICES.md`.
+
+## Release rule
+
+Sebelum distribusi:
+1. pastikan hak/izin untuk aset baseline dan aset baru terdokumentasi;
+2. pertahankan notice/attribution yang diwajibkan;
+3. jangan menganggap file bebas dipakai hanya karena tidak memiliki watermark;
+4. audit ulang provenance jika SDK, font, texture pack, musik, SFX, atau aset pihak
+   ketiga baru ditambahkan.

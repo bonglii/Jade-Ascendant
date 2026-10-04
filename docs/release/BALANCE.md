@@ -63,7 +63,7 @@ Bonus equipment dijumlahkan dalam jenisnya. Tambahan radius pickup dibatasi 72, 
 
 ## Sumber ekonomi lainnya
 
-Meditasi Pavilion memberikan 20 Batu Roh sekali per tanggal lokal yang baru. Ada tiga quest aktif dari pool sembilan, dan 14 achievement. Reward kegagalan serta enam achievement lama tidak dinaikkan diam-diam; definisi tetap berada di RewardManager, AchievementManager, DailyQuestManager. Tidak ada gacha, paid revive, atau pembelian uang nyata. Jam perangkat masih menjadi sumber tanggal; tidak ada server anti-cheat.
+Meditasi Pavilion memberikan 20 Batu Roh sekali per tanggal lokal yang baru. Ada tiga quest aktif dari pool sembilan, dan 14 achievement. Reward kegagalan serta enam achievement lama tidak dinaikkan diam-diam; definisi tetap berada di RewardManager, AchievementManager, dan DailyQuestManager. Celestial Pavilion memiliki equipment summoning; rewarded-ad paths bersifat opsional, dan Celestial Jade dapat dibeli melalui Google Play Billing pada build Android yang mendukung. Jam perangkat masih menjadi sumber tanggal untuk sistem lokal; tidak ada server anti-cheat, dan production server-side purchase-token verification belum menjadi authority.
 
 ## Yang harus diukur saat playtest
 

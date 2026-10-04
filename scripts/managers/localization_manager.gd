@@ -27,7 +27,7 @@ const INDONESIAN: Dictionary = {
 	"A CELESTIAL RELIC ANSWERED YOUR CALL": "RELIK LANGIT MENJAWAB PANGGILANMU",
 	"THE ARMORY RESONATES WITH RARE QI": "GUDANG SENJATA BERESONANSI DENGAN QI LANGKA",
 	"THE ARMORY HAS ANSWERED": "GUDANG SENJATA TELAH MENJAWAB",
-	"Celestial Jade purchase remains unavailable until verified platform billing is integrated.": "Pembelian Giok Langit tetap tidak tersedia sampai billing platform yang terverifikasi terintegrasi.",
+	"Celestial Jade purchases use Google Play Billing on supported Android builds.": "Pembelian Giok Langit menggunakan Google Play Billing pada build Android yang mendukung.",
 	"CELESTIAL PAVILION": "PAVILIUN LANGIT",
 	"Equipment Summon": "Panggilan Perlengkapan",
 	"Call unlocked equipment from the Celestial Armory. Pity and Wish Fate persist across sessions.": "Panggil perlengkapan yang telah terbuka dari Gudang Senjata Langit. Pity dan Takdir Wish tersimpan antar sesi.",
@@ -110,11 +110,11 @@ const INDONESIAN: Dictionary = {
 	"Sound is temporarily unavailable.": "Suara sementara tidak tersedia.",
 	"PRIVACY & SUPPORT": "PRIVASI & BANTUAN",
 	"Your journey stays on your device.": "Perjalananmu tersimpan di perangkatmu.",
-	"This offline edition does not send gameplay data, personal information, or device identifiers to a server. It has no account, advertising, analytics service, or real-money purchases.": "Edisi luring ini tidak mengirim data permainan, informasi pribadi, atau pengenal perangkat ke server. Tidak ada akun, iklan, layanan analitik, atau pembelian dengan uang nyata.",
+
 	"What the game saves": "Data yang disimpan",
 	"Progress, equipment, achievements, daily trials, run checkpoints, and preferences are stored locally. Daily trials and meditation use your device date. Auras change appearance only.": "Progres, perlengkapan, pencapaian, ujian harian, checkpoint, dan preferensi disimpan secara lokal. Ujian harian dan meditasi memakai tanggal perangkat. Aura hanya mengubah penampilan.",
 	"Deleting your data": "Menghapus data",
-	"On Android, use Settings > Apps > Jade Ascendant > Storage > Clear storage, or uninstall the game. This removes local progress. This edition has no cloud save or account recovery.": "Di Android, buka Pengaturan > Aplikasi > Jade Ascendant > Penyimpanan > Hapus data, atau copot game. Progres lokal akan terhapus. Edisi ini tidak memiliki simpanan awan atau pemulihan akun.",
+
 	"Optional vibration": "Getaran opsional",
 	"Vibration can be enabled in Settings. It only provides feedback during combat and does not collect data.": "Getaran dapat diaktifkan di Pengaturan. Fungsinya memberi respons saat bertempur dan tidak mengumpulkan data.",
 	"External links and support": "Tautan luar dan bantuan",
@@ -133,7 +133,7 @@ const INDONESIAN: Dictionary = {
 	"Equipment Forge": "Penempaan Perlengkapan",
 	"Exchange earned Spirit Stones or Refinement Shards for equipment. Duplicate rewards become shards automatically.": "Tukar Batu Roh atau Pecahan Pemurnian hasil bermain dengan perlengkapan. Hadiah duplikat otomatis menjadi pecahan.",
 	"About Jade Ascendant": "Tentang Jade Ascendant",
-	"This edition plays offline. All equipment is earned through play. No ads or real-money purchases are included.": "Edisi ini dimainkan luring. Semua perlengkapan diperoleh melalui permainan. Tidak ada iklan atau pembelian dengan uang nyata.",
+
 	"%d Spirit Stones  •  %d Refinement Shards": "%d Batu Roh  •  %d Pecahan Pemurnian",
 	"  •  Clear 1-%d": "  •  Tuntaskan 1-%d",
 	"A save needs recovery. Close and reopen the game before continuing.": "Simpanan perlu dipulihkan. Tutup dan buka kembali game sebelum melanjutkan.",
