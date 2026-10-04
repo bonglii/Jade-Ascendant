@@ -144,7 +144,17 @@ func _audit_reward_catalog() -> void:
 				+ str(day)
 			)
 
-	for mail_id: String in MAIL_ORDER:
+	var mail_ids: Array[String] = get_mail_ids()
+	if mail_ids.size() != MAIL_ORDER.size():
+		push_error(
+			"LiveOpsManager: mailbox order contains duplicate or unknown IDs."
+		)
+	if mail_ids.size() != MAIL_CATALOG.size():
+		push_error(
+			"LiveOpsManager: mailbox catalog/order coverage is incomplete."
+		)
+
+	for mail_id: String in mail_ids:
 		var mail: Dictionary = get_mail(mail_id)
 		var reward: Dictionary = mail.get("reward", {})
 		if reward.is_empty():
@@ -374,6 +384,20 @@ func claim_login_day(day: int) -> bool:
 	return true
 
 
+func get_mail_ids() -> Array[String]:
+	var result: Array[String] = []
+	for mail_id: String in MAIL_ORDER:
+		var normalized: String = mail_id.strip_edges()
+		if (
+			normalized.is_empty()
+			or normalized in result
+			or not MAIL_CATALOG.has(normalized)
+		):
+			continue
+		result.append(normalized)
+	return result
+
+
 func get_mail(mail_id: String) -> Dictionary:
 	if not MAIL_CATALOG.has(mail_id):
 		return {}
@@ -387,7 +411,7 @@ func get_mail(mail_id: String) -> Dictionary:
 
 func get_mail_entries() -> Array[Dictionary]:
 	var entries: Array[Dictionary] = []
-	for mail_id: String in MAIL_ORDER:
+	for mail_id: String in get_mail_ids():
 		var mail: Dictionary = get_mail(mail_id)
 		if not mail.is_empty():
 			entries.append(mail)
@@ -395,11 +419,15 @@ func get_mail_entries() -> Array[Dictionary]:
 
 
 func is_mail_read(mail_id: String) -> bool:
+	if not MAIL_CATALOG.has(mail_id):
+		return false
 	return MAIL_READ_PREFIX + mail_id in _get_ledger()
 
 
 func is_mail_claimed(mail_id: String) -> bool:
-	var mail: Dictionary = MAIL_CATALOG.get(mail_id, {})
+	if not MAIL_CATALOG.has(mail_id):
+		return false
+	var mail: Dictionary = MAIL_CATALOG[mail_id]
 	var reward: Dictionary = mail.get("reward", {})
 	if reward.is_empty():
 		return true
@@ -408,7 +436,7 @@ func is_mail_claimed(mail_id: String) -> bool:
 
 func get_mail_unread_count() -> int:
 	var count: int = 0
-	for mail_id: String in MAIL_ORDER:
+	for mail_id: String in get_mail_ids():
 		if not is_mail_read(mail_id):
 			count += 1
 	return count
@@ -416,7 +444,7 @@ func get_mail_unread_count() -> int:
 
 func get_mail_claimable_count() -> int:
 	var count: int = 0
-	for mail_id: String in MAIL_ORDER:
+	for mail_id: String in get_mail_ids():
 		var mail: Dictionary = MAIL_CATALOG.get(mail_id, {})
 		var reward: Dictionary = mail.get("reward", {})
 		if not reward.is_empty() and not is_mail_claimed(mail_id):
@@ -427,7 +455,7 @@ func get_mail_claimable_count() -> int:
 func mark_all_mail_read() -> bool:
 	var ledger: Array[String] = _get_ledger()
 	var changed: bool = false
-	for mail_id: String in MAIL_ORDER:
+	for mail_id: String in get_mail_ids():
 		var marker: String = MAIL_READ_PREFIX + mail_id
 		if marker in ledger:
 			continue

@@ -103,6 +103,8 @@ func _run() -> void:
 		await _test_release_contracts()
 	if failures == 0:
 		_test_event_production_contracts()
+	if failures == 0:
+		_test_mailbox_production_contracts()
 	await _finish()
 
 
@@ -2403,6 +2405,137 @@ func _test_event_production_contracts() -> void:
 		bool(final_pavilion_read.get("success", false))
 		and pavilion.state == final_pavilion_read.get("data", {}),
 		"LiveOps runtime Pavilion state matches the committed permanent snapshot"
+	)
+
+func _test_mailbox_production_contracts() -> void:
+	var live_ops: Node = root.get_node_or_null("LiveOpsManager")
+	if not _check(live_ops != null, "Mailbox production uses the LiveOpsManager authority"):
+		return
+
+	var progression: Variant = root.get_node("ProgressionManager")
+	var inventory: Variant = root.get_node("InventoryManager")
+	var pavilion: Variant = root.get_node("PavilionManager")
+
+	var mail_ids: Array = live_ops.call("get_mail_ids")
+	_check(
+		mail_ids == ["welcome_initiate", "celestial_path_notice"],
+		"Mailbox exposes the two ordered production messages exactly once"
+	)
+	_check(
+		mail_ids.size() == live_ops.MAIL_CATALOG.size(),
+		"Mailbox order covers the complete production catalog"
+	)
+	_check(
+		live_ops.get_mail_entries().size() == mail_ids.size(),
+		"Mailbox presentation entries match the normalized catalog order"
+	)
+	_check(
+		live_ops.get_mail("unknown_mail").is_empty()
+		and not bool(live_ops.is_mail_read("unknown_mail"))
+		and not bool(live_ops.is_mail_claimed("unknown_mail"))
+		and not bool(live_ops.claim_mail("unknown_mail")),
+		"Unknown mail IDs fail closed and cannot create reward or read authority"
+	)
+	_check(
+		int(live_ops.get_mail_unread_count()) == 2
+		and int(live_ops.get_mail_claimable_count()) == 1
+		and int(live_ops.get_home_mail_badge_count()) == 2,
+		"Fresh mailbox badge reflects unread messages without duplicating attachments"
+	)
+
+	var stones_before_read: int = int(progression.spirit_stone)
+	var shards_before_read: int = int(inventory.get_item_count("refinement_shard"))
+	_check(bool(live_ops.mark_all_mail_read()), "Opening mailbox commits all current read markers")
+	_check(
+		bool(live_ops.is_mail_read("welcome_initiate"))
+		and bool(live_ops.is_mail_read("celestial_path_notice"))
+		and int(live_ops.get_mail_unread_count()) == 0
+		and int(live_ops.get_mail_claimable_count()) == 1
+		and int(live_ops.get_home_mail_badge_count()) == 1,
+		"Reading mail clears unread state but preserves an unclaimed attachment badge"
+	)
+	_check(
+		int(progression.spirit_stone) == stones_before_read
+		and int(inventory.get_item_count("refinement_shard")) == shards_before_read,
+		"Read-state persistence grants no economy reward"
+	)
+	_check(
+		bool(live_ops.mark_all_mail_read())
+		and int(live_ops.get_mail_unread_count()) == 0,
+		"Repeated mark-all-read is idempotent"
+	)
+
+	var read_snapshot: Dictionary = saver.call("read_save_data", "pavilion")
+	var read_data: Dictionary = read_snapshot.get("data", {})
+	var read_ledger: Variant = read_data.get("claimed_milestone_ids", [])
+	_check(
+		bool(read_snapshot.get("success", false))
+		and read_ledger is Array
+		and "liveops:mail:read:welcome_initiate" in (read_ledger as Array)
+		and "liveops:mail:read:celestial_path_notice" in (read_ledger as Array),
+		"Mailbox read markers persist in the permanent Pavilion snapshot"
+	)
+
+	var welcome: Dictionary = live_ops.get_mail("welcome_initiate")
+	var welcome_reward: Dictionary = welcome.get("reward", {})
+	var expected_stones: int = int(welcome_reward.get("spirit_stone", 0))
+	var expected_shards: int = 0
+	var welcome_items: Variant = welcome_reward.get("items", {})
+	if welcome_items is Dictionary:
+		expected_shards = int((welcome_items as Dictionary).get("refinement_shard", 0))
+
+	var stones_before_claim: int = int(progression.spirit_stone)
+	var shards_before_claim: int = int(inventory.get_item_count("refinement_shard"))
+	_check(
+		bool(live_ops.claim_mail("welcome_initiate")),
+		"Welcome attachment claims successfully"
+	)
+	_check(
+		int(progression.spirit_stone) == stones_before_claim + expected_stones
+		and int(inventory.get_item_count("refinement_shard")) == shards_before_claim + expected_shards,
+		"Mailbox attachment grants exactly the catalog reward"
+	)
+	_check(
+		bool(live_ops.is_mail_claimed("welcome_initiate"))
+		and int(live_ops.get_mail_claimable_count()) == 0
+		and int(live_ops.get_home_mail_badge_count()) == 0,
+		"Successful attachment claim clears claimable and home badge state"
+	)
+
+	var claim_snapshot: Dictionary = saver.call("read_save_data", "pavilion")
+	var claim_data: Dictionary = claim_snapshot.get("data", {})
+	var claim_ledger: Variant = claim_data.get("claimed_milestone_ids", [])
+	_check(
+		bool(claim_snapshot.get("success", false))
+		and claim_ledger is Array
+		and "liveops:mail:read:welcome_initiate" in (claim_ledger as Array)
+		and "liveops:mail:claim:welcome_initiate" in (claim_ledger as Array),
+		"Mailbox reward and read/claim markers persist atomically"
+	)
+	_check(
+		not bool(live_ops.claim_mail("welcome_initiate")),
+		"Duplicate mailbox attachment claim is rejected"
+	)
+	_check(
+		int(progression.spirit_stone) == stones_before_claim + expected_stones
+		and int(inventory.get_item_count("refinement_shard")) == shards_before_claim + expected_shards,
+		"Rejected duplicate mailbox claim grants nothing"
+	)
+	_check(
+		not bool(live_ops.claim_mail("celestial_path_notice"))
+		and int(live_ops.get_mail_claimable_count()) == 0,
+		"Notice-only mail cannot manufacture an attachment reward"
+	)
+	_check(
+		not bool(saver.call("has_pending_transaction")),
+		"Mailbox reward transaction leaves no pending save journal"
+	)
+
+	var final_snapshot: Dictionary = saver.call("read_save_data", "pavilion")
+	_check(
+		bool(final_snapshot.get("success", false))
+		and pavilion.state == final_snapshot.get("data", {}),
+		"Mailbox runtime state matches the committed permanent snapshot"
 	)
 
 func _finish() -> void:
