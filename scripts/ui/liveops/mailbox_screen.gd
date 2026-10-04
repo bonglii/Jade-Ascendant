@@ -103,6 +103,10 @@ func _ready() -> void:
 	call_deferred("_fit_popup")
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED and is_inside_tree():
+		call_deferred("_refresh_from_authority")
+
 func _build_home_scrim() -> void:
 	var scrim := ColorRect.new()
 	scrim.name = "SpiritMessagesHomeScrim"
@@ -500,7 +504,7 @@ func _layout_body() -> void:
 	var h: float = _body.size.y
 	if is_instance_valid(_compact_inbox_button):
 		_compact_inbox_button.visible = w < 450.0
-		_compact_inbox_button.text = "READ" if _compact_inbox_open else "INBOX"
+		_compact_inbox_button.text = tr("READ") if _compact_inbox_open else tr("INBOX")
 	if w >= 450.0:
 		_inbox_panel.visible = true
 		_letter_panel.visible = true
@@ -637,7 +641,7 @@ func _rebuild_inbox(preserve_scroll: bool = true) -> void:
 	_mail_card_refs.clear()
 
 	var entries: Array[Dictionary] = _entries()
-	_inbox_count.text = "%d LETTER%s" % [entries.size(), "" if entries.size() == 1 else "S"]
+	_inbox_count.text = (tr("%d LETTER") if entries.size() == 1 else tr("%d LETTERS")) % entries.size()
 	if entries.is_empty():
 		var empty := _label("No letters have arrived.\n\nThe Celestial Courier awaits.", 17, MUTED)
 		empty.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -686,7 +690,7 @@ func _rebuild_inbox(preserve_scroll: bool = true) -> void:
 		v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		inside.add_child(v)
 
-		var title := _label(str(data.get("title", "")), 17, INK if selected else INK)
+		var title := _label(tr(str(data.get("title", ""))), 17, INK if selected else INK)
 		title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		title.max_lines_visible = INBOX_TITLE_MAX_LINES
@@ -694,7 +698,7 @@ func _rebuild_inbox(preserve_scroll: bool = true) -> void:
 		title.tooltip_text = str(data.get("title", ""))
 		v.add_child(title)
 
-		var sender := _label(str(data.get("sender", "")), 12, PAPER_MUTED if selected else PAPER_MUTED)
+		var sender := _label(tr(str(data.get("sender", ""))), 12, PAPER_MUTED if selected else PAPER_MUTED)
 		sender.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		sender.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		sender.max_lines_visible = INBOX_SENDER_MAX_LINES
@@ -702,7 +706,7 @@ func _rebuild_inbox(preserve_scroll: bool = true) -> void:
 		sender.tooltip_text = str(data.get("sender", ""))
 		v.add_child(sender)
 
-		var status: String = "NEW" if unread else ("ATTACHMENT" if has_claimable_attachment else ("CLAIMED" if not reward.is_empty() else "NOTICE"))
+		var status: String = tr("NEW") if unread else (tr("ATTACHMENT") if has_claimable_attachment else (tr("CLAIMED") if not reward.is_empty() else tr("NOTICE")))
 		var badge := _label(status, 12, INK if selected else (Color(0.47, 0.34, 0.18, 1.0) if has_claimable_attachment else PAPER_MUTED))
 		badge.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		badge.autowrap_mode = TextServer.AUTOWRAP_OFF
@@ -954,7 +958,7 @@ func _full_texture(parent: Control, texture_value: Texture2D, stretch: TextureRe
 
 func _label(value: String, font_size: int, color: Color) -> Label:
 	var label := Label.new()
-	label.text = value
+	label.text = tr(value)
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -964,7 +968,7 @@ func _label(value: String, font_size: int, color: Color) -> Label:
 
 func _button(value: String, primary: bool) -> Button:
 	var button := Button.new()
-	button.text = value
+	button.text = tr(value)
 	button.focus_mode = Control.FOCUS_NONE
 	button.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
 	button.keep_pressed_outside = false

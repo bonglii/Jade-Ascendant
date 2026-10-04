@@ -103,13 +103,17 @@ func _preferred_active_day() -> int:
 	if live_ops == null:
 		return 1
 	var total: int = int(live_ops.get_active_login_day_count())
-	for day: int in range(1, int(live_ops.LOGIN_DAY_COUNT) + 1):
+	for day: int in range(1, _total_days() + 1):
 		if (
 			bool(live_ops.is_login_day_unlocked(day))
 			and not bool(live_ops.is_login_day_claimed(day))
 		):
 			return day
-	return clampi(total, 1, int(live_ops.LOGIN_DAY_COUNT))
+	return clampi(total, 1, _total_days())
+
+
+func _total_days() -> int:
+	return int(live_ops.LOGIN_DAY_COUNT) if live_ops != null else 7
 
 
 func _on_live_ops_changed() -> void:
@@ -119,6 +123,8 @@ func _on_live_ops_changed() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
 		call_deferred("_layout_to_viewport")
+	elif what == NOTIFICATION_TRANSLATION_CHANGED and is_inside_tree():
+		call_deferred("_refresh")
 
 
 func _layout_to_viewport() -> void:
@@ -476,9 +482,10 @@ func _refresh() -> void:
 		1,
 		int(live_ops.LOGIN_DAY_COUNT)
 	)
-	_active_label.text = "%d/7 ACTIVE" % int(
-		live_ops.get_active_login_day_count()
-	)
+	_active_label.text = tr("%d/%d ACTIVE") % [
+		int(live_ops.get_active_login_day_count()),
+		_total_days(),
+	]
 	_render_day_cards()
 	_refresh_footer()
 
@@ -524,7 +531,7 @@ func _refresh_day_card(day: int) -> void:
 
 	var state: String = _state(day)
 	var selected: bool = day == _selected_day
-	var final_day: bool = day == 7
+	var final_day: bool = day == _total_days()
 	var accent: Color = _accent(day, state)
 	var desired_size := Vector2(170.0 if final_day else (151.0 if selected else 145.0), 247.0)
 	if card.custom_minimum_size != desired_size:
@@ -544,7 +551,7 @@ func _refresh_day_card(day: int) -> void:
 	var day_color: Color = GOLD_LIGHT if selected or final_day else TEXT
 	if day_label.get_theme_color("font_color") != day_color:
 		day_label.add_theme_color_override("font_color", day_color)
-	var status_text: String = "✓ CLAIMED" if state == "claimed" else ("✦ READY" if state == "ready" else "◈ LOCKED")
+	var status_text: String = tr("✓ CLAIMED") if state == "claimed" else (tr("✦ READY") if state == "ready" else tr("◈ LOCKED"))
 	if status_label.text != status_text:
 		status_label.text = status_text
 	if status_label.get_theme_color("font_color") != accent:
@@ -557,7 +564,7 @@ func _refresh_day_card(day: int) -> void:
 	if gift_amount.text != stone_text:
 		gift_amount.text = stone_text
 	var shard_count: int = int(reward.get("refinement_shard", 0))
-	var secondary_text: String = "+%d SHARDS" % shard_count if shard_count > 0 else "STONES"
+	var secondary_text: String = tr("+%d SHARDS") % shard_count if shard_count > 0 else tr("STONES")
 	if secondary.text != secondary_text:
 		secondary.text = secondary_text
 
@@ -565,7 +572,7 @@ func _refresh_day_card(day: int) -> void:
 func _make_day_card(day: int) -> Button:
 	var state: String = _state(day)
 	var selected: bool = day == _selected_day
-	var final_day: bool = day == 7
+	var final_day: bool = day == _total_days()
 	var accent: Color = _accent(day, state)
 
 	var card := Button.new()
@@ -618,12 +625,12 @@ func _make_day_card(day: int) -> Button:
 	content.add_theme_constant_override("separation", 2)
 	insets.add_child(content)
 
-	var day_label := _label("DAY %d" % day, 20, GOLD_LIGHT if selected or final_day else TEXT)
+	var day_label := _label(tr("DAY %d") % day, 20, GOLD_LIGHT if selected or final_day else TEXT)
 	day_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	content.add_child(day_label)
 
 	var status := _label(
-		"✓ CLAIMED" if state == "claimed" else ("✦ READY" if state == "ready" else "◈ LOCKED"),
+		tr("✓ CLAIMED") if state == "claimed" else (tr("✦ READY") if state == "ready" else tr("◈ LOCKED")),
 		15,
 		accent
 	)
@@ -649,7 +656,7 @@ func _make_day_card(day: int) -> Button:
 
 	var shard_count: int = int(_reward(day).get("refinement_shard", 0))
 	var secondary := _label(
-		"+%d SHARDS" % shard_count if shard_count > 0 else "STONES",
+		tr("+%d SHARDS") % shard_count if shard_count > 0 else tr("STONES"),
 		14,
 		MUTED
 	)
@@ -672,10 +679,10 @@ func _make_day_card(day: int) -> Button:
 
 func _refresh_footer() -> void:
 	var state: String = _state(_selected_day)
-	var final_day: bool = _selected_day == 7
+	var final_day: bool = _selected_day == _total_days()
 	var reward: Dictionary = _reward(_selected_day)
 
-	_day_title.text = "DAY 07  •  THE SEVENTH GATE" if final_day else "DAY %02d  •  ASCENSION REWARD" % _selected_day
+	_day_title.text = tr("DAY 07  •  THE SEVENTH GATE") if final_day else tr("DAY %02d  •  ASCENSION REWARD") % _selected_day
 	_day_title.add_theme_color_override("font_color", GOLD_LIGHT if final_day or state == "ready" else JADE)
 	_day_status.text = _state_text(state)
 	_day_status.add_theme_color_override("font_color", _accent(_selected_day, state))
@@ -705,21 +712,21 @@ func _refresh_footer() -> void:
 
 	var progress_locked: bool = SaveManager.is_progress_read_only()
 	if state == "ready":
-		_action.text = "CLAIM FINAL GIFT" if final_day else "CLAIM REWARD"
+		_action.text = tr("CLAIM FINAL GIFT") if final_day else tr("CLAIM REWARD")
 		_action.disabled = progress_locked or _claim_busy
 		_action_art.texture = CLAIM_GOLD if not _action.disabled else CLAIM_BLUE
 	elif state == "claimed":
-		_action.text = "CLAIMED"
+		_action.text = tr("CLAIMED")
 		_action.disabled = true
 		_action_art.texture = CLAIM_BLUE
 	else:
-		_action.text = "UNLOCK ON DAY %d" % _selected_day
+		_action.text = tr("UNLOCK ON DAY %d") % _selected_day
 		_action.disabled = true
 		_action_art.texture = CLAIM_BLUE
 
 	_footer_note.text = (
-		"SAVING UNAVAILABLE" if progress_locked
-		else "REWARDS SAVE ON CLAIM"
+		tr("SAVING UNAVAILABLE") if progress_locked
+		else tr("REWARDS SAVE ON CLAIM")
 	)
 
 
@@ -835,7 +842,7 @@ func _on_claim_pressed() -> void:
 		return
 	_refresh()
 	if not claimed:
-		_footer_note.text = "CLAIM UNAVAILABLE"
+		_footer_note.text = tr("CLAIM UNAVAILABLE")
 
 
 func _on_backdrop_input(event: InputEvent) -> void:
@@ -891,11 +898,11 @@ func _state(day: int) -> String:
 func _state_text(state: String) -> String:
 	match state:
 		"claimed":
-			return "CLAIMED"
+			return tr("CLAIMED")
 		"ready":
-			return "READY TO CLAIM"
+			return tr("READY TO CLAIM")
 		_:
-			return "SEALED  •  RETURN ON THIS ACTIVE DAY"
+			return tr("SEALED  •  RETURN ON THIS ACTIVE DAY")
 
 
 func _accent(day: int, state: String) -> Color:
@@ -903,7 +910,7 @@ func _accent(day: int, state: String) -> Color:
 		return JADE
 	if state == "locked":
 		return DIM
-	return GOLD_LIGHT if day == 7 or day == _selected_day else SKY
+	return GOLD_LIGHT if day == _total_days() or day == _selected_day else SKY
 
 
 func _reward(day: int) -> Dictionary:
@@ -944,7 +951,7 @@ func _apply_title_shadow(label: Label) -> void:
 
 func _label(value: String, font_size: int, color: Color) -> Label:
 	var label := Label.new()
-	label.text = value
+	label.text = tr(value)
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER

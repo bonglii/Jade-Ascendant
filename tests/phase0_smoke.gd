@@ -105,6 +105,8 @@ func _run() -> void:
 		_test_event_production_contracts()
 	if failures == 0:
 		_test_mailbox_production_contracts()
+	if failures == 0:
+		await _test_event_final_presentation_contracts()
 	await _finish()
 
 
@@ -2537,6 +2539,192 @@ func _test_mailbox_production_contracts() -> void:
 		and pavilion.state == final_snapshot.get("data", {}),
 		"Mailbox runtime state matches the committed permanent snapshot"
 	)
+
+
+func _test_event_final_presentation_contracts() -> void:
+	var live_ops: Node = root.get_node_or_null("LiveOpsManager")
+	if not _check(live_ops != null, "Final Event presentation has LiveOpsManager authority available"):
+		return
+
+	var ui_sources: Array[String] = [
+		"res://scripts/ui/liveops/event_center_screen.gd",
+		"res://scripts/ui/liveops/new_player_event_screen.gd",
+		"res://scripts/ui/liveops/mailbox_screen.gd",
+	]
+	for source_path: String in ui_sources:
+		var source: String = FileAccess.get_file_as_string(source_path)
+		_check(
+			not source.is_empty()
+			and "grant_reward(" not in source
+			and "write_save_data(" not in source
+			and "write_save_batch(" not in source,
+			"Event UI remains presentation-only: " + source_path
+		)
+
+	var event_center_source: String = FileAccess.get_file_as_string(
+		"res://scripts/ui/liveops/event_center_screen.gd"
+	)
+	_check(
+		"celestial_treasury_screen.tscn" not in event_center_source,
+		"Event Center stays decoupled from Treasury/Billing production authority"
+	)
+
+	var expected_scenes: Array[String] = [
+		"res://scenes/ui/event_center_screen.tscn",
+		"res://scenes/ui/new_player_event_screen.tscn",
+		"res://scenes/ui/mailbox_screen.tscn",
+	]
+	for scene_path: String in expected_scenes:
+		var packed: PackedScene = load(scene_path) as PackedScene
+		_check(packed != null, "Final Event production scene loads: " + scene_path)
+		if packed != null:
+			var instance: Node = packed.instantiate()
+			_check(instance is Control, "Final Event production scene is a Control: " + scene_path)
+			instance.free()
+
+	var previous_locale: String = TranslationServer.get_locale()
+	TranslationServer.set_locale("id")
+	var localized: Dictionary = {
+		"CELESTIAL EVENTS": "EVENT LANGIT",
+		"DAY %d / %d": "HARI %d / %d",
+		"CELESTIAL SIGN-IN": "ABSEN LANGIT",
+		"READY TO CLAIM": "SIAP DIAMBIL",
+		"SPIRIT MESSAGES": "PESAN SPIRIT",
+		"%d LETTERS": "%d SURAT",
+		"CLAIM FAILED · RETRY": "GAGAL MENGAMBIL · COBA LAGI",
+	}
+	for message_id: String in localized:
+		_check(
+			TranslationServer.translate(message_id) == str(localized[message_id]),
+			"Event Production Indonesian localization covers: " + message_id
+		)
+
+	if not _check(
+		change_scene_to_file("res://scenes/ui/main_menu.tscn") == OK,
+		"Final Event QA opens production Home"
+	):
+		TranslationServer.set_locale(previous_locale)
+		return
+	await process_frame
+	await process_frame
+
+	var home: Node = current_scene
+	var presenter: Node = null
+	if home != null:
+		presenter = home.get_node_or_null("HomeUI/HomeProductionOverlay")
+	if not _check(presenter != null, "Production Home owns the premium LiveOps rail"):
+		TranslationServer.set_locale(previous_locale)
+		return
+
+	var refresh_callback := Callable(presenter, "_refresh_all")
+	if live_ops.is_connected("live_ops_changed", refresh_callback):
+		live_ops.disconnect("live_ops_changed", refresh_callback)
+	presenter.call("_on_tree_node_added", live_ops)
+	await process_frame
+	_check(
+		live_ops.is_connected("live_ops_changed", refresh_callback),
+		"Premium Home rail reconnects when deferred LiveOpsManager becomes available"
+	)
+
+	var event_button: Button = presenter.get("event_button") as Button
+	var event_scroll: ScrollContainer = presenter.get("event_scroll") as ScrollContainer
+	if _check(
+		event_button != null and event_scroll != null,
+		"Premium Home rail exposes guarded Event button and scroll container"
+	):
+		var press_map: Dictionary = presenter.get("event_press_scroll_y")
+		press_map[event_button.get_instance_id()] = event_scroll.scroll_vertical + 100
+		presenter.set("event_press_scroll_y", press_map)
+		presenter.call(
+			"_open_live_popup",
+			"res://scenes/ui/event_center_screen.tscn",
+			event_button
+		)
+		await process_frame
+		_check(
+			home.get_node_or_null("EventCenterScreen") == null,
+			"Scrolling the premium LiveOps rail cannot accidentally open Event Center"
+		)
+
+		presenter.call(
+			"_open_live_popup",
+			"res://scenes/ui/event_center_screen.tscn",
+			event_button
+		)
+		await process_frame
+		await process_frame
+		var event_popup: Node = home.get_node_or_null("EventCenterScreen")
+		_check(
+			event_popup != null and bool(event_popup.get_meta("liveops_popup", false)),
+			"Home opens Event Center through the managed LiveOps popup path"
+		)
+		if event_popup != null:
+			var headline: Label = event_popup.find_child(
+				"EventCenterHeadline", true, false
+			) as Label
+			_check(
+				headline != null and str(headline.text) == "EVENT LANGIT",
+				"Event Center popup renders active Indonesian production copy"
+			)
+
+		live_ops.call(
+			"open_live_popup",
+			"res://scenes/ui/new_player_event_screen.tscn"
+		)
+		await process_frame
+		await process_frame
+		var seven_popup: Node = home.get_node_or_null("NewPlayerEventScreen")
+		_check(
+			seven_popup != null
+			and home.get_node_or_null("EventCenterScreen") == null,
+			"Managed popup replacement moves Event Center to Seven-Day cleanly"
+		)
+		if seven_popup != null:
+			var day_status: Label = seven_popup.get("_day_status") as Label
+			_check(
+				day_status != null
+				and str(day_status.text) in [
+					"DIAMBIL",
+					"SIAP DIAMBIL",
+					"TERSEGEL  •  KEMBALI PADA HARI AKTIF INI",
+				],
+				"Seven-Day popup refreshes dynamic state in the active locale"
+			)
+
+		live_ops.call(
+			"open_live_popup",
+			"res://scenes/ui/mailbox_screen.tscn"
+		)
+		await process_frame
+		await process_frame
+		var mail_popup: Node = home.get_node_or_null("MailboxScreen")
+		_check(
+			mail_popup != null
+			and home.get_node_or_null("NewPlayerEventScreen") == null,
+			"Managed popup replacement moves Seven-Day to Mailbox cleanly"
+		)
+		if mail_popup != null:
+			var mail_title: Label = mail_popup.find_child(
+				"SpiritMessagesTitle", true, false
+			) as Label
+			_check(
+				mail_title != null and str(mail_title.text) == "PESAN SPIRIT",
+				"Mailbox popup renders active Indonesian production copy"
+			)
+
+	if live_ops.has_method("close_live_popup"):
+		live_ops.call("close_live_popup")
+	await process_frame
+	_check(
+		home == null
+		or (
+			home.get_node_or_null("EventCenterScreen") == null
+			and home.get_node_or_null("NewPlayerEventScreen") == null
+			and home.get_node_or_null("MailboxScreen") == null
+		),
+		"Closing the managed Event popup leaves no stale LiveOps surface"
+	)
+	TranslationServer.set_locale(previous_locale)
 
 func _finish() -> void:
 	paused = false

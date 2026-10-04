@@ -84,6 +84,11 @@ func _ready() -> void:
 			_live_ops.connect("live_ops_changed", refresh_callback)
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED and is_inside_tree():
+		_refresh_event_status()
+		_fit_layout()
+
 func _build_production() -> void:
 	# Home owns its actual backdrop, wallet and bottom navigation when this
 	# scene is embedded as a LiveOps popup. Only standalone mode adds key art.
@@ -372,13 +377,13 @@ func _refresh_event_status() -> void:
 	var day_count: int = int(_live_ops.get_active_login_day_count())
 	var total: int = int(_live_ops.LOGIN_DAY_COUNT)
 	var claimable: int = int(_live_ops.get_login_claimable_count())
-	_event_progress.text = "DAY %d / %d" % [day_count, total]
+	_event_progress.text = tr("DAY %d / %d") % [day_count, total]
 	if bool(_live_ops.is_new_player_event_complete()):
-		_event_status.text = "COMPLETED"
+		_event_status.text = tr("COMPLETED")
 	elif claimable > 0:
-		_event_status.text = "%d READY" % claimable
+		_event_status.text = tr("%d READY") % claimable
 	else:
-		_event_status.text = "IN PROGRESS"
+		_event_status.text = tr("IN PROGRESS")
 
 
 func _wire_navigation_button(button: Button, id: String) -> void:
@@ -470,7 +475,7 @@ func _fit_layout() -> void:
 	_featured_action_row.columns = 1 if compact else 2
 	# Production readability raises 13px badges to 15px. Author at that
 	# final size in the LAB and reserve real widths for every status value.
-	_featured_tag.text = "FEATURED" if compact else "FEATURED EVENT"
+	_featured_tag.text = tr("FEATURED") if compact else tr("FEATURED EVENT")
 	_featured_tag.custom_minimum_size.x = 92.0 if compact else 155.0
 	_event_status.custom_minimum_size.x = 122.0 if compact else 126.0
 	var ribbon_row: HBoxContainer = _featured_tag.get_parent() as HBoxContainer
@@ -485,8 +490,8 @@ func _fit_layout() -> void:
 	var eye := _header.get_node_or_null("EventEyebrow") as Label
 	if eye != null:
 		eye.text = (
-			"JADE ASCENDANT  /  EVENTS"
-			if compact else "JADE ASCENDANT  /  LIVE EVENTS"
+			tr("JADE ASCENDANT  /  EVENTS")
+			if compact else tr("JADE ASCENDANT  /  LIVE EVENTS")
 		)
 		eye.size.x = inner_w
 	var divider := _header.get_node_or_null("HeaderSeparator") as HSeparator
@@ -631,7 +636,7 @@ func _badge(value: String, ink: Color, fill: Color) -> Label:
 
 func _label(value: String, size_value: int, ink: Color) -> Label:
 	var l := Label.new()
-	l.text = value
+	l.text = tr(value)
 	# Author the production 16px floor before first paint, so the global
 	# readability manager has no deferred adjustment to apply.
 	var final_size: int = maxi(size_value, 16)
@@ -643,7 +648,7 @@ func _label(value: String, size_value: int, ink: Color) -> Label:
 
 func _button(value: String, main: bool) -> Button:
 	var b := Button.new()
-	b.text = value
+	b.text = tr(value)
 	b.focus_mode = Control.FOCUS_NONE
 	b.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
 	b.keep_pressed_outside = false

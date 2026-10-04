@@ -35,6 +35,9 @@ const SETTINGS_ICON: Texture2D = preload(
 const PremiumMeditationPresenter = preload(
 	"res://scripts/ui/idle_cultivation_presenter_premium.gd"
 )
+const LiveOpsLocalization = preload(
+	"res://scripts/liveops/live_ops_localization.gd"
+)
 
 const EVENT_CENTER_SCENE: String = "res://scenes/ui/event_center_screen.tscn"
 const SEVEN_DAY_SCENE: String = "res://scenes/ui/new_player_event_screen.tscn"
@@ -72,6 +75,7 @@ var mailbox_badge: TextureRect = null
 
 
 func _ready() -> void:
+	LiveOpsLocalization.install()
 	_install_premium_meditation_presenter()
 	_hide_legacy_home_chrome()
 	_build_readability_grounding()
@@ -162,9 +166,18 @@ func _hide_legacy_liveops_docks() -> void:
 func _on_tree_node_added(node: Node) -> void:
 	if node == null:
 		return
+	if str(node.name) == "LiveOpsManager":
+		call_deferred("_handle_live_ops_manager_available")
 	if str(node.name) in ["LiveOpsLeftDock", "LiveOpsRightDock"]:
 		if node.get_parent() == get_parent() and node is Control:
 			(node as Control).visible = false
+
+
+func _handle_live_ops_manager_available() -> void:
+	# GameSession intentionally boots LiveOpsManager deferred. Reconnect the
+	# premium rail if Home became ready before that runtime helper existed.
+	_connect_runtime_signals()
+	_refresh_liveops_badges()
 
 
 func _build_readability_grounding() -> void:
@@ -314,22 +327,22 @@ func _build_event_rail() -> void:
 	box.add_theme_constant_override("separation", 11)
 	event_scroll.add_child(box)
 
-	var rail_title := _label("LIVE OPS", 12, GOLD_BRIGHT)
+	var rail_title := _label(tr("LIVE OPS"), 12, GOLD_BRIGHT)
 	rail_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(rail_title)
 
 	event_button = _event_button(EVENT_CENTER_ICON, "EVENT", Color(1.0, 0.37, 0.26, 1.0))
-	event_button.pressed.connect(_open_live_popup.bind(EVENT_CENTER_SCENE))
+	event_button.pressed.connect(_open_live_popup.bind(EVENT_CENTER_SCENE, event_button))
 	box.add_child(event_button)
 	event_badge = _add_notification_badge(event_button)
 
 	seven_day_button = _event_button(SEVEN_DAY_ICON, "7-DAY", Color(1.0, 0.84, 0.50, 1.0))
-	seven_day_button.pressed.connect(_open_live_popup.bind(SEVEN_DAY_SCENE))
+	seven_day_button.pressed.connect(_open_live_popup.bind(SEVEN_DAY_SCENE, seven_day_button))
 	box.add_child(seven_day_button)
 	seven_day_badge = _add_notification_badge(seven_day_button)
 
 	mailbox_button = _event_button(MAILBOX_ICON, "MAIL", Color(0.48, 0.91, 1.0, 1.0))
-	mailbox_button.pressed.connect(_open_live_popup.bind(MAILBOX_SCENE))
+	mailbox_button.pressed.connect(_open_live_popup.bind(MAILBOX_SCENE, mailbox_button))
 	box.add_child(mailbox_button)
 	mailbox_badge = _add_notification_badge(mailbox_button)
 
@@ -339,7 +352,7 @@ func _build_event_rail() -> void:
 			"TREASURY",
 			Color(1.0, 0.66, 0.25, 1.0)
 		)
-		treasury_button.pressed.connect(_open_live_popup.bind(TREASURY_SCENE))
+		treasury_button.pressed.connect(_open_live_popup.bind(TREASURY_SCENE, treasury_button))
 		box.add_child(treasury_button)
 
 
@@ -389,7 +402,7 @@ func _event_button(
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	button.add_child(icon)
 
-	var label := _label(label_text, 13, TEXT)
+	var label := _label(tr(label_text), 13, TEXT)
 	label.anchor_left = 0.0
 	label.anchor_top = 0.0
 	label.anchor_right = 1.0
@@ -419,15 +432,20 @@ func _event_scroll_changed(button: Button) -> bool:
 	return absi(event_scroll.scroll_vertical - start_y) >= MOBILE_SCROLL_DEADZONE
 
 
-func _open_live_popup(scene_path: String) -> void:
-	var sender := get_viewport().gui_get_focus_owner() as Button
-	if sender != null and _event_scroll_changed(sender):
+func _open_live_popup(
+	scene_path: String,
+	source_button: Button = null
+) -> void:
+	# Event rail buttons intentionally use FOCUS_NONE, so gui_get_focus_owner()
+	# cannot identify the pressed button reliably on touch. Bind it explicitly.
+	if source_button != null and _event_scroll_changed(source_button):
 		return
 	var live_ops := get_node_or_null("/root/LiveOpsManager")
-	if live_ops != null and live_ops.has_method("open_live_popup"):
-		live_ops.call("open_live_popup", scene_path)
+	if live_ops == null or not live_ops.has_method("open_live_popup"):
+		# Fail closed during the tiny deferred-bootstrap window rather than
+		# transitioning into a LiveOps scene without its authority node.
 		return
-	_open_menu_scene(scene_path)
+	live_ops.call("open_live_popup", scene_path)
 
 
 func _open_menu_scene(scene_path: String) -> void:
