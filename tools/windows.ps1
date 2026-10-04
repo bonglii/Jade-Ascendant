@@ -168,9 +168,18 @@ function Configure-Publisher {
             publisher_name=(Read-Host 'Nama penerbit yang akan tampil di kebijakan privasi')
             support_email=(Read-Host 'Email dukungan milikmu')
             privacy_url=(Read-Host 'URL HTTPS kebijakan privasi yang akan kamu terbitkan')
-            version_name='1.0.0'
-            version_code=1
+            version_name=(Read-Host 'Version name rilis (format x.y.z, contoh: 1.0.4)')
+            version_code=0
         }
+        if ($config.version_name -notmatch '^\d+\.\d+\.\d+$') {
+            throw 'Version name harus format x.y.z, contoh: 1.0.4.'
+        }
+        $versionCodeRaw = Read-Host 'Version code Android (integer 1..2100000000)'
+        $versionCode = 0L
+        if (-not [long]::TryParse($versionCodeRaw, [ref]$versionCode) -or $versionCode -lt 1 -or $versionCode -gt 2100000000) {
+            throw 'Version code Android harus integer 1..2100000000.'
+        }
+        $config.version_code = $versionCode
         Write-Utf8 $path ($config | ConvertTo-Json)
     }
     $config = Read-PublisherConfig

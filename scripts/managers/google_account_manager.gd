@@ -2,7 +2,7 @@ extends Node
 
 ## Firebase Authentication / Google Sign-In boundary for Jade Ascendant.
 ## Phase 1 deliberately does NOT read, upload, merge, or switch gameplay saves.
-## Depends on optional GodotFirebaseAndroid 1.1.0 native addon; fails closed.
+## Depends on the optional tracked GodotFirebaseAndroid native addon; fails closed.
 
 signal account_state_changed(snapshot: Dictionary)
 
