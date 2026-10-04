@@ -87,7 +87,6 @@ func _ready() -> void:
 	_connect_runtime_signals()
 	_refresh_all()
 	get_tree().node_added.connect(_on_tree_node_added)
-	call_deferred("_hide_legacy_liveops_docks")
 	call_deferred("_configure_mobile_scroll")
 	call_deferred("_position_meditation")
 
@@ -153,24 +152,11 @@ func _hide_legacy_home_chrome() -> void:
 			legacy.visible = false
 
 
-func _hide_legacy_liveops_docks() -> void:
-	var home_ui := get_parent()
-	if home_ui == null:
-		return
-	for node_name in ["LiveOpsLeftDock", "LiveOpsRightDock"]:
-		var legacy := home_ui.get_node_or_null(node_name) as Control
-		if legacy != null:
-			legacy.visible = false
-
-
 func _on_tree_node_added(node: Node) -> void:
 	if node == null:
 		return
 	if str(node.name) == "LiveOpsManager":
 		call_deferred("_handle_live_ops_manager_available")
-	if str(node.name) in ["LiveOpsLeftDock", "LiveOpsRightDock"]:
-		if node.get_parent() == get_parent() and node is Control:
-			(node as Control).visible = false
 
 
 func _handle_live_ops_manager_available() -> void:

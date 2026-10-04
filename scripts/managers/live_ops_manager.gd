@@ -18,31 +18,7 @@ const LiveOpsLocalization = preload(
 	"res://scripts/liveops/live_ops_localization.gd"
 )
 
-const ICON_MAILBOX: Texture2D = preload(
-	"res://assets/ui/liveops/mailbox.png"
-)
-const ICON_SEVEN_DAY: Texture2D = preload(
-	"res://assets/ui/liveops/seven_day.png"
-)
-const ICON_EVENT_CENTER: Texture2D = preload(
-	"res://assets/ui/liveops/event_center.png"
-)
-const ICON_TREASURY: Texture2D = preload(
-	"res://assets/ui/liveops/treasury.png"
-)
-
 const MAIN_MENU_SCENE: String = "res://scenes/ui/main_menu.tscn"
-const MAILBOX_SCENE: String = "res://scenes/ui/mailbox_screen.tscn"
-const NEW_PLAYER_EVENT_SCENE: String = (
-	"res://scenes/ui/new_player_event_screen.tscn"
-)
-const EVENT_CENTER_SCENE: String = (
-	"res://scenes/ui/event_center_screen.tscn"
-)
-const TREASURY_SCENE: String = (
-	"res://scenes/ui/celestial_treasury_screen.tscn"
-)
-
 const ACTIVE_PREFIX: String = "liveops:new_player:active:"
 const LOGIN_CLAIM_PREFIX: String = "liveops:new_player:claim:"
 const MAIL_READ_PREFIX: String = "liveops:mail:read:"
@@ -90,11 +66,6 @@ const MAIL_CATALOG: Dictionary = {
 	},
 }
 
-var _attached_home_id: int = 0
-var _home_left_dock: VBoxContainer = null
-var _home_right_dock: VBoxContainer = null
-var _mail_badge: Button = null
-var _login_badge: Button = null
 var _active_live_popup: Control = null
 var _active_live_popup_scene: String = ""
 var _date_check_elapsed: float = 0.0
@@ -116,8 +87,6 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	_attach_to_home_if_needed()
-
 	_date_check_elapsed += delta
 	if _date_check_elapsed < DATE_CHECK_INTERVAL:
 		return
@@ -127,8 +96,7 @@ func _process(delta: float) -> void:
 	if current_date == _last_date_key:
 		return
 	_last_date_key = current_date
-	if _record_current_active_day():
-		_refresh_home_badges()
+	_record_current_active_day()
 
 
 func _audit_reward_catalog() -> void:
@@ -380,7 +348,6 @@ func claim_login_day(day: int) -> bool:
 		return false
 
 	_apply_pavilion_snapshot(next_pavilion)
-	_refresh_home_badges()
 	return true
 
 
@@ -463,10 +430,7 @@ func mark_all_mail_read() -> bool:
 		changed = true
 	if not changed:
 		return true
-	var saved: bool = _commit_ledger(ledger)
-	if saved:
-		_refresh_home_badges()
-	return saved
+	return _commit_ledger(ledger)
 
 
 func claim_mail(mail_id: String) -> bool:
@@ -500,7 +464,6 @@ func claim_mail(mail_id: String) -> bool:
 		return false
 
 	_apply_pavilion_snapshot(next_pavilion)
-	_refresh_home_badges()
 	return true
 
 
@@ -509,253 +472,6 @@ func get_home_mail_badge_count() -> int:
 		get_mail_unread_count(),
 		get_mail_claimable_count()
 	)
-
-
-func _attach_to_home_if_needed() -> void:
-	var tree: SceneTree = get_tree()
-	if tree == null or tree.current_scene == null:
-		return
-	var scene: Node = tree.current_scene
-	if scene.scene_file_path != MAIN_MENU_SCENE:
-		_attached_home_id = 0
-		_home_left_dock = null
-		_home_right_dock = null
-		_mail_badge = null
-		_login_badge = null
-		return
-
-	var scene_id: int = int(scene.get_instance_id())
-	if _attached_home_id == scene_id:
-		return
-
-	var home_ui: Control = scene.get_node_or_null("HomeUI") as Control
-	if home_ui == null:
-		return
-
-	_attached_home_id = scene_id
-	_build_home_live_ui(home_ui)
-	_refresh_home_badges()
-
-
-func _build_home_live_ui(home_ui: Control) -> void:
-	_home_left_dock = VBoxContainer.new()
-	_home_left_dock.name = "LiveOpsLeftDock"
-	_home_left_dock.anchor_left = 0.0
-	_home_left_dock.anchor_top = 0.39
-	_home_left_dock.anchor_right = 0.0
-	_home_left_dock.anchor_bottom = 0.39
-	_home_left_dock.offset_left = 10.0
-	_home_left_dock.offset_top = -118.0
-	_home_left_dock.offset_right = 100.0
-	_home_left_dock.offset_bottom = 162.0
-	_home_left_dock.add_theme_constant_override("separation", 6)
-	_home_left_dock.z_index = 12
-	home_ui.add_child(_home_left_dock)
-
-	var mail_button: Button = _make_home_shortcut(
-		tr("MAIL"),
-		ICON_MAILBOX,
-		Color(0.30, 0.88, 0.78, 1.0)
-	)
-	mail_button.pressed.connect(
-		func() -> void: _open_live_scene(MAILBOX_SCENE)
-	)
-	_home_left_dock.add_child(mail_button)
-	_mail_badge = _add_badge(mail_button)
-
-	var login_button: Button = _make_home_shortcut(
-		tr("7-DAY"),
-		ICON_SEVEN_DAY,
-		Color(0.98, 0.76, 0.30, 1.0)
-	)
-	login_button.pressed.connect(
-		func() -> void: _open_live_scene(NEW_PLAYER_EVENT_SCENE)
-	)
-	_home_left_dock.add_child(login_button)
-	_login_badge = _add_badge(login_button)
-
-	var event_button: Button = _make_home_shortcut(
-		tr("EVENTS"),
-		ICON_EVENT_CENTER,
-		Color(0.42, 0.78, 0.96, 1.0)
-	)
-	event_button.pressed.connect(
-		func() -> void: _open_live_scene(EVENT_CENTER_SCENE)
-	)
-	_home_left_dock.add_child(event_button)
-
-	# Treasury is available on Android builds, including Internal Testing and
-	# release. Keep it available on debug desktop for QA, but fail closed on
-	# non-Android release builds.
-	if OS.get_name() == "Android" or OS.is_debug_build():
-		_home_right_dock = VBoxContainer.new()
-		_home_right_dock.name = "LiveOpsRightDock"
-		_home_right_dock.anchor_left = 1.0
-		_home_right_dock.anchor_top = 0.39
-		_home_right_dock.anchor_right = 1.0
-		_home_right_dock.anchor_bottom = 0.39
-		_home_right_dock.offset_left = -100.0
-		_home_right_dock.offset_top = -44.0
-		_home_right_dock.offset_right = -10.0
-		_home_right_dock.offset_bottom = 52.0
-		_home_right_dock.z_index = 12
-		home_ui.add_child(_home_right_dock)
-
-		var treasury_button: Button = _make_home_shortcut(
-			tr("TREASURY"),
-			ICON_TREASURY,
-			Color(0.98, 0.76, 0.30, 1.0)
-		)
-		treasury_button.pressed.connect(
-			func() -> void: _open_live_scene(TREASURY_SCENE)
-		)
-		_home_right_dock.add_child(treasury_button)
-
-
-func _make_home_shortcut(
-	label_text: String,
-	icon_texture: Texture2D,
-	accent: Color
-) -> Button:
-	var button := Button.new()
-	button.custom_minimum_size = Vector2(90.0, 86.0)
-	button.text = ""
-	button.focus_mode = Control.FOCUS_NONE
-	button.add_theme_stylebox_override(
-		"normal",
-		_make_shortcut_style(
-			Color(0.002, 0.020, 0.028, 0.58),
-			Color(accent.r, accent.g, accent.b, 0.34)
-		)
-	)
-	button.add_theme_stylebox_override(
-		"hover",
-		_make_shortcut_style(
-			Color(0.004, 0.050, 0.058, 0.82),
-			Color(accent.r, accent.g, accent.b, 0.82)
-		)
-	)
-	button.add_theme_stylebox_override(
-		"pressed",
-		_make_shortcut_style(
-			Color(0.002, 0.030, 0.038, 0.92),
-			Color(accent.r, accent.g, accent.b, 0.72)
-		)
-	)
-
-	var visual := VBoxContainer.new()
-	visual.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	visual.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	visual.offset_left = 4.0
-	visual.offset_top = 2.0
-	visual.offset_right = -4.0
-	visual.offset_bottom = -4.0
-	visual.add_theme_constant_override("separation", -2)
-	visual.alignment = BoxContainer.ALIGNMENT_CENTER
-	button.add_child(visual)
-
-	var icon := TextureRect.new()
-	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	icon.custom_minimum_size = Vector2(66.0, 66.0)
-	icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	icon.texture = icon_texture
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	visual.add_child(icon)
-
-	var label := Label.new()
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	label.text = label_text
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	label.add_theme_font_size_override("font_size", 9)
-	label.add_theme_color_override(
-		"font_color",
-		Color(0.96, 0.92, 0.80, 1.0)
-	)
-	label.add_theme_color_override(
-		"font_shadow_color",
-		Color(0.0, 0.0, 0.0, 0.94)
-	)
-	label.add_theme_constant_override("shadow_offset_y", 2)
-	visual.add_child(label)
-
-	return button
-
-
-func _make_shortcut_style(
-	background: Color,
-	border: Color
-) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = background
-	style.border_width_left = 1
-	style.border_width_top = 1
-	style.border_width_right = 1
-	style.border_width_bottom = 1
-	style.border_color = border
-	style.corner_radius_top_left = 14
-	style.corner_radius_top_right = 14
-	style.corner_radius_bottom_left = 14
-	style.corner_radius_bottom_right = 14
-	style.shadow_color = Color(0.0, 0.0, 0.0, 0.44)
-	style.shadow_size = 5
-	return style
-
-
-func _add_badge(button: Button) -> Button:
-	var badge := Button.new()
-	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	badge.focus_mode = Control.FOCUS_NONE
-	badge.anchor_left = 1.0
-	badge.anchor_top = 0.0
-	badge.anchor_right = 1.0
-	badge.anchor_bottom = 0.0
-	badge.offset_left = -23.0
-	badge.offset_top = -5.0
-	badge.offset_right = 3.0
-	badge.offset_bottom = 21.0
-	badge.add_theme_font_size_override("font_size", 10)
-	badge.add_theme_color_override("font_color", Color.WHITE)
-	badge.add_theme_stylebox_override("normal", _make_badge_style())
-	badge.add_theme_stylebox_override("hover", _make_badge_style())
-	badge.add_theme_stylebox_override("pressed", _make_badge_style())
-	button.add_child(badge)
-	return badge
-
-
-func _make_badge_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.90, 0.14, 0.08, 0.99)
-	style.corner_radius_top_left = 12
-	style.corner_radius_top_right = 12
-	style.corner_radius_bottom_left = 12
-	style.corner_radius_bottom_right = 12
-	style.border_width_left = 2
-	style.border_width_top = 2
-	style.border_width_right = 2
-	style.border_width_bottom = 2
-	style.border_color = Color(1.0, 0.76, 0.30, 1.0)
-	style.shadow_color = Color(0.90, 0.14, 0.08, 0.50)
-	style.shadow_size = 4
-	return style
-
-
-func _set_badge(badge: Button, count: int) -> void:
-	if badge == null or not is_instance_valid(badge):
-		return
-	badge.visible = count > 0
-	badge.text = str(mini(count, 9)) + ("+" if count > 9 else "")
-
-
-func _refresh_home_badges() -> void:
-	_set_badge(_mail_badge, get_home_mail_badge_count())
-	_set_badge(_login_badge, get_login_claimable_count())
-
-
-func _open_live_scene(scene_path: String) -> void:
-	open_live_popup(scene_path)
 
 
 func open_live_popup(scene_path: String) -> void:
@@ -790,7 +506,6 @@ func close_live_popup() -> void:
 	if is_instance_valid(popup):
 		popup.hide()
 		popup.queue_free()
-	_refresh_home_badges()
 	var tree := get_tree()
 	if tree != null and tree.current_scene != null and tree.current_scene.has_method("handle_system_back"):
 		SceneTransitionManager.set_back_handler(Callable(tree.current_scene, "handle_system_back"))

@@ -33,7 +33,6 @@ const LEGACY_PATHS: Dictionary = {
 	"res://assets/ui/pavilion/polish/celestial_jade.svg": "celestial_jade",
 	"res://assets/ui/pavilion/icons/celestial_jade.png": "celestial_jade",
 	"res://assets/ui/pavilion/polish/pavilion_seal.svg": "pavilion_seal",
-	"res://assets/ui/pavilion/icons/pavilion_seal.png": "pavilion_seal",
 }
 
 var _watched: Array[WeakRef] = []

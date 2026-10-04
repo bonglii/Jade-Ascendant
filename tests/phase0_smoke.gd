@@ -107,6 +107,8 @@ func _run() -> void:
 		_test_mailbox_production_contracts()
 	if failures == 0:
 		await _test_event_final_presentation_contracts()
+	if failures == 0:
+		_test_event_cleanup_contracts()
 	await _finish()
 
 
@@ -2725,6 +2727,53 @@ func _test_event_final_presentation_contracts() -> void:
 		"Closing the managed Event popup leaves no stale LiveOps surface"
 	)
 	TranslationServer.set_locale(previous_locale)
+
+func _test_event_cleanup_contracts() -> void:
+	var manager_source: String = FileAccess.get_file_as_string(
+		"res://scripts/managers/live_ops_manager.gd"
+	)
+	var presenter_source: String = FileAccess.get_file_as_string(
+		"res://scripts/ui/home_production_presenter.gd"
+	)
+	var icon_source: String = FileAccess.get_file_as_string(
+		"res://scripts/ui/resource_icon_unifier.gd"
+	)
+
+	_check(
+		not manager_source.is_empty()
+		and "LiveOpsLeftDock" not in manager_source
+		and "LiveOpsRightDock" not in manager_source
+		and "_build_home_live_ui" not in manager_source
+		and "_make_home_shortcut" not in manager_source,
+		"Event Cleanup removes retired hidden Home LiveOps dock construction"
+	)
+	_check(
+		"res://assets/ui/liveops/mailbox.png" not in manager_source
+		and "res://assets/ui/liveops/seven_day.png" not in manager_source
+		and "res://assets/ui/liveops/event_center.png" not in manager_source
+		and "res://assets/ui/liveops/treasury.png" not in manager_source,
+		"Event Cleanup removes legacy raw LiveOps icon dependencies from authority"
+	)
+	_check(
+		"func open_live_popup(scene_path: String) -> void:" in manager_source
+		and "func close_live_popup() -> void:" in manager_source
+		and "signal live_ops_changed" in manager_source,
+		"Event Cleanup preserves managed popup and LiveOps signal authority"
+	)
+	_check(
+		not presenter_source.is_empty()
+		and "LiveOpsLeftDock" not in presenter_source
+		and "LiveOpsRightDock" not in presenter_source
+		and "_hide_legacy_liveops_docks" not in presenter_source,
+		"Premium Home no longer carries retired LiveOps dock compatibility hiding"
+	)
+	_check(
+		not icon_source.is_empty()
+		and "res://assets/ui/pavilion/icons/pavilion_seal.png" not in icon_source
+		and "res://assets/ui/pavilion/polish/pavilion_seal.svg" in icon_source
+		and "res://assets/ui/shared/resources/pavilion_seal_premium.png" in icon_source,
+		"Resource icon unifier drops only the missing Pavilion Seal PNG alias"
+	)
 
 func _finish() -> void:
 	paused = false
