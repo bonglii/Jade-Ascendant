@@ -101,6 +101,8 @@ func _run() -> void:
 		await _test_chapter_three_stages()
 	if failures == 0:
 		await _test_release_contracts()
+	if failures == 0:
+		_test_event_production_contracts()
 	await _finish()
 
 
@@ -2295,6 +2297,113 @@ func _test_chapter_three_stages() -> void:
 		"Automated progression clears all sixteen current stages"
 	)
 
+
+func _test_event_production_contracts() -> void:
+	var live_ops: Node = root.get_node_or_null("LiveOpsManager")
+	if not _check(live_ops != null, "Event Production runtime helper boots as LiveOpsManager"):
+		return
+
+	var progression: Variant = root.get_node("ProgressionManager")
+	var inventory: Variant = root.get_node("InventoryManager")
+	var pavilion: Variant = root.get_node("PavilionManager")
+
+	_check(
+		live_ops.has_method("claim_login_day")
+		and live_ops.has_method("_record_active_date")
+		and live_ops.has_method("get_active_login_day_count"),
+		"Seven-Day authority stays inside LiveOpsManager"
+	)
+	_check(
+		live_ops.get_active_login_day_count() == 1,
+		"Fresh isolated run records exactly one active local day"
+	)
+	_check(
+		not bool(live_ops.call("_record_active_date", "invalid-date")),
+		"Malformed event date cannot advance Seven-Day progress"
+	)
+	_check(
+		not bool(live_ops.call("claim_login_day", 2)),
+		"Locked Seven-Day reward cannot be claimed early"
+	)
+
+	var day_one_reward: Dictionary = live_ops.call("get_login_reward", 1)
+	var expected_stones: int = int(day_one_reward.get("spirit_stone", 0))
+	var expected_shards: int = 0
+	var raw_items: Variant = day_one_reward.get("items", {})
+	if raw_items is Dictionary:
+		expected_shards = int((raw_items as Dictionary).get("refinement_shard", 0))
+
+	var stones_before: int = int(progression.spirit_stone)
+	var shards_before: int = int(inventory.get_item_count("refinement_shard"))
+	_check(
+		bool(live_ops.call("claim_login_day", 1)),
+		"Unlocked Seven-Day reward claims successfully"
+	)
+	_check(
+		int(progression.spirit_stone) == stones_before + expected_stones
+		and int(inventory.get_item_count("refinement_shard")) == shards_before + expected_shards,
+		"Seven-Day claim grants exactly the catalog reward"
+	)
+	_check(
+		bool(live_ops.call("is_login_day_claimed", 1)),
+		"Seven-Day permanent claim marker becomes visible after grant"
+	)
+
+	var pavilion_read: Dictionary = saver.call("read_save_data", "pavilion")
+	var pavilion_data: Dictionary = pavilion_read.get("data", {})
+	var raw_ledger: Variant = pavilion_data.get("claimed_milestone_ids", [])
+	_check(
+		bool(pavilion_read.get("success", false))
+		and raw_ledger is Array
+		and "liveops:new_player:claim:1" in (raw_ledger as Array),
+		"Seven-Day claim marker is persisted with the permanent Pavilion snapshot"
+	)
+	_check(
+		not bool(live_ops.call("claim_login_day", 1)),
+		"Duplicate Seven-Day claim is rejected"
+	)
+	_check(
+		int(progression.spirit_stone) == stones_before + expected_stones
+		and int(inventory.get_item_count("refinement_shard")) == shards_before + expected_shards,
+		"Rejected duplicate claim grants nothing"
+	)
+	_check(
+		not bool(saver.call("has_pending_transaction")),
+		"Seven-Day reward transaction leaves no pending save journal"
+	)
+
+	var active_before: int = int(live_ops.call("get_active_login_day_count"))
+	_check(
+		bool(live_ops.call("_record_active_date", "2099-01-01")),
+		"Later valid date advances Seven-Day progress once"
+	)
+	var active_after_forward: int = int(live_ops.call("get_active_login_day_count"))
+	_check(
+		active_after_forward == active_before + 1,
+		"Forward active date increments progress by exactly one"
+	)
+	_check(
+		not bool(live_ops.call("_record_active_date", "2099-01-01"))
+		and int(live_ops.call("get_active_login_day_count")) == active_after_forward,
+		"Duplicate active date is idempotent"
+	)
+	_check(
+		not bool(live_ops.call("_record_active_date", "2098-12-31"))
+		and int(live_ops.call("get_active_login_day_count")) == active_after_forward,
+		"Backward device date cannot manufacture another active day"
+	)
+	_check(
+		bool(live_ops.call("_record_active_date", "2099-01-02"))
+		and int(live_ops.call("get_active_login_day_count")) == active_after_forward + 1,
+		"Next monotonic local date advances Seven-Day progress once"
+	)
+
+	var final_pavilion_read: Dictionary = saver.call("read_save_data", "pavilion")
+	_check(
+		bool(final_pavilion_read.get("success", false))
+		and pavilion.state == final_pavilion_read.get("data", {}),
+		"LiveOps runtime Pavilion state matches the committed permanent snapshot"
+	)
 
 func _finish() -> void:
 	paused = false

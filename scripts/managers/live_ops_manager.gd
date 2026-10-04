@@ -209,13 +209,68 @@ func _commit_ledger(ledger: Array[String]) -> bool:
 	return true
 
 
-func _record_current_active_day() -> bool:
-	var active_days: int = get_active_login_day_count()
-	if active_days >= LOGIN_DAY_COUNT:
+func _is_valid_date_key(date_key: String) -> bool:
+	var value: String = date_key.strip_edges()
+	if (
+		value.length() != 10
+		or value.substr(4, 1) != "-"
+		or value.substr(7, 1) != "-"
+	):
 		return false
 
-	var current_date: String = _get_current_date_key()
-	if current_date.is_empty():
+	var year_text: String = value.substr(0, 4)
+	var month_text: String = value.substr(5, 2)
+	var day_text: String = value.substr(8, 2)
+	for numeric_part: String in [year_text, month_text, day_text]:
+		for index: int in range(numeric_part.length()):
+			var code: int = numeric_part.unicode_at(index)
+			if code < 48 or code > 57:
+				return false
+
+	var year: int = int(year_text)
+	var month: int = int(month_text)
+	var day: int = int(day_text)
+	if year < 1970 or month < 1 or month > 12 or day < 1:
+		return false
+
+	var max_day: int = 31
+	match month:
+		4, 6, 9, 11:
+			max_day = 30
+		2:
+			var leap_year: bool = (
+				year % 400 == 0
+				or (year % 4 == 0 and year % 100 != 0)
+			)
+			max_day = 29 if leap_year else 28
+	return day <= max_day
+
+
+func _get_latest_active_date_key() -> String:
+	var latest: String = ""
+	for entry: String in _get_ledger():
+		if not entry.begins_with(ACTIVE_PREFIX):
+			continue
+		var date_key: String = entry.trim_prefix(ACTIVE_PREFIX)
+		if not _is_valid_date_key(date_key):
+			continue
+		if latest.is_empty() or date_key.casecmp_to(latest) > 0:
+			latest = date_key
+	return latest
+
+
+func _record_active_date(date_key: String) -> bool:
+	if get_active_login_day_count() >= LOGIN_DAY_COUNT:
+		return false
+
+	var current_date: String = date_key.strip_edges()
+	if not _is_valid_date_key(current_date):
+		return false
+
+	# Offline v1 intentionally uses the local calendar, but progress itself is
+	# monotonic: duplicate/backward dates cannot manufacture additional days.
+	var latest: String = _get_latest_active_date_key()
+	if not latest.is_empty() and current_date.casecmp_to(latest) <= 0:
 		return false
 
 	var marker: String = ACTIVE_PREFIX + current_date
@@ -236,12 +291,20 @@ func _record_current_active_day() -> bool:
 	return true
 
 
+func _record_current_active_day() -> bool:
+	return _record_active_date(_get_current_date_key())
+
+
 func get_active_login_day_count() -> int:
-	var count: int = 0
+	var seen_dates: Dictionary = {}
 	for entry: String in _get_ledger():
-		if entry.begins_with(ACTIVE_PREFIX):
-			count += 1
-	return clampi(count, 0, LOGIN_DAY_COUNT)
+		if not entry.begins_with(ACTIVE_PREFIX):
+			continue
+		var date_key: String = entry.trim_prefix(ACTIVE_PREFIX)
+		if not _is_valid_date_key(date_key) or seen_dates.has(date_key):
+			continue
+		seen_dates[date_key] = true
+	return clampi(seen_dates.size(), 0, LOGIN_DAY_COUNT)
 
 
 func get_login_reward(day: int) -> Dictionary:
