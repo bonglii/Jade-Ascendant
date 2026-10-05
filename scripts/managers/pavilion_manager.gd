@@ -116,6 +116,7 @@ var billing_owned_product_ids: Array[String] = []
 var secure_purchase_authority_ready: bool = false
 var purchase_authority_bridge: Object = null
 var secure_purchase_in_flight_product_id: String = ""
+var secure_purchase_recovery_rescan_requested: bool = false
 
 
 func _ready() -> void:
@@ -475,6 +476,13 @@ func refresh_iap_store_products() -> void:
 func purchase_iap(product_id: String) -> bool:
 	if not is_instance_valid(billing_provider):
 		return false
+	if not secure_purchase_in_flight_product_id.is_empty():
+		billing_purchase_state_changed.emit(
+			product_id,
+			"verification_in_progress",
+			"Another purchase is still being verified."
+		)
+		return false
 	var account_binding: String = (
 		GoogleAccountManager.get_monetization_account_binding()
 	)
@@ -499,6 +507,14 @@ func purchase_iap(product_id: String) -> bool:
 
 func restore_iap_purchases() -> void:
 	if not is_instance_valid(billing_provider):
+		return
+	if not secure_purchase_in_flight_product_id.is_empty():
+		secure_purchase_recovery_rescan_requested = true
+		billing_purchase_state_changed.emit(
+			"",
+			"recovery_deferred",
+			"Purchase recovery will continue after current verification."
+		)
 		return
 	_refresh_secure_purchase_context()
 	if not secure_purchase_authority_ready:
@@ -681,9 +697,11 @@ func _on_billing_purchase_ready(
 		)
 		return
 	if not secure_purchase_in_flight_product_id.is_empty():
-		_fail_secure_purchase_delivery(
+		secure_purchase_recovery_rescan_requested = true
+		billing_purchase_state_changed.emit(
 			product_id,
-			"Another purchase is still being verified."
+			"verification_deferred",
+			"Purchase will be recovered after current verification."
 		)
 		return
 	secure_purchase_in_flight_product_id = product_id
@@ -700,7 +718,11 @@ func _on_purchase_authority_result(
 ) -> void:
 	var pending_product_id: String = secure_purchase_in_flight_product_id
 	secure_purchase_in_flight_product_id = ""
+	if pending_product_id.is_empty():
+		secure_purchase_recovery_rescan_requested = false
+		return
 	if not success:
+		_cancel_secure_purchase_recovery_rescan()
 		_fail_secure_purchase_delivery(
 			pending_product_id,
 			"Secure purchase verification failed. Please try again."
@@ -708,6 +730,7 @@ func _on_purchase_authority_result(
 		return
 	var parsed: Variant = JSON.parse_string(grant_json)
 	if not (parsed is Dictionary):
+		_cancel_secure_purchase_recovery_rescan()
 		_fail_secure_purchase_delivery(
 			pending_product_id,
 			"Secure purchase verification returned an invalid grant."
@@ -717,9 +740,18 @@ func _on_purchase_authority_result(
 	var delivery_product_id: String = str(
 		grant.get("internal_product_id", "")
 	).strip_edges()
-	if delivery_product_id.is_empty():
-		delivery_product_id = pending_product_id
+	if (
+		delivery_product_id.is_empty()
+		or delivery_product_id != pending_product_id
+	):
+		_cancel_secure_purchase_recovery_rescan()
+		_fail_secure_purchase_delivery(
+			pending_product_id,
+			"Secure purchase product binding is invalid."
+		)
+		return
 	if not _apply_server_authorized_iap_grant(grant):
+		_cancel_secure_purchase_recovery_rescan()
 		var message: String = last_error
 		if message.is_empty():
 			message = "Secure purchase delivery failed."
@@ -739,6 +771,18 @@ func _on_purchase_authority_result(
 		true,
 		"Purchase delivered securely."
 	)
+	_continue_secure_purchase_recovery()
+
+
+func _continue_secure_purchase_recovery() -> void:
+	if not secure_purchase_recovery_rescan_requested:
+		return
+	secure_purchase_recovery_rescan_requested = false
+	call_deferred("restore_iap_purchases")
+
+
+func _cancel_secure_purchase_recovery_rescan() -> void:
+	secure_purchase_recovery_rescan_requested = false
 
 
 func _fail_secure_purchase_delivery(
