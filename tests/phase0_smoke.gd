@@ -36,6 +36,7 @@ const EVENT_EXPANSION_E1_CONTRACT_PATH: String = "res://release/event_content_ex
 const EVENT_EXPANSION_E2_CONTRACT_PATH: String = "res://release/event_content_expansion_e2_first_event_contract.json"
 const EVENT_EXPANSION_E3_CONTRACT_PATH: String = "res://release/event_content_expansion_e3_boss_hunt_contract.json"
 const EVENT_EXPANSION_E4_CONTRACT_PATH: String = "res://release/event_content_expansion_e4_heavenly_ladder_contract.json"
+const EVENT_EXPANSION_E5_CONTRACT_PATH: String = "res://release/event_content_expansion_e5_treasure_hunt_contract.json"
 
 var checks: int = 0
 var failures: int = 0
@@ -2324,8 +2325,9 @@ func _test_event_production_contracts() -> void:
 			"jade_valley_pilgrimage",
 			"celestial_boss_hunt",
 			"heavenly_ladder",
+			"celestial_treasure_hunt",
 		],
-		"E3 event catalog adds Celestial Boss Hunt after Jade Valley"
+		"E5 event catalog exposes five ordered production events"
 	)
 	_check(
 		event_ids.size() == live_ops.EVENT_CATALOG.size(),
@@ -2364,8 +2366,8 @@ func _test_event_production_contracts() -> void:
 	var featured_event: Dictionary = live_ops.call("get_featured_event")
 	_check(
 		featured_event == seven_days
-		and live_ops.call("get_active_event_entries").size() == 4,
-		"E4 keeps Seven Days featured while exposing four active events"
+		and live_ops.call("get_active_event_entries").size() == 5,
+		"E5 keeps Seven Days featured while exposing five active events"
 	)
 
 	var pilgrimage_event: Dictionary = live_ops.call(
@@ -2410,6 +2412,20 @@ func _test_event_production_contracts() -> void:
 		and not ladder_event.has("reward")
 		and not ladder_event.has("rewards"),
 		"E4 Heavenly Ladder catalog remains metadata-only with existing authorities"
+	)
+	var treasure_event: Dictionary = live_ops.call(
+		"get_event",
+		"celestial_treasure_hunt"
+	)
+	_check(
+		str(treasure_event.get("authority", "")) == "live_ops_manager"
+		and str(treasure_event.get("reward_authority", "")) == "reward_manager"
+		and str(treasure_event.get("progress_kind", "")) == "journey_realm_completion_caches"
+		and bool(treasure_event.get("active", false))
+		and not bool(treasure_event.get("featured", true))
+		and not treasure_event.has("reward")
+		and not treasure_event.has("rewards"),
+		"E5 Treasure Hunt catalog remains metadata-only with existing authorities"
 	)
 	var e1_contract_source: String = FileAccess.get_file_as_string(
 		EVENT_EXPANSION_E1_CONTRACT_PATH
@@ -2502,6 +2518,34 @@ func _test_event_production_contracts() -> void:
 		and not bool(e4_contract.get("monetization_mutation_allowed", true))
 		and not bool(e4_contract.get("cloud_save_mutation_allowed", true)),
 		"E4 contract locks Heavenly Ladder without new persistence or platform authority"
+	)
+	var e5_contract_source: String = FileAccess.get_file_as_string(
+		EVENT_EXPANSION_E5_CONTRACT_PATH
+	)
+	var parsed_e5_contract: Variant = JSON.parse_string(e5_contract_source)
+	var e5_contract: Dictionary = {}
+	if parsed_e5_contract is Dictionary:
+		e5_contract = parsed_e5_contract as Dictionary
+	_check(
+		not e5_contract.is_empty()
+		and str(e5_contract.get("state", "")) == "TREASURE_HUNT_REWARDED_EVENT_LOCKED"
+		and str(e5_contract.get("event_id", "")) == "celestial_treasure_hunt"
+		and int(e5_contract.get("cache_count", 0)) == 5
+		and int(e5_contract.get("base_total_spirit_stone_reward", 0)) == 1950
+		and int(e5_contract.get("base_total_refinement_shard_reward", 0)) == 15
+		and int(e5_contract.get("optional_rewarded_multiplier", 0)) == 2
+		and str(e5_contract.get("rewarded_placement", "")) == "liveops_treasure_hunt_double"
+		and not bool(e5_contract.get("normal_claim_requires_ad", true))
+		and not bool(e5_contract.get("celestial_jade_reward_allowed", true))
+		and not bool(e5_contract.get("rng_reward_allowed", true))
+		and not bool(e5_contract.get("ui_direct_reward_grant", true))
+		and not bool(e5_contract.get("new_save_domain_added", true))
+		and not bool(e5_contract.get("new_autoload_added", true))
+		and not bool(e5_contract.get("new_progress_counter_added", true))
+		and not bool(e5_contract.get("monetization_manager_file_mutated", true))
+		and not bool(e5_contract.get("m6_lock_mutated", true))
+		and not bool(e5_contract.get("cloud_save_mutation_allowed", true)),
+		"E5 contract locks optional rewarded 2x without reopening M6 or Cloud"
 	)
 
 	var ladder_ids: Array = live_ops.call("get_heavenly_ladder_milestone_ids")
@@ -2868,6 +2912,222 @@ func _test_event_production_contracts() -> void:
 		not bool(saver.call("has_pending_transaction")),
 		"E3 Boss Hunt claims leave no pending save journal"
 	)
+
+	var treasure_cleared_before: Array = journey.cleared_stage_keys.duplicate()
+	var treasure_stage_counts: Array = []
+	for chapter_id: int in journey.get_chapter_ids():
+		var stage_ids: Array = journey.get_stage_ids(chapter_id)
+		treasure_stage_counts.append(stage_ids.size())
+		for stage_id: int in stage_ids:
+			var stage_key: String = journey.get_stage_key(chapter_id, stage_id)
+			if stage_key not in journey.cleared_stage_keys:
+				journey.cleared_stage_keys.append(stage_key)
+
+	var treasure_ids: Array = live_ops.call("get_treasure_hunt_cache_ids")
+	_check(
+		treasure_ids == [
+			"verdant_realm_cache",
+			"crimson_moon_cache",
+			"star_palace_cache",
+			"frostveil_cache",
+			"solar_nirvana_cache",
+		],
+		"E5 Treasure Hunt exposes five ordered realm caches"
+	)
+	_check(
+		treasure_stage_counts == [6, 5, 5, 5, 5],
+		"E5 Treasure Hunt derives the current 26-stage realm shape"
+	)
+
+	var treasure_base_stones: int = 0
+	var treasure_base_shards: int = 0
+	for cache_id: String in treasure_ids:
+		var cache: Dictionary = live_ops.call("get_treasure_hunt_cache", cache_id)
+		var reward: Dictionary = cache.get("reward", {})
+		var items: Dictionary = reward.get("items", {})
+		treasure_base_stones += int(reward.get("spirit_stone", 0))
+		treasure_base_shards += int(items.get("refinement_shard", 0))
+		_check(
+			bool(cache.get("unlocked", false)),
+			"E5 realm cache unlock requires every stage clear: " + cache_id
+		)
+	_check(
+		treasure_base_stones == 1950 and treasure_base_shards == 15,
+		"E5 Treasure Hunt base catalog totals 1950 Spirit Stone and 15 shards"
+	)
+
+	var treasure_stones_before: int = int(progression.spirit_stone)
+	var treasure_shards_before: int = int(
+		inventory.get_item_count("refinement_shard")
+	)
+	_check(
+		bool(live_ops.call("claim_treasure_hunt_cache", "verdant_realm_cache")),
+		"E5 normal Treasure Hunt claim never requires an ad"
+	)
+	_check(
+		not bool(live_ops.call("claim_treasure_hunt_cache", "verdant_realm_cache")),
+		"E5 duplicate Treasure Hunt claim is rejected"
+	)
+
+	var treasure_monetization: Variant = root.get_node("MonetizationManager")
+	var treasure_policy_last_reward_at_before: int = int(
+		treasure_monetization.last_reward_at
+	)
+	var treasure_policy_last_reward_unix_before: int = int(
+		treasure_monetization.last_reward_unix
+	)
+	var treasure_policy_day_bucket_before: int = int(
+		treasure_monetization.policy_day_bucket
+	)
+	var treasure_policy_counts_before: Dictionary = (
+		treasure_monetization.placement_counts as Dictionary
+	).duplicate(true)
+	treasure_monetization.last_reward_at = -60000
+	treasure_monetization.last_reward_unix = 0
+	treasure_monetization.placement_counts.erase(
+		"liveops_treasure_hunt_double"
+	)
+
+	var treasure_debug_rewarded: GDScript = load(
+		"res://scripts/monetization/debug_provider.gd"
+	) as GDScript
+	var treasure_offline_rewarded: GDScript = load(
+		"res://scripts/monetization/offline_provider.gd"
+	) as GDScript
+	_check(
+		treasure_monetization.use_test_provider(
+			treasure_debug_rewarded.new()
+		),
+		"E5 debug provider attaches only inside isolated QA"
+	)
+	_check(
+		bool(
+			live_ops.call(
+				"request_treasure_hunt_double_claim",
+				"crimson_moon_cache"
+			)
+		),
+		"E5 optional 2x starts through MonetizationManager"
+	)
+	await process_frame
+	await process_frame
+	_check(
+		bool(
+			live_ops.call(
+				"is_treasure_hunt_cache_claimed",
+				"crimson_moon_cache"
+			)
+		)
+		and str(
+			live_ops.call("get_treasure_hunt_pending_cache")
+		).is_empty(),
+		"E5 verified rewarded callback consumes one pending treasure cache"
+	)
+	var treasure_policy: Dictionary = live_ops.call(
+		"get_treasure_hunt_rewarded_policy_status"
+	)
+	_check(
+		int(treasure_policy.get("placement_claims", 0)) == 1
+		and int(treasure_policy.get("daily_limit", 0)) == 1,
+		"E5 Treasure Hunt 2x placement is capped to one verified use per day"
+	)
+	_check(
+		not bool(
+			live_ops.call(
+				"is_treasure_hunt_double_available",
+				"star_palace_cache"
+			)
+		),
+		"E5 second same-day Treasure Hunt 2x is unavailable after the cap"
+	)
+	_check(
+		bool(live_ops.call("claim_treasure_hunt_cache", "star_palace_cache")),
+		"E5 ad cap never blocks the normal reward claim"
+	)
+
+	_check(
+		treasure_monetization.use_test_provider(
+			treasure_offline_rewarded.new()
+		),
+		"E5 restores fail-closed offline rewarded provider after QA"
+	)
+	treasure_monetization.last_reward_at = (
+		treasure_policy_last_reward_at_before
+	)
+	treasure_monetization.last_reward_unix = (
+		treasure_policy_last_reward_unix_before
+	)
+	treasure_monetization.policy_day_bucket = (
+		treasure_policy_day_bucket_before
+	)
+	treasure_monetization.placement_counts = (
+		treasure_policy_counts_before.duplicate(true)
+	)
+	_check(
+		bool(treasure_monetization.call("_save_policy_state")),
+		"E5 rewarded fixture restores the prior monetization policy snapshot"
+	)
+	_check(
+		int(treasure_monetization.last_reward_at)
+		== treasure_policy_last_reward_at_before
+		and int(treasure_monetization.last_reward_unix)
+		== treasure_policy_last_reward_unix_before
+		and int(treasure_monetization.policy_day_bucket)
+		== treasure_policy_day_bucket_before
+		and treasure_monetization.placement_counts
+		== treasure_policy_counts_before,
+		"E5 rewarded fixture leaves later provider QA isolated"
+	)
+
+	for cache_id: String in [
+		"frostveil_cache",
+		"solar_nirvana_cache",
+	]:
+		_check(
+			bool(live_ops.call("claim_treasure_hunt_cache", cache_id)),
+			"E5 remaining cache claims normally after rewarded use: " + cache_id
+		)
+
+	_check(
+		int(progression.spirit_stone) == treasure_stones_before + 2200
+		and int(inventory.get_item_count("refinement_shard"))
+		== treasure_shards_before + 17,
+		"E5 one optional 2x plus normal claims grant exactly 2200 Stone and 17 shards"
+	)
+	_check(
+		bool(live_ops.call("is_treasure_hunt_complete"))
+		and int(live_ops.call("get_treasure_hunt_claimable_count")) == 0,
+		"E5 Treasure Hunt completes only after all five one-time caches"
+	)
+
+	var treasure_snapshot: Dictionary = saver.call(
+		"read_save_data",
+		"pavilion"
+	)
+	var treasure_data: Dictionary = treasure_snapshot.get("data", {})
+	var treasure_ledger: Variant = treasure_data.get(
+		"claimed_milestone_ids",
+		[]
+	)
+	var treasure_markers_valid: bool = (
+		bool(treasure_snapshot.get("success", false))
+		and treasure_ledger is Array
+	)
+	if treasure_markers_valid:
+		for cache_id: String in treasure_ids:
+			if (
+				"liveops:celestial_treasure_hunt:claim:" + cache_id
+			) not in (treasure_ledger as Array):
+				treasure_markers_valid = false
+	_check(
+		treasure_markers_valid,
+		"E5 normal and rewarded claims persist through one permanent ledger"
+	)
+	_check(
+		not bool(saver.call("has_pending_transaction")),
+		"E5 Treasure Hunt claims leave no pending save journal"
+	)
+	journey.cleared_stage_keys = treasure_cleared_before.duplicate()
 
 	_check(
 		live_ops.has_method("claim_login_day")

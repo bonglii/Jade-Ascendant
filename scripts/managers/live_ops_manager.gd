@@ -31,19 +31,24 @@ const EVENT_ID_SEVEN_DAYS: String = "seven_days_of_ascension"
 const EVENT_ID_JADE_VALLEY_PILGRIMAGE: String = "jade_valley_pilgrimage"
 const EVENT_ID_CELESTIAL_BOSS_HUNT: String = "celestial_boss_hunt"
 const EVENT_ID_HEAVENLY_LADDER: String = "heavenly_ladder"
+const EVENT_ID_CELESTIAL_TREASURE_HUNT: String = "celestial_treasure_hunt"
 const PILGRIMAGE_CLAIM_PREFIX: String = (
 	"liveops:jade_valley_pilgrimage:claim:"
 )
 const BOSS_HUNT_CLAIM_PREFIX: String = "liveops:celestial_boss_hunt:claim:"
 const HEAVENLY_LADDER_CLAIM_PREFIX: String = "liveops:heavenly_ladder:claim:"
+const TREASURE_HUNT_CLAIM_PREFIX: String = "liveops:celestial_treasure_hunt:claim:"
 const BOSS_HUNT_REWARDED_PLACEMENT: String = "liveops_boss_hunt_double"
 const BOSS_HUNT_REWARDED_MULTIPLIER: int = 2
+const TREASURE_HUNT_REWARDED_PLACEMENT: String = "liveops_treasure_hunt_double"
+const TREASURE_HUNT_REWARDED_MULTIPLIER: int = 2
 
 const EVENT_ORDER: Array[String] = [
 	EVENT_ID_SEVEN_DAYS,
 	EVENT_ID_JADE_VALLEY_PILGRIMAGE,
 	EVENT_ID_CELESTIAL_BOSS_HUNT,
 	EVENT_ID_HEAVENLY_LADDER,
+	EVENT_ID_CELESTIAL_TREASURE_HUNT,
 ]
 const EVENT_CATALOG: Dictionary = {
 	"seven_days_of_ascension": {
@@ -99,6 +104,19 @@ const EVENT_CATALOG: Dictionary = {
 		"authority": "live_ops_manager",
 		"reward_authority": "reward_manager",
 		"progress_kind": "journey_total_clear_milestones",
+	},
+	"celestial_treasure_hunt": {
+		"title": "CELESTIAL TREASURE HUNT",
+		"description": (
+			"Complete every stage in a realm to reveal its one-time "
+			+ "celestial treasure cache."
+		),
+		"scene_path": "res://scenes/ui/celestial_treasure_hunt_screen.tscn",
+		"featured": false,
+		"active": true,
+		"authority": "live_ops_manager",
+		"reward_authority": "reward_manager",
+		"progress_kind": "journey_realm_completion_caches",
 	},
 }
 
@@ -236,6 +254,41 @@ const HEAVENLY_LADDER_MILESTONES: Dictionary = {
 	},
 }
 
+const TREASURE_HUNT_CACHE_ORDER: Array[String] = [
+	"verdant_realm_cache",
+	"crimson_moon_cache",
+	"star_palace_cache",
+	"frostveil_cache",
+	"solar_nirvana_cache",
+]
+const TREASURE_HUNT_CACHES: Dictionary = {
+	"verdant_realm_cache": {
+		"title": "VERDANT REALM CACHE",
+		"chapter_id": 1,
+		"reward": {"spirit_stone": 150, "items": {"refinement_shard": 1}},
+	},
+	"crimson_moon_cache": {
+		"title": "CRIMSON MOON CACHE",
+		"chapter_id": 2,
+		"reward": {"spirit_stone": 250, "items": {"refinement_shard": 2}},
+	},
+	"star_palace_cache": {
+		"title": "STAR PALACE CACHE",
+		"chapter_id": 3,
+		"reward": {"spirit_stone": 350, "items": {"refinement_shard": 3}},
+	},
+	"frostveil_cache": {
+		"title": "FROSTVEIL CACHE",
+		"chapter_id": 4,
+		"reward": {"spirit_stone": 500, "items": {"refinement_shard": 4}},
+	},
+	"solar_nirvana_cache": {
+		"title": "SOLAR NIRVANA CACHE",
+		"chapter_id": 5,
+		"reward": {"spirit_stone": 700, "items": {"refinement_shard": 5}},
+	},
+}
+
 const LOGIN_REWARDS: Dictionary = {
 	1: {"spirit_stone": 100, "items": {}},
 	2: {"spirit_stone": 150, "items": {"refinement_shard": 2}},
@@ -280,6 +333,7 @@ var _active_live_popup_scene: String = ""
 var _date_check_elapsed: float = 0.0
 var _last_date_key: String = ""
 var _boss_hunt_pending_milestone: String = ""
+var _treasure_hunt_pending_cache: String = ""
 
 
 func _ready() -> void:
@@ -301,6 +355,26 @@ func _ready() -> void:
 	)
 	if not MonetizationManager.rewarded_request_finished.is_connected(finished_callback):
 		MonetizationManager.rewarded_request_finished.connect(finished_callback)
+	var treasure_verified_callback := Callable(
+		self,
+		"_on_treasure_hunt_verified_rewarded_completed"
+	)
+	if not MonetizationManager.verified_rewarded_completed.is_connected(
+		treasure_verified_callback
+	):
+		MonetizationManager.verified_rewarded_completed.connect(
+			treasure_verified_callback
+		)
+	var treasure_finished_callback := Callable(
+		self,
+		"_on_treasure_hunt_rewarded_request_finished"
+	)
+	if not MonetizationManager.rewarded_request_finished.is_connected(
+		treasure_finished_callback
+	):
+		MonetizationManager.rewarded_request_finished.connect(
+			treasure_finished_callback
+		)
 	DebugLogger.system(str(
 		"LiveOps Phase 1 aktif | Active day: ",
 		get_active_login_day_count(),
@@ -492,6 +566,31 @@ func _audit_reward_catalog() -> void:
 		):
 			push_error(
 				"LiveOpsManager: invalid Heavenly Ladder reward " + milestone_id
+			)
+
+	for cache_id: String in get_treasure_hunt_cache_ids():
+		var cache: Dictionary = get_treasure_hunt_cache(cache_id)
+		var reward: Dictionary = cache.get("reward", {})
+		var doubled_reward: Dictionary = _multiply_reward(
+			reward,
+			TREASURE_HUNT_REWARDED_MULTIPLIER
+		)
+		if not RewardManager.is_valid_reward(
+			RewardManager.SOURCE_PAVILION,
+			"live_ops_celestial_treasure_hunt_" + cache_id + "_normal",
+			reward
+		):
+			push_error(
+				"LiveOpsManager: invalid Treasure Hunt reward " + cache_id
+			)
+		if not RewardManager.is_valid_reward(
+			RewardManager.SOURCE_PAVILION,
+			"live_ops_celestial_treasure_hunt_" + cache_id + "_rewarded_audit",
+			doubled_reward
+		):
+			push_error(
+				"LiveOpsManager: invalid doubled Treasure Hunt reward "
+				+ cache_id
 			)
 
 	var mail_ids: Array[String] = get_mail_ids()
@@ -1195,6 +1294,223 @@ func claim_heavenly_ladder_milestone(milestone_id: String) -> bool:
 
 	_apply_pavilion_snapshot(next_pavilion)
 	return true
+
+
+func get_treasure_hunt_cache_ids() -> Array[String]:
+	var result: Array[String] = []
+	for raw_id: String in TREASURE_HUNT_CACHE_ORDER:
+		var cache_id: String = raw_id.strip_edges()
+		if (
+			cache_id.is_empty()
+			or cache_id in result
+			or not TREASURE_HUNT_CACHES.has(cache_id)
+		):
+			continue
+		result.append(cache_id)
+	return result
+
+
+func get_treasure_hunt_cache(cache_id: String) -> Dictionary:
+	if not TREASURE_HUNT_CACHES.has(cache_id):
+		return {}
+	var cache: Dictionary = (
+		TREASURE_HUNT_CACHES[cache_id] as Dictionary
+	).duplicate(true)
+	cache["id"] = cache_id
+	cache["unlocked"] = is_treasure_hunt_cache_unlocked(cache_id)
+	cache["claimed"] = is_treasure_hunt_cache_claimed(cache_id)
+	return cache
+
+
+func is_treasure_hunt_cache_unlocked(cache_id: String) -> bool:
+	if not TREASURE_HUNT_CACHES.has(cache_id):
+		return false
+	var cache: Dictionary = TREASURE_HUNT_CACHES[cache_id]
+	var chapter_id: int = int(cache.get("chapter_id", 0))
+	var stage_ids: Array = JourneyManager.get_stage_ids(chapter_id)
+	if stage_ids.is_empty():
+		return false
+	for stage_id: int in stage_ids:
+		if not JourneyManager.is_stage_cleared(chapter_id, stage_id):
+			return false
+	return true
+
+
+func is_treasure_hunt_cache_claimed(cache_id: String) -> bool:
+	if not TREASURE_HUNT_CACHES.has(cache_id):
+		return false
+	return TREASURE_HUNT_CLAIM_PREFIX + cache_id in _get_ledger()
+
+
+func get_treasure_hunt_unlocked_count() -> int:
+	var count: int = 0
+	for cache_id: String in get_treasure_hunt_cache_ids():
+		if is_treasure_hunt_cache_unlocked(cache_id):
+			count += 1
+	return count
+
+
+func get_treasure_hunt_claimed_count() -> int:
+	var count: int = 0
+	for cache_id: String in get_treasure_hunt_cache_ids():
+		if is_treasure_hunt_cache_claimed(cache_id):
+			count += 1
+	return count
+
+
+func get_treasure_hunt_claimable_count() -> int:
+	var count: int = 0
+	for cache_id: String in get_treasure_hunt_cache_ids():
+		if (
+			is_treasure_hunt_cache_unlocked(cache_id)
+			and not is_treasure_hunt_cache_claimed(cache_id)
+		):
+			count += 1
+	return count
+
+
+func is_treasure_hunt_complete() -> bool:
+	var cache_ids: Array[String] = get_treasure_hunt_cache_ids()
+	return (
+		not cache_ids.is_empty()
+		and get_treasure_hunt_claimed_count() == cache_ids.size()
+	)
+
+
+func get_treasure_hunt_pending_cache() -> String:
+	return _treasure_hunt_pending_cache
+
+
+func get_treasure_hunt_rewarded_policy_status() -> Dictionary:
+	var policy: Dictionary = MonetizationManager.get_rewarded_policy_status(
+		TREASURE_HUNT_REWARDED_PLACEMENT
+	)
+	policy["pending_cache_id"] = _treasure_hunt_pending_cache
+	return policy
+
+
+func is_treasure_hunt_double_available(cache_id: String) -> bool:
+	return (
+		TREASURE_HUNT_CACHES.has(cache_id)
+		and is_treasure_hunt_cache_unlocked(cache_id)
+		and not is_treasure_hunt_cache_claimed(cache_id)
+		and not SaveManager.is_progress_read_only()
+		and _treasure_hunt_pending_cache.is_empty()
+		and MonetizationManager.rewarded_available(
+			TREASURE_HUNT_REWARDED_PLACEMENT
+		)
+	)
+
+
+func _grant_treasure_hunt_reward(
+	cache_id: String,
+	reward: Dictionary,
+	source_suffix: String
+) -> Dictionary:
+	if (
+		not TREASURE_HUNT_CACHES.has(cache_id)
+		or not is_treasure_hunt_cache_unlocked(cache_id)
+		or is_treasure_hunt_cache_claimed(cache_id)
+		or SaveManager.is_progress_read_only()
+	):
+		return {"success": false, "error": "Treasure cache is not claimable."}
+
+	var ledger: Array[String] = _get_ledger()
+	ledger.append(TREASURE_HUNT_CLAIM_PREFIX + cache_id)
+	var next_pavilion: Dictionary = _build_pavilion_snapshot(ledger)
+	var result: Dictionary = RewardManager.grant_reward(
+		RewardManager.SOURCE_PAVILION,
+		"live_ops_celestial_treasure_hunt_" + cache_id + "_" + source_suffix,
+		reward,
+		{"pavilion": next_pavilion}
+	)
+	if not bool(result.get("success", false)):
+		return result
+
+	_apply_pavilion_snapshot(next_pavilion)
+	return result
+
+
+func claim_treasure_hunt_cache(cache_id: String) -> bool:
+	if not _treasure_hunt_pending_cache.is_empty():
+		return false
+	var cache: Dictionary = get_treasure_hunt_cache(cache_id)
+	if cache.is_empty():
+		return false
+	var result: Dictionary = _grant_treasure_hunt_reward(
+		cache_id,
+		(cache.get("reward", {}) as Dictionary).duplicate(true),
+		"normal"
+	)
+	return bool(result.get("success", false))
+
+
+func request_treasure_hunt_double_claim(cache_id: String) -> bool:
+	if not is_treasure_hunt_double_available(cache_id):
+		return false
+	_treasure_hunt_pending_cache = cache_id
+	if not MonetizationManager.show_rewarded(
+		TREASURE_HUNT_REWARDED_PLACEMENT
+	):
+		_treasure_hunt_pending_cache = ""
+		live_ops_changed.emit()
+		return false
+	live_ops_changed.emit()
+	return true
+
+
+func _on_treasure_hunt_verified_rewarded_completed(
+	placement: String,
+	grant_id: String
+) -> void:
+	if placement != TREASURE_HUNT_REWARDED_PLACEMENT:
+		return
+	var cache_id: String = _treasure_hunt_pending_cache
+	_treasure_hunt_pending_cache = ""
+	if cache_id.is_empty():
+		MonetizationManager.publish_reward_delivery_result(
+			placement,
+			false,
+			0,
+			"No pending treasure cache."
+		)
+		live_ops_changed.emit()
+		return
+
+	var cache: Dictionary = get_treasure_hunt_cache(cache_id)
+	var doubled_reward: Dictionary = _multiply_reward(
+		cache.get("reward", {}),
+		TREASURE_HUNT_REWARDED_MULTIPLIER
+	)
+	var result: Dictionary = _grant_treasure_hunt_reward(
+		cache_id,
+		doubled_reward,
+		"rewarded_" + grant_id
+	)
+	var granted: bool = bool(result.get("success", false))
+	var message: String = (
+		RewardManager.get_reward_summary(doubled_reward, "Reward claimed.")
+		if granted
+		else str(result.get("error", "Treasure cache delivery failed."))
+	)
+	MonetizationManager.publish_reward_delivery_result(
+		placement,
+		granted,
+		int(doubled_reward.get("spirit_stone", 0)) if granted else 0,
+		message
+	)
+	live_ops_changed.emit()
+
+
+func _on_treasure_hunt_rewarded_request_finished(
+	placement: String,
+	_status: String
+) -> void:
+	if placement != TREASURE_HUNT_REWARDED_PLACEMENT:
+		return
+	if not _treasure_hunt_pending_cache.is_empty():
+		_treasure_hunt_pending_cache = ""
+		live_ops_changed.emit()
 
 
 func get_mail_ids() -> Array[String]:

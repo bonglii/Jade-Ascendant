@@ -10,6 +10,7 @@ const FEATURED_EVENT_ID: String = "seven_days_of_ascension"
 const PILGRIMAGE_EVENT_ID: String = "jade_valley_pilgrimage"
 const BOSS_HUNT_EVENT_ID: String = "celestial_boss_hunt"
 const HEAVENLY_LADDER_EVENT_ID: String = "heavenly_ladder"
+const TREASURE_HUNT_EVENT_ID: String = "celestial_treasure_hunt"
 const DAILY_SCENE: String = "res://scenes/ui/daily_quest_screen.tscn"
 const PAVILION_SCENE: String = "res://scenes/ui/pavilion_screen.tscn"
 
@@ -384,6 +385,25 @@ func _build_secondary(parent: VBoxContainer) -> void:
 			"OPEN LADDER  ›",
 			"heavenly_ladder"
 		)
+	var treasure_event: Dictionary = _live_ops.call(
+		"get_event",
+		TREASURE_HUNT_EVENT_ID
+	)
+	if not treasure_event.is_empty():
+		_add_activity_card(
+			str(treasure_event.get("title", "CELESTIAL TREASURE HUNT")),
+			"TREASURE HUNT EVENT",
+			str(
+				treasure_event.get(
+					"description",
+					"Complete every stage in a realm to reveal its one-time celestial treasure cache."
+				)
+			),
+			PILGRIMAGE_ICON,
+			Color(0.95, 0.75, 0.31, 1.0),
+			"OPEN TREASURE HUNT  ›",
+			"treasure_hunt"
+		)
 	_add_activity_card(
 		"Daily Trials", "DAILY CULTIVATION", "Complete daily disciplines and collect available rewards.",
 		DAILY_ICON, JADE, "OPEN DAILY  ›", "daily"
@@ -509,6 +529,8 @@ func _open_destination(id: String) -> void:
 			event_id = BOSS_HUNT_EVENT_ID
 		"heavenly_ladder":
 			event_id = HEAVENLY_LADDER_EVENT_ID
+		"treasure_hunt":
+			event_id = TREASURE_HUNT_EVENT_ID
 		"daily":
 			scene_path = DAILY_SCENE
 		"pavilion":
