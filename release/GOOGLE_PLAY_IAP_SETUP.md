@@ -83,3 +83,30 @@ Current locked state remains fail-closed:
 
 Production activation belongs to later monetization release gates and requires
 explicit approval plus the already-defined secure runtime prerequisites.
+
+## M5 monetization release gates
+
+M5 does not activate paid checkout. It converts the remaining monetization
+release requirements into an executable CI gate so a future release cannot
+silently bypass the locked security boundaries.
+
+Current lane status:
+
+- Rewarded ads code gate: **PASS**. M4 locked production IDs, UMP consent
+  fail-closed behavior, bounded consent/load retries, privacy options, and
+  SDK-callback-only reward authority. External closed-testing and policy
+  validation are still required before broad release.
+- Paid purchase security-contract gate: **PASS**. The server-authoritative
+  purchase flow, recovery, Treasury contract, and replay protection are locked.
+- Paid purchase production gate: **BLOCKED**. Production deployment,
+  credentials, Google Play Developer API access, persistent ledger runtime,
+  shipping `JadeMonetizationNativeBridge` integration, and explicit activation
+  approval are not present.
+- Full monetization release gate: **BLOCKED** while the paid purchase production
+  gate remains blocked.
+
+The release gate must stay exact-SHA CI enforced. Enabling commercial checkout
+requires a separate explicit approval change after the missing production
+prerequisites have been supplied and validated; M5 itself does not change
+`SECURE_PURCHASE_ACTIVATION_APPROVED`, `project.godot`, backend deployment, or
+Cloud Save.

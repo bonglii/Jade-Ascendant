@@ -39,7 +39,8 @@ jobs:
             backend/monetization/tests/m1b2_authority_recovery_gate.test.mjs \
             backend/monetization/tests/m2_billing_lifecycle_recovery.test.mjs \
             backend/monetization/tests/m3_treasury_production_contract.test.mjs \
-            backend/monetization/tests/m4_admob_ump_production_hardening.test.mjs
+            backend/monetization/tests/m4_admob_ump_production_hardening.test.mjs \
+            backend/monetization/tests/m5_monetization_release_gate.test.mjs
 
       - name: Setup JDK 17
         uses: actions/setup-java@v4
