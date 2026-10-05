@@ -35,6 +35,7 @@ const CHAPTER_THREE_ENEMY_VISUAL_CATALOG_PATH: String = "res://scripts/data/chap
 const EVENT_EXPANSION_E1_CONTRACT_PATH: String = "res://release/event_content_expansion_e1_contract.json"
 const EVENT_EXPANSION_E2_CONTRACT_PATH: String = "res://release/event_content_expansion_e2_first_event_contract.json"
 const EVENT_EXPANSION_E3_CONTRACT_PATH: String = "res://release/event_content_expansion_e3_boss_hunt_contract.json"
+const EVENT_EXPANSION_E4_CONTRACT_PATH: String = "res://release/event_content_expansion_e4_heavenly_ladder_contract.json"
 
 var checks: int = 0
 var failures: int = 0
@@ -2322,6 +2323,7 @@ func _test_event_production_contracts() -> void:
 			"seven_days_of_ascension",
 			"jade_valley_pilgrimage",
 			"celestial_boss_hunt",
+			"heavenly_ladder",
 		],
 		"E3 event catalog adds Celestial Boss Hunt after Jade Valley"
 	)
@@ -2362,8 +2364,8 @@ func _test_event_production_contracts() -> void:
 	var featured_event: Dictionary = live_ops.call("get_featured_event")
 	_check(
 		featured_event == seven_days
-		and live_ops.call("get_active_event_entries").size() == 3,
-		"E3 keeps Seven Days featured while exposing three active events"
+		and live_ops.call("get_active_event_entries").size() == 4,
+		"E4 keeps Seven Days featured while exposing four active events"
 	)
 
 	var pilgrimage_event: Dictionary = live_ops.call(
@@ -2394,6 +2396,20 @@ func _test_event_production_contracts() -> void:
 		and not boss_hunt_event.has("reward")
 		and not boss_hunt_event.has("rewards"),
 		"E3 Boss Hunt catalog remains metadata-only with existing authorities"
+	)
+	var ladder_event: Dictionary = live_ops.call(
+		"get_event",
+		"heavenly_ladder"
+	)
+	_check(
+		str(ladder_event.get("authority", "")) == "live_ops_manager"
+		and str(ladder_event.get("reward_authority", "")) == "reward_manager"
+		and str(ladder_event.get("progress_kind", "")) == "journey_total_clear_milestones"
+		and bool(ladder_event.get("active", false))
+		and not bool(ladder_event.get("featured", true))
+		and not ladder_event.has("reward")
+		and not ladder_event.has("rewards"),
+		"E4 Heavenly Ladder catalog remains metadata-only with existing authorities"
 	)
 	var e1_contract_source: String = FileAccess.get_file_as_string(
 		EVENT_EXPANSION_E1_CONTRACT_PATH
@@ -2463,6 +2479,130 @@ func _test_event_production_contracts() -> void:
 		and not bool(e3_contract.get("cloud_save_mutation_allowed", true)),
 		"E3 contract locks optional rewarded 2x without reopening M6 or Cloud"
 	)
+	var e4_contract_source: String = FileAccess.get_file_as_string(
+		EVENT_EXPANSION_E4_CONTRACT_PATH
+	)
+	var parsed_e4_contract: Variant = JSON.parse_string(e4_contract_source)
+	var e4_contract: Dictionary = {}
+	if parsed_e4_contract is Dictionary:
+		e4_contract = parsed_e4_contract as Dictionary
+	_check(
+		not e4_contract.is_empty()
+		and str(e4_contract.get("state", "")) == "HEAVENLY_LADDER_EVENT_LOCKED"
+		and str(e4_contract.get("event_id", "")) == "heavenly_ladder"
+		and int(e4_contract.get("milestone_count", 0)) == 8
+		and int(e4_contract.get("journey_stage_count", 0)) == 26
+		and int(e4_contract.get("total_spirit_stone_reward", 0)) == 2150
+		and int(e4_contract.get("total_refinement_shard_reward", 0)) == 18
+		and not bool(e4_contract.get("rewarded_ad_used", true))
+		and not bool(e4_contract.get("ui_direct_reward_grant", true))
+		and not bool(e4_contract.get("new_save_domain_added", true))
+		and not bool(e4_contract.get("new_autoload_added", true))
+		and not bool(e4_contract.get("new_progress_counter_added", true))
+		and not bool(e4_contract.get("monetization_mutation_allowed", true))
+		and not bool(e4_contract.get("cloud_save_mutation_allowed", true)),
+		"E4 contract locks Heavenly Ladder without new persistence or platform authority"
+	)
+
+	var ladder_ids: Array = live_ops.call("get_heavenly_ladder_milestone_ids")
+	_check(
+		ladder_ids == [
+			"first_ascent",
+			"cloud_step",
+			"jade_stair",
+			"starward_step",
+			"heaven_gate",
+			"celestial_arch",
+			"sovereign_height",
+			"ascendant_summit",
+		],
+		"E4 Heavenly Ladder exposes eight ordered ascension rungs"
+	)
+	var ladder_cleared_before: Array = journey.cleared_stage_keys.duplicate()
+	for chapter_id: int in journey.get_chapter_ids():
+		for stage_id: int in journey.get_stage_ids(chapter_id):
+			var stage_key: String = journey.get_stage_key(chapter_id, stage_id)
+			if stage_key not in journey.cleared_stage_keys:
+				journey.cleared_stage_keys.append(stage_key)
+	_check(
+		int(live_ops.call("get_heavenly_ladder_total_stage_count")) == 26
+		and int(live_ops.call("get_heavenly_ladder_cleared_stage_count")) == 26,
+		"E4 derives all 26 Journey stage clears without a new progress counter"
+	)
+	var ladder_stones_before: int = int(progression.spirit_stone)
+	var ladder_shards_before: int = int(
+		inventory.get_item_count("refinement_shard")
+	)
+	var ladder_expected_stones: int = 0
+	var ladder_expected_shards: int = 0
+	for milestone_id: String in ladder_ids:
+		var milestone: Dictionary = live_ops.call(
+			"get_heavenly_ladder_milestone",
+			milestone_id
+		)
+		var reward: Dictionary = milestone.get("reward", {})
+		var items: Dictionary = reward.get("items", {})
+		ladder_expected_stones += int(reward.get("spirit_stone", 0))
+		ladder_expected_shards += int(items.get("refinement_shard", 0))
+		_check(
+			bool(milestone.get("unlocked", false)),
+			"E4 Heavenly Ladder rung unlock derives from total Journey clears: "
+			+ milestone_id
+		)
+		_check(
+			bool(
+				live_ops.call(
+					"claim_heavenly_ladder_milestone",
+					milestone_id
+				)
+			),
+			"E4 Heavenly Ladder claim routes through LiveOps authority: "
+			+ milestone_id
+		)
+		_check(
+			not bool(
+				live_ops.call(
+					"claim_heavenly_ladder_milestone",
+					milestone_id
+				)
+			),
+			"E4 duplicate Heavenly Ladder claim is rejected: " + milestone_id
+		)
+	_check(
+		ladder_expected_stones == 2150
+		and ladder_expected_shards == 18
+		and int(progression.spirit_stone) == (
+			ladder_stones_before + ladder_expected_stones
+		)
+		and int(inventory.get_item_count("refinement_shard")) == (
+			ladder_shards_before + ladder_expected_shards
+		),
+		"E4 Heavenly Ladder grants exactly 2150 Spirit Stone and 18 shards"
+	)
+	_check(
+		bool(live_ops.call("is_heavenly_ladder_complete"))
+		and int(live_ops.call("get_heavenly_ladder_claimable_count")) == 0,
+		"E4 Heavenly Ladder completes only after all eight one-time claims"
+	)
+	var ladder_snapshot: Dictionary = saver.call("read_save_data", "pavilion")
+	var ladder_data: Dictionary = ladder_snapshot.get("data", {})
+	var ladder_ledger: Variant = ladder_data.get("claimed_milestone_ids", [])
+	var ladder_markers_valid: bool = (
+		bool(ladder_snapshot.get("success", false))
+		and ladder_ledger is Array
+	)
+	if ladder_markers_valid:
+		for milestone_id: String in ladder_ids:
+			if (
+				"liveops:heavenly_ladder:claim:" + milestone_id
+			) not in (ladder_ledger as Array):
+				ladder_markers_valid = false
+	_check(
+		ladder_markers_valid,
+		"E4 Heavenly Ladder claims persist in the existing Pavilion ledger"
+	)
+	journey.cleared_stage_keys = ladder_cleared_before.duplicate()
+
 	var pilgrimage_ids: Array = live_ops.call(
 		"get_pilgrimage_milestone_ids"
 	)

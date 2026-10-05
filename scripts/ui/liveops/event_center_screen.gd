@@ -9,6 +9,7 @@ const LiveOpsUi = preload("res://scripts/ui/liveops/live_ops_ui.gd")
 const FEATURED_EVENT_ID: String = "seven_days_of_ascension"
 const PILGRIMAGE_EVENT_ID: String = "jade_valley_pilgrimage"
 const BOSS_HUNT_EVENT_ID: String = "celestial_boss_hunt"
+const HEAVENLY_LADDER_EVENT_ID: String = "heavenly_ladder"
 const DAILY_SCENE: String = "res://scenes/ui/daily_quest_screen.tscn"
 const PAVILION_SCENE: String = "res://scenes/ui/pavilion_screen.tscn"
 
@@ -364,6 +365,25 @@ func _build_secondary(parent: VBoxContainer) -> void:
 			"OPEN BOSS HUNT  ›",
 			"boss_hunt"
 		)
+	var ladder_event: Dictionary = _live_ops.call(
+		"get_event",
+		HEAVENLY_LADDER_EVENT_ID
+	)
+	if not ladder_event.is_empty():
+		_add_activity_card(
+			str(ladder_event.get("title", "HEAVENLY LADDER")),
+			"LADDER EVENT",
+			str(
+				ladder_event.get(
+					"description",
+					"Clear stages across every realm and ascend the Heavenly Ladder for one-time rewards."
+				)
+			),
+			PILGRIMAGE_ICON,
+			Color(0.58, 0.79, 1.0, 1.0),
+			"OPEN LADDER  ›",
+			"heavenly_ladder"
+		)
 	_add_activity_card(
 		"Daily Trials", "DAILY CULTIVATION", "Complete daily disciplines and collect available rewards.",
 		DAILY_ICON, JADE, "OPEN DAILY  ›", "daily"
@@ -487,6 +507,8 @@ func _open_destination(id: String) -> void:
 			event_id = PILGRIMAGE_EVENT_ID
 		"boss_hunt":
 			event_id = BOSS_HUNT_EVENT_ID
+		"heavenly_ladder":
+			event_id = HEAVENLY_LADDER_EVENT_ID
 		"daily":
 			scene_path = DAILY_SCENE
 		"pavilion":

@@ -30,10 +30,12 @@ const DATE_CHECK_INTERVAL: float = 20.0
 const EVENT_ID_SEVEN_DAYS: String = "seven_days_of_ascension"
 const EVENT_ID_JADE_VALLEY_PILGRIMAGE: String = "jade_valley_pilgrimage"
 const EVENT_ID_CELESTIAL_BOSS_HUNT: String = "celestial_boss_hunt"
+const EVENT_ID_HEAVENLY_LADDER: String = "heavenly_ladder"
 const PILGRIMAGE_CLAIM_PREFIX: String = (
 	"liveops:jade_valley_pilgrimage:claim:"
 )
 const BOSS_HUNT_CLAIM_PREFIX: String = "liveops:celestial_boss_hunt:claim:"
+const HEAVENLY_LADDER_CLAIM_PREFIX: String = "liveops:heavenly_ladder:claim:"
 const BOSS_HUNT_REWARDED_PLACEMENT: String = "liveops_boss_hunt_double"
 const BOSS_HUNT_REWARDED_MULTIPLIER: int = 2
 
@@ -41,6 +43,7 @@ const EVENT_ORDER: Array[String] = [
 	EVENT_ID_SEVEN_DAYS,
 	EVENT_ID_JADE_VALLEY_PILGRIMAGE,
 	EVENT_ID_CELESTIAL_BOSS_HUNT,
+	EVENT_ID_HEAVENLY_LADDER,
 ]
 const EVENT_CATALOG: Dictionary = {
 	"seven_days_of_ascension": {
@@ -83,6 +86,19 @@ const EVENT_CATALOG: Dictionary = {
 		"authority": "live_ops_manager",
 		"reward_authority": "reward_manager",
 		"progress_kind": "journey_chapter_final_bounties",
+	},
+	"heavenly_ladder": {
+		"title": "HEAVENLY LADDER",
+		"description": (
+			"Clear stages across every realm and ascend the Heavenly Ladder "
+			+ "for one-time rewards."
+		),
+		"scene_path": "res://scenes/ui/heavenly_ladder_screen.tscn",
+		"featured": false,
+		"active": true,
+		"authority": "live_ops_manager",
+		"reward_authority": "reward_manager",
+		"progress_kind": "journey_total_clear_milestones",
 	},
 }
 
@@ -167,6 +183,59 @@ const BOSS_HUNT_MILESTONES: Dictionary = {
 		"reward": {"spirit_stone": 900, "items": {"refinement_shard": 5}},
 	},
 }
+const HEAVENLY_LADDER_MILESTONE_ORDER: Array[String] = [
+	"first_ascent",
+	"cloud_step",
+	"jade_stair",
+	"starward_step",
+	"heaven_gate",
+	"celestial_arch",
+	"sovereign_height",
+	"ascendant_summit",
+]
+const HEAVENLY_LADDER_MILESTONES: Dictionary = {
+	"first_ascent": {
+		"title": "FIRST ASCENT",
+		"required_clears": 3,
+		"reward": {"spirit_stone": 60, "items": {}},
+	},
+	"cloud_step": {
+		"title": "CLOUD STEP",
+		"required_clears": 6,
+		"reward": {"spirit_stone": 100, "items": {"refinement_shard": 1}},
+	},
+	"jade_stair": {
+		"title": "JADE STAIR",
+		"required_clears": 9,
+		"reward": {"spirit_stone": 140, "items": {"refinement_shard": 1}},
+	},
+	"starward_step": {
+		"title": "STARWARD STEP",
+		"required_clears": 12,
+		"reward": {"spirit_stone": 200, "items": {"refinement_shard": 2}},
+	},
+	"heaven_gate": {
+		"title": "HEAVEN GATE",
+		"required_clears": 15,
+		"reward": {"spirit_stone": 260, "items": {"refinement_shard": 2}},
+	},
+	"celestial_arch": {
+		"title": "CELESTIAL ARCH",
+		"required_clears": 18,
+		"reward": {"spirit_stone": 340, "items": {"refinement_shard": 3}},
+	},
+	"sovereign_height": {
+		"title": "SOVEREIGN HEIGHT",
+		"required_clears": 22,
+		"reward": {"spirit_stone": 450, "items": {"refinement_shard": 4}},
+	},
+	"ascendant_summit": {
+		"title": "ASCENDANT SUMMIT",
+		"required_clears": 26,
+		"reward": {"spirit_stone": 600, "items": {"refinement_shard": 5}},
+	},
+}
+
 const LOGIN_REWARDS: Dictionary = {
 	1: {"spirit_stone": 100, "items": {}},
 	2: {"spirit_stone": 150, "items": {"refinement_shard": 2}},
@@ -413,6 +482,18 @@ func _audit_reward_catalog() -> void:
 			doubled_reward
 		):
 			push_error("LiveOpsManager: invalid doubled Boss Hunt reward " + milestone_id)
+	for milestone_id: String in get_heavenly_ladder_milestone_ids():
+		var milestone: Dictionary = get_heavenly_ladder_milestone(milestone_id)
+		var reward: Dictionary = milestone.get("reward", {})
+		if not RewardManager.is_valid_reward(
+			RewardManager.SOURCE_PAVILION,
+			"live_ops_heavenly_ladder_" + milestone_id,
+			reward
+		):
+			push_error(
+				"LiveOpsManager: invalid Heavenly Ladder reward " + milestone_id
+			)
+
 	var mail_ids: Array[String] = get_mail_ids()
 	if mail_ids.size() != MAIL_ORDER.size():
 		push_error(
@@ -1000,6 +1081,120 @@ func _on_boss_hunt_rewarded_request_finished(
 	if not _boss_hunt_pending_milestone.is_empty():
 		_boss_hunt_pending_milestone = ""
 		live_ops_changed.emit()
+
+
+func get_heavenly_ladder_milestone_ids() -> Array[String]:
+	var result: Array[String] = []
+	for raw_id: String in HEAVENLY_LADDER_MILESTONE_ORDER:
+		var milestone_id: String = raw_id.strip_edges()
+		if (
+			milestone_id.is_empty()
+			or milestone_id in result
+			or not HEAVENLY_LADDER_MILESTONES.has(milestone_id)
+		):
+			continue
+		result.append(milestone_id)
+	return result
+
+
+func get_heavenly_ladder_total_stage_count() -> int:
+	var total: int = 0
+	for chapter_id: int in JourneyManager.get_chapter_ids():
+		total += JourneyManager.get_stage_ids(chapter_id).size()
+	return total
+
+
+func get_heavenly_ladder_cleared_stage_count() -> int:
+	var cleared: int = 0
+	for chapter_id: int in JourneyManager.get_chapter_ids():
+		for stage_id: int in JourneyManager.get_stage_ids(chapter_id):
+			if JourneyManager.is_stage_cleared(chapter_id, stage_id):
+				cleared += 1
+	return cleared
+
+
+func get_heavenly_ladder_milestone(milestone_id: String) -> Dictionary:
+	if not HEAVENLY_LADDER_MILESTONES.has(milestone_id):
+		return {}
+	var milestone: Dictionary = (
+		HEAVENLY_LADDER_MILESTONES[milestone_id] as Dictionary
+	).duplicate(true)
+	milestone["id"] = milestone_id
+	milestone["unlocked"] = is_heavenly_ladder_milestone_unlocked(milestone_id)
+	milestone["claimed"] = is_heavenly_ladder_milestone_claimed(milestone_id)
+	return milestone
+
+
+func is_heavenly_ladder_milestone_unlocked(milestone_id: String) -> bool:
+	if not HEAVENLY_LADDER_MILESTONES.has(milestone_id):
+		return false
+	var milestone: Dictionary = HEAVENLY_LADDER_MILESTONES[milestone_id]
+	return get_heavenly_ladder_cleared_stage_count() >= int(
+		milestone.get("required_clears", 0)
+	)
+
+
+func is_heavenly_ladder_milestone_claimed(milestone_id: String) -> bool:
+	if not HEAVENLY_LADDER_MILESTONES.has(milestone_id):
+		return false
+	return HEAVENLY_LADDER_CLAIM_PREFIX + milestone_id in _get_ledger()
+
+
+func get_heavenly_ladder_claimed_count() -> int:
+	var count: int = 0
+	for milestone_id: String in get_heavenly_ladder_milestone_ids():
+		if is_heavenly_ladder_milestone_claimed(milestone_id):
+			count += 1
+	return count
+
+
+func get_heavenly_ladder_claimable_count() -> int:
+	var count: int = 0
+	for milestone_id: String in get_heavenly_ladder_milestone_ids():
+		if (
+			is_heavenly_ladder_milestone_unlocked(milestone_id)
+			and not is_heavenly_ladder_milestone_claimed(milestone_id)
+		):
+			count += 1
+	return count
+
+
+func is_heavenly_ladder_complete() -> bool:
+	var milestone_ids: Array[String] = get_heavenly_ladder_milestone_ids()
+	return (
+		not milestone_ids.is_empty()
+		and get_heavenly_ladder_claimed_count() == milestone_ids.size()
+	)
+
+
+func claim_heavenly_ladder_milestone(milestone_id: String) -> bool:
+	if (
+		not HEAVENLY_LADDER_MILESTONES.has(milestone_id)
+		or not is_heavenly_ladder_milestone_unlocked(milestone_id)
+		or is_heavenly_ladder_milestone_claimed(milestone_id)
+		or SaveManager.is_progress_read_only()
+	):
+		return false
+
+	var milestone: Dictionary = HEAVENLY_LADDER_MILESTONES[milestone_id]
+	var reward: Dictionary = milestone.get("reward", {}).duplicate(true)
+	if reward.is_empty():
+		return false
+
+	var ledger: Array[String] = _get_ledger()
+	ledger.append(HEAVENLY_LADDER_CLAIM_PREFIX + milestone_id)
+	var next_pavilion: Dictionary = _build_pavilion_snapshot(ledger)
+	var result: Dictionary = RewardManager.grant_reward(
+		RewardManager.SOURCE_PAVILION,
+		"live_ops_heavenly_ladder_" + milestone_id,
+		reward,
+		{"pavilion": next_pavilion}
+	)
+	if not bool(result.get("success", false)):
+		return false
+
+	_apply_pavilion_snapshot(next_pavilion)
+	return true
 
 
 func get_mail_ids() -> Array[String]:
