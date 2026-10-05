@@ -1,0 +1,29 @@
+{
+  "contract_version": 1,
+  "phase": "MONETIZATION_M1B2C",
+  "state": "AUTHORITY_READINESS_RECOVERY_GATE_FAIL_CLOSED",
+  "base_locked_sha": "f884d6b1b7a456dc645fc0e3075ff6cc982b02ff",
+  "readiness_gate_wired": true,
+  "explicit_activation_approval": false,
+  "production_activation_approved": false,
+  "firebase_callable_runtime_approved": false,
+  "native_purchase_bridge_enabled": false,
+  "tracked_aar_integrated": false,
+  "secure_purchase_authority_ready": false,
+  "play_checkout_enabled": false,
+  "purchase_recovery_enabled": false,
+  "recovery_rechecks_runtime_readiness": true,
+  "recovery_requires_secure_authority": true,
+  "readiness_requires": [
+    "explicit_activation_approval",
+    "firebase_account_binding",
+    "fixed_native_transport",
+    "native_app_check_configuration"
+  ],
+  "client_consume_allowed": false,
+  "client_acknowledge_allowed": false,
+  "client_finalize_allowed": false,
+  "raw_purchase_token_local_storage_allowed": false,
+  "cloud_save_backend_modification_approved": false,
+  "prior_boundary_mutation_allowed": false
+}

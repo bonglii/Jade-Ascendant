@@ -30,6 +30,7 @@ const GooglePlayBillingProvider = preload(
 	"res://scripts/monetization/google_play_billing_provider.gd"
 )
 const PURCHASE_AUTHORITY_SINGLETON: String = "JadeMonetizationNativeBridge"
+const SECURE_PURCHASE_ACTIVATION_APPROVED: bool = false
 
 const MEDITATION_REWARD: int = 20
 const PAYMENT_AUTO: String = "auto"
@@ -499,6 +500,7 @@ func purchase_iap(product_id: String) -> bool:
 func restore_iap_purchases() -> void:
 	if not is_instance_valid(billing_provider):
 		return
+	_refresh_secure_purchase_context()
 	if not secure_purchase_authority_ready:
 		billing_purchase_state_changed.emit(
 			"",
@@ -544,6 +546,24 @@ func _has_secure_purchase_transport() -> bool:
 	)
 
 
+func _is_secure_purchase_transport_configured() -> bool:
+	if not _has_secure_purchase_transport():
+		return false
+	return bool(purchase_authority_bridge.call(
+		"isSecurePurchaseTransportConfigured"
+	))
+
+
+func _compute_secure_purchase_authority_ready(
+	account_binding: String
+) -> bool:
+	return (
+		SECURE_PURCHASE_ACTIVATION_APPROVED
+		and not account_binding.is_empty()
+		and _is_secure_purchase_transport_configured()
+	)
+
+
 func _connect_secure_purchase_identity() -> void:
 	if GoogleAccountManager.has_signal("monetization_identity_changed"):
 		var callback := Callable(self, "_on_monetization_identity_changed")
@@ -564,18 +584,27 @@ func _on_monetization_identity_changed(_ready: bool) -> void:
 
 
 func _refresh_secure_purchase_context() -> bool:
+	secure_purchase_authority_ready = false
 	if not is_instance_valid(billing_provider):
 		return false
 	if not billing_provider.has_method("configure_secure_purchase_context"):
 		return false
+	if not _has_secure_purchase_transport():
+		_connect_secure_purchase_transport()
 	var account_binding: String = (
 		GoogleAccountManager.get_monetization_account_binding()
 	)
-	return bool(billing_provider.call(
+	secure_purchase_authority_ready = (
+		_compute_secure_purchase_authority_ready(account_binding)
+	)
+	var provider_ready: bool = bool(billing_provider.call(
 		"configure_secure_purchase_context",
 		account_binding,
 		secure_purchase_authority_ready
 	))
+	if not provider_ready:
+		secure_purchase_authority_ready = false
+	return secure_purchase_authority_ready
 
 
 func _activate_android_billing_provider() -> void:
