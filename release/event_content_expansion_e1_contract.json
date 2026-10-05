@@ -1,0 +1,27 @@
+{
+  "contract_version": 1,
+  "phase": "EVENT_CONTENT_EXPANSION_E1",
+  "state": "EVENT_CATALOG_FOUNDATION_LOCKED",
+  "base_locked_sha": "0750391fd0c182f00cfda5a6c90dc44ac1644806",
+  "new_events_added": false,
+  "new_rewards_added": false,
+  "new_save_domain_added": false,
+  "event_catalog_metadata_only": true,
+  "event_authority": "LiveOpsManager",
+  "reward_authority": "RewardManager",
+  "persistent_ledger_owner": "PavilionManager.claimed_milestone_ids",
+  "persistent_ledger_namespace": "liveops:",
+  "daily_quest_authority_unchanged": true,
+  "event_center_presentation_only": true,
+  "event_center_catalog_routing_enabled": true,
+  "current_event_ids": [
+    "seven_days_of_ascension"
+  ],
+  "current_featured_event_id": "seven_days_of_ascension",
+  "monetization_final_lock_sha": "0750391fd0c182f00cfda5a6c90dc44ac1644806",
+  "monetization_mutation_allowed": false,
+  "cloud_save_mutation_allowed": false,
+  "new_autoload_allowed": false,
+  "direct_ui_reward_grant_allowed": false,
+  "direct_ui_save_write_allowed": false
+}

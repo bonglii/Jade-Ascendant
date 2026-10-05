@@ -6,7 +6,7 @@ extends Control
 ## Daily Trials and Pavilion continue to own their own gameplay and economy.
 
 const LiveOpsUi = preload("res://scripts/ui/liveops/live_ops_ui.gd")
-const NEW_PLAYER_SCENE: String = "res://scenes/ui/new_player_event_screen.tscn"
+const FEATURED_EVENT_ID: String = "seven_days_of_ascension"
 const DAILY_SCENE: String = "res://scenes/ui/daily_quest_screen.tscn"
 const PAVILION_SCENE: String = "res://scenes/ui/pavilion_screen.tscn"
 
@@ -52,6 +52,8 @@ var _hero_art: TextureRect = null
 var _hero_stage: Control = null
 var _event_status: Label = null
 var _event_progress: Label = null
+var _featured_title: Label = null
+var _featured_description: Label = null
 var _featured_tag: Label = null
 var _featured_action_row: GridContainer = null
 var _grid: GridContainer = null
@@ -271,16 +273,21 @@ func _build_featured(parent: VBoxContainer) -> void:
 	hero_outline.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_hero_stage.add_child(hero_outline)
 
-	var title := _label("SEVEN DAYS OF ASCENSION", 23, GOLD_LIGHT)
-	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	content.add_child(title)
-
-	var description := _label(
-		"Continue your cultivation journey and collect the rewards you have earned.",
-		15, IVORY
+	_featured_title = _label(
+		"SEVEN DAYS OF ASCENSION",
+		23,
+		GOLD_LIGHT
 	)
-	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	content.add_child(description)
+	_featured_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content.add_child(_featured_title)
+
+	_featured_description = _label(
+		"Continue your cultivation journey and collect the rewards you have earned.",
+		15,
+		IVORY
+	)
+	_featured_description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content.add_child(_featured_description)
 
 	_featured_action_row = GridContainer.new()
 	_featured_action_row.columns = 2
@@ -374,6 +381,26 @@ func _refresh_event_status() -> void:
 		return
 	if _live_ops == null:
 		return
+
+	var featured_event: Dictionary = _live_ops.call(
+		"get_event",
+		FEATURED_EVENT_ID
+	)
+	if featured_event.is_empty():
+		push_error(
+			"EventCenterScreen: featured event catalog entry is missing."
+		)
+		return
+
+	if is_instance_valid(_featured_title):
+		_featured_title.text = tr(
+			str(featured_event.get("title", ""))
+		)
+	if is_instance_valid(_featured_description):
+		_featured_description.text = tr(
+			str(featured_event.get("description", ""))
+		)
+
 	var day_count: int = int(_live_ops.get_active_login_day_count())
 	var total: int = int(_live_ops.LOGIN_DAY_COUNT)
 	var claimable: int = int(_live_ops.get_login_claimable_count())
@@ -410,13 +437,30 @@ func _open_destination(id: String) -> void:
 	var scene_path: String = ""
 	match id:
 		"seven_day":
-			scene_path = NEW_PLAYER_SCENE
+			if _live_ops == null:
+				return
+			var featured_event: Dictionary = _live_ops.call(
+				"get_event",
+				FEATURED_EVENT_ID
+			)
+			scene_path = str(
+				featured_event.get("scene_path", "")
+			).strip_edges()
 		"daily":
 			scene_path = DAILY_SCENE
 		"pavilion":
 			scene_path = PAVILION_SCENE
 		_:
 			return
+
+	if (
+		scene_path.is_empty()
+		or not ResourceLoader.exists(scene_path, "PackedScene")
+	):
+		push_error(
+			"EventCenterScreen: destination scene is unavailable for " + id
+		)
+		return
 
 	# Seven Days remains a popup when Event Center was opened from Home.
 	# For other destinations retain the existing lightweight menu transition.

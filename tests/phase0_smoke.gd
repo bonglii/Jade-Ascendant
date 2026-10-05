@@ -32,6 +32,7 @@ const JOURNEY_VISUAL_CATALOG_PATH: String = "res://scripts/ui/journey_visual_cat
 const CHAPTER_TWO_ENEMY_VISUAL_CATALOG_PATH: String = "res://scripts/data/chapter_two_enemy_visual_catalog.gd"
 const CHAPTER_THREE_CATALOG_PATH: String = "res://scripts/data/chapter_three_catalog.gd"
 const CHAPTER_THREE_ENEMY_VISUAL_CATALOG_PATH: String = "res://scripts/data/chapter_three_enemy_visual_catalog.gd"
+const EVENT_EXPANSION_E1_CONTRACT_PATH: String = "res://release/event_content_expansion_e1_contract.json"
 
 var checks: int = 0
 var failures: int = 0
@@ -2313,6 +2314,72 @@ func _test_event_production_contracts() -> void:
 	var inventory: Variant = root.get_node("InventoryManager")
 	var pavilion: Variant = root.get_node("PavilionManager")
 
+	var event_ids: Array = live_ops.call("get_event_ids")
+	_check(
+		event_ids == ["seven_days_of_ascension"],
+		"E1 event catalog starts with the existing Seven Days event only"
+	)
+	_check(
+		event_ids.size() == live_ops.EVENT_CATALOG.size(),
+		"E1 event order covers the complete catalog exactly once"
+	)
+
+	var seven_days: Dictionary = live_ops.call(
+		"get_event",
+		"seven_days_of_ascension"
+	)
+	_check(
+		str(seven_days.get("id", "")) == "seven_days_of_ascension"
+		and str(seven_days.get("authority", "")) == "live_ops_manager"
+		and str(seven_days.get("reward_authority", "")) == "reward_manager"
+		and str(seven_days.get("progress_kind", "")) == "seven_day_login"
+		and bool(seven_days.get("active", false))
+		and bool(seven_days.get("featured", false)),
+		"E1 catalog preserves LiveOps progress and RewardManager authority"
+	)
+	_check(
+		not seven_days.has("reward")
+		and not seven_days.has("rewards"),
+		"E1 event catalog remains metadata-only and cannot mint rewards"
+	)
+	_check(
+		ResourceLoader.exists(
+			str(seven_days.get("scene_path", "")),
+			"PackedScene"
+		),
+		"E1 catalog route resolves the existing Seven Days production scene"
+	)
+	_check(
+		live_ops.call("get_event", "unknown_event").is_empty(),
+		"Unknown event IDs fail closed"
+	)
+	var featured_event: Dictionary = live_ops.call("get_featured_event")
+	_check(
+		featured_event == seven_days
+		and live_ops.call("get_active_event_entries").size() == 1,
+		"E1 exposes exactly one active featured event before content expansion"
+	)
+
+	var e1_contract_source: String = FileAccess.get_file_as_string(
+		EVENT_EXPANSION_E1_CONTRACT_PATH
+	)
+	var parsed_e1_contract: Variant = JSON.parse_string(
+		e1_contract_source
+	)
+	var e1_contract: Dictionary = {}
+	if parsed_e1_contract is Dictionary:
+		e1_contract = parsed_e1_contract as Dictionary
+	_check(
+		not e1_contract.is_empty()
+		and str(e1_contract.get("state", "")) == "EVENT_CATALOG_FOUNDATION_LOCKED"
+		and not bool(e1_contract.get("new_events_added", true))
+		and not bool(e1_contract.get("new_rewards_added", true))
+		and not bool(e1_contract.get("new_save_domain_added", true))
+		and not bool(e1_contract.get("monetization_mutation_allowed", true))
+		and not bool(e1_contract.get("cloud_save_mutation_allowed", true)),
+		"E1 contract locks catalog foundation without new economy or save authority"
+	)
+
 	_check(
 		live_ops.has_method("claim_login_day")
 		and live_ops.has_method("_record_active_date")
@@ -2569,6 +2636,12 @@ func _test_event_final_presentation_contracts() -> void:
 	_check(
 		"celestial_treasury_screen.tscn" not in event_center_source,
 		"Event Center stays decoupled from Treasury/Billing production authority"
+	)
+	_check(
+		"FEATURED_EVENT_ID" in event_center_source
+		and "get_event" in event_center_source
+		and "NEW_PLAYER_SCENE" not in event_center_source,
+		"E1 Event Center reads featured event routing from LiveOps catalog"
 	)
 
 	var expected_scenes: Array[String] = [

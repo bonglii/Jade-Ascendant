@@ -27,6 +27,26 @@ const MAIL_CLAIM_PREFIX: String = "liveops:mail:claim:"
 const LOGIN_DAY_COUNT: int = 7
 const DATE_CHECK_INTERVAL: float = 20.0
 
+const EVENT_ID_SEVEN_DAYS: String = "seven_days_of_ascension"
+const EVENT_ORDER: Array[String] = [
+	EVENT_ID_SEVEN_DAYS,
+]
+const EVENT_CATALOG: Dictionary = {
+	"seven_days_of_ascension": {
+		"title": "SEVEN DAYS OF ASCENSION",
+		"description": (
+			"Continue your cultivation journey and collect the rewards "
+			+ "you have earned."
+		),
+		"scene_path": "res://scenes/ui/new_player_event_screen.tscn",
+		"featured": true,
+		"active": true,
+		"authority": "live_ops_manager",
+		"reward_authority": "reward_manager",
+		"progress_kind": "seven_day_login",
+	},
+}
+
 const LOGIN_REWARDS: Dictionary = {
 	1: {"spirit_stone": 100, "items": {}},
 	2: {"spirit_stone": 150, "items": {"refinement_shard": 2}},
@@ -77,6 +97,7 @@ func _ready() -> void:
 	LiveOpsLocalization.install()
 	_last_date_key = _get_current_date_key()
 	_record_current_active_day()
+	_audit_event_catalog()
 	_audit_reward_catalog()
 	DebugLogger.system(str(
 		"LiveOps Phase 1 aktif | Active day: ",
@@ -97,6 +118,119 @@ func _process(delta: float) -> void:
 		return
 	_last_date_key = current_date
 	_record_current_active_day()
+
+
+func _audit_event_catalog() -> void:
+	var event_ids: Array[String] = get_event_ids()
+	if event_ids.size() != EVENT_ORDER.size():
+		push_error(
+			"LiveOpsManager: event order contains duplicate or unknown IDs."
+		)
+	if event_ids.size() != EVENT_CATALOG.size():
+		push_error(
+			"LiveOpsManager: event catalog/order coverage is incomplete."
+		)
+
+	var featured_count: int = 0
+	for event_id: String in event_ids:
+		var event: Dictionary = get_event(event_id)
+		var title: String = str(event.get("title", "")).strip_edges()
+		var description: String = str(
+			event.get("description", "")
+		).strip_edges()
+		var scene_path: String = str(
+			event.get("scene_path", "")
+		).strip_edges()
+		var authority: String = str(
+			event.get("authority", "")
+		).strip_edges()
+		var reward_authority: String = str(
+			event.get("reward_authority", "")
+		).strip_edges()
+		var progress_kind: String = str(
+			event.get("progress_kind", "")
+		).strip_edges()
+
+		if (
+			title.is_empty()
+			or description.is_empty()
+			or scene_path.is_empty()
+			or progress_kind.is_empty()
+		):
+			push_error(
+				"LiveOpsManager: event metadata incomplete for " + event_id
+			)
+		if (
+			authority != "live_ops_manager"
+			or reward_authority != "reward_manager"
+		):
+			push_error(
+				"LiveOpsManager: event authority boundary invalid for "
+				+ event_id
+			)
+		if event.has("reward") or event.has("rewards"):
+			push_error(
+				"LiveOpsManager: event catalog must remain metadata-only: "
+				+ event_id
+			)
+		if (
+			not scene_path.begins_with("res://")
+			or not ResourceLoader.exists(scene_path, "PackedScene")
+		):
+			push_error(
+				"LiveOpsManager: event scene is unavailable for " + event_id
+			)
+		if bool(event.get("featured", false)):
+			featured_count += 1
+
+	if featured_count != 1:
+		push_error(
+			"LiveOpsManager: exactly one featured event is required."
+		)
+
+
+func get_event_ids() -> Array[String]:
+	var result: Array[String] = []
+	for raw_event_id: String in EVENT_ORDER:
+		var event_id: String = raw_event_id.strip_edges()
+		if (
+			event_id.is_empty()
+			or event_id in result
+			or not EVENT_CATALOG.has(event_id)
+		):
+			continue
+		result.append(event_id)
+	return result
+
+
+func has_event(event_id: String) -> bool:
+	return EVENT_CATALOG.has(event_id)
+
+
+func get_event(event_id: String) -> Dictionary:
+	if not has_event(event_id):
+		return {}
+	var catalog_event: Dictionary = EVENT_CATALOG[event_id]
+	var event: Dictionary = catalog_event.duplicate(true)
+	event["id"] = event_id
+	return event
+
+
+func get_active_event_entries() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for event_id: String in get_event_ids():
+		var event: Dictionary = get_event(event_id)
+		if event.is_empty() or not bool(event.get("active", false)):
+			continue
+		result.append(event)
+	return result
+
+
+func get_featured_event() -> Dictionary:
+	for event: Dictionary in get_active_event_entries():
+		if bool(event.get("featured", false)):
+			return event.duplicate(true)
+	return {}
 
 
 func _audit_reward_catalog() -> void:
