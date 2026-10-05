@@ -1,0 +1,41 @@
+{
+  "contract_version": 1,
+  "phase": "MONETIZATION_M1B2A",
+  "state": "NATIVE_TRANSPORT_CANDIDATE_DISABLED",
+  "base_locked_sha": "2e76a4b85fa98c09afcf384396a6de365c67d8c9",
+  "region": "asia-southeast2",
+  "fixed_callable_name": "jadeAuthorizePurchase",
+  "production_activation_approved": false,
+  "firebase_callable_runtime_approved": false,
+  "native_purchase_bridge_enabled": false,
+  "tracked_aar_integrated": false,
+  "client_wiring_enabled": false,
+  "secure_purchase_authority_ready": false,
+  "play_checkout_enabled": false,
+  "require_firebase_auth": true,
+  "allow_anonymous_firebase_auth": true,
+  "allow_google_firebase_auth": true,
+  "require_app_check": true,
+  "release_app_check_provider": "play_integrity",
+  "debug_app_check_provider_is_release_allowed": false,
+  "request_keys": [
+    "purchase_token"
+  ],
+  "response_keys": [
+    "purchase_contract_version",
+    "state",
+    "grant_id",
+    "internal_product_id",
+    "celestial_jade"
+  ],
+  "client_uid_parameter_allowed": false,
+  "client_product_parameter_allowed": false,
+  "client_amount_parameter_allowed": false,
+  "client_finalization_parameter_allowed": false,
+  "raw_purchase_token_response_allowed": false,
+  "raw_purchase_token_local_storage_allowed": false,
+  "cloud_save_backend_modification_approved": false,
+  "cloud_bridge_reuse_for_monetization_allowed": false,
+  "limited_use_app_check_token_required": true,
+  "server_app_check_replay_consumption_approved": false
+}

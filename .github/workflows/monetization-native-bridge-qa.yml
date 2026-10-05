@@ -1,0 +1,88 @@
+name: Jade Ascendant - Monetization Native Bridge QA
+
+on:
+  push:
+    branches:
+      - 'qa/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  monetization-native-bridge:
+    name: M1B2 native transport candidate (NO DEPLOY)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout exact tested revision
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Run monetization security contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test \
+            backend/monetization/tests/purchase_authority.test.mjs \
+            backend/monetization/tests/m1b_client_source_boundary.test.mjs \
+            backend/monetization/tests/m1b2_native_transport_source_boundary.test.mjs
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android API 36
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager "platforms;android-36" "build-tools;35.0.0"
+
+      - name: Setup Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Build and unit-test isolated native bridge
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle \
+            -p backend/monetization/android_bridge \
+            :bridge:testDebugUnitTest \
+            :bridge:assembleDebug \
+            :bridge:assembleRelease \
+            --no-daemon \
+            --stacktrace
+
+      - name: Verify candidate AAR outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          debug='backend/monetization/android_bridge/bridge/build/outputs/aar/JadeMonetizationNativeBridge-debug.aar'
+          release='backend/monetization/android_bridge/bridge/build/outputs/aar/JadeMonetizationNativeBridge-release.aar'
+          test -f "$debug"
+          test -f "$release"
+          sha256sum "$debug" "$release"
+          echo 'M1B2_NATIVE_TRANSPORT_CANDIDATE_PASS'
+
+      - name: Preserve candidate AAR evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: jade-monetization-native-bridge-${{ github.run_id }}
+          path: backend/monetization/android_bridge/bridge/build/outputs/aar/*.aar
+          if-no-files-found: error
+          retention-days: 14
