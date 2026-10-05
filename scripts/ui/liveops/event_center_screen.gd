@@ -7,6 +7,7 @@ extends Control
 
 const LiveOpsUi = preload("res://scripts/ui/liveops/live_ops_ui.gd")
 const FEATURED_EVENT_ID: String = "seven_days_of_ascension"
+const PILGRIMAGE_EVENT_ID: String = "jade_valley_pilgrimage"
 const DAILY_SCENE: String = "res://scenes/ui/daily_quest_screen.tscn"
 const PAVILION_SCENE: String = "res://scenes/ui/pavilion_screen.tscn"
 
@@ -18,6 +19,9 @@ const SEVEN_DAY_ART: Texture2D = preload(
 )
 const DAILY_ICON: Texture2D = preload(
 	"res://assets/ui/icons/actions/daily.png"
+)
+const PILGRIMAGE_ICON: Texture2D = preload(
+	"res://assets/ui/home/liveops_premium/event_center_premium.png"
 )
 const PAVILION_ICON: Texture2D = preload(
 	"res://assets/ui/pavilion/icons/pavilion_crest.png"
@@ -320,6 +324,26 @@ func _build_secondary(parent: VBoxContainer) -> void:
 	_grid.add_theme_constant_override("v_separation", 11)
 	parent.add_child(_grid)
 
+	var pilgrimage_event: Dictionary = _live_ops.call(
+		"get_event",
+		PILGRIMAGE_EVENT_ID
+	)
+	if not pilgrimage_event.is_empty():
+		_add_activity_card(
+			str(pilgrimage_event.get("title", "JADE VALLEY PILGRIMAGE")),
+			"JOURNEY EVENT",
+			str(
+				pilgrimage_event.get(
+					"description",
+					"Clear key trials across Verdant Qi Valley and claim pilgrimage offerings."
+				)
+			),
+			PILGRIMAGE_ICON,
+			GOLD,
+			"OPEN PILGRIMAGE  ›",
+			"pilgrimage"
+		)
+
 	_add_activity_card(
 		"Daily Trials", "DAILY CULTIVATION", "Complete daily disciplines and collect available rewards.",
 		DAILY_ICON, JADE, "OPEN DAILY  ›", "daily"
@@ -435,23 +459,29 @@ func _open_destination(id: String) -> void:
 		return
 
 	var scene_path: String = ""
+	var event_id: String = ""
 	match id:
 		"seven_day":
-			if _live_ops == null:
-				return
-			var featured_event: Dictionary = _live_ops.call(
-				"get_event",
-				FEATURED_EVENT_ID
-			)
-			scene_path = str(
-				featured_event.get("scene_path", "")
-			).strip_edges()
+			event_id = FEATURED_EVENT_ID
+		"pilgrimage":
+			event_id = PILGRIMAGE_EVENT_ID
 		"daily":
 			scene_path = DAILY_SCENE
 		"pavilion":
 			scene_path = PAVILION_SCENE
 		_:
 			return
+
+	if not event_id.is_empty():
+		if _live_ops == null:
+			return
+		var event: Dictionary = _live_ops.call(
+			"get_event",
+			event_id
+		)
+		scene_path = str(
+			event.get("scene_path", "")
+		).strip_edges()
 
 	if (
 		scene_path.is_empty()
@@ -464,7 +494,10 @@ func _open_destination(id: String) -> void:
 
 	# Seven Days remains a popup when Event Center was opened from Home.
 	# For other destinations retain the existing lightweight menu transition.
-	if bool(get_meta("liveops_popup", false)) and id == "seven_day":
+	if (
+		bool(get_meta("liveops_popup", false))
+		and id in ["seven_day", "pilgrimage"]
+	):
 		if _live_ops != null and _live_ops.has_method("open_live_popup"):
 			_live_ops.call("open_live_popup", scene_path)
 			return

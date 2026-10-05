@@ -28,8 +28,14 @@ const LOGIN_DAY_COUNT: int = 7
 const DATE_CHECK_INTERVAL: float = 20.0
 
 const EVENT_ID_SEVEN_DAYS: String = "seven_days_of_ascension"
+const EVENT_ID_JADE_VALLEY_PILGRIMAGE: String = "jade_valley_pilgrimage"
+const PILGRIMAGE_CLAIM_PREFIX: String = (
+	"liveops:jade_valley_pilgrimage:claim:"
+)
+
 const EVENT_ORDER: Array[String] = [
 	EVENT_ID_SEVEN_DAYS,
+	EVENT_ID_JADE_VALLEY_PILGRIMAGE,
 ]
 const EVENT_CATALOG: Dictionary = {
 	"seven_days_of_ascension": {
@@ -44,6 +50,58 @@ const EVENT_CATALOG: Dictionary = {
 		"authority": "live_ops_manager",
 		"reward_authority": "reward_manager",
 		"progress_kind": "seven_day_login",
+	},
+	"jade_valley_pilgrimage": {
+		"title": "JADE VALLEY PILGRIMAGE",
+		"description": (
+			"Clear key trials across Verdant Qi Valley and claim "
+			+ "pilgrimage offerings."
+		),
+		"scene_path": (
+			"res://scenes/ui/jade_valley_pilgrimage_screen.tscn"
+		),
+		"featured": false,
+		"active": true,
+		"authority": "live_ops_manager",
+		"reward_authority": "reward_manager",
+		"progress_kind": "journey_stage_milestones",
+	},
+}
+
+const PILGRIMAGE_MILESTONE_ORDER: Array[String] = [
+	"bamboo_mist_passage",
+	"storm_peak_oath",
+	"sovereign_gate",
+]
+const PILGRIMAGE_MILESTONES: Dictionary = {
+	"bamboo_mist_passage": {
+		"title": "BAMBOO MIST PASSAGE",
+		"description": "Clear Stage 1-2: Bamboo Mist Pass.",
+		"chapter_id": 1,
+		"stage_id": 2,
+		"reward": {"spirit_stone": 75, "items": {}},
+	},
+	"storm_peak_oath": {
+		"title": "STORM PEAK OATH",
+		"description": "Clear Stage 1-4: Storm Peak Approach.",
+		"chapter_id": 1,
+		"stage_id": 4,
+		"reward": {
+			"spirit_stone": 125,
+			"items": {"refinement_shard": 1},
+		},
+	},
+	"sovereign_gate": {
+		"title": "SOVEREIGN GATE",
+		"description": (
+			"Clear Stage 1-5: Sovereign's Celestial Gate."
+		),
+		"chapter_id": 1,
+		"stage_id": 5,
+		"reward": {
+			"spirit_stone": 200,
+			"items": {"refinement_shard": 2},
+		},
 	},
 }
 
@@ -244,6 +302,21 @@ func _audit_reward_catalog() -> void:
 			push_error(
 				"LiveOpsManager: invalid login reward catalog day "
 				+ str(day)
+			)
+
+	for milestone_id: String in get_pilgrimage_milestone_ids():
+		var milestone: Dictionary = get_pilgrimage_milestone(
+			milestone_id
+		)
+		var reward: Dictionary = milestone.get("reward", {})
+		if not RewardManager.is_valid_reward(
+			RewardManager.SOURCE_PAVILION,
+			"live_ops_jade_valley_pilgrimage_" + milestone_id,
+			reward
+		):
+			push_error(
+				"LiveOpsManager: invalid pilgrimage reward "
+				+ milestone_id
 			)
 
 	var mail_ids: Array[String] = get_mail_ids()
@@ -475,6 +548,143 @@ func claim_login_day(day: int) -> bool:
 	var result: Dictionary = RewardManager.grant_reward(
 		RewardManager.SOURCE_PAVILION,
 		"live_ops_login_day_%d" % day,
+		reward,
+		{"pavilion": next_pavilion}
+	)
+	if not bool(result.get("success", false)):
+		return false
+
+	_apply_pavilion_snapshot(next_pavilion)
+	return true
+
+
+func get_pilgrimage_milestone_ids() -> Array[String]:
+	var result: Array[String] = []
+	for raw_id: String in PILGRIMAGE_MILESTONE_ORDER:
+		var milestone_id: String = raw_id.strip_edges()
+		if (
+			milestone_id.is_empty()
+			or milestone_id in result
+			or not PILGRIMAGE_MILESTONES.has(milestone_id)
+		):
+			continue
+		result.append(milestone_id)
+	return result
+
+
+func get_pilgrimage_milestone(
+	milestone_id: String
+) -> Dictionary:
+	if not PILGRIMAGE_MILESTONES.has(milestone_id):
+		return {}
+	var catalog_entry: Dictionary = PILGRIMAGE_MILESTONES[
+		milestone_id
+	]
+	var milestone: Dictionary = catalog_entry.duplicate(true)
+	milestone["id"] = milestone_id
+	milestone["unlocked"] = is_pilgrimage_milestone_unlocked(
+		milestone_id
+	)
+	milestone["claimed"] = is_pilgrimage_milestone_claimed(
+		milestone_id
+	)
+	return milestone
+
+
+func is_pilgrimage_milestone_unlocked(
+	milestone_id: String
+) -> bool:
+	if not PILGRIMAGE_MILESTONES.has(milestone_id):
+		return false
+	var milestone: Dictionary = PILGRIMAGE_MILESTONES[
+		milestone_id
+	]
+	return JourneyManager.is_stage_cleared(
+		int(milestone.get("chapter_id", 0)),
+		int(milestone.get("stage_id", 0))
+	)
+
+
+func is_pilgrimage_milestone_claimed(
+	milestone_id: String
+) -> bool:
+	if not PILGRIMAGE_MILESTONES.has(milestone_id):
+		return false
+	return (
+		PILGRIMAGE_CLAIM_PREFIX + milestone_id
+	) in _get_ledger()
+
+
+func get_pilgrimage_unlocked_count() -> int:
+	var count: int = 0
+	for milestone_id: String in get_pilgrimage_milestone_ids():
+		if is_pilgrimage_milestone_unlocked(milestone_id):
+			count += 1
+	return count
+
+
+func get_pilgrimage_claimed_count() -> int:
+	var count: int = 0
+	for milestone_id: String in get_pilgrimage_milestone_ids():
+		if is_pilgrimage_milestone_claimed(milestone_id):
+			count += 1
+	return count
+
+
+func get_pilgrimage_claimable_count() -> int:
+	var count: int = 0
+	for milestone_id: String in get_pilgrimage_milestone_ids():
+		if (
+			is_pilgrimage_milestone_unlocked(milestone_id)
+			and not is_pilgrimage_milestone_claimed(milestone_id)
+		):
+			count += 1
+	return count
+
+
+func is_pilgrimage_complete() -> bool:
+	var milestone_ids: Array[String] = (
+		get_pilgrimage_milestone_ids()
+	)
+	return (
+		not milestone_ids.is_empty()
+		and get_pilgrimage_claimed_count() == milestone_ids.size()
+	)
+
+
+func claim_pilgrimage_milestone(
+	milestone_id: String
+) -> bool:
+	if (
+		not PILGRIMAGE_MILESTONES.has(milestone_id)
+		or not is_pilgrimage_milestone_unlocked(milestone_id)
+		or is_pilgrimage_milestone_claimed(milestone_id)
+		or SaveManager.is_progress_read_only()
+	):
+		return false
+
+	var milestone: Dictionary = PILGRIMAGE_MILESTONES[
+		milestone_id
+	]
+	var reward: Dictionary = milestone.get(
+		"reward",
+		{}
+	).duplicate(true)
+	if reward.is_empty():
+		return false
+
+	var ledger: Array[String] = _get_ledger()
+	var claim_marker: String = (
+		PILGRIMAGE_CLAIM_PREFIX + milestone_id
+	)
+	ledger.append(claim_marker)
+	var next_pavilion: Dictionary = _build_pavilion_snapshot(
+		ledger
+	)
+
+	var result: Dictionary = RewardManager.grant_reward(
+		RewardManager.SOURCE_PAVILION,
+		"live_ops_jade_valley_pilgrimage_" + milestone_id,
 		reward,
 		{"pavilion": next_pavilion}
 	)

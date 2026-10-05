@@ -33,6 +33,7 @@ const CHAPTER_TWO_ENEMY_VISUAL_CATALOG_PATH: String = "res://scripts/data/chapte
 const CHAPTER_THREE_CATALOG_PATH: String = "res://scripts/data/chapter_three_catalog.gd"
 const CHAPTER_THREE_ENEMY_VISUAL_CATALOG_PATH: String = "res://scripts/data/chapter_three_enemy_visual_catalog.gd"
 const EVENT_EXPANSION_E1_CONTRACT_PATH: String = "res://release/event_content_expansion_e1_contract.json"
+const EVENT_EXPANSION_E2_CONTRACT_PATH: String = "res://release/event_content_expansion_e2_first_event_contract.json"
 
 var checks: int = 0
 var failures: int = 0
@@ -2316,12 +2317,15 @@ func _test_event_production_contracts() -> void:
 
 	var event_ids: Array = live_ops.call("get_event_ids")
 	_check(
-		event_ids == ["seven_days_of_ascension"],
-		"E1 event catalog starts with the existing Seven Days event only"
+		event_ids == [
+			"seven_days_of_ascension",
+			"jade_valley_pilgrimage",
+		],
+		"E2 event catalog adds Jade Valley Pilgrimage after Seven Days"
 	)
 	_check(
 		event_ids.size() == live_ops.EVENT_CATALOG.size(),
-		"E1 event order covers the complete catalog exactly once"
+		"E2 event order covers the complete catalog exactly once"
 	)
 
 	var seven_days: Dictionary = live_ops.call(
@@ -2356,8 +2360,23 @@ func _test_event_production_contracts() -> void:
 	var featured_event: Dictionary = live_ops.call("get_featured_event")
 	_check(
 		featured_event == seven_days
-		and live_ops.call("get_active_event_entries").size() == 1,
-		"E1 exposes exactly one active featured event before content expansion"
+		and live_ops.call("get_active_event_entries").size() == 2,
+		"E2 keeps Seven Days featured while exposing two active events"
+	)
+
+	var pilgrimage_event: Dictionary = live_ops.call(
+		"get_event",
+		"jade_valley_pilgrimage"
+	)
+	_check(
+		str(pilgrimage_event.get("authority", "")) == "live_ops_manager"
+		and str(pilgrimage_event.get("reward_authority", "")) == "reward_manager"
+		and str(pilgrimage_event.get("progress_kind", "")) == "journey_stage_milestones"
+		and bool(pilgrimage_event.get("active", false))
+		and not bool(pilgrimage_event.get("featured", true))
+		and not pilgrimage_event.has("reward")
+		and not pilgrimage_event.has("rewards"),
+		"E2 pilgrimage catalog remains metadata-only with existing authorities"
 	)
 
 	var e1_contract_source: String = FileAccess.get_file_as_string(
@@ -2377,7 +2396,154 @@ func _test_event_production_contracts() -> void:
 		and not bool(e1_contract.get("new_save_domain_added", true))
 		and not bool(e1_contract.get("monetization_mutation_allowed", true))
 		and not bool(e1_contract.get("cloud_save_mutation_allowed", true)),
-		"E1 contract locks catalog foundation without new economy or save authority"
+		"E1 historical catalog foundation contract remains locked"
+	)
+
+	var e2_contract_source: String = FileAccess.get_file_as_string(
+		EVENT_EXPANSION_E2_CONTRACT_PATH
+	)
+	var parsed_e2_contract: Variant = JSON.parse_string(
+		e2_contract_source
+	)
+	var e2_contract: Dictionary = {}
+	if parsed_e2_contract is Dictionary:
+		e2_contract = parsed_e2_contract as Dictionary
+	_check(
+		not e2_contract.is_empty()
+		and str(e2_contract.get("state", "")) == "FIRST_EVENT_PRODUCTION_LOCKED"
+		and str(e2_contract.get("event_id", "")) == "jade_valley_pilgrimage"
+		and int(e2_contract.get("milestone_count", 0)) == 3
+		and int(e2_contract.get("total_spirit_stone_reward", 0)) == 400
+		and int(e2_contract.get("total_refinement_shard_reward", 0)) == 3
+		and not bool(e2_contract.get("new_save_domain_added", true))
+		and not bool(e2_contract.get("new_autoload_added", true))
+		and not bool(e2_contract.get("monetization_mutation_allowed", true))
+		and not bool(e2_contract.get("cloud_save_mutation_allowed", true)),
+		"E2 contract locks first event without new save or platform authority"
+	)
+
+	var pilgrimage_ids: Array = live_ops.call(
+		"get_pilgrimage_milestone_ids"
+	)
+	_check(
+		pilgrimage_ids == [
+			"bamboo_mist_passage",
+			"storm_peak_oath",
+			"sovereign_gate",
+		],
+		"E2 pilgrimage exposes exactly three ordered milestones"
+	)
+
+	var pilgrimage_stones_before: int = int(
+		progression.spirit_stone
+	)
+	var pilgrimage_shards_before: int = int(
+		inventory.get_item_count("refinement_shard")
+	)
+	var expected_pilgrimage_stones: int = 0
+	var expected_pilgrimage_shards: int = 0
+	for milestone_id: String in pilgrimage_ids:
+		var milestone: Dictionary = live_ops.call(
+			"get_pilgrimage_milestone",
+			milestone_id
+		)
+		_check(
+			bool(milestone.get("unlocked", false))
+			and not bool(milestone.get("claimed", true)),
+			"E2 pilgrimage milestone derives unlock from Journey: "
+			+ milestone_id
+		)
+		var milestone_reward: Dictionary = milestone.get(
+			"reward",
+			{}
+		)
+		expected_pilgrimage_stones += int(
+			milestone_reward.get("spirit_stone", 0)
+		)
+		var milestone_items: Dictionary = milestone_reward.get(
+			"items",
+			{}
+		)
+		expected_pilgrimage_shards += int(
+			milestone_items.get("refinement_shard", 0)
+		)
+		_check(
+			bool(
+				live_ops.call(
+					"claim_pilgrimage_milestone",
+					milestone_id
+				)
+			),
+			"E2 pilgrimage milestone claims through LiveOps authority: "
+			+ milestone_id
+		)
+		_check(
+			bool(
+				live_ops.call(
+					"is_pilgrimage_milestone_claimed",
+					milestone_id
+				)
+			),
+			"E2 pilgrimage claim marker becomes permanent: "
+			+ milestone_id
+		)
+		_check(
+			not bool(
+				live_ops.call(
+					"claim_pilgrimage_milestone",
+					milestone_id
+				)
+			),
+			"E2 duplicate pilgrimage claim is rejected: "
+			+ milestone_id
+		)
+
+	_check(
+		expected_pilgrimage_stones == 400
+		and expected_pilgrimage_shards == 3
+		and int(progression.spirit_stone) == (
+			pilgrimage_stones_before + expected_pilgrimage_stones
+		)
+		and int(inventory.get_item_count("refinement_shard")) == (
+			pilgrimage_shards_before + expected_pilgrimage_shards
+		),
+		"E2 pilgrimage grants exactly 400 Spirit Stone and 3 shards"
+	)
+	_check(
+		bool(live_ops.call("is_pilgrimage_complete"))
+		and int(live_ops.call("get_pilgrimage_claimable_count")) == 0,
+		"E2 pilgrimage completes only after all three claims"
+	)
+	var pilgrimage_snapshot: Dictionary = saver.call(
+		"read_save_data",
+		"pavilion"
+	)
+	var pilgrimage_data: Dictionary = pilgrimage_snapshot.get(
+		"data",
+		{}
+	)
+	var pilgrimage_ledger: Variant = pilgrimage_data.get(
+		"claimed_milestone_ids",
+		[]
+	)
+	var pilgrimage_markers_valid: bool = (
+		bool(pilgrimage_snapshot.get("success", false))
+		and pilgrimage_ledger is Array
+	)
+	if pilgrimage_markers_valid:
+		for milestone_id: String in pilgrimage_ids:
+			if (
+				"liveops:jade_valley_pilgrimage:claim:"
+				+ milestone_id
+			) not in (pilgrimage_ledger as Array):
+				pilgrimage_markers_valid = false
+	_check(
+		pilgrimage_markers_valid,
+		"E2 pilgrimage claim markers persist in the existing Pavilion ledger"
+	)
+	_check(
+		not bool(saver.call("has_pending_transaction")),
+		"E2 pilgrimage reward claims leave no pending save journal"
 	)
 
 	_check(
@@ -2618,6 +2784,7 @@ func _test_event_final_presentation_contracts() -> void:
 	var ui_sources: Array[String] = [
 		"res://scripts/ui/liveops/event_center_screen.gd",
 		"res://scripts/ui/liveops/new_player_event_screen.gd",
+		"res://scripts/ui/liveops/jade_valley_pilgrimage_screen.gd",
 		"res://scripts/ui/liveops/mailbox_screen.gd",
 	]
 	for source_path: String in ui_sources:
@@ -2639,14 +2806,16 @@ func _test_event_final_presentation_contracts() -> void:
 	)
 	_check(
 		"FEATURED_EVENT_ID" in event_center_source
+		and "PILGRIMAGE_EVENT_ID" in event_center_source
 		and "get_event" in event_center_source
 		and "NEW_PLAYER_SCENE" not in event_center_source,
-		"E1 Event Center reads featured event routing from LiveOps catalog"
+		"E2 Event Center routes both production events through LiveOps catalog"
 	)
 
 	var expected_scenes: Array[String] = [
 		"res://scenes/ui/event_center_screen.tscn",
 		"res://scenes/ui/new_player_event_screen.tscn",
+		"res://scenes/ui/jade_valley_pilgrimage_screen.tscn",
 		"res://scenes/ui/mailbox_screen.tscn",
 	]
 	for scene_path: String in expected_scenes:
@@ -2663,6 +2832,7 @@ func _test_event_final_presentation_contracts() -> void:
 		"CELESTIAL EVENTS": "EVENT LANGIT",
 		"DAY %d / %d": "HARI %d / %d",
 		"CELESTIAL SIGN-IN": "ABSEN LANGIT",
+		"JADE VALLEY PILGRIMAGE": "ZIARAH LEMBAH GIOK",
 		"READY TO CLAIM": "SIAP DIAMBIL",
 		"SPIRIT MESSAGES": "PESAN SPIRIT",
 		"%d LETTERS": "%d SURAT",
