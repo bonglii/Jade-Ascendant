@@ -21,6 +21,21 @@ jobs:
     steps:
       - name: Checkout exact tested revision
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Verify exact CI revision
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $actual = (git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Unable to resolve checked-out HEAD.'
+          }
+          if ($actual -ne $env:GITHUB_SHA) {
+            throw "Checked out $actual but workflow SHA is $env:GITHUB_SHA"
+          }
+          Write-Host "EXACT_SHA_CI_PASS $actual"
 
       - name: Setup Node.js 22 for server-boundary tests
         uses: actions/setup-node@v5
@@ -106,6 +121,19 @@ jobs:
     steps:
       - name: Checkout exact tested revision
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Verify exact CI revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          if [[ "$actual" != "$GITHUB_SHA" ]]; then
+            echo "ERROR: checked out $actual but workflow SHA is $GITHUB_SHA" >&2
+            exit 1
+          fi
+          echo "EXACT_SHA_CI_PASS $actual"
 
       - name: Setup Node.js 22
         uses: actions/setup-node@v5

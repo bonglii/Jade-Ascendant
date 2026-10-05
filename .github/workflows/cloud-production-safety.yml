@@ -20,6 +20,19 @@ jobs:
     steps:
       - name: Checkout exact revision
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Verify exact CI revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          if [[ "$actual" != "$GITHUB_SHA" ]]; then
+            echo "ERROR: checked out $actual but workflow SHA is $GITHUB_SHA" >&2
+            exit 1
+          fi
+          echo "EXACT_SHA_CI_PASS $actual"
 
       - name: Setup Node.js 22
         uses: actions/setup-node@v5

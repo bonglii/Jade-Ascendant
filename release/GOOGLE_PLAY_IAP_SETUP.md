@@ -110,3 +110,20 @@ requires a separate explicit approval change after the missing production
 prerequisites have been supplied and validated; M5 itself does not change
 `SECURE_PURCHASE_ACTIVATION_APPROVED`, `project.godot`, backend deployment, or
 Cloud Save.
+
+## M6 exact-SHA CI and final monetization lock
+
+M6 closes the monetization engineering phase without activating blocked paid
+purchase production. Every required CI job explicitly checks out
+`${{ github.sha }}` and verifies repository `HEAD == GITHUB_SHA` before QA.
+
+Final lock status after the M6 commit's own exact-SHA CI is green:
+- Monetization engineering/security lock: **FINAL**
+- Rewarded ads code gate: **PASS**; external closed-testing/policy validation remains required
+- Paid purchase security-contract gate: **PASS**
+- Paid purchase production gate: **BLOCKED**
+- Full commercial monetization release gate: **BLOCKED**
+
+M6 does not deploy Firebase, add production credentials, integrate the
+monetization bridge AAR into the shipping project, enable paid checkout, modify
+runtime monetization logic, or give Cloud Save purchase authority.
