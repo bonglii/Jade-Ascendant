@@ -1,0 +1,33 @@
+{
+  "contract_version": 1,
+  "phase": "MONETIZATION_M4",
+  "state": "ADMOB_UMP_PRODUCTION_HARDENED",
+  "base_locked_sha": "3f3f62fa951f3f19d383a42f23293468deea0195",
+  "android_release_rewarded_ads_enabled_when_policy_allows": true,
+  "rewarded_ads_optional": true,
+  "production_android_app_id": "ca-app-pub-3082528078187093~9576090733",
+  "production_rewarded_ad_unit_id": "ca-app-pub-3082528078187093/8339864838",
+  "debug_rewarded_ad_unit_id": "ca-app-pub-3940256099942544/5224354917",
+  "release_requires_valid_production_ids": true,
+  "release_rejects_google_sample_and_test_ids": true,
+  "release_requires_matching_publisher_prefix": true,
+  "ump_consent_update_each_launch": true,
+  "consent_gate_allowed_statuses": [
+    "NOT_REQUIRED",
+    "OBTAINED"
+  ],
+  "ads_before_consent_gate_allowed": false,
+  "consent_failure_fail_closed": true,
+  "consent_retry_enabled": true,
+  "consent_retry_initial_seconds": 5,
+  "consent_retry_max_seconds": 60,
+  "rewarded_load_retry_enabled": true,
+  "rewarded_load_retry_initial_seconds": 15,
+  "rewarded_load_retry_max_seconds": 120,
+  "privacy_options_release_surface": true,
+  "reward_grant_requires_sdk_reward_callback": true,
+  "reward_callback_replay_allowed": false,
+  "purchase_authority_modified": false,
+  "cloud_save_backend_modification_approved": false,
+  "prior_locked_boundary_mutation_allowed": false
+}

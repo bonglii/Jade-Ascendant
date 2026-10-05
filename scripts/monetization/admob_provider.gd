@@ -17,6 +17,8 @@ const GOOGLE_SAMPLE_ANDROID_APP_ID: String = "ca-app-pub-3940256099942544~334751
 const ANDROID_APP_ID_SETTING: String = "admob/general/android/app_id"
 const RELEASE_REWARDED_SETTING: String = "monetization/admob/rewarded_ad_unit_id"
 
+const CONSENT_RETRY_INITIAL_SECONDS: float = 5.0
+const CONSENT_RETRY_MAX_SECONDS: float = 60.0
 const LOAD_RETRY_INITIAL_SECONDS: float = 15.0
 const LOAD_RETRY_MAX_SECONDS: float = 120.0
 
@@ -39,6 +41,8 @@ var _consent_form: ConsentForm
 var _active_request_id: int = -1
 var _reward_earned_for_request: bool = false
 
+var _consent_retry_timer: Timer
+var _consent_retry_delay_seconds: float = CONSENT_RETRY_INITIAL_SECONDS
 var _retry_timer: Timer
 var _retry_delay_seconds: float = LOAD_RETRY_INITIAL_SECONDS
 
@@ -63,6 +67,13 @@ func _ready() -> void:
 		_state = "native_plugin_missing"
 		push_error("AdMobProvider: native AdMob/UMP plugin tidak tersedia.")
 		return
+
+	_consent_retry_timer = Timer.new()
+	_consent_retry_timer.name = "ConsentUpdateRetry"
+	_consent_retry_timer.one_shot = true
+	_consent_retry_timer.wait_time = CONSENT_RETRY_INITIAL_SECONDS
+	_consent_retry_timer.timeout.connect(_begin_consent_update)
+	add_child(_consent_retry_timer)
 
 	_retry_timer = Timer.new()
 	_retry_timer.name = "RewardedLoadRetry"
@@ -133,6 +144,11 @@ func get_runtime_status() -> Dictionary:
 		"state": _state,
 		"test_mode": OS.is_debug_build(),
 		"consent_gate_open": _consent_gate_open,
+		"consent_retry_scheduled": (
+			_consent_retry_timer != null
+			and not _consent_retry_timer.is_stopped()
+		),
+		"consent_retry_delay_seconds": _consent_retry_delay_seconds,
 		"ads_initialized": _ads_initialized,
 		"rewarded_loading": _rewarded_loading,
 		"rewarded_ready": _rewarded_ad != null,
@@ -226,6 +242,12 @@ func _native_plugins_available() -> bool:
 func _begin_consent_update() -> void:
 	_state = "consent_updating"
 	_consent_gate_open = false
+	_destroy_rewarded_ad()
+	if (
+		_consent_retry_timer != null
+		and not _consent_retry_timer.is_stopped()
+	):
+		_consent_retry_timer.stop()
 
 	var parameters := ConsentRequestParameters.new()
 	UserMessagingPlatform.consent_information.update(
@@ -236,6 +258,7 @@ func _begin_consent_update() -> void:
 
 
 func _on_consent_update_success() -> void:
+	_reset_consent_retry()
 	_evaluate_consent_after_update()
 
 
@@ -243,6 +266,7 @@ func _on_consent_update_failure(_form_error) -> void:
 	_state = "consent_update_failed"
 	_consent_gate_open = false
 	_destroy_rewarded_ad()
+	_schedule_consent_retry()
 
 
 func _evaluate_consent_after_update() -> void:
@@ -267,11 +291,16 @@ func _evaluate_consent_after_update() -> void:
 	_state = "consent_unresolved"
 	_consent_gate_open = false
 	_destroy_rewarded_ad()
+	_schedule_consent_retry()
 
 
 func _on_consent_form_loaded(consent_form: ConsentForm) -> void:
 	if consent_form == null:
 		_state = "consent_form_missing"
+		_consent_gate_open = false
+		_consent_form = null
+		_destroy_rewarded_ad()
+		_schedule_consent_retry()
 		return
 
 	_consent_form = consent_form
@@ -284,6 +313,7 @@ func _on_consent_form_load_failure(_form_error) -> void:
 	_consent_gate_open = false
 	_consent_form = null
 	_destroy_rewarded_ad()
+	_schedule_consent_retry()
 
 
 func _on_consent_form_dismissed(form_error) -> void:
@@ -292,6 +322,7 @@ func _on_consent_form_dismissed(form_error) -> void:
 		_state = "consent_form_dismiss_failed"
 		_consent_gate_open = false
 		_destroy_rewarded_ad()
+		_schedule_consent_retry()
 		return
 
 	var status: int = UserMessagingPlatform.consent_information.get_consent_status()
@@ -330,7 +361,35 @@ func _consent_allows_ads(consent_status: int) -> bool:
 	]
 
 
+func _schedule_consent_retry() -> void:
+	if (
+		_consent_retry_timer == null
+		or _consent_gate_open
+		or _active_request_id >= 0
+	):
+		return
+
+	_consent_retry_timer.wait_time = _consent_retry_delay_seconds
+	if _consent_retry_timer.is_stopped():
+		_consent_retry_timer.start()
+
+	_consent_retry_delay_seconds = minf(
+		_consent_retry_delay_seconds * 2.0,
+		CONSENT_RETRY_MAX_SECONDS
+	)
+
+
+func _reset_consent_retry() -> void:
+	_consent_retry_delay_seconds = CONSENT_RETRY_INITIAL_SECONDS
+	if (
+		_consent_retry_timer != null
+		and not _consent_retry_timer.is_stopped()
+	):
+		_consent_retry_timer.stop()
+
+
 func _open_consent_gate() -> void:
+	_reset_consent_retry()
 	_consent_gate_open = true
 	_initialize_mobile_ads()
 
