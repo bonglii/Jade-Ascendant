@@ -4,8 +4,9 @@ const LiveOpsUi = preload("res://scripts/ui/liveops/live_ops_ui.gd")
 
 ## HEAVENLY TREASURY — APPROVED TOP-UP PRODUCTION.
 ## Approved V6.2 layout/artwork. This Control owns presentation, never grants.
-## PavilionManager/Google Play Billing own product prices, purchase lifecycle,
-## purchase token validation, save, economy and entitlement authority.
+## Google Play Billing owns localized product details and checkout. Purchased
+## tokens pass transiently through the secure native bridge to server authority;
+## the server verifies and consumes before PavilionManager can save a grant.
 ## Six consumable Celestial Jade packs only. No fabricated offer or price.
 
 const EconomyCatalog = preload("res://scripts/data/economy_catalog.gd")
@@ -28,7 +29,7 @@ const CARD_DARK: Color = Color(0.002, 0.042, 0.050, 0.97)
 const SWIPE_DEADZONE: int = 7
 
 # No first-top-up bonus, daily gift, starter bundle, or monthly blessing:
-# this LAB is a straight consumable Celestial Jade top-up storefront.
+# this production storefront is a straight consumable Celestial Jade top-up.
 # Ascending tier quantities mirror the EconomyCatalog; actual localized prices
 # can only be confirmed by Google Play Billing in production.
 const OFFER_IDS: Array[String] = [
@@ -933,8 +934,8 @@ func _request_purchase() -> void:
 	_billing_message = "Opening Google Play purchase..."
 	_message_product_id = _selected_id
 	_update_details()
-	# All transactions, consumption, receipt/token processing and grants remain
-	# with the existing PavilionManager/Google Play Billing provider.
+	# Google Play opens checkout; the purchase token is forwarded transiently
+	# to secure native/server authority. Treasury never consumes or grants.
 	if not PavilionManager.purchase_iap(_active_purchase_id):
 		_purchase_busy = false
 		_active_purchase_id = ""
@@ -955,11 +956,32 @@ func _on_store_products_updated(_products: Dictionary) -> void:
 
 
 func _on_purchase_state_changed(product_id: String, status: String, message: String) -> void:
-	if status in ["opening", "granting", "pending"]:
+	if status in ["opening", "pending", "verification_required"]:
 		_purchase_busy = true
 		if not product_id.is_empty():
 			_active_purchase_id = product_id
-	elif status in ["cancelled", "failed", "launch_failed", "unavailable", "completed", "unsupported", "price_unavailable", "invalid", "save_failed", "finalization_failed"]:
+	elif status in [
+		"verification_in_progress",
+		"verification_deferred",
+		"recovery_deferred",
+	]:
+		# A secure authority request already owns the current transaction.
+		# Deferred recovery must not overwrite that active product id.
+		_purchase_busy = true
+	elif status in [
+		"cancelled",
+		"failed",
+		"launch_failed",
+		"unavailable",
+		"unsupported",
+		"price_unavailable",
+		"invalid",
+		"identity_preparing",
+		"identity_unavailable",
+		"secure_verification_unavailable",
+		"secure_verification_failed",
+		"delivered",
+	]:
 		_purchase_busy = false
 		_active_purchase_id = ""
 	if not message.is_empty():
@@ -969,15 +991,16 @@ func _on_purchase_state_changed(product_id: String, status: String, message: Str
 
 
 func _on_purchase_delivery_finished(product_id: String, success: bool, message: String) -> void:
+	# Delivery is terminal for this Treasury presentation transaction on both
+	# success and failure. Recovery can start another verification afterwards.
+	_purchase_busy = false
+	_active_purchase_id = ""
 	_message_product_id = product_id
 	_billing_message = (
 		"PURCHASE SAVED · REWARD DELIVERED"
 		if success
 		else tr(message)
 	)
-	if not success:
-		_purchase_busy = false
-		_active_purchase_id = ""
 	_refresh_storefront()
 
 
