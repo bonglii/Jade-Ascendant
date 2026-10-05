@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'qa/**'
+      - main
   pull_request:
     branches:
       - main
@@ -48,4 +49,5 @@ jobs:
           node --test backend/cloud_save/tests/callable_factory.test.mjs
           node --test backend/cloud_save/tests/read_only_policy.test.mjs
           node --test backend/cloud_save/tests/native_bridge_contract.test.mjs
+          node --test tests/production_baseline_p0.test.mjs
           echo 'JADE_CLOUD_PRODUCTION_SAFETY_PASS'

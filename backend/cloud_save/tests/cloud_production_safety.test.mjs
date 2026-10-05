@@ -11,6 +11,7 @@ const tracked = path => execFileSync("git", ["show", `:${path}`], { cwd: repo, e
 const json = path => JSON.parse(read(path));
 
 const approval = json("backend/cloud_save/production_approval_boundary.json");
+const p0 = json("release/production_baseline_p0.json");
 const predeploy = json("backend/cloud_save/predeploy_gate.json");
 const project = tracked("project.godot");
 const index = read("backend/cloud_save/functions/index.mjs");
@@ -35,7 +36,6 @@ const FALSE_APPROVAL_KEYS = [
   "automatic_restore_approved",
   "cloud_wins_approved",
   "economy_write_approved",
-  "merge_to_main_approved",
 ];
 
 const RETIRED_WORKFLOWS = [
@@ -154,16 +154,30 @@ const RETIRED_BACKEND_GATE_SOURCES = [
   "backend/cloud_save/functions/src/transport/account_bound_read_transport_qa.mjs",
 ];
 
-test("final production approval fuse remains explicitly closed", () => {
+test("historical E4 runtime production fuse remains explicitly closed", () => {
   assert.equal(approval.contract_version, 1);
   assert.equal(approval.phase, "E4");
   assert.equal(approval.state, "EXPLICIT_APPROVAL_REQUIRED");
   assert.equal(approval.firebase_project_id, null);
   for (const key of FALSE_APPROVAL_KEYS) assert.equal(approval[key], false, `${key} must remain false`);
+  assert.equal(approval.merge_to_main_approved, false);
   assert.deepEqual(approval.allowed_preapproval_callable_exports, ["jadeCloudSaveCapabilities"]);
   assert.equal(approval.permanent_domain_count, 8);
   assert.equal(approval.active_run_checkpoint_included, false);
   assert.equal(approval.spark_policy, "NO_BLAZE_UPGRADE_WITHOUT_EXPLICIT_OWNER_APPROVAL");
+});
+
+test("P0 supersedes only the historical source-promotion fuse", () => {
+  assert.equal(p0.phase, "PRODUCTION_BASELINE_P0");
+  assert.equal(p0.state, "SOURCE_PROMOTION_APPROVED_RUNTIME_FAIL_CLOSED");
+  assert.equal(p0.repository_source_promotion_approved, true);
+  assert.equal(p0.source_promotion_supersedes_historical_e4_merge_flag, true);
+  assert.equal(p0.historical_e4_merge_to_main_approved, false);
+  assert.equal(p0.cloud_save_runtime_activation_approved, false);
+  assert.equal(p0.cloud_save_backend_deployment_approved, false);
+  assert.equal(p0.cloud_save_write_approved, false);
+  assert.equal(p0.cloud_save_restore_approved, false);
+  assert.equal(p0.firebase_deployment_approved, false);
 });
 
 test("legacy predeploy policy agrees with the final fail-closed boundary", () => {
