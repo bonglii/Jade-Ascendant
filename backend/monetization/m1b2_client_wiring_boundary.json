@@ -1,0 +1,35 @@
+{
+  "contract_version": 1,
+  "phase": "MONETIZATION_M1B2B",
+  "state": "CLIENT_TRANSPORT_WIRED_FAIL_CLOSED",
+  "base_locked_sha": "72957a7a9678301e320b67faf027bbff15b54054",
+  "production_activation_approved": false,
+  "firebase_callable_runtime_approved": false,
+  "native_purchase_bridge_enabled": false,
+  "tracked_aar_integrated": false,
+  "client_wiring_enabled": true,
+  "secure_purchase_authority_ready": false,
+  "play_checkout_enabled": false,
+  "purchase_recovery_enabled": false,
+  "fixed_native_singleton": "JadeMonetizationNativeBridge",
+  "fixed_native_method": "authorizePurchase",
+  "fixed_native_signal": "purchaseAuthorityResult",
+  "request_keys": [
+    "purchase_token"
+  ],
+  "response_keys": [
+    "purchase_contract_version",
+    "state",
+    "grant_id",
+    "internal_product_id",
+    "celestial_jade"
+  ],
+  "client_uid_parameter_allowed": false,
+  "client_product_parameter_allowed": false,
+  "client_amount_parameter_allowed": false,
+  "client_finalization_parameter_allowed": false,
+  "raw_purchase_token_local_storage_allowed": false,
+  "server_grant_revalidated_by_pavilion": true,
+  "cloud_save_backend_modification_approved": false,
+  "m1b2a_boundary_mutation_allowed": false
+}

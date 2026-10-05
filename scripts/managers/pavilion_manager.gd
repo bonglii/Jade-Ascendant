@@ -29,6 +29,7 @@ const OfflineBillingProvider = preload(
 const GooglePlayBillingProvider = preload(
 	"res://scripts/monetization/google_play_billing_provider.gd"
 )
+const PURCHASE_AUTHORITY_SINGLETON: String = "JadeMonetizationNativeBridge"
 
 const MEDITATION_REWARD: int = 20
 const PAYMENT_AUTO: String = "auto"
@@ -112,6 +113,8 @@ var billing_provider: Node = null
 var billing_store_products: Dictionary = {}
 var billing_owned_product_ids: Array[String] = []
 var secure_purchase_authority_ready: bool = false
+var purchase_authority_bridge: Object = null
+var secure_purchase_in_flight_product_id: String = ""
 
 
 func _ready() -> void:
@@ -131,6 +134,7 @@ func _ready() -> void:
 	elif not bool(result.get("exists", false)):
 		_save_state()
 	_connect_cadence_hooks()
+	call_deferred("_connect_secure_purchase_transport")
 	call_deferred("_connect_secure_purchase_identity")
 	call_deferred("_sync_economy_cadence")
 
@@ -505,6 +509,41 @@ func restore_iap_purchases() -> void:
 	billing_provider.call("restore_purchases")
 
 
+
+func _connect_secure_purchase_transport() -> bool:
+	purchase_authority_bridge = null
+	if OS.get_name() != "Android":
+		return false
+	if not Engine.has_singleton(PURCHASE_AUTHORITY_SINGLETON):
+		return false
+	var bridge: Object = Engine.get_singleton(PURCHASE_AUTHORITY_SINGLETON)
+	if bridge == null:
+		return false
+	if (
+		not bridge.has_method("authorizePurchase")
+		or not bridge.has_method("isSecurePurchaseTransportConfigured")
+		or not bridge.has_signal("purchaseAuthorityResult")
+	):
+		return false
+	var callback := Callable(self, "_on_purchase_authority_result")
+	if not bridge.is_connected("purchaseAuthorityResult", callback):
+		bridge.connect("purchaseAuthorityResult", callback)
+	purchase_authority_bridge = bridge
+	return true
+
+
+func _has_secure_purchase_transport() -> bool:
+	return (
+		purchase_authority_bridge != null
+		and is_instance_valid(purchase_authority_bridge)
+		and purchase_authority_bridge.has_method("authorizePurchase")
+		and purchase_authority_bridge.has_method(
+			"isSecurePurchaseTransportConfigured"
+		)
+		and purchase_authority_bridge.has_signal("purchaseAuthorityResult")
+	)
+
+
 func _connect_secure_purchase_identity() -> void:
 	if GoogleAccountManager.has_signal("monetization_identity_changed"):
 		var callback := Callable(self, "_on_monetization_identity_changed")
@@ -604,18 +643,89 @@ func _on_billing_purchase_ready(
 	_purchase_token: String,
 	_order_id: String
 ) -> void:
-	# M1B-1 deliberately has no production authority transport yet. Never derive
-	# entitlement from the client product id/token and never finalize on-device.
-	last_error = "Secure purchase verification is not available yet."
+	if not _has_secure_purchase_transport():
+		_connect_secure_purchase_transport()
+	if not secure_purchase_authority_ready or not _has_secure_purchase_transport():
+		_fail_secure_purchase_delivery(
+			product_id,
+			"Secure purchase verification is not available yet."
+		)
+		return
+	if not secure_purchase_in_flight_product_id.is_empty():
+		_fail_secure_purchase_delivery(
+			product_id,
+			"Another purchase is still being verified."
+		)
+		return
+	secure_purchase_in_flight_product_id = product_id
+	purchase_authority_bridge.call(
+		"authorizePurchase",
+		_purchase_token
+	)
+
+
+func _on_purchase_authority_result(
+	success: bool,
+	_status: String,
+	grant_json: String
+) -> void:
+	var pending_product_id: String = secure_purchase_in_flight_product_id
+	secure_purchase_in_flight_product_id = ""
+	if not success:
+		_fail_secure_purchase_delivery(
+			pending_product_id,
+			"Secure purchase verification failed. Please try again."
+		)
+		return
+	var parsed: Variant = JSON.parse_string(grant_json)
+	if not (parsed is Dictionary):
+		_fail_secure_purchase_delivery(
+			pending_product_id,
+			"Secure purchase verification returned an invalid grant."
+		)
+		return
+	var grant: Dictionary = parsed
+	var delivery_product_id: String = str(
+		grant.get("internal_product_id", "")
+	).strip_edges()
+	if delivery_product_id.is_empty():
+		delivery_product_id = pending_product_id
+	if not _apply_server_authorized_iap_grant(grant):
+		var message: String = last_error
+		if message.is_empty():
+			message = "Secure purchase delivery failed."
+		_fail_secure_purchase_delivery(
+			delivery_product_id,
+			message
+		)
+		return
+	last_error = ""
+	billing_purchase_state_changed.emit(
+		delivery_product_id,
+		"delivered",
+		"Purchase delivered securely."
+	)
+	purchase_delivery_finished.emit(
+		delivery_product_id,
+		true,
+		"Purchase delivered securely."
+	)
+
+
+func _fail_secure_purchase_delivery(
+	product_id: String,
+	message: String
+) -> void:
+	last_error = message
 	billing_purchase_state_changed.emit(
 		product_id,
-		"secure_verification_unavailable",
-		last_error
+		"secure_verification_failed",
+		message
 	)
 	purchase_delivery_finished.emit(
 		product_id,
 		false,
-		last_error
+		message
 	)
 
 
