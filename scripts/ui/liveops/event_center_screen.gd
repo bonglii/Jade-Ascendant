@@ -8,6 +8,7 @@ extends Control
 const LiveOpsUi = preload("res://scripts/ui/liveops/live_ops_ui.gd")
 const FEATURED_EVENT_ID: String = "seven_days_of_ascension"
 const PILGRIMAGE_EVENT_ID: String = "jade_valley_pilgrimage"
+const BOSS_HUNT_EVENT_ID: String = "celestial_boss_hunt"
 const DAILY_SCENE: String = "res://scenes/ui/daily_quest_screen.tscn"
 const PAVILION_SCENE: String = "res://scenes/ui/pavilion_screen.tscn"
 
@@ -344,6 +345,25 @@ func _build_secondary(parent: VBoxContainer) -> void:
 			"pilgrimage"
 		)
 
+	var boss_hunt_event: Dictionary = _live_ops.call(
+		"get_event",
+		BOSS_HUNT_EVENT_ID
+	)
+	if not boss_hunt_event.is_empty():
+		_add_activity_card(
+			str(boss_hunt_event.get("title", "CELESTIAL BOSS HUNT")),
+			"BOSS HUNT EVENT",
+			str(
+				boss_hunt_event.get(
+					"description",
+					"Defeat the sovereign at the end of each realm and claim one-time celestial bounties."
+				)
+			),
+			PILGRIMAGE_ICON,
+			Color(0.96, 0.55, 0.28, 1.0),
+			"OPEN BOSS HUNT  ›",
+			"boss_hunt"
+		)
 	_add_activity_card(
 		"Daily Trials", "DAILY CULTIVATION", "Complete daily disciplines and collect available rewards.",
 		DAILY_ICON, JADE, "OPEN DAILY  ›", "daily"
@@ -465,6 +485,8 @@ func _open_destination(id: String) -> void:
 			event_id = FEATURED_EVENT_ID
 		"pilgrimage":
 			event_id = PILGRIMAGE_EVENT_ID
+		"boss_hunt":
+			event_id = BOSS_HUNT_EVENT_ID
 		"daily":
 			scene_path = DAILY_SCENE
 		"pavilion":
@@ -496,7 +518,7 @@ func _open_destination(id: String) -> void:
 	# For other destinations retain the existing lightweight menu transition.
 	if (
 		bool(get_meta("liveops_popup", false))
-		and id in ["seven_day", "pilgrimage"]
+		and id in ["seven_day", "pilgrimage", "boss_hunt"]
 	):
 		if _live_ops != null and _live_ops.has_method("open_live_popup"):
 			_live_ops.call("open_live_popup", scene_path)

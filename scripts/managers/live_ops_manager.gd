@@ -29,13 +29,18 @@ const DATE_CHECK_INTERVAL: float = 20.0
 
 const EVENT_ID_SEVEN_DAYS: String = "seven_days_of_ascension"
 const EVENT_ID_JADE_VALLEY_PILGRIMAGE: String = "jade_valley_pilgrimage"
+const EVENT_ID_CELESTIAL_BOSS_HUNT: String = "celestial_boss_hunt"
 const PILGRIMAGE_CLAIM_PREFIX: String = (
 	"liveops:jade_valley_pilgrimage:claim:"
 )
+const BOSS_HUNT_CLAIM_PREFIX: String = "liveops:celestial_boss_hunt:claim:"
+const BOSS_HUNT_REWARDED_PLACEMENT: String = "liveops_boss_hunt_double"
+const BOSS_HUNT_REWARDED_MULTIPLIER: int = 2
 
 const EVENT_ORDER: Array[String] = [
 	EVENT_ID_SEVEN_DAYS,
 	EVENT_ID_JADE_VALLEY_PILGRIMAGE,
+	EVENT_ID_CELESTIAL_BOSS_HUNT,
 ]
 const EVENT_CATALOG: Dictionary = {
 	"seven_days_of_ascension": {
@@ -65,6 +70,19 @@ const EVENT_CATALOG: Dictionary = {
 		"authority": "live_ops_manager",
 		"reward_authority": "reward_manager",
 		"progress_kind": "journey_stage_milestones",
+	},
+	"celestial_boss_hunt": {
+		"title": "CELESTIAL BOSS HUNT",
+		"description": (
+			"Defeat the sovereign at the end of each realm and claim "
+			+ "one-time celestial bounties."
+		),
+		"scene_path": "res://scenes/ui/celestial_boss_hunt_screen.tscn",
+		"featured": false,
+		"active": true,
+		"authority": "live_ops_manager",
+		"reward_authority": "reward_manager",
+		"progress_kind": "journey_chapter_final_bounties",
 	},
 }
 
@@ -105,6 +123,50 @@ const PILGRIMAGE_MILESTONES: Dictionary = {
 	},
 }
 
+const BOSS_HUNT_MILESTONE_ORDER: Array[String] = [
+	"verdant_sovereign",
+	"crimson_moon_master",
+	"star_palace_sovereign",
+	"frostbound_sovereign",
+	"primordial_sun_sovereign",
+]
+const BOSS_HUNT_MILESTONES: Dictionary = {
+	"verdant_sovereign": {
+		"title": "VERDANT SOVEREIGN BOUNTY",
+		"description": "Clear Stage 1-5 and defeat the Jade Valley Sovereign.",
+		"chapter_id": 1,
+		"stage_id": 5,
+		"reward": {"spirit_stone": 150, "items": {"refinement_shard": 1}},
+	},
+	"crimson_moon_master": {
+		"title": "CRIMSON MOON BOUNTY",
+		"description": "Clear Stage 2-5 and defeat the Crimson Moon Sect Master.",
+		"chapter_id": 2,
+		"stage_id": 5,
+		"reward": {"spirit_stone": 250, "items": {"refinement_shard": 2}},
+	},
+	"star_palace_sovereign": {
+		"title": "STAR PALACE BOUNTY",
+		"description": "Clear Stage 3-5 and defeat the Star Palace Celestial Sovereign.",
+		"chapter_id": 3,
+		"stage_id": 5,
+		"reward": {"spirit_stone": 400, "items": {"refinement_shard": 3}},
+	},
+	"frostbound_sovereign": {
+		"title": "FROSTBOUND BOUNTY",
+		"description": "Clear Stage 4-5 and defeat the Frostbound Sovereign.",
+		"chapter_id": 4,
+		"stage_id": 5,
+		"reward": {"spirit_stone": 600, "items": {"refinement_shard": 4}},
+	},
+	"primordial_sun_sovereign": {
+		"title": "PRIMORDIAL SUN BOUNTY",
+		"description": "Clear Stage 5-5 and defeat the Primordial Sun Sovereign.",
+		"chapter_id": 5,
+		"stage_id": 5,
+		"reward": {"spirit_stone": 900, "items": {"refinement_shard": 5}},
+	},
+}
 const LOGIN_REWARDS: Dictionary = {
 	1: {"spirit_stone": 100, "items": {}},
 	2: {"spirit_stone": 150, "items": {"refinement_shard": 2}},
@@ -148,6 +210,7 @@ var _active_live_popup: Control = null
 var _active_live_popup_scene: String = ""
 var _date_check_elapsed: float = 0.0
 var _last_date_key: String = ""
+var _boss_hunt_pending_milestone: String = ""
 
 
 func _ready() -> void:
@@ -157,6 +220,18 @@ func _ready() -> void:
 	_record_current_active_day()
 	_audit_event_catalog()
 	_audit_reward_catalog()
+	var verified_callback := Callable(
+		self,
+		"_on_boss_hunt_verified_rewarded_completed"
+	)
+	if not MonetizationManager.verified_rewarded_completed.is_connected(verified_callback):
+		MonetizationManager.verified_rewarded_completed.connect(verified_callback)
+	var finished_callback := Callable(
+		self,
+		"_on_boss_hunt_rewarded_request_finished"
+	)
+	if not MonetizationManager.rewarded_request_finished.is_connected(finished_callback):
+		MonetizationManager.rewarded_request_finished.connect(finished_callback)
 	DebugLogger.system(str(
 		"LiveOps Phase 1 aktif | Active day: ",
 		get_active_login_day_count(),
@@ -319,6 +394,25 @@ func _audit_reward_catalog() -> void:
 				+ milestone_id
 			)
 
+	for milestone_id: String in get_boss_hunt_milestone_ids():
+		var milestone: Dictionary = get_boss_hunt_milestone(milestone_id)
+		var reward: Dictionary = milestone.get("reward", {})
+		var doubled_reward: Dictionary = _multiply_reward(
+			reward,
+			BOSS_HUNT_REWARDED_MULTIPLIER
+		)
+		if not RewardManager.is_valid_reward(
+			RewardManager.SOURCE_PAVILION,
+			"live_ops_celestial_boss_hunt_" + milestone_id + "_normal",
+			reward
+		):
+			push_error("LiveOpsManager: invalid Boss Hunt reward " + milestone_id)
+		if not RewardManager.is_valid_reward(
+			RewardManager.SOURCE_PAVILION,
+			"live_ops_celestial_boss_hunt_" + milestone_id + "_rewarded_audit",
+			doubled_reward
+		):
+			push_error("LiveOpsManager: invalid doubled Boss Hunt reward " + milestone_id)
 	var mail_ids: Array[String] = get_mail_ids()
 	if mail_ids.size() != MAIL_ORDER.size():
 		push_error(
@@ -693,6 +787,219 @@ func claim_pilgrimage_milestone(
 
 	_apply_pavilion_snapshot(next_pavilion)
 	return true
+
+
+
+func get_boss_hunt_milestone_ids() -> Array[String]:
+	var result: Array[String] = []
+	for raw_id: String in BOSS_HUNT_MILESTONE_ORDER:
+		var milestone_id: String = raw_id.strip_edges()
+		if (
+			milestone_id.is_empty()
+			or milestone_id in result
+			or not BOSS_HUNT_MILESTONES.has(milestone_id)
+		):
+			continue
+		result.append(milestone_id)
+	return result
+
+
+func get_boss_hunt_milestone(milestone_id: String) -> Dictionary:
+	if not BOSS_HUNT_MILESTONES.has(milestone_id):
+		return {}
+	var milestone: Dictionary = (
+		BOSS_HUNT_MILESTONES[milestone_id] as Dictionary
+	).duplicate(true)
+	milestone["id"] = milestone_id
+	milestone["unlocked"] = is_boss_hunt_milestone_unlocked(milestone_id)
+	milestone["claimed"] = is_boss_hunt_milestone_claimed(milestone_id)
+	return milestone
+
+
+func is_boss_hunt_milestone_unlocked(milestone_id: String) -> bool:
+	if not BOSS_HUNT_MILESTONES.has(milestone_id):
+		return false
+	var milestone: Dictionary = BOSS_HUNT_MILESTONES[milestone_id]
+	return JourneyManager.is_stage_cleared(
+		int(milestone.get("chapter_id", 0)),
+		int(milestone.get("stage_id", 0))
+	)
+
+
+func is_boss_hunt_milestone_claimed(milestone_id: String) -> bool:
+	if not BOSS_HUNT_MILESTONES.has(milestone_id):
+		return false
+	return BOSS_HUNT_CLAIM_PREFIX + milestone_id in _get_ledger()
+
+
+func get_boss_hunt_unlocked_count() -> int:
+	var count: int = 0
+	for milestone_id: String in get_boss_hunt_milestone_ids():
+		if is_boss_hunt_milestone_unlocked(milestone_id):
+			count += 1
+	return count
+
+
+func get_boss_hunt_claimed_count() -> int:
+	var count: int = 0
+	for milestone_id: String in get_boss_hunt_milestone_ids():
+		if is_boss_hunt_milestone_claimed(milestone_id):
+			count += 1
+	return count
+
+
+func get_boss_hunt_claimable_count() -> int:
+	var count: int = 0
+	for milestone_id: String in get_boss_hunt_milestone_ids():
+		if (
+			is_boss_hunt_milestone_unlocked(milestone_id)
+			and not is_boss_hunt_milestone_claimed(milestone_id)
+		):
+			count += 1
+	return count
+
+
+func get_boss_hunt_pending_milestone() -> String:
+	return _boss_hunt_pending_milestone
+
+
+func get_boss_hunt_rewarded_policy_status() -> Dictionary:
+	var policy: Dictionary = MonetizationManager.get_rewarded_policy_status(
+		BOSS_HUNT_REWARDED_PLACEMENT
+	)
+	policy["pending_milestone_id"] = _boss_hunt_pending_milestone
+	return policy
+
+
+func is_boss_hunt_double_available(milestone_id: String) -> bool:
+	return (
+		BOSS_HUNT_MILESTONES.has(milestone_id)
+		and is_boss_hunt_milestone_unlocked(milestone_id)
+		and not is_boss_hunt_milestone_claimed(milestone_id)
+		and not SaveManager.is_progress_read_only()
+		and _boss_hunt_pending_milestone.is_empty()
+		and MonetizationManager.rewarded_available(BOSS_HUNT_REWARDED_PLACEMENT)
+	)
+
+
+func _multiply_reward(reward: Dictionary, multiplier: int) -> Dictionary:
+	var factor: int = maxi(multiplier, 1)
+	var items: Dictionary = {}
+	var raw_items: Variant = reward.get("items", {})
+	if raw_items is Dictionary:
+		for raw_item_id: Variant in (raw_items as Dictionary).keys():
+			var item_id: String = str(raw_item_id)
+			var amount: int = int((raw_items as Dictionary).get(raw_item_id, 0))
+			if not item_id.is_empty() and amount > 0:
+				items[item_id] = amount * factor
+	return RewardManager.create_reward_data(
+		int(reward.get("spirit_stone", 0)) * factor,
+		items,
+		int(reward.get("hero_exp", 0)) * factor
+	)
+
+
+func _grant_boss_hunt_reward(
+	milestone_id: String,
+	reward: Dictionary,
+	source_suffix: String
+) -> Dictionary:
+	if (
+		not BOSS_HUNT_MILESTONES.has(milestone_id)
+		or not is_boss_hunt_milestone_unlocked(milestone_id)
+		or is_boss_hunt_milestone_claimed(milestone_id)
+		or SaveManager.is_progress_read_only()
+	):
+		return {"success": false, "error": "Boss bounty is not claimable."}
+	var ledger: Array[String] = _get_ledger()
+	ledger.append(BOSS_HUNT_CLAIM_PREFIX + milestone_id)
+	var next_pavilion: Dictionary = _build_pavilion_snapshot(ledger)
+	var result: Dictionary = RewardManager.grant_reward(
+		RewardManager.SOURCE_PAVILION,
+		"live_ops_celestial_boss_hunt_" + milestone_id + "_" + source_suffix,
+		reward,
+		{"pavilion": next_pavilion}
+	)
+	if not bool(result.get("success", false)):
+		return result
+	_apply_pavilion_snapshot(next_pavilion)
+	return result
+
+
+func claim_boss_hunt_milestone(milestone_id: String) -> bool:
+	if not _boss_hunt_pending_milestone.is_empty():
+		return false
+	var milestone: Dictionary = get_boss_hunt_milestone(milestone_id)
+	if milestone.is_empty():
+		return false
+	var result: Dictionary = _grant_boss_hunt_reward(
+		milestone_id,
+		(milestone.get("reward", {}) as Dictionary).duplicate(true),
+		"normal"
+	)
+	return bool(result.get("success", false))
+
+
+func request_boss_hunt_double_claim(milestone_id: String) -> bool:
+	if not is_boss_hunt_double_available(milestone_id):
+		return false
+	_boss_hunt_pending_milestone = milestone_id
+	if not MonetizationManager.show_rewarded(BOSS_HUNT_REWARDED_PLACEMENT):
+		_boss_hunt_pending_milestone = ""
+		live_ops_changed.emit()
+		return false
+	live_ops_changed.emit()
+	return true
+
+
+func _on_boss_hunt_verified_rewarded_completed(
+	placement: String,
+	grant_id: String
+) -> void:
+	if placement != BOSS_HUNT_REWARDED_PLACEMENT:
+		return
+	var milestone_id: String = _boss_hunt_pending_milestone
+	_boss_hunt_pending_milestone = ""
+	if milestone_id.is_empty():
+		MonetizationManager.publish_reward_delivery_result(
+			placement, false, 0, "No pending boss bounty."
+		)
+		live_ops_changed.emit()
+		return
+	var milestone: Dictionary = get_boss_hunt_milestone(milestone_id)
+	var doubled_reward: Dictionary = _multiply_reward(
+		milestone.get("reward", {}),
+		BOSS_HUNT_REWARDED_MULTIPLIER
+	)
+	var result: Dictionary = _grant_boss_hunt_reward(
+		milestone_id,
+		doubled_reward,
+		"rewarded_" + grant_id
+	)
+	var granted: bool = bool(result.get("success", false))
+	var message: String = (
+		RewardManager.get_reward_summary(doubled_reward, "Reward claimed.")
+		if granted
+		else str(result.get("error", "Boss bounty delivery failed."))
+	)
+	MonetizationManager.publish_reward_delivery_result(
+		placement,
+		granted,
+		int(doubled_reward.get("spirit_stone", 0)) if granted else 0,
+		message
+	)
+	live_ops_changed.emit()
+
+
+func _on_boss_hunt_rewarded_request_finished(
+	placement: String,
+	_status: String
+) -> void:
+	if placement != BOSS_HUNT_REWARDED_PLACEMENT:
+		return
+	if not _boss_hunt_pending_milestone.is_empty():
+		_boss_hunt_pending_milestone = ""
+		live_ops_changed.emit()
 
 
 func get_mail_ids() -> Array[String]:

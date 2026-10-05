@@ -34,6 +34,7 @@ const CHAPTER_THREE_CATALOG_PATH: String = "res://scripts/data/chapter_three_cat
 const CHAPTER_THREE_ENEMY_VISUAL_CATALOG_PATH: String = "res://scripts/data/chapter_three_enemy_visual_catalog.gd"
 const EVENT_EXPANSION_E1_CONTRACT_PATH: String = "res://release/event_content_expansion_e1_contract.json"
 const EVENT_EXPANSION_E2_CONTRACT_PATH: String = "res://release/event_content_expansion_e2_first_event_contract.json"
+const EVENT_EXPANSION_E3_CONTRACT_PATH: String = "res://release/event_content_expansion_e3_boss_hunt_contract.json"
 
 var checks: int = 0
 var failures: int = 0
@@ -104,7 +105,7 @@ func _run() -> void:
 	if failures == 0:
 		await _test_release_contracts()
 	if failures == 0:
-		_test_event_production_contracts()
+		await _test_event_production_contracts()
 	if failures == 0:
 		_test_mailbox_production_contracts()
 	if failures == 0:
@@ -2320,8 +2321,9 @@ func _test_event_production_contracts() -> void:
 		event_ids == [
 			"seven_days_of_ascension",
 			"jade_valley_pilgrimage",
+			"celestial_boss_hunt",
 		],
-		"E2 event catalog adds Jade Valley Pilgrimage after Seven Days"
+		"E3 event catalog adds Celestial Boss Hunt after Jade Valley"
 	)
 	_check(
 		event_ids.size() == live_ops.EVENT_CATALOG.size(),
@@ -2360,8 +2362,8 @@ func _test_event_production_contracts() -> void:
 	var featured_event: Dictionary = live_ops.call("get_featured_event")
 	_check(
 		featured_event == seven_days
-		and live_ops.call("get_active_event_entries").size() == 2,
-		"E2 keeps Seven Days featured while exposing two active events"
+		and live_ops.call("get_active_event_entries").size() == 3,
+		"E3 keeps Seven Days featured while exposing three active events"
 	)
 
 	var pilgrimage_event: Dictionary = live_ops.call(
@@ -2379,6 +2381,20 @@ func _test_event_production_contracts() -> void:
 		"E2 pilgrimage catalog remains metadata-only with existing authorities"
 	)
 
+	var boss_hunt_event: Dictionary = live_ops.call(
+		"get_event",
+		"celestial_boss_hunt"
+	)
+	_check(
+		str(boss_hunt_event.get("authority", "")) == "live_ops_manager"
+		and str(boss_hunt_event.get("reward_authority", "")) == "reward_manager"
+		and str(boss_hunt_event.get("progress_kind", "")) == "journey_chapter_final_bounties"
+		and bool(boss_hunt_event.get("active", false))
+		and not bool(boss_hunt_event.get("featured", true))
+		and not boss_hunt_event.has("reward")
+		and not boss_hunt_event.has("rewards"),
+		"E3 Boss Hunt catalog remains metadata-only with existing authorities"
+	)
 	var e1_contract_source: String = FileAccess.get_file_as_string(
 		EVENT_EXPANSION_E1_CONTRACT_PATH
 	)
@@ -2422,6 +2438,31 @@ func _test_event_production_contracts() -> void:
 		"E2 contract locks first event without new save or platform authority"
 	)
 
+	var e3_contract_source: String = FileAccess.get_file_as_string(
+		EVENT_EXPANSION_E3_CONTRACT_PATH
+	)
+	var parsed_e3_contract: Variant = JSON.parse_string(e3_contract_source)
+	var e3_contract: Dictionary = {}
+	if parsed_e3_contract is Dictionary:
+		e3_contract = parsed_e3_contract as Dictionary
+	_check(
+		not e3_contract.is_empty()
+		and str(e3_contract.get("state", "")) == "BOSS_HUNT_REWARDED_EVENT_LOCKED"
+		and str(e3_contract.get("event_id", "")) == "celestial_boss_hunt"
+		and int(e3_contract.get("milestone_count", 0)) == 5
+		and int(e3_contract.get("base_total_spirit_stone_reward", 0)) == 2300
+		and int(e3_contract.get("base_total_refinement_shard_reward", 0)) == 15
+		and int(e3_contract.get("optional_rewarded_multiplier", 0)) == 2
+		and str(e3_contract.get("rewarded_placement", "")) == "liveops_boss_hunt_double"
+		and not bool(e3_contract.get("normal_claim_requires_ad", true))
+		and not bool(e3_contract.get("ui_direct_reward_grant", true))
+		and not bool(e3_contract.get("new_save_domain_added", true))
+		and not bool(e3_contract.get("new_autoload_added", true))
+		and not bool(e3_contract.get("monetization_manager_file_mutated", true))
+		and not bool(e3_contract.get("m6_lock_mutated", true))
+		and not bool(e3_contract.get("cloud_save_mutation_allowed", true)),
+		"E3 contract locks optional rewarded 2x without reopening M6 or Cloud"
+	)
 	var pilgrimage_ids: Array = live_ops.call(
 		"get_pilgrimage_milestone_ids"
 	)
@@ -2544,6 +2585,148 @@ func _test_event_production_contracts() -> void:
 	_check(
 		not bool(saver.call("has_pending_transaction")),
 		"E2 pilgrimage reward claims leave no pending save journal"
+	)
+	var boss_hunt_ids: Array = live_ops.call("get_boss_hunt_milestone_ids")
+	_check(
+		boss_hunt_ids == [
+			"verdant_sovereign",
+			"crimson_moon_master",
+			"star_palace_sovereign",
+			"frostbound_sovereign",
+			"primordial_sun_sovereign",
+		],
+		"E3 Boss Hunt exposes five ordered realm-final bounties"
+	)
+	var boss_base_stones: int = 0
+	var boss_base_shards: int = 0
+	for milestone_id: String in boss_hunt_ids:
+		var milestone: Dictionary = live_ops.call("get_boss_hunt_milestone", milestone_id)
+		var reward: Dictionary = milestone.get("reward", {})
+		var items: Dictionary = reward.get("items", {})
+		boss_base_stones += int(reward.get("spirit_stone", 0))
+		boss_base_shards += int(items.get("refinement_shard", 0))
+		_check(
+			bool(milestone.get("unlocked", false)) == journey.is_stage_cleared(
+				int(milestone.get("chapter_id", 0)),
+				int(milestone.get("stage_id", 0))
+			),
+			"E3 Boss Hunt unlock derives only from Journey: " + milestone_id
+		)
+	_check(
+		boss_base_stones == 2300 and boss_base_shards == 15,
+		"E3 Boss Hunt base catalog totals 2300 Spirit Stone and 15 shards"
+	)
+
+	var normal: Dictionary = live_ops.call("get_boss_hunt_milestone", "verdant_sovereign")
+	var normal_reward: Dictionary = normal.get("reward", {})
+	var normal_items: Dictionary = normal_reward.get("items", {})
+	var normal_stones_before: int = int(progression.spirit_stone)
+	var normal_shards_before: int = int(inventory.get_item_count("refinement_shard"))
+	_check(
+		bool(live_ops.call("claim_boss_hunt_milestone", "verdant_sovereign")),
+		"E3 normal Boss Hunt claim never requires an ad"
+	)
+	_check(
+		int(progression.spirit_stone) == normal_stones_before + int(normal_reward.get("spirit_stone", 0))
+		and int(inventory.get_item_count("refinement_shard")) == normal_shards_before + int(normal_items.get("refinement_shard", 0)),
+		"E3 normal Boss Hunt claim grants exactly the base reward"
+	)
+	_check(
+		not bool(live_ops.call("claim_boss_hunt_milestone", "verdant_sovereign")),
+		"E3 duplicate normal Boss Hunt claim is rejected"
+	)
+
+	var monetization: Variant = root.get_node("MonetizationManager")
+	var boss_policy_last_reward_at_before: int = int(
+		monetization.last_reward_at
+	)
+	var boss_policy_last_reward_unix_before: int = int(
+		monetization.last_reward_unix
+	)
+	var boss_policy_day_bucket_before: int = int(
+		monetization.policy_day_bucket
+	)
+	var boss_policy_counts_before: Dictionary = (
+		monetization.placement_counts as Dictionary
+	).duplicate(true)
+	monetization.last_reward_at = -60000
+	monetization.last_reward_unix = 0
+	monetization.placement_counts.erase("liveops_boss_hunt_double")
+	var debug_rewarded: GDScript = load("res://scripts/monetization/debug_provider.gd") as GDScript
+	var offline_rewarded: GDScript = load("res://scripts/monetization/offline_provider.gd") as GDScript
+	_check(
+		monetization.use_test_provider(debug_rewarded.new()),
+		"E3 debug provider attaches only inside isolated QA"
+	)
+	var doubled: Dictionary = live_ops.call("get_boss_hunt_milestone", "crimson_moon_master")
+	var doubled_reward: Dictionary = doubled.get("reward", {})
+	var doubled_items: Dictionary = doubled_reward.get("items", {})
+	var doubled_stones_before: int = int(progression.spirit_stone)
+	var doubled_shards_before: int = int(inventory.get_item_count("refinement_shard"))
+	_check(
+		bool(live_ops.call("request_boss_hunt_double_claim", "crimson_moon_master")),
+		"E3 optional 2x starts through MonetizationManager"
+	)
+	await process_frame
+	await process_frame
+	_check(
+		bool(live_ops.call("is_boss_hunt_milestone_claimed", "crimson_moon_master"))
+		and str(live_ops.call("get_boss_hunt_pending_milestone")).is_empty(),
+		"E3 verified rewarded callback consumes one pending Boss Hunt bounty"
+	)
+	_check(
+		int(progression.spirit_stone) == doubled_stones_before + int(doubled_reward.get("spirit_stone", 0)) * 2
+		and int(inventory.get_item_count("refinement_shard")) == doubled_shards_before + int(doubled_items.get("refinement_shard", 0)) * 2,
+		"E3 verified rewarded callback grants exactly 2x the base bounty"
+	)
+	var boss_policy: Dictionary = live_ops.call("get_boss_hunt_rewarded_policy_status")
+	_check(
+		int(boss_policy.get("placement_claims", 0)) == 1
+		and int(boss_policy.get("daily_limit", 0)) == 1,
+		"E3 Boss Hunt 2x placement is capped to one verified use per day"
+	)
+	_check(
+		not bool(live_ops.call("is_boss_hunt_double_available", "star_palace_sovereign")),
+		"E3 second same-day Boss Hunt 2x is unavailable after the cap"
+	)
+	_check(
+		bool(live_ops.call("claim_boss_hunt_milestone", "star_palace_sovereign")),
+		"E3 ad cap never blocks the normal reward claim"
+	)
+	_check(
+		monetization.use_test_provider(offline_rewarded.new()),
+		"E3 restores fail-closed offline rewarded provider after QA"
+	)
+	monetization.last_reward_at = boss_policy_last_reward_at_before
+	monetization.last_reward_unix = boss_policy_last_reward_unix_before
+	monetization.policy_day_bucket = boss_policy_day_bucket_before
+	monetization.placement_counts = boss_policy_counts_before.duplicate(true)
+	_check(
+		bool(monetization.call("_save_policy_state")),
+		"E3 rewarded fixture restores the prior monetization policy snapshot"
+	)
+	_check(
+		int(monetization.last_reward_at) == boss_policy_last_reward_at_before
+		and int(monetization.last_reward_unix) == boss_policy_last_reward_unix_before
+		and int(monetization.policy_day_bucket) == boss_policy_day_bucket_before
+		and monetization.placement_counts == boss_policy_counts_before,
+		"E3 rewarded fixture leaves later provider QA isolated"
+	)
+
+	var boss_snapshot: Dictionary = saver.call("read_save_data", "pavilion")
+	var boss_data: Dictionary = boss_snapshot.get("data", {})
+	var boss_ledger: Variant = boss_data.get("claimed_milestone_ids", [])
+	_check(
+		bool(boss_snapshot.get("success", false))
+		and boss_ledger is Array
+		and "liveops:celestial_boss_hunt:claim:verdant_sovereign" in (boss_ledger as Array)
+		and "liveops:celestial_boss_hunt:claim:crimson_moon_master" in (boss_ledger as Array)
+		and "liveops:celestial_boss_hunt:claim:star_palace_sovereign" in (boss_ledger as Array),
+		"E3 normal and rewarded claims persist through one permanent ledger"
+	)
+	_check(
+		not bool(saver.call("has_pending_transaction")),
+		"E3 Boss Hunt claims leave no pending save journal"
 	)
 
 	_check(
@@ -2785,6 +2968,7 @@ func _test_event_final_presentation_contracts() -> void:
 		"res://scripts/ui/liveops/event_center_screen.gd",
 		"res://scripts/ui/liveops/new_player_event_screen.gd",
 		"res://scripts/ui/liveops/jade_valley_pilgrimage_screen.gd",
+		"res://scripts/ui/liveops/celestial_boss_hunt_screen.gd",
 		"res://scripts/ui/liveops/mailbox_screen.gd",
 	]
 	for source_path: String in ui_sources:
@@ -2807,15 +2991,17 @@ func _test_event_final_presentation_contracts() -> void:
 	_check(
 		"FEATURED_EVENT_ID" in event_center_source
 		and "PILGRIMAGE_EVENT_ID" in event_center_source
+		and "BOSS_HUNT_EVENT_ID" in event_center_source
 		and "get_event" in event_center_source
 		and "NEW_PLAYER_SCENE" not in event_center_source,
-		"E2 Event Center routes both production events through LiveOps catalog"
+		"E3 Event Center routes all production events through LiveOps catalog"
 	)
 
 	var expected_scenes: Array[String] = [
 		"res://scenes/ui/event_center_screen.tscn",
 		"res://scenes/ui/new_player_event_screen.tscn",
 		"res://scenes/ui/jade_valley_pilgrimage_screen.tscn",
+		"res://scenes/ui/celestial_boss_hunt_screen.tscn",
 		"res://scenes/ui/mailbox_screen.tscn",
 	]
 	for scene_path: String in expected_scenes:
@@ -2833,6 +3019,8 @@ func _test_event_final_presentation_contracts() -> void:
 		"DAY %d / %d": "HARI %d / %d",
 		"CELESTIAL SIGN-IN": "ABSEN LANGIT",
 		"JADE VALLEY PILGRIMAGE": "ZIARAH LEMBAH GIOK",
+		"CELESTIAL BOSS HUNT": "PERBURUAN BOS LANGIT",
+		"CLAIM 2× • OPTIONAL AD": "AMBIL 2× • IKLAN OPSIONAL",
 		"READY TO CLAIM": "SIAP DIAMBIL",
 		"SPIRIT MESSAGES": "PESAN SPIRIT",
 		"%d LETTERS": "%d SURAT",
