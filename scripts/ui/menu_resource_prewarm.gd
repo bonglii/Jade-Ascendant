@@ -6,6 +6,18 @@ extends Node
 ## The prewarm starts only AFTER an initial hub menu becomes interactive.
 
 const PAVILION_SCENE: String = "res://scenes/ui/pavilion_screen.tscn"
+const HOME_SCENE: String = "res://scenes/ui/main_menu.tscn"
+const HERO_SCENE: String = "res://scenes/ui/equipment_screen.tscn"
+
+# Keep only the noticeably heavier hub PackedScenes alive. Cultivation and
+# Trials already load in ~250 ms on the release desktop baseline, while Home,
+# Hero and Pavilion benefit materially from retaining their parsed scene graph.
+const FAST_NAV_SCENES: PackedStringArray = [
+	HOME_SCENE,
+	HERO_SCENE,
+	PAVILION_SCENE,
+]
+
 const MENU_SCENES: PackedStringArray = [
 	"res://scenes/ui/main_menu.tscn",
 	"res://scenes/ui/cultivation_menu.tscn",
@@ -16,8 +28,8 @@ const MENU_SCENES: PackedStringArray = [
 
 # Assets directly requested during Pavilion's visible, above-fold build.
 # Keep the set small: a full inventory/summoning cache wastes Android RAM.
-# Never pre-request the PackedScene: doing so could race the existing menu
-# transition manager's own threaded load for that SAME resource path.
+# PackedScene prewarm is coordinated with SceneTransitionManager so an in-flight
+# request can be reused safely instead of duplicated.
 const PRIORITY_RESOURCES: PackedStringArray = [
 	"res://assets/ui/pavilion/redesign/pavilion_summon_palace_bg.png",
 	"res://assets/ui/pavilion/redesign/pavilion_summon_altar.png",
@@ -51,6 +63,11 @@ var _generation: int = 0
 
 
 func _ready() -> void:
+	# This helper exists only to improve visible menu navigation. Headless QA
+	# exits quickly and must not leave asynchronous ResourceLoader work in flight.
+	if DisplayServer.get_name() == "headless":
+		return
+
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	# Optional parameter accepts either a zero- or one-argument Godot signal.
 	var callback: Callable = Callable(self, "_on_scene_changed")
@@ -101,6 +118,18 @@ func _start_prewarm(generation_id: int) -> void:
 		return
 	var started_at: int = Time.get_ticks_msec()
 
+	# Parse and retain the heaviest hub scenes before optional art prewarm.
+	# SceneTransitionManager knows how to share an in-flight request, so a user
+	# tapping a destination while this runs never starts a competing load.
+	for path_value: String in FAST_NAV_SCENES:
+		await _await_idle_navigation(generation_id)
+		if not _is_current_run(generation_id):
+			return
+		await _prewarm_packed_scene(path_value, generation_id)
+		if not _is_current_run(generation_id):
+			return
+		await get_tree().process_frame
+
 	for path_value: String in PRIORITY_RESOURCES:
 		await _await_idle_navigation(generation_id)
 		if not _is_current_run(generation_id):
@@ -123,7 +152,7 @@ func _start_prewarm(generation_id: int) -> void:
 	_prewarm_completed = true
 	_prewarm_started = false
 	DebugLogger.system(
-		"Menu idle prewarm | %d optional textures | %d ms"
+		"Menu idle prewarm | %d cached resources | %d ms"
 		% [_warm_cache.size(), Time.get_ticks_msec() - started_at]
 	)
 
@@ -133,6 +162,55 @@ func _await_idle_navigation(generation_id: int) -> void:
 	# during scene transitions, Pavilion first paint, or gameplay selection.
 	while _is_current_run(generation_id) and not _hub_is_idle():
 		await get_tree().create_timer(0.12, true).timeout
+
+
+func _prewarm_packed_scene(
+	path_value: String,
+	generation_id: int
+) -> void:
+	if not _is_current_run(generation_id):
+		return
+	if path_value.is_empty() or not ResourceLoader.exists(path_value):
+		return
+	if _warm_cache.has(path_value):
+		return
+
+	if ResourceLoader.has_cached(path_value):
+		var cached_scene: PackedScene = ResourceLoader.load(
+			path_value,
+			"PackedScene",
+			ResourceLoader.CACHE_MODE_REUSE
+		) as PackedScene
+		if cached_scene != null:
+			_warm_cache[path_value] = cached_scene
+		return
+
+	var status: int = ResourceLoader.load_threaded_get_status(path_value)
+	if (
+		status != ResourceLoader.THREAD_LOAD_IN_PROGRESS
+		and status != ResourceLoader.THREAD_LOAD_LOADED
+	):
+		var request_error: Error = ResourceLoader.load_threaded_request(
+			path_value,
+			"PackedScene",
+			false,
+			ResourceLoader.CACHE_MODE_REUSE
+		)
+		if request_error != OK:
+			return
+
+	while _is_current_run(generation_id):
+		status = ResourceLoader.load_threaded_get_status(path_value)
+		if status == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+			await get_tree().process_frame
+			continue
+		if status == ResourceLoader.THREAD_LOAD_LOADED:
+			var warmed_scene: PackedScene = (
+				ResourceLoader.load_threaded_get(path_value) as PackedScene
+			)
+			if warmed_scene != null and _is_current_run(generation_id):
+				_warm_cache[path_value] = warmed_scene
+		return
 
 
 func _hub_is_idle() -> bool:

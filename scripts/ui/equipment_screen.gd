@@ -92,6 +92,11 @@ const SORT_NAME: String = "name"
 const MODE_EQUIPMENT: String = "equipment"
 const MODE_BAG: String = "bag"
 
+# The first viewport is exactly two three-column rows. Build those six cards
+# synchronously, then fill below-the-fold cards after the menu transition ends.
+const INITIAL_COLLECTION_FIRST_PAINT_COUNT: int = 6
+const COLLECTION_STAGE_BATCH_SIZE: int = 3
+
 @onready var content: Control = %Content
 @onready var top_header: Control = %TopHeader
 @onready var spirit_stone_label: Label = %SpiritStoneLabel
@@ -179,12 +184,14 @@ var active_mode: String = MODE_EQUIPMENT
 var sort_mode: String = SORT_RARITY
 var current_resonance_piece_count: int = 0
 var motion_time: float = 0.0
+var _collection_build_generation: int = 0
 
 var ui_font: SystemFont
 var display_font: SystemFont
 
 
 func _ready() -> void:
+	var startup_started_at: int = Time.get_ticks_msec()
 	_build_screen_fonts()
 
 	slot_nodes = {
@@ -276,10 +283,17 @@ func _ready() -> void:
 	_configure_inventory_scroll_zone()
 	_configure_selected_effect_scroll_zone()
 
-	_choose_initial_selection()
-	_refresh_all()
+	# Static scene typography is applied once. Dynamically-created relic cards
+	# already author their final fonts/sizes inside _create_item_card().
 	_apply_screen_typography()
+	_choose_initial_selection()
+	_refresh_all(true)
 	_layout_screen()
+	DebugLogger.system(str(
+		"Hero Equipment first paint ready | ",
+		Time.get_ticks_msec() - startup_started_at,
+		" ms"
+	))
 	set_process(true)
 
 
@@ -607,7 +621,7 @@ func _choose_initial_selection() -> void:
 		)
 
 
-func _refresh_all() -> void:
+func _refresh_all(staged_collection: bool = false) -> void:
 	if is_instance_valid(ProgressionManager):
 		spirit_stone_label.text = str(
 			ProgressionManager.spirit_stone
@@ -622,7 +636,7 @@ func _refresh_all() -> void:
 	_refresh_mode_buttons()
 	_refresh_filter_buttons()
 	_refresh_collection_meta()
-	_rebuild_collection()
+	_rebuild_collection(staged_collection)
 	_apply_slot_selection()
 
 
@@ -1634,7 +1648,12 @@ func _sort_item_ids(
 			)
 
 
-func _rebuild_collection() -> void:
+func _rebuild_collection(
+	staged_initial_build: bool = false
+) -> void:
+	_collection_build_generation += 1
+	var generation_id: int = _collection_build_generation
+
 	for child: Node in item_grid.get_children():
 		item_grid.remove_child(child)
 		child.queue_free()
@@ -1653,13 +1672,81 @@ func _rebuild_collection() -> void:
 			selected_item_id
 		)
 
-	for item_id: String in item_ids:
+	var initial_count: int = item_ids.size()
+	if staged_initial_build:
+		initial_count = mini(
+			initial_count,
+			INITIAL_COLLECTION_FIRST_PAINT_COUNT
+		)
+
+	for index: int in range(initial_count):
+		var item_id: String = item_ids[index]
 		var card: Button = _create_item_card(item_id)
 		item_grid.add_child(card)
 		card_buttons[item_id] = card
 
 	_refresh_card_selection()
-	_apply_screen_typography()
+
+	if (
+		staged_initial_build
+		and initial_count < item_ids.size()
+	):
+		_finish_staged_collection.call_deferred(
+			item_ids,
+			initial_count,
+			generation_id
+		)
+
+
+func _finish_staged_collection(
+	item_ids: Array[String],
+	start_index: int,
+	generation_id: int
+) -> void:
+	# Never compete with the active scene transition. The first six cards cover
+	# the visible two-row viewport; below-the-fold cards can arrive afterwards.
+	while (
+		is_inside_tree()
+		and generation_id == _collection_build_generation
+		and SceneTransitionManager.is_transitioning
+	):
+		await get_tree().process_frame
+
+	if (
+		not is_inside_tree()
+		or generation_id != _collection_build_generation
+	):
+		return
+
+	var stage_started_at: int = Time.get_ticks_msec()
+	var batch_count: int = 0
+
+	for index: int in range(start_index, item_ids.size()):
+		if (
+			not is_inside_tree()
+			or generation_id != _collection_build_generation
+			or SceneTransitionManager.is_transitioning
+		):
+			return
+
+		var item_id: String = item_ids[index]
+		var card: Button = _create_item_card(item_id)
+		item_grid.add_child(card)
+		card_buttons[item_id] = card
+		batch_count += 1
+
+		if batch_count >= COLLECTION_STAGE_BATCH_SIZE:
+			batch_count = 0
+			await get_tree().process_frame
+
+	_refresh_card_selection()
+	DebugLogger.system(str(
+		"Hero Equipment collection staged | ",
+		card_buttons.size(),
+		" cards | ",
+		Time.get_ticks_msec() - stage_started_at,
+		" ms"
+	))
 
 
 func _create_item_card(

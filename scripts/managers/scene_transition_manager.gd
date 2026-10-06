@@ -14,10 +14,10 @@ const LOADING_SCREEN_SCENE: PackedScene = preload(
 	"res://scenes/system/loading_screen.tscn"
 )
 
-const MENU_OUT_DURATION: float = 0.10
-const MENU_IN_DURATION: float = 0.16
-const MENU_REDUCED_OUT_DURATION: float = 0.05
-const MENU_REDUCED_IN_DURATION: float = 0.08
+const MENU_OUT_DURATION: float = 0.06
+const MENU_IN_DURATION: float = 0.10
+const MENU_REDUCED_OUT_DURATION: float = 0.03
+const MENU_REDUCED_IN_DURATION: float = 0.05
 const MENU_VEIL_COLOR: Color = Color(0.004, 0.055, 0.052, 0.72)
 
 var is_transitioning: bool = false
@@ -66,10 +66,9 @@ func transition_menu_to(scene_path: String, direction: int = 1) -> Error:
 		)
 		return ERR_FILE_NOT_FOUND
 
-	# Menu scenes used to be loaded synchronously by change_scene_to_file(),
-	# which can stall the main thread on asset-heavy Hero/Pavilion screens.
-	# Request the PackedScene first and let the existing veil animation remain
-	# responsive while ResourceLoader completes the work in the background.
+	# Godot safely reuses an existing threaded request for the same path.
+	# Always pair this request with load_threaded_get() in the await helper so
+	# ResourceLoader's user token is released on every successful transition.
 	var request_error: Error = ResourceLoader.load_threaded_request(
 		scene_path,
 		"PackedScene",
@@ -157,9 +156,18 @@ func _run_menu_transition(scene_path: String, _direction: int) -> void:
 	if is_instance_valid(menu_overlay):
 		menu_overlay.queue_free()
 	menu_overlay = null
+	var transition_elapsed_ms: int = (
+		Time.get_ticks_msec() - transition_started_at
+	)
 	var completed_path: String = target_scene_path
 	_reset_state()
-	DebugLogger.system(str("Menu transition selesai: ", completed_path))
+	DebugLogger.system(str(
+		"Menu transition selesai: ",
+		completed_path,
+		" | total ",
+		transition_elapsed_ms,
+		" ms"
+	))
 	transition_completed.emit(completed_path)
 
 func _await_menu_packed_scene(scene_path: String) -> PackedScene:
