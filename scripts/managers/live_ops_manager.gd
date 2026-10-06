@@ -32,12 +32,15 @@ const EVENT_ID_JADE_VALLEY_PILGRIMAGE: String = "jade_valley_pilgrimage"
 const EVENT_ID_CELESTIAL_BOSS_HUNT: String = "celestial_boss_hunt"
 const EVENT_ID_HEAVENLY_LADDER: String = "heavenly_ladder"
 const EVENT_ID_CELESTIAL_TREASURE_HUNT: String = "celestial_treasure_hunt"
+const EVENT_ID_PATH_OF_FIVE_ELEMENTS: String = "path_of_five_elements"
 const PILGRIMAGE_CLAIM_PREFIX: String = (
 	"liveops:jade_valley_pilgrimage:claim:"
 )
 const BOSS_HUNT_CLAIM_PREFIX: String = "liveops:celestial_boss_hunt:claim:"
 const HEAVENLY_LADDER_CLAIM_PREFIX: String = "liveops:heavenly_ladder:claim:"
 const TREASURE_HUNT_CLAIM_PREFIX: String = "liveops:celestial_treasure_hunt:claim:"
+const FIVE_ELEMENTS_CLAIM_PREFIX: String = "liveops:path_of_five_elements:claim:"
+const FIVE_ELEMENTS_CONVERGENCE_ID: String = "five_elements_convergence"
 const BOSS_HUNT_REWARDED_PLACEMENT: String = "liveops_boss_hunt_double"
 const BOSS_HUNT_REWARDED_MULTIPLIER: int = 2
 const TREASURE_HUNT_REWARDED_PLACEMENT: String = "liveops_treasure_hunt_double"
@@ -49,6 +52,7 @@ const EVENT_ORDER: Array[String] = [
 	EVENT_ID_CELESTIAL_BOSS_HUNT,
 	EVENT_ID_HEAVENLY_LADDER,
 	EVENT_ID_CELESTIAL_TREASURE_HUNT,
+	EVENT_ID_PATH_OF_FIVE_ELEMENTS,
 ]
 const EVENT_CATALOG: Dictionary = {
 	"seven_days_of_ascension": {
@@ -117,6 +121,19 @@ const EVENT_CATALOG: Dictionary = {
 		"authority": "live_ops_manager",
 		"reward_authority": "reward_manager",
 		"progress_kind": "journey_realm_completion_caches",
+	},
+	"path_of_five_elements": {
+		"title": "PATH OF FIVE ELEMENTS",
+		"description": (
+			"Complete five elemental trials drawn from key Journey stages, "
+			+ "then claim the convergence reward."
+		),
+		"scene_path": "res://scenes/ui/path_of_five_elements_screen.tscn",
+		"featured": false,
+		"active": true,
+		"authority": "live_ops_manager",
+		"reward_authority": "reward_manager",
+		"progress_kind": "journey_required_stage_sets",
 	},
 }
 
@@ -287,6 +304,45 @@ const TREASURE_HUNT_CACHES: Dictionary = {
 		"chapter_id": 5,
 		"reward": {"spirit_stone": 700, "items": {"refinement_shard": 5}},
 	},
+}
+
+const FIVE_ELEMENTS_TRIAL_ORDER: Array[String] = [
+	"wood_resonance",
+	"fire_tempering",
+	"earth_foundation",
+	"metal_edge",
+	"water_flow",
+]
+const FIVE_ELEMENTS_TRIALS: Dictionary = {
+	"wood_resonance": {
+		"title": "WOOD RESONANCE",
+		"required_stage_keys": ["1-2", "2-1", "3-2"],
+		"reward": {"spirit_stone": 140, "items": {"refinement_shard": 1}},
+	},
+	"fire_tempering": {
+		"title": "FIRE TEMPERING",
+		"required_stage_keys": ["1-4", "2-3", "5-2"],
+		"reward": {"spirit_stone": 220, "items": {"refinement_shard": 2}},
+	},
+	"earth_foundation": {
+		"title": "EARTH FOUNDATION",
+		"required_stage_keys": ["1-3", "3-3", "4-2"],
+		"reward": {"spirit_stone": 300, "items": {"refinement_shard": 2}},
+	},
+	"metal_edge": {
+		"title": "METAL EDGE",
+		"required_stage_keys": ["2-4", "3-4", "4-4"],
+		"reward": {"spirit_stone": 380, "items": {"refinement_shard": 3}},
+	},
+	"water_flow": {
+		"title": "WATER FLOW",
+		"required_stage_keys": ["2-2", "4-3", "5-3"],
+		"reward": {"spirit_stone": 460, "items": {"refinement_shard": 3}},
+	},
+}
+const FIVE_ELEMENTS_CONVERGENCE_REWARD: Dictionary = {
+	"spirit_stone": 500,
+	"items": {"refinement_shard": 4},
 }
 
 const LOGIN_REWARDS: Dictionary = {
@@ -592,6 +648,27 @@ func _audit_reward_catalog() -> void:
 				"LiveOpsManager: invalid doubled Treasure Hunt reward "
 				+ cache_id
 			)
+
+	for trial_id: String in get_five_elements_trial_ids():
+		var trial: Dictionary = get_five_elements_trial(trial_id)
+		var reward: Dictionary = trial.get("reward", {})
+		if not RewardManager.is_valid_reward(
+			RewardManager.SOURCE_PAVILION,
+			"live_ops_path_of_five_elements_" + trial_id,
+			reward
+		):
+			push_error(
+				"LiveOpsManager: invalid Five Elements reward " + trial_id
+			)
+
+	var convergence: Dictionary = get_five_elements_convergence()
+	var convergence_reward: Dictionary = convergence.get("reward", {})
+	if not RewardManager.is_valid_reward(
+		RewardManager.SOURCE_PAVILION,
+		"live_ops_path_of_five_elements_" + FIVE_ELEMENTS_CONVERGENCE_ID,
+		convergence_reward
+	):
+		push_error("LiveOpsManager: invalid Five Elements convergence reward")
 
 	var mail_ids: Array[String] = get_mail_ids()
 	if mail_ids.size() != MAIL_ORDER.size():
@@ -1512,6 +1589,195 @@ func _on_treasure_hunt_rewarded_request_finished(
 		_treasure_hunt_pending_cache = ""
 		live_ops_changed.emit()
 
+
+func get_five_elements_trial_ids() -> Array[String]:
+	var result: Array[String] = []
+	for raw_id: String in FIVE_ELEMENTS_TRIAL_ORDER:
+		var trial_id: String = raw_id.strip_edges()
+		if (
+			trial_id.is_empty()
+			or trial_id in result
+			or not FIVE_ELEMENTS_TRIALS.has(trial_id)
+		):
+			continue
+		result.append(trial_id)
+	return result
+
+
+func _is_five_elements_stage_key_cleared(stage_key: String) -> bool:
+	var normalized: String = stage_key.strip_edges()
+	var parts: PackedStringArray = normalized.split("-", false, 1)
+	if parts.size() != 2:
+		return false
+	var chapter_id: int = int(parts[0])
+	var stage_id: int = int(parts[1])
+	if (
+		chapter_id <= 0
+		or stage_id <= 0
+		or not JourneyManager.has_stage(chapter_id, stage_id)
+	):
+		return false
+	return JourneyManager.is_stage_cleared(chapter_id, stage_id)
+
+
+func get_five_elements_trial_cleared_requirement_count(trial_id: String) -> int:
+	if not FIVE_ELEMENTS_TRIALS.has(trial_id):
+		return 0
+	var trial: Dictionary = FIVE_ELEMENTS_TRIALS[trial_id]
+	var raw_keys: Variant = trial.get("required_stage_keys", [])
+	if not raw_keys is Array:
+		return 0
+	var count: int = 0
+	for raw_stage_key: Variant in (raw_keys as Array):
+		if _is_five_elements_stage_key_cleared(str(raw_stage_key)):
+			count += 1
+	return count
+
+
+func is_five_elements_trial_unlocked(trial_id: String) -> bool:
+	if not FIVE_ELEMENTS_TRIALS.has(trial_id):
+		return false
+	var trial: Dictionary = FIVE_ELEMENTS_TRIALS[trial_id]
+	var raw_keys: Variant = trial.get("required_stage_keys", [])
+	if not raw_keys is Array or (raw_keys as Array).is_empty():
+		return false
+	for raw_stage_key: Variant in (raw_keys as Array):
+		if not _is_five_elements_stage_key_cleared(str(raw_stage_key)):
+			return false
+	return true
+
+
+func is_five_elements_trial_claimed(trial_id: String) -> bool:
+	if not FIVE_ELEMENTS_TRIALS.has(trial_id):
+		return false
+	return FIVE_ELEMENTS_CLAIM_PREFIX + trial_id in _get_ledger()
+
+
+func get_five_elements_trial(trial_id: String) -> Dictionary:
+	if not FIVE_ELEMENTS_TRIALS.has(trial_id):
+		return {}
+	var trial: Dictionary = (
+		FIVE_ELEMENTS_TRIALS[trial_id] as Dictionary
+	).duplicate(true)
+	trial["id"] = trial_id
+	trial["unlocked"] = is_five_elements_trial_unlocked(trial_id)
+	trial["claimed"] = is_five_elements_trial_claimed(trial_id)
+	var raw_keys: Variant = trial.get("required_stage_keys", [])
+	trial["required_count"] = (raw_keys as Array).size() if raw_keys is Array else 0
+	trial["cleared_count"] = get_five_elements_trial_cleared_requirement_count(
+		trial_id
+	)
+	return trial
+
+
+func get_five_elements_unlocked_count() -> int:
+	var count: int = 0
+	for trial_id: String in get_five_elements_trial_ids():
+		if is_five_elements_trial_unlocked(trial_id):
+			count += 1
+	return count
+
+
+func get_five_elements_claimed_count() -> int:
+	var count: int = 0
+	for trial_id: String in get_five_elements_trial_ids():
+		if is_five_elements_trial_claimed(trial_id):
+			count += 1
+	return count
+
+
+func get_five_elements_claimable_count() -> int:
+	var count: int = 0
+	for trial_id: String in get_five_elements_trial_ids():
+		if (
+			is_five_elements_trial_unlocked(trial_id)
+			and not is_five_elements_trial_claimed(trial_id)
+		):
+			count += 1
+	return count
+
+
+func _commit_five_elements_reward(
+	claim_id: String,
+	reward: Dictionary
+) -> bool:
+	if (
+		claim_id.strip_edges().is_empty()
+		or reward.is_empty()
+		or SaveManager.is_progress_read_only()
+	):
+		return false
+	var claim_marker: String = FIVE_ELEMENTS_CLAIM_PREFIX + claim_id
+	var ledger: Array[String] = _get_ledger()
+	if claim_marker in ledger:
+		return false
+	ledger.append(claim_marker)
+	var next_pavilion: Dictionary = _build_pavilion_snapshot(ledger)
+	var result: Dictionary = RewardManager.grant_reward(
+		RewardManager.SOURCE_PAVILION,
+		"live_ops_path_of_five_elements_" + claim_id,
+		reward,
+		{"pavilion": next_pavilion}
+	)
+	if not bool(result.get("success", false)):
+		return false
+	_apply_pavilion_snapshot(next_pavilion)
+	return true
+
+
+func claim_five_elements_trial(trial_id: String) -> bool:
+	if (
+		not FIVE_ELEMENTS_TRIALS.has(trial_id)
+		or not is_five_elements_trial_unlocked(trial_id)
+		or is_five_elements_trial_claimed(trial_id)
+	):
+		return false
+	var trial: Dictionary = FIVE_ELEMENTS_TRIALS[trial_id]
+	var reward: Dictionary = trial.get("reward", {}).duplicate(true)
+	return _commit_five_elements_reward(trial_id, reward)
+
+
+func is_five_elements_convergence_unlocked() -> bool:
+	var trial_ids: Array[String] = get_five_elements_trial_ids()
+	return (
+		not trial_ids.is_empty()
+		and get_five_elements_claimed_count() == trial_ids.size()
+	)
+
+
+func is_five_elements_convergence_claimed() -> bool:
+	return (
+		FIVE_ELEMENTS_CLAIM_PREFIX + FIVE_ELEMENTS_CONVERGENCE_ID
+	) in _get_ledger()
+
+
+func get_five_elements_convergence() -> Dictionary:
+	return {
+		"id": FIVE_ELEMENTS_CONVERGENCE_ID,
+		"title": "FIVE ELEMENTS CONVERGENCE",
+		"reward": FIVE_ELEMENTS_CONVERGENCE_REWARD.duplicate(true),
+		"unlocked": is_five_elements_convergence_unlocked(),
+		"claimed": is_five_elements_convergence_claimed(),
+	}
+
+
+func claim_five_elements_convergence() -> bool:
+	if (
+		not is_five_elements_convergence_unlocked()
+		or is_five_elements_convergence_claimed()
+	):
+		return false
+	return _commit_five_elements_reward(
+		FIVE_ELEMENTS_CONVERGENCE_ID,
+		FIVE_ELEMENTS_CONVERGENCE_REWARD.duplicate(true)
+	)
+
+
+func is_five_elements_complete() -> bool:
+	return (
+		is_five_elements_convergence_unlocked()
+		and is_five_elements_convergence_claimed()
+	)
 
 func get_mail_ids() -> Array[String]:
 	var result: Array[String] = []

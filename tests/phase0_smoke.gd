@@ -37,6 +37,7 @@ const EVENT_EXPANSION_E2_CONTRACT_PATH: String = "res://release/event_content_ex
 const EVENT_EXPANSION_E3_CONTRACT_PATH: String = "res://release/event_content_expansion_e3_boss_hunt_contract.json"
 const EVENT_EXPANSION_E4_CONTRACT_PATH: String = "res://release/event_content_expansion_e4_heavenly_ladder_contract.json"
 const EVENT_EXPANSION_E5_CONTRACT_PATH: String = "res://release/event_content_expansion_e5_treasure_hunt_contract.json"
+const EVENT_EXPANSION_E6_CONTRACT_PATH: String = "res://release/event_content_expansion_e6_five_elements_core_contract.json"
 
 var checks: int = 0
 var failures: int = 0
@@ -2326,8 +2327,9 @@ func _test_event_production_contracts() -> void:
 			"celestial_boss_hunt",
 			"heavenly_ladder",
 			"celestial_treasure_hunt",
+			"path_of_five_elements",
 		],
-		"E5 event catalog exposes five ordered production events"
+		"E6 event catalog exposes six ordered production events"
 	)
 	_check(
 		event_ids.size() == live_ops.EVENT_CATALOG.size(),
@@ -2366,8 +2368,8 @@ func _test_event_production_contracts() -> void:
 	var featured_event: Dictionary = live_ops.call("get_featured_event")
 	_check(
 		featured_event == seven_days
-		and live_ops.call("get_active_event_entries").size() == 5,
-		"E5 keeps Seven Days featured while exposing five active events"
+		and live_ops.call("get_active_event_entries").size() == 6,
+		"E6 keeps Seven Days featured while exposing six active events"
 	)
 
 	var pilgrimage_event: Dictionary = live_ops.call(
@@ -2426,6 +2428,24 @@ func _test_event_production_contracts() -> void:
 		and not treasure_event.has("reward")
 		and not treasure_event.has("rewards"),
 		"E5 Treasure Hunt catalog remains metadata-only with existing authorities"
+	)
+	var five_elements_event: Dictionary = live_ops.call(
+		"get_event",
+		"path_of_five_elements"
+	)
+	_check(
+		str(five_elements_event.get("authority", "")) == "live_ops_manager"
+		and str(five_elements_event.get("reward_authority", "")) == "reward_manager"
+		and str(five_elements_event.get("progress_kind", "")) == "journey_required_stage_sets"
+		and bool(five_elements_event.get("active", false))
+		and not bool(five_elements_event.get("featured", true))
+		and not five_elements_event.has("reward")
+		and not five_elements_event.has("rewards")
+		and ResourceLoader.exists(
+			str(five_elements_event.get("scene_path", "")),
+			"PackedScene"
+		),
+		"E6 Five Elements catalog remains metadata-only with existing authorities"
 	)
 	var e1_contract_source: String = FileAccess.get_file_as_string(
 		EVENT_EXPANSION_E1_CONTRACT_PATH
@@ -2546,6 +2566,37 @@ func _test_event_production_contracts() -> void:
 		and not bool(e5_contract.get("m6_lock_mutated", true))
 		and not bool(e5_contract.get("cloud_save_mutation_allowed", true)),
 		"E5 contract locks optional rewarded 2x without reopening M6 or Cloud"
+	)
+
+	var e6_contract_source: String = FileAccess.get_file_as_string(
+		EVENT_EXPANSION_E6_CONTRACT_PATH
+	)
+	var parsed_e6_contract: Variant = JSON.parse_string(e6_contract_source)
+	var e6_contract: Dictionary = {}
+	if parsed_e6_contract is Dictionary:
+		e6_contract = parsed_e6_contract as Dictionary
+	_check(
+		not e6_contract.is_empty()
+		and str(e6_contract.get("state", "")) == "FIVE_ELEMENTS_EVENT_LOCKED"
+		and str(e6_contract.get("event_id", "")) == "path_of_five_elements"
+		and str(e6_contract.get("scene_path", "")) == "res://scenes/ui/path_of_five_elements_screen.tscn"
+		and int(e6_contract.get("trial_count", 0)) == 5
+		and int(e6_contract.get("required_stage_keys_per_trial", 0)) == 3
+		and int(e6_contract.get("total_spirit_stone_reward", 0)) == 2000
+		and int(e6_contract.get("total_refinement_shard_reward", 0)) == 15
+		and not bool(e6_contract.get("rewarded_ad_used", true))
+		and not bool(e6_contract.get("rng_reward_allowed", true))
+		and not bool(e6_contract.get("celestial_jade_reward_allowed", true))
+		and not bool(e6_contract.get("new_save_domain_added", true))
+		and not bool(e6_contract.get("new_autoload_added", true))
+		and not bool(e6_contract.get("new_progress_counter_added", true))
+		and bool(e6_contract.get("event_catalog_mutated", false))
+		and bool(e6_contract.get("ui_added", false))
+		and bool(e6_contract.get("indonesian_localization_added", false))
+		and bool(e6_contract.get("monopoly_deferred_for_persistence_audit", false))
+		and not bool(e6_contract.get("cloud_save_mutation_allowed", true))
+		and bool(e6_contract.get("final_lock", false)),
+		"E6 contract locks Five Elements production event without persistence expansion"
 	)
 
 	var ladder_ids: Array = live_ops.call("get_heavenly_ladder_milestone_ids")
@@ -3129,6 +3180,169 @@ func _test_event_production_contracts() -> void:
 	)
 	journey.cleared_stage_keys = treasure_cleared_before.duplicate()
 
+	var five_elements_ids: Array = live_ops.call(
+		"get_five_elements_trial_ids"
+	)
+	_check(
+		five_elements_ids == [
+			"wood_resonance",
+			"fire_tempering",
+			"earth_foundation",
+			"metal_edge",
+			"water_flow",
+		],
+		"E6 Five Elements exposes five ordered non-linear trials"
+	)
+	_check(
+		not bool(live_ops.call("claim_five_elements_trial", "unknown_trial"))
+		and not bool(live_ops.call("is_five_elements_trial_unlocked", "unknown_trial"))
+		and live_ops.call("get_five_elements_trial", "unknown_trial").is_empty(),
+		"E6 unknown Five Elements trial IDs fail closed"
+	)
+	_check(
+		not bool(live_ops.call("is_five_elements_convergence_unlocked"))
+		and not bool(live_ops.call("claim_five_elements_convergence")),
+		"E6 convergence cannot unlock before all five elemental claims"
+	)
+
+	var five_elements_cleared_before: Array = (
+		journey.cleared_stage_keys.duplicate()
+	)
+	var five_elements_expected_stones: int = 0
+	var five_elements_expected_shards: int = 0
+	for trial_id: String in five_elements_ids:
+		var trial: Dictionary = live_ops.call(
+			"get_five_elements_trial",
+			trial_id
+		)
+		var required_keys: Array = trial.get("required_stage_keys", [])
+		_check(
+			required_keys.size() == 3,
+			"E6 elemental trial requires exactly three authored Journey stages: "
+			+ trial_id
+		)
+		for raw_stage_key: Variant in required_keys:
+			var stage_key: String = str(raw_stage_key)
+			var parts: PackedStringArray = stage_key.split("-", false, 1)
+			var requirement_valid: bool = parts.size() == 2
+			if requirement_valid:
+				requirement_valid = journey.has_stage(
+					int(parts[0]),
+					int(parts[1])
+				)
+			_check(
+				requirement_valid,
+				"E6 elemental requirement resolves an existing Journey stage: "
+				+ stage_key
+			)
+			if requirement_valid and stage_key not in journey.cleared_stage_keys:
+				journey.cleared_stage_keys.append(stage_key)
+		var reward: Dictionary = trial.get("reward", {})
+		var items: Dictionary = reward.get("items", {})
+		five_elements_expected_stones += int(
+			reward.get("spirit_stone", 0)
+		)
+		five_elements_expected_shards += int(
+			items.get("refinement_shard", 0)
+		)
+
+	_check(
+		five_elements_expected_stones == 1500
+		and five_elements_expected_shards == 11,
+		"E6 five elemental trial rewards total exactly 1500 Stone and 11 shards"
+	)
+	_check(
+		int(live_ops.call("get_five_elements_unlocked_count")) == 5
+		and int(live_ops.call("get_five_elements_claimable_count")) == 5,
+		"E6 trial eligibility derives only from the authored Journey stage sets"
+	)
+
+	var five_elements_stones_before: int = int(progression.spirit_stone)
+	var five_elements_shards_before: int = int(
+		inventory.get_item_count("refinement_shard")
+	)
+	for trial_id: String in five_elements_ids:
+		_check(
+			bool(live_ops.call("claim_five_elements_trial", trial_id)),
+			"E6 elemental trial claim routes through LiveOps authority: "
+			+ trial_id
+		)
+		_check(
+			bool(live_ops.call("is_five_elements_trial_claimed", trial_id))
+			and not bool(
+				live_ops.call("claim_five_elements_trial", trial_id)
+			),
+			"E6 duplicate elemental claim fails closed: " + trial_id
+		)
+
+	_check(
+		int(live_ops.call("get_five_elements_claimed_count")) == 5
+		and bool(live_ops.call("is_five_elements_convergence_unlocked")),
+		"E6 convergence unlock derives from all five permanent elemental claims"
+	)
+	var convergence: Dictionary = live_ops.call(
+		"get_five_elements_convergence"
+	)
+	var convergence_reward: Dictionary = convergence.get("reward", {})
+	var convergence_items: Dictionary = convergence_reward.get("items", {})
+	_check(
+		int(convergence_reward.get("spirit_stone", 0)) == 500
+		and int(convergence_items.get("refinement_shard", 0)) == 4,
+		"E6 convergence reward is exactly 500 Stone and 4 shards"
+	)
+	_check(
+		bool(live_ops.call("claim_five_elements_convergence")),
+		"E6 convergence reward routes through LiveOps authority"
+	)
+	_check(
+		bool(live_ops.call("is_five_elements_complete"))
+		and not bool(live_ops.call("claim_five_elements_convergence")),
+		"E6 convergence is one-time and completes the Five Elements core"
+	)
+	_check(
+		int(progression.spirit_stone)
+		== five_elements_stones_before + 2000
+		and int(inventory.get_item_count("refinement_shard"))
+		== five_elements_shards_before + 15,
+		"E6 core grants exactly 2000 Spirit Stone and 15 shards"
+	)
+
+	var five_elements_snapshot: Dictionary = saver.call(
+		"read_save_data",
+		"pavilion"
+	)
+	var five_elements_data: Dictionary = five_elements_snapshot.get(
+		"data",
+		{}
+	)
+	var five_elements_ledger: Variant = five_elements_data.get(
+		"claimed_milestone_ids",
+		[]
+	)
+	var five_elements_markers_valid: bool = (
+		bool(five_elements_snapshot.get("success", false))
+		and five_elements_ledger is Array
+	)
+	if five_elements_markers_valid:
+		for trial_id: String in five_elements_ids:
+			if (
+				"liveops:path_of_five_elements:claim:" + trial_id
+			) not in (five_elements_ledger as Array):
+				five_elements_markers_valid = false
+		if (
+			"liveops:path_of_five_elements:claim:five_elements_convergence"
+		) not in (five_elements_ledger as Array):
+			five_elements_markers_valid = false
+	_check(
+		five_elements_markers_valid,
+		"E6 all elemental and convergence claims persist in the existing Pavilion ledger"
+	)
+	_check(
+		not bool(saver.call("has_pending_transaction")),
+		"E6 Five Elements claims leave no pending save journal"
+	)
+	journey.cleared_stage_keys = five_elements_cleared_before.duplicate()
+
 	_check(
 		live_ops.has_method("claim_login_day")
 		and live_ops.has_method("_record_active_date")
@@ -3369,6 +3583,9 @@ func _test_event_final_presentation_contracts() -> void:
 		"res://scripts/ui/liveops/new_player_event_screen.gd",
 		"res://scripts/ui/liveops/jade_valley_pilgrimage_screen.gd",
 		"res://scripts/ui/liveops/celestial_boss_hunt_screen.gd",
+		"res://scripts/ui/liveops/heavenly_ladder_screen.gd",
+		"res://scripts/ui/liveops/celestial_treasure_hunt_screen.gd",
+		"res://scripts/ui/liveops/path_of_five_elements_screen.gd",
 		"res://scripts/ui/liveops/mailbox_screen.gd",
 	]
 	for source_path: String in ui_sources:
@@ -3392,9 +3609,12 @@ func _test_event_final_presentation_contracts() -> void:
 		"FEATURED_EVENT_ID" in event_center_source
 		and "PILGRIMAGE_EVENT_ID" in event_center_source
 		and "BOSS_HUNT_EVENT_ID" in event_center_source
+		and "HEAVENLY_LADDER_EVENT_ID" in event_center_source
+		and "TREASURE_HUNT_EVENT_ID" in event_center_source
+		and "FIVE_ELEMENTS_EVENT_ID" in event_center_source
 		and "get_event" in event_center_source
 		and "NEW_PLAYER_SCENE" not in event_center_source,
-		"E3 Event Center routes all production events through LiveOps catalog"
+		"E6 Event Center routes all production events through LiveOps catalog"
 	)
 
 	var expected_scenes: Array[String] = [
@@ -3402,6 +3622,9 @@ func _test_event_final_presentation_contracts() -> void:
 		"res://scenes/ui/new_player_event_screen.tscn",
 		"res://scenes/ui/jade_valley_pilgrimage_screen.tscn",
 		"res://scenes/ui/celestial_boss_hunt_screen.tscn",
+		"res://scenes/ui/heavenly_ladder_screen.tscn",
+		"res://scenes/ui/celestial_treasure_hunt_screen.tscn",
+		"res://scenes/ui/path_of_five_elements_screen.tscn",
 		"res://scenes/ui/mailbox_screen.tscn",
 	]
 	for scene_path: String in expected_scenes:
@@ -3420,6 +3643,8 @@ func _test_event_final_presentation_contracts() -> void:
 		"CELESTIAL SIGN-IN": "ABSEN LANGIT",
 		"JADE VALLEY PILGRIMAGE": "ZIARAH LEMBAH GIOK",
 		"CELESTIAL BOSS HUNT": "PERBURUAN BOS LANGIT",
+		"PATH OF FIVE ELEMENTS": "JALUR LIMA UNSUR",
+		"FIVE ELEMENTS CONVERGENCE": "KONVERGENSI LIMA UNSUR",
 		"CLAIM 2× • OPTIONAL AD": "AMBIL 2× • IKLAN OPSIONAL",
 		"READY TO CLAIM": "SIAP DIAMBIL",
 		"SPIRIT MESSAGES": "PESAN SPIRIT",

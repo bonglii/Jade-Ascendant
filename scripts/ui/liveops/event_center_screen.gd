@@ -11,6 +11,7 @@ const PILGRIMAGE_EVENT_ID: String = "jade_valley_pilgrimage"
 const BOSS_HUNT_EVENT_ID: String = "celestial_boss_hunt"
 const HEAVENLY_LADDER_EVENT_ID: String = "heavenly_ladder"
 const TREASURE_HUNT_EVENT_ID: String = "celestial_treasure_hunt"
+const FIVE_ELEMENTS_EVENT_ID: String = "path_of_five_elements"
 const DAILY_SCENE: String = "res://scenes/ui/daily_quest_screen.tscn"
 const PAVILION_SCENE: String = "res://scenes/ui/pavilion_screen.tscn"
 
@@ -404,6 +405,25 @@ func _build_secondary(parent: VBoxContainer) -> void:
 			"OPEN TREASURE HUNT  ›",
 			"treasure_hunt"
 		)
+	var five_elements_event: Dictionary = _live_ops.call(
+		"get_event",
+		FIVE_ELEMENTS_EVENT_ID
+	)
+	if not five_elements_event.is_empty():
+		_add_activity_card(
+			str(five_elements_event.get("title", "PATH OF FIVE ELEMENTS")),
+			"FIVE ELEMENTS EVENT",
+			str(
+				five_elements_event.get(
+					"description",
+					"Complete five elemental trials drawn from key Journey stages, then claim the convergence reward."
+				)
+			),
+			PILGRIMAGE_ICON,
+			Color(0.42, 0.90, 0.68, 1.0),
+			"OPEN FIVE ELEMENTS  ›",
+			"five_elements"
+		)
 	_add_activity_card(
 		"Daily Trials", "DAILY CULTIVATION", "Complete daily disciplines and collect available rewards.",
 		DAILY_ICON, JADE, "OPEN DAILY  ›", "daily"
@@ -531,6 +551,8 @@ func _open_destination(id: String) -> void:
 			event_id = HEAVENLY_LADDER_EVENT_ID
 		"treasure_hunt":
 			event_id = TREASURE_HUNT_EVENT_ID
+		"five_elements":
+			event_id = FIVE_ELEMENTS_EVENT_ID
 		"daily":
 			scene_path = DAILY_SCENE
 		"pavilion":
