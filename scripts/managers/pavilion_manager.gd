@@ -595,7 +595,7 @@ func _connect_secure_purchase_identity() -> void:
 	_refresh_secure_purchase_context()
 
 
-func _on_monetization_identity_changed(_identity_ready: bool) -> void:
+func _on_monetization_identity_changed(_ready: bool) -> void:
 	_refresh_secure_purchase_context()
 
 
