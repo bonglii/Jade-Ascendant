@@ -683,63 +683,173 @@ func _build_featured_selector() -> void:
 func _rebuild_featured_selector() -> void:
 	if featured_row == null:
 		return
-	for child: Node in featured_row.get_children():
-		featured_row.remove_child(child)
-		child.queue_free()
 
-	var available_targets: Array[String] = PavilionManager.get_wish_target_options()
-	for item_id: String in featured_items:
-		var selected: bool = item_id == selected_rate_up_item_id
-		var available: bool = item_id in available_targets
-		var card: Control = Control.new()
-		card.custom_minimum_size = Vector2(0.0, 134.0)
-		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		featured_row.add_child(card)
+	var can_reuse: bool = (
+		featured_row.get_child_count() == featured_items.size()
+	)
+	if can_reuse:
+		for index: int in range(featured_items.size()):
+			var existing_card := featured_row.get_child(index) as Control
+			if (
+				existing_card == null
+				or str(
+					existing_card.get_meta(
+						"rate_up_item_id",
+						""
+					)
+				) != featured_items[index]
+			):
+				can_reuse = false
+				break
 
-		var frame: TextureRect = TextureRect.new()
-		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		frame.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		frame.texture = _load_component_texture(
-			FEATURED_RATE_UP_FRAME_PATH if selected else FEATURED_RELIC_FRAME_PATH
+	if not can_reuse:
+		for child: Node in featured_row.get_children():
+			featured_row.remove_child(child)
+			child.queue_free()
+
+		for item_id: String in featured_items:
+			var card: Control = Control.new()
+			card.custom_minimum_size = Vector2(0.0, 134.0)
+			card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			card.set_meta("rate_up_item_id", item_id)
+			featured_row.add_child(card)
+
+			var frame: TextureRect = TextureRect.new()
+			frame.name = "Frame"
+			frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			frame.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			card.add_child(frame)
+			frame.set_anchors_and_offsets_preset(
+				Control.PRESET_FULL_RECT
+			)
+
+			var icon: TextureRect = TextureRect.new()
+			icon.name = "Icon"
+			icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon.stretch_mode = (
+				TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			)
+			icon.texture = _load_item_texture(item_id)
+			icon.anchor_left = 0.19
+			icon.anchor_top = 0.15
+			icon.anchor_right = 0.81
+			card.add_child(icon)
+
+			var name_label: Label = _label(
+				card,
+				_compact_item_name(item_id),
+				10,
+				Color(0.90, 0.89, 0.84, 0.92)
+			)
+			name_label.name = "Name"
+			name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			name_label.horizontal_alignment = (
+				HORIZONTAL_ALIGNMENT_CENTER
+			)
+			name_label.vertical_alignment = (
+				VERTICAL_ALIGNMENT_CENTER
+			)
+			name_label.autowrap_mode = (
+				TextServer.AUTOWRAP_WORD_SMART
+			)
+			name_label.add_theme_constant_override(
+				"outline_size",
+				1
+			)
+			name_label.add_theme_color_override(
+				"font_outline_color",
+				Color(0.0, 0.0, 0.0, 0.82)
+			)
+			name_label.anchor_left = 0.06
+			name_label.anchor_right = 0.94
+
+			var hit: Button = _transparent_hit_button()
+			hit.pressed.connect(
+				_select_rate_up_item.bind(item_id)
+			)
+			card.add_child(hit)
+			hit.set_anchors_and_offsets_preset(
+				Control.PRESET_FULL_RECT
+			)
+
+	var available_targets: Array[String] = (
+		PavilionManager.get_wish_target_options()
+	)
+	for index: int in range(featured_items.size()):
+		var item_id: String = featured_items[index]
+		var card := featured_row.get_child(index) as Control
+		_apply_featured_card_state(
+			card,
+			item_id == selected_rate_up_item_id,
+			item_id in available_targets
 		)
-		frame.modulate = (
-			Color.WHITE
-			if selected
-			else Color(1.0, 1.0, 1.0, 0.58 if available else 0.34)
+
+
+func _apply_featured_card_state(
+	card: Control,
+	selected: bool,
+	available: bool
+) -> void:
+	if card == null:
+		return
+
+	if (
+		card.has_meta("rate_up_selected")
+		and card.has_meta("rate_up_available")
+		and bool(card.get_meta("rate_up_selected")) == selected
+		and bool(card.get_meta("rate_up_available")) == available
+	):
+		# FIRST-PAINT STABILITY: unchanged siblings stay untouched.
+		return
+
+	var frame := card.get_node_or_null("Frame") as TextureRect
+	var icon := card.get_node_or_null("Icon") as TextureRect
+	var name_label := card.get_node_or_null("Name") as Label
+	if frame == null or icon == null or name_label == null:
+		return
+
+	frame.texture = _load_component_texture(
+		FEATURED_RATE_UP_FRAME_PATH
+		if selected
+		else FEATURED_RELIC_FRAME_PATH
+	)
+	frame.modulate = (
+		Color.WHITE
+		if selected
+		else Color(
+			1.0,
+			1.0,
+			1.0,
+			0.58 if available else 0.34
 		)
-		card.add_child(frame)
-		frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	)
 
-		var icon: TextureRect = TextureRect.new()
-		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.texture = _load_item_texture(item_id)
-		icon.anchor_left = 0.19
-		icon.anchor_top = 0.15
-		icon.anchor_right = 0.81
-		icon.anchor_bottom = 0.66 if selected else 0.69
-		icon.modulate = Color(1.0, 1.0, 1.0, 1.0 if selected else (0.78 if available else 0.42))
-		card.add_child(icon)
+	icon.anchor_bottom = 0.66 if selected else 0.69
+	icon.modulate = Color(
+		1.0,
+		1.0,
+		1.0,
+		1.0 if selected else (0.78 if available else 0.42)
+	)
 
-		var name_tint: Color = Color(1.0, 0.95, 0.82, 1.0) if selected else Color(0.90, 0.89, 0.84, 0.92 if available else 0.52)
-		var name_label: Label = _label(card, _compact_item_name(item_id), 10, name_tint)
-		name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		name_label.add_theme_constant_override("outline_size", 1)
-		name_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.82))
-		name_label.anchor_left = 0.06
-		name_label.anchor_right = 0.94
-		name_label.anchor_top = 0.80 if selected else 0.77
-		name_label.anchor_bottom = 0.96 if selected else 0.93
+	name_label.anchor_top = 0.80 if selected else 0.77
+	name_label.anchor_bottom = 0.96 if selected else 0.93
+	name_label.add_theme_color_override(
+		"font_color",
+		Color(1.0, 0.95, 0.82, 1.0)
+		if selected
+		else Color(
+			0.90,
+			0.89,
+			0.84,
+			0.92 if available else 0.52
+		)
+	)
 
-		var hit: Button = _transparent_hit_button()
-		hit.pressed.connect(_select_rate_up_item.bind(item_id))
-		card.add_child(hit)
-		hit.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	card.set_meta("rate_up_selected", selected)
+	card.set_meta("rate_up_available", available)
 
 
 func _select_rate_up_item(item_id: String) -> void:

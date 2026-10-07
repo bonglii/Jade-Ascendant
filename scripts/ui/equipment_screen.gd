@@ -186,6 +186,24 @@ var current_resonance_piece_count: int = 0
 var motion_time: float = 0.0
 var _collection_build_generation: int = 0
 
+# HERO CHAMBER PASS 1: presentation-only surfaces. EquipmentManager remains
+# authoritative for loadout, inventory, ascension, and save semantics.
+var hero_focus_panel: PanelContainer
+var hero_identity_plate: PanelContainer
+var hero_status_badge: PanelContainer
+
+# HERO DETAIL PASS 2: presentation-only depth surfaces.
+var resonance_core_surface: PanelContainer
+var selected_art_surface: PanelContainer
+var selected_effect_surface: PanelContainer
+
+# HERO SELECTED RELIC REDESIGN: layered presentation surfaces only.
+var selected_action_surface: PanelContainer
+var selected_accent_bar: ColorRect
+var selected_effect_title: Label
+
+# HERO FINAL POLISH PASS 4: motion is presentation-only and respects
+# SettingsManager.reduced_effects. No gameplay state is stored here.
 var ui_font: SystemFont
 var display_font: SystemFont
 
@@ -215,6 +233,8 @@ func _ready() -> void:
 		resonance_node_4,
 		resonance_node_5
 	]
+
+	_install_hero_chamber_polish()
 
 	SceneTransitionManager.set_back_handler(handle_system_back)
 	resized.connect(_queue_layout)
@@ -282,6 +302,8 @@ func _ready() -> void:
 	_apply_action_button_styles()
 	_configure_inventory_scroll_zone()
 	_configure_selected_effect_scroll_zone()
+	_install_hero_detail_polish()
+	_install_collection_polish()
 
 	# Static scene typography is applied once. Dynamically-created relic cards
 	# already author their final fonts/sizes inside _create_item_card().
@@ -296,6 +318,695 @@ func _ready() -> void:
 	))
 	set_process(true)
 
+
+func _install_hero_chamber_polish() -> void:
+	var stage_frame := hero_stage.get_node_or_null("Frame") as TextureRect
+	if stage_frame != null:
+		# Keep the approved ornamental frame, but demote it so Lin Yue and the
+		# selected relic become the hierarchy instead of the outer chrome.
+		stage_frame.modulate = Color(0.78, 0.92, 0.91, 0.82)
+
+	hero_focus_panel = PanelContainer.new()
+	hero_focus_panel.name = "HeroFocusSurface"
+	hero_focus_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hero_focus_panel.z_index = 0
+	hero_focus_panel.add_theme_stylebox_override(
+		"panel",
+		_make_hero_focus_style()
+	)
+	hero_stage.add_child(hero_focus_panel)
+	hero_stage.move_child(hero_focus_panel, 1)
+
+	hero_identity_plate = PanelContainer.new()
+	hero_identity_plate.name = "HeroIdentityPlate"
+	hero_identity_plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hero_identity_plate.z_index = 6
+	hero_identity_plate.add_theme_stylebox_override(
+		"panel",
+		_make_hero_identity_style()
+	)
+	hero_stage.add_child(hero_identity_plate)
+
+	hero_status_badge = PanelContainer.new()
+	hero_status_badge.name = "HeroStatusBadge"
+	hero_status_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hero_status_badge.z_index = 18
+	hero_stage.add_child(hero_status_badge)
+
+	status_label.anchor_left = 0.0
+	status_label.anchor_top = 0.0
+	status_label.anchor_right = 0.0
+	status_label.anchor_bottom = 0.0
+	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	status_label.add_theme_font_size_override("font_size", 12)
+	status_label.set_meta(&"jade_mobile_readability_v2", true)
+
+	hero_name.add_theme_font_size_override("font_size", 20)
+	hero_name.add_theme_color_override(
+		"font_color",
+		Color(1.0, 0.89, 0.62, 1.0)
+	)
+	hero_name.add_theme_constant_override("outline_size", 1)
+	hero_name.add_theme_color_override(
+		"font_outline_color",
+		Color(0.0, 0.0, 0.0, 0.82)
+	)
+	hero_name.set_meta(&"jade_mobile_readability_v2", true)
+
+	hero_subtitle.add_theme_font_size_override("font_size", 11)
+	hero_subtitle.add_theme_color_override(
+		"font_color",
+		Color(0.61, 0.90, 0.84, 0.90)
+	)
+	hero_subtitle.set_meta(&"jade_mobile_readability_v2", true)
+
+	for slot_id: String in SLOT_ORDER:
+		var slot_node: Control = slot_nodes.get(slot_id) as Control
+		if slot_node == null:
+			continue
+		var slot_label := slot_node.get_node("SlotLabel") as Label
+		var star_label := slot_node.get_node("StarLabel") as Label
+		if slot_label != null:
+			slot_label.add_theme_font_size_override("font_size", 12)
+			slot_label.set_meta(&"jade_mobile_readability_v2", true)
+		if star_label != null:
+			star_label.add_theme_font_size_override("font_size", 11)
+			star_label.set_meta(&"jade_mobile_readability_v2", true)
+
+
+func _make_hero_focus_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.004, 0.035, 0.045, 0.48)
+	style.border_color = Color(0.27, 0.85, 0.78, 0.20)
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.corner_radius_top_left = 96
+	style.corner_radius_top_right = 96
+	style.corner_radius_bottom_left = 96
+	style.corner_radius_bottom_right = 96
+	style.shadow_color = Color(0.20, 0.82, 0.72, 0.15)
+	style.shadow_size = 18
+	return style
+
+
+func _make_hero_identity_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.003, 0.021, 0.031, 0.86)
+	style.border_color = Color(0.94, 0.72, 0.28, 0.30)
+	style.border_width_top = 1
+	style.border_width_bottom = 1
+	style.corner_radius_top_left = 10
+	style.corner_radius_top_right = 10
+	style.corner_radius_bottom_left = 10
+	style.corner_radius_bottom_right = 10
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.48)
+	style.shadow_size = 7
+	return style
+
+
+func _apply_hero_status_badge_style(accent: Color) -> void:
+	if hero_status_badge == null:
+		return
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.003, 0.026, 0.036, 0.94)
+	style.border_color = Color(accent.r, accent.g, accent.b, 0.72)
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_left = 8
+	style.corner_radius_bottom_right = 8
+	style.shadow_color = Color(accent.r, accent.g, accent.b, 0.14)
+	style.shadow_size = 5
+	hero_status_badge.add_theme_stylebox_override("panel", style)
+
+func _install_hero_detail_polish() -> void:
+	# The middle stack keeps the same gameplay flow, but the visual hierarchy is:
+	# set identity -> resonance path -> stats -> next unlock.
+	resonance_panel.custom_minimum_size.y = 144.0
+	selected_detail_panel.custom_minimum_size.y = 178.0
+
+	var resonance_frame := resonance_panel.get_node("Frame") as TextureRect
+	if resonance_frame != null:
+		resonance_frame.modulate = Color(0.70, 0.86, 0.85, 0.66)
+
+	var resonance_title := resonance_panel.get_node("Title") as Label
+	if resonance_title != null:
+		resonance_title.text = "RESONANSI"
+		_set_hero_rect(resonance_title, 0.04, 0.035, 0.42, 0.145)
+		resonance_title.add_theme_font_size_override("font_size", 9)
+		resonance_title.add_theme_color_override(
+			"font_color",
+			Color(0.48, 0.79, 0.75, 0.78)
+		)
+		resonance_title.set_meta(&"jade_mobile_readability_v2", true)
+
+	_set_hero_rect(set_name_label, 0.04, 0.14, 0.76, 0.33)
+	set_name_label.add_theme_font_override("font", display_font)
+	set_name_label.add_theme_font_size_override("font_size", 15)
+	set_name_label.add_theme_color_override(
+		"font_color",
+		Color(1.0, 0.86, 0.52, 1.0)
+	)
+	set_name_label.clip_text = false
+	set_name_label.set_meta(&"jade_mobile_readability_v2", true)
+
+	_set_hero_rect(set_tier_label, 0.80, 0.14, 0.96, 0.33)
+	set_tier_label.add_theme_font_size_override("font_size", 13)
+	set_tier_label.add_theme_color_override(
+		"font_color",
+		Color(0.52, 1.0, 0.86, 1.0)
+	)
+	set_tier_label.set_meta(&"jade_mobile_readability_v2", true)
+
+	resonance_core_surface = PanelContainer.new()
+	resonance_core_surface.name = "ResonanceCoreSurface"
+	resonance_core_surface.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	resonance_core_surface.add_theme_stylebox_override(
+		"panel",
+		_make_resonance_core_style()
+	)
+	resonance_panel.add_child(resonance_core_surface)
+	resonance_panel.move_child(
+		resonance_core_surface,
+		resonance_path_root.get_index()
+	)
+	_set_hero_rect(
+		resonance_core_surface,
+		0.035,
+		0.34,
+		0.965,
+		0.61
+	)
+
+	_set_hero_rect(resonance_path_root, 0.10, 0.365, 0.90, 0.59)
+
+	var stats_row := resonance_panel.get_node("StatsRow") as HBoxContainer
+	if stats_row != null:
+		_set_hero_rect(stats_row, 0.04, 0.625, 0.96, 0.81)
+		stats_row.add_theme_constant_override("separation", 6)
+
+	for stat_id: String in ["HP", "DMG", "MOVE", "CRIT"]:
+		var stat_label := resonance_panel.get_node(
+			NodePath("StatsRow/%s/Label" % stat_id)
+		) as Label
+		if stat_label != null:
+			stat_label.add_theme_font_size_override("font_size", 8)
+			stat_label.add_theme_color_override(
+				"font_color",
+				Color(0.52, 0.72, 0.71, 0.88)
+			)
+			stat_label.set_meta(&"jade_mobile_readability_v2", true)
+
+	for value_label: Label in [
+		hp_value,
+		dmg_value,
+		move_value,
+		crit_value
+	]:
+		value_label.add_theme_font_size_override("font_size", 12)
+		value_label.add_theme_color_override(
+			"font_color",
+			Color(0.72, 1.0, 0.90, 1.0)
+		)
+		value_label.set_meta(&"jade_mobile_readability_v2", true)
+
+	_set_hero_rect(next_resonance_label, 0.04, 0.81, 0.96, 0.985)
+	next_resonance_label.add_theme_font_size_override("font_size", 10)
+	next_resonance_label.add_theme_color_override(
+		"font_color",
+		Color(0.70, 0.98, 0.90, 1.0)
+	)
+	next_resonance_label.add_theme_constant_override("line_spacing", 1)
+	next_resonance_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	next_resonance_label.max_lines_visible = 2
+	next_resonance_label.clip_text = false
+	next_resonance_label.set_meta(&"jade_mobile_readability_v2", true)
+
+	var selected_frame := selected_detail_panel.get_node("Frame") as TextureRect
+	if selected_frame != null:
+		selected_frame.modulate = Color(0.68, 0.84, 0.83, 0.64)
+
+	# Left: relic artwork showcase.
+	selected_art_surface = PanelContainer.new()
+	selected_art_surface.name = "SelectedArtSurface"
+	selected_art_surface.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	selected_detail_panel.add_child(selected_art_surface)
+	selected_detail_panel.move_child(
+		selected_art_surface,
+		selected_item_icon.get_index()
+	)
+	_set_hero_rect(
+		selected_art_surface,
+		0.018,
+		0.075,
+		0.302,
+		0.925
+	)
+
+	# A narrow rarity strip separates artwork from information without adding
+	# another heavy frame.
+	selected_accent_bar = ColorRect.new()
+	selected_accent_bar.name = "SelectedRarityAccent"
+	selected_accent_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	selected_accent_bar.color = Color(0.72, 0.86, 0.84, 0.72)
+	selected_detail_panel.add_child(selected_accent_bar)
+	_set_hero_rect(
+		selected_accent_bar,
+		0.312,
+		0.12,
+		0.318,
+		0.88
+	)
+
+	_set_hero_rect(selected_item_icon, 0.040, 0.135, 0.282, 0.855)
+	selected_item_icon.z_index = 2
+
+	# Center: identity and combat information.
+	_set_hero_rect(selected_item_name, 0.342, 0.045, 0.735, 0.245)
+	selected_item_name.add_theme_font_override("font", display_font)
+	selected_item_name.add_theme_font_size_override("font_size", 16)
+	selected_item_name.add_theme_constant_override("outline_size", 1)
+	selected_item_name.add_theme_color_override(
+		"font_outline_color",
+		Color(0.0, 0.0, 0.0, 0.76)
+	)
+	selected_item_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	selected_item_name.max_lines_visible = 2
+	selected_item_name.clip_text = false
+	selected_item_name.set_meta(&"jade_mobile_readability_v2", true)
+
+	_set_hero_rect(selected_meta, 0.342, 0.245, 0.735, 0.355)
+	selected_meta.add_theme_font_size_override("font_size", 9)
+	selected_meta.add_theme_color_override(
+		"font_color",
+		Color(0.68, 0.90, 0.86, 0.92)
+	)
+	selected_meta.set_meta(&"jade_mobile_readability_v2", true)
+
+	_set_hero_rect(selected_stats, 0.342, 0.365, 0.735, 0.485)
+	selected_stats.add_theme_font_size_override("font_size", 11)
+	selected_stats.add_theme_color_override(
+		"font_color",
+		Color(0.70, 1.0, 0.88, 1.0)
+	)
+	selected_stats.clip_text = false
+	selected_stats.set_meta(&"jade_mobile_readability_v2", true)
+
+	_set_hero_rect(selected_set, 0.342, 0.495, 0.735, 0.585)
+	selected_set.add_theme_font_size_override("font_size", 9)
+	selected_set.add_theme_color_override(
+		"font_color",
+		Color(1.0, 0.82, 0.40, 0.94)
+	)
+	selected_set.clip_text = false
+	selected_set.set_meta(&"jade_mobile_readability_v2", true)
+
+	# Signature effect gets a dedicated title + readable description.
+	selected_effect_surface = PanelContainer.new()
+	selected_effect_surface.name = "SelectedEffectSurface"
+	selected_effect_surface.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	selected_detail_panel.add_child(selected_effect_surface)
+	selected_detail_panel.move_child(
+		selected_effect_surface,
+		selected_effect_scroll.get_index()
+	)
+	_set_hero_rect(
+		selected_effect_surface,
+		0.325,
+		0.595,
+		0.742,
+		0.945
+	)
+
+	selected_effect_title = Label.new()
+	selected_effect_title.name = "SelectedEffectTitle"
+	selected_effect_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	selected_effect_title.add_theme_font_override("font", display_font)
+	selected_effect_title.add_theme_font_size_override("font_size", 10)
+	selected_effect_title.add_theme_color_override(
+		"font_color",
+		Color(1.0, 0.83, 0.43, 0.98)
+	)
+	selected_effect_title.set_meta(&"jade_mobile_readability_v2", true)
+	selected_detail_panel.add_child(selected_effect_title)
+	_set_hero_rect(
+		selected_effect_title,
+		0.347,
+		0.615,
+		0.720,
+		0.705
+	)
+
+	_set_hero_rect(
+		selected_effect_scroll,
+		0.347,
+		0.705,
+		0.720,
+		0.925
+	)
+	selected_effect.add_theme_font_size_override("font_size", 10)
+	selected_effect.add_theme_color_override(
+		"font_color",
+		Color(0.76, 0.88, 0.85, 0.98)
+	)
+	selected_effect.add_theme_constant_override("line_spacing", 3)
+	selected_effect.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	selected_effect.clip_text = false
+	selected_effect.set_meta(&"jade_mobile_readability_v2", true)
+
+	# Right: action rail is visually part of the inspect card instead of
+	# floating beside it.
+	selected_action_surface = PanelContainer.new()
+	selected_action_surface.name = "SelectedActionSurface"
+	selected_action_surface.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	selected_action_surface.add_theme_stylebox_override(
+		"panel",
+		_make_selected_action_style(
+			Color(0.52, 1.0, 0.86, 1.0)
+		)
+	)
+	selected_detail_panel.add_child(selected_action_surface)
+	var action_row := selected_detail_panel.get_node("ActionRow") as VBoxContainer
+	if action_row != null:
+		selected_detail_panel.move_child(
+			selected_action_surface,
+			action_row.get_index()
+		)
+		_set_hero_rect(
+			selected_action_surface,
+			0.755,
+			0.11,
+			0.985,
+			0.90
+		)
+		_set_hero_rect(action_row, 0.775, 0.205, 0.965, 0.805)
+		action_row.add_theme_constant_override("separation", 10)
+
+	for action_button: Button in [action_primary, action_forge]:
+		action_button.custom_minimum_size = Vector2(82.0, 38.0)
+		action_button.add_theme_font_size_override("font_size", 10)
+		action_button.set_meta(&"jade_mobile_readability_v2", true)
+
+	_apply_selected_detail_rarity_style("common")
+
+
+func _set_hero_rect(
+	control: Control,
+	left: float,
+	top: float,
+	right: float,
+	bottom: float
+) -> void:
+	if control == null:
+		return
+
+	control.anchor_left = left
+	control.anchor_top = top
+	control.anchor_right = right
+	control.anchor_bottom = bottom
+	control.offset_left = 0.0
+	control.offset_top = 0.0
+	control.offset_right = 0.0
+	control.offset_bottom = 0.0
+
+
+func _make_resonance_core_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.003, 0.035, 0.043, 0.76)
+	style.border_color = Color(0.25, 0.80, 0.73, 0.20)
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.corner_radius_top_left = 14
+	style.corner_radius_top_right = 14
+	style.corner_radius_bottom_left = 14
+	style.corner_radius_bottom_right = 14
+	return style
+
+
+func _make_selected_effect_style(accent: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.002, 0.022, 0.031, 0.78)
+	style.border_color = Color(
+		accent.r,
+		accent.g,
+		accent.b,
+		0.20
+	)
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_left = 8
+	style.corner_radius_bottom_right = 8
+	return style
+
+
+func _make_selected_action_style(accent: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.002, 0.027, 0.037, 0.82)
+	style.border_color = Color(
+		accent.r,
+		accent.g,
+		accent.b,
+		0.18
+	)
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.corner_radius_top_left = 10
+	style.corner_radius_top_right = 10
+	style.corner_radius_bottom_left = 10
+	style.corner_radius_bottom_right = 10
+	return style
+
+
+func _apply_selected_detail_rarity_style(rarity_id: String) -> void:
+	var accent: Color = EquipmentVisualCatalog.get_rarity_color(
+		rarity_id
+	)
+
+	if selected_accent_bar != null:
+		selected_accent_bar.color = Color(
+			accent.r,
+			accent.g,
+			accent.b,
+			0.74
+		)
+
+	if selected_art_surface != null:
+		var art_style := StyleBoxFlat.new()
+		art_style.bg_color = Color(
+			accent.r * 0.045,
+			accent.g * 0.045,
+			accent.b * 0.045,
+			0.94
+		)
+		art_style.border_color = Color(
+			accent.r,
+			accent.g,
+			accent.b,
+			0.62
+		)
+		art_style.border_width_left = 1
+		art_style.border_width_top = 1
+		art_style.border_width_right = 1
+		art_style.border_width_bottom = 1
+		art_style.corner_radius_top_left = 12
+		art_style.corner_radius_top_right = 12
+		art_style.corner_radius_bottom_left = 12
+		art_style.corner_radius_bottom_right = 12
+		art_style.shadow_color = Color(
+			accent.r,
+			accent.g,
+			accent.b,
+			0.19
+		)
+		art_style.shadow_size = 9
+		selected_art_surface.add_theme_stylebox_override(
+			"panel",
+			art_style
+		)
+
+	if selected_effect_surface != null:
+		selected_effect_surface.add_theme_stylebox_override(
+			"panel",
+			_make_selected_effect_style(accent)
+		)
+
+	if selected_action_surface != null:
+		selected_action_surface.add_theme_stylebox_override(
+			"panel",
+			_make_selected_action_style(accent)
+		)
+
+	if selected_effect_title != null:
+		selected_effect_title.add_theme_color_override(
+			"font_color",
+			Color(
+				lerpf(accent.r, 1.0, 0.30),
+				lerpf(accent.g, 0.86, 0.30),
+				lerpf(accent.b, 0.48, 0.30),
+				1.0
+			)
+		)
+
+func _install_collection_polish() -> void:
+	# PASS 3: Collection is intentionally quieter than the selected relic.
+	# The hierarchy is Selected > Equipped > Owned.
+	var main_vbox := main_scroll.get_node("MainVBox") as VBoxContainer
+	if main_vbox == null:
+		return
+
+	var collection_meta := main_vbox.get_node("CollectionMeta") as Control
+	var filter_row := main_vbox.get_node("FilterRow") as HBoxContainer
+	var collection_panel := main_vbox.get_node(
+		"CollectionPanel"
+	) as PanelContainer
+	var collection_vbox := collection_panel.get_node(
+		"CollectionVBox"
+	) as VBoxContainer
+	var heading := collection_vbox.get_node(
+		"HeadingRow/Heading"
+	) as Label
+
+	if collection_meta != null:
+		collection_meta.custom_minimum_size.y = 44.0
+
+		var summary_surface := PanelContainer.new()
+		summary_surface.name = "CollectionSummarySurface"
+		summary_surface.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		summary_surface.add_theme_stylebox_override(
+			"panel",
+			_make_collection_summary_style()
+		)
+		collection_meta.add_child(summary_surface)
+		collection_meta.move_child(summary_surface, 0)
+		summary_surface.set_anchors_and_offsets_preset(
+			Control.PRESET_FULL_RECT
+		)
+
+	owned_summary.add_theme_font_size_override("font_size", 10)
+	owned_summary.add_theme_color_override(
+		"font_color",
+		Color(0.92, 0.80, 0.48, 0.92)
+	)
+	owned_summary.set_meta(&"jade_mobile_readability_v2", true)
+
+	codex_summary.add_theme_font_size_override("font_size", 10)
+	codex_summary.add_theme_color_override(
+		"font_color",
+		Color(0.54, 0.90, 0.84, 0.92)
+	)
+	codex_summary.set_meta(&"jade_mobile_readability_v2", true)
+
+	if filter_row != null:
+		filter_row.custom_minimum_size.y = 46.0
+		filter_row.add_theme_constant_override("separation", 5)
+
+	if collection_panel != null:
+		collection_panel.add_theme_stylebox_override(
+			"panel",
+			_make_collection_panel_style()
+		)
+
+	if collection_vbox != null:
+		collection_vbox.add_theme_constant_override(
+			"separation",
+			9
+		)
+
+	if heading != null:
+		heading.text = "KOLEKSI RELIK"
+		heading.add_theme_font_override("font", display_font)
+		heading.add_theme_font_size_override("font_size", 11)
+		heading.add_theme_color_override(
+			"font_color",
+			Color(0.62, 0.94, 0.86, 0.96)
+		)
+		heading.set_meta(&"jade_mobile_readability_v2", true)
+
+	_apply_collection_sort_style()
+
+
+func _make_collection_summary_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.002, 0.026, 0.035, 0.62)
+	style.border_color = Color(0.23, 0.72, 0.68, 0.18)
+	style.border_width_top = 1
+	style.border_width_bottom = 1
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_left = 8
+	style.corner_radius_bottom_right = 8
+	return style
+
+
+func _make_collection_panel_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.002, 0.024, 0.032, 0.74)
+	style.border_color = Color(0.25, 0.78, 0.72, 0.20)
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.corner_radius_top_left = 10
+	style.corner_radius_top_right = 10
+	style.corner_radius_bottom_left = 10
+	style.corner_radius_bottom_right = 10
+	style.content_margin_left = 6.0
+	style.content_margin_top = 7.0
+	style.content_margin_right = 6.0
+	style.content_margin_bottom = 7.0
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.22)
+	style.shadow_size = 4
+	return style
+
+
+func _apply_collection_sort_style() -> void:
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(0.003, 0.050, 0.060, 0.92)
+	normal.border_color = Color(0.31, 0.80, 0.74, 0.40)
+	normal.border_width_left = 1
+	normal.border_width_top = 1
+	normal.border_width_right = 1
+	normal.border_width_bottom = 1
+	normal.corner_radius_top_left = 7
+	normal.corner_radius_top_right = 7
+	normal.corner_radius_bottom_left = 7
+	normal.corner_radius_bottom_right = 7
+
+	var hover := normal.duplicate() as StyleBoxFlat
+	hover.bg_color = Color(0.02, 0.10, 0.11, 0.98)
+	hover.border_color = Color(0.46, 0.92, 0.82, 0.70)
+
+	var pressed := normal.duplicate() as StyleBoxFlat
+	pressed.bg_color = Color(0.06, 0.12, 0.10, 0.98)
+	pressed.border_color = Color(0.95, 0.77, 0.31, 0.82)
+
+	sort_button.custom_minimum_size = Vector2(76.0, 28.0)
+	sort_button.focus_mode = Control.FOCUS_NONE
+	sort_button.add_theme_font_size_override("font_size", 8)
+	sort_button.add_theme_color_override(
+		"font_color",
+		Color(0.70, 0.91, 0.87, 0.94)
+	)
+	sort_button.add_theme_stylebox_override("normal", normal)
+	sort_button.add_theme_stylebox_override("hover", hover)
+	sort_button.add_theme_stylebox_override("pressed", pressed)
+	sort_button.add_theme_stylebox_override("focus", hover)
+	sort_button.set_meta(&"jade_mobile_readability_v2", true)
 
 func _build_screen_fonts() -> void:
 	# Cross-platform system stacks: Android usually resolves Roboto / generic
@@ -370,19 +1081,41 @@ func _process(delta: float) -> void:
 		is_instance_valid(SettingsManager)
 		and SettingsManager.reduced_effects
 	):
-		hero_halo.modulate.a = 0.15
-		hero_seal.modulate.a = 0.07
+		hero_halo.modulate.a = 0.18
+		hero_seal.modulate.a = 0.09
 		selected_item_icon.modulate.a = 1.0
+		if hero_focus_panel != null:
+			hero_focus_panel.modulate.a = 1.0
+		if selected_art_surface != null:
+			selected_art_surface.modulate.a = 1.0
+		if selected_action_surface != null:
+			selected_action_surface.modulate.a = 1.0
 		for resonance_node: PanelContainer in resonance_nodes:
-			resonance_node.modulate.a = 1.0
+			resonance_node.modulate = Color.WHITE
+		_refresh_selected_card_motion(0.5, true)
 		return
 
 	motion_time = fmod(motion_time + delta, 1000.0)
 	var pulse: float = (sin(motion_time * 1.55) + 1.0) * 0.5
+	var aura_wave: float = (
+		(sin(motion_time * 0.82 + 0.35) + 1.0) * 0.5
+	)
+	var relic_wave: float = (
+		(sin(motion_time * 1.08 + 1.10) + 1.0) * 0.5
+	)
 
-	hero_halo.modulate.a = 0.12 + pulse * 0.06
-	hero_seal.modulate.a = 0.05 + pulse * 0.025
-	selected_item_icon.modulate.a = 0.94 + pulse * 0.06
+	# PASS 4: keep motion below the threshold where it reads as animation.
+	# The chamber breathes; controls and geometry stay perfectly stable.
+	hero_halo.modulate.a = 0.16 + aura_wave * 0.08
+	hero_seal.modulate.a = 0.07 + aura_wave * 0.04
+	selected_item_icon.modulate.a = 0.97 + relic_wave * 0.03
+
+	if hero_focus_panel != null:
+		hero_focus_panel.modulate.a = 0.94 + aura_wave * 0.06
+	if selected_art_surface != null:
+		selected_art_surface.modulate.a = 0.94 + relic_wave * 0.06
+	if selected_action_surface != null:
+		selected_action_surface.modulate.a = 0.96 + relic_wave * 0.04
 
 	var selected_slot: Control = slot_nodes.get(
 		selected_slot_id
@@ -391,9 +1124,10 @@ func _process(delta: float) -> void:
 		var selected_frame: TextureRect = selected_slot.get_node(
 			"Frame"
 		) as TextureRect
-		selected_frame.modulate.a = 0.90 + pulse * 0.10
+		selected_frame.modulate.a = 0.92 + pulse * 0.08
 
 	_refresh_resonance_motion(pulse)
+	_refresh_selected_card_motion(relic_wave)
 
 
 func _queue_layout() -> void:
@@ -456,83 +1190,114 @@ func _layout_hero_stage() -> void:
 	if stage_w <= 0.0 or stage_h <= 0.0:
 		return
 
-	# V1.5 chamber redistribution:
-	# - entire hero/orbit block sits slightly lower so the top weapon has
-	#   breathing room from the showcase frame;
-	# - four side equipment slots become slim vertical relic cards;
-	# - chamber height is increased so the initial inventory viewport lands on
-	#   exactly two clean rows instead of showing a clipped third row.
-	var hero_w: float = stage_w * 0.47
+	# HERO CHAMBER PASS 1
+	# Character presence is the primary hierarchy. Equipment remains fully
+	# interactive, but its chrome stays outside Lin Yue's silhouette.
+	var hero_w: float = stage_w * 0.56
 	var hero_left: float = (stage_w - hero_w) * 0.5
 
-	hero_art.position = Vector2(hero_left, 100.0)
-	hero_art.size = Vector2(hero_w, stage_h - 136.0)
+	if hero_focus_panel != null:
+		hero_focus_panel.position = Vector2(stage_w * 0.245, 58.0)
+		hero_focus_panel.size = Vector2(
+			stage_w * 0.51,
+			stage_h - 112.0
+		)
 
 	hero_halo.position = Vector2(
-		stage_w * 0.23,
-		stage_h * 0.25
+		stage_w * 0.18,
+		stage_h * 0.13
 	)
 	hero_halo.size = Vector2(
-		stage_w * 0.54,
-		stage_h * 0.60
+		stage_w * 0.64,
+		stage_h * 0.69
 	)
 
 	hero_seal.position = Vector2(
 		stage_w * 0.30,
-		stage_h * 0.22
+		stage_h * 0.27
 	)
 	hero_seal.size = Vector2(
 		stage_w * 0.40,
-		stage_h * 0.48
+		stage_h * 0.49
+	)
+
+	hero_art.position = Vector2(hero_left, 66.0)
+	hero_art.size = Vector2(
+		hero_w,
+		stage_h - 104.0
 	)
 
 	hero_pedestal.position = Vector2(
-		stage_w * 0.34,
+		stage_w * 0.31,
 		stage_h - 70.0
 	)
 	hero_pedestal.size = Vector2(
-		stage_w * 0.32,
-		56.0
+		stage_w * 0.38,
+		58.0
 	)
+
+	if hero_identity_plate != null:
+		hero_identity_plate.position = Vector2(
+			stage_w * 0.24,
+			stage_h - 62.0
+		)
+		hero_identity_plate.size = Vector2(
+			stage_w * 0.52,
+			52.0
+		)
 
 	hero_name.position = Vector2(
-		stage_w * 0.35,
-		stage_h - 42.0
+		stage_w * 0.29,
+		stage_h - 58.0
 	)
-	hero_name.size = Vector2(stage_w * 0.30, 22.0)
+	hero_name.size = Vector2(
+		stage_w * 0.42,
+		24.0
+	)
 
 	hero_subtitle.position = Vector2(
-		stage_w * 0.26,
-		stage_h - 22.0
+		stage_w * 0.24,
+		stage_h - 34.0
 	)
-	hero_subtitle.size = Vector2(stage_w * 0.48, 16.0)
+	hero_subtitle.size = Vector2(
+		stage_w * 0.52,
+		18.0
+	)
 
-	var side_size: Vector2 = Vector2(76.0, 98.0)
-	var weapon_size: Vector2 = Vector2(110.0, 78.0)
+	if hero_status_badge != null:
+		hero_status_badge.position = Vector2(16.0, 16.0)
+		hero_status_badge.size = Vector2(132.0, 28.0)
 
-	var side_inset: float = 54.0
+	status_label.position = Vector2(16.0, 16.0)
+	status_label.size = Vector2(132.0, 28.0)
+
+	var side_size := Vector2(70.0, 84.0)
+	var weapon_size := Vector2(96.0, 68.0)
+	var side_inset: float = 28.0
 	var left_x: float = side_inset
 	var right_x: float = stage_w - side_size.x - side_inset
-	var upper_y: float = 100.0
-	var lower_y: float = stage_h - side_size.y - 50.0
+	var upper_y: float = 92.0
+	var lower_y: float = stage_h - side_size.y - 62.0
 
 	armament_slot.position = Vector2(
 		(stage_w - weapon_size.x) * 0.5,
-		10.0
+		18.0
 	)
 	armament_slot.size = weapon_size
 
 	robe_slot.position = Vector2(left_x, upper_y)
 	robe_slot.size = side_size
-
 	bracer_slot.position = Vector2(right_x, upper_y)
 	bracer_slot.size = side_size
-
 	pendant_slot.position = Vector2(left_x, lower_y)
 	pendant_slot.size = side_size
-
 	boots_slot.position = Vector2(right_x, lower_y)
 	boots_slot.size = side_size
+
+	for slot_id: String in SLOT_ORDER:
+		var slot_node: Control = slot_nodes.get(slot_id) as Control
+		if slot_node != null:
+			slot_node.pivot_offset = slot_node.size * 0.5
 
 	_layout_formation_lines()
 
@@ -540,26 +1305,26 @@ func _layout_hero_stage() -> void:
 func _layout_formation_lines() -> void:
 	var stage_w: float = hero_stage.size.x
 	var stage_h: float = hero_stage.size.y
-	var core: Vector2 = Vector2(
+	var core := Vector2(
 		stage_w * 0.5,
-		stage_h * 0.53
+		stage_h * 0.51
 	)
 
 	weapon_line.points = PackedVector2Array([
 		armament_slot.position
 			+ Vector2(
 				armament_slot.size.x * 0.5,
-				armament_slot.size.y * 0.88
+				armament_slot.size.y * 0.92
 			),
-		Vector2(stage_w * 0.5, stage_h * 0.30),
+		Vector2(stage_w * 0.5, stage_h * 0.34),
 		core
 	])
 
 	robe_line.points = PackedVector2Array([
 		robe_slot.position
 			+ Vector2(
-				robe_slot.size.x * 0.92,
-				robe_slot.size.y * 0.48
+				robe_slot.size.x * 0.94,
+				robe_slot.size.y * 0.50
 			),
 		Vector2(stage_w * 0.40, stage_h * 0.43),
 		core
@@ -568,8 +1333,8 @@ func _layout_formation_lines() -> void:
 	bracer_line.points = PackedVector2Array([
 		bracer_slot.position
 			+ Vector2(
-				bracer_slot.size.x * 0.08,
-				bracer_slot.size.y * 0.48
+				bracer_slot.size.x * 0.06,
+				bracer_slot.size.y * 0.50
 			),
 		Vector2(stage_w * 0.60, stage_h * 0.43),
 		core
@@ -578,23 +1343,22 @@ func _layout_formation_lines() -> void:
 	pendant_line.points = PackedVector2Array([
 		pendant_slot.position
 			+ Vector2(
-				pendant_slot.size.x * 0.92,
-				pendant_slot.size.y * 0.52
+				pendant_slot.size.x * 0.94,
+				pendant_slot.size.y * 0.50
 			),
-		Vector2(stage_w * 0.40, stage_h * 0.73),
+		Vector2(stage_w * 0.40, stage_h * 0.68),
 		core
 	])
 
 	boots_line.points = PackedVector2Array([
 		boots_slot.position
 			+ Vector2(
-				boots_slot.size.x * 0.08,
-				boots_slot.size.y * 0.52
+				boots_slot.size.x * 0.06,
+				boots_slot.size.y * 0.50
 			),
-		Vector2(stage_w * 0.60, stage_h * 0.73),
+		Vector2(stage_w * 0.60, stage_h * 0.68),
 		core
 	])
-
 
 func _choose_initial_selection() -> void:
 	var equipped_weapon: String = (
@@ -642,23 +1406,41 @@ func _refresh_all(staged_collection: bool = false) -> void:
 
 func _refresh_status() -> void:
 	if not EquipmentManager.can_modify_equipment():
+		var locked_accent := Color(1.0, 0.60, 0.42, 1.0)
 		status_label.text = "LOADOUT TERKUNCI"
+		status_label.tooltip_text = (
+			"Loadout tidak dapat diubah pada kondisi saat ini."
+		)
 		status_label.add_theme_color_override(
 			"font_color",
-			Color(1.0, 0.60, 0.42, 0.92)
+			locked_accent
 		)
+		_apply_hero_status_badge_style(locked_accent)
 		return
 
 	if EquipmentManager.has_preserved_active_run_loadout():
-		status_label.text = "PERUBAHAN UNTUK RUN BERIKUTNYA"
-	else:
-		status_label.text = "LOADOUT SIAP • PILIH RELIK"
+		var next_run_accent := Color(1.0, 0.82, 0.38, 1.0)
+		status_label.text = "NEXT RUN"
+		status_label.tooltip_text = (
+			"Perubahan equipment diterapkan pada run berikutnya."
+		)
+		status_label.add_theme_color_override(
+			"font_color",
+			next_run_accent
+		)
+		_apply_hero_status_badge_style(next_run_accent)
+		return
 
+	var ready_accent := Color(0.52, 1.0, 0.86, 1.0)
+	status_label.text = "LOADOUT SIAP"
+	status_label.tooltip_text = (
+		"Pilih relik untuk memeriksa atau mengelola loadout."
+	)
 	status_label.add_theme_color_override(
 		"font_color",
-		Color(0.52, 1.0, 0.86, 0.92)
+		ready_accent
 	)
-
+	_apply_hero_status_badge_style(ready_accent)
 
 func _refresh_hero_slots() -> void:
 	for slot_id: String in SLOT_ORDER:
@@ -777,14 +1559,14 @@ func _build_next_resonance_text(
 			next_tier
 		)
 	)
-	if next_bonus.is_empty():
-		return "NEXT • %d / 5" % next_tier
 
-	return "NEXT • %d / 5  →  %s" % [
+	if next_bonus.is_empty():
+		return "NEXT RESONANCE • %d / 5" % next_tier
+
+	return "NEXT RESONANCE • %d / 5 • %s" % [
 		next_tier,
 		next_bonus
 	]
-
 
 func _refresh_resonance_visuals(
 	piece_count: int
@@ -900,9 +1682,9 @@ func _make_resonance_node_style(
 				0.28,
 				0.90,
 				0.76,
-				0.22
+				0.28
 			)
-			style.shadow_size = 5
+			style.shadow_size = 7
 		_:
 			style.bg_color = Color(
 				0.018,
@@ -925,9 +1707,9 @@ func _layout_resonance_path() -> void:
 	if width <= 0.0 or height <= 0.0:
 		return
 
-	var node_size: float = 22.0
-	var first_center_x: float = 16.0
-	var last_center_x: float = width - 16.0
+	var node_size: float = 24.0
+	var first_center_x: float = 18.0
+	var last_center_x: float = width - 18.0
 	var y_center: float = height * 0.5
 
 	for index: int in range(resonance_nodes.size()):
@@ -953,7 +1735,6 @@ func _layout_resonance_path() -> void:
 		current_resonance_piece_count
 	)
 
-
 func _refresh_resonance_motion(
 	pulse: float
 ) -> void:
@@ -969,11 +1750,54 @@ func _refresh_resonance_motion(
 			index == next_index
 			and current_resonance_piece_count < 5
 		):
-			node_panel.modulate.a = (
-				0.82 + pulse * 0.18
+			node_panel.modulate = Color(
+				0.92 + pulse * 0.08,
+				1.0,
+				0.96 + pulse * 0.04,
+				0.86 + pulse * 0.14
 			)
 		else:
-			node_panel.modulate.a = 1.0
+			node_panel.modulate = Color.WHITE
+
+
+func _refresh_selected_card_motion(
+	pulse: float,
+	reduced: bool = false
+) -> void:
+	var selected_button := card_buttons.get(
+		selected_item_id
+	) as Button
+	if selected_button == null:
+		return
+
+	var rim := selected_button.get_node_or_null(
+		"SelectedStateRim"
+	) as PanelContainer
+	var overlay := selected_button.get_node_or_null(
+		"SelectionOverlay"
+	) as TextureRect
+	var badge := selected_button.get_node_or_null(
+		"SelectedStateBadge"
+	) as PanelContainer
+
+	if rim != null and rim.visible:
+		rim.modulate.a = (
+			1.0
+			if reduced
+			else 0.88 + pulse * 0.12
+		)
+	if overlay != null and overlay.visible:
+		overlay.modulate.a = (
+			0.58
+			if reduced
+			else 0.50 + pulse * 0.10
+		)
+	if badge != null and badge.visible:
+		badge.modulate.a = (
+			1.0
+			if reduced
+			else 0.94 + pulse * 0.06
+		)
 
 
 func _refresh_selected_item() -> void:
@@ -984,6 +1808,9 @@ func _refresh_selected_item() -> void:
 		selected_stats.text = ""
 		selected_set.text = ""
 		selected_effect.text = ""
+		if selected_effect_title != null:
+			selected_effect_title.text = "EFEK RELIK"
+		_apply_selected_detail_rarity_style("common")
 		action_primary.text = "PAKAI"
 		action_primary.disabled = true
 		action_forge.text = "TEMPA"
@@ -1021,6 +1848,7 @@ func _refresh_selected_item() -> void:
 			rarity_id
 		)
 	)
+	_apply_selected_detail_rarity_style(rarity_id)
 
 	if item_type == InventoryManager.ITEM_TYPE_MATERIAL:
 		selected_meta.text = "BAHAN • x%d" % (
@@ -1035,6 +1863,8 @@ func _refresh_selected_item() -> void:
 			)
 		)
 		selected_set.text = "MATERIAL PENYEMPURNAAN"
+		if selected_effect_title != null:
+			selected_effect_title.text = "MATERIAL"
 		selected_effect.text = (
 			"Material penyempurnaan tidak dapat dipasang sebagai equipment."
 		)
@@ -1089,14 +1919,20 @@ func _refresh_selected_item() -> void:
 			piece_count
 		]
 
-	selected_effect.text = "%s • %s" % [
+	var signature_name: String = (
 		EquipmentVisualCatalog.get_signature_effect_name(
 			item_data
-		),
+		)
+	)
+	var signature_description: String = (
 		EquipmentVisualCatalog.get_signature_effect_description(
 			item_data
 		)
-	]
+	)
+
+	if selected_effect_title != null:
+		selected_effect_title.text = signature_name.to_upper()
+	selected_effect.text = signature_description
 
 	var equipped_here: bool = (
 		EquipmentManager.get_loadout_equipped_item_id(slot_id)
@@ -1119,7 +1955,6 @@ func _refresh_selected_item() -> void:
 	)
 
 	selected_effect_scroll.scroll_vertical = 0
-
 
 func _build_forge_tooltip(item_id: String) -> String:
 	if item_id.is_empty():
@@ -1399,35 +2234,61 @@ func _apply_filter_style(
 	button: Button,
 	selected: bool
 ) -> void:
-	var style: StyleBoxTexture = StyleBoxTexture.new()
-	style.texture = (
-		TAB_SELECTED
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = (
+		Color(0.075, 0.085, 0.045, 0.92)
 		if selected
-		else TAB_NORMAL
+		else Color(0.003, 0.042, 0.052, 0.88)
 	)
-	style.texture_margin_left = 14.0
-	style.texture_margin_top = 12.0
-	style.texture_margin_right = 14.0
-	style.texture_margin_bottom = 12.0
+	normal.border_color = (
+		Color(0.95, 0.76, 0.30, 0.72)
+		if selected
+		else Color(0.30, 0.72, 0.68, 0.24)
+	)
+	normal.border_width_left = 1
+	normal.border_width_top = 1
+	normal.border_width_right = 1
+	normal.border_width_bottom = 1
+	normal.corner_radius_top_left = 7
+	normal.corner_radius_top_right = 7
+	normal.corner_radius_bottom_left = 7
+	normal.corner_radius_bottom_right = 7
 
-	for state: String in [
-		"normal",
-		"hover",
-		"pressed",
-		"focus"
-	]:
-		button.add_theme_stylebox_override(
-			state,
-			style
-		)
+	var hover := normal.duplicate() as StyleBoxFlat
+	hover.bg_color = (
+		Color(0.095, 0.11, 0.055, 0.98)
+		if selected
+		else Color(0.015, 0.085, 0.090, 0.96)
+	)
+	hover.border_color = (
+		Color(1.0, 0.84, 0.40, 0.88)
+		if selected
+		else Color(0.42, 0.88, 0.78, 0.54)
+	)
 
+	var pressed := normal.duplicate() as StyleBoxFlat
+	pressed.bg_color = Color(0.08, 0.12, 0.08, 0.98)
+	pressed.border_color = Color(0.96, 0.80, 0.34, 0.84)
+
+	button.focus_mode = Control.FOCUS_NONE
+	button.add_theme_font_size_override("font_size", 8)
+	button.add_theme_stylebox_override("normal", normal)
+	button.add_theme_stylebox_override("hover", hover)
+	button.add_theme_stylebox_override("pressed", pressed)
+	button.add_theme_stylebox_override("focus", hover)
 	button.add_theme_color_override(
 		"font_color",
 		Color(1.0, 0.88, 0.52, 1.0)
 		if selected
-		else Color(0.82, 0.92, 0.91, 1.0)
+		else Color(0.67, 0.83, 0.81, 0.88)
 	)
-
+	button.add_theme_color_override(
+		"font_hover_color",
+		Color(1.0, 0.94, 0.70, 1.0)
+		if selected
+		else Color(0.78, 0.96, 0.91, 1.0)
+	)
+	button.set_meta(&"jade_mobile_readability_v2", true)
 
 func _refresh_collection_meta() -> void:
 	var unique_count: int = (
@@ -1779,6 +2640,15 @@ func _create_item_card(
 	button.pressed.connect(
 		_on_item_pressed.bind(item_id)
 	)
+	button.button_down.connect(
+		_on_item_card_button_down.bind(button)
+	)
+	button.button_up.connect(
+		_on_item_card_button_up.bind(
+			button,
+			item_id
+		)
+	)
 
 	_apply_card_style(
 		button,
@@ -1789,9 +2659,9 @@ func _create_item_card(
 	icon.name = "Icon"
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	icon.anchor_left = 0.18
-	icon.anchor_top = 0.09
+	icon.anchor_top = 0.10
 	icon.anchor_right = 0.82
-	icon.anchor_bottom = 0.61
+	icon.anchor_bottom = 0.60
 	icon.expand_mode = (
 		TextureRect.EXPAND_IGNORE_SIZE
 	)
@@ -1802,21 +2672,31 @@ func _create_item_card(
 	button.add_child(icon)
 
 	if _is_equipped(item_id):
-		var equipped_label: Label = Label.new()
-		equipped_label.name = "Equipped"
-		equipped_label.mouse_filter = (
-			Control.MOUSE_FILTER_IGNORE
+		var badge := PanelContainer.new()
+		badge.name = "EquippedBadge"
+		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		badge.anchor_left = 0.055
+		badge.anchor_top = 0.045
+		badge.anchor_right = 0.61
+		badge.anchor_bottom = 0.18
+		badge.z_index = 8
+		badge.add_theme_stylebox_override(
+			"panel",
+			_make_equipped_badge_style()
 		)
-		equipped_label.anchor_left = 0.06
-		equipped_label.anchor_top = 0.04
-		# Keep the equipped caption at its final font size on first paint.
-		# Give the longer Indonesian text enough width inside the card.
-		equipped_label.anchor_right = 0.98
-		equipped_label.anchor_bottom = 0.18
+
+		var equipped_label := Label.new()
+		equipped_label.name = "Label"
 		equipped_label.text = "TERPASANG"
+		equipped_label.horizontal_alignment = (
+			HORIZONTAL_ALIGNMENT_CENTER
+		)
+		equipped_label.vertical_alignment = (
+			VERTICAL_ALIGNMENT_CENTER
+		)
 		equipped_label.add_theme_font_size_override(
 			"font_size",
-			16
+			10
 		)
 		equipped_label.add_theme_font_override(
 			"font",
@@ -1824,9 +2704,14 @@ func _create_item_card(
 		)
 		equipped_label.add_theme_color_override(
 			"font_color",
-			Color(0.52, 1.0, 0.86, 1.0)
+			Color(0.62, 0.96, 0.88, 0.94)
 		)
-		button.add_child(equipped_label)
+		equipped_label.set_meta(
+			&"jade_mobile_readability_v2",
+			true
+		)
+		badge.add_child(equipped_label)
+		button.add_child(badge)
 
 	var name_label: Label = Label.new()
 	name_label.name = "Name"
@@ -1850,22 +2735,17 @@ func _create_item_card(
 		VERTICAL_ALIGNMENT_CENTER
 	)
 	name_label.clip_text = true
-	# Author lower collection names at their final readable size before
-	# first paint. MenuReadabilityManager and HubResourceBarManager both
-	# leave 16 px unchanged, preventing a delayed text resize.
 	name_label.add_theme_font_size_override(
 		"font_size",
-		16
+		15
 	)
 	name_label.add_theme_font_override(
 		"font",
 		ui_font
 	)
-	name_label.add_theme_color_override(
-		"font_color",
-		EquipmentVisualCatalog.get_rarity_color(
-			rarity_id
-		)
+	name_label.set_meta(
+		&"jade_mobile_readability_v2",
+		true
 	)
 	button.add_child(name_label)
 
@@ -1882,10 +2762,6 @@ func _create_item_card(
 	footer.vertical_alignment = (
 		VERTICAL_ALIGNMENT_CENTER
 	)
-	footer.add_theme_font_size_override(
-		"font_size",
-		9
-	)
 
 	if item_type == InventoryManager.ITEM_TYPE_EQUIPMENT:
 		footer.text = _format_stars(
@@ -1893,19 +2769,13 @@ func _create_item_card(
 				item_id
 			)
 		)
-		# Keep equipment stars at their final readable size before first paint.
-		# Other footers (such as material counts) keep their prior sizing.
 		footer.add_theme_font_size_override(
 			"font_size",
-			16
+			13
 		)
 		footer.add_theme_font_override(
 			"font",
 			ui_font
-		)
-		footer.add_theme_color_override(
-			"font_color",
-			Color(1.0, 0.82, 0.25, 1.0)
 		)
 	else:
 		footer.text = "x%d" % (
@@ -1913,18 +2783,272 @@ func _create_item_card(
 				item_id
 			)
 		)
-		footer.add_theme_color_override(
-			"font_color",
-			Color(0.55, 0.88, 1.0, 1.0)
+		footer.add_theme_font_size_override(
+			"font_size",
+			10
 		)
 
+	footer.set_meta(
+		&"jade_mobile_readability_v2",
+		true
+	)
 	button.add_child(footer)
+
 	_install_selection_overlay(
 		button,
 		item_id == selected_item_id
 	)
+	_apply_card_state_visuals(
+		button,
+		item_id
+	)
 
 	return button
+
+
+func _make_equipped_badge_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.003, 0.075, 0.075, 0.90)
+	style.border_color = Color(0.35, 0.88, 0.78, 0.38)
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	style.corner_radius_bottom_left = 6
+	style.corner_radius_bottom_right = 6
+	return style
+
+
+func _apply_card_state_visuals(
+	button: Button,
+	item_id: String
+) -> void:
+	# PASS 3.1: SELECTED CARD HIERARCHY
+	# Selected must read instantly even beside equipped Legendary cards.
+	var selected: bool = item_id == selected_item_id
+	var equipped: bool = _is_equipped(item_id)
+	var item_data: Dictionary = (
+		InventoryManager.get_item_data(item_id)
+	)
+	var rarity_id: String = str(
+		item_data.get("rarity", "common")
+	)
+	var rarity_color: Color = (
+		EquipmentVisualCatalog.get_rarity_color(
+			rarity_id
+		)
+	)
+
+	var icon := button.get_node_or_null("Icon") as TextureRect
+	var name_label := button.get_node_or_null("Name") as Label
+	var footer := button.get_node_or_null("Footer") as Label
+	var badge := button.get_node_or_null(
+		"EquippedBadge"
+	) as PanelContainer
+	var selection_overlay := button.get_node_or_null(
+		"SelectionOverlay"
+	) as TextureRect
+
+	var selected_rim := _ensure_selected_card_rim(button)
+	var selected_badge := _ensure_selected_card_badge(button)
+
+	button.z_index = 10 if selected else (2 if equipped else 0)
+
+	# Dim the rarity frame itself on non-selected cards. Children get their own
+	# hierarchy below, so rarity identity remains readable without competing.
+	button.self_modulate = Color(
+		1.0,
+		1.0,
+		1.0,
+		1.0 if selected else (0.66 if equipped else 0.50)
+	)
+
+	if icon != null:
+		icon.modulate = Color(
+			1.0,
+			1.0,
+			1.0,
+			1.0 if selected else (0.88 if equipped else 0.76)
+		)
+
+	if name_label != null:
+		name_label.add_theme_color_override(
+			"font_color",
+			Color(
+				rarity_color.r,
+				rarity_color.g,
+				rarity_color.b,
+				1.0 if selected else (0.82 if equipped else 0.64)
+			)
+		)
+
+	if footer != null:
+		footer.add_theme_color_override(
+			"font_color",
+			Color(
+				1.0,
+				0.82,
+				0.25,
+				1.0 if selected else (0.68 if equipped else 0.44)
+			)
+		)
+
+	if badge != null:
+		badge.visible = equipped
+		badge.modulate.a = 0.78 if selected else 0.54
+
+	if selection_overlay != null:
+		selection_overlay.visible = selected
+		selection_overlay.modulate = Color(
+			0.72,
+			1.0,
+			0.90,
+			0.58
+		)
+
+	if selected_rim != null:
+		selected_rim.visible = selected
+
+	if selected_badge != null:
+		selected_badge.visible = selected
+
+	_install_selection_overlay(
+		button,
+		selected
+	)
+
+
+func _ensure_selected_card_rim(
+	button: Button
+) -> PanelContainer:
+	var rim := button.get_node_or_null(
+		"SelectedStateRim"
+	) as PanelContainer
+
+	if rim == null:
+		rim = PanelContainer.new()
+		rim.name = "SelectedStateRim"
+		rim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		rim.z_index = 18
+		rim.add_theme_stylebox_override(
+			"panel",
+			_make_selected_card_rim_style()
+		)
+		button.add_child(rim)
+		rim.set_anchors_and_offsets_preset(
+			Control.PRESET_FULL_RECT
+		)
+
+	return rim
+
+
+func _ensure_selected_card_badge(
+	button: Button
+) -> PanelContainer:
+	var badge := button.get_node_or_null(
+		"SelectedStateBadge"
+	) as PanelContainer
+
+	if badge != null:
+		return badge
+
+	badge = PanelContainer.new()
+	badge.name = "SelectedStateBadge"
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	badge.z_index = 22
+	badge.anchor_left = 0.64
+	badge.anchor_top = 0.045
+	badge.anchor_right = 0.96
+	badge.anchor_bottom = 0.18
+	badge.add_theme_stylebox_override(
+		"panel",
+		_make_selected_card_badge_style()
+	)
+
+	var label := Label.new()
+	label.name = "Label"
+	label.text = "DIPILIH"
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_override(
+		"font",
+		ui_font
+	)
+	label.add_theme_font_size_override(
+		"font_size",
+		9
+	)
+	label.add_theme_color_override(
+		"font_color",
+		Color(1.0, 0.91, 0.60, 1.0)
+	)
+	label.set_meta(
+		&"jade_mobile_readability_v2",
+		true
+	)
+	badge.add_child(label)
+	button.add_child(badge)
+
+	return badge
+
+
+func _make_selected_card_rim_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.02, 0.08, 0.07, 0.09)
+	style.border_color = Color(1.0, 0.80, 0.30, 0.92)
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.corner_radius_top_left = 9
+	style.corner_radius_top_right = 9
+	style.corner_radius_bottom_left = 9
+	style.corner_radius_bottom_right = 9
+	style.shadow_color = Color(0.30, 0.94, 0.78, 0.22)
+	style.shadow_size = 6
+	return style
+
+
+func _make_selected_card_badge_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.11, 0.085, 0.025, 0.96)
+	style.border_color = Color(1.0, 0.80, 0.30, 0.82)
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	style.corner_radius_bottom_left = 6
+	style.corner_radius_bottom_right = 6
+	style.shadow_color = Color(0.98, 0.76, 0.28, 0.18)
+	style.shadow_size = 4
+	return style
+
+func _on_item_card_button_down(
+	button: Button
+) -> void:
+	# Tactile feedback only; selection is still committed by pressed.
+	if button == null:
+		return
+	button.modulate = Color(0.88, 0.97, 0.93, 0.96)
+
+
+func _on_item_card_button_up(
+	button: Button,
+	item_id: String
+) -> void:
+	if button == null:
+		return
+	button.modulate = Color.WHITE
+
+	if card_buttons.get(item_id) == button:
+		_apply_card_state_visuals(
+			button,
+			item_id
+		)
 
 
 func _get_card_texture_for_rarity(
@@ -2004,30 +3128,31 @@ func _refresh_card_selection() -> void:
 		var button: Button = (
 			card_buttons[item_id] as Button
 		)
-		_install_selection_overlay(
+		_apply_card_state_visuals(
 			button,
-			item_id == selected_item_id
+			item_id
 		)
-
 
 func _apply_slot_selection() -> void:
 	for slot_id: String in SLOT_ORDER:
-		var slot_node: Control = (
-			slot_nodes[slot_id] as Control
-		)
-		var frame: TextureRect = slot_node.get_node(
-			"Frame"
-		) as TextureRect
-		var line: Line2D = formation_lines.get(
-			slot_id
-		) as Line2D
+		var slot_node: Control = slot_nodes.get(slot_id) as Control
+		if slot_node == null:
+			continue
+
+		var frame := slot_node.get_node("Frame") as TextureRect
+		var icon := slot_node.get_node("Icon") as TextureRect
+		var slot_label := slot_node.get_node("SlotLabel") as Label
+		var star_label := slot_node.get_node("StarLabel") as Label
+		var line: Line2D = formation_lines.get(slot_id) as Line2D
 		var item_id: String = (
 			EquipmentManager.get_loadout_equipped_item_id(slot_id)
 		)
+		var selected: bool = slot_id == selected_slot_id
+		var occupied: bool = not item_id.is_empty()
 
-		if slot_id == selected_slot_id:
+		if selected:
 			frame.texture = CARD_SELECTED
-		elif item_id.is_empty():
+		elif not occupied:
 			frame.texture = CARD_COMMON
 		else:
 			var item_data: Dictionary = (
@@ -2037,23 +3162,54 @@ func _apply_slot_selection() -> void:
 				str(item_data.get("rarity", "common"))
 			)
 
-		frame.modulate = Color.WHITE
-		if line != null:
-			if slot_id == selected_slot_id:
-				line.default_color = Color(
-					0.98,
-					0.78,
-					0.34,
-					0.42
-				)
-			else:
-				line.default_color = Color(
-					0.27,
-					0.85,
-					0.78,
-					0.16
-				)
+		slot_node.scale = (
+			Vector2(1.055, 1.055)
+			if selected
+			else Vector2.ONE
+		)
+		slot_node.z_index = 12 if selected else 9
 
+		if selected:
+			frame.modulate = Color(1.0, 1.0, 1.0, 1.0)
+			icon.modulate = Color(1.0, 1.0, 1.0, 1.0)
+			slot_label.add_theme_color_override(
+				"font_color",
+				Color(1.0, 0.90, 0.58, 1.0)
+			)
+			star_label.add_theme_color_override(
+				"font_color",
+				Color(1.0, 0.82, 0.25, 1.0)
+			)
+		elif occupied:
+			frame.modulate = Color(1.0, 1.0, 1.0, 0.68)
+			icon.modulate = Color(1.0, 1.0, 1.0, 0.86)
+			slot_label.add_theme_color_override(
+				"font_color",
+				Color(0.69, 0.88, 0.84, 0.88)
+			)
+			star_label.add_theme_color_override(
+				"font_color",
+				Color(1.0, 0.82, 0.25, 0.72)
+			)
+		else:
+			frame.modulate = Color(1.0, 1.0, 1.0, 0.40)
+			icon.modulate = Color(1.0, 1.0, 1.0, 0.34)
+			slot_label.add_theme_color_override(
+				"font_color",
+				Color(0.55, 0.70, 0.69, 0.70)
+			)
+			star_label.add_theme_color_override(
+				"font_color",
+				Color(0.72, 0.64, 0.40, 0.52)
+			)
+
+		if line != null:
+			line.width = 1.25 if selected else 0.75
+			line.default_color = (
+				Color(0.98, 0.78, 0.34, 0.46)
+				if selected
+				else Color(0.27, 0.85, 0.78, 0.09)
+			)
 
 func _set_mode(
 	mode_id: String
@@ -2113,14 +3269,8 @@ func _on_slot_pressed(
 	_refresh_mode_buttons()
 	_refresh_selected_item()
 	_refresh_card_selection()
-
-	status_label.text = "%s DIPILIH" % str(
-		SLOT_LABELS.get(
-			slot_id,
-			slot_id.to_upper()
-		)
-	)
-
+	# Selection feedback is the orbit highlight + detail card. The compact
+	# status badge remains reserved for loadout state.
 
 func _on_item_pressed(
 	item_id: String
@@ -2130,9 +3280,7 @@ func _on_item_pressed(
 	_refresh_selected_item()
 	_apply_slot_selection()
 	_refresh_card_selection()
-
-	status_label.text = "RELIK DIPILIH • SIAP DIKELOLA"
-
+	# Keep the chamber status badge stable while item detail updates below.
 
 func _sync_selected_slot_from_item(
 	item_id: String

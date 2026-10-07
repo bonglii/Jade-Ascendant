@@ -1,12 +1,10 @@
 extends Node
 
-## Applies the commercial icon family and mobile readability polish to stable
-## existing screens without changing gameplay, save, reward, equipment, or
-## navigation authority.
-
-const EQUIPMENT_SCREEN_SCENE: String = (
-	"res://scenes/ui/equipment_screen.tscn"
-)
+## Applies the commercial icon family to stable screens without changing
+## gameplay, save, reward, equipment, or navigation authority.
+##
+## Hero owns its final geometry and readability inside equipment_screen.gd.
+## This global manager must never mutate Hero layout after scene construction.
 
 const ICON_DAILY: Texture2D = preload(
 	"res://assets/ui/icons/actions/daily.png"
@@ -18,10 +16,7 @@ const ICON_REWARD: Texture2D = preload(
 	"res://assets/ui/pavilion/icons/reward_chest.png"
 )
 
-const HERO_REFRESH_INTERVAL: float = 0.30
-
 var _scene_instance_id: int = 0
-var _hero_refresh_elapsed: float = 0.0
 
 
 func _ready() -> void:
@@ -30,27 +25,20 @@ func _ready() -> void:
 	call_deferred("_refresh_current_scene")
 
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	var tree: SceneTree = get_tree()
 	if tree == null or tree.current_scene == null:
 		return
 
 	var current_scene: Node = tree.current_scene
 	var current_id: int = int(current_scene.get_instance_id())
-	if current_id != _scene_instance_id:
-		_scene_instance_id = current_id
-		_hero_refresh_elapsed = 0.0
-		call_deferred("_refresh_current_scene")
+	if current_id == _scene_instance_id:
 		return
 
-	if current_scene.scene_file_path != EQUIPMENT_SCREEN_SCENE:
-		return
-
-	_hero_refresh_elapsed += delta
-	if _hero_refresh_elapsed < HERO_REFRESH_INTERVAL:
-		return
-	_hero_refresh_elapsed = 0.0
-	_polish_hero_screen(current_scene)
+	_scene_instance_id = current_id
+	# FIRST-PAINT STABILITY: apply scene-entry decoration once. Never keep
+	# resizing/re-anchoring Hero after the player can already see the screen.
+	_refresh_current_scene()
 
 
 func _refresh_current_scene() -> void:
@@ -91,9 +79,6 @@ func _refresh_current_scene() -> void:
 		26
 	)
 
-	if scene.scene_file_path == EQUIPMENT_SCREEN_SCENE:
-		_polish_hero_screen(scene)
-		call_deferred("_polish_hero_screen", scene)
 
 
 func _decorate_named_button(
@@ -128,176 +113,3 @@ func _decorate_named_button(
 		"icon_disabled_color",
 		Color(0.56, 0.62, 0.60, 0.58)
 	)
-
-
-func _polish_hero_screen(scene: Node) -> void:
-	if not is_instance_valid(scene):
-		return
-
-	# Give long Indonesian slot names enough width without shrinking Lin Yue.
-	for node_name: String in ["RobeButton", "PendantButton"]:
-		_configure_left_slot(
-			scene.find_child(node_name, true, false) as Button
-		)
-	for node_name: String in [
-		"ArmamentButton",
-		"BracerButton",
-		"BootsButton",
-	]:
-		_configure_right_slot(
-			scene.find_child(node_name, true, false) as Button
-		)
-
-	_raise_label_readability(scene, "StatusLabel", 13)
-	_raise_label_readability(scene, "StageTitle", 13)
-	_raise_label_readability(scene, "BonusSummaryLabel", 12)
-	_raise_label_readability(scene, "EquippedCountLabel", 14)
-
-	var candidate_scroll := scene.find_child(
-		"CandidateScroll",
-		true,
-		false
-	) as ScrollContainer
-	if candidate_scroll != null:
-		var collection_vbox := candidate_scroll.get_parent() as VBoxContainer
-		if collection_vbox != null:
-			collection_vbox.add_theme_constant_override(
-				"separation",
-				10
-			)
-
-	var showcase := scene.find_child(
-		"CollectionShowcase",
-		true,
-		false
-	) as PanelContainer
-	if showcase != null:
-		showcase.custom_minimum_size.y = 98.0
-		_polish_collection_showcase(showcase)
-
-	var filter_bar := scene.find_child(
-		"CollectionFilterBar",
-		true,
-		false
-	) as HBoxContainer
-	if filter_bar != null:
-		filter_bar.custom_minimum_size.y = 42.0
-		filter_bar.add_theme_constant_override("separation", 8)
-		for child: Node in filter_bar.get_children():
-			if child is Button:
-				var filter_button := child as Button
-				filter_button.custom_minimum_size.y = 38.0
-				_set_hero_font_floor(filter_button, 11)
-			elif child is Label:
-				_set_hero_font_floor(child as Label, 11)
-
-
-func _set_hero_font_floor(control: Control, minimum_size: int) -> void:
-	# MenuReadabilityManager/HubResourceBarManager can already have raised
-	# the same Hero text. Never override that larger size with a smaller value
-	# on the 0.30-second polish pass. Avoid redundant theme writes as well.
-	if not is_instance_valid(control):
-		return
-	var existing_size: int = control.get_theme_font_size("font_size")
-	if existing_size < minimum_size:
-		control.add_theme_font_size_override("font_size", minimum_size)
-
-
-func _configure_left_slot(button: Button) -> void:
-	if button == null:
-		return
-	button.anchor_left = 0.015
-	button.anchor_right = 0.225
-	button.offset_left = 0.0
-	button.offset_right = 0.0
-	button.offset_bottom = 90.0
-	_set_hero_font_floor(button, 13)
-	_polish_slot_caption(button)
-
-
-func _configure_right_slot(button: Button) -> void:
-	if button == null:
-		return
-	button.anchor_left = 0.775
-	button.anchor_right = 0.985
-	button.offset_left = 0.0
-	button.offset_right = 0.0
-	button.offset_bottom = 90.0
-	_set_hero_font_floor(button, 13)
-	_polish_slot_caption(button)
-
-
-func _polish_slot_caption(button: Button) -> void:
-	var caption := button.get_node_or_null("SlotCaption") as Label
-	if caption == null:
-		return
-	caption.offset_left = 5.0
-	caption.offset_top = -38.0
-	caption.offset_right = -5.0
-	caption.offset_bottom = -3.0
-	_set_hero_font_floor(caption, 10)
-	caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	caption.max_lines_visible = 2
-	caption.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	caption.clip_text = false
-
-
-func _raise_label_readability(
-	scene: Node,
-	node_name: String,
-	font_size: int
-) -> void:
-	var label := scene.find_child(
-		node_name,
-		true,
-		false
-	) as Label
-	if label == null:
-		return
-	_set_hero_font_floor(label, font_size)
-	label.clip_text = false
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-
-
-func _polish_collection_showcase(root: Node) -> void:
-	var labels: Array[Label] = []
-	_collect_labels(root, labels)
-
-	for label: Label in labels:
-		label.clip_text = false
-		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		label.max_lines_visible = 2
-
-		var upper_text: String = label.text.to_upper()
-		if (
-			"OWNED EQUIPMENT" in upper_text
-			or "PERLENGKAPAN DIMILIKI" in upper_text
-		):
-			_set_hero_font_floor(label, 11)
-			label.autowrap_mode = TextServer.AUTOWRAP_OFF
-		elif (
-			"LOADOUT RESONANCE" in upper_text
-			or "RESONANSI LOADOUT" in upper_text
-		):
-			_set_hero_font_floor(label, 12)
-		elif "/" in label.text and "%" in label.text:
-			_set_hero_font_floor(label, 15)
-			label.autowrap_mode = TextServer.AUTOWRAP_OFF
-		else:
-			var current_size: int = label.get_theme_font_size(
-				"font_size"
-			)
-			if current_size < 10:
-				_set_hero_font_floor(label, 10)
-
-
-func _collect_labels(
-	root: Node,
-	target: Array[Label]
-) -> void:
-	for child: Node in root.get_children():
-		if child is Label:
-			target.append(child as Label)
-		_collect_labels(child, target)

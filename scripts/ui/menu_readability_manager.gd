@@ -8,17 +8,22 @@ extends Node
 ## All production scenes under res://scenes/ui/ share one mobile readability
 ## floor. LAB scenes are intentionally excluded so visual sandboxes remain
 ## isolated from production presentation rules.
+##
+## FIRST-PAINT STABILITY CONTRACT:
+## Production UI must resolve its final font size and geometry before it becomes
+## visibly interactive. This manager is a fallback, never a delayed animation.
+## Selection-only interactions must update existing nodes in place instead of
+## rebuilding unaffected sibling cards.
 
 const UI_SCENE_PREFIX: String = "res://scenes/ui/"
 const LAB_SEGMENT: String = "/lab/"
 const HERO_SCENE: String = "res://scenes/ui/equipment_screen.tscn"
 const BACKPACK_SCENE: String = "res://scenes/ui/backpack_screen.tscn"
-const REFRESH_INTERVAL: float = 0.15
 const READABILITY_META: StringName = &"jade_mobile_readability_v2"
 
-var _elapsed: float = 0.0
 var _last_scene_id: int = 0
 var _dirty: bool = true
+var _refresh_queued: bool = false
 
 
 func _ready() -> void:
@@ -35,15 +40,21 @@ func _exit_tree() -> void:
 		tree.node_added.disconnect(_on_tree_node_added)
 
 
-func _process(delta: float) -> void:
-	_elapsed += delta
-	if _elapsed < REFRESH_INTERVAL:
+func _process(_delta: float) -> void:
+	var tree: SceneTree = get_tree()
+	if tree == null or tree.current_scene == null:
 		return
-	_elapsed = 0.0
+
+	var scene_id: int = tree.current_scene.get_instance_id()
+	if scene_id == _last_scene_id:
+		return
+
+	_dirty = true
 	_refresh_current_scene()
 
 
 func _refresh_current_scene() -> void:
+	_refresh_queued = false
 	var tree: SceneTree = get_tree()
 	if tree == null:
 		return
@@ -77,9 +88,17 @@ func _on_tree_node_added(added_node: Node) -> void:
 		return
 	if added_node == scene or scene.is_ancestor_of(added_node):
 		# Dynamic Pavilion / Trials / LiveOps controls are often configured after
-		# add_child(). Defer normalization to the next refresh so their authored
-		# font override is already final before we establish the readability floor.
+		# add_child(). Run one deferred pass after the current build stack finishes,
+		# instead of leaving visible text at a smaller size for up to 150 ms.
 		_dirty = true
+		_queue_refresh()
+
+
+func _queue_refresh() -> void:
+	if _refresh_queued:
+		return
+	_refresh_queued = true
+	call_deferred("_refresh_current_scene")
 
 
 func _is_production_ui_scene(scene_path: String) -> bool:
