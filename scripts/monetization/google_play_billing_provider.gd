@@ -453,7 +453,7 @@ func _process_purchase(purchase_data: Dictionary) -> void:
 		)
 
 func get_runtime_status() -> Dictionary:
-	var purchase_ready: bool = (
+	var runtime_ready: bool = (
 		_client_ready()
 		and secure_authority_ready
 		and _is_sha256_hex(secure_account_binding)
@@ -466,7 +466,7 @@ func get_runtime_status() -> Dictionary:
 	return {
 		"provider": "google_play_billing",
 		"state": runtime_state,
-		"ready": purchase_ready,
+		"ready": runtime_ready,
 		"billing_client_ready": _client_ready(),
 		"secure_authority_ready": secure_authority_ready,
 		"account_binding_ready": _is_sha256_hex(secure_account_binding),

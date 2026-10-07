@@ -755,7 +755,7 @@ func _reward_card(
 	)
 	panel.custom_minimum_size = Vector2(
 		0.0,
-		122.0
+		155.0
 	)
 
 	var transparent := StyleBoxFlat.new()

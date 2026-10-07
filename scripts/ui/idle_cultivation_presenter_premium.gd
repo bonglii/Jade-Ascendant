@@ -314,7 +314,7 @@ func _build_premium_hero(
 	var frame := PanelContainer.new()
 	frame.custom_minimum_size = Vector2(
 		0.0,
-		334.0
+		284.0
 	)
 	frame.clip_contents = true
 	frame.add_theme_stylebox_override(
@@ -348,30 +348,6 @@ func _build_premium_hero(
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	frame.add_child(shade)
 
-	var sanctum := Label.new()
-	sanctum.anchor_left = 0.0
-	sanctum.anchor_top = 1.0
-	sanctum.anchor_right = 1.0
-	sanctum.anchor_bottom = 1.0
-	sanctum.offset_top = -32.0
-	sanctum.offset_bottom = -7.0
-	sanctum.text = tr("INNER SEA SANCTUM")
-	sanctum.horizontal_alignment = (
-		HORIZONTAL_ALIGNMENT_CENTER
-	)
-	sanctum.vertical_alignment = (
-		VERTICAL_ALIGNMENT_CENTER
-	)
-	sanctum.add_theme_font_size_override(
-		"font_size",
-		13
-	)
-	sanctum.add_theme_color_override(
-		"font_color",
-		Color(1.0, 0.90, 0.61, 0.95)
-	)
-	sanctum.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	frame.add_child(sanctum)
 
 
 func _build_premium_status(
@@ -590,7 +566,7 @@ func _premium_reward_card(
 	)
 	panel.custom_minimum_size = Vector2(
 		0.0,
-		116.0
+		180.0
 	)
 
 	var transparent := StyleBoxFlat.new()
@@ -772,19 +748,15 @@ func _premium_cta(
 
 
 func _on_claim_button_down() -> void:
-	_claim_press_scroll_y = (
-		_premium_scroll.scroll_vertical
-		if _premium_scroll != null
-		else 0
-	)
+	_claim_press_scroll_y = 0
+	if _premium_scroll != null:
+		_claim_press_scroll_y = _premium_scroll.scroll_vertical
 
 
 func _on_rewarded_button_down() -> void:
-	_rewarded_press_scroll_y = (
-		_premium_scroll.scroll_vertical
-		if _premium_scroll != null
-		else 0
-	)
+	_rewarded_press_scroll_y = 0
+	if _premium_scroll != null:
+		_rewarded_press_scroll_y = _premium_scroll.scroll_vertical
 
 
 func _on_safe_claim_pressed() -> void:
@@ -948,11 +920,10 @@ func _refresh_popup() -> void:
 			or rewarded_pending
 			or request_active
 		)
-		_claim_button.text = (
-			tr("CLAIM 1×")
-			if is_ready
-			else tr("GATHERING QI")
-		)
+		if is_ready:
+			_claim_button.text = tr("CLAIM 1×")
+		else:
+			_claim_button.text = tr("GATHERING QI")
 
 	if _rewarded_button != null:
 		_rewarded_button.disabled = true
@@ -1077,14 +1048,18 @@ func _fit_modal_to_content() -> void:
 		> available_height + 1.0
 	)
 	if needs_scroll:
-		_premium_scroll.vertical_scroll_mode = (
-			ScrollContainer.SCROLL_MODE_SHOW_NEVER
-			if (
-				OS.has_feature("android")
-				or OS.has_feature("ios")
-			)
-			else ScrollContainer.SCROLL_MODE_AUTO
+		var mobile_display: bool = (
+			OS.has_feature("android")
+			or OS.has_feature("ios")
 		)
+		if mobile_display:
+			_premium_scroll.vertical_scroll_mode = (
+				ScrollContainer.SCROLL_MODE_SHOW_NEVER
+			)
+		else:
+			_premium_scroll.vertical_scroll_mode = (
+				ScrollContainer.SCROLL_MODE_AUTO
+			)
 		_make_premium_scroll_tree_touch_safe(
 			_premium_body
 		)

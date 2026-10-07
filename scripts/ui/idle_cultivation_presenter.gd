@@ -140,18 +140,14 @@ func _build_shortcut(header: HBoxContainer) -> void:
 func _apply_shortcut_style(is_ready: bool) -> void:
 	if _shortcut == null:
 		return
-	var border: Color = (
-		Color(1.0, 0.78, 0.32, 0.82)
-		if is_ready
-		else Color(0.34, 0.88, 0.76, 0.48)
-	)
+	var border: Color = Color(0.34, 0.88, 0.76, 0.48)
+	if is_ready:
+		border = Color(1.0, 0.78, 0.32, 0.82)
 	for state_name: String in ["normal", "hover", "pressed", "focus"]:
 		var style := StyleBoxFlat.new()
-		style.bg_color = (
-			Color(0.016, 0.090, 0.086, 0.98)
-			if state_name == "hover"
-			else Color(0.004, 0.040, 0.046, 0.96)
-		)
+		style.bg_color = Color(0.004, 0.040, 0.046, 0.96)
+		if state_name == "hover":
+			style.bg_color = Color(0.016, 0.090, 0.086, 0.98)
 		style.border_width_left = 1
 		style.border_width_top = 1
 		style.border_width_right = 1
@@ -478,11 +474,10 @@ func _refresh_popup() -> void:
 		or rewarded_pending
 		or request_active
 	)
-	_claim_button.text = (
-		tr("CLAIM 1×")
-		if is_ready
-		else tr("GATHERING QI")
-	)
+	if is_ready:
+		_claim_button.text = tr("CLAIM 1×")
+	else:
+		_claim_button.text = tr("GATHERING QI")
 
 	_rewarded_button.disabled = true
 	if not is_ready:
@@ -579,13 +574,12 @@ func _on_reward_delivery_finished(
 		# Success UI is owned by _on_reward_claimed(), which receives the
 		# exact reward payload committed by RewardManager.
 		return
-	_claim_message = (
-		message
-		if not message.is_empty()
-		else tr(
+	if not message.is_empty():
+		_claim_message = message
+	else:
+		_claim_message = tr(
 			"Reward could not be saved. Restart the game before watching another ad."
 		)
-	)
 	_refresh_all()
 
 
