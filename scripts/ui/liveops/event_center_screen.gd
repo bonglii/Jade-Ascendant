@@ -180,7 +180,7 @@ func _build_production() -> void:
 	_scroll.name = "EventCenterVerticalScroll"
 	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_scroll.scroll_deadzone = SCROLL_DEADZONE
 	_scroll.follow_focus = false
@@ -205,6 +205,16 @@ func _build_production() -> void:
 	footer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	footer.custom_minimum_size.y = 26.0
 	body.add_child(footer)
+
+	var bottom_safe_pad := Control.new()
+	bottom_safe_pad.name = "OrnamentalBottomSafePad"
+	bottom_safe_pad.custom_minimum_size.y = 112.0
+	bottom_safe_pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	body.add_child(bottom_safe_pad)
+
+	# Every noninteractive descendant is transparent to touch drags; buttons use
+	# PASS so mobile swipes can begin anywhere inside a card without dead zones.
+	LiveOpsUi.make_scroll_tree_touch_safe(body)
 
 	_scroll.scroll_started.connect(_on_scroll_started)
 	_scroll.scroll_ended.connect(_on_scroll_ended)
@@ -316,16 +326,32 @@ func _build_featured(parent: VBoxContainer) -> void:
 
 
 func _build_secondary(parent: VBoxContainer) -> void:
+	var heading_shell := PanelContainer.new()
+	heading_shell.name = "CultivationActivitiesHeading"
+	heading_shell.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	heading_shell.add_theme_stylebox_override(
+		"panel",
+		_panel(
+			Color(0.004, 0.025, 0.032, 0.84),
+			Color(GOLD.r, GOLD.g, GOLD.b, 0.72),
+			8,
+			1
+		)
+	)
+	parent.add_child(heading_shell)
+
 	var heading := _label("YOUR CULTIVATION ACTIVITIES", 16, GOLD_LIGHT)
 	heading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	heading.custom_minimum_size.y = 25.0
-	parent.add_child(heading)
+	heading.custom_minimum_size.y = 24.0
+	_add_panel_margin(heading_shell, heading, 9, 5, 9, 5)
 
 	_grid = GridContainer.new()
-	_grid.columns = 2
+	# The production frame caps content width at ~528 logical pixels.
+	# A single column prevents narrow card copy and orphan final cards.
+	_grid.columns = 1
 	_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_grid.add_theme_constant_override("h_separation", 11)
-	_grid.add_theme_constant_override("v_separation", 11)
+	_grid.add_theme_constant_override("h_separation", 12)
+	_grid.add_theme_constant_override("v_separation", 12)
 	parent.add_child(_grid)
 
 	var pilgrimage_event: Dictionary = _live_ops.call(
@@ -443,42 +469,282 @@ func _add_activity_card(
 	cta_text: String,
 	preview_id: String
 ) -> void:
-	var panel := _panel_container(card_name, Color(0.006, 0.045, 0.057, 0.98), accent, 14, 2)
+	var panel := _panel_container(
+		card_name,
+		Color(0.004, 0.038, 0.048, 0.985),
+		Color(accent.r, accent.g, accent.b, 0.78),
+		14,
+		2
+	)
+	panel.add_theme_stylebox_override(
+		"panel",
+		_panel(
+			Color(0.004, 0.038, 0.048, 0.985),
+			Color(accent.r, accent.g, accent.b, 0.78),
+			14,
+			2,
+			8
+		)
+	)
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_grid.add_child(panel)
 
 	var card_content := VBoxContainer.new()
-	card_content.add_theme_constant_override("separation", 8)
-	_add_panel_margin(panel, card_content, 13, 13, 12, 13)
+	card_content.add_theme_constant_override("separation", 7)
+	_add_panel_margin(panel, card_content, 11, 11, 11, 12)
+
+	var accent_line := ColorRect.new()
+	accent_line.custom_minimum_size.y = 3.0
+	accent_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	accent_line.color = Color(accent.r, accent.g, accent.b, 0.82)
+	accent_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card_content.add_child(accent_line)
 
 	var icon_row := HBoxContainer.new()
 	icon_row.add_theme_constant_override("separation", 9)
 	card_content.add_child(icon_row)
+
+	var icon_frame := PanelContainer.new()
+	icon_frame.custom_minimum_size = Vector2(64.0, 64.0)
+	icon_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon_frame.add_theme_stylebox_override(
+		"panel",
+		_panel(
+			Color(0.002, 0.027, 0.035, 0.98),
+			Color(accent.r, accent.g, accent.b, 0.72),
+			11,
+			1,
+			4
+		)
+	)
+	icon_row.add_child(icon_frame)
+
+	var icon_margin := MarginContainer.new()
+	for side: String in ["left", "top", "right", "bottom"]:
+		icon_margin.add_theme_constant_override("margin_" + side, 4)
+	icon_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon_frame.add_child(icon_margin)
+
 	var icon := _texture(icon_art)
-	icon.custom_minimum_size = Vector2(62.0, 62.0)
-	icon.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	icon_row.add_child(icon)
+	icon.custom_minimum_size = Vector2(54.0, 54.0)
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon_margin.add_child(icon)
+
+	# One-column cards use a compact identity row instead of stacking
+	# the eyebrow and title under the icon.
+	var identity := VBoxContainer.new()
+	identity.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	identity.add_theme_constant_override("separation", 2)
+	icon_row.add_child(identity)
+
 	var eyebrow := _label(eyebrow_text, 13, accent)
 	eyebrow.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	eyebrow.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	eyebrow.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	icon_row.add_child(eyebrow)
+	identity.add_child(eyebrow)
 
-	var title := _label(card_name.to_upper(), 21, GOLD_LIGHT)
+	var title := _label(card_name.to_upper(), 20, GOLD_LIGHT)
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	card_content.add_child(title)
+	title.max_lines_visible = 2
+	title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	title.add_theme_color_override(
+		"font_shadow_color",
+		Color(0.0, 0.0, 0.0, 0.72)
+	)
+	title.add_theme_constant_override("shadow_offset_y", 1)
+	identity.add_child(title)
 
 	var description := _label(description_text, 15, IVORY)
 	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	description.custom_minimum_size.y = 58.0
+	description.custom_minimum_size.y = 48.0
+	description.max_lines_visible = 4
+	description.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	card_content.add_child(description)
 
-	var cta := _button(cta_text, false)
-	cta.custom_minimum_size.y = 48.0
-	cta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_wire_navigation_button(cta, preview_id)
-	card_content.add_child(cta)
+	# Status and CTA share a row at the approved portrait width; on
+	# narrower logical layouts _fit_layout stacks them for readability.
+	var action_row := GridContainer.new()
+	action_row.name = "EventCardActionRow"
+	action_row.columns = 2
+	action_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	action_row.add_theme_constant_override("h_separation", 9)
+	action_row.add_theme_constant_override("v_separation", 7)
 
+	var reward_ready: bool = false
+	var preview: Dictionary = _activity_progress_preview(preview_id)
+	if not preview.is_empty():
+		var current_value: int = int(preview.get("current", 0))
+		var total: int = int(preview.get("total", 0))
+		var ready: int = int(preview.get("ready", 0))
+		var complete: bool = bool(preview.get("complete", false))
+		reward_ready = ready > 0
+
+		var progress_text := _label(
+			tr("PROGRESS %d / %d") % [current_value, total],
+			13,
+			MUTED
+		)
+		progress_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		card_content.add_child(progress_text)
+
+		LiveOpsUi.add_progress_meter(
+			card_content,
+			current_value,
+			total,
+			accent
+		)
+
+		var state_text: String = tr("IN PROGRESS")
+		var state_ink: Color = accent
+		var state_fill: Color = Color(0.008, 0.070, 0.076, 0.98)
+		if complete:
+			state_text = tr("COMPLETED")
+			state_ink = JADE
+			state_fill = Color(0.012, 0.105, 0.090, 0.98)
+		elif reward_ready:
+			state_text = tr("%d READY") % ready
+			state_ink = GOLD_LIGHT
+			state_fill = Color(0.25, 0.135, 0.035, 0.98)
+
+		var state := _badge(state_text, state_ink, state_fill)
+		state.custom_minimum_size = Vector2(0.0, 34.0)
+		state.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		state.size_flags_stretch_ratio = 0.95
+		action_row.add_child(state)
+
+		if reward_ready:
+			panel.add_theme_stylebox_override(
+				"panel",
+				_panel(
+					Color(0.009, 0.050, 0.057, 0.99),
+					Color(GOLD_LIGHT.r, GOLD_LIGHT.g, GOLD_LIGHT.b, 0.88),
+					14,
+					2,
+					10
+				)
+			)
+
+	var cta := _button(cta_text, false)
+	cta.custom_minimum_size.y = 50.0
+	cta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cta.size_flags_stretch_ratio = 1.55
+	_style_activity_cta(cta, accent, reward_ready)
+	_wire_navigation_button(cta, preview_id)
+	action_row.add_child(cta)
+	card_content.add_child(action_row)
+
+func _activity_progress_preview(preview_id: String) -> Dictionary:
+	if _live_ops == null:
+		return {}
+
+	match preview_id:
+		"pilgrimage":
+			var pilgrimage_ids: Array = _live_ops.call(
+				"get_pilgrimage_milestone_ids"
+			)
+			return {
+				"current": int(_live_ops.call("get_pilgrimage_unlocked_count")),
+				"total": pilgrimage_ids.size(),
+				"ready": int(_live_ops.call("get_pilgrimage_claimable_count")),
+				"complete": bool(_live_ops.call("is_pilgrimage_complete")),
+			}
+		"boss_hunt":
+			var boss_ids: Array = _live_ops.call("get_boss_hunt_milestone_ids")
+			var boss_claimed: int = int(
+				_live_ops.call("get_boss_hunt_claimed_count")
+			)
+			return {
+				"current": int(_live_ops.call("get_boss_hunt_unlocked_count")),
+				"total": boss_ids.size(),
+				"ready": int(_live_ops.call("get_boss_hunt_claimable_count")),
+				"complete": (
+					boss_claimed == boss_ids.size()
+					and not boss_ids.is_empty()
+				),
+			}
+		"heavenly_ladder":
+			return {
+				"current": int(
+					_live_ops.call("get_heavenly_ladder_cleared_stage_count")
+				),
+				"total": int(
+					_live_ops.call("get_heavenly_ladder_total_stage_count")
+				),
+				"ready": int(
+					_live_ops.call("get_heavenly_ladder_claimable_count")
+				),
+				"complete": bool(
+					_live_ops.call("is_heavenly_ladder_complete")
+				),
+			}
+		"treasure_hunt":
+			var treasure_ids: Array = _live_ops.call(
+				"get_treasure_hunt_cache_ids"
+			)
+			return {
+				"current": int(_live_ops.call("get_treasure_hunt_unlocked_count")),
+				"total": treasure_ids.size(),
+				"ready": int(_live_ops.call("get_treasure_hunt_claimable_count")),
+				"complete": bool(_live_ops.call("is_treasure_hunt_complete")),
+			}
+		"five_elements":
+			var element_ids: Array = _live_ops.call("get_five_elements_trial_ids")
+			return {
+				"current": int(_live_ops.call("get_five_elements_unlocked_count")),
+				"total": element_ids.size(),
+				"ready": int(_live_ops.call("get_five_elements_claimable_count")),
+				"complete": bool(_live_ops.call("is_five_elements_complete")),
+			}
+		_:
+			return {}
+
+
+func _style_activity_cta(
+	button: Button,
+	accent: Color,
+	reward_ready: bool
+) -> void:
+	var edge: Color = GOLD_LIGHT if reward_ready else accent
+	var normal_fill := Color(0.004, 0.058, 0.067, 0.99)
+	if reward_ready:
+		normal_fill = Color(0.105, 0.066, 0.018, 0.99)
+
+	button.add_theme_color_override(
+		"font_color",
+		GOLD_LIGHT if reward_ready else IVORY
+	)
+	button.add_theme_color_override("font_hover_color", GOLD_LIGHT)
+	button.add_theme_color_override("font_pressed_color", GOLD_LIGHT)
+	button.add_theme_stylebox_override(
+		"normal",
+		_panel(
+			normal_fill,
+			Color(edge.r, edge.g, edge.b, 0.88),
+			9,
+			2,
+			5
+		)
+	)
+	button.add_theme_stylebox_override(
+		"hover",
+		_panel(
+			Color(0.012, 0.112, 0.105, 1.0),
+			Color(edge.r, edge.g, edge.b, 1.0),
+			9,
+			2,
+			7
+		)
+	)
+	button.add_theme_stylebox_override(
+		"pressed",
+		_panel(
+			Color(0.001, 0.030, 0.038, 1.0),
+			Color(edge.r, edge.g, edge.b, 0.92),
+			9,
+			2,
+			1
+		)
+	)
 
 func _refresh_event_status() -> void:
 	if _event_status == null or _event_progress == null:
@@ -636,8 +902,16 @@ func _fit_layout() -> void:
 	_body_margin.add_theme_constant_override("margin_top", safe_top)
 	_body_margin.add_theme_constant_override("margin_bottom", safe_bottom)
 
-	_grid.columns = 1 if compact else 2
+	# Preserve the one-column card layout at the 648px logical viewport.
+	_grid.columns = 1
 	_featured_action_row.columns = 1 if compact else 2
+	var footer := _scroll.find_child(
+		"EventCenterFooter",
+		true,
+		false
+	) as Label
+	if footer != null:
+		footer.visible = not compact
 	# Production readability raises 13px badges to 15px. Author at that
 	# final size in the LAB and reserve real widths for every status value.
 	_featured_tag.text = tr("FEATURED") if compact else tr("FEATURED EVENT")
@@ -648,6 +922,12 @@ func _fit_layout() -> void:
 		ribbon_row.add_theme_constant_override("separation", 5 if compact else 9)
 
 	var inner_w: float = popup_w - float(safe_x) * 2.0
+	# Only the card status/CTA reflows: no event state or navigation changes.
+	var action_columns: int = 2 if inner_w >= 420.0 else 1
+	for card: Node in _grid.get_children():
+		var actions := card.find_child("EventCardActionRow", true, false) as GridContainer
+		if actions != null and actions.columns != action_columns:
+			actions.columns = action_columns
 	var target_title_font: int = 22 if compact else 28
 	if _header_title.get_theme_font_size("font_size") != target_title_font:
 		_header_title.add_theme_font_size_override("font_size", target_title_font)

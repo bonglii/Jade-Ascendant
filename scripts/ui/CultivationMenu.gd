@@ -12,7 +12,7 @@ const SPIRIT_STONE_ICON: Texture2D = preload(
 	"res://assets/ui/shared/resources/spirit_stone_premium.png"
 )
 const APPROVED_SANCTUM_BG: Texture2D = preload(
-	"res://assets/ui/cultivation/cultivation_inner_sea_sanctum_v6.png"
+	"res://assets/ui/cultivation/cultivation_celestial_realm_bg.png"
 )
 
 const PATH_ICONS: Dictionary = {

@@ -7,6 +7,7 @@ const ACHIEVEMENT_SCENE: String = "res://scenes/ui/achievement_screen.tscn"
 const DAILY_QUEST_SCENE: String = "res://scenes/ui/daily_quest_screen.tscn"
 const SETTINGS_SCENE: String = "res://scenes/ui/settings_screen.tscn"
 const CheckpointData = preload("res://scripts/managers/checkpoint_manager.gd")
+const ProfileGoogleAccountCard = preload("res://scripts/ui/google_account_card.gd")
 
 @onready var spirit_stone_label: Label = %SpiritStoneLabel
 @onready var realm_summary_label: Label = %RealmSummaryLabel
@@ -549,9 +550,9 @@ func _ensure_profile_sheet() -> void:
 	outer_margin.name = "OuterMargin"
 	outer_margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	outer_margin.add_theme_constant_override("margin_left", 18)
-	outer_margin.add_theme_constant_override("margin_top", 24)
+	outer_margin.add_theme_constant_override("margin_top", 16)
 	outer_margin.add_theme_constant_override("margin_right", 18)
-	outer_margin.add_theme_constant_override("margin_bottom", 24)
+	outer_margin.add_theme_constant_override("margin_bottom", 16)
 	outer_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	profile_overlay.add_child(outer_margin)
 
@@ -562,7 +563,7 @@ func _ensure_profile_sheet() -> void:
 
 	profile_sheet_panel = PanelContainer.new()
 	profile_sheet_panel.name = "ProfileSheet"
-	profile_sheet_panel.custom_minimum_size = Vector2(588.0, 930.0)
+	profile_sheet_panel.custom_minimum_size = Vector2(598.0, 1038.0)
 	profile_sheet_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	var sheet_style := _make_profile_style(
 		Color(0.003, 0.030, 0.040, 0.992),
@@ -594,7 +595,7 @@ func _ensure_profile_sheet() -> void:
 	content.add_child(header)
 
 	var seal := TextureRect.new()
-	seal.custom_minimum_size = Vector2(70.0, 70.0)
+	seal.custom_minimum_size = Vector2(84.0, 84.0)
 	seal.texture = profile_seal.texture
 	seal.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	seal.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -609,7 +610,7 @@ func _ensure_profile_sheet() -> void:
 	var name_label := Label.new()
 	name_label.text = "LIN YUE"
 	name_label.theme_type_variation = &"JadeHeroName"
-	name_label.add_theme_font_size_override("font_size", 30)
+	name_label.add_theme_font_size_override("font_size", 33)
 	name_label.add_theme_color_override(
 		"font_color",
 		Color(0.95, 1.0, 0.98, 1.0)
@@ -669,7 +670,7 @@ func _ensure_profile_sheet() -> void:
 	header.add_child(close_button)
 
 	profile_sheet_exp_bar = ProgressBar.new()
-	profile_sheet_exp_bar.custom_minimum_size = Vector2(0.0, 10.0)
+	profile_sheet_exp_bar.custom_minimum_size = Vector2(0.0, 13.0)
 	profile_sheet_exp_bar.show_percentage = false
 	profile_sheet_exp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	profile_sheet_exp_bar.add_theme_stylebox_override(
@@ -844,6 +845,7 @@ func _refresh_profile_sheet() -> void:
 		child.queue_free()
 
 	var stats: Dictionary = _build_permanent_profile_snapshot()
+	_add_profile_quick_combat_summary(stats)
 	_add_profile_section_title(tr("CORE STATS"))
 	_add_profile_stat_row(
 		tr("MAX HP BONUS"),
@@ -959,6 +961,7 @@ func _refresh_profile_sheet() -> void:
 	)
 
 	_add_profile_milestones(hero_level)
+	_add_profile_google_account_card()
 	_configure_profile_scroll_input()
 
 func _configure_profile_scroll_input() -> void:
@@ -1077,6 +1080,128 @@ func _build_permanent_profile_snapshot() -> Dictionary:
 			)
 		)
 	}
+
+func _add_profile_quick_combat_summary(stats: Dictionary) -> void:
+	# Read-only display: values come from the existing authority-backed snapshot.
+	# These are permanent pre-run bonuses, not in-run weapon damage estimates.
+	_add_profile_section_title(tr("COMBAT SUMMARY"))
+	var tiles := GridContainer.new()
+	tiles.name = "CombatSummaryTiles"
+	tiles.columns = 3
+	tiles.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tiles.add_theme_constant_override("h_separation", 6)
+	profile_sheet_body.add_child(tiles)
+	_add_profile_combat_tile(
+		tiles,
+		"DAMAGE",
+		"+%.1f%%" % (float(stats.get("damage_bonus", 0.0)) * 100.0),
+		Color(1.0, 0.83, 0.43, 1.0)
+	)
+	_add_profile_combat_tile(
+		tiles,
+		"CRIT RATE",
+		"%.1f%%" % (float(stats.get("critical_chance", 0.0)) * 100.0),
+		Color(0.45, 0.96, 0.80, 1.0)
+	)
+	_add_profile_combat_tile(
+		tiles,
+		"CRIT DMG",
+		"%.0f%%" % (float(stats.get("critical_damage_multiplier", 2.0)) * 100.0),
+		Color(0.49, 0.85, 1.0, 1.0)
+	)
+	var account_jump := Button.new()
+	account_jump.name = "ProfileJumpToGoogleAccount"
+	account_jump.text = "GOOGLE ACCOUNT  â†“"
+	account_jump.custom_minimum_size.y = 40.0
+	account_jump.focus_mode = Control.FOCUS_NONE
+	account_jump.mouse_filter = Control.MOUSE_FILTER_PASS
+	account_jump.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
+	account_jump.keep_pressed_outside = false
+	account_jump.add_theme_font_size_override("font_size", 15)
+	account_jump.add_theme_color_override(
+		"font_color", Color(0.70, 0.98, 0.89, 1.0)
+	)
+	account_jump.add_theme_stylebox_override(
+		"normal",
+		_make_profile_style(
+			Color(0.008, 0.060, 0.066, 0.90),
+			Color(0.30, 0.80, 0.69, 0.65), 9, 1
+		)
+	)
+	account_jump.add_theme_stylebox_override(
+		"hover",
+		_make_profile_style(
+			Color(0.018, 0.092, 0.092, 0.96),
+			Color(0.94, 0.77, 0.41, 0.95), 9, 1
+		)
+	)
+	account_jump.pressed.connect(_jump_to_profile_google_account)
+	profile_sheet_body.add_child(account_jump)
+
+
+func _add_profile_combat_tile(
+	parent: GridContainer,
+	title_text: String,
+	value_text: String,
+	accent: Color
+) -> void:
+	var tile := PanelContainer.new()
+	tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tile.add_theme_stylebox_override(
+		"panel",
+		_make_profile_style(
+			Color(0.006, 0.044, 0.055, 0.97),
+			Color(accent.r, accent.g, accent.b, 0.74),
+			12,
+			1
+		)
+	)
+	parent.add_child(tile)
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 5)
+	margin.add_theme_constant_override("margin_right", 5)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_bottom", 12)
+	tile.add_child(margin)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 4)
+	margin.add_child(column)
+	var title := Label.new()
+	title.text = title_text
+	title.autowrap_mode = TextServer.AUTOWRAP_OFF
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 14)
+	title.add_theme_color_override("font_color", Color(0.78, 0.89, 0.85, 1.0))
+	column.add_child(title)
+	var value := Label.new()
+	value.text = value_text
+	value.autowrap_mode = TextServer.AUTOWRAP_OFF
+	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	value.add_theme_font_size_override("font_size", 23)
+	value.add_theme_color_override("font_color", accent)
+	column.add_child(value)
+
+
+func _jump_to_profile_google_account() -> void:
+	if profile_scroll == null or profile_sheet_body == null:
+		return
+	var account: Control = profile_sheet_body.get_node_or_null(
+		"ProfileGoogleAccountCard"
+	) as Control
+	if account != null:
+		profile_scroll.ensure_control_visible(account)
+
+func _add_profile_google_account_card() -> void:
+	# Reuse the one existing Firebase Google Sign-In UI and its safe account
+	# snapshot. No duplicate authentication, token storage, or Cloud Save.
+	_add_profile_section_title(tr("GOOGLE ACCOUNT"))
+	var card: PanelContainer = ProfileGoogleAccountCard.new() as PanelContainer
+	if card == null:
+		push_warning("MainMenu: unable to instantiate profile Google account card.")
+		return
+	card.name = "ProfileGoogleAccountCard"
+	profile_sheet_body.add_child(card)
+
 
 func _has_profile_signature_stat(stats: Dictionary) -> bool:
 	for stat_id: String in [

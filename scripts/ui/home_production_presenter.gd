@@ -11,6 +11,10 @@ extends Control
 ## - HubResourceBarManager owns the shared top wallet.
 ## - WuxiaHubNav owns the bottom navigation.
 
+const PROFILE_MEDALLION: Texture2D = preload(
+	"res://assets/ui/main_menu/polish/sanctuary_medallion.svg"
+)
+
 const MEDITATION_ICON: Texture2D = preload(
 	"res://assets/ui/home/liveops_premium/meditation_premium.png"
 )
@@ -78,8 +82,7 @@ func _ready() -> void:
 	LiveOpsLocalization.install()
 	_install_premium_meditation_presenter()
 	_hide_legacy_home_chrome()
-	_build_readability_grounding()
-	_build_identity()
+	_build_profile_shortcut()
 	_build_top_right_settings()
 	_build_event_rail()
 	_build_journey_deck()
@@ -166,57 +169,53 @@ func _handle_live_ops_manager_available() -> void:
 	_refresh_liveops_badges()
 
 
-func _build_readability_grounding() -> void:
-	var lower := ColorRect.new()
-	lower.name = "HomeProductionLowerGlass"
-	lower.anchor_left = 0.0
-	lower.anchor_top = 0.56
-	lower.anchor_right = 1.0
-	lower.anchor_bottom = 1.0
-	lower.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	lower.color = Color(0.0, 0.010, 0.018, 0.38)
-	add_child(lower)
-	move_child(lower, 0)
-
-
-func _build_identity() -> void:
-	var eyebrow := _label("JADE SANCTUARY", 13, JADE_SOFT)
-	eyebrow.anchor_left = 0.04
-	eyebrow.anchor_top = 0.0
-	eyebrow.anchor_right = 0.96
-	eyebrow.anchor_bottom = 0.0
-	eyebrow.offset_top = 76.0
-	eyebrow.offset_bottom = 101.0
-	eyebrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	eyebrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(eyebrow)
-
-	var identity := Button.new()
-	identity.name = "LinYueIdentityButton"
-	identity.anchor_left = 0.19
-	identity.anchor_top = 0.0
-	identity.anchor_right = 0.81
-	identity.anchor_bottom = 0.0
-	identity.offset_top = 99.0
-	identity.offset_bottom = 132.0
-	identity.text = "LIN YUE  •  WANDERING CULTIVATOR"
-	identity.flat = true
-	identity.focus_mode = Control.FOCUS_NONE
-	identity.mouse_filter = Control.MOUSE_FILTER_PASS
-	identity.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
-	identity.keep_pressed_outside = false
-	identity.add_theme_font_size_override("font_size", 18)
-	identity.add_theme_color_override(
-		"font_color",
-		Color(0.985, 0.96, 0.84, 1.0)
+func _build_profile_shortcut() -> void:
+	# A real profile entry in the top-left, below (not inside) the shared wallet.
+	# It opens MainMenu's existing read-only combat profile and Google account UI.
+	var shortcut := Button.new()
+	shortcut.name = "HomeProfileShortcut"
+	shortcut.anchor_left = 0.0
+	shortcut.anchor_top = 0.0
+	shortcut.anchor_right = 0.0
+	shortcut.anchor_bottom = 0.0
+	shortcut.offset_left = 17.0
+	shortcut.offset_top = 82.0
+	shortcut.offset_right = 231.0
+	shortcut.offset_bottom = 148.0
+	shortcut.text = "PROFILE"
+	shortcut.icon = PROFILE_MEDALLION
+	shortcut.expand_icon = true
+	shortcut.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	shortcut.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	shortcut.focus_mode = Control.FOCUS_NONE
+	shortcut.mouse_filter = Control.MOUSE_FILTER_STOP
+	shortcut.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
+	shortcut.keep_pressed_outside = false
+	shortcut.tooltip_text = "Open Player Profile"
+	shortcut.add_theme_font_size_override("font_size", 17)
+	shortcut.add_theme_color_override("font_color", GOLD_BRIGHT)
+	shortcut.add_theme_color_override("font_hover_color", Color(1.0, 0.97, 0.81, 1.0))
+	shortcut.add_theme_stylebox_override(
+		"normal",
+		_feature_style(
+			Color(0.003, 0.038, 0.047, 0.86),
+			Color(0.89, 0.73, 0.31, 0.77),
+			6
+		)
 	)
-	identity.add_theme_color_override(
-		"font_hover_color",
-		Color(1.0, 0.88, 0.52, 1.0)
+	shortcut.add_theme_stylebox_override(
+		"hover",
+		_feature_style(
+			Color(0.015, 0.088, 0.089, 0.97),
+			Color(0.46, 0.97, 0.83, 0.98),
+			8
+		)
 	)
-	identity.pressed.connect(_open_profile)
-	add_child(identity)
-
+	shortcut.add_theme_stylebox_override(
+		"pressed", shortcut.get_theme_stylebox("hover")
+	)
+	shortcut.pressed.connect(_open_profile)
+	add_child(shortcut)
 
 func _build_top_right_settings() -> void:
 	# Preserve the familiar Home Settings placement: upper-right, directly

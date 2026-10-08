@@ -3605,6 +3605,18 @@ func _test_event_final_presentation_contracts() -> void:
 		"celestial_treasury_screen.tscn" not in event_center_source,
 		"Event Center stays decoupled from Treasury/Billing production authority"
 	)
+
+	var live_ops_ui_source: String = FileAccess.get_file_as_string(
+		"res://scripts/ui/liveops/live_ops_ui.gd"
+	)
+	_check(
+		not live_ops_ui_source.is_empty()
+		and "func make_scroll_tree_touch_safe(root: Node) -> void:" in live_ops_ui_source
+		and "button.mouse_filter = Control.MOUSE_FILTER_PASS" in live_ops_ui_source
+		and "scroll.follow_focus = false" in live_ops_ui_source
+		and "LiveOpsUi.make_scroll_tree_touch_safe(body)" in event_center_source,
+		"LiveOps event scroll zones preserve mobile drag-safe input routing"
+	)
 	_check(
 		"FEATURED_EVENT_ID" in event_center_source
 		and "PILGRIMAGE_EVENT_ID" in event_center_source

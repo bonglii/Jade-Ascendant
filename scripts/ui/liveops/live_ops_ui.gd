@@ -12,19 +12,33 @@ static func build_shell(
 	eyebrow_text: String,
 	title_text: String,
 	subtitle_text: String,
-	hero_icon: Texture2D = null
+	hero_icon: Texture2D = null,
+	accent: Color = Color(0.34, 0.90, 0.80, 1.0),
+	event_background: Texture2D = null
 ) -> Dictionary:
 	if bool(root.get_meta("liveops_popup", false)):
-		return _build_popup_shell(root, eyebrow_text, title_text, subtitle_text, hero_icon)
+		return _build_popup_shell(
+			root,
+			eyebrow_text,
+			title_text,
+			subtitle_text,
+			hero_icon,
+			accent,
+			event_background
+		)
 
 	var background := TextureRect.new()
 	background.name = "Background"
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	background.texture = BACKGROUND_TEXTURE
+	if event_background != null:
+		background.texture = event_background
 	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	background.modulate = Color(0.18, 0.27, 0.29, 1.0)
+	if event_background != null:
+		background.modulate = Color(0.72, 0.78, 0.72, 1.0)
 	root.add_child(background)
 
 	var shade := ColorRect.new()
@@ -32,6 +46,8 @@ static func build_shell(
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	shade.color = Color(0.001, 0.009, 0.014, 0.80)
+	if event_background != null:
+		shade.color = Color(0.001, 0.009, 0.014, 0.50)
 	root.add_child(shade)
 
 	var safe := MarginContainer.new()
@@ -77,25 +93,19 @@ static func build_shell(
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top_row.add_child(spacer)
 
-	var live_tag := Label.new()
-	live_tag.text = root.tr("LIVE SERVICES")
-	live_tag.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	live_tag.add_theme_font_size_override("font_size", 11)
-	live_tag.add_theme_color_override(
-		"font_color",
-		Color(0.50, 0.82, 0.76, 1.0)
-	)
-	top_row.add_child(live_tag)
 
 	var hero_panel := PanelContainer.new()
-	hero_panel.add_theme_stylebox_override(
-		"panel",
-		make_panel_style(
-			Color(0.002, 0.024, 0.034, 0.95),
-			Color(0.96, 0.76, 0.30, 0.55),
-			14
-		)
+	var hero_style := make_panel_style(
+		Color(0.004, 0.032, 0.042, 0.98),
+		Color(accent.r, accent.g, accent.b, 0.78),
+		16
 	)
+	hero_style.border_width_left = 2
+	hero_style.border_width_top = 2
+	hero_style.border_width_right = 2
+	hero_style.border_width_bottom = 2
+	hero_style.shadow_size = 10
+	hero_panel.add_theme_stylebox_override("panel", hero_style)
 	outer.add_child(hero_panel)
 
 	var hero_margin := MarginContainer.new()
@@ -126,10 +136,7 @@ static func build_shell(
 	var eyebrow := Label.new()
 	eyebrow.text = eyebrow_text
 	eyebrow.add_theme_font_size_override("font_size", 11)
-	eyebrow.add_theme_color_override(
-		"font_color",
-		Color(0.34, 0.90, 0.80, 1.0)
-	)
+	eyebrow.add_theme_color_override("font_color", accent)
 	hero_text.add_child(eyebrow)
 
 	var title := Label.new()
@@ -156,15 +163,18 @@ static func build_shell(
 	scroll.name = "Scroll"
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	# Per-screen override: sensitive enough to win against an accidental tap,
-	# but not so sensitive that normal stationary taps become scroll gestures.
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	# Keep drag acquisition responsive on mobile while descendant controls
+	# propagate touch input back to the owning ScrollContainer.
 	scroll.scroll_deadzone = 4
+	scroll.follow_focus = false
+	scroll.mouse_filter = Control.MOUSE_FILTER_STOP
 	outer.add_child(scroll)
 
 	var content := VBoxContainer.new()
 	content.name = "Content"
 	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content.add_theme_constant_override("separation", 10)
 	scroll.add_child(content)
 	_install_scroll_guard(scroll, content)
@@ -176,7 +186,15 @@ static func build_shell(
 	}
 
 
-static func _build_popup_shell(root: Control, eyebrow_text: String, title_text: String, subtitle_text: String, hero_icon: Texture2D) -> Dictionary:
+static func _build_popup_shell(
+	root: Control,
+	eyebrow_text: String,
+	title_text: String,
+	subtitle_text: String,
+	hero_icon: Texture2D,
+	accent: Color,
+	event_background: Texture2D
+) -> Dictionary:
 	root.mouse_filter = Control.MOUSE_FILTER_STOP
 	var scrim := ColorRect.new()
 	scrim.name = "ModalScrim"
@@ -200,7 +218,14 @@ static func _build_popup_shell(root: Control, eyebrow_text: String, title_text: 
 	style.shadow_color = Color(0.0, 0.0, 0.0, 0.72)
 	style.shadow_size = 18
 	panel.add_theme_stylebox_override("panel", style)
+	panel.clip_contents = true
 	root.add_child(panel)
+
+	if event_background != null:
+		_add_event_realm_backdrop(
+			panel,
+			event_background
+		)
 
 	var margin := MarginContainer.new()
 	for side: String in ["left", "top", "right", "bottom"]:
@@ -213,12 +238,6 @@ static func _build_popup_shell(root: Control, eyebrow_text: String, title_text: 
 	var top := HBoxContainer.new()
 	top.custom_minimum_size.y = 44.0
 	outer.add_child(top)
-	var tag := Label.new()
-	tag.text = root.tr("LIVE SERVICES")
-	tag.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	tag.add_theme_font_size_override("font_size", 11)
-	tag.add_theme_color_override("font_color", Color(0.50, 0.86, 0.78, 1.0))
-	top.add_child(tag)
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(spacer)
@@ -231,7 +250,17 @@ static func _build_popup_shell(root: Control, eyebrow_text: String, title_text: 
 	top.add_child(close)
 
 	var hero := PanelContainer.new()
-	hero.add_theme_stylebox_override("panel", make_panel_style(Color(0.004, 0.030, 0.040, 0.94), Color(0.30, 0.82, 0.72, 0.38), 14))
+	var hero_style := make_panel_style(
+		Color(0.005, 0.034, 0.043, 0.985),
+		Color(accent.r, accent.g, accent.b, 0.82),
+		16
+	)
+	hero_style.border_width_left = 2
+	hero_style.border_width_top = 2
+	hero_style.border_width_right = 2
+	hero_style.border_width_bottom = 2
+	hero_style.shadow_size = 10
+	hero.add_theme_stylebox_override("panel", hero_style)
 	outer.add_child(hero)
 	var hm := MarginContainer.new()
 	hm.add_theme_constant_override("margin_left", 14)
@@ -243,41 +272,67 @@ static func _build_popup_shell(root: Control, eyebrow_text: String, title_text: 
 	hr.add_theme_constant_override("separation", 10)
 	hm.add_child(hr)
 	if hero_icon != null:
+		var icon_frame := PanelContainer.new()
+		icon_frame.custom_minimum_size = Vector2(74.0, 74.0)
+		icon_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var icon_style := make_panel_style(
+			Color(0.002, 0.020, 0.028, 0.98),
+			Color(accent.r, accent.g, accent.b, 0.72),
+			12
+		)
+		icon_style.shadow_size = 5
+		icon_frame.add_theme_stylebox_override("panel", icon_style)
+		hr.add_child(icon_frame)
+		var icon_margin := MarginContainer.new()
+		for side: String in ["left", "top", "right", "bottom"]:
+			icon_margin.add_theme_constant_override("margin_" + side, 5)
+		icon_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon_frame.add_child(icon_margin)
 		var icon := TextureRect.new()
-		icon.custom_minimum_size = Vector2(64.0, 64.0)
+		icon.custom_minimum_size = Vector2(62.0, 62.0)
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		icon.texture = hero_icon
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		hr.add_child(icon)
+		icon_margin.add_child(icon)
 	var ht := VBoxContainer.new()
 	ht.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hr.add_child(ht)
 	var eyebrow := Label.new()
 	eyebrow.text = eyebrow_text
 	eyebrow.add_theme_font_size_override("font_size", 10)
-	eyebrow.add_theme_color_override("font_color", Color(0.36, 0.90, 0.80, 1.0))
+	eyebrow.add_theme_color_override("font_color", accent)
 	ht.add_child(eyebrow)
 	var title := Label.new()
 	title.text = title_text
-	title.add_theme_font_size_override("font_size", 22)
+	title.add_theme_font_size_override("font_size", 24)
 	title.add_theme_color_override("font_color", Color(0.98, 0.82, 0.40, 1.0))
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ht.add_child(title)
 	var subtitle := Label.new()
 	subtitle.text = subtitle_text
 	subtitle.add_theme_font_size_override("font_size", 12)
-	subtitle.add_theme_color_override("font_color", Color(0.72, 0.84, 0.81, 1.0))
+	subtitle.add_theme_color_override("font_color", Color(0.78, 0.88, 0.86, 1.0))
 	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ht.add_child(subtitle)
+	var hero_rule := ColorRect.new()
+	hero_rule.custom_minimum_size.y = 3.0
+	hero_rule.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hero_rule.color = Color(accent.r, accent.g, accent.b, 0.78)
+	hero_rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ht.add_child(hero_rule)
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
 	scroll.scroll_deadzone = 4
+	scroll.follow_focus = false
+	scroll.mouse_filter = Control.MOUSE_FILTER_STOP
 	outer.add_child(scroll)
 	var content := VBoxContainer.new()
 	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content.add_theme_constant_override("separation", 10)
 	scroll.add_child(content)
 	_install_scroll_guard(scroll, content)
@@ -296,6 +351,38 @@ static func _build_popup_shell(root: Control, eyebrow_text: String, title_text: 
 	return {"back_button": close, "content": content, "scroll": scroll, "popup": panel}
 
 
+static func _add_event_realm_backdrop(
+	parent: Control,
+	texture: Texture2D
+) -> void:
+	var art := TextureRect.new()
+	art.name = "EventRealmBackdrop"
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	art.texture = texture
+	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	art.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	art.modulate = Color(0.82, 0.88, 0.82, 1.0)
+	parent.add_child(art)
+	art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+	var shade := ColorRect.new()
+	shade.name = "EventRealmShade"
+	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	shade.color = Color(0.001, 0.010, 0.014, 0.34)
+	parent.add_child(shade)
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+	var lower_shade := ColorRect.new()
+	lower_shade.name = "EventRealmLowerShade"
+	lower_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lower_shade.color = Color(0.001, 0.010, 0.014, 0.22)
+	lower_shade.anchor_left = 0.0
+	lower_shade.anchor_top = 0.40
+	lower_shade.anchor_right = 1.0
+	lower_shade.anchor_bottom = 1.0
+	parent.add_child(lower_shade)
+
 static func _install_scroll_guard(
 	scroll: ScrollContainer,
 	content: Control
@@ -305,9 +392,11 @@ static func _install_scroll_guard(
 	# release cannot also activate a card/action that the finger started on.
 	var tracked_buttons: Array[Button] = []
 	var disabled_before: Dictionary = {}
+	make_scroll_tree_touch_safe(content)
 
 	scroll.scroll_started.connect(
 		func() -> void:
+			make_scroll_tree_touch_safe(content)
 			tracked_buttons.clear()
 			disabled_before.clear()
 			_collect_buttons(content, tracked_buttons)
@@ -346,6 +435,19 @@ static func _install_scroll_guard(
 	)
 
 
+static func make_scroll_tree_touch_safe(root: Node) -> void:
+	# Layout-only Controls must never become dead drag zones. Buttons stay
+	# interactive, but PASS lets ScrollContainer still win once a swipe starts.
+	if root is Control:
+		var control := root as Control
+		if control is Button:
+			control.mouse_filter = Control.MOUSE_FILTER_PASS
+		elif not (control is ScrollContainer):
+			control.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for child: Node in root.get_children():
+		make_scroll_tree_touch_safe(child)
+
+
 static func _collect_buttons(
 	root: Node,
 	target: Array[Button]
@@ -368,17 +470,20 @@ static func make_card(
 ) -> VBoxContainer:
 	var panel := PanelContainer.new()
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel.add_theme_stylebox_override(
-		"panel",
-		make_panel_style(
-			Color(0.002, 0.022, 0.032, 0.95),
-			Color(accent.r, accent.g, accent.b, 0.42),
-			12
-		)
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var card_style := make_panel_style(
+		Color(0.003, 0.031, 0.040, 0.985),
+		Color(accent.r, accent.g, accent.b, 0.64),
+		12
 	)
+	card_style.border_width_left = 3
+	card_style.shadow_color = Color(0.0, 0.0, 0.0, 0.46)
+	card_style.shadow_size = 8
+	panel.add_theme_stylebox_override("panel", card_style)
 	parent.add_child(panel)
 
 	var margin := MarginContainer.new()
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	margin.add_theme_constant_override("margin_left", 16)
 	margin.add_theme_constant_override("margin_top", 13)
 	margin.add_theme_constant_override("margin_right", 16)
@@ -386,10 +491,17 @@ static func make_card(
 	panel.add_child(margin)
 
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 6)
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_theme_constant_override("separation", 7)
 	margin.add_child(box)
-	return box
 
+	var accent_line := ColorRect.new()
+	accent_line.custom_minimum_size.y = 2.0
+	accent_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	accent_line.color = Color(accent.r, accent.g, accent.b, 0.78)
+	accent_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(accent_line)
+	return box
 
 static func add_label(
 	parent: Container,
@@ -402,7 +514,325 @@ static func add_label(
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(label)
+	return label
+
+
+static func add_progress_meter(
+	parent: Container,
+	current_value: int,
+	total_value: int,
+	accent: Color = Color(0.30, 0.82, 0.72, 1.0)
+) -> ProgressBar:
+	var meter := ProgressBar.new()
+	meter.custom_minimum_size.y = 9.0
+	meter.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	meter.min_value = 0.0
+	meter.max_value = float(maxi(total_value, 1))
+	meter.value = float(clampi(current_value, 0, maxi(total_value, 1)))
+	meter.show_percentage = false
+	meter.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var track := make_panel_style(
+		Color(0.001, 0.014, 0.020, 0.98),
+		Color(accent.r, accent.g, accent.b, 0.20),
+		4
+	)
+	track.shadow_size = 0
+	meter.add_theme_stylebox_override("background", track)
+
+	var fill := make_panel_style(
+		Color(accent.r, accent.g, accent.b, 0.82),
+		Color(accent.r, accent.g, accent.b, 0.94),
+		4
+	)
+	fill.shadow_size = 0
+	meter.add_theme_stylebox_override("fill", fill)
+	parent.add_child(meter)
+	return meter
+
+
+static func make_event_overview(
+	parent: Container,
+	title_text: String,
+	current_value: int,
+	total_value: int,
+	state_text: String,
+	accent: Color,
+	ready_count: int = 0
+) -> VBoxContainer:
+	var panel := PanelContainer.new()
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var style := make_panel_style(
+		Color(0.004, 0.034, 0.044, 0.99),
+		Color(accent.r, accent.g, accent.b, 0.86),
+		16
+	)
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.shadow_size = 10
+	panel.add_theme_stylebox_override("panel", style)
+	parent.add_child(panel)
+
+	var margin := MarginContainer.new()
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margin.add_theme_constant_override("margin_left", 16)
+	margin.add_theme_constant_override("margin_top", 14)
+	margin.add_theme_constant_override("margin_right", 16)
+	margin.add_theme_constant_override("margin_bottom", 14)
+	panel.add_child(margin)
+
+	var box := VBoxContainer.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_theme_constant_override("separation", 9)
+	margin.add_child(box)
+
+	var top := HBoxContainer.new()
+	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	top.add_theme_constant_override("separation", 8)
+	box.add_child(top)
+	var title := add_label(
+		top,
+		title_text,
+		18,
+		Color(0.98, 0.82, 0.40, 1.0)
+	)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var status_accent: Color = (
+		Color(0.98, 0.80, 0.36, 1.0)
+		if ready_count > 0
+		else accent
+	)
+	add_state_badge(top, state_text, status_accent, ready_count > 0)
+
+	var metric := add_label(
+		box,
+		"%d / %d" % [current_value, total_value],
+		29,
+		accent
+	)
+	metric.add_theme_color_override(
+		"font_shadow_color",
+		Color(0.0, 0.0, 0.0, 0.72)
+	)
+	metric.add_theme_constant_override("shadow_offset_y", 1)
+
+	add_progress_meter(
+		box,
+		current_value,
+		total_value,
+		accent
+	)
+
+	if ready_count > 0:
+		add_info_strip(
+			box,
+			parent.tr("%d REWARDS READY") % ready_count,
+			Color(0.98, 0.80, 0.36, 1.0),
+			true
+		)
+	return box
+
+
+static func make_event_milestone(
+	parent: Container,
+	marker_text: String,
+	title_text: String,
+	detail_text: String,
+	reward_text: String,
+	accent: Color,
+	state_id: String,
+	state_text: String,
+	progress_current: int = -1,
+	progress_total: int = -1
+) -> VBoxContainer:
+	var border: Color = accent
+	var background := Color(0.003, 0.027, 0.036, 0.99)
+	var shadow_size: int = 5
+	match state_id:
+		"ready":
+			border = Color(0.98, 0.80, 0.36, 1.0)
+			background = Color(0.075, 0.048, 0.012, 0.985)
+			shadow_size = 10
+		"claimed":
+			border = Color(0.34, 0.89, 0.72, 0.66)
+			background = Color(0.003, 0.032, 0.036, 0.95)
+		"locked":
+			border = Color(0.34, 0.52, 0.52, 0.52)
+			background = Color(0.002, 0.018, 0.025, 0.94)
+		_:
+			pass
+
+	var panel := PanelContainer.new()
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var style := make_panel_style(background, border, 14)
+	style.border_width_left = 4
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.shadow_size = shadow_size
+	panel.add_theme_stylebox_override("panel", style)
+	parent.add_child(panel)
+
+	var margin := MarginContainer.new()
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margin.add_theme_constant_override("margin_left", 15)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_right", 15)
+	margin.add_theme_constant_override("margin_bottom", 13)
+	panel.add_child(margin)
+
+	var box := VBoxContainer.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_theme_constant_override("separation", 7)
+	margin.add_child(box)
+
+	var header := HBoxContainer.new()
+	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	header.add_theme_constant_override("separation", 8)
+	box.add_child(header)
+	var marker := add_label(header, marker_text, 12, border)
+	marker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	add_state_badge(
+		header,
+		state_text,
+		border,
+		state_id == "ready"
+	)
+
+	var title_color: Color = (
+		Color(0.98, 0.82, 0.40, 1.0)
+		if state_id == "ready"
+		else border
+	)
+	add_label(box, title_text, 18, title_color)
+	if not detail_text.is_empty():
+		add_label(
+			box,
+			detail_text,
+			13,
+			Color(0.74, 0.84, 0.82, 1.0)
+		)
+
+	if progress_current >= 0 and progress_total > 0:
+		add_label(
+			box,
+			parent.tr("PROGRESS %d / %d") % [
+				progress_current,
+				progress_total,
+			],
+			12,
+			Color(0.62, 0.84, 0.79, 1.0)
+		)
+		add_progress_meter(
+			box,
+			progress_current,
+			progress_total,
+			accent
+		)
+
+	var reward_panel := PanelContainer.new()
+	reward_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var reward_style := make_panel_style(
+		Color(0.002, 0.020, 0.027, 0.98),
+		Color(border.r, border.g, border.b, 0.34),
+		9
+	)
+	reward_style.shadow_size = 0
+	reward_panel.add_theme_stylebox_override("panel", reward_style)
+	box.add_child(reward_panel)
+	var reward_margin := MarginContainer.new()
+	reward_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	reward_margin.add_theme_constant_override("margin_left", 11)
+	reward_margin.add_theme_constant_override("margin_top", 7)
+	reward_margin.add_theme_constant_override("margin_right", 11)
+	reward_margin.add_theme_constant_override("margin_bottom", 7)
+	reward_panel.add_child(reward_margin)
+	var reward_label := Label.new()
+	reward_label.text = "✦  " + reward_text
+	reward_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	reward_label.add_theme_font_size_override("font_size", 13)
+	reward_label.add_theme_color_override(
+		"font_color",
+		Color(0.98, 0.78, 0.32, 1.0)
+	)
+	reward_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	reward_margin.add_child(reward_label)
+	return box
+
+
+static func add_state_badge(
+	parent: Container,
+	text_value: String,
+	accent: Color,
+	strong: bool = false
+) -> Label:
+	var badge := Label.new()
+	badge.text = text_value
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	badge.custom_minimum_size = Vector2(96.0, 27.0)
+	badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	badge.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	badge.add_theme_font_size_override("font_size", 12)
+	badge.add_theme_color_override("font_color", accent)
+	var fill := Color(0.004, 0.045, 0.052, 0.98)
+	if strong:
+		fill = Color(0.16, 0.095, 0.020, 0.99)
+	var style := make_panel_style(
+		fill,
+		Color(accent.r, accent.g, accent.b, 0.72),
+		7
+	)
+	style.shadow_size = 0
+	badge.add_theme_stylebox_override("normal", style)
+	parent.add_child(badge)
+	return badge
+
+
+static func add_info_strip(
+	parent: Container,
+	text_value: String,
+	accent: Color,
+	strong: bool = false
+) -> Label:
+	var panel := PanelContainer.new()
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var fill := Color(
+		accent.r * 0.055,
+		accent.g * 0.055,
+		accent.b * 0.055,
+		0.99
+	)
+	if strong:
+		fill = Color(
+			accent.r * 0.11,
+			accent.g * 0.08,
+			accent.b * 0.04,
+			0.99
+		)
+	var style := make_panel_style(
+		fill,
+		Color(accent.r, accent.g, accent.b, 0.42),
+		8
+	)
+	style.shadow_size = 0
+	panel.add_theme_stylebox_override("panel", style)
+	parent.add_child(panel)
+	var label := Label.new()
+	label.text = text_value
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.custom_minimum_size.y = 28.0
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 12)
+	label.add_theme_color_override("font_color", accent)
+	panel.add_child(label)
 	return label
 
 
@@ -415,6 +845,9 @@ static func add_action_button(
 	var button := Button.new()
 	button.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
 	button.keep_pressed_outside = false
+	button.focus_mode = Control.FOCUS_NONE
+	button.mouse_filter = Control.MOUSE_FILTER_PASS
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	button.custom_minimum_size = Vector2(0.0, 46.0)
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.text = text_value
@@ -447,6 +880,17 @@ static func add_action_button(
 			Color(0.002, 0.028, 0.038, 1.0),
 			Color(accent.r, accent.g, accent.b, 0.82)
 		)
+	)
+	button.add_theme_stylebox_override(
+		"disabled",
+		make_button_style(
+			Color(0.001, 0.018, 0.024, 0.94),
+			Color(accent.r, accent.g, accent.b, 0.24)
+		)
+	)
+	button.add_theme_color_override(
+		"font_disabled_color",
+		Color(0.54, 0.65, 0.63, 0.78)
 	)
 	if callback.is_valid():
 		button.pressed.connect(callback)
