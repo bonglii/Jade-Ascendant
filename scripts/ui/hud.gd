@@ -1,5 +1,7 @@
 extends CanvasLayer
 
+const InRunStatsOverlay = preload("res://scripts/ui/in_run_stats_overlay.gd")
+
 ## In-Run HUD
 ## Presentation authority for runtime status only.
 ## Combat, progression, wave, boss and checkpoint state remain owned by their managers.
@@ -63,6 +65,7 @@ var _encounter_banner_phase: Label = null
 var _encounter_banner_top_line: ColorRect = null
 var _encounter_banner_bottom_line: ColorRect = null
 var _encounter_banner_tween: Tween = null
+var _in_run_stats_overlay: Control = null
 
 func _ready() -> void:
 	boss_panel.visible = false
@@ -78,10 +81,65 @@ func _ready() -> void:
 	_validate_hud_references()
 	_connect_boss_spawn_signal()
 	_apply_runtime_presentation()
+	_build_in_run_stats_entry()
 	_refresh_player_hud(true)
 
 func _process(_delta: float) -> void:
 	_refresh_player_hud(false)
+
+
+func _build_in_run_stats_entry() -> void:
+	# Reuse the existing HP row and pause-sheet art; no new decoration assets.
+	var health_row: HBoxContainer = get_node_or_null(
+		"ScreenRoot/HUDSafeArea/TopHUD/Margin/Content/HealthRow"
+	) as HBoxContainer
+	var screen_root: Control = get_node_or_null("ScreenRoot") as Control
+	if health_row == null or screen_root == null:
+		push_error("HUD: cannot install the in-run stats entry safely.")
+		return
+	var entry := Button.new()
+	entry.name = "InRunStatsButton"
+	entry.text = "STATS"
+	entry.custom_minimum_size = Vector2(76.0, 32.0)
+	entry.focus_mode = Control.FOCUS_NONE
+	entry.add_theme_font_size_override("font_size", 14)
+	entry.add_theme_color_override("font_color", HUD_JADE)
+	entry.pressed.connect(_on_in_run_stats_pressed)
+	health_row.add_child(entry)
+
+	_in_run_stats_overlay = InRunStatsOverlay.new() as Control
+	if _in_run_stats_overlay == null:
+		push_error("HUD: in-run stats overlay failed to instantiate.")
+		return
+	screen_root.add_child(_in_run_stats_overlay)
+	var frame: PanelContainer = pause_overlay.get_node_or_null(
+		"Center/Panel"
+	) as PanelContainer
+	var frame_style: StyleBox = null
+	if frame != null:
+		frame_style = frame.get_theme_stylebox("panel")
+	_in_run_stats_overlay.call("setup", player, player_health, frame_style)
+
+
+func _on_in_run_stats_pressed() -> void:
+	if _in_run_stats_overlay == null or get_tree().paused:
+		return
+	if SceneTransitionManager.is_transitioning:
+		return
+	if level_up_panel.visible or pause_overlay.visible:
+		return
+	var tutorial: Control = get_node_or_null(
+		"ScreenRoot/HUDSafeArea/TutorialOverlay"
+	) as Control
+	if tutorial != null:
+		var tutorial_panel: Control = tutorial.get_node_or_null(
+			"TutorialPanel"
+		) as Control
+		if tutorial_panel != null and tutorial_panel.visible:
+			return
+	_in_run_stats_overlay.call("open_snapshot")
+
+
 
 func _validate_hud_references() -> void:
 	if player == null:
@@ -671,6 +729,9 @@ func _hide_encounter_banner() -> void:
 func handle_system_back() -> void:
 	if SceneTransitionManager.is_transitioning:
 		return
+	if _in_run_stats_overlay != null and _in_run_stats_overlay.visible:
+		_in_run_stats_overlay.call("close_snapshot")
+		return
 	if level_up_panel.visible:
 		return
 	if pause_overlay.visible:
@@ -679,6 +740,8 @@ func handle_system_back() -> void:
 	_on_pause_pressed()
 
 func _on_pause_pressed() -> void:
+	if _in_run_stats_overlay != null and _in_run_stats_overlay.visible:
+		return
 	if get_tree().paused:
 		return
 	if level_up_panel.visible:

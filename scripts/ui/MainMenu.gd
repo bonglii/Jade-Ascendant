@@ -8,6 +8,7 @@ const DAILY_QUEST_SCENE: String = "res://scenes/ui/daily_quest_screen.tscn"
 const SETTINGS_SCENE: String = "res://scenes/ui/settings_screen.tscn"
 const CheckpointData = preload("res://scripts/managers/checkpoint_manager.gd")
 const ProfileGoogleAccountCard = preload("res://scripts/ui/google_account_card.gd")
+const EquipmentSetRuntime = preload("res://scripts/data/equipment_set_runtime.gd")
 
 @onready var spirit_stone_label: Label = %SpiritStoneLabel
 @onready var realm_summary_label: Label = %RealmSummaryLabel
@@ -694,7 +695,7 @@ func _ensure_profile_sheet() -> void:
 	content.add_child(profile_sheet_exp_bar)
 
 	var eyebrow := Label.new()
-	eyebrow.text = tr("PERMANENT COMBAT PROFILE")
+	eyebrow.text = tr("NEXT-RUN PERMANENT STATS")
 	eyebrow.theme_type_variation = &"JadeSubtitle"
 	eyebrow.add_theme_font_size_override("font_size", 16)
 	eyebrow.add_theme_color_override(
@@ -705,7 +706,7 @@ func _ensure_profile_sheet() -> void:
 
 	var subtitle := Label.new()
 	subtitle.text = tr(
-		"Permanent stats • before run-only upgrades"
+		"Cultivation, equipped items and active set resonance. Run buffs excluded."
 	)
 	subtitle.theme_type_variation = &"JadeMutedLabel"
 	subtitle.add_theme_font_size_override("font_size", 14)
@@ -846,16 +847,16 @@ func _refresh_profile_sheet() -> void:
 
 	var stats: Dictionary = _build_permanent_profile_snapshot()
 	_add_profile_quick_combat_summary(stats)
-	_add_profile_section_title(tr("CORE STATS"))
+	_add_profile_section_title(tr("PERMANENT STATS"))
 	_add_profile_stat_row(
 		tr("MAX HP BONUS"),
 		"+%.0f" % float(stats["max_health_bonus"]),
-		""
+		tr("Bonus only; starting Max HP depends on the stage.")
 	)
 	_add_profile_stat_row(
 		tr("DAMAGE BONUS"),
 		"+%.1f%%" % (float(stats["damage_bonus"]) * 100.0),
-		""
+		tr("Multiplies each weapon's base hit; not final damage.")
 	)
 	_add_profile_stat_row(
 		tr("ATTACK SPEED"),
@@ -874,8 +875,8 @@ func _refresh_profile_sheet() -> void:
 	)
 	_add_profile_stat_row(
 		tr("CRITICAL CHANCE"),
-		"+%.1f%%" % (float(stats["critical_chance"]) * 100.0),
-		""
+		"%.1f%%" % (float(stats["critical_chance"]) * 100.0),
+		tr("Pre-run base; Sword Intent can raise this in battle.")
 	)
 	_add_profile_stat_row(
 		tr("CRITICAL DAMAGE"),
@@ -926,6 +927,14 @@ func _refresh_profile_sheet() -> void:
 				),
 				tr("Conditional bonus while Lin Yue is moving.")
 			)
+		if float(stats["stationary_damage_bonus"]) > 0.0001:
+			_add_profile_stat_row(
+				tr("STATIONARY DAMAGE"),
+				"+%.1f%%" % (
+					float(stats["stationary_damage_bonus"]) * 100.0
+				),
+				tr("Conditional set bonus while Lin Yue stands still.")
+			)
 		if float(stats["low_health_damage_bonus"]) > 0.0001:
 			_add_profile_stat_row(
 				tr("LOW-HP DAMAGE"),
@@ -933,6 +942,14 @@ func _refresh_profile_sheet() -> void:
 					float(stats["low_health_damage_bonus"]) * 100.0
 				),
 				tr("Conditional bonus at or below 50% HP.")
+			)
+		if float(stats["high_health_damage_bonus"]) > 0.0001:
+			_add_profile_stat_row(
+				tr("HIGH-HP DAMAGE"),
+				"+%.1f%%" % (
+					float(stats["high_health_damage_bonus"]) * 100.0
+				),
+				tr("Conditional set bonus at or above 80% HP.")
 			)
 		if float(stats["low_health_critical_chance"]) > 0.0001:
 			_add_profile_stat_row(
@@ -961,6 +978,8 @@ func _refresh_profile_sheet() -> void:
 	)
 
 	_add_profile_milestones(hero_level)
+	_add_profile_section_title(tr("IN-RUN STATS"))
+	_add_profile_run_scope_note()
 	_add_profile_google_account_card()
 	_configure_profile_scroll_input()
 
@@ -998,6 +1017,7 @@ func _build_permanent_profile_snapshot() -> Dictionary:
 	)
 	var equipment_damage_multiplier: float = (
 		EquipmentManager.get_loadout_damage_multiplier()
+		+ EquipmentSetRuntime.get_bonus("damage_bonus")
 	)
 	var damage_bonus: float = maxf(
 		(sword_power_multiplier * equipment_damage_multiplier) - 1.0,
@@ -1008,11 +1028,11 @@ func _build_permanent_profile_snapshot() -> Dictionary:
 		0.95,
 		float(ProgressionManager.swift_qi_level)
 	)
-	var cooldown_reduction: float = (
+	var cooldown_reduction: float = clampf(
 		EquipmentManager.get_loadout_secondary_bonus(
-			"attack_cooldown_reduction",
-			0.10
-		)
+			"attack_cooldown_reduction", 0.10
+		) + EquipmentSetRuntime.get_bonus("attack_cooldown_reduction"),
+		0.0, 0.10
 	)
 	var equipment_cooldown_multiplier: float = maxf(
 		1.0 - cooldown_reduction,
@@ -1029,23 +1049,33 @@ func _build_permanent_profile_snapshot() -> Dictionary:
 	)
 
 	return {
-		"max_health_bonus": vitality_bonus + equipment_health,
+		"max_health_bonus": (
+			vitality_bonus + equipment_health
+			+ EquipmentSetRuntime.get_bonus("max_health_flat")
+		),
 		"damage_bonus": damage_bonus,
 		"attack_speed_bonus": attack_speed_bonus,
 		"movement_speed_bonus": maxf(
-			EquipmentManager.get_loadout_movement_speed_multiplier() - 1.0,
+			EquipmentManager.get_loadout_movement_speed_multiplier() - 1.0
+			+ EquipmentSetRuntime.get_bonus("movement_speed_bonus"),
 			0.0
 		),
 		"experience_bonus": maxf(
-			EquipmentManager.get_loadout_experience_multiplier() - 1.0,
+			EquipmentManager.get_loadout_experience_multiplier() - 1.0
+			+ EquipmentSetRuntime.get_bonus("experience_bonus"),
 			0.0
 		),
-		"critical_chance": EquipmentManager.get_loadout_critical_chance_bonus(),
+		"critical_chance": clampf(
+			EquipmentManager.get_loadout_critical_chance_bonus()
+			+ EquipmentSetRuntime.get_bonus("critical_chance_bonus"),
+			0.0, 1.0
+		),
 		"critical_damage_multiplier": (
-			2.0
-			+ EquipmentManager.get_loadout_secondary_bonus(
-				"critical_damage_bonus",
-				0.15
+			2.0 + clampf(
+				EquipmentManager.get_loadout_secondary_bonus(
+					"critical_damage_bonus", 0.15
+				) + EquipmentSetRuntime.get_bonus("critical_damage_bonus"),
+				0.0, 0.15
 			)
 		),
 		"attack_cooldown_reduction": cooldown_reduction,
@@ -1053,38 +1083,70 @@ func _build_permanent_profile_snapshot() -> Dictionary:
 			"pickup_radius_bonus",
 			72.0
 		),
-		"starting_shield_charges": EquipmentManager.get_loadout_secondary_bonus(
-			"starting_shield_charges",
-			1.0
-		),
-		"level_up_heal": EquipmentManager.get_loadout_secondary_bonus(
-			"level_up_heal_flat",
-			4.0
-		),
-		"blood_qi_heal_bonus": EquipmentManager.get_loadout_secondary_bonus(
-			"blood_qi_heal_bonus",
-			0.75
-		),
-		"moving_damage_bonus": EquipmentManager.get_loadout_secondary_bonus(
-			"moving_damage_bonus",
-			0.08
-		),
-		"low_health_damage_bonus": EquipmentManager.get_loadout_secondary_bonus(
-			"low_health_damage_bonus",
-			0.10
-		),
-		"low_health_critical_chance": (
+		"starting_shield_charges": clampf(
 			EquipmentManager.get_loadout_secondary_bonus(
-				"low_health_critical_chance_bonus",
-				0.05
-			)
+				"starting_shield_charges", 2.0
+			) + EquipmentSetRuntime.get_bonus("starting_shield_charges"),
+			0.0, 2.0
+		),
+		"level_up_heal": clampf(
+			EquipmentManager.get_loadout_secondary_bonus(
+				"level_up_heal_flat", 4.0
+			) + EquipmentSetRuntime.get_bonus("level_up_heal_flat"),
+			0.0, 4.0
+		),
+		"blood_qi_heal_bonus": clampf(
+			EquipmentManager.get_loadout_secondary_bonus(
+				"blood_qi_heal_bonus", 0.75
+			) + EquipmentSetRuntime.get_bonus("blood_qi_heal_bonus"),
+			0.0, 0.75
+		),
+		"moving_damage_bonus": clampf(
+			EquipmentManager.get_loadout_secondary_bonus(
+				"moving_damage_bonus", 0.08
+			) + EquipmentSetRuntime.get_bonus("moving_damage_bonus"),
+			0.0, 0.08
+		),
+		"stationary_damage_bonus": EquipmentSetRuntime.get_bonus(
+			"stationary_damage_bonus"
+		),
+		"low_health_damage_bonus": clampf(
+			EquipmentManager.get_loadout_secondary_bonus(
+				"low_health_damage_bonus", 0.10
+			) + EquipmentSetRuntime.get_bonus("low_health_damage_bonus"),
+			0.0, 0.10
+		),
+		"high_health_damage_bonus": EquipmentSetRuntime.get_bonus(
+			"high_health_damage_bonus"
+		),
+		"low_health_critical_chance": clampf(
+			EquipmentManager.get_loadout_secondary_bonus(
+				"low_health_critical_chance_bonus", 0.05
+			) + EquipmentSetRuntime.get_bonus("low_health_critical_chance_bonus"),
+			0.0, 0.05
 		)
 	}
+
+func _add_profile_run_scope_note() -> void:
+	var note := Label.new()
+	note.name = "InRunStatScopeNote"
+	note.text = tr(
+		"Live HP, Power, Sword Intent critical chance, Body Refinement, "
+		+ "and conditional bonuses are measured inside a stage. "
+		+ "This hub shows the next-run loadout, not a live combat snapshot."
+	)
+	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	note.add_theme_font_size_override("font_size", 14)
+	note.add_theme_color_override(
+		"font_color", Color(0.70, 0.86, 0.81, 1.0)
+	)
+	profile_sheet_body.add_child(note)
+
 
 func _add_profile_quick_combat_summary(stats: Dictionary) -> void:
 	# Read-only display: values come from the existing authority-backed snapshot.
 	# These are permanent pre-run bonuses, not in-run weapon damage estimates.
-	_add_profile_section_title(tr("COMBAT SUMMARY"))
+	_add_profile_section_title(tr("PRE-RUN COMBAT"))
 	var tiles := GridContainer.new()
 	tiles.name = "CombatSummaryTiles"
 	tiles.columns = 3
@@ -1111,7 +1173,7 @@ func _add_profile_quick_combat_summary(stats: Dictionary) -> void:
 	)
 	var account_jump := Button.new()
 	account_jump.name = "ProfileJumpToGoogleAccount"
-	account_jump.text = "GOOGLE ACCOUNT  â†“"
+	account_jump.text = "GOOGLE ACCOUNT"
 	account_jump.custom_minimum_size.y = 40.0
 	account_jump.focus_mode = Control.FOCUS_NONE
 	account_jump.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -1211,7 +1273,9 @@ func _has_profile_signature_stat(stats: Dictionary) -> bool:
 		"level_up_heal",
 		"blood_qi_heal_bonus",
 		"moving_damage_bonus",
+		"stationary_damage_bonus",
 		"low_health_damage_bonus",
+		"high_health_damage_bonus",
 		"low_health_critical_chance"
 	]:
 		if float(stats.get(stat_id, 0.0)) > 0.0001:
