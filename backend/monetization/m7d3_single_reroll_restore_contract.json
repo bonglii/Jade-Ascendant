@@ -1,0 +1,18 @@
+{
+  "contract_version": 1,
+  "gate": "MONETIZATION_M7D3_SINGLE_REROLL_RESTORE",
+  "intent": "Restore QA-passed original M7D single rewarded Dao Choice Reroll after M7D2 second ad remained AD PREPARING on Android",
+  "active_placement": "dao_choice_reroll",
+  "max_successful_rerolls_per_run": 1,
+  "max_successful_rerolls_per_local_day": 1,
+  "global_non_revive_daily_ad_target": 5,
+  "m7d2_second_slot_disabled": true,
+  "existing_m7d2_run_spent_marker_preserved": true,
+  "existing_player_progress_and_reward_receipts_untouched": true,
+  "m7b_m7c_m7e2_runtime_modified": false,
+  "monetization_manager_modified": false,
+  "admob_provider_modified": false,
+  "ssv_implemented": false,
+  "production_release_allowed": false,
+  "android_single_reroll_regression_required": true
+}

@@ -13,6 +13,8 @@ signal daily_quest_progressed(
 signal daily_quest_completed(quest_id: String)
 signal daily_quest_claimed(quest_id: String, spirit_stone_reward: int)
 signal daily_quests_reset(date_key: String)
+signal m7b_offer_finished(placement: String, success: bool, message: String)
+signal m7c2_offer_finished(success: bool, message: String)
 
 const SAVE_PATH: String = "user://daily_quests.save"
 const SAVE_VERSION: int = 1
@@ -56,6 +58,12 @@ var active_date_key: String = ""
 var quest_progress: Dictionary = {}
 var completed_quest_ids: Array[String] = []
 var claimed_quest_ids: Array[String] = []
+var m7b_claimed_placement_ids: Array[String] = []
+var m7b_processed_grant_ids: Array[String] = []
+var _m7b_bridge: Node = null
+var m7c2_pending_focus: bool = false
+var _m7c2_bridge: Node = null
+var m7d_used_run_id: String = ""
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -66,6 +74,8 @@ func _ready() -> void:
 	_connect_runtime_hooks()
 	save_daily_quests()
 	print_daily_quest_status()
+	call_deferred("_install_m7b_reward_bridge")
+	call_deferred("_m7c2_install_bridge")
 
 func _connect_runtime_hooks() -> void:
 	var tree := get_tree()
@@ -382,6 +392,7 @@ func _apply_daily_reset_if_needed() -> void:
 	quest_progress.clear()
 	completed_quest_ids.clear()
 	claimed_quest_ids.clear()
+	m7b_claimed_placement_ids.clear()
 	_initialize_progress_entries()
 	daily_quests_reset.emit(active_date_key)
 	DebugLogger.system(str(
@@ -473,6 +484,14 @@ func load_daily_quests() -> void:
 	claimed_quest_ids = _normalize_id_array(
 		save_data.get("claimed", [])
 	)
+	m7b_claimed_placement_ids = _normalize_id_array(
+		save_data.get("m7b_claimed_placement_ids", [])
+	)
+	m7b_processed_grant_ids = _normalize_id_array(
+		save_data.get("m7b_processed_grant_ids", [])
+	)
+	m7c2_pending_focus = save_data.get("m7c2_pending_focus", false) == true
+	m7d_used_run_id = str(save_data.get("m7d_used_run_id", ""))
 
 func _normalize_id_array(raw_value: Variant) -> Array[String]:
 	var normalized: Array[String] = []
@@ -536,5 +555,253 @@ func build_save_data() -> Dictionary:
 		"active_quest_ids": active_quest_ids.duplicate(),
 		"progress": quest_progress.duplicate(true),
 		"completed": completed_quest_ids.duplicate(),
-		"claimed": claimed_quest_ids.duplicate()
+		"claimed": claimed_quest_ids.duplicate(),
+		"m7b_claimed_placement_ids": m7b_claimed_placement_ids.duplicate(),
+		"m7b_processed_grant_ids": m7b_processed_grant_ids.duplicate(),
+		"m7c2_pending_focus": m7c2_pending_focus,
+		"m7d_used_run_id": m7d_used_run_id
 	}
+
+# M7B voluntary ad rewards are owned by DailyQuestManager, NEVER by the UI.
+# Receipt + permanent currency/inventory must commit in one SaveManager batch.
+func m7b_get_offer_status(placement: String) -> Dictionary:
+	if not is_instance_valid(_m7b_bridge):
+		return {"available": false, "reason": "REWARDS PREPARING"}
+	return _m7b_bridge.call("get_offer_status", placement)
+
+
+func m7b_request_rewarded(placement: String) -> bool:
+	if not is_instance_valid(_m7b_bridge):
+		return false
+	return bool(_m7b_bridge.call("request_rewarded", placement))
+
+
+func m7b_commit_sdk_reward(placement: String, expected_day: String, grant_id: String) -> Dictionary:
+	refresh_daily_date()
+	if SaveManager.is_progress_read_only():
+		return {"success": false, "error": "Save is read-only."}
+	if active_date_key != expected_day:
+		return {"success": false, "error": "Daily cycle changed during ad."}
+	if grant_id.is_empty() or grant_id in m7b_processed_grant_ids:
+		return {"success": false, "error": "Reward receipt is invalid or already used."}
+	if placement in m7b_claimed_placement_ids:
+		return {"success": false, "error": "Offer already claimed today."}
+	var stones: int = 0
+	var items: Dictionary = {}
+	match placement:
+		"daily_completion_cache":
+			var active_ids: Array[String] = get_daily_quest_ids()
+			if active_ids.is_empty():
+				return {"success": false, "error": "No active quests."}
+			for quest_id: String in active_ids:
+				if not is_claimed(quest_id):
+					return {"success": false, "error": "All daily claims are required."}
+			stones = 50
+		"refinement_supply":
+			if not JourneyManager.is_stage_cleared(1, 3):
+				return {"success": false, "error": "Refinement supply not unlocked."}
+			items[InventoryManager.REFINEMENT_SHARD] = 2
+		_:
+			return {"success": false, "error": "Unknown offer."}
+	var next_claims: Array[String] = m7b_claimed_placement_ids.duplicate()
+	next_claims.append(placement)
+	var next_ids: Array[String] = m7b_processed_grant_ids.duplicate()
+	next_ids.append(grant_id)
+	# Keep bounded receipt history without weakening the current daily marker.
+	if next_ids.size() > 64:
+		next_ids = next_ids.slice(next_ids.size() - 64)
+	var next_daily: Dictionary = build_save_data()
+	next_daily["m7b_claimed_placement_ids"] = next_claims
+	next_daily["m7b_processed_grant_ids"] = next_ids
+	var reward: Dictionary = RewardManager.create_reward_data(stones, items)
+	var result: Dictionary = RewardManager.grant_reward(
+		RewardManager.SOURCE_DAILY_QUEST,
+		expected_day + "_m7b_" + placement,
+		reward,
+		{"daily_quests": next_daily}
+	)
+	if bool(result.get("success", false)):
+		m7b_claimed_placement_ids = next_claims
+		m7b_processed_grant_ids = next_ids
+	return result
+
+
+func _install_m7b_reward_bridge() -> void:
+	if is_instance_valid(_m7b_bridge):
+		return
+	# Runtime load avoids a parser cycle with this autoload's child bridge.
+	var script: Script = load("res://scripts/monetization/m7b_daily_reward_bridge.gd") as Script
+	if script == null:
+		push_error("M7B bridge script could not load.")
+		return
+	_m7b_bridge = script.new() as Node
+	if _m7b_bridge == null:
+		push_error("M7B bridge could not instantiate.")
+		return
+	_m7b_bridge.name = "M7BDailyRewardBridge"
+	add_child(_m7b_bridge)
+
+## M7C2 Qi Focus: opt-in SDK grant stored in existing permanent Daily Quest domain.
+## Pending focus does NOT reset with daily claim markers; it waits for a new run.
+func _m7c2_install_bridge() -> void:
+	if is_instance_valid(_m7c2_bridge):
+		return
+	var script: Script = load("res://scripts/monetization/m7c2_qi_focus_bridge.gd") as Script
+	if script == null:
+		push_error("M7C2 Qi Focus bridge missing.")
+		return
+	_m7c2_bridge = script.new() as Node
+	if _m7c2_bridge == null:
+		push_error("M7C2 Qi Focus bridge instantiation failed.")
+		return
+	_m7c2_bridge.name = "M7C2QiFocusBridge"
+	add_child(_m7c2_bridge)
+	_m7c2_bridge.connect("offer_finished", Callable(self, "_m7c2_on_offer_finished"))
+
+
+func _m7c2_on_offer_finished(success: bool, message: String) -> void:
+	m7c2_offer_finished.emit(success, message)
+
+
+func m7c2_get_offer_status() -> Dictionary:
+	if not is_instance_valid(_m7c2_bridge):
+		return {"available": false, "reason": "REWARDS PREPARING"}
+	return _m7c2_bridge.call("get_offer_status")
+
+
+func m7c2_request_rewarded() -> bool:
+	if not is_instance_valid(_m7c2_bridge):
+		return false
+	return bool(_m7c2_bridge.call("request_rewarded"))
+
+
+func m7c2_commit_sdk_reward(expected_day: String, grant_id: String) -> Dictionary:
+	refresh_daily_date()
+	if SaveManager.is_progress_read_only() or expected_day != active_date_key:
+		return {"success": false, "error": "Save locked or daily cycle changed."}
+	if grant_id.is_empty() or grant_id in m7b_processed_grant_ids:
+		return {"success": false, "error": "Reward receipt already used."}
+	if m7c2_pending_focus or "qi_focus" in m7b_claimed_placement_ids:
+		return {"success": false, "error": "Qi Focus is already reserved or claimed."}
+	if not JourneyManager.is_stage_cleared(1, 1):
+		return {"success": false, "error": "Qi Focus not unlocked."}
+	var next_claims: Array[String] = m7b_claimed_placement_ids.duplicate()
+	next_claims.append("qi_focus")
+	var next_grants: Array[String] = m7b_processed_grant_ids.duplicate()
+	next_grants.append(grant_id)
+	if next_grants.size() > 64:
+		next_grants = next_grants.slice(next_grants.size() - 64)
+	var next_daily: Dictionary = build_save_data()
+	next_daily["m7b_claimed_placement_ids"] = next_claims
+	next_daily["m7b_processed_grant_ids"] = next_grants
+	next_daily["m7c2_pending_focus"] = true
+	var result: Dictionary = SaveManager.write_save_data("daily_quests", next_daily)
+	if not bool(result.get("success", false)):
+		return {"success": false, "error": "Qi Focus reservation was not saved."}
+	m7b_claimed_placement_ids = next_claims
+	m7b_processed_grant_ids = next_grants
+	m7c2_pending_focus = true
+	return {"success": true}
+
+
+## Called ONLY when CheckpointManager boots a new selected Journey stage.
+## Continue skips this call and restores the saved per-run flag instead.
+func m7c2_consume_for_new_run() -> bool:
+	if not m7c2_pending_focus or SaveManager.is_progress_read_only():
+		return false
+	var next_daily: Dictionary = build_save_data()
+	next_daily["m7c2_pending_focus"] = false
+	var result: Dictionary = SaveManager.write_save_data("daily_quests", next_daily)
+	if not bool(result.get("success", false)):
+		return false
+	m7c2_pending_focus = false
+	return true
+
+
+## M7D: a per-run spent marker survives Daily Quest rollover and Continue.
+## JourneyManager persists a unique nonce in the existing journey.save domain.
+func m7d_get_offer_status() -> Dictionary:
+	refresh_daily_date()
+	if SaveManager.is_progress_read_only():
+		return {"available": false, "reason": "SAVE LOCKED"}
+	if not JourneyManager.has_active_run():
+		return {"available": false, "reason": "NO ACTIVE RUN"}
+	var run_id: String = JourneyManager.m7d_run_id
+	if run_id.is_empty() or run_id.length() != 32:
+		return {"available": false, "reason": "LEGACY RUN"}
+	if not _m7d_is_run_id_durable(run_id):
+		return {"available": false, "reason": "RUN SAVE NOT READY"}
+	if m7d_used_run_id == run_id:
+		return {"available": false, "reason": "REROLL USED"}
+	if "dao_choice_reroll" in m7b_claimed_placement_ids:
+		return {"available": false, "reason": "CLAIMED TODAY"}
+	var watched_today: int = 0
+	for key: Variant in MonetizationManager.placement_counts:
+		if str(key) != "game_over_revive":
+			watched_today += maxi(int(MonetizationManager.placement_counts[key]), 0)
+	if watched_today >= 5:
+		return {"available": false, "reason": "DAILY AD LIMIT"}
+	var policy: Dictionary = MonetizationManager.get_rewarded_policy_status(
+		"dao_choice_reroll"
+	)
+	if int(policy.get("placement_claims", 0)) > 0:
+		return {"available": false, "reason": "CLAIMED TODAY"}
+	if int(policy.get("cooldown_remaining_seconds", 0)) > 0:
+		return {"available": false, "reason": "COOLDOWN"}
+	if not bool(policy.get("available", false)):
+		return {"available": false, "reason": "AD PREPARING"}
+	return {"available": true, "reason": "READY"}
+
+
+func _m7d_is_run_id_durable(run_id: String) -> bool:
+	if run_id.is_empty() or not JourneyManager.has_active_run():
+		return false
+	var result: Dictionary = SaveManager.read_save_data("journey")
+	if not bool(result.get("success", false)):
+		return false
+	var data: Dictionary = result.get("data", {})
+	return (
+		str(data.get("m7d_run_id", "")) == run_id
+		and int(data.get("active_run_chapter_id", 0))
+		== JourneyManager.active_run_chapter_id
+		and int(data.get("active_run_stage_id", 0))
+		== JourneyManager.active_run_stage_id
+	)
+
+
+func m7d_commit_sdk_reroll(
+	expected_day: String, expected_run_id: String, grant_id: String
+) -> Dictionary:
+	refresh_daily_date()
+	if SaveManager.is_progress_read_only() or expected_day != active_date_key:
+		return {"success": false, "error": "SAVE LOCKED OR DAY CHANGED"}
+	if (
+		expected_run_id.is_empty()
+		or JourneyManager.m7d_run_id != expected_run_id
+		or not _m7d_is_run_id_durable(expected_run_id)
+	):
+		return {"success": false, "error": "RUN NO LONGER ACTIVE"}
+	if (
+		m7d_used_run_id == expected_run_id
+		or "dao_choice_reroll" in m7b_claimed_placement_ids
+	):
+		return {"success": false, "error": "REROLL ALREADY USED"}
+	if grant_id.is_empty() or grant_id in m7b_processed_grant_ids:
+		return {"success": false, "error": "INVALID REWARD RECEIPT"}
+	var next_claims: Array[String] = m7b_claimed_placement_ids.duplicate()
+	next_claims.append("dao_choice_reroll")
+	var next_grants: Array[String] = m7b_processed_grant_ids.duplicate()
+	next_grants.append(grant_id)
+	if next_grants.size() > 64:
+		next_grants = next_grants.slice(next_grants.size() - 64)
+	var next_daily: Dictionary = build_save_data()
+	next_daily["m7b_claimed_placement_ids"] = next_claims
+	next_daily["m7b_processed_grant_ids"] = next_grants
+	next_daily["m7d_used_run_id"] = expected_run_id
+	var saved: Dictionary = SaveManager.write_save_data("daily_quests", next_daily)
+	if not bool(saved.get("success", false)):
+		return {"success": false, "error": "REROLL RECEIPT SAVE FAILED"}
+	m7b_claimed_placement_ids = next_claims
+	m7b_processed_grant_ids = next_grants
+	m7d_used_run_id = expected_run_id
+	return {"success": true}

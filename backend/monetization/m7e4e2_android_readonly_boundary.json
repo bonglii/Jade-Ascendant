@@ -1,0 +1,15 @@
+{
+  "phase": "MONETIZATION_M7E4E2",
+  "kind": "source_only_android_inbox_probe_and_display_only_validator",
+  "authenticated_native_sdk_transport_required": true,
+  "firebase_auth_uid_never_taken_from_gdscript": true,
+  "app_check_required": true,
+  "reject_account_switch_during_async_call": true,
+  "native_bridge_registered": false,
+  "read_only_inbox_callable_registered": false,
+  "client_local_currency_grants": false,
+  "client_ack_enabled": false,
+  "server_delivery_enabled": false,
+  "ssv_intent_issuance_live": false,
+  "production_release": "HOLD"
+}

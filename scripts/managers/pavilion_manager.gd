@@ -21,6 +21,14 @@ signal purchase_delivery_finished(
 	message: String
 )
 signal billing_entitlements_changed(product_ids: Array[String])
+## Display-only paid wallet update; never a credit/debit/summon authorization.
+signal paid_wallet_snapshot_m9_changed(view: Dictionary)
+## M14 server-credit acknowledgment is volatile display only.
+signal paid_purchase_receipt_m14_changed(view: Dictionary)
+## M12 committed summon recovery is a volatile DISPLAY snapshot only.
+signal paid_summon_recovery_m12_changed(view: Dictionary)
+## FastTrack read-only paid entitlement view; never written to user:// inventory.
+signal paid_entitlements_rc_changed(view: Dictionary)
 
 const EconomyCatalog = preload("res://scripts/data/economy_catalog.gd")
 const OfflineBillingProvider = preload(
@@ -31,6 +39,22 @@ const GooglePlayBillingProvider = preload(
 )
 const PURCHASE_AUTHORITY_SINGLETON: String = "JadeMonetizationNativeBridge"
 const SECURE_PURCHASE_ACTIVATION_APPROVED: bool = false
+const HybridWalletGameBridgeM7 = preload(
+	"res://scripts/monetization/hybrid_wallet_game_bridge_m7.gd"
+)
+const HybridPaidWalletSnapshotM9 = preload(
+	"res://scripts/monetization/hybrid_paid_wallet_snapshot_m9.gd"
+)
+## Explicit follow-up approval needed AFTER Worker read route QA.
+const HYBRID_PAID_WALLET_DISPLAY_SYNC_APPROVED: bool = false
+const HybridPaidPurchaseReceiptM14 = preload("res://scripts/monetization/hybrid_paid_purchase_receipt_m14.gd")
+const HybridPaidSummonRecoveryM12 = preload(
+	"res://scripts/monetization/hybrid_paid_summon_recovery_m12.gd"
+)
+## Kept false until server-issued paid outcomes can be reconciled exactly once.
+const HYBRID_PAID_SUMMON_RECOVERY_READ_APPROVED: bool = false
+const HybridPaidEntitlementsRC = preload("res://scripts/monetization/hybrid_paid_entitlements_rc.gd")
+const HYBRID_PAID_ENTITLEMENTS_DISPLAY_APPROVED: bool = false
 
 const MEDITATION_REWARD: int = 20
 const PAYMENT_AUTO: String = "auto"
@@ -116,7 +140,20 @@ var billing_owned_product_ids: Array[String] = []
 var secure_purchase_authority_ready: bool = false
 var purchase_authority_bridge: Object = null
 var secure_purchase_in_flight_product_id: String = ""
+var _secure_purchase_in_flight_binding_m14: String = ""
+var _paid_purchase_receipt_m14: Dictionary = HybridPaidPurchaseReceiptM14.empty()
 var secure_purchase_recovery_rescan_requested: bool = false
+## M9 ephemeral display state: excluded from pavilion.save and summon accounting.
+var _paid_wallet_bridge_m9: Object = null
+var _paid_summon_recovery_bridge_m12: Object = null
+var _paid_summon_recovery_request_m12: String = ""
+var _paid_summon_recovery_view_m12: Dictionary = {}
+var _paid_entitlements_bridge_rc: Object = null
+var _paid_entitlements_pending_rc: bool = false
+var _paid_entitlements_binding_rc: String = ""
+var _paid_entitlements_view_rc: Dictionary = HybridPaidEntitlementsRC.empty()
+var _paid_wallet_pending_m9: bool = false
+var _paid_wallet_view_m9: Dictionary = HybridPaidWalletSnapshotM9.empty()
 
 
 func _ready() -> void:
@@ -137,6 +174,7 @@ func _ready() -> void:
 		_save_state()
 	_connect_cadence_hooks()
 	call_deferred("_connect_secure_purchase_transport")
+	call_deferred("_connect_paid_wallet_transport_m9")
 	call_deferred("_connect_secure_purchase_identity")
 	call_deferred("_sync_economy_cadence")
 
@@ -324,6 +362,203 @@ func _save_state() -> bool:
 
 func get_celestial_jade() -> int:
 	return maxi(int(state.get("celestial_jade", 0)), 0)
+
+
+## M7 read-only Hybrid inspection: local balance remains unclassified.
+## These methods NEVER authorize, debit, credit, summon or write a save.
+func get_hybrid_wallet_m7_status() -> Dictionary:
+	var grants: Variant = state.get("processed_iap_grant_ids", [])
+	if not (grants is Array):
+		return {"error": "invalid_local_grants", "runtime_cutover": false}
+	return HybridWalletGameBridgeM7.status_from_local(
+		get_celestial_jade(), grants as Array,
+		not SECURE_PURCHASE_ACTIVATION_APPROVED
+	)
+
+
+func preview_hybrid_summon_m7(pull_count: int, source: String = "auto") -> Dictionary:
+	return HybridWalletGameBridgeM7.preview_summon(
+		get_celestial_jade(), pull_count, source
+	)
+
+
+## M9 READ-ONLY native transport. Never writes save, modifies game currency,
+## or opens any purchasing/summoning path. Read gate remains false in M9.
+func get_paid_wallet_m9_view() -> Dictionary:
+	return _paid_wallet_view_m9.duplicate(true)
+
+
+func _invalidate_paid_wallet_m9(status: String = "not_connected") -> void:
+	_paid_wallet_pending_m9 = false
+	_paid_wallet_view_m9 = HybridPaidWalletSnapshotM9.empty(status)
+	paid_wallet_snapshot_m9_changed.emit(get_paid_wallet_m9_view())
+
+
+func _connect_paid_wallet_transport_m9() -> bool:
+	_paid_wallet_bridge_m9 = null
+	if OS.get_name() != "Android":
+		return false
+	if not Engine.has_singleton(PURCHASE_AUTHORITY_SINGLETON):
+		return false
+	var bridge: Object = Engine.get_singleton(PURCHASE_AUTHORITY_SINGLETON)
+	if bridge == null:
+		return false
+	if not bridge.has_method("refreshPaidWalletSnapshot"):
+		return false
+	if not bridge.has_signal("paidWalletSnapshotResult"):
+		return false
+	var callback := Callable(self, "_on_paid_wallet_snapshot_result_m9")
+	if not bridge.is_connected("paidWalletSnapshotResult", callback):
+		bridge.connect("paidWalletSnapshotResult", callback)
+	_paid_wallet_bridge_m9 = bridge
+	return true
+
+
+func request_paid_wallet_snapshot_m9() -> bool:
+	## The Worker read endpoint has NOT been enabled/deployed. This approval
+	## must only be flipped after separate read-route and identity QA.
+	if not HYBRID_PAID_WALLET_DISPLAY_SYNC_APPROVED:
+		return false
+	if _paid_wallet_pending_m9 or OS.get_name() != "Android":
+		return false
+	if GoogleAccountManager.get_monetization_account_binding().is_empty():
+		_invalidate_paid_wallet_m9("identity_required")
+		return false
+	if _paid_wallet_bridge_m9 == null or not is_instance_valid(_paid_wallet_bridge_m9):
+		if not _connect_paid_wallet_transport_m9():
+			_invalidate_paid_wallet_m9("not_connected")
+			return false
+	_paid_wallet_pending_m9 = true
+	_paid_wallet_view_m9 = HybridPaidWalletSnapshotM9.empty("loading")
+	paid_wallet_snapshot_m9_changed.emit(get_paid_wallet_m9_view())
+	_paid_wallet_bridge_m9.call("refreshPaidWalletSnapshot")
+	return true
+
+
+func _on_paid_wallet_snapshot_result_m9(success: bool, status: String, payload: String) -> void:
+	## Ignore unsolicited/late native results after logout or reset.
+	if not _paid_wallet_pending_m9:
+		return
+	_paid_wallet_pending_m9 = false
+	if GoogleAccountManager.get_monetization_account_binding().is_empty():
+		_invalidate_paid_wallet_m9("identity_required")
+		return
+	_paid_wallet_view_m9 = HybridPaidWalletSnapshotM9.from_native_result(
+		success, status, payload
+	)
+	paid_wallet_snapshot_m9_changed.emit(get_paid_wallet_m9_view())
+
+
+## FastTrack read-only server entitlement mirror. NEVER touches inventory.save.
+func get_paid_entitlements_rc_view() -> Dictionary:
+	return _paid_entitlements_view_rc.duplicate(true)
+
+func _invalidate_paid_entitlements_rc(status: String = "not_connected") -> void:
+	_paid_entitlements_pending_rc = false
+	_paid_entitlements_binding_rc = ""
+	_paid_entitlements_view_rc = HybridPaidEntitlementsRC.empty(status)
+	paid_entitlements_rc_changed.emit(get_paid_entitlements_rc_view())
+
+func _connect_paid_entitlements_rc() -> bool:
+	_paid_entitlements_bridge_rc = null
+	if OS.get_name() != "Android" or not Engine.has_singleton(PURCHASE_AUTHORITY_SINGLETON):
+		return false
+	var bridge: Object = Engine.get_singleton(PURCHASE_AUTHORITY_SINGLETON)
+	if bridge == null or not bridge.has_method("refreshPaidEntitlements") or not bridge.has_signal("paidEntitlementsReadResult"):
+		return false
+	var callback := Callable(self, "_on_paid_entitlements_result_rc")
+	if not bridge.is_connected("paidEntitlementsReadResult", callback):
+		bridge.connect("paidEntitlementsReadResult", callback)
+	_paid_entitlements_bridge_rc = bridge
+	return true
+
+func request_paid_entitlements_rc() -> bool:
+	if not HYBRID_PAID_ENTITLEMENTS_DISPLAY_APPROVED or _paid_entitlements_pending_rc:
+		return false
+	var binding: String = GoogleAccountManager.get_monetization_account_binding()
+	if binding.is_empty():
+		_invalidate_paid_entitlements_rc("identity_required")
+		return false
+	if _paid_entitlements_bridge_rc == null or not is_instance_valid(_paid_entitlements_bridge_rc):
+		if not _connect_paid_entitlements_rc():
+			_invalidate_paid_entitlements_rc("not_connected")
+			return false
+	_paid_entitlements_pending_rc = true
+	_paid_entitlements_binding_rc = binding
+	_paid_entitlements_view_rc = HybridPaidEntitlementsRC.empty("loading")
+	paid_entitlements_rc_changed.emit(get_paid_entitlements_rc_view())
+	_paid_entitlements_bridge_rc.call("refreshPaidEntitlements")
+	return true
+
+func _on_paid_entitlements_result_rc(success: bool, status: String, payload: String) -> void:
+	if not _paid_entitlements_pending_rc:
+		return
+	var bound_uid: String = _paid_entitlements_binding_rc
+	_paid_entitlements_pending_rc = false
+	_paid_entitlements_binding_rc = ""
+	if bound_uid.is_empty() or GoogleAccountManager.get_monetization_account_binding() != bound_uid:
+		_invalidate_paid_entitlements_rc("identity_changed")
+		return
+	_paid_entitlements_view_rc = HybridPaidEntitlementsRC.from_native_result(success, status, payload)
+	paid_entitlements_rc_changed.emit(get_paid_entitlements_rc_view())
+
+
+## M12 read-only recovery handoff. Never writes game state or applies rewards.
+func get_paid_summon_recovery_m12_view() -> Dictionary:
+	if _paid_summon_recovery_view_m12.is_empty():
+		return HybridPaidSummonRecoveryM12.empty()
+	return _paid_summon_recovery_view_m12.duplicate(true)
+
+func _invalidate_paid_summon_recovery_m12(reason: String = "not_connected") -> void:
+	_paid_summon_recovery_request_m12 = ""
+	_paid_summon_recovery_view_m12 = HybridPaidSummonRecoveryM12.empty(reason)
+	paid_summon_recovery_m12_changed.emit(get_paid_summon_recovery_m12_view())
+
+func _connect_paid_summon_recovery_m12() -> bool:
+	_paid_summon_recovery_bridge_m12 = null
+	if OS.get_name() != "Android" or not Engine.has_singleton(PURCHASE_AUTHORITY_SINGLETON):
+		return false
+	var bridge: Object = Engine.get_singleton(PURCHASE_AUTHORITY_SINGLETON)
+	if bridge == null or not bridge.has_method("recoverPaidSummon") or not bridge.has_signal("paidSummonRecoveryResult"):
+		return false
+	var callback := Callable(self, "_on_paid_summon_recovery_result_m12")
+	if not bridge.is_connected("paidSummonRecoveryResult", callback):
+		bridge.connect("paidSummonRecoveryResult", callback)
+	_paid_summon_recovery_bridge_m12 = bridge
+	return true
+
+func request_paid_summon_recovery_m12(request_id: String) -> bool:
+	if not HYBRID_PAID_SUMMON_RECOVERY_READ_APPROVED:
+		return false
+	if not _paid_summon_recovery_request_m12.is_empty():
+		return false
+	if not HybridPaidSummonRecoveryM12.valid_request_id(request_id):
+		return false
+	if GoogleAccountManager.get_monetization_account_binding().is_empty():
+		_invalidate_paid_summon_recovery_m12("identity_required")
+		return false
+	if _paid_summon_recovery_bridge_m12 == null or not is_instance_valid(_paid_summon_recovery_bridge_m12):
+		if not _connect_paid_summon_recovery_m12():
+			_invalidate_paid_summon_recovery_m12("not_connected")
+			return false
+	_paid_summon_recovery_request_m12 = request_id.to_lower()
+	_paid_summon_recovery_view_m12 = HybridPaidSummonRecoveryM12.empty("loading")
+	paid_summon_recovery_m12_changed.emit(get_paid_summon_recovery_m12_view())
+	_paid_summon_recovery_bridge_m12.call("recoverPaidSummon", request_id)
+	return true
+
+func _on_paid_summon_recovery_result_m12(success: bool, status: String, payload: String) -> void:
+	if _paid_summon_recovery_request_m12.is_empty():
+		return
+	var expected_id: String = _paid_summon_recovery_request_m12
+	_paid_summon_recovery_request_m12 = ""
+	if GoogleAccountManager.get_monetization_account_binding().is_empty():
+		_invalidate_paid_summon_recovery_m12("identity_required")
+		return
+	_paid_summon_recovery_view_m12 = HybridPaidSummonRecoveryM12.from_native_result(
+		success, status, payload, expected_id
+	)
+	paid_summon_recovery_m12_changed.emit(get_paid_summon_recovery_m12_view())
 
 
 func get_pavilion_seals() -> int:
@@ -530,35 +765,30 @@ func restore_iap_purchases() -> void:
 
 func _connect_secure_purchase_transport() -> bool:
 	purchase_authority_bridge = null
-	if OS.get_name() != "Android":
-		return false
-	if not Engine.has_singleton(PURCHASE_AUTHORITY_SINGLETON):
+	if OS.get_name() != "Android" or not Engine.has_singleton(PURCHASE_AUTHORITY_SINGLETON):
 		return false
 	var bridge: Object = Engine.get_singleton(PURCHASE_AUTHORITY_SINGLETON)
 	if bridge == null:
 		return false
 	if (
-		not bridge.has_method("authorizePurchase")
-		or not bridge.has_method("isSecurePurchaseTransportConfigured")
-		or not bridge.has_signal("purchaseAuthorityResult")
+		not bridge.has_method("authorizePaidWalletPurchaseV2")
+		or not bridge.has_method("isPaidWalletPurchaseV2TransportConfigured")
+		or not bridge.has_signal("paidPurchaseWalletCreditResult")
 	):
 		return false
-	var callback := Callable(self, "_on_purchase_authority_result")
-	if not bridge.is_connected("purchaseAuthorityResult", callback):
-		bridge.connect("purchaseAuthorityResult", callback)
+	var callback := Callable(self, "_on_paid_purchase_wallet_credit_m14")
+	if not bridge.is_connected("paidPurchaseWalletCreditResult", callback):
+		bridge.connect("paidPurchaseWalletCreditResult", callback)
 	purchase_authority_bridge = bridge
 	return true
-
 
 func _has_secure_purchase_transport() -> bool:
 	return (
 		purchase_authority_bridge != null
 		and is_instance_valid(purchase_authority_bridge)
-		and purchase_authority_bridge.has_method("authorizePurchase")
-		and purchase_authority_bridge.has_method(
-			"isSecurePurchaseTransportConfigured"
-		)
-		and purchase_authority_bridge.has_signal("purchaseAuthorityResult")
+		and purchase_authority_bridge.has_method("authorizePaidWalletPurchaseV2")
+		and purchase_authority_bridge.has_method("isPaidWalletPurchaseV2TransportConfigured")
+		and purchase_authority_bridge.has_signal("paidPurchaseWalletCreditResult")
 	)
 
 
@@ -566,7 +796,7 @@ func _is_secure_purchase_transport_configured() -> bool:
 	if not _has_secure_purchase_transport():
 		return false
 	return bool(purchase_authority_bridge.call(
-		"isSecurePurchaseTransportConfigured"
+		"isPaidWalletPurchaseV2TransportConfigured"
 	))
 
 
@@ -596,6 +826,10 @@ func _connect_secure_purchase_identity() -> void:
 
 
 func _on_monetization_identity_changed(_ready: bool) -> void:
+	_invalidate_paid_entitlements_rc("identity_changed")
+	_invalidate_paid_purchase_receipt_m14("identity_changed")
+	_invalidate_paid_wallet_m9("identity_changed")
+	_invalidate_paid_summon_recovery_m12("identity_changed")
 	_refresh_secure_purchase_context()
 
 
@@ -705,72 +939,52 @@ func _on_billing_purchase_ready(
 		)
 		return
 	secure_purchase_in_flight_product_id = product_id
+	_secure_purchase_in_flight_binding_m14 = GoogleAccountManager.get_monetization_account_binding()
 	purchase_authority_bridge.call(
-		"authorizePurchase",
+		"authorizePaidWalletPurchaseV2",
 		_purchase_token
 	)
 
 
-func _on_purchase_authority_result(
-	success: bool,
-	_status: String,
-	grant_json: String
-) -> void:
-	var pending_product_id: String = secure_purchase_in_flight_product_id
+## M14: legacy local-grant listener is NOT connected. If invoked directly,
+## fail closed. No grant payload is ever allowed to mutate pavilion.save.
+func _on_purchase_authority_result(_success: bool, _status: String, _grant_json: String) -> void:
+	var product_id: String = secure_purchase_in_flight_product_id
 	secure_purchase_in_flight_product_id = ""
-	if pending_product_id.is_empty():
-		secure_purchase_recovery_rescan_requested = false
+	_secure_purchase_in_flight_binding_m14 = ""
+	if not product_id.is_empty():
+		_fail_secure_purchase_delivery(product_id, "Legacy local purchase grant is retired.")
+
+func get_paid_purchase_receipt_m14() -> Dictionary:
+	return _paid_purchase_receipt_m14.duplicate(true)
+
+func _invalidate_paid_purchase_receipt_m14(reason: String = "identity_changed") -> void:
+	_paid_purchase_receipt_m14 = HybridPaidPurchaseReceiptM14.empty(reason)
+	paid_purchase_receipt_m14_changed.emit(get_paid_purchase_receipt_m14())
+
+func _on_paid_purchase_wallet_credit_m14(success: bool, result_status: String, receipt_json: String) -> void:
+	var product_id: String = secure_purchase_in_flight_product_id
+	var expected_binding: String = _secure_purchase_in_flight_binding_m14
+	secure_purchase_in_flight_product_id = ""
+	_secure_purchase_in_flight_binding_m14 = ""
+	if product_id.is_empty():
 		return
-	if not success:
+	if expected_binding.is_empty() or GoogleAccountManager.get_monetization_account_binding() != expected_binding:
 		_cancel_secure_purchase_recovery_rescan()
-		_fail_secure_purchase_delivery(
-			pending_product_id,
-			"Secure purchase verification failed. Please try again."
-		)
+		_invalidate_paid_purchase_receipt_m14("identity_changed")
+		_fail_secure_purchase_delivery(product_id, "Account changed during purchase verification.")
 		return
-	var parsed: Variant = JSON.parse_string(grant_json)
-	if not (parsed is Dictionary):
+	_paid_purchase_receipt_m14 = HybridPaidPurchaseReceiptM14.from_native_result(
+		success, result_status, receipt_json
+	)
+	paid_purchase_receipt_m14_changed.emit(get_paid_purchase_receipt_m14())
+	if _paid_purchase_receipt_m14.get("status", "") != "credited":
 		_cancel_secure_purchase_recovery_rescan()
-		_fail_secure_purchase_delivery(
-			pending_product_id,
-			"Secure purchase verification returned an invalid grant."
-		)
-		return
-	var grant: Dictionary = parsed
-	var delivery_product_id: String = str(
-		grant.get("internal_product_id", "")
-	).strip_edges()
-	if (
-		delivery_product_id.is_empty()
-		or delivery_product_id != pending_product_id
-	):
-		_cancel_secure_purchase_recovery_rescan()
-		_fail_secure_purchase_delivery(
-			pending_product_id,
-			"Secure purchase product binding is invalid."
-		)
-		return
-	if not _apply_server_authorized_iap_grant(grant):
-		_cancel_secure_purchase_recovery_rescan()
-		var message: String = last_error
-		if message.is_empty():
-			message = "Secure purchase delivery failed."
-		_fail_secure_purchase_delivery(
-			delivery_product_id,
-			message
-		)
+		_fail_secure_purchase_delivery(product_id, "Server wallet credit unavailable. Retry purchase recovery.")
 		return
 	last_error = ""
-	billing_purchase_state_changed.emit(
-		delivery_product_id,
-		"delivered",
-		"Purchase delivered securely."
-	)
-	purchase_delivery_finished.emit(
-		delivery_product_id,
-		true,
-		"Purchase delivered securely."
-	)
+	billing_purchase_state_changed.emit(product_id, "wallet_credited", "Purchase credited to server wallet.")
+	purchase_delivery_finished.emit(product_id, true, "Purchase credited to server wallet.")
 	_continue_secure_purchase_recovery()
 
 
@@ -805,74 +1019,10 @@ func _fail_secure_purchase_delivery(
 ## Internal handoff target for M1B-2. Only a validated server grant may reach
 ## this function. Purchase token, order id, UID and client-claimed amount are
 ## intentionally absent from the API.
-func _apply_server_authorized_iap_grant(grant: Dictionary) -> bool:
-	last_error = ""
-	var expected_keys: Array = [
-		"purchase_contract_version",
-		"state",
-		"grant_id",
-		"internal_product_id",
-		"celestial_jade",
-	]
-	if not _dictionary_has_exact_keys(grant, expected_keys):
-		last_error = "Secure purchase grant shape is invalid."
-		return false
-	if (
-		typeof(grant.get("purchase_contract_version")) != TYPE_INT
-		or int(grant["purchase_contract_version"]) != 1
-		or str(grant.get("state", "")) != "grant_ready"
-	):
-		last_error = "Secure purchase grant contract is invalid."
-		return false
-
-	var grant_id: String = str(grant.get("grant_id", "")).strip_edges()
-	if not _is_iap_grant_id(grant_id):
-		last_error = "Secure purchase grant id is invalid."
-		return false
-
-	var product_id: String = str(
-		grant.get("internal_product_id", "")
-	).strip_edges()
-	var product: Dictionary = EconomyCatalog.get_iap_product(product_id)
-	if (
-		product.is_empty()
-		or str(product.get("type", ""))
-			!= EconomyCatalog.PRODUCT_TYPE_CONSUMABLE
-	):
-		last_error = "Secure purchase product is not supported."
-		return false
-
-	var jade_amount: int = int(grant.get("celestial_jade", 0))
-	if (
-		typeof(grant.get("celestial_jade")) != TYPE_INT
-		or jade_amount <= 0
-		or jade_amount != int(
-			product.get(EconomyCatalog.CURRENCY_CELESTIAL_JADE, 0)
-		)
-	):
-		last_error = "Secure purchase grant amount is invalid."
-		return false
-
-	var processed_iap: Array = _normalize_string_array(
-		state.get("processed_iap_grant_ids", [])
-	)
-	if grant_id in processed_iap:
-		return true
-	if SaveManager.is_progress_read_only():
-		last_error = "Restart the game to recover a pending purchase save."
-		return false
-
-	var next_state: Dictionary = state.duplicate(true)
-	next_state["celestial_jade"] = maxi(
-		int(next_state.get("celestial_jade", 0)) + jade_amount,
-		0
-	)
-	processed_iap.append(grant_id)
-	next_state["processed_iap_grant_ids"] = processed_iap
-	if not _commit_pavilion_state(next_state):
-		return false
-	pavilion_changed.emit()
-	return true
+func _apply_server_authorized_iap_grant(_grant: Dictionary) -> bool:
+	## Permanently retired. Local save grants are unsafe across two devices.
+	last_error = "Legacy local purchase grant is retired."
+	return false
 
 
 func _connect_cadence_hooks() -> void:

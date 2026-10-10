@@ -1,5 +1,6 @@
 extends CanvasLayer
 
+const M7E2Gate = preload("res://scripts/monetization/m7e2_legacy_security_gate.gd")
 ## Game Over UI
 ## Menangani Retry stage yang sama dan kembali ke Main Menu.
 
@@ -576,7 +577,7 @@ func _refresh_revive_button() -> void:
 		revive_button.text = tr("REVIVING...")
 		return
 
-	var policy: Dictionary = MonetizationManager.get_rewarded_policy_status(
+	var policy: Dictionary = M7E2Gate.get_policy_status(
 		RewardedBridge.PLACEMENT_ID
 	)
 	if bool(policy.get("available", false)):
@@ -612,7 +613,7 @@ func _on_revive_pressed() -> void:
 		_refresh_revive_button()
 		return
 
-	if not MonetizationManager.show_rewarded(
+	if not M7E2Gate.request(
 		RewardedBridge.PLACEMENT_ID
 	):
 		game_over_manager.call("cancel_pending_rewarded_revive")

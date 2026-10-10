@@ -1,5 +1,6 @@
 extends Node
 
+const M7E2Gate = preload("res://scripts/monetization/m7e2_legacy_security_gate.gd")
 ## Verified rewarded-ad boundary for Spirit Meditation.
 ## The UI may request an ad, but only this bridge can convert a verified
 ## provider callback into the snapshotted 2x offline-cultivation grant.
@@ -27,6 +28,13 @@ func _on_verified_rewarded_completed(
 	grant_id: String
 ) -> void:
 	if placement != PLACEMENT_ID:
+		return
+	if not M7E2Gate.earned_is_durable(placement, grant_id):
+		IdleCultivationManager.cancel_pending_rewarded_double_claim()
+		get_parent().call(
+			"publish_reward_delivery_result", PLACEMENT_ID, false, 0,
+			"Reward policy could not be saved."
+		)
 		return
 
 	var monetization: Variant = get_parent()

@@ -1,0 +1,19 @@
+{
+  "contract_version": 1,
+  "phase": "MONETIZATION_M7B",
+  "state": "TWO_LOCAL_REWARDED_OFFERS_CANDIDATE_QA_REQUIRED",
+  "previous_m7a_contract_untouched": true,
+  "old_m4_m5_m6_blob_locks_preserved": true,
+  "placements_added": ["daily_completion_cache", "refinement_supply"],
+  "new_reward_route_owner": "DailyQuestManager",
+  "sdk_earned_callback_not_server_ssv": true,
+  "requires_one_atomic_reward_and_claim_save_batch": true,
+  "daily_limit_each_placement": 1,
+  "max_new_offer_claims_per_day": 2,
+  "global_five_day_cap_enforced_for_legacy_calls": false,
+  "new_offer_guard_checks_existing_daily_usage": true,
+  "billing_activated": false,
+  "production_admob_release_validated": false,
+  "new_save_domain_created": false,
+  "android_live_ad_reward_verified": false
+}

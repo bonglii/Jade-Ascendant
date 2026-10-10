@@ -1,5 +1,6 @@
 extends Node
 
+const M7E2Gate = preload("res://scripts/monetization/m7e2_legacy_security_gate.gd")
 ## Home Live UI Phase 1
 ##
 ## Persistence strategy:
@@ -1121,7 +1122,7 @@ func get_boss_hunt_pending_milestone() -> String:
 
 
 func get_boss_hunt_rewarded_policy_status() -> Dictionary:
-	var policy: Dictionary = MonetizationManager.get_rewarded_policy_status(
+	var policy: Dictionary = M7E2Gate.get_policy_status(
 		BOSS_HUNT_REWARDED_PLACEMENT
 	)
 	policy["pending_milestone_id"] = _boss_hunt_pending_milestone
@@ -1135,7 +1136,7 @@ func is_boss_hunt_double_available(milestone_id: String) -> bool:
 		and not is_boss_hunt_milestone_claimed(milestone_id)
 		and not SaveManager.is_progress_read_only()
 		and _boss_hunt_pending_milestone.is_empty()
-		and MonetizationManager.rewarded_available(BOSS_HUNT_REWARDED_PLACEMENT)
+		and M7E2Gate.can_request(BOSS_HUNT_REWARDED_PLACEMENT)
 	)
 
 
@@ -1201,7 +1202,7 @@ func request_boss_hunt_double_claim(milestone_id: String) -> bool:
 	if not is_boss_hunt_double_available(milestone_id):
 		return false
 	_boss_hunt_pending_milestone = milestone_id
-	if not MonetizationManager.show_rewarded(BOSS_HUNT_REWARDED_PLACEMENT):
+	if not M7E2Gate.request(BOSS_HUNT_REWARDED_PLACEMENT):
 		_boss_hunt_pending_milestone = ""
 		live_ops_changed.emit()
 		return false
@@ -1214,6 +1215,13 @@ func _on_boss_hunt_verified_rewarded_completed(
 	grant_id: String
 ) -> void:
 	if placement != BOSS_HUNT_REWARDED_PLACEMENT:
+		return
+	if not M7E2Gate.earned_is_durable(placement, grant_id):
+		_boss_hunt_pending_milestone = ""
+		MonetizationManager.publish_reward_delivery_result(
+			placement, false, 0, "Reward policy could not be saved."
+		)
+		live_ops_changed.emit()
 		return
 	var milestone_id: String = _boss_hunt_pending_milestone
 	_boss_hunt_pending_milestone = ""
@@ -1459,7 +1467,7 @@ func get_treasure_hunt_pending_cache() -> String:
 
 
 func get_treasure_hunt_rewarded_policy_status() -> Dictionary:
-	var policy: Dictionary = MonetizationManager.get_rewarded_policy_status(
+	var policy: Dictionary = M7E2Gate.get_policy_status(
 		TREASURE_HUNT_REWARDED_PLACEMENT
 	)
 	policy["pending_cache_id"] = _treasure_hunt_pending_cache
@@ -1473,7 +1481,7 @@ func is_treasure_hunt_double_available(cache_id: String) -> bool:
 		and not is_treasure_hunt_cache_claimed(cache_id)
 		and not SaveManager.is_progress_read_only()
 		and _treasure_hunt_pending_cache.is_empty()
-		and MonetizationManager.rewarded_available(
+		and M7E2Gate.can_request(
 			TREASURE_HUNT_REWARDED_PLACEMENT
 		)
 	)
@@ -1526,7 +1534,7 @@ func request_treasure_hunt_double_claim(cache_id: String) -> bool:
 	if not is_treasure_hunt_double_available(cache_id):
 		return false
 	_treasure_hunt_pending_cache = cache_id
-	if not MonetizationManager.show_rewarded(
+	if not M7E2Gate.request(
 		TREASURE_HUNT_REWARDED_PLACEMENT
 	):
 		_treasure_hunt_pending_cache = ""
@@ -1541,6 +1549,13 @@ func _on_treasure_hunt_verified_rewarded_completed(
 	grant_id: String
 ) -> void:
 	if placement != TREASURE_HUNT_REWARDED_PLACEMENT:
+		return
+	if not M7E2Gate.earned_is_durable(placement, grant_id):
+		_treasure_hunt_pending_cache = ""
+		MonetizationManager.publish_reward_delivery_result(
+			placement, false, 0, "Reward policy could not be saved."
+		)
+		live_ops_changed.emit()
 		return
 	var cache_id: String = _treasure_hunt_pending_cache
 	_treasure_hunt_pending_cache = ""

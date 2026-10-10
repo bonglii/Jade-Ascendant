@@ -32,7 +32,7 @@ const OPTIONAL_BOOL_SAVE_KEYS: Array[String] = [
 	"sword_dao_resonance_owned", "yin_yang_reversal_owned", "heavenly_tribulation_owned",
 	"fire_orb_owned", "thunder_talisman_owned", "yin_yang_blades_owned",
 	"heavenly_sword_rain_owned", "eight_trigrams_formation_owned",
-	"defeat_pending", "rewarded_revive_used"
+	"defeat_pending", "rewarded_revive_used", "m7c2_qi_focus_active"
 ]
 
 @onready var player = get_tree().get_first_node_in_group("player")
@@ -58,6 +58,13 @@ func _ready() -> void:
 
 	if GameSession.consume_continue_request():
 		call_deferred("_load_continue")
+	elif player != null and JourneyManager.has_active_run():
+		# Consume only on a NEW Journey run, never on Continue.
+		player.m7c2_qi_focus_active = (
+			DailyQuestManager.m7c2_consume_for_new_run()
+		)
+		if bool(player.m7c2_qi_focus_active):
+			call_deferred("_m7c2_save_activation_checkpoint")
 
 func _load_continue() -> void:
 	DebugLogger.system(str("=========================================="))
@@ -147,6 +154,7 @@ func save_checkpoint() -> bool:
 	save_data["experience_to_next_level"] = (
 		player.experience_to_next_level
 	)
+	save_data["m7c2_qi_focus_active"] = bool(player.m7c2_qi_focus_active)
 
 	save_data["spiritual_insight_level"] = (
 		player.spiritual_insight_level
@@ -772,6 +780,9 @@ func load_checkpoint() -> bool:
 		player.experience_to_next_level = save_data[
 			"experience_to_next_level"
 		]
+	player.m7c2_qi_focus_active = bool(
+		save_data.get("m7c2_qi_focus_active", false)
+	)
 
 	player.spiritual_insight_level = clampi(
 		int(
@@ -1420,3 +1431,16 @@ func delete_checkpoint() -> bool:
 	if bool(delete_result.get("success", false)):
 		defeat_pending = false
 	return bool(delete_result.get("success", false))
+
+
+## M7C2: record activated bonus at the first safe opportunity.
+## Continue must restore the checkpoint flag without spending another token.
+func _m7c2_save_activation_checkpoint() -> void:
+	if not is_inside_tree() or player == null:
+		return
+	if not bool(player.m7c2_qi_focus_active):
+		return
+	if not JourneyManager.has_active_run():
+		return
+	if not save_checkpoint():
+		push_warning("M7C2: first Qi Focus checkpoint was not saved.")

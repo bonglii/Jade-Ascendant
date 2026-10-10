@@ -1,0 +1,18 @@
+{
+  "phase": "MONETIZATION_M7C1",
+  "state": "VICTORY_ENCORE_LOCAL_SDK_REWARD_CALLBACK_QA_PENDING",
+  "rewarded_placement": "victory_encore",
+  "reward_type": "repeat_stage_spirit_stone_bonus",
+  "bonus_percent": 50,
+  "maximum_bonus_stones": 100,
+  "per_day_placement_claims": 1,
+  "global_five_day_cap_enforced_for_legacy_calls": false,
+  "provider_has_signed_ssv": false,
+  "requires_committed_repeat_clear_reward": true,
+  "reward_and_receipt_atomic_in_daily_quests_save": true,
+  "existing_admob_provider_modified": false,
+  "existing_m4_m6_lock_modified": false,
+  "existing_victory_manager_modified": false,
+  "existing_m7b_bridges_modified": false,
+  "requires_android_test_ad_validation": true
+}

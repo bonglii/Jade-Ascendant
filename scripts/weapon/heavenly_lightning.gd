@@ -13,6 +13,8 @@ var lightning_damage: float = 0.0
 var lightning_radius: float = DEFAULT_RADIUS
 var player_stats: Node = null
 var has_impacted: bool = false
+var _visual_elapsed: float = 0.0
+var _visual_active: bool = false
 
 @onready var collision_shape: CollisionShape2D = (
 	get_node_or_null("CollisionShape2D")
@@ -24,6 +26,7 @@ func _ready() -> void:
 	collision_layer = 0
 	collision_mask = ENEMY_COLLISION_MASK
 	monitoring = true
+	set_process(false)
 
 	apply_lightning_radius()
 
@@ -81,39 +84,9 @@ func apply_lightning_radius() -> void:
 	circle_shape.radius = lightning_radius
 
 
-func create_ring_points(
-	ring_radius: float,
-	segments: int = 40
-) -> PackedVector2Array:
-	var points := PackedVector2Array()
-
-	for index in range(segments + 1):
-		var angle: float = (
-			TAU * float(index) / float(segments)
-		)
-		points.append(
-			Vector2.RIGHT.rotated(angle)
-			* ring_radius
-		)
-
-	return points
-
-
-func _make_line(
-	points: PackedVector2Array,
-	width: float,
-	color: Color
-) -> Line2D:
-	var line := Line2D.new()
-	line.width = width
-	line.default_color = color
-	line.antialiased = true
-	line.points = points
-	add_child(line)
-	return line
-
-
 func create_impact_visual() -> void:
+	# Instantaneous gameplay impact only. No fake wind-up or new damage area.
+	# One CanvasItem draws the entire bounded visual; no per-strike Line2Ds.
 	CombatFeedback.lightning(
 		global_position + Vector2(0.0, -132.0),
 		global_position,
@@ -121,68 +94,70 @@ func create_impact_visual() -> void:
 		true
 	)
 	AudioManager.play_sfx("chain")
-
-	# This ring appears only when damage becomes active and matches actual radius.
-	var outer := _make_line(
-		create_ring_points(lightning_radius),
-		3.0,
-		Color(0.58, 0.90, 1.0, 0.80)
-	)
-	var glow := _make_line(
-		create_ring_points(lightning_radius),
-		10.0,
-		Color(0.24, 0.62, 1.0, 0.12)
-	)
-	var inner := _make_line(
-		create_ring_points(lightning_radius * 0.46),
-		2.0,
-		Color(0.88, 0.98, 1.0, 0.84)
-	)
-
-	var ray_count: int = (
-		4 if SettingsManager.reduced_effects else 10
-	)
-	for index in range(ray_count):
-		var direction := Vector2.RIGHT.rotated(
-			float(index) * TAU / float(ray_count)
-		)
-		var ray := _make_line(
-			PackedVector2Array([
-				direction * 8.0,
-				direction * lightning_radius * 0.86
-			]),
-			1.8 if index % 2 == 0 else 1.2,
-			Color(0.66, 0.92, 1.0, 0.72)
-		)
-
-		var ray_tween := create_tween()
-		ray_tween.tween_property(
-			ray,
-			"modulate:a",
-			0.0,
-			IMPACT_VISUAL_DURATION
-		)
-
-	var tween := create_tween()
-	tween.set_parallel(true)
-
-	for ring in [outer, glow, inner]:
-		ring.scale = Vector2.ONE * 0.45
-		tween.tween_property(
-			ring,
-			"scale",
-			Vector2.ONE,
-			IMPACT_VISUAL_DURATION
-		)
-		tween.tween_property(
-			ring,
-			"modulate:a",
-			0.0,
-			IMPACT_VISUAL_DURATION
-		)
-
+	_visual_elapsed = 0.0
+	_visual_active = true
+	set_process(true)
+	queue_redraw()
 	if not SettingsManager.reduced_effects:
 		CombatFeedback.impulse(1.8)
+
+
+func _process(delta: float) -> void:
+	if not _visual_active:
+		return
+	_visual_elapsed = minf(_visual_elapsed + delta, IMPACT_VISUAL_DURATION)
+	queue_redraw()
+	if _visual_elapsed >= IMPACT_VISUAL_DURATION:
+		_visual_active = false
+		set_process(false)
+
+
+func _draw() -> void:
+	if not _visual_active:
+		return
+	var progress: float = clampf(
+		_visual_elapsed / maxf(IMPACT_VISUAL_DURATION, 0.01),
+		0.0, 1.0
+	)
+	var fade: float = (1.0 - progress) * (1.0 - progress)
+	var reduced: bool = SettingsManager.reduced_effects
+	var hit_radius: float = maxf(lightning_radius, 0.01)
+	var expanding_radius: float = hit_radius * lerpf(0.45, 1.0, progress)
+
+	# The outer ring never grows past the real physics query radius.
+	if not reduced:
+		draw_arc(
+			Vector2.ZERO, expanding_radius, 0.0, TAU, 40,
+			Color(0.26, 0.62, 1.0, 0.16 * fade), 10.0, true
+		)
+	draw_arc(
+		Vector2.ZERO, expanding_radius, 0.0, TAU, 40,
+		Color(0.66, 0.94, 1.0, 0.92 * fade), 3.0, true
+	)
+	draw_arc(
+		Vector2.ZERO, expanding_radius * 0.46, 0.0, TAU, 28,
+		Color(0.92, 1.0, 0.91, 0.86 * fade), 1.8, true
+	)
+
+	var ray_count: int = 4 if reduced else 10
+	for index in range(ray_count):
+		var direction: Vector2 = Vector2.RIGHT.rotated(
+			TAU * float(index) / float(ray_count)
+		)
+		draw_line(
+			direction * hit_radius * 0.12,
+			direction * hit_radius * 0.86,
+			Color(0.68, 0.93, 1.0, 0.72 * fade),
+			1.8 if index % 2 == 0 else 1.2, true
+		)
+
+	# A small gold center identifies Tribulation as an empowered PLAYER hit.
+	# It stays far inside the gameplay radius and does not suggest another AoE.
+	if not reduced:
+		draw_circle(
+			Vector2.ZERO, minf(hit_radius * 0.10, 5.5),
+			Color(1.0, 0.86, 0.45, 0.70 * fade)
+		)
 
 
 func impact() -> void:

@@ -1,0 +1,32 @@
+{
+  "phase": "MONETIZATION_M7E4E3",
+  "kind": "additive_disabled_crash_safe_delivery_state_machine_dry_run",
+  "depends_on": ["M7E4B", "M7E4C", "M7E4D1", "M7E4E1", "M7E4E2"],
+  "user_reported_M7E4E2_QA_pass": true,
+  "protocol": ["AUTHORITATIVE_SERVER_INTENT", "SSV_VERIFIED_PENDING_DELIVERY", "AUTHENTICATED_INBOX", "ATOMIC_LOCAL_GRANT_PLUS_RECEIPT", "SERVER_ACK_AFTER_LOCAL_COMMIT", "RESTART_RETRY_WITHOUT_REGRANT"],
+  "this_gate_only": {
+    "in_memory_qa_simulator": true,
+    "crash_window_tests": true,
+    "concurrent_retry_tests": true,
+    "account_change_rejection": true,
+    "real_Godot_reward_grant": false,
+    "persistent_Godot_receipt_journal": false,
+    "server_ack_endpoint": false,
+    "firebase_authenticated_delivery_callable": false,
+    "android_native_bridge_registered": false,
+    "monetization_manager_modified": false,
+    "admob_provider_modified": false,
+    "legacy_reward_routes_modified": false,
+    "production_ssv_enabled": false,
+    "release_approved": false
+  },
+  "known_release_blockers": [
+    "LEGACY_SDK_CALLBACK_AND_SSV_DOUBLE_GRANT_MIGRATION_UNPROVEN",
+    "REAL_LOCAL_SAVE_AND_RECEIPT_ATOMICITY_NOT_IMPLEMENTED",
+    "SERVER_AUTHENTICATED_ACK_PROTOCOL_NOT_IMPLEMENTED",
+    "SERVER_ISSUED_ADMOB_CUSTOM_DATA_INTENT_NOT_WIRED",
+    "GOOGLE_GUEST_ACCOUNT_UID_CONTINUITY_NOT_PROVEN",
+    "FIRESTORE_ANDROID_FAULT_INJECTION_AND_EXACT_SHA_CI_REQUIRED"
+  ],
+  "verdict": "RELEASE_HOLD"
+}

@@ -147,6 +147,17 @@ func _build_panel() -> void:
 	_add_row(body, "crit_damage", "CRITICAL DAMAGE")
 	_add_row(body, "sword_intent", "SWORD INTENT")
 	_add_row(body, "attack_speed", "ATTACK SPEED BONUS")
+	_add_section(body, "ACTIVE WEAPONS")
+	_add_row(body, "weapon_spirit_sword", "SPIRIT SWORD")
+	_add_row(body, "weapon_fire_orb", "FIRE ORB")
+	_add_row(body, "weapon_thunder_talisman", "THUNDER TALISMAN")
+	_add_row(body, "weapon_yin_yang_blades", "YIN-YANG BLADES")
+	_add_row(body, "weapon_heavenly_sword_rain", "HEAVENLY SWORD RAIN")
+	_add_row(body, "weapon_eight_trigrams_formation", "EIGHT TRIGRAMS")
+	_add_section(body, "RESONANCE UNLOCKS")
+	_add_row(body, "resonance_sword", "SWORD DAO")
+	_add_row(body, "resonance_reversal", "YIN-YANG REVERSAL")
+	_add_row(body, "resonance_tribulation", "HEAVENLY TRIBULATION")
 	_add_section(body, "MOBILITY AND GROWTH")
 	_add_row(body, "movement", "MAX MOVEMENT SPEED")
 	_add_row(body, "exp", "EXP MULTIPLIER")
@@ -258,3 +269,61 @@ func _refresh_snapshot(stats: Node) -> void:
 		_set_value("exp", "%.3fx" % float(
 			_player.call("get_experience_multiplier")
 		))
+	_refresh_live_loadout(stats)
+
+
+func _refresh_live_loadout(stats: Node) -> void:
+	# Snapshot-only: no gameplay calculation, no timers, no equipment mutation.
+	var manager: Node = _player.get_node_or_null("WeaponManager")
+	var weapon_specs: Array[Dictionary] = [
+		{"key": "weapon_spirit_sword", "name": "Spirit Sword"},
+		{"key": "weapon_fire_orb", "name": "Fire Orb"},
+		{"key": "weapon_thunder_talisman", "name": "Thunder Talisman"},
+		{"key": "weapon_yin_yang_blades", "name": "Yin-Yang Blades"},
+		{"key": "weapon_heavenly_sword_rain", "name": "Heavenly Sword Rain"},
+		{"key": "weapon_eight_trigrams_formation", "name": "Eight Trigrams Formation"}
+	]
+	for spec: Dictionary in weapon_specs:
+		var key: String = str(spec["key"])
+		var weapon: Node = null
+		if manager != null and manager.has_method("get_weapon_by_name"):
+			weapon = manager.call("get_weapon_by_name", str(spec["name"])) as Node
+		var value_label: Label = _rows.get(key, null) as Label
+		if value_label == null:
+			continue
+		var row: Control = value_label.get_parent() as Control
+		if row != null:
+			row.visible = weapon != null and is_instance_valid(weapon)
+		if weapon != null and is_instance_valid(weapon):
+			_set_value(key, "LV %d" % int(weapon.get("level")))
+
+	var sword_unlocked: bool = (
+		stats.has_method("has_sword_dao_resonance")
+		and bool(stats.call("has_sword_dao_resonance"))
+	)
+	var reversal_unlocked: bool = (
+		stats.has_method("has_yin_yang_reversal")
+		and bool(stats.call("has_yin_yang_reversal"))
+	)
+	var tribulation_unlocked: bool = (
+		stats.has_method("has_heavenly_tribulation")
+		and bool(stats.call("has_heavenly_tribulation"))
+	)
+	_set_value("resonance_sword", "UNLOCKED" if sword_unlocked else "LOCKED")
+	_set_value("resonance_tribulation", "UNLOCKED" if tribulation_unlocked else "LOCKED")
+
+	var reversal_text: String = "UNLOCKED" if reversal_unlocked else "LOCKED"
+	var reversal_active: bool = false
+	if reversal_unlocked and manager != null and manager.has_method("get_weapon_by_name"):
+		var blades: Node = manager.call("get_weapon_by_name", "Yin-Yang Blades") as Node
+		if blades != null and is_instance_valid(blades):
+			reversal_active = bool(blades.get("reversal_active"))
+			if reversal_active:
+				var remaining: float = maxf(float(blades.get("reversal_time_remaining")), 0.0)
+				reversal_text = "ACTIVE %.1fs" % remaining
+	_set_value("resonance_reversal", reversal_text)
+	var reversal_label: Label = _rows.get("resonance_reversal", null) as Label
+	if reversal_label != null:
+		reversal_label.add_theme_color_override(
+			"font_color", GOLD if reversal_active else JADE
+		)

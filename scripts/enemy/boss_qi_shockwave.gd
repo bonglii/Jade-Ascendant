@@ -131,6 +131,21 @@ func setup_telegraph_visual() -> void:
 	)
 	add_child(telegraph_outline)
 
+	# Only the existing REAL danger boundary changes color. No added geometry,
+	# no altered hitbox, wind-up timing, impact timing or camera flash.
+	# Crimson arenas use warm ivory to contrast the already-red background.
+	var imminent_edge: Color = Color(1.0, 0.38, 0.26, 0.98)
+	if presentation_theme == "crimson_moon":
+		imminent_edge = Color(1.0, 0.92, 0.62, 0.98)
+	var imminent_tween: Tween = create_tween()
+	imminent_tween.tween_interval(maxf(telegraph_duration * 0.65, 0.0))
+	imminent_tween.tween_property(
+		telegraph_outline,
+		"default_color",
+		imminent_edge,
+		maxf(telegraph_duration * 0.35, 0.01)
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+
 	## Preparation cue from Boss center; never represents damage radius.
 	charge_ring = Line2D.new()
 	charge_ring.z_index = 5

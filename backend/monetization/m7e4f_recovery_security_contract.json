@@ -1,0 +1,32 @@
+{
+  "phase": "MONETIZATION_M7E4F",
+  "kind": "additive_fault_injection_and_emulator_test_gate",
+  "featureFlags": {
+    "productionEnabled": false,
+    "nativeBridgeActivated": false,
+    "localSaveReceiptImplemented": false,
+    "serverAckImplemented": false,
+    "serverAdIntentIssuanceImplemented": false,
+    "legacyRewardMigrationApproved": false
+  },
+  "checks": [
+    "randomized_model_recovery",
+    "bad_signature_fails_closed",
+    "firestore_commit_failure_no_write",
+    "parallel_scv_once_only",
+    "transaction_replay_prevented",
+    "daily_5_limit",
+    "dao_1_per_run"
+  ],
+  "knownBlockers": [
+    "LOCAL_ATOMIC_RECEIPT_NOT_IMPLEMENTED",
+    "SERVER_AUTHENTICATED_ACK_NOT_IMPLEMENTED",
+    "SERVER_ISSUED_SSV_INTENT_NOT_WIRED",
+    "LEGACY_SDK_REWARD_MIGRATION_NOT_IMPLEMENTED",
+    "AUTHENTICATED_NATIVE_INBOX_NOT_ACTIVATED",
+    "GOOGLE_GUEST_IDENTITY_QA_REQUIRED",
+    "ANDROID_FAULT_INJECTION_PENDING",
+    "EXACT_SHA_CI_PENDING"
+  ],
+  "verdict": "RELEASE_HOLD"
+}

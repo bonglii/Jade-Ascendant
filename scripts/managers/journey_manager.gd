@@ -54,6 +54,7 @@ var active_run_stage_id: int = NO_ACTIVE_ID
 
 var unlocked_stage_keys: Array = []
 var cleared_stage_keys: Array = []
+var m7d_run_id: String = ""
 
 func _ready() -> void:
 	_load_progress()
@@ -188,6 +189,10 @@ func begin_selected_stage() -> String:
 	var scene_path := str(stage_data.get("scene_path", ""))
 	if scene_path.is_empty():
 		return ""
+	var next_run_id: String = _m7d_new_run_nonce()
+	if next_run_id.is_empty():
+		return ""
+	m7d_run_id = next_run_id
 	active_run_chapter_id = selected_chapter_id
 	active_run_stage_id = selected_stage_id
 	_save_progress()
@@ -367,6 +372,7 @@ func _load_progress() -> void:
 	)
 	unlocked_stage_keys = save_data.get("unlocked_stage_keys", [])
 	cleared_stage_keys = save_data.get("cleared_stage_keys", [])
+	m7d_run_id = str(save_data.get("m7d_run_id", ""))
 
 func build_save_data() -> Dictionary:
 	return {
@@ -376,5 +382,15 @@ func build_save_data() -> Dictionary:
 		"active_run_chapter_id": active_run_chapter_id,
 		"active_run_stage_id": active_run_stage_id,
 		"unlocked_stage_keys": unlocked_stage_keys.duplicate(),
-		"cleared_stage_keys": cleared_stage_keys.duplicate()
+		"cleared_stage_keys": cleared_stage_keys.duplicate(),
+		"m7d_run_id": m7d_run_id
 	}
+
+
+## New selected Journey runs receive a fresh persistent one-time entitlement ID.
+func _m7d_new_run_nonce() -> String:
+	var source := Crypto.new()
+	var bytes: PackedByteArray = source.generate_random_bytes(16)
+	if bytes.size() != 16:
+		return ""
+	return bytes.hex_encode()

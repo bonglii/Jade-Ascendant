@@ -1,0 +1,23 @@
+{
+  "contract_version": 1,
+  "phase": "MONETIZATION_M7A",
+  "state": "ADDITIVE_CATALOG_NONSHIPPING",
+  "baseline_git_sha": "ff5b6152151eee9b1a2f7f4e75e896dea4b9564c",
+  "existing_shipping_placements": 5,
+  "planned_disabled_placements": 5,
+  "planned_total_choices": 10,
+  "target_optional_ad_global_daily_cap": 5,
+  "global_cap_implemented": false,
+  "new_reward_delivery_enabled": false,
+  "new_ad_placement_enabled": false,
+  "existing_ui_routes_rewired": false,
+  "existing_monetization_manager_mutated": false,
+  "admob_provider_mutated": false,
+  "prior_m4_m5_m6_hash_locks_preserved": true,
+  "admob_sdk_callback_equals_ssv": false,
+  "server_side_reward_verification_implemented": false,
+  "google_play_purchases_activated": false,
+  "paid_purchase_production_gate_passed": false,
+  "no_new_save_domain": true,
+  "next_gate": "M7B_GRANT_AUTHORITY_AND_USER_INTERFACE"
+}

@@ -1,5 +1,6 @@
 extends "res://scripts/ui/pavilion_screen.gd"
 
+const M7E2Gate = preload("res://scripts/monetization/m7e2_legacy_security_gate.gd")
 ## Commercial rewarded-ad presentation for Jade Pavilion.
 ## Economy authority remains in PavilionManager; this layer only requests a
 ## verified rewarded placement and presents its saved result.
@@ -536,7 +537,7 @@ func _refresh_rewarded_seal_section() -> void:
 		return
 
 	var policy: Dictionary = (
-		MonetizationManager.get_rewarded_policy_status(
+		M7E2Gate.get_policy_status(
 			RewardedBridge.PLACEMENT_ID
 		)
 	)
@@ -663,7 +664,7 @@ func _request_rewarded_seal() -> void:
 		_refresh_rewarded_seal_section()
 		return
 
-	if not MonetizationManager.show_rewarded(
+	if not M7E2Gate.request(
 		RewardedBridge.PLACEMENT_ID
 	):
 		_show_rewarded_message(

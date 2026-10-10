@@ -43,8 +43,9 @@ func _physics_process(delta: float) -> void:
 	for body in get_overlapping_bodies():
 		body_contacted.emit(body)
 
-	if not SettingsManager.reduced_effects:
-		queue_redraw()
+	# The blade trail has no time-dependent geometry. The Area2D transform
+	# already moves and rotates its cached CanvasItem each physics frame.
+	# Redraw only when polarity or Reversal changes.
 
 
 func _get_player_combat_origin_local() -> Vector2:

@@ -1,0 +1,48 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {join} from 'node:path';
+import {createHash} from 'node:crypto';
+const root=process.cwd();
+const read=p=>readFileSync(join(root,p),'utf8');
+const sha=p=>{const b=readFileSync(join(root,p));return createHash('sha1').update(Buffer.concat([Buffer.from(`blob ${b.length}\0`),b])).digest('hex')};
+const bridge=read('scripts/monetization/m7c_victory_encore_bridge.gd');
+const victory=read('scripts/ui/VictoryUI.gd');
+const boundary=JSON.parse(read('backend/monetization/m7c_victory_encore_boundary.json'));
+test('M7C1: eligible only from persisted repeat-clear award and explicit opt-in',()=>{
+ assert.match(bridge,/RewardManager\.reward_granted\.connect\(_on_reward_granted\)/);
+ assert.match(bridge,/source_type != RewardManager\.SOURCE_STAGE_CLEAR/);
+ assert.match(bridge,/source_id\.ends_with\("_repeat_clear"\)/);
+ assert.match(bridge,/JourneyManager\.is_stage_cleared\(chapter, stage\)/);
+ assert.match(bridge,/get_stage_clear_reward\(chapter, stage, false\)/);
+ assert.match(victory,/_m7c_button\.pressed\.connect\(_on_m7c_victory_offer_pressed\)/);
+ assert.match(victory,/func show_victory\(\) -> void:/);
+ assert.match(victory,/_refresh_m7c_offer\(\)/);
+ assert.match(bridge,/MonetizationManager\.show_rewarded\(PLACEMENT_ID\)/);
+ assert.equal(boundary.requires_committed_repeat_clear_reward,true);
+});
+test('M7C1: reward needs matching callback, durable policy, atomic save and replay flags',()=>{
+ assert.match(bridge,/MonetizationManager\.verified_rewarded_completed\.connect\(_on_sdk_reward\)/);
+ assert.match(bridge,/grant_id != _pending_grant_id/);
+ assert.match(bridge,/MonetizationManager\.policy_store\.call\("load_state"\)/);
+ assert.match(bridge,/DailyQuestManager\.m7b_processed_grant_ids/);
+ assert.match(bridge,/DailyQuestManager\.m7b_claimed_placement_ids/);
+ assert.match(bridge,/RewardManager\.grant_reward\(/);
+ assert.match(bridge,/\{"daily_quests": next_daily\}/);
+ assert.match(bridge,/if bool\(result\.get\("success", false\)\):/);
+ assert.doesNotMatch(victory,/RewardManager\.grant_reward\(/);
+ assert.doesNotMatch(victory,/MonetizationManager\.show_rewarded\(/);
+ assert.equal(boundary.reward_and_receipt_atomic_in_daily_quests_save,true);
+});
+test('M7C1: budget bounded, legacy M4-M6 and M7B untouched',()=>{
+ assert.match(bridge,/const MAX_BONUS_STONES: int = 100/);
+ assert.match(bridge,/floori\(float\(stones\) \* 0\.5\)/);
+ assert.match(bridge,/NON_REVIVE_DAILY_CAP_TARGET: int = 5/);
+ assert.match(bridge,/get_rewarded_policy_status\(PLACEMENT_ID\)/);
+ assert.equal(boundary.global_five_day_cap_enforced_for_legacy_calls,false);
+ assert.equal(boundary.provider_has_signed_ssv,false);
+ assert.equal(sha('scripts/managers/monetization_manager.gd'),'83d491aef274edd8b9d7f9be3cbff734fcab0eb5');
+ assert.equal(sha('scripts/monetization/admob_provider.gd'),'a2d72a5f6d358157d8b30677183dcaee3abc8512');
+ assert.equal(sha('scripts/managers/live_ops_manager.gd'),'5857e9ac635d2bf0d0c3ed6cc2f18405affc4c60');
+ assert.equal(sha('scripts/monetization/m7b_daily_reward_bridge.gd'),'7681701e557f165f41d76d7d9e9eebf0250595bd');
+});

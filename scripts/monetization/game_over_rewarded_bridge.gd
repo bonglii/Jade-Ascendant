@@ -1,5 +1,6 @@
 extends Node
 
+const M7E2Gate = preload("res://scripts/monetization/m7e2_legacy_security_gate.gd")
 ## Verified rewarded-ad boundary for in-run revive.
 ## The provider callback never mutates gameplay directly; it is forwarded only
 ## to the currently defeated run's GameOverManager.
@@ -34,6 +35,12 @@ func _on_verified_rewarded_completed(
 	grant_id: String
 ) -> void:
 	if placement != PLACEMENT_ID:
+		return
+	if not M7E2Gate.earned_is_durable(placement, grant_id):
+		var defeated: Node = _get_game_over_manager()
+		if defeated != null:
+			defeated.call("cancel_pending_rewarded_revive")
+		_publish(false, "Reward policy could not be saved.")
 		return
 	var game_over_manager: Node = _get_game_over_manager()
 	if game_over_manager == null:

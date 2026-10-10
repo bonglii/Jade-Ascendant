@@ -1,0 +1,20 @@
+{
+  "phase": "MONETIZATION_M7E4D",
+  "kind": "emulator_only_http_ssv_firestore_boundary",
+  "baseline_head": "ff5b6152151eee9b1a2f7f4e75e896dea4b9564c",
+  "emulator_project": "demo-jade-ssv",
+  "http_method": "GET",
+  "acknowledge_only_on_durable_receipt": true,
+  "idempotent_callback_200": true,
+  "firebase_function_enabled_in_production": false,
+  "trusted_key_download_url": "https://www.gstatic.com/admob/reward/verifier-keys.json",
+  "trusted_key_cache_max_hours": 24,
+  "keys_from_http_request": false,
+  "server_side_intent_issuer": false,
+  "reward_delivery": false,
+  "firebase_production_deployed": false,
+  "iap_enabled": false,
+  "android_client_ssv_wired": false,
+  "local_reward_recovery_done": false,
+  "release_verdict": "RELEASE_HOLD"
+}

@@ -1,0 +1,22 @@
+# PREDEPLOY CONFIG ONLY. DO NOT deploy before secrets and Android integration are verified.
+name = "jade-ascendant-iap"
+main = "src/index.mjs"
+compatibility_date = "2026-09-01"
+workers_dev = true
+
+[vars]
+JADE_IAP_BACKEND_ENABLED = "false"
+JADE_PAID_WALLET_READ_ENABLED = "false"
+JADE_SUMMON_RECOVERY_READ_ENABLED = "false"
+JADE_PAID_WALLET_CREDIT_V2_ENABLED = "false"
+JADE_PAID_SUMMON_WRITE_ENABLED = "false"
+JADE_PAID_ENTITLEMENTS_READ_ENABLED = "false"
+FIREBASE_PROJECT_ID = "jade-ascendant"
+FIREBASE_PROJECT_NUMBER = "350718070767"
+JADE_ANDROID_FIREBASE_APP_ID = "1:350718070767:android:e5520012a501d2856cf01a"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "jade-iap-ledger"
+database_id = "f0e59ec4-effb-4002-b9a5-d246965b5b83"
+migrations_dir = "migrations"

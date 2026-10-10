@@ -24,6 +24,14 @@ const TrialsRecordSealScript = preload(
 @onready var achievement_tab: Button = %AchievementTab
 @onready var challenge_tab: Button = %ChallengeTab
 
+var _m7b_buttons: Dictionary = {}
+var _m7b_status_labels: Dictionary = {}
+var _m7b_last_message: String = ""
+var _m7b_refresh_left: float = 1.0
+var _m7c2_focus_button: Button = null
+var _m7c2_focus_status: Label = null
+var _m7c2_focus_message: String = ""
+
 
 func _ready() -> void:
 	SceneTransitionManager.set_back_handler(handle_system_back)
@@ -34,11 +42,21 @@ func _ready() -> void:
 	challenge_tab.visible = false
 
 	_connect_manager_signals()
+	if not DailyQuestManager.m7c2_offer_finished.is_connected(_on_m7c2_offer_finished):
+		DailyQuestManager.m7c2_offer_finished.connect(_on_m7c2_offer_finished)
 	_refresh_screen()
 
 	DebugLogger.system(
 		"Trials Hub aktif! Section: Daily Disciplines"
 	)
+
+
+func _process(delta: float) -> void:
+	_m7b_refresh_left -= delta
+	if _m7b_refresh_left <= 0.0:
+		_m7b_refresh_left = 1.0
+		_refresh_m7b_offer_buttons()
+		_refresh_m7c2_offer_button()
 
 
 func _connect_manager_signals() -> void:
@@ -69,6 +87,9 @@ func _connect_manager_signals() -> void:
 		DailyQuestManager.daily_quests_reset.connect(
 			_on_daily_quests_reset
 		)
+
+	if not DailyQuestManager.m7b_offer_finished.is_connected(_on_m7b_reward_finished):
+		DailyQuestManager.m7b_offer_finished.connect(_on_m7b_reward_finished)
 
 
 func _refresh_screen() -> void:
@@ -159,6 +180,7 @@ func _rebuild_quest_list() -> void:
 	for child: Node in quest_list.get_children():
 		child.queue_free()
 
+	quest_list.add_child(_build_m7b_offer_board())
 	var sorted_ids: Array[String] = _get_sorted_daily_ids()
 
 	if sorted_ids.is_empty():
@@ -683,3 +705,153 @@ func _return_to_journey() -> void:
 			"TrialsHub: gagal kembali ke Journey. Error code: "
 			+ str(change_error)
 		)
+
+# M7B optional rewards live inside the EXISTING Daily Disciplines scroll.
+# Nothing obstructs ordinary quests; SDK ad is only invoked from button taps.
+func _build_m7b_offer_board() -> PanelContainer:
+	var card := PanelContainer.new()
+	card.name = "M7BRewardBoard"
+	var frame := StyleBoxFlat.new()
+	frame.bg_color = Color(0.013, 0.042, 0.050, 0.98)
+	frame.border_color = Color(0.88, 0.68, 0.28, 0.84)
+	frame.set_border_width_all(1)
+	frame.set_corner_radius_all(10)
+	card.add_theme_stylebox_override("panel", frame)
+	var margin := MarginContainer.new()
+	for edge: String in ["left", "right", "top", "bottom"]:
+		margin.add_theme_constant_override("margin_" + edge, 12)
+	card.add_child(margin)
+	var layout := VBoxContainer.new()
+	layout.add_theme_constant_override("separation", 8)
+	margin.add_child(layout)
+	var heading := Label.new()
+	heading.text = "DAO REWARDS  •  OPTIONAL ADS"
+	heading.theme_type_variation = &"JadeHeroName"
+	heading.add_theme_font_size_override("font_size", 17)
+	heading.add_theme_color_override("font_color", Color(1.0, 0.82, 0.44))
+	layout.add_child(heading)
+	var helper := Label.new()
+	helper.text = "Watch only if you want the shown reward. Free daily quests stay available."
+	helper.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	helper.add_theme_font_size_override("font_size", 12)
+	layout.add_child(helper)
+	_m7b_buttons.clear()
+	_m7b_status_labels.clear()
+	for offer: Dictionary in [
+		{"id": "daily_completion_cache", "title": "+50 SPIRIT STONES"},
+		{"id": "refinement_supply", "title": "+2 REFINEMENT SHARDS"},
+	]:
+		var placement: String = str(offer["id"])
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		layout.add_child(row)
+		var details := VBoxContainer.new()
+		details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(details)
+		var offer_name := Label.new()
+		offer_name.text = str(offer["title"])
+		offer_name.add_theme_font_size_override("font_size", 13)
+		details.add_child(offer_name)
+		var status := Label.new()
+		status.add_theme_font_size_override("font_size", 11)
+		status.add_theme_color_override("font_color", Color(0.76, 0.85, 0.81))
+		details.add_child(status)
+		var action := Button.new()
+		action.custom_minimum_size = Vector2(124.0, 46.0)
+		action.text = "WATCH AD"
+		action.theme_type_variation = &"JadeSecondaryButton"
+		action.pressed.connect(_on_m7b_reward_pressed.bind(placement))
+		row.add_child(action)
+		_m7b_buttons[placement] = action
+		_m7b_status_labels[placement] = status
+	var notice := Label.new()
+	notice.name = "M7BRewardStatus"
+	notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	notice.add_theme_font_size_override("font_size", 12)
+	notice.text = _m7b_last_message
+	layout.add_child(notice)
+	layout.add_child(_build_m7c2_offer_row())
+	_refresh_m7b_offer_buttons()
+	_refresh_m7c2_offer_button()
+	return card
+
+
+func _refresh_m7b_offer_buttons() -> void:
+	for raw_placement: Variant in _m7b_buttons.keys():
+		var placement: String = str(raw_placement)
+		var button: Button = _m7b_buttons.get(placement) as Button
+		var status_label: Label = _m7b_status_labels.get(placement) as Label
+		if not is_instance_valid(button) or not is_instance_valid(status_label):
+			continue
+		var state: Dictionary = DailyQuestManager.m7b_get_offer_status(placement)
+		var ready: bool = bool(state.get("available", false))
+		button.disabled = not ready
+		button.text = "WATCH AD" if ready else "UNAVAILABLE"
+		status_label.text = str(state.get("reason", "UNAVAILABLE"))
+
+
+func _on_m7b_reward_pressed(placement: String) -> void:
+	if DailyQuestManager.m7b_request_rewarded(placement):
+		_m7b_last_message = "Playing optional ad for " + placement.replace("_", " ")
+	else:
+		_m7b_last_message = "Ad unavailable. No reward was claimed."
+	_refresh_screen()
+
+
+func _on_m7b_reward_finished(_placement: String, success: bool, message: String) -> void:
+	_m7b_last_message = ("RECEIVED: " if success else "NOT CLAIMED: ") + message
+	_refresh_screen()
+
+
+# M7C2 voluntary Qi Focus offer appended inside the existing Dao Rewards board.
+func _build_m7c2_offer_row() -> VBoxContainer:
+	var section := VBoxContainer.new()
+	section.name = "M7C2QiFocusOffer"
+	section.add_theme_constant_override("separation", 4)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	section.add_child(row)
+	var text_side := VBoxContainer.new()
+	text_side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(text_side)
+	var title := Label.new()
+	title.text = "QI FOCUS • +10% EXP NEXT RUN"
+	title.add_theme_font_size_override("font_size", 13)
+	text_side.add_child(title)
+	_m7c2_focus_status = Label.new()
+	_m7c2_focus_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_m7c2_focus_status.add_theme_font_size_override("font_size", 11)
+	text_side.add_child(_m7c2_focus_status)
+	_m7c2_focus_button = Button.new()
+	_m7c2_focus_button.custom_minimum_size = Vector2(124.0, 46.0)
+	_m7c2_focus_button.text = "WATCH AD"
+	_m7c2_focus_button.theme_type_variation = &"JadeSecondaryButton"
+	_m7c2_focus_button.pressed.connect(_on_m7c2_focus_pressed)
+	row.add_child(_m7c2_focus_button)
+	return section
+
+
+func _refresh_m7c2_offer_button() -> void:
+	if not is_instance_valid(_m7c2_focus_button) or not is_instance_valid(_m7c2_focus_status):
+		return
+	var state: Dictionary = DailyQuestManager.m7c2_get_offer_status()
+	var ready: bool = bool(state.get("available", false))
+	_m7c2_focus_button.disabled = not ready
+	_m7c2_focus_button.text = "WATCH AD" if ready else "UNAVAILABLE"
+	_m7c2_focus_status.text = (
+		_m7c2_focus_message if not _m7c2_focus_message.is_empty()
+		else str(state.get("reason", "UNAVAILABLE"))
+	)
+
+
+func _on_m7c2_focus_pressed() -> void:
+	if DailyQuestManager.m7c2_request_rewarded():
+		_m7c2_focus_message = "AD IN PROGRESS • BONUS ON NEXT NEW RUN"
+	else:
+		_m7c2_focus_message = "AD UNAVAILABLE • NO BONUS CLAIMED"
+	_refresh_m7c2_offer_button()
+
+
+func _on_m7c2_offer_finished(success: bool, message: String) -> void:
+	_m7c2_focus_message = ("RECEIVED: " if success else "NOT CLAIMED: ") + message
+	_refresh_screen()

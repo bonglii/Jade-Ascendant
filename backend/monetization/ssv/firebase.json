@@ -1,0 +1,9 @@
+{
+  "functions": [{ "source": "functions", "codebase": "jade-ssv-emulator-only" }],
+  "emulators": {
+    "firestore": { "host": "127.0.0.1", "port": 8088 },
+    "functions": { "host": "127.0.0.1", "port": 5008 },
+    "ui": { "enabled": false }
+  },
+  "singleProjectMode": true
+}

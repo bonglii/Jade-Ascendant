@@ -54,6 +54,12 @@ var intro_tween: Tween = null
 var victory_seal: TextureRect = null
 var reward_chip_row: HBoxContainer = null
 var result_atmosphere: Control = null
+var _m7c_bridge: Node = null
+var _m7c_row: VBoxContainer = null
+var _m7c_button: Button = null
+var _m7c_label: Label = null
+var _m7c_last_message: String = ""
+var _m7c_refresh_left: float = 0.8
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_WHEN_PAUSED
@@ -61,6 +67,7 @@ func _ready() -> void:
 	main_menu_button.pressed.connect(_on_main_menu_pressed)
 	if not RewardManager.reward_granted.is_connected(_on_reward_granted):
 		RewardManager.reward_granted.connect(_on_reward_granted)
+	_install_m7c_victory_offer()
 	hide()
 
 func show_victory() -> void:
@@ -72,6 +79,8 @@ func show_victory() -> void:
 			"A save needs recovery. Close and reopen the game before continuing."
 		)
 	_play_intro()
+	_m7c_last_message = ""
+	_refresh_m7c_offer()
 	DebugLogger.system(str("VictoryUI ditampilkan!"))
 
 func _on_reward_granted(
@@ -737,6 +746,84 @@ func _format_number(value: int) -> String:
 	if value < 0:
 		formatted = "-" + formatted
 	return formatted
+
+# M7C1: voluntary repeat-victory offer, rendered only on this result screen.
+func _install_m7c_victory_offer() -> void:
+	var bridge_script: Script = load("res://scripts/monetization/m7c_victory_encore_bridge.gd") as Script
+	if bridge_script == null:
+		push_error("M7C1 Victory Encore bridge could not load.")
+		return
+	_m7c_bridge = bridge_script.new() as Node
+	if _m7c_bridge == null:
+		push_error("M7C1 Victory Encore bridge could not instantiate.")
+		return
+	_m7c_bridge.name = "M7CVictoryEncoreBridge"
+	_m7c_bridge.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(_m7c_bridge)
+	_m7c_bridge.connect("offer_finished", Callable(self, "_on_m7c_offer_finished"))
+	_m7c_row = VBoxContainer.new()
+	_m7c_row.name = "VictoryEncoreOffer"
+	_m7c_row.add_theme_constant_override("separation", 5)
+	content.add_child(_m7c_row)
+	content.move_child(_m7c_row, main_menu_button.get_index())
+	_m7c_button = Button.new()
+	_m7c_button.text = "VICTORY ENCORE • WATCH AD"
+	_m7c_button.custom_minimum_size = Vector2(0.0, 52.0)
+	_m7c_button.theme_type_variation = &"JadeSecondaryButton"
+	_m7c_button.add_theme_font_size_override("font_size", 15)
+	_m7c_button.pressed.connect(_on_m7c_victory_offer_pressed)
+	_m7c_row.add_child(_m7c_button)
+	_m7c_label = Label.new()
+	_m7c_label.add_theme_font_size_override("font_size", 12)
+	_m7c_label.add_theme_color_override("font_color", Color(0.95, 0.81, 0.50, 1.0))
+	_m7c_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_m7c_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_m7c_row.add_child(_m7c_label)
+	_m7c_row.visible = false
+
+
+func _process(delta: float) -> void:
+	if not visible or _m7c_bridge == null:
+		return
+	_m7c_refresh_left -= delta
+	if _m7c_refresh_left <= 0.0:
+		_m7c_refresh_left = 0.8
+		_refresh_m7c_offer()
+
+
+func _refresh_m7c_offer() -> void:
+	if _m7c_bridge == null or _m7c_row == null:
+		return
+	var status: Dictionary = _m7c_bridge.call("get_offer_status")
+	_m7c_row.visible = bool(status.get("visible", false))
+	if not _m7c_row.visible:
+		return
+	var bonus: int = int(status.get("bonus", 0))
+	_m7c_button.disabled = not bool(status.get("available", false))
+	_m7c_button.text = "VICTORY ENCORE • +%d STONES • WATCH AD" % bonus
+	var reason: String = str(status.get("reason", "UNAVAILABLE"))
+	_m7c_label.text = (
+		_m7c_last_message if not _m7c_last_message.is_empty()
+		else "OPTIONAL AD • REPEAT CLEAR BONUS" if reason == "READY"
+		else reason
+	)
+
+
+func _on_m7c_victory_offer_pressed() -> void:
+	if _m7c_bridge == null:
+		return
+	if not bool(_m7c_bridge.call("request_rewarded")):
+		_m7c_last_message = "AD UNAVAILABLE • TRY AGAIN"
+	else:
+		_m7c_last_message = "AD IN PROGRESS • REWARD AFTER CONFIRMATION"
+	_refresh_m7c_offer()
+
+
+func _on_m7c_offer_finished(success: bool, message: String) -> void:
+	_m7c_last_message = message
+	if success:
+		_refresh_reward_summary()
+	_refresh_m7c_offer()
 
 func _on_main_menu_pressed() -> void:
 	if SceneTransitionManager.is_transitioning:

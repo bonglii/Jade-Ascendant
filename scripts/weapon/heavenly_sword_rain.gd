@@ -19,6 +19,7 @@ var telegraph_duration: float = DEFAULT_TELEGRAPH_DURATION
 var active_duration: float = DEFAULT_ACTIVE_DURATION
 var player_stats: Node = null
 var has_impacted: bool = false
+var _impact_visual_elapsed: float = 0.0
 
 var telegraph_ring: Line2D = null
 var middle_ring: Line2D = null
@@ -38,6 +39,7 @@ func _ready() -> void:
 	collision_layer = 0
 	collision_mask = 2
 	monitoring = true
+	set_process(false)
 
 	apply_strike_radius()
 	create_telegraph_visual()
@@ -243,98 +245,66 @@ func hide_telegraph_visual() -> void:
 
 
 func create_impact_visual() -> void:
-	var start_radius: float = maxf(
-		strike_radius * 0.28,
-		7.0
-	)
-
-	var glow_ring := _make_line(
-		create_ring_points(start_radius),
-		10.0,
-		Color(0.40, 0.80, 1.0, 0.16)
-	)
-	glow_ring.z_index = 3
-
-	var impact_ring := _make_line(
-		create_ring_points(start_radius),
-		5.5,
-		Color(0.82, 0.96, 1.0, 1.0)
-	)
-	impact_ring.z_index = 3
-
-	var streak := _make_line(
-		PackedVector2Array([
-			Vector2(0.0, -82.0),
-			Vector2(0.0, 10.0)
-		]),
-		5.0,
-		Color(0.94, 0.99, 1.0, 0.98)
-	)
-	streak.z_index = 3
-
-	var shard_count: int = (
-		4 if SettingsManager.reduced_effects else 8
-	)
-
-	for index in range(shard_count):
-		var direction := Vector2.RIGHT.rotated(
-			float(index) * TAU / float(shard_count)
-		)
-		var shard := _make_line(
-			PackedVector2Array([
-				direction * 7.0,
-				direction * minf(
-					strike_radius * 0.82,
-					34.0
-				)
-			]),
-			2.3 if index % 2 == 0 else 1.6,
-			Color(0.66, 0.94, 1.0, 0.84)
-		)
-		shard.z_index = 3
-
-		var shard_tween := create_tween()
-		shard_tween.tween_property(
-			shard,
-			"modulate:a",
-			0.0,
-			active_duration
-		)
-
-	var target_scale: float = (
-		strike_radius / start_radius
-	)
-
-	var tween := create_tween()
-	tween.set_parallel(true)
-
-	for ring in [glow_ring, impact_ring]:
-		tween.tween_property(
-			ring,
-			"scale",
-			Vector2.ONE * target_scale,
-			active_duration
-		)
-		tween.tween_property(
-			ring,
-			"modulate:a",
-			0.0,
-			active_duration
-		)
-
-	tween.tween_property(
-		streak,
-		"modulate:a",
-		0.0,
-		active_duration
-	)
+	# The impact is a single bounded CanvasItem drawing; no per-hit Line2Ds.
+	# Radius never exceeds strike_radius / the actual CircleShape2D hit area.
+	_impact_visual_elapsed = 0.0
+	set_process(true)
+	queue_redraw()
 
 	if sword_sprite != null:
-		tween.tween_property(
-			sword_sprite,
-			"modulate:a",
-			0.0,
-			active_duration
+		var fade := create_tween()
+		fade.tween_property(
+			sword_sprite, "modulate:a", 0.0, active_duration
+		)
+
+
+func _process(delta: float) -> void:
+	if not has_impacted:
+		return
+	_impact_visual_elapsed += delta
+	queue_redraw()
+	if _impact_visual_elapsed >= active_duration:
+		set_process(false)
+
+
+func _draw() -> void:
+	if not has_impacted:
+		return
+
+	var progress: float = clampf(
+		_impact_visual_elapsed / maxf(active_duration, 0.01),
+		0.0, 1.0
+	)
+	var remaining: float = 1.0 - progress
+	var alpha: float = remaining * remaining
+	var reduced: bool = SettingsManager.reduced_effects
+	var ring_radius: float = strike_radius * lerpf(0.28, 1.0, progress)
+
+	if not reduced:
+		draw_arc(
+			Vector2.ZERO, ring_radius, 0.0, TAU, VFX_SEGMENTS,
+			Color(0.40, 0.80, 1.0, 0.17 * alpha), 9.0, true
+		)
+	draw_arc(
+		Vector2.ZERO, ring_radius, 0.0, TAU, VFX_SEGMENTS,
+		Color(0.82, 0.96, 1.0, 0.96 * alpha), 4.8, true
+	)
+	# The vertical streak communicates the falling sword, not damage width.
+	draw_line(
+		Vector2(0.0, -82.0), Vector2(0.0, 10.0),
+		Color(0.94, 0.99, 1.0, 0.92 * alpha), 4.8, true
+	)
+
+	var shard_count: int = 4 if reduced else 8
+	for index in range(shard_count):
+		var direction: Vector2 = Vector2.RIGHT.rotated(
+			TAU * float(index) / float(shard_count)
+		)
+		var shard_tip: float = minf(strike_radius * 0.82, 34.0)
+		draw_line(
+			direction * 7.0, direction * shard_tip,
+			Color(0.66, 0.94, 1.0, 0.82 * alpha),
+			2.3 if index % 2 == 0 else 1.6, true
 		)
 
 

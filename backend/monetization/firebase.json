@@ -1,0 +1,13 @@
+{
+  "functions": [
+    {
+      "source": ".",
+      "codebase": "jade-iap",
+      "ignore": [
+        ".git", ".git/**", "node_modules", "node_modules/**", "tests/**",
+        "android_bridge/**", "**/build/**", "**/artifacts/**", "*.log", "*.zip",
+        ".env", ".env.*", "**/*.keystore", "**/*.jks", "**/*.p12"
+      ]
+    }
+  ]
+}

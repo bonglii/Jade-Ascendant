@@ -1,5 +1,6 @@
 extends Node
 
+const M7E2Gate = preload("res://scripts/monetization/m7e2_legacy_security_gate.gd")
 ## Domain bridge between verified rewarded-ad completions and Pavilion economy.
 ## Providers never write currency directly. Only PavilionManager owns the wallet.
 const EconomyCatalog = preload("res://scripts/data/economy_catalog.gd")
@@ -22,6 +23,12 @@ func _on_verified_rewarded_completed(
 	grant_id: String
 ) -> void:
 	if placement != PLACEMENT_ID:
+		return
+	if not M7E2Gate.earned_is_durable(placement, grant_id):
+		get_parent().call(
+			"publish_reward_delivery_result", PLACEMENT_ID, false, 0,
+			"Reward policy could not be saved."
+		)
 		return
 
 	var manager: Variant = get_parent()

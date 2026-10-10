@@ -1,0 +1,21 @@
+{
+  "phase": "MONETIZATION_M7E4E1",
+  "kind": "authenticated_read_only_pending_entitlement_inbox",
+  "previous_emulator_gate": "M7E4D1_USER_REPORTED_PASS",
+  "source": "m7e4c_ssv_credits with matching m7e4c_ssv_receipts",
+  "require_firebase_auth_context_uid": true,
+  "require_app_check_when_registered": true,
+  "deny_client_supplied_uid": true,
+  "max_items_per_query": 20,
+  "only_pending_entitlements": true,
+  "fails_closed_on_receipt_inconsistency": true,
+  "modifies_existing_ledger_or_ssv": false,
+  "gameplay_reward_writes": false,
+  "local_save_writes": false,
+  "delivery_ack_enabled": false,
+  "client_auth_transport_wired": false,
+  "callable_registered": false,
+  "real_production_deployed": false,
+  "ssv_intent_issuer_enabled": false,
+  "release_verdict": "RELEASE_HOLD"
+}

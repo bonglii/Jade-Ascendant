@@ -53,11 +53,16 @@ func _physics_process(delta: float) -> void:
 	# Keep the formation's expensive CanvasItem redraw off the 60 Hz
 	# physics path. Its damage pulse, duration, and overlaps still tick
 	# every physics frame and queue their impact visuals immediately.
+	# Lower visual refresh in reduced-effects mode; physics/pulses are untouched.
+	var refresh_interval: float = (
+		1.0 / 18.0 if SettingsManager.reduced_effects
+		else VISUAL_REFRESH_INTERVAL
+	)
 	_visual_refresh_elapsed += delta
-	if _visual_refresh_elapsed >= VISUAL_REFRESH_INTERVAL:
+	if _visual_refresh_elapsed >= refresh_interval:
 		_visual_refresh_elapsed = fmod(
 			_visual_refresh_elapsed,
-			VISUAL_REFRESH_INTERVAL
+			refresh_interval
 		)
 		update_formation_visual()
 
@@ -205,6 +210,22 @@ func _draw() -> void:
 		2.5,
 		true
 	)
+	# Golden anticipation arc fills only during the final moments before
+	# the NEXT ACTUAL damage pulse. It never exceeds the gameplay radius.
+	var anticipation_window: float = minf(pulse_interval * 0.33, 0.28)
+	if pulse_remaining > 0.0 and pulse_remaining <= anticipation_window:
+		var anticipation: float = clampf(
+			1.0 - pulse_remaining / maxf(anticipation_window, 0.01),
+			0.0, 1.0
+		)
+		draw_arc(
+			Vector2.ZERO, radius * 0.96,
+			-PI * 0.5, -PI * 0.5 + TAU * anticipation,
+			FORMATION_SEGMENTS,
+			Color(0.98, 0.82, 0.36, opacity * (0.36 + 0.44 * anticipation)),
+			3.0 if not SettingsManager.reduced_effects else 2.0, true
+		)
+
 	draw_arc(
 		Vector2.ZERO,
 		radius * 0.78,

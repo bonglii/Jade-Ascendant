@@ -1,0 +1,15 @@
+{
+  "phase": "MONETIZATION_M7E4A_RECOVERY_BOUNDARY",
+  "base_git_sha": "ff5b6152151eee9b1a2f7f4e75e896dea4b9564c",
+  "installer_kind": "additive_audit_only",
+  "mutates_gameplay_or_admob": false,
+  "mutates_saves": false,
+  "new_reward_grants_enabled": false,
+  "server_side_verification_implemented": false,
+  "android_failure_injection_performed": false,
+  "new_save_domain_added": false,
+  "new_autoload_added": false,
+  "requires_single_dao_reroll": true,
+  "release_verdict": "HOLD",
+  "note": "Tests assert known source boundaries and two synthetic models; they do not prove real device failure recovery, server receipt authenticity, or 5/day cryptographic enforcement."
+}

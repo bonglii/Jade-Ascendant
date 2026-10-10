@@ -1,0 +1,31 @@
+{
+  "phase": "MONETIZATION_M7E4B",
+  "kind": "isolated_crypto_verification_foundation",
+  "baseline_head": "ff5b6152151eee9b1a2f7f4e75e896dea4b9564c",
+  "node_runtime": "22",
+  "features": {
+    "raw_query_preserved": true,
+    "ecdsa_p256_sha256_der": true,
+    "google_key_schema_parse": true,
+    "trusted_key_id_required": true,
+    "server_intent_binding_required": true,
+    "transaction_id_extracted": true,
+    "no_client_chosen_user_id": true,
+    "reward_grant": false,
+    "live_http_endpoint": false,
+    "trusted_google_key_downloader": false,
+    "durable_atomic_replay_ledger": false,
+    "android_sdk_ssv_custom_data_wiring": false,
+    "fault_injection_proven": false,
+    "production_release_approved": false
+  },
+  "still_blocked": [
+    "POLICY_SAVE_FAIL_LOST_EARNED_REWARD",
+    "POLICY_BOTH_COPIES_INVALID_RESET",
+    "NO_CROSS_DOMAIN_ATOMIC_AD_RECEIPT",
+    "SSV_SERVER_PROOF_MISSING",
+    "FAULT_INJECTION_ANDROID_PENDING",
+    "EXACT_SHA_CI_PENDING"
+  ],
+  "result": "RELEASE_HOLD"
+}

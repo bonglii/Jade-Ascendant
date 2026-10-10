@@ -8,7 +8,7 @@ const JADE: Color = Color(0.64, 0.94, 0.82)
 const GOLD: Color = Color(0.95, 0.79, 0.44)
 const THUNDER: Color = Color(0.62, 0.90, 1.0)
 const DANGER: Color = Color(1.0, 0.60, 0.46)
-const CRITICAL: Color = Color(1.0, 0.22, 0.20)
+const CRITICAL: Color = Color(1.0, 0.82, 0.28)
 const CRITICAL_HIT_META: StringName = &"jade_critical_hit_feedback"
 
 # Damage text stays inside the existing pooled CanvasItem renderer.
@@ -79,20 +79,34 @@ func hit(actor: Node2D, amount: float, is_critical: bool = false) -> void:
 	elif is_critical:
 		text_color = CRITICAL
 
-	var text_lane: float = float((effect_cursor % 5) - 2) * 3.0
+	# Wider deterministic lanes prevent rapid multi-target hits stacking into one digit cloud.
+	# No random sampling, no additional combat nodes, no impact on damage rolls.
+	var text_lane: float = float((effect_cursor % 7) - 3) * 10.0
+	var text_lift: float = float(effect_cursor % 3) * 7.0
+	var formatted_damage: String = (
+		str(maxi(1, int(round(amount)))) if SettingsManager.damage_numbers else ""
+	)
+	var number_size: int = CRITICAL_TEXT_FONT_SIZE if is_critical else DAMAGE_TEXT_FONT_SIZE
+	var minimum_width: float = CRITICAL_TEXT_WIDTH if is_critical else DAMAGE_TEXT_WIDTH
+	# Five-digit+ hits must remain legible instead of using a hard-coded 72/88px lane.
+	var dynamic_width: float = maxf(
+		minimum_width,
+		float(formatted_damage.length()) * float(number_size) * 0.66 + 20.0
+	)
 	var text_lifetime: float = CRITICAL_TEXT_LIFETIME if is_critical else DAMAGE_TEXT_LIFETIME
 	entry.merge({
 		"kind": "hit",
 		"position": actor.global_position,
 		"left": text_lifetime,
 		"duration": text_lifetime,
-		"text": str(maxi(1, int(round(amount)))) if SettingsManager.damage_numbers else "",
+		"text": formatted_damage,
 		"color": text_color,
 		"text_lane": text_lane,
+		"text_lift": text_lift,
 		"critical": is_critical,
-		"text_font_size": CRITICAL_TEXT_FONT_SIZE if is_critical else DAMAGE_TEXT_FONT_SIZE,
+		"text_font_size": number_size,
 		"text_rise": CRITICAL_TEXT_RISE if is_critical else DAMAGE_TEXT_RISE,
-		"text_width": CRITICAL_TEXT_WIDTH if is_critical else DAMAGE_TEXT_WIDTH
+		"text_width": dynamic_width
 	}, true)
 
 	if actor_is_player:
@@ -340,9 +354,10 @@ func _draw() -> void:
 					)
 				text_alpha = clampf(text_alpha, 0.0, 1.0)
 				var lane_offset: float = float(entry.get("text_lane", 0.0))
+				var lift_offset: float = float(entry.get("text_lift", 0.0))
 				var label_position: Vector2 = point + Vector2(
 					-text_width * 0.5 + lane_offset,
-					(-33.0 if is_critical else -29.0) - progress * text_rise
+					(-33.0 if is_critical else -29.0) - progress * text_rise - lift_offset
 				)
 				draw_string(
 					ThemeDB.fallback_font,
@@ -362,10 +377,30 @@ func _draw() -> void:
 					text_font_size,
 					Color(entry["color"], text_alpha)
 				)
-			if progress < (0.36 if is_critical else 0.30):
+				# A non-color cue helps distinguish player criticals from incoming damage.
+				if is_critical:
+					draw_string(
+						ThemeDB.fallback_font,
+						label_position + Vector2(0.0, -16.0),
+						"CRIT",
+						HORIZONTAL_ALIGNMENT_CENTER,
+						text_width,
+						11,
+						Color(CRITICAL, text_alpha * 0.92)
+					)
+			if is_critical and progress < 0.34:
+				var burst_progress: float = clampf(progress / 0.34, 0.0, 1.0)
+				draw_arc(
+					point,
+					11.0 + burst_progress * 25.0,
+					0.0, TAU, 20,
+					Color(CRITICAL, (1.0 - burst_progress) * 0.74),
+					1.8, true
+				)
+			if progress < (0.36 if is_critical else 0.30) and (is_critical or not SettingsManager.reduced_effects):
 				_draw_rays(
 					point,
-					6 if is_critical else 4,
+					(4 if SettingsManager.reduced_effects else 6) if is_critical else 4,
 					(7.0 if is_critical else 5.0) + progress * (32.0 if is_critical else 24.0),
 					tint
 				)

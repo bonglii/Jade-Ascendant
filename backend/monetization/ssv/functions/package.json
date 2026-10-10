@@ -1,0 +1,13 @@
+{
+  "name": "jade-ascendant-ssv-emulator-only",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "index.mjs",
+  "engines": { "node": "22" },
+  "dependencies": {
+    "firebase-admin": "14.5.0",
+    "firebase-functions": "7.4.0"
+  },
+  "scripts": { "test:firestore": "node --test tests/m7e4d_firestore_emulator.test.mjs" }
+}

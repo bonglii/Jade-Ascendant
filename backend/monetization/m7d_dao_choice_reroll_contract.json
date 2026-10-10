@@ -1,0 +1,21 @@
+{
+  "contract_version": 1,
+  "phase": "MONETIZATION_M7D",
+  "state": "DAO_REROLL_CODE_GATE_QA_HOLD",
+  "placement": "dao_choice_reroll",
+  "entitlement": "replace_current_three_eligible_upgrade_choices",
+  "per_run_limit": 1,
+  "per_local_day_limit": 1,
+  "run_identity_owner": "JourneyManager.m7d_run_id in journey.save v1 additive field",
+  "run_spent_owner": "DailyQuestManager.m7d_used_run_id in daily_quests.save v1 additive field",
+  "reward_callback": "MonetizationManager.verified_rewarded_completed (device SDK, not SSV)",
+  "ad_failure_or_cancel_grant": false,
+  "permanent_currency_granted": false,
+  "iaps_or_historical_monetiation_provider_mutated": false,
+  "checkpoint_schema_or_legacy_continue_mutated": false,
+  "new_save_domain": false,
+  "new_autoload": false,
+  "non_revive_global_cap_legacy_paths_enforced": false,
+  "device_validation_required": true,
+  "exact_current_commit_ci_required": true
+}

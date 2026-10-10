@@ -1,0 +1,131 @@
+name: Jade Ascendant - M7 Final Exact SHA QA (NO DEPLOY)
+
+on:
+  push:
+    branches:
+      - 'qa/**'
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  monetization-m7-contracts:
+    name: M7 Node boundaries and explicit release hold
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exactly this GitHub revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Enforce exact SHA and clean repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain --untracked-files=normal)"
+          echo "EXACT_SHA_M7_PASS $actual"
+      - name: Use Node.js 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Run complete M7 regression and historical M6 boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test \
+            backend/monetization/tests/m6_final_monetization_lock.test.mjs \
+            backend/monetization/tests/m7a_rewarded_offer_catalog.test.mjs \
+            backend/monetization/tests/m7b_daily_rewards.test.mjs \
+            backend/monetization/tests/m7c_victory_encore.test.mjs \
+            backend/monetization/tests/m7c2_qi_focus.test.mjs \
+            backend/monetization/tests/m7d_dao_reroll.test.mjs \
+            backend/monetization/tests/m7d3_single_reroll_restore.test.mjs \
+            backend/monetization/tests/m7e2_legacy_security_gate.test.mjs \
+            backend/monetization/tests/m7e4_recovery_boundary.test.mjs \
+            backend/monetization/tests/m7e4b_ssv_verifier.test.mjs \
+            backend/monetization/tests/m7e4c_receipt_ledger.test.mjs \
+            backend/monetization/tests/m7e4d_endpoint_boundary.test.mjs \
+            backend/monetization/tests/m7e4e_pending_inbox.test.mjs \
+            backend/monetization/tests/m7e4e2_android_readonly_boundary.test.mjs \
+            backend/monetization/tests/m7e4e3_crash_delivery_dryrun.test.mjs \
+            backend/monetization/tests/m7e4f_adversarial_recovery.test.mjs \
+            backend/monetization/tests/m7e5_final_gate.test.mjs
+      - name: Generate M7E5 release hold evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/m7e5
+          set +e
+          node tools/qa/m7e5_release_matrix.mjs > artifacts/m7e5/release_matrix.json
+          rc=$?
+          set -e
+          if [ "$rc" -ne 2 ]; then
+            echo "M7E5 expected RELEASE_HOLD exit 2; received $rc" >&2
+            cat artifacts/m7e5/release_matrix.json
+            exit 1
+          fi
+          node --input-type=module -e 'import fs from "node:fs"; const r=JSON.parse(fs.readFileSync("artifacts/m7e5/release_matrix.json")); if(r.verdict!=="RELEASE_HOLD"||r.violations.length)process.exit(1); console.log("M7E5_QA_VALID_RELEASE_HOLD",r.blockers.length);'
+          cat artifacts/m7e5/release_matrix.json
+          echo 'QA_PASS_IS_NOT_RELEASE_APPROVAL' >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain read-only final release matrix
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jade-m7e5-release-matrix-${{ github.run_id }}
+          path: artifacts/m7e5/release_matrix.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  monetization-m7-firestore-emulator:
+    name: M7 genuine Firestore emulator fault and inbox tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GCLOUD_PROJECT: demo-jade-ssv
+      CI: 'true'
+    steps:
+      - name: Checkout exactly this GitHub revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Enforce exact SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          echo "EXACT_SHA_FIRESTORE_PASS $GITHUB_SHA"
+      - name: Use Node.js 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Use Java 21 for current Firestore emulator
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated emulator dependencies (no production credentials)
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --prefix backend/monetization/ssv/functions --ignore-scripts --no-audit --no-fund
+          echo 'Dependency lockfile not yet reviewed/tracked: reproducibility remains a release blocker.'
+      - name: Run Firestore emulator only on demo project
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes firebase-tools@15.28.2 emulators:exec \
+            --only firestore \
+            --project demo-jade-ssv \
+            --config backend/monetization/ssv/firebase.json \
+            'node --test --test-concurrency=1 backend/monetization/ssv/functions/tests/m7e4d_firestore_emulator.test.mjs backend/monetization/ssv/functions/tests/m7e4e_firestore_inbox_emulator.test.mjs backend/monetization/ssv/functions/tests/m7e4f_firestore_recovery_emulator.test.mjs'

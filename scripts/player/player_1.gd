@@ -19,6 +19,7 @@ var experience_to_next_level: int = 10
 
 var movement_speed_level: int = 0
 var spiritual_insight_level: int = 0
+var m7c2_qi_focus_active: bool = false
 
 var facing_direction: String = "down"
 
@@ -160,6 +161,7 @@ func get_experience_multiplier() -> float:
 	return (
 		insight_multiplier
 		* (EquipmentManager.get_experience_multiplier() + set_bonus)
+		* (1.10 if m7c2_qi_focus_active else 1.0)
 	)
 
 func level_up() -> void:

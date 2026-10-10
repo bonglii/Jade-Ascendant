@@ -1,5 +1,6 @@
 extends Node
 
+const M7E2Gate = preload("res://scripts/monetization/m7e2_legacy_security_gate.gd")
 const MAIN_MENU_SCENE: String = "res://scenes/ui/main_menu.tscn"
 const MEDITATION_ICON: Texture2D = preload(
 	"res://assets/ui/pavilion/icons/meditation.png"
@@ -488,7 +489,7 @@ func _refresh_popup() -> void:
 		_rewarded_button.text = tr("AD PLAYING...")
 	else:
 		var policy: Dictionary = (
-			MonetizationManager.get_rewarded_policy_status(
+			M7E2Gate.get_policy_status(
 				RewardedBridge.PLACEMENT_ID
 			)
 		)
@@ -548,7 +549,7 @@ func _on_rewarded_claim_pressed() -> void:
 		_refresh_popup()
 		return
 
-	if not MonetizationManager.show_rewarded(
+	if not M7E2Gate.request(
 		RewardedBridge.PLACEMENT_ID
 	):
 		manager.call("cancel_pending_rewarded_double_claim")

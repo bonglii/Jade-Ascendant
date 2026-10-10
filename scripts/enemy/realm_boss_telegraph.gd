@@ -157,8 +157,18 @@ func _draw() -> void:
 	var alpha: float = 0.24 + progress * 0.21
 	if _impacted:
 		alpha = 0.65 * (1.0 - clampf((_elapsed - warning_duration) / MAX_LIFETIME_AFTER_IMPACT, 0.0, 1.0))
+	# Keep realm-colored area fill and EXACT hit geometry. Only the existing
+	# border turns toward danger coral during the last 28% of the wind-up.
+	# No strobe, enlarged radius or second misleading warning shape.
+	var imminent: float = smoothstep(0.72, 1.0, progress)
+	var danger_edge: Color = accent.lerp(
+		Color(1.0, 0.34, 0.25, 1.0), imminent * 0.90
+	)
 	var fill: Color = Color(accent.r, accent.g, accent.b, alpha * 0.45)
-	var edge: Color = Color(accent.r, accent.g, accent.b, minf(alpha * 2.0, 0.99))
+	var edge: Color = Color(
+		danger_edge.r, danger_edge.g, danger_edge.b,
+		minf(alpha * (2.0 + imminent * 0.30), 0.99)
+	)
 	match pattern:
 		"frost_lance", "solar_lance":
 			var half_width: float = 40.0 if pattern == "solar_lance" else 32.0

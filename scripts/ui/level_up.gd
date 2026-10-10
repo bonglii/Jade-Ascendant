@@ -125,6 +125,14 @@ var weapon_manager: Variant = null
 
 var upgrade_buttons: Array[Button] = []
 var selection_locked: bool = false
+var _m7d_button: Button = null
+var _m7d_request_grant_id: String = ""
+var _m7d_request_day: String = ""
+var _m7d_request_run_id: String = ""
+var _m7d_original_choices: Array[String] = []
+var _m7d_future_choices: Array[String] = []
+var _m7d_last_message: String = ""
+var _m7d_refresh_left: float = 0.8
 
 @onready var breakthrough_level_label: Label = %BreakthroughLevelLabel
 
@@ -156,7 +164,21 @@ func _ready() -> void:
 
 	find_upgrade_buttons()
 	_polish_header()
+	_m7d_create_offer_row()
+	if not MonetizationManager.verified_rewarded_completed.is_connected(_m7d_on_sdk_reward):
+		MonetizationManager.verified_rewarded_completed.connect(_m7d_on_sdk_reward)
+	if not MonetizationManager.rewarded_request_finished.is_connected(_m7d_on_ad_finished):
+		MonetizationManager.rewarded_request_finished.connect(_m7d_on_ad_finished)
 	hide()
+
+
+func _process(delta: float) -> void:
+	if not visible:
+		return
+	_m7d_refresh_left -= delta
+	if _m7d_refresh_left <= 0.0:
+		_m7d_refresh_left = 0.8
+		_m7d_refresh_button()
 
 
 func find_upgrade_buttons() -> void:
@@ -200,6 +222,8 @@ func show_level_up() -> void:
 
 	breakthrough_level_label.text = tr("LEVEL %d") % int(player.level)
 	update_buttons()
+	_m7d_last_message = ""
+	_m7d_refresh_left = 0.8
 
 	for button in upgrade_buttons:
 		button.scale = Vector2.ONE
@@ -213,6 +237,7 @@ func show_level_up() -> void:
 	_refresh_choice_visual_colors()
 	_refresh_breakthrough_accent()
 	_queue_special_choice_pulse()
+	_m7d_refresh_button()
 
 	DebugLogger.system(str("=== LEVEL UP MENU ==="))
 	for i in range(current_upgrades.size()):
@@ -1774,3 +1799,193 @@ func _play_upgrade_selection_sfx() -> void:
 		return
 	if audio_manager.has_method("play_sfx"):
 		audio_manager.call("play_sfx", "upgrade")
+
+
+## M7D: optional one-time rewarded reroll. Existing upgrade availability and
+## apply_upgrade() retain sole gameplay authority; this only swaps card IDs.
+func _m7d_create_offer_row() -> void:
+	var content: VBoxContainer = get_node_or_null(
+		"SafeArea/Center/Frame/Margin/Content"
+	) as VBoxContainer
+	if content == null or content.has_node("M7DOfferRow"):
+		return
+	var row := HBoxContainer.new()
+	row.name = "M7DOfferRow"
+	row.add_theme_constant_override("separation", 8)
+	var caption := Label.new()
+	caption.text = "DAO REROLL • 1 / RUN"
+	caption.add_theme_font_size_override("font_size", 11)
+	caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(caption)
+	_m7d_button = Button.new()
+	_m7d_button.name = "M7DRewardedRerollButton"
+	_m7d_button.custom_minimum_size = Vector2(190.0, 44.0)
+	_m7d_button.add_theme_font_size_override("font_size", 12)
+	_m7d_button.theme_type_variation = &"JadeSecondaryButton"
+	_m7d_button.pressed.connect(_m7d_on_pressed)
+	row.add_child(_m7d_button)
+	content.add_child(row)
+	content.move_child(row, maxi(content.get_child_count() - 2, 0))
+
+
+func _m7d_has_alternative_choices() -> bool:
+	for upgrade_id: String in upgrade_pool:
+		if upgrade_id not in current_upgrades and is_upgrade_available(upgrade_id):
+			return true
+	return false
+
+
+func _m7d_find_alternative_choices() -> Array[String]:
+	var candidates: Array[String] = []
+	var previous: Array[String] = []
+	for upgrade_id: String in upgrade_pool:
+		if not is_upgrade_available(upgrade_id):
+			continue
+		if upgrade_id in current_upgrades:
+			previous.append(upgrade_id)
+		else:
+			candidates.append(upgrade_id)
+	if candidates.is_empty():
+		return []
+	candidates.shuffle()
+	previous.shuffle()
+	var selected: Array[String] = []
+	var option_count: int = current_upgrades.size()
+	for upgrade_id: String in candidates:
+		if selected.size() >= option_count:
+			break
+		selected.append(upgrade_id)
+	for upgrade_id: String in previous:
+		if selected.size() >= option_count:
+			break
+		selected.append(upgrade_id)
+	if selected.size() != option_count:
+		return []
+	return selected
+
+
+func _m7d_refresh_button() -> void:
+	if _m7d_button == null or not is_instance_valid(_m7d_button):
+		return
+	if not _m7d_request_grant_id.is_empty():
+		_m7d_button.disabled = true
+		_m7d_button.text = "AD IN PROGRESS"
+		return
+	if not _m7d_last_message.is_empty():
+		_m7d_button.disabled = true
+		_m7d_button.text = _m7d_last_message
+		return
+	if selection_locked or current_upgrades.is_empty():
+		_m7d_button.disabled = true
+		_m7d_button.text = "REROLL LOCKED"
+		return
+	var status: Dictionary = DailyQuestManager.m7d_get_offer_status()
+	var has_alternative: bool = _m7d_has_alternative_choices()
+	var ready: bool = (
+		bool(status.get("available", false))
+		and has_alternative
+	)
+	_m7d_button.disabled = not ready
+	_m7d_button.text = (
+		"WATCH AD • REROLL" if ready else
+		"NO OTHER CHOICES" if not has_alternative else
+		str(status.get("reason", "AD UNAVAILABLE"))
+	)
+
+
+func _m7d_on_pressed() -> void:
+	if not visible or not get_tree().paused or selection_locked:
+		return
+	if not _m7d_request_grant_id.is_empty():
+		return
+	var choices: Array[String] = _m7d_find_alternative_choices()
+	if choices.is_empty():
+		return
+	if not bool(DailyQuestManager.m7d_get_offer_status().get("available", false)):
+		return
+	var claim_day: String = DailyQuestManager.active_date_key
+	var run_id: String = JourneyManager.m7d_run_id
+	if not MonetizationManager.show_rewarded("dao_choice_reroll"):
+		_m7d_refresh_button()
+		return
+	_m7d_request_grant_id = str(MonetizationManager.active_grant_id)
+	_m7d_request_day = claim_day
+	_m7d_request_run_id = run_id
+	_m7d_original_choices = current_upgrades.duplicate()
+	_m7d_future_choices = choices.duplicate()
+	selection_locked = true
+	_m7d_refresh_button()
+
+
+func _m7d_on_sdk_reward(placement: String, grant_id: String) -> void:
+	if placement != "dao_choice_reroll":
+		return
+	if (
+		_m7d_request_grant_id.is_empty()
+		or grant_id != _m7d_request_grant_id
+		or not visible
+		or not get_tree().paused
+		or not selection_locked
+		or current_upgrades != _m7d_original_choices
+		or JourneyManager.m7d_run_id != _m7d_request_run_id
+	):
+		_m7d_publish(false, "REROLL NOT APPLIED")
+		_m7d_clear_request()
+		return
+	for upgrade_id: String in _m7d_future_choices:
+		if not is_upgrade_available(upgrade_id):
+			_m7d_publish(false, "CHOICES CHANGED")
+			_m7d_clear_request()
+			return
+	# MonetizationManager emits earned before dismissal, after policy save.
+	# Both the policy counter and nonce must be durable before owner commit.
+	var persisted: Dictionary = MonetizationManager.policy_store.call("load_state")
+	var durable_counts: Dictionary = persisted.get("placement_counts", {})
+	if (
+		int(durable_counts.get(placement, 0))
+		!= int(MonetizationManager.placement_counts.get(placement, 0))
+		or int(persisted.get("last_reward_unix", -1))
+		!= int(MonetizationManager.last_reward_unix)
+	):
+		_m7d_publish(false, "SAVE FAILED • RESTART")
+		_m7d_clear_request()
+		return
+	var result: Dictionary = DailyQuestManager.m7d_commit_sdk_reroll(
+		_m7d_request_day, _m7d_request_run_id, grant_id
+	)
+	if not bool(result.get("success", false)):
+		_m7d_publish(false, str(result.get("error", "SAVE FAILED")))
+		_m7d_clear_request()
+		return
+	current_upgrades = _m7d_future_choices.duplicate()
+	selection_locked = false
+	update_buttons()
+	_refresh_choice_visual_colors()
+	_refresh_breakthrough_accent()
+	_queue_special_choice_pulse()
+	_m7d_publish(true, "REROLL USED")
+	_m7d_clear_request()
+
+
+func _m7d_on_ad_finished(placement: String, _status: String) -> void:
+	if placement != "dao_choice_reroll" or _m7d_request_grant_id.is_empty():
+		return
+	_m7d_publish(false, "AD CANCELLED")
+	_m7d_clear_request()
+
+
+func _m7d_publish(success: bool, message: String) -> void:
+	_m7d_last_message = message
+	MonetizationManager.publish_reward_delivery_result(
+		"dao_choice_reroll", success, 1 if success else 0, message
+	)
+
+
+func _m7d_clear_request() -> void:
+	_m7d_request_grant_id = ""
+	_m7d_request_day = ""
+	_m7d_request_run_id = ""
+	_m7d_original_choices.clear()
+	_m7d_future_choices.clear()
+	selection_locked = false
+	_m7d_refresh_button()

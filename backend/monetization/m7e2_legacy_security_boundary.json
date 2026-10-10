@@ -1,0 +1,15 @@
+{
+  "phase": "MONETIZATION_M7E2_LEGACY_CLIENT_SECURITY",
+  "base_git_sha": "ff5b6152151eee9b1a2f7f4e75e896dea4b9564c",
+  "historical_manager_mutated": false,
+  "admob_provider_mutated": false,
+  "m4_m5_m6_lock_mutated": false,
+  "new_save_domain_added": false,
+  "new_autoload_added": false,
+  "legacy_ui_cap_target": 5,
+  "revive_exempt_from_optional_daily_cap": true,
+  "durable_policy_before_legacy_owner_delivery": true,
+  "server_side_verification_implemented": false,
+  "android_test_ads_required": true,
+  "release_verdict": "HOLD"
+}
