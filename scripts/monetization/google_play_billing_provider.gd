@@ -54,6 +54,11 @@ var restore_in_progress := false
 var secure_account_binding: String = ""
 var secure_authority_ready: bool = false
 
+# Debug only. No account IDs, Firebase credentials, purchase tokens or order IDs.
+func _qa_billing(message: String) -> void:
+	if OS.is_debug_build():
+		print("JADE_IAP_BILLING_QA ", message)
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	if OS.get_name() != "Android":
@@ -62,6 +67,7 @@ func _ready() -> void:
 		return
 	if not Engine.has_singleton(PLUGIN_SINGLETON):
 		state = "native_plugin_missing"
+		_qa_billing("play_plugin_missing")
 		call_deferred("_publish_catalog")
 		return
 	billing_client = BillingClientScript.new() as Node
@@ -76,6 +82,7 @@ func _ready() -> void:
 	_connect_signal("query_purchases_response", _on_query_purchases)
 	_connect_signal("on_purchase_updated", _on_purchase_updated)
 	state = "connecting"
+	_qa_billing("connecting")
 	billing_client.call("start_connection")
 
 func _exit_tree() -> void:
@@ -165,16 +172,19 @@ func _supported_ids() -> PackedStringArray:
 
 func _on_connected() -> void:
 	state = "connected"
+	_qa_billing("connected")
 	refresh_products()
 	if secure_authority_ready:
 		restore_purchases()
 
 func _on_disconnected() -> void:
 	state = "disconnected"
+	_qa_billing("disconnected")
 	_publish_catalog()
 
 func _on_connect_error(_code: int, _message: String) -> void:
 	state = "connect_error"
+	_qa_billing("connect_error code=" + str(_code))
 	_publish_catalog()
 
 func _client_ready() -> bool:
@@ -193,9 +203,24 @@ func refresh_products() -> void:
 		_publish_catalog()
 		return
 	state = "querying_products"
+	_qa_billing("query_requested count=" + str(ids.size()))
 	billing_client.call("query_product_details", ids, PRODUCT_TYPE_INAPP)
 
 func _on_product_details(response: Dictionary) -> void:
+	# Product IDs are public catalog identifiers. Do not print server debug messages.
+	var qa_code: int = int(response.get("response_code", -999))
+	var qa_fetched: Variant = response.get("product_details", [])
+	var qa_unfetched: Variant = response.get("unfetched_products", [])
+	var qa_fetched_count: int = (qa_fetched as Array).size() if qa_fetched is Array else -1
+	var qa_failures: PackedStringArray = PackedStringArray()
+	if qa_unfetched is Array:
+		for raw_failure: Variant in qa_unfetched:
+			if raw_failure is Dictionary:
+				var f: Dictionary = raw_failure as Dictionary
+				var id: String = str(f.get("product_id", ""))
+				if id in PLAY_PRODUCT_ID_BY_INTERNAL.values():
+					qa_failures.append(id + ":" + str(int(f.get("status_code", -1))))
+	_qa_billing("query_result code=" + str(qa_code) + " fetched=" + str(qa_fetched_count) + " unfetched=" + ",".join(qa_failures))
 	if int(response.get("response_code", -999)) != RESPONSE_OK:
 		state = "product_query_failed"
 		_publish_catalog()
@@ -209,6 +234,11 @@ func _on_product_details(response: Dictionary) -> void:
 				if not item.is_empty():
 					next_products[str(item["product_id"])] = item
 	store_products = next_products
+	var qa_positive: int = 0
+	for qa_product: Dictionary in store_products.values():
+		if int(qa_product.get("price_amount_micros", 0)) > 0 and not str(qa_product.get("formatted_price", "")).is_empty():
+			qa_positive += 1
+	_qa_billing("parsed_products=" + str(store_products.size()) + " positive_prices=" + str(qa_positive))
 	state = "ready"
 	_publish_catalog()
 

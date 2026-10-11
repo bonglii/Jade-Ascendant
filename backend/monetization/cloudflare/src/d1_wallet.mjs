@@ -9,6 +9,7 @@
  * SERVER validation and idempotent fulfillment; it is not implemented here.
  */
 import { createHash } from 'node:crypto';
+import { assertRefundCreditEligibleRC8, makeProtectedCreditUpdateRC8 } from './wallet_refund_credit_rc8.mjs';
 import { PURCHASE_CONTRACT_VERSION, productByInternalId } from '../../src/product_catalog.mjs';
 
 const UID = /^[A-Za-z0-9_-]{1,128}$/;
@@ -94,6 +95,11 @@ export function createD1Wallet(d1) {
 
   async function apply(uid, event) {
     const ownerKey = requireUid(uid);
+    // The precheck protects replays. The guarded SQL UPDATE below protects
+    // against a void/hold arriving AFTER the precheck but BEFORE D1 commit.
+    if (event.kind === 'play_credit') {
+      await assertRefundCreditEligibleRC8({ db: d1, ownerKey, eventKey: event.eventKey });
+    }
     // D1 batch is transactional: if INSERT event duplicates or UPDATE violates
     // nonnegative/overflow CHECK, the entire batch rolls back.
     // In particular, do NOT replace this with independent .run() statements.
@@ -102,8 +108,12 @@ export function createD1Wallet(d1) {
         d1.prepare('INSERT OR IGNORE INTO iap_wallet_accounts_v1 (owner_key, balance, revision) VALUES (?, 0, 0)').bind(ownerKey),
         d1.prepare('INSERT INTO iap_wallet_events_v1 (event_key, owner_key, event_kind, item_key, delta) VALUES (?, ?, ?, ?, ?)')
           .bind(event.eventKey, ownerKey, event.kind, event.itemKey, event.delta),
-        d1.prepare('UPDATE iap_wallet_accounts_v1 SET balance = balance + ?, revision = revision + 1 WHERE owner_key = ?')
-          .bind(event.delta, ownerKey),
+        (event.kind === 'play_credit'
+          ? makeProtectedCreditUpdateRC8({
+              db: d1, ownerKey, eventKey: event.eventKey, delta: event.delta,
+            })
+          : d1.prepare('UPDATE iap_wallet_accounts_v1 SET balance = balance + ?, revision = revision + 1 WHERE owner_key = ?')
+              .bind(event.delta, ownerKey)),
       ]);
       return { ...(await snapshotForKey(ownerKey)), applied: true };
     } catch (error) {
@@ -113,6 +123,11 @@ export function createD1Wallet(d1) {
       if (existing) {
         if (!verifiedEventMatches(existing, ownerKey, event)) {
           throw new WalletError('event_conflict');
+        }
+        // A previously credited event cannot be reported as available after a
+        // refund or an account hold. Replay never creates a second credit.
+        if (event.kind === 'play_credit') {
+          await assertRefundCreditEligibleRC8({ db: d1, ownerKey, eventKey: event.eventKey });
         }
         return { ...(await snapshotForKey(ownerKey)), applied: false };
       }

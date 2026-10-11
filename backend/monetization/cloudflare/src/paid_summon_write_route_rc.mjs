@@ -6,6 +6,9 @@
  */
 import { InvalidIdentity, verifyFirebaseHeaders } from './jwt_verify.mjs';
 import { createCanonicalSummonStage, CanonicalStageError } from './summon_canonical_stage.mjs';
+import { RefundHoldErrorRC5 } from './refund_account_guard_rc5.mjs';
+import { VerifiedPurchaseUnlockErrorRC14, paidPurchaseUnlockEnabledRC14 } from './verified_purchase_unlock_rc14.mjs';
+import { TrustedProgressionErrorRC3 } from './trusted_progression_read_rc3.mjs';
 import { resolveTrustedSummonStage } from './summon_trusted_resolver_stage.mjs';
 
 const UUID4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -82,13 +85,13 @@ function receipt(result, requestId, pullCount) {
 }
 export function createPaidSummonWriteHandlerRC({
   verifyIdentity = verifyFirebaseHeaders,
-  makeCoordinator = createCanonicalSummonStage,
+  makeCoordinator = (db,env) => createCanonicalSummonStage(db,{requireTrustedProof:!paidPurchaseUnlockEnabledRC14(env),requireVerifiedPaidCredit:paidPurchaseUnlockEnabledRC14(env),writeRecoveryIndex:true,requireNoRefundHold:true}),
   resolveTrustedTransition = resolveTrustedSummonStage,
 } = {}) {
   return async (request, env) => {
     if (request.method !== 'POST') return reply(405, { error: 'method_not_allowed' });
     // Two independent backend locks; do not touch Auth, D1, or RNG if disabled.
-    if (env?.JADE_IAP_BACKEND_ENABLED !== 'true' || env?.JADE_PAID_SUMMON_WRITE_ENABLED !== 'true') {
+    if (env?.JADE_IAP_BACKEND_ENABLED !== 'true' || env?.JADE_PAID_SUMMON_WRITE_ENABLED !== 'true' || env?.JADE_REFUND_RECONCILIATION_READY !== 'true') {
       return reply(503, { error: 'paid_summon_disabled' });
     }
     if (!env.DB || typeof env.DB.prepare !== 'function' || typeof env.DB.batch !== 'function') {
@@ -98,10 +101,15 @@ export function createPaidSummonWriteHandlerRC({
       if (new URL(request.url).search) throw new TypeError('invalid_query');
       const uid = requireUid(await verifyIdentity(request.headers, env));
       const { requestId, pullCount } = await parseBody(request);
-      const transaction = await makeCoordinator(env.DB).execute({ uid, requestId, pullCount, resolveTrustedTransition });
+      const transaction = await makeCoordinator(env.DB,env).execute({ uid, requestId, pullCount, resolveTrustedTransition });
       return reply(200, receipt(transaction, requestId, pullCount));
     } catch (err) {
       if (err instanceof InvalidIdentity) return reply(401, { error: 'unauthenticated' });
+      if (err instanceof TrustedProgressionErrorRC3 && err.code === 'unverified_progress') {
+        return reply(409, { error: 'paid_progression_not_ready' });
+      }
+      if (err instanceof RefundHoldErrorRC5) return reply(423, { error: 'paid_account_on_hold' });
+      if (err instanceof VerifiedPurchaseUnlockErrorRC14) return reply(409, { error: 'verified_play_purchase_required' });
       if (err instanceof CanonicalStageError) {
         if (['canonical_state_not_verified', 'summon_not_unlocked'].includes(err.code)) {
           return reply(409, { error: 'paid_progression_not_ready' });

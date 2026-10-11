@@ -819,6 +819,17 @@ func _refresh_storefront() -> void:
 	_billing_ready = bool(runtime.get("ready", false))
 	_billing_state = str(runtime.get("state", "unavailable"))
 	_live_price_data = PavilionManager.get_iap_store_products()
+	if OS.is_debug_build():
+		var qa_parts: PackedStringArray = PackedStringArray([
+			"state=" + _billing_state,
+			"ready=" + str(_billing_ready),
+			"play_plugin=" + str(bool(runtime.get("plugin_singleton", false))),
+			"client_ready=" + str(bool(runtime.get("billing_client_ready", false))),
+			"identity=" + str(bool(runtime.get("account_binding_ready", false))),
+			"authority=" + str(bool(runtime.get("secure_purchase_authority_ready", false))),
+			"products=" + str(_live_price_data.size()),
+		])
+		print("JADE_IAP_UI_QA state=", " ".join(qa_parts))
 	for product_id: String in OFFER_IDS:
 		if not _cards_by_id.has(product_id):
 			continue
@@ -826,10 +837,10 @@ func _refresh_storefront() -> void:
 		var price_label: Label = entry["price"] as Label
 		var shown_price: String = _available_formatted_price(product_id)
 		var next_text: String = "LOADING PRICE..."
-		if not PavilionManager.is_iap_purchase_supported(product_id):
-			next_text = "NOT AVAILABLE"
-		elif not shown_price.is_empty():
+		if not shown_price.is_empty():
 			next_text = shown_price
+		elif not PavilionManager.is_iap_purchase_supported(product_id):
+			next_text = "NOT AVAILABLE"
 		elif not _billing_ready and _billing_state in ["missing", "disconnected", "connect_error", "unavailable"]:
 			next_text = "STORE UNAVAILABLE"
 		if price_label.text != next_text:
@@ -840,8 +851,8 @@ func _refresh_storefront() -> void:
 
 
 func _available_formatted_price(product_id: String) -> String:
-	if not _billing_ready or not PavilionManager.is_iap_purchase_supported(product_id):
-		return ""
+	# Display price ONLY from Google's ProductDetails; purchase permission is checked separately.
+	# A locked purchase must never masquerade as a Play price-query failure.
 	if not _live_price_data.has(product_id):
 		return ""
 	var info: Dictionary = _live_price_data[product_id]

@@ -7,15 +7,21 @@ import { createSummonRecoveryHandlerM11 } from "./summon_recovery_route_m11.mjs"
 import { createPaidPurchaseCreditHandlerM13 } from "./paid_purchase_credit_route_m13.mjs";
 import { createPaidSummonWriteHandlerRC } from "./paid_summon_write_route_rc.mjs";
 import { createPaidEntitlementsReadHandlerRC } from "./paid_entitlements_read_route_rc.mjs";
+import { createPaidLoadoutHandlerRC6 } from "./paid_loadout_route_rc6.mjs";
+import { createTrustedProgressionReadHandlerRC3 } from "./trusted_progression_read_rc3.mjs";
+import { createSummonRecoveryIndexHandlerRC3 } from "./summon_recovery_index_rc3.mjs";
 
 const noStore = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff" };
 function json(body, status) { return new Response(JSON.stringify(body), { status, headers: noStore }); }
-export function createWorkerHandler({ verifyIdentity = verifyFirebaseHeaders, makePaidWalletRead = createPaidWalletReadHandlerM8, makeSummonRecovery = createSummonRecoveryHandlerM11, makePaidPurchaseCredit = createPaidPurchaseCreditHandlerM13, makePaidSummon = createPaidSummonWriteHandlerRC, makePaidEntitlements = createPaidEntitlementsReadHandlerRC } = {}) {
+export function createWorkerHandler({ verifyIdentity = verifyFirebaseHeaders, makePaidWalletRead = createPaidWalletReadHandlerM8, makeSummonRecovery = createSummonRecoveryHandlerM11, makePaidPurchaseCredit = createPaidPurchaseCreditHandlerM13, makePaidSummon = createPaidSummonWriteHandlerRC, makePaidEntitlements = createPaidEntitlementsReadHandlerRC, makePaidLoadout = createPaidLoadoutHandlerRC6, makeTrustedProgression = createTrustedProgressionReadHandlerRC3, makeRecoveryIndex = createSummonRecoveryIndexHandlerRC3 } = {}) {
   const paidWalletRead = makePaidWalletRead({ verifyIdentity });
   const summonRecovery = makeSummonRecovery({ verifyIdentity });
   const paidPurchaseCredit = makePaidPurchaseCredit({ verifyIdentity });
   const paidSummon = makePaidSummon({ verifyIdentity });
   const paidEntitlements = makePaidEntitlements({ verifyIdentity });
+  const paidLoadout = makePaidLoadout({ verifyIdentity });
+  const trustedProgression = makeTrustedProgression({ verifyIdentity });
+  const recoveryIndex = makeRecoveryIndex({ verifyIdentity });
   return async function handler(request, env) {
     const path = new URL(request.url).pathname;
     // Read-only, independently gated by JADE_PAID_WALLET_READ_ENABLED.
@@ -25,6 +31,9 @@ export function createWorkerHandler({ verifyIdentity = verifyFirebaseHeaders, ma
     if (path === "/v1/iap/authorize-v2") return paidPurchaseCredit(request, env);
     if (path === "/v1/wallet/summon") return paidSummon(request, env);
     if (path === "/v1/wallet/entitlements") return paidEntitlements(request, env);
+    if (path === "/v1/wallet/paid-loadout") return paidLoadout(request, env);
+    if (path === "/v1/wallet/trusted-progress") return trustedProgression(request, env);
+    if (path === "/v1/wallet/summon-recovery-index") return recoveryIndex(request, env);
     if (path === "/health" && request.method === "GET") return json({ service: "jade-iap", activation: "locked" }, 200);
     if (path !== "/v1/iap/authorize") return json({ error: "not_found" }, 404);
     if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);

@@ -26,12 +26,12 @@ function secureInt(min,max) {
   return min+(buffer[0]%range);
 }
 
-function requireState(s,pullCount) {
+function requireState(s,pullCount,serverVerifiedPurchaseUnlocked=false) {
   if (![1,10].includes(pullCount)) fail('invalid_pull_count');
   if (!plain(s)||s.state_contract_version!==1||!Array.isArray(s.cleared_stage_keys)||s.cleared_stage_keys.length>200
       ||s.cleared_stage_keys.some(k=>typeof k!=='string'||!/^\d{1,2}-\d{1,2}$/.test(k))
       ||new Set(s.cleared_stage_keys).size!==s.cleared_stage_keys.length
-      ||!s.cleared_stage_keys.includes('1-5')
+      ||(!serverVerifiedPurchaseUnlocked && !s.cleared_stage_keys.includes('1-5'))
       ||!plain(s.pity)||!['rare_plus','epic_plus','legendary'].every((k,i)=>Number.isInteger(s.pity[k])&&s.pity[k]>=0&&s.pity[k]<[10,30,50][i])
       ||!plain(s.inventory)||Object.keys(s.inventory).length>300||Object.entries(s.inventory).some(([k,v])=>!ITEM.test(k)||v!==1)
       ||!Number.isSafeInteger(s.refinement_shards)||s.refinement_shards<0||s.refinement_shards>MAX
@@ -78,10 +78,14 @@ function pick(options,rand) {
   if(!Number.isSafeInteger(i)||i<0||i>=options.length) fail('invalid_secure_rng_result');
   return options[i];
 }
-function resolver(rand,{canonicalState:input,pullCount}) {
-  requireState(input,pullCount);
+function resolver(rand,{canonicalState:input,pullCount,serverVerifiedPurchaseUnlocked=false}) {
+  if(typeof serverVerifiedPurchaseUnlocked!=="boolean") fail("invalid_server_unlock_policy");
+  requireState(input,pullCount,serverVerifiedPurchaseUnlocked);
   const state=structuredClone(input);
-  const pool=getPool(state.cleared_stage_keys);
+  // This is a pool policy only. NEVER write a fake stage clear to canonical state.
+  const eligibleStages=serverVerifiedPurchaseUnlocked
+    ? [...new Set([...state.cleared_stage_keys,"1-5"])] : state.cleared_stage_keys;
+  const pool=getPool(eligibleStages);
   const rates=getRates(pool);
   if(state.wish_item_id && !pool.legendary.includes(state.wish_item_id)) fail('wish_not_unlocked');
   const results=[];

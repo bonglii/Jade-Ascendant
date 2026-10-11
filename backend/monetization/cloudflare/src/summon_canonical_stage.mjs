@@ -11,6 +11,9 @@
  */
 import { createHash } from 'node:crypto';
 import { createD1Wallet } from './d1_wallet.mjs';
+import { assertTrustedStageEvidenceRC3, trustedStageRevisionGuardRC3 } from './trusted_progression_read_rc3.mjs';
+import { assertNoRefundHoldRC5, refundHoldCasPredicateRC5 } from './refund_account_guard_rc5.mjs';
+import { assertVerifiedPlayCreditRC14, verifiedPlayCreditCasGuardRC14 } from './verified_purchase_unlock_rc14.mjs';
 
 const UID = /^[A-Za-z0-9_-]{1,128}$/;
 const UUID4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -114,7 +117,7 @@ function replay(row,owner,count,cost) {
   try { const o=JSON.parse(row.outcome_json); validateOutcome(o,count); return o; }
   catch { throw new CanonicalStageError('stored_outcome_invalid'); }
 }
-export function createCanonicalSummonStage(db) {
+export function createCanonicalSummonStage(db,{requireTrustedProof=false,writeRecoveryIndex=false,requireNoRefundHold=false,requireVerifiedPaidCredit=false}={}) {
   if (!db || typeof db.prepare!=='function' || typeof db.batch!=='function') throw new CanonicalStageError('d1_required');
   const wallet=createD1Wallet(db);
   return {
@@ -126,29 +129,53 @@ export function createCanonicalSummonStage(db) {
       if (!record || record.status!=='verified') throw new CanonicalStageError('canonical_state_not_verified');
       if (!validInt(record.revision,0,Number.MAX_SAFE_INTEGER-1)) throw new CanonicalStageError('invalid_canonical_revision');
       const state=parseState(record.state_json);
-      if (!state.cleared_stage_keys.includes('1-5')) throw new CanonicalStageError('summon_not_unlocked');
+      // The paid-only pool has a server purchase gate, not a fake victory.
+      if (!requireVerifiedPaidCredit && !state.cleared_stage_keys.includes('1-5')) throw new CanonicalStageError('summon_not_unlocked');
+      if (requireVerifiedPaidCredit && requireTrustedProof) throw new CanonicalStageError('conflicting_unlock_policy');
+      const trustedStages = requireTrustedProof
+        ? (await assertTrustedStageEvidenceRC3({db,owner,stageKeys:state.cleared_stage_keys})).stageKeys
+        : [];
+      if (requireVerifiedPaidCredit) await assertVerifiedPlayCreditRC14(db,owner);
+      if (requireNoRefundHold) await assertNoRefundHoldRC5({db,owner});
       if (typeof resolveTrustedTransition!=='function') throw new CanonicalStageError('trusted_server_resolver_required');
       // Trusted pure resolver must read only server-owned input; no client RNG,
       // item eligibility or pity arguments. It has NO direct DB write authority.
       const before=structuredClone(state);
-      const candidate=await resolveTrustedTransition({uid,pullCount,spendId:id,canonicalState:structuredClone(state)});
+      const candidate=await resolveTrustedTransition({uid,pullCount,spendId:id,canonicalState:structuredClone(state),serverVerifiedPurchaseUnlocked:requireVerifiedPaidCredit});
       if (!exact(candidate,['outcome','nextState'])) throw new CanonicalStageError('invalid_trusted_transition');
       const outcomeJson=validateOutcome(candidate.outcome,pullCount);
       validateTransition(before,candidate.nextState,candidate.outcome,pullCount);
       const nextJson=validateState(candidate.nextState);
       try {
-        await db.batch([
+        // RC3_TRUSTED_PROOF_CAS: inside the atomic debit/outcome batch.
+        // Every condition is re-evaluated IN the same D1 batch as debit.
+        // A false predicate sets revision=-1, failing canonical CHECK and
+        // rolling back wallet debit, outcome and request index together.
+        const proofGuard = requireTrustedProof
+          ? trustedStageRevisionGuardRC3(owner,trustedStages) : null;
+        const paidGuard = requireVerifiedPaidCredit
+          ? verifiedPlayCreditCasGuardRC14(owner) : null;
+        const guards = [proofGuard,paidGuard].filter(Boolean);
+        const guardSql = guards.map(g=>' AND ('+g.sql+')').join('')
+          + (requireNoRefundHold ? ' '+refundHoldCasPredicateRC5() : '');
+        const guardBindings = guards.flatMap(g=>g.bindings);
+        const steps = [
           db.prepare('INSERT INTO iap_wallet_events_v1 (event_key,owner_key,event_kind,item_key,delta) VALUES (?, ?, ?, ?, ?)')
             .bind(id,owner,'summon_debit','summon:'+pullCount,-cost),
           db.prepare('UPDATE iap_wallet_accounts_v1 SET balance=balance-?,revision=revision+1 WHERE owner_key=?')
             .bind(cost,owner),
           // CAS must ABORT, not silently update 0 rows, when revision changed.
           // The revision CHECK forces a transaction rollback on stale state.
-          db.prepare('UPDATE iap_summon_canonical_v1 SET revision=CASE WHEN revision=? THEN revision+1 ELSE -1 END, state_json=CASE WHEN revision=? THEN ? ELSE state_json END,updated_at=CURRENT_TIMESTAMP WHERE owner_key=?')
-            .bind(record.revision,record.revision,nextJson,owner),
+          db.prepare(`UPDATE iap_summon_canonical_v1 SET revision=CASE WHEN revision=?${guardSql} THEN revision+1 ELSE -1 END, state_json=CASE WHEN revision=? THEN ? ELSE state_json END,updated_at=CURRENT_TIMESTAMP WHERE owner_key=?`)
+            .bind(record.revision,...guardBindings,record.revision,nextJson,owner),
           db.prepare('INSERT INTO iap_summon_outcomes_v1 (spend_key,owner_key,pull_count,jade_cost,outcome_json) VALUES (?, ?, ?, ?, ?)')
             .bind(id,owner,pullCount,cost,outcomeJson),
-        ]);
+        ];
+        if (writeRecoveryIndex) {
+          steps.push(db.prepare('INSERT INTO iap_summon_request_index_v1 (spend_key,owner_key,request_id) VALUES (?, ?, ?)')
+            .bind(id,owner,requestId.toLowerCase()));
+        }
+        await db.batch(steps);
         return {spend_id:id,outcome:JSON.parse(outcomeJson),wallet:await wallet.getSnapshot(uid),applied:true};
       } catch(e) {
         const after=await readOutcome(primary(db),id);

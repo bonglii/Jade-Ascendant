@@ -6,6 +6,7 @@ extends "res://scripts/ui/pavilion_runtime_screen_vfx.gd"
 ## duplicate conversion, rewarded grants, and save state.
 
 const RitualStage = preload("res://scripts/ui/pavilion_rateup_ritual_stage.gd")
+const PaidSummonSurfaceRC5 = preload("res://scripts/ui/paid_summon_surface_rc5.gd")
 
 const PALACE_BACKGROUND_PATH: String = "res://assets/ui/pavilion/redesign/pavilion_summon_palace_bg.png"
 const SUMMON_ALTAR_PATH: String = "res://assets/ui/pavilion/redesign/pavilion_summon_altar.png"
@@ -94,6 +95,8 @@ func _build_summon_section() -> void:
 	_build_legendary_mandate()
 	_build_summon_ctas()
 	_build_utility_rows()
+	if PavilionManager.HYBRID_PAID_SUMMON_WRITE_APPROVED:
+		locked_root.add_child(PaidSummonSurfaceRC5.new())
 
 	starter_button = _button(
 		locked_root,

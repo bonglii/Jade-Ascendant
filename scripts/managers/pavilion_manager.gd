@@ -29,6 +29,11 @@ signal paid_purchase_receipt_m14_changed(view: Dictionary)
 signal paid_summon_recovery_m12_changed(view: Dictionary)
 ## FastTrack read-only paid entitlement view; never written to user:// inventory.
 signal paid_entitlements_rc_changed(view: Dictionary)
+signal paid_verified_purchase_repair_changed(view: Dictionary)
+## RC6: server-only paid loadout and cross-device summon lookup.
+signal paid_loadout_rc6_changed(view: Dictionary)
+signal paid_summon_history_rc6_changed(view: Dictionary)
+signal paid_summon_commit_rc4_changed(view: Dictionary)
 
 const EconomyCatalog = preload("res://scripts/data/economy_catalog.gd")
 const OfflineBillingProvider = preload(
@@ -39,6 +44,7 @@ const GooglePlayBillingProvider = preload(
 )
 const PURCHASE_AUTHORITY_SINGLETON: String = "JadeMonetizationNativeBridge"
 const SECURE_PURCHASE_ACTIVATION_APPROVED: bool = false
+const PAID_LEDGER_REPAIR_UI_APPROVED: bool = false
 const HybridWalletGameBridgeM7 = preload(
 	"res://scripts/monetization/hybrid_wallet_game_bridge_m7.gd"
 )
@@ -55,6 +61,14 @@ const HybridPaidSummonRecoveryM12 = preload(
 const HYBRID_PAID_SUMMON_RECOVERY_READ_APPROVED: bool = false
 const HybridPaidEntitlementsRC = preload("res://scripts/monetization/hybrid_paid_entitlements_rc.gd")
 const HYBRID_PAID_ENTITLEMENTS_DISPLAY_APPROVED: bool = false
+const HybridPaidLoadoutRC2 = preload("res://scripts/monetization/hybrid_paid_loadout_rc2.gd")
+const HybridSummonRecoveryIndexRC3 = preload("res://scripts/monetization/hybrid_summon_recovery_index_rc3.gd")
+const HYBRID_PAID_LOADOUT_READ_APPROVED: bool = false
+const HYBRID_PAID_LOADOUT_WRITE_APPROVED: bool = false
+const HYBRID_PAID_HISTORY_READ_APPROVED: bool = false
+const HYBRID_PAID_SUMMON_WRITE_APPROVED: bool = false
+const HybridPaidSummonCommitRC4 = preload("res://scripts/monetization/hybrid_paid_summon_commit_rc4.gd")
+const PaidSummonPendingJournalRC4 = preload("res://scripts/monetization/paid_summon_pending_journal_rc4.gd")
 
 const MEDITATION_REWARD: int = 20
 const PAYMENT_AUTO: String = "auto"
@@ -138,6 +152,7 @@ var billing_provider: Node = null
 var billing_store_products: Dictionary = {}
 var billing_owned_product_ids: Array[String] = []
 var secure_purchase_authority_ready: bool = false
+var _iap_auth_qa_previous: String = ""
 var purchase_authority_bridge: Object = null
 var secure_purchase_in_flight_product_id: String = ""
 var _secure_purchase_in_flight_binding_m14: String = ""
@@ -152,8 +167,25 @@ var _paid_entitlements_bridge_rc: Object = null
 var _paid_entitlements_pending_rc: bool = false
 var _paid_entitlements_binding_rc: String = ""
 var _paid_entitlements_view_rc: Dictionary = HybridPaidEntitlementsRC.empty()
+var _paid_rc6_bridge: Object = null
+var _paid_loadout_pending_rc6: bool = false
+var _paid_loadout_bound_rc6: String = ""
+var _paid_loadout_live_binding_rc6: String = ""
+var _paid_loadout_view_rc6: Dictionary = HybridPaidLoadoutRC2.empty()
+var _paid_history_pending_rc6: bool = false
+var _paid_history_bound_rc6: String = ""
+var _paid_history_live_binding_rc6: String = ""
+var _paid_history_view_rc6: Dictionary = HybridSummonRecoveryIndexRC3.empty()
+var _paid_summon_bridge_rc4: Object = null
+var _paid_summon_pending_rc4: bool = false
+var _paid_summon_request_rc4: String = ""
+var _paid_summon_binding_rc4: String = ""
+var _paid_summon_commit_view_rc4: Dictionary = HybridPaidSummonCommitRC4.empty()
 var _paid_wallet_pending_m9: bool = false
 var _paid_wallet_view_m9: Dictionary = HybridPaidWalletSnapshotM9.empty()
+var _purchase_repair_binding: String = ""
+var _purchase_repair_pending: bool = false
+var _purchase_repair_view: Dictionary = {"status": "not_connected"}
 
 
 func _ready() -> void:
@@ -176,6 +208,7 @@ func _ready() -> void:
 	call_deferred("_connect_secure_purchase_transport")
 	call_deferred("_connect_paid_wallet_transport_m9")
 	call_deferred("_connect_secure_purchase_identity")
+	call_deferred("_refresh_paid_rc6_if_ready")
 	call_deferred("_sync_economy_cadence")
 
 
@@ -403,7 +436,7 @@ func _connect_paid_wallet_transport_m9() -> bool:
 	var bridge: Object = Engine.get_singleton(PURCHASE_AUTHORITY_SINGLETON)
 	if bridge == null:
 		return false
-	if not bridge.has_method("refreshPaidWalletSnapshot"):
+	if not bridge.call("has_java_method", "refreshPaidWalletSnapshot"):
 		return false
 	if not bridge.has_signal("paidWalletSnapshotResult"):
 		return false
@@ -464,7 +497,7 @@ func _connect_paid_entitlements_rc() -> bool:
 	if OS.get_name() != "Android" or not Engine.has_singleton(PURCHASE_AUTHORITY_SINGLETON):
 		return false
 	var bridge: Object = Engine.get_singleton(PURCHASE_AUTHORITY_SINGLETON)
-	if bridge == null or not bridge.has_method("refreshPaidEntitlements") or not bridge.has_signal("paidEntitlementsReadResult"):
+	if bridge == null or not bridge.call("has_java_method", "refreshPaidEntitlements") or not bridge.has_signal("paidEntitlementsReadResult"):
 		return false
 	var callback := Callable(self, "_on_paid_entitlements_result_rc")
 	if not bridge.is_connected("paidEntitlementsReadResult", callback):
@@ -500,10 +533,156 @@ func _on_paid_entitlements_result_rc(success: bool, status: String, payload: Str
 		_invalidate_paid_entitlements_rc("identity_changed")
 		return
 	_paid_entitlements_view_rc = HybridPaidEntitlementsRC.from_native_result(success, status, payload)
+	EquipmentManager.clear_paid_runtime_rc6()
 	paid_entitlements_rc_changed.emit(get_paid_entitlements_rc_view())
+	if _paid_entitlements_view_rc.get("status") == "ready":
+		request_paid_loadout_rc6()
+	else:
+		_invalidate_paid_rc6("entitlements_unavailable")
 
 
 ## M12 read-only recovery handoff. Never writes game state or applies rewards.
+## RC4: server-paid summon transport. ID is journaled BEFORE the HTTP request.
+## No local Jade, inventory, equipment or pity writes. Still locked for release.
+func get_paid_summon_commit_rc4_view() -> Dictionary:
+	return _paid_summon_commit_view_rc4.duplicate(true)
+
+func _connect_paid_summon_commit_rc4() -> bool:
+	_paid_summon_bridge_rc4 = null
+	if OS.get_name() != "Android" or not Engine.has_singleton(PURCHASE_AUTHORITY_SINGLETON):
+		return false
+	var bridge: Object = Engine.get_singleton(PURCHASE_AUTHORITY_SINGLETON)
+	if bridge == null or not bridge.call("has_java_method", "commitPaidSummon") or not bridge.has_signal("paidSummonCommitResult"):
+		return false
+	var callback := Callable(self, "_on_paid_summon_result_rc4")
+	if not bridge.is_connected("paidSummonCommitResult", callback):
+		bridge.connect("paidSummonCommitResult", callback)
+	_paid_summon_bridge_rc4 = bridge
+	return true
+
+func request_paid_summon_rc4(pull_count: int) -> bool:
+	if not HYBRID_PAID_SUMMON_WRITE_APPROVED or _paid_summon_pending_rc4:
+		return false
+	if pull_count not in [1, 10]:
+		return false
+	var binding: String = GoogleAccountManager.get_monetization_account_binding()
+	if binding.is_empty():
+		return false
+	if _paid_summon_bridge_rc4 == null or not is_instance_valid(_paid_summon_bridge_rc4):
+		if not _connect_paid_summon_commit_rc4():
+			return false
+	if not _paid_summon_bridge_rc4.has_method("isPaidSummonTransportConfigured") or not bool(_paid_summon_bridge_rc4.call("isPaidSummonTransportConfigured")):
+		return false
+	var existing: Dictionary = PaidSummonPendingJournalRC4.read_pending()
+	if not existing.is_empty():
+		if existing.has("error") or existing.get("account_binding") != binding or existing.get("pull_count") != pull_count:
+			return false
+	var pending: Dictionary = PaidSummonPendingJournalRC4.create_pending(binding, pull_count)
+	if pending.has("error") or not pending.has("request_id"):
+		return false
+	_paid_summon_pending_rc4 = true
+	_paid_summon_request_rc4 = str(pending["request_id"])
+	_paid_summon_binding_rc4 = binding
+	_paid_summon_commit_view_rc4 = HybridPaidSummonCommitRC4.empty("loading")
+	paid_summon_commit_rc4_changed.emit(get_paid_summon_commit_rc4_view())
+	_paid_summon_bridge_rc4.call("commitPaidSummon", _paid_summon_request_rc4, pull_count)
+	return true
+
+## Resume with the same UUID after restart, without creating another spend.
+func resume_pending_paid_summon_rc4() -> bool:
+	var pending: Dictionary = PaidSummonPendingJournalRC4.read_pending()
+	if pending.is_empty() or pending.has("error"):
+		return false
+	if pending.get("account_binding") != GoogleAccountManager.get_monetization_account_binding():
+		return false
+	return request_paid_summon_rc4(int(pending.get("pull_count", 0)))
+
+func _on_paid_summon_result_rc4(success: bool, status: String, payload: String) -> void:
+	if not _paid_summon_pending_rc4:
+		return
+	var binding: String = _paid_summon_binding_rc4
+	var request_id: String = _paid_summon_request_rc4
+	_paid_summon_pending_rc4 = false
+	_paid_summon_binding_rc4 = ""
+	_paid_summon_request_rc4 = ""
+	if binding.is_empty() or GoogleAccountManager.get_monetization_account_binding() != binding:
+		_paid_summon_commit_view_rc4 = HybridPaidSummonCommitRC4.empty("account_changed")
+	else:
+		_paid_summon_commit_view_rc4 = HybridPaidSummonCommitRC4.from_native_result(success, status, payload, request_id)
+		if _paid_summon_commit_view_rc4.get("status") == "committed":
+			if not PaidSummonPendingJournalRC4.clear_committed(binding, request_id):
+				_paid_summon_commit_view_rc4["journal_cleanup_pending"] = true
+	paid_summon_commit_rc4_changed.emit(get_paid_summon_commit_rc4_view())
+
+## No purchase tokens, Jade credits, items or saves can be modified here.
+func get_paid_verified_purchase_repair_view() -> Dictionary:
+	return _purchase_repair_view.duplicate(true)
+
+func _invalidate_verified_purchase_repair(reason: String = "unavailable") -> void:
+	_purchase_repair_pending = false
+	_purchase_repair_binding = ""
+	_purchase_repair_view = {"status": reason}
+	paid_verified_purchase_repair_changed.emit(get_paid_verified_purchase_repair_view())
+
+func request_paid_verified_purchase_repair() -> bool:
+	if not PAID_LEDGER_REPAIR_UI_APPROVED or _purchase_repair_pending:
+		return false
+	if OS.get_name() != "Android" or not Engine.has_singleton(PURCHASE_AUTHORITY_SINGLETON):
+		return false
+	var binding: String = GoogleAccountManager.get_monetization_account_binding()
+	if binding.is_empty():
+		_invalidate_verified_purchase_repair("account_changed")
+		return false
+	var bridge: Object = Engine.get_singleton(PURCHASE_AUTHORITY_SINGLETON)
+	if bridge == null or not bridge.call("has_java_method", "repairVerifiedPlayPurchases"):
+		return false
+	if not bridge.call("has_java_method", "isVerifiedPurchaseRepairTransportConfigured"):
+		return false
+	if not bool(bridge.call("isVerifiedPurchaseRepairTransportConfigured")):
+		return false
+	if not bridge.has_signal("paidVerifiedPurchaseRepairResult"):
+		return false
+	var callback := Callable(self, "_on_verified_purchase_repair_result")
+	if not bridge.is_connected("paidVerifiedPurchaseRepairResult", callback):
+		bridge.connect("paidVerifiedPurchaseRepairResult", callback)
+	_purchase_repair_pending = true
+	_purchase_repair_binding = binding
+	_purchase_repair_view = {"status": "loading"}
+	paid_verified_purchase_repair_changed.emit(get_paid_verified_purchase_repair_view())
+	bridge.call("repairVerifiedPlayPurchases")
+	return true
+
+func _on_verified_purchase_repair_result(success: bool, status: String, payload: String) -> void:
+	if not _purchase_repair_pending:
+		return
+	var expected_binding: String = _purchase_repair_binding
+	_purchase_repair_pending = false
+	_purchase_repair_binding = ""
+	if expected_binding.is_empty() or GoogleAccountManager.get_monetization_account_binding() != expected_binding:
+		_invalidate_verified_purchase_repair("account_changed")
+		return
+	if not success or status != "SERVER_LEDGER_RECONCILED":
+		_invalidate_verified_purchase_repair("unavailable")
+		return
+	var raw: Variant = JSON.parse_string(payload)
+	if not (raw is Dictionary):
+		_invalidate_verified_purchase_repair("invalid_response")
+		return
+	var result: Dictionary = raw
+	if result.size() != 4 or int(result.get("repair_contract_version", -1)) != 1:
+		_invalidate_verified_purchase_repair("invalid_response")
+		return
+	if result.get("state") != "server_reconciled" or not result.has("verified_purchases"):
+		_invalidate_verified_purchase_repair("invalid_response")
+		return
+	var verified: int = int(result.get("verified_purchases", -1))
+	var added: int = int(result.get("new_wallet_credits", -1))
+	if verified < 0 or verified > 32 or added < 0 or added > verified:
+		_invalidate_verified_purchase_repair("invalid_response")
+		return
+	_purchase_repair_view = {"status": "reconciled", "new_wallet_credits": added, "verified_purchases": verified}
+	paid_verified_purchase_repair_changed.emit(get_paid_verified_purchase_repair_view())
+
 func get_paid_summon_recovery_m12_view() -> Dictionary:
 	if _paid_summon_recovery_view_m12.is_empty():
 		return HybridPaidSummonRecoveryM12.empty()
@@ -519,7 +698,7 @@ func _connect_paid_summon_recovery_m12() -> bool:
 	if OS.get_name() != "Android" or not Engine.has_singleton(PURCHASE_AUTHORITY_SINGLETON):
 		return false
 	var bridge: Object = Engine.get_singleton(PURCHASE_AUTHORITY_SINGLETON)
-	if bridge == null or not bridge.has_method("recoverPaidSummon") or not bridge.has_signal("paidSummonRecoveryResult"):
+	if bridge == null or not bridge.call("has_java_method", "recoverPaidSummon") or not bridge.has_signal("paidSummonRecoveryResult"):
 		return false
 	var callback := Callable(self, "_on_paid_summon_recovery_result_m12")
 	if not bridge.is_connected("paidSummonRecoveryResult", callback):
@@ -560,6 +739,167 @@ func _on_paid_summon_recovery_result_m12(success: bool, status: String, payload:
 	)
 	paid_summon_recovery_m12_changed.emit(get_paid_summon_recovery_m12_view())
 
+
+## RC6: verified paid equipment remains separate from pavilion.save and legacy summon.
+func get_paid_loadout_rc6_view() -> Dictionary:
+	if _paid_loadout_pending_rc6 and _paid_loadout_bound_rc6 == GoogleAccountManager.get_monetization_account_binding():
+		return _paid_loadout_view_rc6.duplicate(true)
+	if _paid_loadout_live_binding_rc6.is_empty() or _paid_loadout_live_binding_rc6 != GoogleAccountManager.get_monetization_account_binding():
+		return HybridPaidLoadoutRC2.empty("account_changed")
+	return _paid_loadout_view_rc6.duplicate(true)
+
+func get_paid_summon_history_rc6_view() -> Dictionary:
+	if _paid_history_pending_rc6 and _paid_history_bound_rc6 == GoogleAccountManager.get_monetization_account_binding():
+		return _paid_history_view_rc6.duplicate(true)
+	if _paid_history_live_binding_rc6.is_empty() or _paid_history_live_binding_rc6 != GoogleAccountManager.get_monetization_account_binding():
+		return HybridSummonRecoveryIndexRC3.empty("account_changed")
+	return _paid_history_view_rc6.duplicate(true)
+
+func _connect_paid_rc6_bridge() -> bool:
+	if OS.get_name() != "Android" or not Engine.has_singleton(PURCHASE_AUTHORITY_SINGLETON):
+		return false
+	var bridge: Object = Engine.get_singleton(PURCHASE_AUTHORITY_SINGLETON)
+	if bridge == null:
+		return false
+	for spec in [
+		["paidLoadoutReadResult", "_on_paid_loadout_read_rc6"],
+		["paidLoadoutWriteResult", "_on_paid_loadout_write_rc6"],
+		["paidSummonHistoryIndexResult", "_on_paid_summon_history_rc6"]
+	]:
+		if not bridge.has_signal(spec[0]):
+			return false
+		var callback := Callable(self, spec[1])
+		if not bridge.is_connected(spec[0], callback):
+			bridge.connect(spec[0], callback)
+	_paid_rc6_bridge = bridge
+	return true
+
+func _invalidate_paid_rc6(reason: String = "account_changed") -> void:
+	_paid_loadout_pending_rc6 = false
+	_paid_history_pending_rc6 = false
+	_paid_loadout_bound_rc6 = ""
+	_paid_history_bound_rc6 = ""
+	_paid_loadout_live_binding_rc6 = ""
+	_paid_history_live_binding_rc6 = ""
+	_paid_loadout_view_rc6 = HybridPaidLoadoutRC2.empty(reason)
+	_paid_history_view_rc6 = HybridSummonRecoveryIndexRC3.empty(reason)
+	EquipmentManager.clear_paid_runtime_rc6()
+	paid_loadout_rc6_changed.emit(get_paid_loadout_rc6_view())
+	paid_summon_history_rc6_changed.emit(get_paid_summon_history_rc6_view())
+
+func request_paid_loadout_rc6() -> bool:
+	if not HYBRID_PAID_LOADOUT_READ_APPROVED or _paid_loadout_pending_rc6:
+		return false
+	var binding: String = GoogleAccountManager.get_monetization_account_binding()
+	if binding.is_empty() or _paid_entitlements_view_rc.get("status") != "ready":
+		_invalidate_paid_rc6("identity_or_entitlements_unavailable")
+		return false
+	if _paid_rc6_bridge == null or not is_instance_valid(_paid_rc6_bridge):
+		if not _connect_paid_rc6_bridge():
+			return false
+	if not _paid_rc6_bridge.has_method("isPaidLoadoutReadConfigured") or not bool(_paid_rc6_bridge.call("isPaidLoadoutReadConfigured")):
+		return false
+	_paid_loadout_pending_rc6 = true
+	_paid_loadout_bound_rc6 = binding
+	_paid_loadout_view_rc6 = HybridPaidLoadoutRC2.empty("loading")
+	paid_loadout_rc6_changed.emit(get_paid_loadout_rc6_view())
+	_paid_rc6_bridge.call("refreshPaidLoadout")
+	return true
+
+func _on_paid_loadout_read_rc6(success: bool, status: String, payload: String) -> void:
+	if not _paid_loadout_pending_rc6:
+		return
+	_paid_loadout_pending_rc6 = false
+	var bound: String = _paid_loadout_bound_rc6
+	_paid_loadout_bound_rc6 = ""
+	if bound.is_empty() or GoogleAccountManager.get_monetization_account_binding() != bound:
+		_invalidate_paid_rc6("account_changed")
+		return
+	_paid_loadout_view_rc6 = HybridPaidLoadoutRC2.from_native_result(success, status, payload, _paid_entitlements_view_rc)
+	_paid_loadout_live_binding_rc6 = bound if _paid_loadout_view_rc6.get("status") == "ready" else ""
+	EquipmentManager.accept_paid_runtime_rc6(bound, _paid_entitlements_view_rc, _paid_loadout_view_rc6)
+	paid_loadout_rc6_changed.emit(get_paid_loadout_rc6_view())
+
+## Propose a server-only loadout. Never call EquipmentManager.equip_item().
+func update_paid_loadout_rc6(slot_id: String, item_id: String) -> bool:
+	if not HYBRID_PAID_LOADOUT_WRITE_APPROVED or _paid_loadout_pending_rc6:
+		return false
+	if _paid_loadout_view_rc6.get("status") != "ready" or not HybridPaidLoadoutRC2.SLOTS.has(slot_id):
+		return false
+	if not item_id.is_empty():
+		if item_id not in HybridPaidLoadoutRC2.PER_SLOT[slot_id] or item_id not in _paid_entitlements_view_rc.get("item_ids", []):
+			return false
+	var binding: String = GoogleAccountManager.get_monetization_account_binding()
+	if binding.is_empty():
+		_invalidate_paid_rc6("account_changed")
+		return false
+	if _paid_rc6_bridge == null or not is_instance_valid(_paid_rc6_bridge):
+		if not _connect_paid_rc6_bridge():
+			return false
+	if not _paid_rc6_bridge.has_method("isPaidLoadoutWriteConfigured") or not bool(_paid_rc6_bridge.call("isPaidLoadoutWriteConfigured")):
+		return false
+	var revision: int = int(_paid_loadout_view_rc6.get("revision", -1))
+	var entitlement_revision: int = int(_paid_entitlements_view_rc.get("revision", -1))
+	if revision < 0 or entitlement_revision < 0:
+		return false
+	var slots: Dictionary = _paid_loadout_view_rc6.get("paid_slots", {}).duplicate(true)
+	slots[slot_id] = item_id
+	var bytes: PackedByteArray = Crypto.new().generate_random_bytes(16)
+	if bytes.size() != 16:
+		return false
+	bytes[6] = (int(bytes[6]) & 15) | 64
+	bytes[8] = (int(bytes[8]) & 63) | 128
+	var hex: String = bytes.hex_encode()
+	var request_id: String = "%s-%s-%s-%s-%s" % [hex.substr(0, 8), hex.substr(8, 4), hex.substr(12, 4), hex.substr(16, 4), hex.substr(20, 12)]
+	_paid_loadout_pending_rc6 = true
+	_paid_loadout_bound_rc6 = binding
+	_paid_loadout_view_rc6 = HybridPaidLoadoutRC2.empty("loading")
+	EquipmentManager.clear_paid_runtime_rc6()
+	paid_loadout_rc6_changed.emit(get_paid_loadout_rc6_view())
+	_paid_rc6_bridge.call("updatePaidLoadout", request_id, revision, entitlement_revision, JSON.stringify(slots))
+	return true
+
+func _on_paid_loadout_write_rc6(success: bool, status: String, payload: String) -> void:
+	_on_paid_loadout_read_rc6(success, "PAID_LOADOUT_READ_ONLY" if status == "PAID_LOADOUT_SERVER_COMMITTED" else status, payload)
+
+func request_paid_summon_history_rc6() -> bool:
+	if not HYBRID_PAID_HISTORY_READ_APPROVED or _paid_history_pending_rc6:
+		return false
+	var binding: String = GoogleAccountManager.get_monetization_account_binding()
+	if binding.is_empty():
+		_invalidate_paid_rc6("account_changed")
+		return false
+	if _paid_rc6_bridge == null or not is_instance_valid(_paid_rc6_bridge):
+		if not _connect_paid_rc6_bridge():
+			return false
+	if not _paid_rc6_bridge.has_method("refreshPaidSummonHistoryIndex"):
+		return false
+	_paid_history_pending_rc6 = true
+	_paid_history_bound_rc6 = binding
+	_paid_history_view_rc6 = HybridSummonRecoveryIndexRC3.empty("loading")
+	paid_summon_history_rc6_changed.emit(get_paid_summon_history_rc6_view())
+	_paid_rc6_bridge.call("refreshPaidSummonHistoryIndex")
+	return true
+
+func _on_paid_summon_history_rc6(success: bool, status: String, payload: String) -> void:
+	if not _paid_history_pending_rc6:
+		return
+	_paid_history_pending_rc6 = false
+	var binding: String = _paid_history_bound_rc6
+	_paid_history_bound_rc6 = ""
+	if binding.is_empty() or GoogleAccountManager.get_monetization_account_binding() != binding:
+		_invalidate_paid_rc6("account_changed")
+		return
+	_paid_history_view_rc6 = HybridSummonRecoveryIndexRC3.from_native_result(success, status, payload)
+	_paid_history_live_binding_rc6 = binding if _paid_history_view_rc6.get("status") == "ready" else ""
+	paid_summon_history_rc6_changed.emit(get_paid_summon_history_rc6_view())
+
+func _refresh_paid_rc6_if_ready() -> void:
+	if not HYBRID_PAID_ENTITLEMENTS_DISPLAY_APPROVED:
+		return
+	if GoogleAccountManager.get_monetization_account_binding().is_empty():
+		return
+	request_paid_entitlements_rc()
 
 func get_pavilion_seals() -> int:
 	return maxi(int(state.get("pavilion_seals", 0)), 0)
@@ -668,6 +1008,36 @@ func get_billing_runtime_status() -> Dictionary:
 			"ready": false,
 			"secure_purchase_authority_ready": false,
 		}
+	# Debug-only staging check: observe each native boundary instead of guessing.
+	# A one-time status re-evaluation may recover late Firebase/native initialization.
+	# Production approval and server-issued purchase authority remain unchanged.
+	if OS.is_debug_build():
+		var qa_native: bool = Engine.has_singleton(PURCHASE_AUTHORITY_SINGLETON)
+		var qa_bridge: Object = Engine.get_singleton(PURCHASE_AUTHORITY_SINGLETON) if qa_native else null
+		var qa_credit: bool = (
+			qa_bridge != null and qa_bridge.call("has_java_method", "isSandboxIapCreditEnabled")
+			and bool(qa_bridge.call("isSandboxIapCreditEnabled"))
+		)
+		var qa_appcheck: bool = (
+			qa_bridge != null and qa_bridge.call("has_java_method", "isSecurePurchaseTransportConfigured")
+			and bool(qa_bridge.call("isSecurePurchaseTransportConfigured"))
+		)
+		if qa_native and not _has_secure_purchase_transport():
+			_connect_secure_purchase_transport()
+		var qa_transport: bool = _is_secure_purchase_transport_configured()
+		var qa_identity: bool = not GoogleAccountManager.get_monetization_account_binding().is_empty()
+		if not secure_purchase_authority_ready and qa_credit and qa_appcheck and qa_transport and qa_identity:
+			_refresh_secure_purchase_context()
+		var qa_line: String = (
+			"native=" + str(qa_native) + " sandbox=" + str(qa_credit)
+			+ " appcheck_initialized=" + str(qa_appcheck)
+			+ " transport=" + str(qa_transport)
+			+ " identity=" + str(qa_identity)
+			+ " pavilion_authority=" + str(secure_purchase_authority_ready)
+		)
+		if qa_line != _iap_auth_qa_previous:
+			_iap_auth_qa_previous = qa_line
+			print("JADE_IAP_AUTH_QA ", qa_line)
 	var raw: Variant = billing_provider.call("get_runtime_status")
 	if not (raw is Dictionary):
 		return {}
@@ -771,8 +1141,8 @@ func _connect_secure_purchase_transport() -> bool:
 	if bridge == null:
 		return false
 	if (
-		not bridge.has_method("authorizePaidWalletPurchaseV2")
-		or not bridge.has_method("isPaidWalletPurchaseV2TransportConfigured")
+		not bridge.call("has_java_method", "authorizePaidWalletPurchaseV2")
+		or not bridge.call("has_java_method", "isPaidWalletPurchaseV2TransportConfigured")
 		or not bridge.has_signal("paidPurchaseWalletCreditResult")
 	):
 		return false
@@ -786,8 +1156,8 @@ func _has_secure_purchase_transport() -> bool:
 	return (
 		purchase_authority_bridge != null
 		and is_instance_valid(purchase_authority_bridge)
-		and purchase_authority_bridge.has_method("authorizePaidWalletPurchaseV2")
-		and purchase_authority_bridge.has_method("isPaidWalletPurchaseV2TransportConfigured")
+		and purchase_authority_bridge.call("has_java_method", "authorizePaidWalletPurchaseV2")
+		and purchase_authority_bridge.call("has_java_method", "isPaidWalletPurchaseV2TransportConfigured")
 		and purchase_authority_bridge.has_signal("paidPurchaseWalletCreditResult")
 	)
 
@@ -800,11 +1170,22 @@ func _is_secure_purchase_transport_configured() -> bool:
 	))
 
 
+## Staging-only: the native debug AAR attests its own locked target at runtime.
+func _staging_sandbox_credit_approved() -> bool:
+	if OS.get_name() != "Android" or not Engine.has_singleton(PURCHASE_AUTHORITY_SINGLETON):
+		return false
+	var native_bridge: Object = Engine.get_singleton(PURCHASE_AUTHORITY_SINGLETON)
+	return (
+		native_bridge != null
+		and native_bridge.call("has_java_method", "isSandboxIapCreditEnabled")
+		and bool(native_bridge.call("isSandboxIapCreditEnabled"))
+	)
+
 func _compute_secure_purchase_authority_ready(
 	account_binding: String
 ) -> bool:
 	return (
-		SECURE_PURCHASE_ACTIVATION_APPROVED
+		(SECURE_PURCHASE_ACTIVATION_APPROVED or _staging_sandbox_credit_approved())
 		and not account_binding.is_empty()
 		and _is_secure_purchase_transport_configured()
 	)
@@ -827,10 +1208,14 @@ func _connect_secure_purchase_identity() -> void:
 
 func _on_monetization_identity_changed(_ready: bool) -> void:
 	_invalidate_paid_entitlements_rc("identity_changed")
+	_invalidate_verified_purchase_repair("account_changed")
 	_invalidate_paid_purchase_receipt_m14("identity_changed")
 	_invalidate_paid_wallet_m9("identity_changed")
 	_invalidate_paid_summon_recovery_m12("identity_changed")
+	_invalidate_paid_rc6("identity_changed")
 	_refresh_secure_purchase_context()
+	if is_inside_tree():
+		call_deferred("_refresh_paid_rc6_if_ready")
 
 
 func _refresh_secure_purchase_context() -> bool:

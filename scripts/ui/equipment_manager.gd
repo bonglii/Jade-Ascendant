@@ -52,6 +52,8 @@ const ASCENSION_SCALABLE_STATS = [
 
 const EquipmentCatalog = preload("res://scripts/data/equipment_catalog.gd")
 const EQUIPMENT_CATALOG: Dictionary = EquipmentCatalog.ITEMS
+const PaidEquipmentRuntimeRC6 = preload("res://scripts/monetization/paid_equipment_runtime_rc6.gd")
+const PAID_EQUIPMENT_RUNTIME_APPROVED: bool = false
 
 var equipped_item_ids: Dictionary = {
 	SLOT_ARMAMENT: "",
@@ -61,6 +63,7 @@ var equipped_item_ids: Dictionary = {
 	SLOT_PENDANT: ""
 }
 var ascension_stars: Dictionary = {}
+var _paid_runtime_snapshot_rc6: Dictionary = PaidEquipmentRuntimeRC6.empty()
 
 # `equipped_item_ids` and `ascension_stars` are the permanent NEXT RUN loadout.
 # Once a checkpoint exists, this snapshot freezes the loadout that belongs to
@@ -120,6 +123,38 @@ func get_item_ids_for_slot(slot_id: String) -> Array[String]:
 			item_ids.append(item_id)
 	return item_ids
 
+## Source-only paid equipment gameplay overlay. Volatile signed-session data only.
+## Never append paid items to inventory.save/equipment.save/checkpoint snapshots.
+func clear_paid_runtime_rc6() -> void:
+	_paid_runtime_snapshot_rc6 = PaidEquipmentRuntimeRC6.empty("invalidated")
+
+func accept_paid_runtime_rc6(binding: String, entitlements: Dictionary, loadout: Dictionary) -> bool:
+	clear_paid_runtime_rc6()
+	if not PAID_EQUIPMENT_RUNTIME_APPROVED:
+		return false
+	if binding.is_empty() or GoogleAccountManager.get_monetization_account_binding() != binding:
+		return false
+	var candidate: Dictionary = PaidEquipmentRuntimeRC6.verified_session(binding, entitlements, loadout, Time.get_ticks_msec())
+	if candidate.get("status") != "ready":
+		return false
+	_paid_runtime_snapshot_rc6 = candidate
+	return true
+
+func _paid_runtime_item_rc6(slot_id: String) -> String:
+	if not PAID_EQUIPMENT_RUNTIME_APPROVED or not _has_gameplay_player():
+		return ""
+	return PaidEquipmentRuntimeRC6.slot_if_fresh(
+		_paid_runtime_snapshot_rc6,
+		GoogleAccountManager.get_monetization_account_binding(),
+		slot_id, Time.get_ticks_msec()
+	)
+
+func _using_paid_runtime_rc6() -> bool:
+	for slot_id in get_slot_ids():
+		if not _paid_runtime_item_rc6(slot_id).is_empty():
+			return true
+	return false
+
 func can_modify_equipment() -> bool:
 	# A checkpoint no longer seals the hub. Hub edits are permanent NEXT RUN
 	# choices, while gameplay continues to read the frozen run snapshot. Direct
@@ -151,6 +186,9 @@ func get_loadout_equipped_item_id(slot_id: String) -> String:
 func get_runtime_equipped_item_id(slot_id: String) -> String:
 	if not is_valid_slot(slot_id):
 		return ""
+	var paid_id: String = _paid_runtime_item_rc6(slot_id)
+	if not paid_id.is_empty():
+		return paid_id
 	if active_run_loadout_snapshot.is_empty():
 		return get_loadout_equipped_item_id(slot_id)
 	var runtime_equipped: Dictionary = active_run_loadout_snapshot.get(
@@ -162,7 +200,7 @@ func get_runtime_equipped_item_id(slot_id: String) -> String:
 func get_equipped_item_id(slot_id: String) -> String:
 	# Keep the established API safe for gameplay callers without changing hub
 	# semantics. Menu scenes have no real player node and therefore see NEXT RUN.
-	if _should_use_active_run_loadout():
+	if _should_use_active_run_loadout() or not _paid_runtime_item_rc6(slot_id).is_empty():
 		return get_runtime_equipped_item_id(slot_id)
 	return get_loadout_equipped_item_id(slot_id)
 
@@ -185,7 +223,7 @@ func get_runtime_equipped_item_data(slot_id: String) -> Dictionary:
 	)
 
 func get_equipped_item_data(slot_id: String) -> Dictionary:
-	if _should_use_active_run_loadout():
+	if _should_use_active_run_loadout() or not _paid_runtime_item_rc6(slot_id).is_empty():
 		return get_runtime_equipped_item_data(slot_id)
 	return get_loadout_equipped_item_data(slot_id)
 
@@ -201,6 +239,9 @@ func get_loadout_item_star(item_id: String) -> int:
 func get_runtime_item_star(item_id: String) -> int:
 	if not has_item_definition(item_id):
 		return 0
+	var slot_id: String = str(get_item_data(item_id).get("slot", ""))
+	if _paid_runtime_item_rc6(slot_id) == item_id:
+		return 1
 	if active_run_loadout_snapshot.is_empty():
 		return get_loadout_item_star(item_id)
 	var runtime_stars: Dictionary = active_run_loadout_snapshot.get(
@@ -214,6 +255,10 @@ func get_runtime_item_star(item_id: String) -> int:
 	)
 
 func get_item_star(item_id: String) -> int:
+	if has_item_definition(item_id):
+		var slot_id: String = str(get_item_data(item_id).get("slot", ""))
+		if _paid_runtime_item_rc6(slot_id) == item_id:
+			return 1
 	if _should_use_active_run_loadout():
 		return get_runtime_item_star(item_id)
 	return get_loadout_item_star(item_id)
@@ -382,7 +427,7 @@ func _get_stat_total(stat_id: String, use_runtime: bool) -> float:
 	for slot_id in get_slot_ids():
 		var item_data: Dictionary = (
 			get_runtime_equipped_item_data(slot_id)
-			if use_runtime
+			if use_runtime or _using_paid_runtime_rc6()
 			else get_loadout_equipped_item_data(slot_id)
 		)
 		total_bonus += float(item_data.get(stat_id, 0.0))

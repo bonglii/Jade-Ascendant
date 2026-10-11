@@ -20,7 +20,7 @@ const summon = (payload = {request_id:REQUEST, pull_count:1}, opts={}) => new Re
   method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify(payload), ...opts,
 });
 const entitlementReq = () => new Request(URL_BASE+'entitlements');
-const env = extra => ({JADE_IAP_BACKEND_ENABLED:'true',JADE_PAID_SUMMON_WRITE_ENABLED:'true',JADE_PAID_ENTITLEMENTS_READ_ENABLED:'true',DB:{prepare:()=>{},batch:()=>{}},...extra});
+const env = extra => ({JADE_IAP_BACKEND_ENABLED:'true',JADE_PAID_SUMMON_WRITE_ENABLED:'true',JADE_REFUND_RECONCILIATION_READY:'true',JADE_PAID_ENTITLEMENTS_READ_ENABLED:'true',DB:{prepare:()=>{},batch:()=>{}},...extra});
 const fakeReceipt = () => ({spend_id:'spendv1:'+'a'.repeat(64),outcome:{outcome_contract_version:1,pull_count:1,results:[{item_id:'test_sword'}],next_pity:{rare_plus:0,epic_plus:0,legendary:0}},wallet:{wallet_contract_version:1,balance:1200,revision:2},applied:true});
 function sampleCanonical(){return {state_contract_version:1,cleared_stage_keys:['1-5'],pity:{rare_plus:0,epic_plus:0,legendary:0},wish_item_id:'',wish_fate_guaranteed:false,lifetime_pulls:0,inventory:{},refinement_shards:0};}
 class SqliteD1 {
