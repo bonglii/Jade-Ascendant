@@ -1014,16 +1014,17 @@ func _refresh_popup() -> void:
 
 
 func _fit_modal_to_content() -> void:
-	if (
-		_modal_panel == null
-		or not is_instance_valid(_modal_panel)
-		or _premium_scroll == null
-		or _premium_body == null
-	):
-		return
-
-	await get_tree().process_frame
-	await get_tree().process_frame
+	if not is_inside_tree(): return
+	var panel: PanelContainer = _modal_panel
+	var scroll: ScrollContainer = _premium_scroll
+	var body: VBoxContainer = _premium_body
+	var popup: Control = _popup
+	if not _fit_target_is_current(panel,scroll,body,popup): return
+	# Close/reopen can replace these nodes during either layout frame.
+	for _frame in range(2):
+		if not is_inside_tree(): return
+		await get_tree().process_frame
+		if not _fit_target_is_current(panel,scroll,body,popup): return
 
 	var desired_height: float = ceilf(
 		_premium_body.get_combined_minimum_size().y
@@ -1199,3 +1200,14 @@ func _premium_panel_style(
 	style.content_margin_right = 10.0
 	style.content_margin_bottom = 8.0
 	return style
+
+
+func _fit_target_is_current(panel: Variant, scroll: Variant, body: Variant, popup: Variant) -> bool:
+	return (
+		is_inside_tree()
+		and is_instance_valid(panel) and is_instance_valid(scroll)
+		and is_instance_valid(body) and is_instance_valid(popup)
+		and not popup.is_queued_for_deletion()
+		and panel == _modal_panel and scroll == _premium_scroll
+		and body == _premium_body and popup == _popup
+	)

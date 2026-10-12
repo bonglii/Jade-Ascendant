@@ -203,3 +203,22 @@ test('owner reset changes only admin credentials, hides plaintext and revokes se
  assert.equal(f.db.sql.prepare('SELECT id FROM mail_campaigns').get().id,mail.id);assert.equal(f.db.sql.prepare('SELECT count(*) AS n FROM player_identities').get().n,2);
  await assert.rejects(resetSQL({key:secret,username:"admin'; DROP TABLE mail_claims; --",password}),/invalid_username/);f.db.sql.close();
 });
+
+test('gift catalog matches authored equipment and extended rewards freeze exact receipts',async()=>{
+ const {CATALOG}=await import('./mail_rewards.mjs');assert.equal(CATALOG.equipment.length,40);const f=await fixture();await f.login();
+ const reward={spirit_stone:20,celestial_jade:500,pavilion_seal:3,items:{refinement_shard:2,nine_heavens_star_sword:1}};const {mail}=await f.publish({reward});assert.deepEqual(mail.reward,reward);
+ assert.equal((await f.api('/v1/mail/claim',{mail_id:mail.id,installation_id:installation})).data.error,'client_upgrade_required');
+ assert.equal((await f.api('/v1/mail/list?installation_id='+installation)).data.entries.length,0);
+ const features={headers:{'x-jade-mail-features':'gifts-v2'}};assert.equal((await f.api('/v1/mail/list?installation_id='+installation,undefined,features)).data.entries.length,1);
+ const held=await f.api('/v1/mail/claim',{mail_id:mail.id,installation_id:installation},features);assert.equal(held.status,200);assert.deepEqual(held.data.reward,reward);
+ const again=await f.api('/v1/mail/claim',{mail_id:mail.id,installation_id:installation},features);assert.equal(again.data.receipt_id,held.data.receipt_id);
+ await f.api('/v1/mail/ack',{mail_id:mail.id,installation_id:installation,receipt_id:held.data.receipt_id});assert.equal((await f.api('/v1/mail/claim',{mail_id:mail.id,installation_id:installation},features)).data.reward,undefined);f.db.sql.close();
+});
+
+test('Jade/seal-only gifts are claims, unsupported paid fields and forged equipment are rejected',async()=>{
+ const f=await fixture();await f.login();for(const reward of [{spirit_stone:0,items:{},celestial_jade:1},{spirit_stone:0,items:{},pavilion_seal:1}]){
+  const {mail}=await f.publish({reward});assert.equal((await f.api('/v1/mail/claim',{mail_id:mail.id,installation_id:installation},{headers:{'x-jade-mail-features':'gifts-v2'}})).status,200);
+ }
+ for(const reward of [{spirit_stone:0,items:{},celestial_jade:true},{spirit_stone:0,items:{},celestial_jade:10001},{spirit_stone:0,items:{},pavilion_seal:101},{spirit_stone:0,items:{},paid_jade:1},{spirit_stone:0,items:{unknown_weapon:1}},{spirit_stone:0,items:{nine_heavens_star_sword:2}}])assert.equal((await f.api('/admin/api/preview',f.draft({reward}))).status,400);
+ const {CATALOG}=await import('./mail_rewards.mjs');assert.equal((await f.api('/admin/api/preview',f.draft({reward:{spirit_stone:0,items:Object.fromEntries(CATALOG.equipment.slice(0,6).map(item=>[item.id,1]))}}))).status,400);f.db.sql.close();
+});

@@ -496,7 +496,8 @@ func get_reward_validation_error(
 		if not InventoryManager.is_known_item(item_id):
 			return "item tidak dikenal: " + item_id
 		has_item_reward = true
-	if spirit_stone_amount <= 0 and hero_exp_amount <= 0 and not has_item_reward:
+	var mail_bonus: bool = source_type == SOURCE_PAVILION and source_id.begins_with("live_ops_mail_server_") and (int(reward_data.get("celestial_jade",0)) > 0 or int(reward_data.get("pavilion_seal",0)) > 0)
+	if spirit_stone_amount <= 0 and hero_exp_amount <= 0 and not has_item_reward and not mail_bonus:
 		return "reward tidak memiliki grant yang valid"
 	return ""
 
@@ -521,6 +522,16 @@ func grant_reward(
 	if not validation_error.is_empty():
 		return _reject_reward(source_type, source_id, validation_error)
 	var normalized_reward: Dictionary = _normalize_reward_data(reward_data)
+	var server_mail: bool = source_type == SOURCE_PAVILION and source_id.begins_with("live_ops_mail_server_")
+	if server_mail:
+		if not ServerMailManager._valid_reward(reward_data): return _reject_reward(source_type,source_id,"Invalid mail gift")
+		for key: String in ["celestial_jade","pavilion_seal"]:
+			var amount: int = int(reward_data.get(key,0))
+			if amount > 0:
+				var state_key: String = "pavilion_seals" if key == "pavilion_seal" else key
+				var next: Dictionary = additional_domains.get("pavilion",{})
+				if int(next.get(state_key,-1)) != int(PavilionManager.state.get(state_key,0))+amount: return _reject_reward(source_type,source_id,"Missing atomic mail currency target")
+				normalized_reward[key] = amount
 	var milestone_level_for_claim: int = 0
 	if source_type == SOURCE_HERO_MILESTONE:
 		milestone_level_for_claim = int(source_id)
@@ -593,6 +604,9 @@ func grant_reward(
 		applied_items,
 		applied_hero_exp
 	)
+	if server_mail:
+		for key: String in ["celestial_jade","pavilion_seal"]:
+			if normalized_reward.has(key): last_grant_result["applied_reward_data"][key] = normalized_reward[key]
 	reward_granted.emit(source_type, source_id, normalized_reward.duplicate(true))
 	AudioManager.play_sfx("claim")
 	return last_grant_result.duplicate(true)

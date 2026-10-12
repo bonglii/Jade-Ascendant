@@ -1117,9 +1117,9 @@ func _domain_value_types_valid(path: String, data: Dictionary) -> bool:
 			for character: String in installation:
 				if not "0123456789abcdef".contains(character): return false
 			if (data.cache as Dictionary).size() > 32: return false
-			for owner: Variant in data.cache:
-				if not owner is String or str(owner).length() != 64 or not data.cache[owner] is Array or (data.cache[owner] as Array).size() > 2000: return false
-				for entry: Variant in data.cache[owner]:
+			for cached_owner: Variant in data.cache:
+				if not cached_owner is String or str(cached_owner).length() != 64 or not data.cache[cached_owner] is Array or (data.cache[cached_owner] as Array).size() > 2000: return false
+				for entry: Variant in data.cache[cached_owner]:
 					if not entry is Dictionary: return false
 		"progression":
 			number_keys = ["spirit_stone", "vitality_level", "sword_power_level", "swift_qi_level"]

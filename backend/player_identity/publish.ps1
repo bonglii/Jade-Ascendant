@@ -28,7 +28,7 @@ try {
     & git diff --cached --stat
     & git diff --cached --quiet
     if ($LASTEXITCODE -eq 1) {
-        & git commit -m 'feat(liveops): upgrade mail studio operations and admin access'
+        & git commit -m 'feat(liveops): add mail gifts and upgrade admin studio'
         if ($LASTEXITCODE -ne 0) { throw 'Checkpoint commit failed.' }
     } elseif ($LASTEXITCODE -ne 0) { throw 'Unable to inspect staged changes.' }
     & git push origin $branch

@@ -1,0 +1,42 @@
+{
+  "theme": "Jade Ascendant xianxia/wuxia; emerald jade and antique gold",
+  "assets": [
+    {
+      "asset": "assets/ui/pavilion/sanctum_premium/celestial_gate.png",
+      "role": "portrait background",
+      "sha256": "f9b23a116d8950b1dc4c2cfd30234a4deb68c461ca1a33e77998d6763232d00f",
+      "generation": "built-in ImageGen, 2026-10-13; new original asset, no existing bitmap overwritten"
+    },
+    {
+      "asset": "assets/ui/pavilion/sanctum_premium/celestial_seal.png",
+      "role": "transparent ceremonial seal",
+      "sha256": "0321590dbe430b758fa4f50e4087093688c49f44d352f71b394ecc6e82688e82",
+      "generation": "built-in ImageGen, 2026-10-13; new original asset, no existing bitmap overwritten"
+    },
+    {
+      "asset": "assets/ui/pavilion/sanctum_premium/celestial_dragon.png",
+      "role": "transparent Chinese qi dragon",
+      "sha256": "7ad567feb54f2c29ce7fe4ffdcf58cfdf523ee0e7c5df3155a7148891a12fe88",
+      "generation": "built-in ImageGen, 2026-10-13; new original asset, no existing bitmap overwritten"
+    },
+    {
+      "asset": "assets/ui/pavilion/sanctum_premium/pavilion_unified.png",
+      "role": "one continuous full-screen Pavilion sanctuary background",
+      "sha256": "4351ede0cf3cc374c4f7bd792407e45b1e1bfe15fe592a0b4ca049d4cb51185a",
+      "generation": "built-in ImageGen, 2026-10-13; new original full-screen composition, no bitmap edits"
+    },
+    {
+      "asset": "assets/ui/pavilion/sanctum_premium/imperial_jade_frame.png",
+      "role": "scalable button and panel surface; native region drawing preserves original bitmap and fixed-size mobile corners",
+      "sha256": "405176b38732c01d76de0fb0aa3de035c339514c20db22af224ee3469033f3c0",
+      "generation": "built-in ImageGen, 2026-10-13; new original asset, no bitmap overwritten",
+      "prompt": "Straight-on rectangular emerald jade UI surface with polished bevel, aged gilded bronze cloud-scroll corner carvings, thin turquoise inner rim, dark empty center, no text or scene; xianxia/wuxia imperial material."
+    }
+  ],
+  "prompt_summary": {
+    "gate": "Ancient ornate circular emerald and bronze-gold gate in a mountain sect sanctum, cloud sea, quiet empty aperture for equipment, no UI or text.",
+    "seal": "Single tactile emerald jade ceremonial medallion, gold cloud carving, centered abstract flame/jian rune, transparent outside, no text.",
+    "dragon": "One elegant Chinese golden and jade qi dragon, one continuous body and tail, no wings, vertical composition, empty transparent center for equipment, no opaque panel or text.",
+    "pavilion_unified": "Single coherent portrait celestial sanctuary: gate at upper third, quiet jade floor and mist through lower half; no embedded panel boundary, UI, weapon, character or text."
+  }
+}

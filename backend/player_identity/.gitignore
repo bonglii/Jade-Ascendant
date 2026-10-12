@@ -2,3 +2,4 @@
 node_modules/
 wrangler.local.toml
 .mail-admin-key.dpapi
+web_assets/

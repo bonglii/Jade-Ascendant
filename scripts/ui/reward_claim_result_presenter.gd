@@ -9,6 +9,7 @@ extends Node
 ## RewardManager / source managers remain authoritative for grant, save,
 ## duplicate protection, inventory, progression, and economy.
 
+const EquipmentVisualCatalog = preload("res://scripts/ui/equipment_visual_catalog.gd")
 const CLAIM_BUFFER_SECONDS: float = 0.14
 const DELIVERY_SETTLE_SECONDS: float = 0.78
 const MOBILE_SCROLL_DEADZONE: int = 6
@@ -632,6 +633,11 @@ func _add_reward_cards(
 		)
 		card_count += 1
 
+	for row: Array in [["celestial_jade","Celestial Jade","res://assets/ui/shared/resources/celestial_jade_premium.png"],["pavilion_seal","Pavilion Seal","res://assets/ui/shared/resources/pavilion_seal_premium.png"]]:
+		var amount: int = int(reward_data.get(row[0],0))
+		if amount > 0:
+			grid.add_child(_reward_card(REWARD_SPIRIT_FRAME,load(row[2]) as Texture2D,tr(row[1]),amount,GOLD_BRIGHT))
+			card_count += 1
 	var hero_amount: int = maxi(
 		int(reward_data.get(
 			RewardManager.REWARD_KEY_HERO_EXP,
@@ -702,6 +708,7 @@ func _add_reward_cards(
 					1.0
 				)
 			elif InventoryManager.is_known_item(item_id):
+				if EquipmentManager.has_item_definition(item_id): icon_texture = load(EquipmentVisualCatalog.get_icon_path(item_id)) as Texture2D
 				var item_data: Dictionary = (
 					InventoryManager.get_item_data(item_id)
 				)

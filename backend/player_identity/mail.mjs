@@ -1,14 +1,15 @@
 import {MailError,fail,json,readBody,exact,digest,mac,checkProof,session,login,sameOrigin,randomId,nowSeconds} from './mail_admin.mjs';
 import {ownerBinding} from './worker.mjs';
 import dashboard from './dashboard.mjs';
+import {pavilionRoute} from './pavilion.mjs';
+import {normalizeReward,hasReward,needsGiftClient,REWARD_CATALOG} from './mail_rewards.mjs';
+export {REWARD_CATALOG};
 import {studioRoute,historyPage,countRecipients,selector,segment,audit} from './mail_studio.mjs';
 export {MailError};
 const ID=/^[a-f0-9]{32}$/;
 const UID=/^JA[0-9A-HJKMNP-TV-Z]{10}$/;
-export const REWARD_CATALOG={spirit_stone:{name:'Spirit Stone',max:100000},refinement_shard:{name:'Refinement Shard',max:500}};
 const primary=db=>db?.withSession?db.withSession('first-primary'):db;
 const list=async statement=>(await statement.all()).results;
-const hasReward=reward=>reward.spirit_stone>0||Object.values(reward.items).some(x=>x>0);
 const install=value=>{if(!ID.test(value||''))fail(400,'invalid_installation');return value;};
 const mailId=value=>{if(!ID.test(value||''))fail(400,'invalid_mail_id');return value;};
 const integer=(value,min,max)=>{if(!Number.isSafeInteger(value)||value<min||value>max)fail(400,'invalid_amount');return value;};
@@ -21,10 +22,8 @@ export function normalizeDraft(input,time=nowSeconds()){
  if(input.audience!=='uid'&&input.target_uid)fail(400,'invalid_uid');
  integer(input.expires_at,time+60,time+90*86400);
  const reward=input.reward;if(!reward||typeof reward!=='object'||Array.isArray(reward))fail(400,'invalid_reward');
- exact(reward,['spirit_stone','items']);const stone=integer(reward.spirit_stone??0,0,100000);
- const items=reward.items??{};if(!items||typeof items!=='object'||Array.isArray(items))fail(400,'invalid_reward');
- exact(items,['refinement_shard']);const shards=integer(items.refinement_shard??0,0,500);
- return {title:text(input.title,100),body:text(input.body,4000),sender:text(input.sender,60),audience:input.audience,target_uid:target,expires_at:input.expires_at,reward:{spirit_stone:stone,items:shards?{refinement_shard:shards}:{}},...(input.audience==='segment'?{segment:segment(input.segment)}:{})};
+ const normalizedReward=normalizeReward(reward);
+ return {title:text(input.title,100),body:text(input.body,4000),sender:text(input.sender,60),audience:input.audience,target_uid:target,expires_at:input.expires_at,reward:normalizedReward,...(input.audience==='segment'?{segment:segment(input.segment)}:{})};
 }
 const recipientCount=countRecipients;
 async function preview(db,env,input){
@@ -59,9 +58,9 @@ async function campaign(db,row){
 }
 async function getRecipient(db,owner,id){const row=await db.prepare('SELECT c.*,r.delivered_at,r.read_at,r.deleted_at FROM mail_campaigns c JOIN mail_recipients r ON r.mail_id=c.id WHERE r.owner_binding=? AND c.id=? AND c.published_at>0').bind(owner,id).first();if(!row)fail(404,'mail_not_found');return row;}
 async function receipt(db,owner,id){return db.prepare('SELECT * FROM mail_claims WHERE owner_binding=? AND mail_id=?').bind(owner,id).first();}
-export async function claimMail(db,owner,input){
+export async function claimMail(db,owner,input,giftClient=false){
  exact(input,['mail_id','installation_id']);const id=mailId(input.mail_id),installation=install(input.installation_id);
- const letter=await getRecipient(db,owner,id);let held=await receipt(db,owner,id);
+ const letter=await getRecipient(db,owner,id);if(!giftClient&&needsGiftClient(JSON.parse(letter.reward_json)))fail(409,'client_upgrade_required');let held=await receipt(db,owner,id);
  if(!held){
   if(!hasReward(JSON.parse(letter.reward_json)))fail(409,'no_attachment');
   // Eligibility is checked in the INSERT itself so cancellation/expiry cannot
@@ -79,10 +78,10 @@ export async function acknowledgeMail(db,owner,input){
  await db.batch([db.prepare('UPDATE mail_claims SET acknowledged_at=? WHERE mail_id=? AND owner_binding=? AND acknowledged_at=0').bind(nowSeconds(),id,owner),db.prepare('UPDATE mail_recipients SET read_at=CASE WHEN read_at=0 THEN ? ELSE read_at END WHERE mail_id=? AND owner_binding=?').bind(nowSeconds(),id,owner)]);
  return {mail_id:id,owner_binding:owner,delivery_state:'claimed'};
 }
-async function inbox(db,owner,url){
+async function inbox(db,owner,url,giftClient=false){
  const installation=install(url.searchParams.get('installation_id'));
  const after=url.searchParams.get('after')||'';if(after&&!ID.test(after))fail(400,'invalid_cursor');
- const rows=await list(db.prepare('SELECT c.*,r.read_at,r.deleted_at,k.installation_id AS claim_installation,k.receipt_id,k.acknowledged_at,k.reserved_at FROM mail_campaigns c JOIN mail_recipients r ON r.mail_id=c.id LEFT JOIN mail_claims k ON k.mail_id=r.mail_id AND k.owner_binding=r.owner_binding WHERE r.owner_binding=? AND c.published_at>0 AND r.deleted_at=0 AND c.id>? ORDER BY c.id LIMIT 41').bind(owner,after));
+ const rows=await list(db.prepare('SELECT c.*,r.read_at,r.deleted_at,k.installation_id AS claim_installation,k.receipt_id,k.acknowledged_at,k.reserved_at FROM mail_campaigns c JOIN mail_recipients r ON r.mail_id=c.id LEFT JOIN mail_claims k ON k.mail_id=r.mail_id AND k.owner_binding=r.owner_binding WHERE r.owner_binding=? AND c.published_at>0 AND r.deleted_at=0 AND c.id>? '+(giftClient?'':"AND COALESCE(json_extract(c.reward_json,'$.celestial_jade'),0)=0 AND COALESCE(json_extract(c.reward_json,'$.pavilion_seal'),0)=0 AND NOT EXISTS(SELECT 1 FROM json_each(json_extract(c.reward_json,'$.items')) j WHERE j.key<>'refinement_shard') " )+'ORDER BY c.id LIMIT 41').bind(owner,after));
  const page=rows.slice(0,40),time=nowSeconds();
  if(page.length)await db.batch(page.map(row=>db.prepare('UPDATE mail_recipients SET delivered_at=? WHERE owner_binding=? AND mail_id=? AND delivered_at=0').bind(time,owner,row.id)));
  return {version:1,owner_binding:owner,server_time:time,next_cursor:rows.length>40?page.at(-1).id:'',entries:page.map(row=>{
@@ -93,6 +92,7 @@ async function inbox(db,owner,url){
 export function createMailHandler({verify}={}){
  return async(request,env)=>{
   const url=new URL(request.url),path=url.pathname,db=primary(env.PROFILE_DB);if(!db)fail(503,'service_unavailable');
+  if(path.startsWith('/admin/assets/')){await session(request,env);if(request.method!=='GET'||!/^\/admin\/assets\/[a-z0-9_]+\.png$/.test(path)||!env.ASSETS)fail(404,'not_found');return env.ASSETS.fetch(request);}
   if(path==='/admin'||path==='/admin/'){
    if(request.method!=='GET')fail(405,'method_not_allowed');const nonce=randomId();
    return new Response(dashboard.replaceAll('__NONCE__',nonce),{headers:{'content-type':'text/html;charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer','content-security-policy':`default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; style-src-attr 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`}});
@@ -101,6 +101,7 @@ export function createMailHandler({verify}={}){
   if(path.startsWith('/admin/api/')){
    const auth=await session(request,env,request.method!=='GET');
    if(path==='/admin/api/session'&&request.method==='GET')return json(200,{...auth,reward_catalog:REWARD_CATALOG});
+   const bannerResponse=await pavilionRoute(db,request,url);if(bannerResponse)return bannerResponse;
    const upgraded=await studioRoute(db,env,request,url,auth,{normalizeDraft,preview,sendMail,campaign,verifyPreview});if(upgraded)return upgraded;
    if(path==='/admin/api/logout'&&request.method==='POST')return json(200,{ok:true},{'set-cookie':'jade_admin=; Path=/admin; HttpOnly; Secure; SameSite=Strict; Max-Age=0'});
    if(path==='/admin/api/preview'&&request.method==='POST')return json(200,await preview(db,env,await readBody(request)));
@@ -128,9 +129,9 @@ export function createMailHandler({verify}={}){
   if(!await db.prepare('SELECT public_uid FROM player_identities WHERE owner_binding=?').bind(owner).first())fail(409,'profile_required');
   const version=request.headers.get('x-jade-client-version')||'';
   await db.prepare('INSERT INTO mail_player_activity(owner_binding,last_seen,client_version) VALUES(?,?,?) ON CONFLICT(owner_binding) DO UPDATE SET last_seen=excluded.last_seen,client_version=CASE WHEN excluded.client_version<>\'\' THEN excluded.client_version ELSE client_version END').bind(owner,nowSeconds(),/^[a-zA-Z0-9._+-]{1,40}$/.test(version)?version:'').run();
-  if(path==='/v1/mail/list'&&request.method==='GET')return json(200,await inbox(db,owner,url));
+  if(path==='/v1/mail/list'&&request.method==='GET')return json(200,await inbox(db,owner,url,request.headers.get('x-jade-mail-features')==='gifts-v2'));
   if(request.method!=='POST')fail(405,'method_not_allowed');const input=await readBody(request,512);
-  if(path==='/v1/mail/claim')return json(200,await claimMail(db,owner,input));
+  if(path==='/v1/mail/claim')return json(200,await claimMail(db,owner,input,request.headers.get('x-jade-mail-features')==='gifts-v2'));
   if(path==='/v1/mail/ack')return json(200,await acknowledgeMail(db,owner,input));
   if(path==='/v1/mail/read_all'){
    exact(input,[]);await db.prepare('UPDATE mail_recipients SET read_at=? WHERE owner_binding=? AND read_at=0 AND deleted_at=0').bind(nowSeconds(),owner).run();return json(200,{ok:true,owner_binding:owner});

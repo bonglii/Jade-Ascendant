@@ -3,6 +3,8 @@ import {verifyAuth, ProfileAuthRejected, ProfileAuthUnavailable} from './auth.mj
 export {verifyAuth} from './auth.mjs';
 import {createMailHandler,MailError,processScheduled} from './mail.mjs';
 
+import {currentDocument,publicSnapshot} from './pavilion.mjs';
+
 const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 const UID = /^JA[0-9A-HJKMNP-TV-Z]{10}$/;
 const encoder = new TextEncoder();
@@ -43,6 +45,12 @@ export function createHandler({verify=verifyAuth,register=registerIdentity}={}) 
   const handleMail=createMailHandler({verify});
   return async(request,env)=>{
     const url = new URL(request.url);
+    if(url.pathname==='/v1/pavilion/banner') {
+      if(request.method!=='GET')return reply(405,{error:'method_not_allowed'});
+      if(!env.PROFILE_DB)return reply(503,{error:'service_unavailable'});
+      try {const db=env.PROFILE_DB.withSession?env.PROFILE_DB.withSession('first-primary'):env.PROFILE_DB;return reply(200,publicSnapshot(await currentDocument(db)));}
+      catch {return reply(503,{error:'banner_unavailable'});}
+    }
     if(url.pathname.startsWith('/admin')||url.pathname.startsWith('/v1/mail/')) {
       try { return await handleMail(request,env); }
       catch(error) {

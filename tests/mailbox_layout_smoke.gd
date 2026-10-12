@@ -20,6 +20,10 @@ func run() -> void:
  server.set_process(false);server._owner="a".repeat(64);server._auth_node=null
  var fixture: Array = [entry(LONG_ID,true),entry(SHORT_ID,false,false)]
  for n: int in range(8): fixture.append(entry(("%032x" % (n+20)),false))
+ if "--expanded-gifts" in OS.get_cmdline_user_args():
+  var items: Dictionary = {"refinement_shard":500}
+  for id: String in root.get_node("EquipmentManager").get_item_ids().slice(0,5): items[id]=1
+  fixture[0].reward={"spirit_stone":100000,"celestial_jade":10000,"pavilion_seal":100,"items":items}
  server._state.cache[server._owner]=fixture
  check(server._valid_mail(fixture[0]),"long fixture obeys server protocol")
  var scene: PackedScene = load("res://scenes/ui/mailbox_screen.tscn")

@@ -1,0 +1,351 @@
+{
+  "version": 2,
+  "equipment": [
+    {
+      "icon_source": "res://assets/ui/equipment/final/ascendant_heart.png",
+      "id": "ascendant_heart",
+      "max": 1,
+      "name": "Ascendant Heart",
+      "rarity": "legendary",
+      "slot": "pendant"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/bamboo_weave_robe.png",
+      "id": "bamboo_weave_robe",
+      "max": 1,
+      "name": "Bamboo Weave Robe",
+      "rarity": "rare",
+      "slot": "robe"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/cinnabar_moon_saber.png",
+      "id": "cinnabar_moon_saber",
+      "max": 1,
+      "name": "Cinnabar Moon Saber",
+      "rarity": "epic",
+      "slot": "armament"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/cloudstep_boots.png",
+      "id": "cloudstep_boots",
+      "max": 1,
+      "name": "Cloudstep Boots",
+      "rarity": "common",
+      "slot": "boots"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/cloudtreader_boots.png",
+      "id": "cloudtreader_boots",
+      "max": 1,
+      "name": "Cloudtreader Boots",
+      "rarity": "legendary",
+      "slot": "boots"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/solar_meridian/dawn_meridian_robe.png",
+      "id": "dawn_meridian_robe",
+      "max": 1,
+      "name": "Dawn Meridian Robe",
+      "rarity": "legendary",
+      "slot": "robe"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/jade_bastion/earthseal_bracer.png",
+      "id": "earthseal_bracer",
+      "max": 1,
+      "name": "Earthseal Bracer",
+      "rarity": "rare",
+      "slot": "bracer"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/stillwater_mirror/glassmoon_robe.png",
+      "id": "glassmoon_robe",
+      "max": 1,
+      "name": "Glassmoon Robe",
+      "rarity": "epic",
+      "slot": "robe"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/solar_meridian/golden_core_pendant.png",
+      "id": "golden_core_pendant",
+      "max": 1,
+      "name": "Golden Core Pendant",
+      "rarity": "legendary",
+      "slot": "pendant"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/jade_bastion/guardian_jade_pendant.png",
+      "id": "guardian_jade_pendant",
+      "max": 1,
+      "name": "Guardian Jade Pendant",
+      "rarity": "rare",
+      "slot": "pendant"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/jade_edge_bracer.png",
+      "id": "jade_edge_bracer",
+      "max": 1,
+      "name": "Jade Edge Bracer",
+      "rarity": "rare",
+      "slot": "bracer"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/jade_guard_bracer.png",
+      "id": "jade_guard_bracer",
+      "max": 1,
+      "name": "Jade Guard Bracer",
+      "rarity": "common",
+      "slot": "bracer"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/mirror_edge_bracer.png",
+      "id": "mirror_edge_bracer",
+      "max": 1,
+      "name": "Mirror-Edge Bracer",
+      "rarity": "rare",
+      "slot": "bracer"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/stillwater_mirror/mirror_heart_pendant.png",
+      "id": "mirror_heart_pendant",
+      "max": 1,
+      "name": "Mirror Heart Pendant",
+      "rarity": "epic",
+      "slot": "pendant"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/miststride_boots.png",
+      "id": "miststride_boots",
+      "max": 1,
+      "name": "Miststride Boots",
+      "rarity": "rare",
+      "slot": "boots"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/mistveil_jian.png",
+      "id": "mistveil_jian",
+      "max": 1,
+      "name": "Mistveil Jian",
+      "rarity": "rare",
+      "slot": "armament"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/moonthread_robe.png",
+      "id": "moonthread_robe",
+      "max": 1,
+      "name": "Moonthread Robe",
+      "rarity": "rare",
+      "slot": "robe"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/jade_bastion/mountain_ward_jian.png",
+      "id": "mountain_ward_jian",
+      "max": 1,
+      "name": "Mountain Ward Jian",
+      "rarity": "rare",
+      "slot": "armament"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/nine_heavens_star_sword.png",
+      "id": "nine_heavens_star_sword",
+      "max": 1,
+      "name": "Nine Heavens Star Sword",
+      "rarity": "legendary",
+      "slot": "armament"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/qi_reservoir_pendant.png",
+      "id": "qi_reservoir_pendant",
+      "max": 1,
+      "name": "Qi Reservoir Pendant",
+      "rarity": "rare",
+      "slot": "pendant"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/stillwater_mirror/reflection_bracer.png",
+      "id": "reflection_bracer",
+      "max": 1,
+      "name": "Reflection Bracer",
+      "rarity": "epic",
+      "slot": "bracer"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/jade_bastion/rootstep_boots.png",
+      "id": "rootstep_boots",
+      "max": 1,
+      "name": "Rootstep Boots",
+      "rarity": "rare",
+      "slot": "boots"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/shadowstep_boots.png",
+      "id": "shadowstep_boots",
+      "max": 1,
+      "name": "Shadowstep Boots",
+      "rarity": "epic",
+      "slot": "boots"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/shrine_seal_pendant.png",
+      "id": "shrine_seal_pendant",
+      "max": 1,
+      "name": "Shrine Seal Pendant",
+      "rarity": "epic",
+      "slot": "pendant"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/stillwater_mirror/silent_ripple_boots.png",
+      "id": "silent_ripple_boots",
+      "max": 1,
+      "name": "Silent Ripple Boots",
+      "rarity": "epic",
+      "slot": "boots"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/solar_meridian/solar_edict_bracer.png",
+      "id": "solar_edict_bracer",
+      "max": 1,
+      "name": "Solar Edict Bracer",
+      "rarity": "legendary",
+      "slot": "bracer"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/sovereign_mantle.png",
+      "id": "sovereign_mantle",
+      "max": 1,
+      "name": "Sovereign Mantle",
+      "rarity": "legendary",
+      "slot": "robe"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/spirit_jade_pendant.png",
+      "id": "spirit_jade_pendant",
+      "max": 1,
+      "name": "Spirit Jade Pendant",
+      "rarity": "common",
+      "slot": "pendant"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/spirit_seal_fan.png",
+      "id": "spirit_seal_fan",
+      "max": 1,
+      "name": "Spirit-Seal Fan",
+      "rarity": "rare",
+      "slot": "armament"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/starstep_boots.png",
+      "id": "starstep_boots",
+      "max": 1,
+      "name": "Starstep Boots",
+      "rarity": "epic",
+      "slot": "boots"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/stillwater_mirror/stillwater_mirror_blade.png",
+      "id": "stillwater_mirror_blade",
+      "max": 1,
+      "name": "Stillwater Mirror Blade",
+      "rarity": "epic",
+      "slot": "armament"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/jade_bastion/stone_meridian_robe.png",
+      "id": "stone_meridian_robe",
+      "max": 1,
+      "name": "Stone Meridian Robe",
+      "rarity": "rare",
+      "slot": "robe"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/stormcall_bracer.png",
+      "id": "stormcall_bracer",
+      "max": 1,
+      "name": "Stormcall Bracer",
+      "rarity": "epic",
+      "slot": "bracer"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/solar_meridian/sunfire_dragon_jian.png",
+      "id": "sunfire_dragon_jian",
+      "max": 1,
+      "name": "Sunfire Dragon Jian",
+      "rarity": "legendary",
+      "slot": "armament"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/solar_meridian/sunstride_boots.png",
+      "id": "sunstride_boots",
+      "max": 1,
+      "name": "Sunstride Boots",
+      "rarity": "legendary",
+      "slot": "boots"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/sword_heart_pendant.png",
+      "id": "sword_heart_pendant",
+      "max": 1,
+      "name": "Sword-Heart Pendant",
+      "rarity": "epic",
+      "slot": "pendant"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/tribulation_bracer.png",
+      "id": "tribulation_bracer",
+      "max": 1,
+      "name": "Tribulation Bracer",
+      "rarity": "legendary",
+      "slot": "bracer"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/verdant_qi_robe.png",
+      "id": "verdant_qi_robe",
+      "max": 1,
+      "name": "Verdant Qi Robe",
+      "rarity": "common",
+      "slot": "robe"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/wanderer_jade_jian.png",
+      "id": "wanderer_jade_jian",
+      "max": 1,
+      "name": "Wanderer's Jade Jian",
+      "rarity": "common",
+      "slot": "armament"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/ward_keeper_robe.png",
+      "id": "ward_keeper_robe",
+      "max": 1,
+      "name": "Ward Keeper Robe",
+      "rarity": "epic",
+      "slot": "robe"
+    }
+  ],
+  "currencies": [
+    {
+      "id": "spirit_stone",
+      "name": "Spirit Stone",
+      "max": 100000,
+      "icon_source": "res://assets/ui/shared/resources/spirit_stone_premium.png"
+    },
+    {
+      "id": "celestial_jade",
+      "name": "Celestial Jade",
+      "max": 10000,
+      "icon_source": "res://assets/ui/shared/resources/celestial_jade_premium.png"
+    },
+    {
+      "id": "pavilion_seal",
+      "name": "Pavilion Seal",
+      "max": 100,
+      "icon_source": "res://assets/ui/shared/resources/pavilion_seal_premium.png"
+    },
+    {
+      "id": "refinement_shard",
+      "name": "Refinement Shard",
+      "max": 500,
+      "icon_source": "res://assets/ui/shared/resources/refinement_shard_premium.png"
+    }
+  ]
+}

@@ -2,6 +2,35 @@ extends Node
 
 ## English message IDs; proper names of arts, items and realms stay consistent.
 const INDONESIAN: Dictionary = {
+	"THE GATE RESONATES": "GERBANG BERESONANSI",
+	"Weapon": "Senjata",
+	"THE SEAL FALLS SILENT": "SEGEL MENJADI HENING",
+	"HEAVENLY GATE OPENS": "GERBANG LANGIT TERBUKA",
+	"BACK TO FORMATION": "KEMBALI KE FORMASI",
+	"Armament": "Senjata",
+	"Robe": "Jubah",
+	"Bracer": "Pelindung",
+	"Boots": "Sepatu",
+	"Pendant": "Liontin",
+
+	"THE ANCIENT SANCTUM": "TEMPAT RITUAL KUNO",
+	"LEGENDARY GUARANTEE": "JAMINAN LEGENDARIS",
+	"WATCH AD • FREE 1× SUMMON": "TONTON IKLAN • GRATIS 1× PANGGIL",
+	"%d rewarded Seals remain • 1 Seal = 1 summon": "Sisa %d Segel iklan • 1 Segel = 1 panggilan",
+	"TALISMAN AWAKENS": "JIMAT MENYALA",
+	"QI GATHERS": "QI TERKUMPUL",
+	"SEAL OPENS": "SEGEL TERBUKA",
+	"MERIDIANS IGNITE": "MERIDIAN MENYALA",
+	"CONSTELLATION FORMS": "FORMASI BINTANG TERBENTUK",
+	"HEAVENLY GATE BREAKS": "GERBANG LANGIT PECAH",
+	"RELIC REVEALED": "RELIK TERUNGKAP",
+	"CELESTIAL FORMATION": "FORMASI LANGIT",
+	"TEN RELICS FORMATION": "FORMASI SEPULUH RELIK",
+	"Tap a seal to reveal its relic.": "Sentuh segel untuk membuka reliknya.",
+	"REVEALED %d / %d": "TERBUKA %d / %d",
+	"REVEAL ALL": "BUKA SEMUA",
+	"SKIP ANIMATION": "LEWATI ANIMASI",
+
 
 	"Call unlocked equipment. Pity and Wish Fate persist across sessions.": "Panggil perlengkapan yang telah terbuka. Pity dan Takdir Wish tersimpan antar sesi.",
 	"PERMANENT ARMORY • WISH ENABLED": "GUDANG SENJATA PERMANEN • WISH AKTIF",

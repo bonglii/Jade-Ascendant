@@ -13,6 +13,8 @@ signal daily_quest_progressed(
 signal daily_quest_completed(quest_id: String)
 signal daily_quest_claimed(quest_id: String, spirit_stone_reward: int)
 signal daily_quests_reset(date_key: String)
+# Emitted by M7BDailyRewardBridge; keep the externally used signal.
+@warning_ignore("unused_signal")
 signal m7b_offer_finished(placement: String, success: bool, message: String)
 signal m7c2_offer_finished(success: bool, message: String)
 

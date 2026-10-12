@@ -41,9 +41,9 @@ func _ready() -> void:
 func _load_state() -> void:
 	var saved: Dictionary = SaveManager.read_save_data(DOMAIN)
 	if bool(saved.get("success",false)) and bool(saved.get("exists",false)):
-		var data: Dictionary = saved.get("data",{})
-		if _valid_id(str(data.get("installation_id",""))) and data.get("cache") is Dictionary:
-			_state = data.duplicate(true)
+		var loaded_state: Dictionary = saved.get("data",{})
+		if _valid_id(str(loaded_state.get("installation_id",""))) and loaded_state.get("cache") is Dictionary:
+			_state = loaded_state.duplicate(true)
 			return
 		_status = "Mail save unavailable"
 		return
@@ -97,7 +97,7 @@ func get_status() -> String:
 	return _status
 
 func _mail_time() -> int:
-	return _server_time + maxi(0,int((Time.get_ticks_msec()-_observed_ticks)/1000)) if _server_time > 0 else 0
+	return _server_time + maxi(0,int(float(Time.get_ticks_msec()-_observed_ticks)/1000.0)) if _server_time > 0 else 0
 
 func get_mail_ids() -> Array[String]:
 	var result: Array[String] = []
@@ -200,7 +200,7 @@ func _on_token(token: String) -> void:
 	var kind: String = str(_pending.kind)
 	var path: String = "/v1/mail/"+kind
 	if kind == "list": path += "?installation_id="+str(_state.installation_id)+"&after="+str(_pending.cursor)
-	var headers := PackedStringArray(["Content-Type: application/json","Accept: application/json","User-Agent: GodotEngine/4.7.2","Host: "+PlayerIdentityServerClient._endpoint_host(),"X-Jade-Owner-Binding: "+_owner,"X-Jade-Client-Version: "+str(ProjectSettings.get_setting("application/config/version","1.0.6")),"Authorization: Bearer "+token])
+	var headers := PackedStringArray(["Content-Type: application/json","Accept: application/json","User-Agent: GodotEngine/4.7.2","Host: "+PlayerIdentityServerClient._endpoint_host(),"X-Jade-Owner-Binding: "+_owner,"X-Jade-Mail-Features: gifts-v2","X-Jade-Client-Version: "+str(ProjectSettings.get_setting("application/config/version","1.0.6")),"Authorization: Bearer "+token])
 	var error: Error = _http.request(PlayerIdentityServerClient._prepare_route(_http,path),headers,HTTPClient.METHOD_GET if kind == "list" else HTTPClient.METHOD_POST,"" if kind == "list" else JSON.stringify(_pending.payload))
 	if error != OK: _fail("Server request could not start")
 
@@ -276,18 +276,30 @@ func _accept_page(data: Dictionary) -> bool:
 	return true
 
 func _valid_reward(reward: Dictionary) -> bool:
-	if reward.size() > 2 or not reward.has("spirit_stone") or not reward.get("items") is Dictionary: return false
-	if typeof(reward.spirit_stone) not in [TYPE_INT,TYPE_FLOAT]: return false
-	var stones: float = float(reward.get("spirit_stone",-1))
-	if not is_finite(stones) or stones < 0 or stones > 100000 or floorf(stones) != stones: return false
-	var items: Dictionary = reward.items
-	if items.size() > 1: return false
-	for key: Variant in items:
-		if str(key) != "refinement_shard": return false
-		if typeof(items[key]) not in [TYPE_INT,TYPE_FLOAT]: return false
-		var count: float = float(items[key])
-		if not is_finite(count) or count < 1 or count > 500 or floorf(count) != count: return false
-	return stones > 0 or not items.is_empty()
+	for key: Variant in reward:
+		if str(key) not in ["spirit_stone","items","celestial_jade","pavilion_seal"]: return false
+	if not reward.has("spirit_stone") or not reward.get("items") is Dictionary: return false
+	var has_grant: bool = false
+	for pair: Array in [["spirit_stone",100000],["celestial_jade",10000],["pavilion_seal",100]]:
+		var raw: Variant = reward.get(pair[0],0)
+		if typeof(raw) not in [TYPE_INT,TYPE_FLOAT]: return false
+		var amount: float = float(raw)
+		if not is_finite(amount) or amount < 0 or amount > int(pair[1]) or floorf(amount) != amount: return false
+		if amount > 0: has_grant = true
+	var equipment_count: int = 0
+	for key: Variant in reward.items:
+		var id: String = str(key)
+		var maximum: int = 500 if id == "refinement_shard" else 1
+		if id != "refinement_shard":
+			if not EquipmentManager.has_item_definition(id): return false
+			equipment_count += 1
+			if equipment_count > 5: return false
+		var raw: Variant = reward.items[key]
+		if typeof(raw) not in [TYPE_INT,TYPE_FLOAT]: return false
+		var amount: float = float(raw)
+		if not is_finite(amount) or amount < 1 or amount > maximum or floorf(amount) != amount: return false
+		has_grant = true
+	return has_grant
 
 func _valid_mail(mail: Dictionary) -> bool:
 	if not _valid_id(str(mail.get("mail_id",""))) or str(mail.get("id","")) != "server:"+str(mail.mail_id): return false

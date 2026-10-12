@@ -6,6 +6,7 @@ extends Control
 ## shared Reward Delivery and Unified Claim Result presenters own feedback.
 ## Visual layout and artwork promoted from user-approved Mail LAB V2.11.
 
+const EquipmentVisualCatalog = preload("res://scripts/ui/equipment_visual_catalog.gd")
 const LiveOpsUi = preload("res://scripts/ui/liveops/live_ops_ui.gd")
 
 const HOME_ART: Texture2D = preload(
@@ -76,7 +77,7 @@ var _document_signature: String = ""
 var _reader_offsets: Dictionary = {}
 var _reader_hint: Label = null
 var _attachment_caption: Label = null
-var _rewards_row: HBoxContainer = null
+var _rewards_row: GridContainer = null
 var _claim_button: Button = null
 var _no_claim_hint: Label = null
 var _footer_label: Label = null
@@ -443,10 +444,11 @@ func _rebuild_reward_slot(parent: VBoxContainer) -> void:
 	reward_holder.add_theme_stylebox_override("panel", reward_holder_style)
 	parent.add_child(reward_holder)
 
-	_rewards_row = HBoxContainer.new()
+	_rewards_row = GridContainer.new()
 	_rewards_row.name = "StableAttachmentSlots"
-	_rewards_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	_rewards_row.add_theme_constant_override("separation", 6)
+	_rewards_row.columns = 2
+	_rewards_row.add_theme_constant_override("h_separation",6)
+	_rewards_row.add_theme_constant_override("v_separation",6)
 	reward_holder.add_child(_rewards_row)
 
 
@@ -544,7 +546,7 @@ func _layout_body() -> void:
 
 func _layout_letter_reader() -> void:
 	if not is_instance_valid(_reader_scroll): return
-	var small: bool = _letter_panel.size.y < 500.0
+	var small: bool = _letter_panel.size.y < 500.0 or _rewards_row.get_child_count() > 4
 	var inset: int = 16 if small else 26
 	_letter_safe.add_theme_constant_override("margin_left",inset)
 	_letter_safe.add_theme_constant_override("margin_right",inset)
@@ -914,6 +916,9 @@ func _reward_tiles(reward: Dictionary) -> Array[Dictionary]:
 	if stone_amount > 0:
 		tiles.append({"icon": SPIRIT_ICON, "name": "Spirit Stone", "amount": stone_amount})
 
+	for row: Array in [["celestial_jade","Celestial Jade","res://assets/ui/shared/resources/celestial_jade_premium.png"],["pavilion_seal","Pavilion Seal","res://assets/ui/shared/resources/pavilion_seal_premium.png"]]:
+		var amount: int = int(reward.get(row[0],0))
+		if amount > 0: tiles.append({"icon":load(row[2]),"name":row[1],"amount":amount})
 	var hero_exp_amount: int = maxi(int(reward.get(RewardManager.REWARD_KEY_HERO_EXP, 0)), 0)
 	if hero_exp_amount > 0:
 		tiles.append({"icon": HERO_EXP_ICON, "name": "Hero EXP", "amount": hero_exp_amount})
@@ -933,6 +938,8 @@ func _reward_tiles(reward: Dictionary) -> Array[Dictionary]:
 			var display_name: String = item_id
 			if item_id == InventoryManager.REFINEMENT_SHARD:
 				icon_texture = SHARD_ICON
+			if EquipmentManager.has_item_definition(item_id):
+				icon_texture = load(EquipmentVisualCatalog.get_icon_path(item_id)) as Texture2D
 			if InventoryManager.is_known_item(item_id):
 				var item_data: Dictionary = InventoryManager.get_item_data(item_id)
 				display_name = str(item_data.get("display_name", item_id))
@@ -950,6 +957,7 @@ func _fill_attachment_tiles(rewards: Array) -> void:
 		# it shrinks to one glyph and forces the pinned footer to fill the letter.
 		return
 
+	_rewards_row.columns = 1 if rewards.size() == 1 else 2
 	for raw: Variant in rewards:
 		if not (raw is Dictionary):
 			continue
@@ -971,10 +979,13 @@ func _fill_attachment_tiles(rewards: Array) -> void:
 		tile_style.shadow_size = 0
 		tile.add_theme_stylebox_override("panel", tile_style)
 		_rewards_row.add_child(tile)
+		var stack := VBoxContainer.new()
+		stack.add_theme_constant_override("separation",2)
+		tile.add_child(stack)
 		var content := HBoxContainer.new()
 		content.alignment = BoxContainer.ALIGNMENT_CENTER
 		content.add_theme_constant_override("separation", 4)
-		tile.add_child(content)
+		stack.add_child(content)
 		var pic := TextureRect.new()
 		pic.custom_minimum_size = Vector2(42.0, 42.0)
 		pic.texture = reward.get("icon", null) as Texture2D
@@ -988,6 +999,11 @@ func _fill_attachment_tiles(rewards: Array) -> void:
 		quantity.autowrap_mode = TextServer.AUTOWRAP_OFF
 		quantity.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		content.add_child(quantity)
+		var name_label := _label(str(reward.get("name","")),10,PAPER_MUTED)
+		name_label.max_lines_visible = 2
+		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		stack.add_child(name_label)
 
 
 func _on_claim_pressed() -> void:

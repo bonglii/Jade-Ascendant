@@ -16,6 +16,11 @@ try {
     if ($configText -notmatch '(?m)^\[triggers\]\s*$') {
         [IO.File]::AppendAllText($config, [Environment]::NewLine + '[triggers]' + [Environment]::NewLine + 'crons = ["* * * * *"]' + [Environment]::NewLine)
     } elseif ($configText -notmatch '(?m)^crons\s*=\s*\["\* \* \* \* \*"\]\s*$') { throw 'Unexpected existing cron configuration; preserve it and review before deployment.' }
+    & node build_mail_assets.mjs
+    if ($LASTEXITCODE -ne 0) { throw 'Reviewed mail assets could not be built.' }
+    if ($configText -notmatch '(?m)^\[assets\]\s*$') {
+        [IO.File]::AppendAllText($config, [Environment]::NewLine + '[assets]' + [Environment]::NewLine + 'directory = "./web_assets"' + [Environment]::NewLine + 'binding = "ASSETS"' + [Environment]::NewLine + 'run_worker_first = true' + [Environment]::NewLine)
+    } elseif ($configText -notmatch '(?m)^directory\s*=\s*"\./web_assets"\s*$' -or $configText -notmatch '(?m)^binding\s*=\s*"ASSETS"\s*$' -or $configText -notmatch '(?m)^run_worker_first\s*=\s*true\s*$') { throw 'Unexpected existing assets configuration; preserve and review it.' }
     Add-Type -AssemblyName System.Security
     $protectedKey = Join-Path $PSScriptRoot '.mail-admin-key.dpapi'
     if (Test-Path -LiteralPath $protectedKey) {

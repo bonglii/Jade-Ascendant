@@ -2011,15 +2011,18 @@ func get_home_mail_badge_count() -> int:
 	return count
 
 
-func apply_server_mail_reward(owner: String,mail_id: String,reward: Dictionary) -> bool:
-	if owner != ServerMailManager._owner or owner.length() != 64 or mail_id.length() != 32:
+func apply_server_mail_reward(owner_binding: String,mail_id: String,reward: Dictionary) -> bool:
+	if not ServerMailManager._valid_reward(reward): return false
+	if owner_binding != ServerMailManager._owner or owner_binding.length() != 64 or mail_id.length() != 32:
 		return false
-	var marker: String = "liveops:server_mail:claim:"+owner+":"+mail_id
+	var marker: String = "liveops:server_mail:claim:"+owner_binding+":"+mail_id
 	var ledger: Array[String] = _get_ledger()
 	if marker in ledger: return true
 	if _mail_mutation_in_progress or _login_claim_in_progress or SaveManager.is_progress_read_only(): return false
 	ledger.append(marker)
 	var next_pavilion: Dictionary = _build_pavilion_snapshot(ledger)
+	next_pavilion["celestial_jade"] = PavilionManager.get_celestial_jade() + int(reward.get("celestial_jade",0))
+	next_pavilion["pavilion_seals"] = PavilionManager.get_pavilion_seals() + int(reward.get("pavilion_seal",0))
 	_mail_mutation_in_progress = true
 	var result: Dictionary = RewardManager.grant_reward(RewardManager.SOURCE_PAVILION,"live_ops_mail_server_"+mail_id,reward,{"pavilion":next_pavilion})
 	_mail_mutation_in_progress = false

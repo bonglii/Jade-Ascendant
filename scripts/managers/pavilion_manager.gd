@@ -7,6 +7,9 @@ extends Node
 ## IMPORTANT: Celestial Jade can only enter runtime through a trusted verified
 ## grant API. The current shipping OfflineProvider does not grant paid currency.
 
+var banner_client: Node
+const BannerClient = preload("res://scripts/managers/pavilion_banner_client.gd")
+
 signal pavilion_changed
 signal summon_completed(result: Dictionary)
 signal store_products_updated(products: Dictionary)
@@ -189,6 +192,9 @@ var _purchase_repair_view: Dictionary = {"status": "not_connected"}
 
 
 func _ready() -> void:
+	banner_client=BannerClient.new()
+	banner_client.name="BannerConfiguration"
+	add_child(banner_client)
 	rng.randomize()
 	if not EconomyCatalog.is_valid():
 		push_error("PavilionManager: EconomyCatalog v2 cadence tidak valid.")
@@ -1206,7 +1212,7 @@ func _connect_secure_purchase_identity() -> void:
 	_refresh_secure_purchase_context()
 
 
-func _on_monetization_identity_changed(_ready: bool) -> void:
+func _on_monetization_identity_changed(_identity_ready: bool) -> void:
 	_invalidate_paid_entitlements_rc("identity_changed")
 	_invalidate_verified_purchase_repair("account_changed")
 	_invalidate_paid_purchase_receipt_m14("identity_changed")
@@ -1715,8 +1721,19 @@ func get_summon_cost(pull_count: int) -> Dictionary:
 	return EconomyCatalog.get_summon_cost(pull_count)
 
 
+func get_banner_configuration() -> Dictionary:
+	return banner_client.current() if banner_client!=null else {}
+
+func get_configured_base_rates() -> Dictionary:
+	var banner: Dictionary=get_banner_configuration()
+	return banner.get("rates",EconomyCatalog.get_base_drop_rates()).duplicate(true)
+
 func get_base_drop_rate_disclosure() -> Array[Dictionary]:
-	return EconomyCatalog.get_drop_rate_disclosure()
+	var entries: Array[Dictionary]=[]
+	var rates: Dictionary=get_configured_base_rates()
+	for rarity: String in EconomyCatalog.RARITY_ORDER:
+		entries.append({"rarity":rarity,"basis_points":int(rates[rarity]),"percent":float(rates[rarity])/100.0})
+	return entries
 
 
 func get_effective_drop_rate_disclosure() -> Array[Dictionary]:
@@ -1756,7 +1773,7 @@ func has_active_legendary_pool() -> bool:
 
 func get_effective_drop_rates_basis_points() -> Dictionary:
 	var pool: Dictionary = get_summon_pool_by_rarity()
-	var rates: Dictionary = EconomyCatalog.get_base_drop_rates()
+	var rates: Dictionary = get_configured_base_rates()
 	for rarity_index: int in range(EconomyCatalog.RARITY_ORDER.size() - 1, -1, -1):
 		var rarity: String = EconomyCatalog.RARITY_ORDER[rarity_index]
 		var rarity_pool: Array = pool.get(rarity, [])
@@ -1899,10 +1916,11 @@ func summon_equipment(
 		next_state["celestial_jade"] = get_celestial_jade() - int(payment["amount"])
 
 	var pool: Dictionary = get_summon_pool_by_rarity()
+	var rates_snapshot: Dictionary = get_effective_drop_rates_basis_points()
 	var reward_counts: Dictionary = {}
 	var pull_results: Array[Dictionary] = []
 	for _pull_index: int in range(pull_count):
-		var roll_result: Dictionary = _roll_rarity(next_state, pool)
+		var roll_result: Dictionary = _roll_rarity(next_state, pool, rates_snapshot)
 		var rarity: String = str(roll_result.get("rarity", "common"))
 		var hard_legendary_pity: bool = bool(roll_result.get("hard_legendary_pity", false))
 		var wish_fate_before: bool = bool(
@@ -2020,7 +2038,7 @@ func _resolve_summon_payment(pull_count: int, payment_method: String) -> Diction
 	return {}
 
 
-func _roll_rarity(next_state: Dictionary, pool: Dictionary) -> Dictionary:
+func _roll_rarity(next_state: Dictionary, pool: Dictionary, rates_snapshot: Dictionary = {}) -> Dictionary:
 	var legendary_active: bool = not (pool.get("legendary", []) as Array).is_empty()
 	var legendary_limit: int = int(EconomyCatalog.PITY_LIMITS["legendary"])
 	var epic_limit: int = int(EconomyCatalog.PITY_LIMITS["epic_plus"])
@@ -2041,7 +2059,7 @@ func _roll_rarity(next_state: Dictionary, pool: Dictionary) -> Dictionary:
 	):
 		return {"rarity": "rare", "hard_legendary_pity": false}
 
-	var rates: Dictionary = get_effective_drop_rates_basis_points()
+	var rates: Dictionary = rates_snapshot if not rates_snapshot.is_empty() else get_effective_drop_rates_basis_points()
 	var roll: int = rng.randi_range(1, EconomyCatalog.RATE_BASIS_POINTS)
 	var cumulative: int = 0
 	for rarity: String in EconomyCatalog.RARITY_ORDER:
