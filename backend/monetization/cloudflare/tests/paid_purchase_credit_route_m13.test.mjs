@@ -20,6 +20,7 @@ function factory({auth=async()=>IDENTITY,credit=async()=>walletResponse}={}) {
     verifyIdentity:auth,
     authorizeAndCredit:async args=>{calls++;return credit(args);},
     makeWallet:()=>({}), makeLedger:()=>({}), makePlay:()=>({}),
+    preflightCredit:async()=>true, // Existing mock tests assume an already-fresh refund cursor.
   });
   return {handler,calls:()=>calls};
 }

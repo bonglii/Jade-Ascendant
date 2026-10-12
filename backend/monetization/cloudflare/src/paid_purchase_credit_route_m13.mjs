@@ -14,6 +14,7 @@ import { createD1Ledger } from './d1_ledger.mjs';
 import { createPlayGateway } from './play_api.mjs';
 import { InvalidIdentity, verifyFirebaseHeaders } from './jwt_verify.mjs';
 import { PurchaseAuthorityError } from '../../src/purchase_authority.mjs';
+import { assertPreconsumeCreditReadinessR1 } from './preconsume_credit_readiness_r1.mjs';
 
 const MAX_BODY = 8192;
 const TOKEN = /^[\x21-\x7e]{16,4096}$/;
@@ -90,6 +91,7 @@ export function createPaidPurchaseCreditHandlerM13({
   makeWallet = createD1Wallet,
   makeLedger = createD1Ledger,
   makePlay = createPlayGateway,
+  preflightCredit = assertPreconsumeCreditReadinessR1,
 } = {}) {
   return async function paidPurchaseCreditHandler(request, env) {
     if (request.method !== 'POST') return reply(405, { error: 'method_not_allowed' });
@@ -102,6 +104,9 @@ export function createPaidPurchaseCreditHandlerM13({
     try {
       const identity = await verifyIdentity(request.headers, env);
       const data = await readPayload(request);
+      // Fail before Play verification/consume when the refund monitor is stale or account held.
+      // The D1 wallet still enforces its independent atomic refund/hold gate at credit time.
+      await preflightCredit({db: env.DB, verifiedUid: identity?.auth?.uid, purchaseToken: data.purchase_token});
       const authorized = await authorizeAndCredit({
         request: { ...identity, data },
         playGateway: makePlay(env.PLAY_SERVICE_ACCOUNT_JSON),
