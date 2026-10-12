@@ -13,6 +13,7 @@ const EquipmentSetCatalog = preload(
 )
 
 const MAIN_MENU_SCENE: String = "res://scenes/ui/main_menu.tscn"
+const FILTER_FONT_SIZE: int = 14
 
 const SLOT_BUTTON_NODE_NAMES: Dictionary = {
 	"armament": "ArmamentButton",
@@ -2271,7 +2272,9 @@ func _apply_filter_style(
 	pressed.border_color = Color(0.96, 0.80, 0.34, 0.84)
 
 	button.focus_mode = Control.FOCUS_NONE
-	button.add_theme_font_size_override("font_size", 8)
+	# Keep typography stable through filter refreshes and the shared readability
+	# pass, which only boosts button fonts below 14 px.
+	button.add_theme_font_size_override("font_size", FILTER_FONT_SIZE)
 	button.add_theme_stylebox_override("normal", normal)
 	button.add_theme_stylebox_override("hover", hover)
 	button.add_theme_stylebox_override("pressed", pressed)

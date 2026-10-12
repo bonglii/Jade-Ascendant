@@ -1,0 +1,13 @@
+# Mail Studio upgrade — 2026-10-12
+
+User confirmed the first dashboard deployment, Android export, real mail delivery and reward claim. This patch builds directly on that verified mail-dashboard base.
+
+Added: single admin username/password + TOTP, one-use recovery codes and password change/session revocation; player UID search with history/send shortcuts; server drafts; scheduled delivery/cancellation; title/UID/ID/status filters and CSV export; reversible individual/bulk history archives; activity/registration/version segments; reviewed pending-case closure without reward redelivery; administrator action log; explicit Windows CMD launchers and parser preflight.
+
+Identity, public UID, player mail, existing reward receipts, IAP and Cloud Save remain preserved. Additive tables are in mail_studio_schema.sql; no existing table migration or deletion is needed. Deploy reruns preserve the DPAPI key and admin configuration. Minute cron runs the same Worker; up to three jobs per invocation keep D1 calls bounded. Scheduled campaign and job state commit in one batch, guarded against cancellation and concurrent delivery.
+
+Verification: 37 Node tests; real browser login, compose, search, draft, scheduling/cancellation, archive/restore, enrollment and recovery-code login, desktop and mobile overflow/CSP checks; native Cloudflare workerd/local D1 crypto, send/archive and actual scheduled handler; Godot import + 26 server-mail checks. All fixtures isolated; no actual player mail or live credentials used. The container interface-enumeration shim was used only for the local Wrangler launcher, not product code or transport security. Windows scripts reviewed and include on-machine parser preflight; live deployment and Windows acceptance remain pending.
+
+Limits: one admin; no email-password reset; recovery replaces the second factor only. Local wallet is not authoritative on the server. Administrative closure does not issue compensation or transfer a pending claim; old downloaded receipts can still finish on their original installation. Archive cleans the dashboard while retaining claim uniqueness. Activity means signed mailbox connectivity; unknown activity is excluded. Version segments need the new optional client header/Android export. Direct dashboard access still depends on working DNS; launcher handles the user's hotspot routing issue.
+
+Lessons: archive instead of removing claim records, include cancellation/job completion in the same transaction, aggregate exports rather than making one D1 query per campaign, check workerd crypto/scheduler behavior, preserve explicit Windows executable paths, and distinguish administrative resolution from a client-confirmed grant.

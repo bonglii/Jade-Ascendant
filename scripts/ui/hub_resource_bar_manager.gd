@@ -176,12 +176,20 @@ func _install_resource_bar(scene_root: Node, scene_path: String) -> void:
 	_resource_bar = bar
 
 
-func _resource_host(scene_root: Node, _scene_path: String) -> Control:
-	# Intentionally mount outside MobileSafeArea. The screen already reserves its
-	# device-safe content inset; this uses that previously empty top band so the
-	# shared wallet visually touches the very top edge without pushing content
-	# farther down. Existing menu content remains inside its safe host.
-	return scene_root as Control
+func _resource_host(scene_root: Node, scene_path: String) -> Control:
+	# Share the screen's existing device-safe coordinates. Mounting at the scene
+	# root bypasses the notch/system insets and can cover the wallet with a camera.
+	# Anchors then follow safe-area refreshes without accumulating extra padding.
+	var host_path: String = "Content"
+	match scene_path:
+		HOME_SCENE:
+			host_path = "HomeUI"
+		PAVILION_SCENE:
+			host_path = "SafeArea"
+	var host := scene_root.get_node_or_null(host_path) as Control
+	if host == null:
+		push_warning("Shared wallet: missing safe-area host in %s" % scene_path)
+	return host
 
 
 func _add_resource_cell(

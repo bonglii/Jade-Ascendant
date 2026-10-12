@@ -1,5 +1,8 @@
 extends CharacterBody2D
 
+const PremiumPresentation = preload("res://scripts/enemy/boss_premium_presentation.gd")
+const PremiumCatalog = preload("res://scripts/data/boss_premium_catalog.gd")
+
 ## Boss
 ## Mengelola movement, health, melee attack, ranged attack,
 ## pemilihan attack pattern, phase combat, dan status kematian Boss.
@@ -478,11 +481,17 @@ func _is_nine_heavens_boss() -> bool:
 	]
 
 func _get_attack_presentation_theme() -> String:
-	return "nine_heavens" if _is_nine_heavens_boss() else ""
+	var profile: Dictionary = PremiumCatalog.get_profile(encounter_display_name)
+	return str(profile.get("theme", ""))
 
 func _ready() -> void:
 	_apply_encounter_presentation()
+	set_meta("premium_boss_presentation",not PremiumCatalog.get_profile(encounter_display_name).is_empty())
 	CombatFeedback.register_actor(self)
+	if not PremiumCatalog.get_profile(encounter_display_name).is_empty():
+		var presentation := PremiumPresentation.new()
+		presentation.name = "PremiumBossPresentation"
+		add_child(presentation)
 	current_hp = max_hp
 	current_phase = PHASE_ONE
 
@@ -762,6 +771,10 @@ func _play_action_animation(
 	)
 
 	visual_action_timer = safe_duration
+	var presentation: Node = get_node_or_null("PremiumBossPresentation")
+	if presentation != null:
+		presentation.on_action(prefix, safe_duration)
+		CombatFeedback.actor_action(self,safe_duration)
 
 ## Helper loop animation agar tidak restart setiap physics frame.
 func _play_loop_animation(

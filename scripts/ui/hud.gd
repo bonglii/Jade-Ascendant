@@ -1,5 +1,7 @@
 extends CanvasLayer
 
+const BossPremiumCatalog = preload("res://scripts/data/boss_premium_catalog.gd")
+
 const InRunStatsOverlay = preload("res://scripts/ui/in_run_stats_overlay.gd")
 
 ## In-Run HUD
@@ -66,6 +68,7 @@ var _encounter_banner_top_line: ColorRect = null
 var _encounter_banner_bottom_line: ColorRect = null
 var _encounter_banner_tween: Tween = null
 var _in_run_stats_overlay: Control = null
+var _review_guide_button: Button
 
 func _ready() -> void:
 	boss_panel.visible = false
@@ -82,6 +85,7 @@ func _ready() -> void:
 	_connect_boss_spawn_signal()
 	_apply_runtime_presentation()
 	_build_in_run_stats_entry()
+	_build_review_guide_entry()
 	_refresh_player_hud(true)
 
 func _process(_delta: float) -> void:
@@ -587,9 +591,9 @@ func _build_encounter_banner() -> void:
 	_encounter_banner.visible = false
 	_encounter_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_encounter_banner.anchor_left = 0.08
-	_encounter_banner.anchor_top = 0.28
+	_encounter_banner.anchor_top = 0.78
 	_encounter_banner.anchor_right = 0.92
-	_encounter_banner.anchor_bottom = 0.42
+	_encounter_banner.anchor_bottom = 0.92
 	_encounter_banner.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_encounter_banner.grow_vertical = Control.GROW_DIRECTION_BOTH
 	_encounter_banner.add_theme_stylebox_override(
@@ -667,6 +671,11 @@ func _show_encounter_banner(phase_text: String, accent: Color) -> void:
 		return
 	_encounter_banner_name.text = boss_name_label.text
 	_encounter_banner_phase.text = phase_text
+	var banner_height: float = maxf(90.0,_encounter_banner.get_combined_minimum_size().y+8.0)
+	_encounter_banner.anchor_top = 1.0
+	_encounter_banner.anchor_bottom = 1.0
+	_encounter_banner.offset_top = -banner_height-56.0
+	_encounter_banner.offset_bottom = -56.0
 	_encounter_banner_phase.add_theme_color_override("font_color", accent)
 	_encounter_banner_name.add_theme_color_override("font_color", HUD_GOLD)
 	if _encounter_banner_top_line != null:
@@ -746,6 +755,9 @@ func _on_pause_pressed() -> void:
 		return
 	if level_up_panel.visible:
 		return
+	var guide: Node = get_node_or_null("ScreenRoot/HUDSafeArea/TutorialOverlay")
+	if _review_guide_button != null:
+		_review_guide_button.visible = guide != null and guide._is_target_stage() and guide._is_tutorial_completed() and not guide.tutorial_active
 	pause_overlay.visible = true
 	_present_pause_overlay()
 	get_tree().paused = true
@@ -798,6 +810,7 @@ func setup_boss_health_bar(boss: Node) -> void:
 	if boss.has_method("get_encounter_display_name"):
 		display_name = str(boss.call("get_encounter_display_name"))
 	boss_name_label.text = _format_boss_name(display_name)
+	_polish_boss_header(display_name)
 	var initial_phase: int = 1
 	var boss_phase_value: Variant = boss.get("current_phase")
 	if boss_phase_value != null:
@@ -810,7 +823,7 @@ func setup_boss_health_bar(boss: Node) -> void:
 	_update_boss_hp_label(initial_hp, initial_max_hp)
 	boss_panel.visible = true
 	_present_boss_arrival()
-	_show_encounter_banner(boss_phase_label.text, HUD_JADE)
+	_show_encounter_banner(boss_phase_label.text,boss_panel.get_meta("premium_accent",HUD_JADE))
 	DebugLogger.system(str("HUD: Boss HP Bar ditampilkan!"))
 	DebugLogger.system(str("HUD: Boss HP = ", initial_hp, "/", initial_max_hp))
 	if not boss.health_changed.is_connected(_on_boss_health_changed):
@@ -859,7 +872,7 @@ func _on_boss_phase_changed(current_phase: int) -> void:
 	_set_boss_phase(current_phase)
 	_pulse_control(boss_phase_label, HUD_GOLD, 1.18)
 	_pulse_control(boss_name_label, Color(1.0, 0.74, 0.30, 1.0), 1.05)
-	_show_encounter_banner(boss_phase_label.text, Color(1.0, 0.42, 0.22, 1.0))
+	_show_encounter_banner(boss_phase_label.text,boss_panel.get_meta("premium_accent",Color(1.0,0.42,0.22)))
 	DebugLogger.system(str("HUD: Boss Phase -> ", current_phase))
 
 func _on_boss_health_changed(current_hp: float, max_hp: float) -> void:
@@ -902,3 +915,64 @@ func _hide_boss_panel() -> void:
 	boss_panel.visible = false
 	boss_panel.modulate = Color.WHITE
 	boss_panel.scale = Vector2.ONE
+
+
+func _polish_boss_header(display_name: String) -> void:
+	var profile: Dictionary = BossPremiumCatalog.get_profile(display_name)
+	if profile.is_empty(): return
+	var accent: Color = profile.accent
+	boss_panel.set_meta("premium_accent",accent)
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.004,0.016,0.026,0.98)
+	style.border_color = accent.lightened(0.12)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(12)
+	style.shadow_color = Color(0,0.008,0.014,0.4)
+	style.shadow_size = 9
+	boss_panel.add_theme_stylebox_override("panel",style)
+	boss_panel.offset_bottom = boss_panel.offset_top+116
+	boss_name_label.add_theme_font_size_override("font_size",20)
+	boss_name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	boss_name_label.max_lines_visible = 2
+	boss_name_label.add_theme_color_override("font_color",Color(1,0.88,0.58))
+	boss_phase_label.add_theme_font_size_override("font_size",14)
+	boss_phase_label.add_theme_color_override("font_color",accent.lightened(0.3))
+	boss_hp_label.add_theme_font_size_override("font_size",13)
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = accent
+	fill.set_corner_radius_all(6)
+	boss_hp_bar.add_theme_stylebox_override("fill",fill)
+	boss_hp_bar.custom_minimum_size.y = 22
+	var content: VBoxContainer = boss_hp_bar.get_parent()
+	var caption: Label = content.get_node_or_null("PremiumBossRealm") as Label
+	if caption == null:
+		caption = Label.new()
+		caption.name = "PremiumBossRealm"
+		caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		caption.add_theme_font_size_override("font_size",11)
+		caption.add_theme_color_override("font_color",accent.lightened(0.25))
+		content.add_child(caption)
+		content.move_child(caption,0)
+	caption.text = "%s  •  TRIAL %02d" % [tr(str(profile.realm)),int(profile.stage)]
+
+
+func _build_review_guide_entry() -> void:
+	_review_guide_button = Button.new()
+	_review_guide_button.name = "ReviewTutorialGuideButton"
+	_review_guide_button.text = tr("TUTORIAL GUIDE")
+	_review_guide_button.custom_minimum_size.y = 46
+	_review_guide_button.add_theme_font_size_override("font_size",16)
+	for state: String in ["normal","hover","pressed"]:
+		_review_guide_button.add_theme_stylebox_override(state,resume_button.get_theme_stylebox(state))
+	_review_guide_button.visible = false
+	var parent: Node = resume_button.get_parent()
+	parent.add_child(_review_guide_button)
+	parent.move_child(_review_guide_button,resume_button.get_index()+1)
+	_review_guide_button.pressed.connect(_review_tutorial_guide)
+
+func _review_tutorial_guide() -> void:
+	if SceneTransitionManager.is_transitioning: return
+	var guide: Node = get_node_or_null("ScreenRoot/HUDSafeArea/TutorialOverlay")
+	if guide == null or not guide._is_target_stage() or not guide._is_tutorial_completed(): return
+	_on_resume_pressed()
+	guide.review_guide()

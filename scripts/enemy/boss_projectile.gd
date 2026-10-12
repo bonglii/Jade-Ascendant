@@ -1,5 +1,10 @@
 extends Area2D
 
+const CRIMSON_MATERIAL = preload("res://assets/shaders/premium_orb_crimson.tres")
+const JADE_MATERIAL = preload("res://assets/shaders/premium_orb_jade.tres")
+
+const PremiumAttack = preload("res://scripts/enemy/hostile_attack_polish.gd")
+
 const NINE_HEAVENS_SPRITE_FRAMES: SpriteFrames = preload(
 	"res://assets/enemy/chapter3/boss_3_astral_star_projectile_spriteframes.tres"
 )
@@ -20,12 +25,17 @@ var direction: Vector2 = Vector2.ZERO
 func _ready() -> void:
 	## Active hostile projectile stays above actor bodies.
 	z_index = 4
+	PremiumAttack.install(self,"projectile")
 
 	body_entered.connect(_on_body_entered)
 
 	if animated_sprite != null:
 		if presentation_theme == "nine_heavens":
 			animated_sprite.sprite_frames = NINE_HEAVENS_SPRITE_FRAMES
+		if presentation_theme == "crimson_moon":
+			animated_sprite.material = CRIMSON_MATERIAL
+		elif presentation_theme == "jade_valley":
+			animated_sprite.material = JADE_MATERIAL
 		animated_sprite.play(&"fly")
 
 ## Mengarahkan projectile menuju posisi target.

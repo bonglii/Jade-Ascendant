@@ -1,0 +1,16 @@
+name = "jade-ascendant-player"
+main = "worker.mjs"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[vars]
+FIREBASE_PROJECT_ID = "jade-ascendant"
+
+[[d1_databases]]
+binding = "PROFILE_DB"
+database_name = "jade-player-identities"
+# deploy.ps1 replaces this in an ignored local deployment configuration.
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[triggers]
+crons = ["* * * * *"]

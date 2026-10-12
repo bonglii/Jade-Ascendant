@@ -1,5 +1,7 @@
 extends Area2D
 
+const PremiumAttack = preload("res://scripts/enemy/hostile_attack_polish.gd")
+
 ## Boss Heavenly Lightning
 ## Serangan AoE dengan telegraph sebelum impact.
 ## Telegraph memiliki arti gameplay nyata, jadi tetap terlihat.
@@ -27,6 +29,7 @@ func _ready() -> void:
 
 	setup_collision_shape()
 	setup_telegraph_visual()
+	PremiumAttack.install(self,"lightning")
 
 	await get_tree().create_timer(
 		telegraph_duration,
@@ -89,6 +92,9 @@ func setup_telegraph_visual() -> void:
 	if presentation_theme == "nine_heavens":
 		telegraph_fill = Color(0.62, 0.31, 0.92, 0.20)
 		telegraph_edge = Color(0.90, 0.72, 1.0, 0.94)
+	if presentation_theme == "crimson_moon":
+		telegraph_fill = Color(1.0,0.72,0.42,0.16)
+		telegraph_edge = Color(1.0,0.92,0.70,0.94)
 	telegraph_visual.color = telegraph_fill
 
 	## Exact gameplay-radius boundary remains readable above dense weapon VFX.

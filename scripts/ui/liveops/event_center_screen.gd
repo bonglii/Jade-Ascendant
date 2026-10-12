@@ -776,7 +776,7 @@ func _refresh_event_status() -> void:
 	var claimable: int = int(_live_ops.get_login_claimable_count())
 	_event_progress.text = tr("DAY %d / %d") % [day_count, total]
 	if bool(_live_ops.is_new_player_event_complete()):
-		_event_status.text = tr("COMPLETED")
+		_event_status.text = tr("NEXT CYCLE TOMORROW")
 	elif claimable > 0:
 		_event_status.text = tr("%d READY") % claimable
 	else:

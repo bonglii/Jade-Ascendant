@@ -49,6 +49,7 @@ const SCROLL_TAP_GUARD_MS: int = 190
 var live_ops: Node = null
 var _claim_busy: bool = false
 var _selected_day: int = 1
+var _displayed_cycle_id: int = 0
 var _root: PanelContainer = null
 var _top_scroll: ScrollContainer = null
 var _top_contents: VBoxContainer = null
@@ -477,14 +478,19 @@ func _build_footer(parent: VBoxContainer) -> void:
 func _refresh() -> void:
 	if live_ops == null or _active_label == null:
 		return
+	var cycle: int = int(live_ops.get_login_cycle_id())
+	if cycle != _displayed_cycle_id:
+		_displayed_cycle_id = cycle
+		_selected_day = _preferred_active_day()
 	_selected_day = clampi(
 		_selected_day,
 		1,
 		int(live_ops.LOGIN_DAY_COUNT)
 	)
-	_active_label.text = tr("%d/%d ACTIVE") % [
+	_active_label.text = tr("%d/%d ACTIVE • CYCLE %d") % [
 		int(live_ops.get_active_login_day_count()),
 		_total_days(),
+		cycle,
 	]
 	_render_day_cards()
 	_refresh_footer()
@@ -726,6 +732,8 @@ func _refresh_footer() -> void:
 
 	_footer_note.text = (
 		tr("SAVING UNAVAILABLE") if progress_locked
+		else tr("NEXT CYCLE ON YOUR NEXT ACTIVE DATE")
+		if bool(live_ops.is_new_player_event_complete())
 		else tr("REWARDS SAVE ON CLAIM")
 	)
 

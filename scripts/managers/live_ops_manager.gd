@@ -22,8 +22,10 @@ const LiveOpsLocalization = preload(
 const MAIN_MENU_SCENE: String = "res://scenes/ui/main_menu.tscn"
 const ACTIVE_PREFIX: String = "liveops:new_player:active:"
 const LOGIN_CLAIM_PREFIX: String = "liveops:new_player:claim:"
+const LOGIN_CYCLE_CLAIM_PREFIX: String = "liveops:login_cycle:claim:"
 const MAIL_READ_PREFIX: String = "liveops:mail:read:"
 const MAIL_CLAIM_PREFIX: String = "liveops:mail:claim:"
+const MAIL_DELETE_PREFIX: String = "liveops:mail:deleted:"
 
 const LOGIN_DAY_COUNT: int = 7
 const DATE_CHECK_INTERVAL: float = 20.0
@@ -388,7 +390,8 @@ const MAIL_CATALOG: Dictionary = {
 var _active_live_popup: Control = null
 var _active_live_popup_scene: String = ""
 var _date_check_elapsed: float = 0.0
-var _last_date_key: String = ""
+var _login_claim_in_progress: bool = false
+var _mail_mutation_in_progress: bool = false
 var _boss_hunt_pending_milestone: String = ""
 var _treasure_hunt_pending_cache: String = ""
 
@@ -396,7 +399,6 @@ var _treasure_hunt_pending_cache: String = ""
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	LiveOpsLocalization.install()
-	_last_date_key = _get_current_date_key()
 	_record_current_active_day()
 	_audit_event_catalog()
 	_audit_reward_catalog()
@@ -446,10 +448,8 @@ func _process(delta: float) -> void:
 		return
 	_date_check_elapsed = 0.0
 
-	var current_date: String = _get_current_date_key()
-	if current_date == _last_date_key:
-		return
-	_last_date_key = current_date
+	# Retry failed activity writes and completed-cycle rollover while the menu
+	# stays open. The ledger rejects dates already recorded or moved backward.
 	_record_current_active_day()
 
 
@@ -671,7 +671,7 @@ func _audit_reward_catalog() -> void:
 	):
 		push_error("LiveOpsManager: invalid Five Elements convergence reward")
 
-	var mail_ids: Array[String] = get_mail_ids()
+	var mail_ids: Array[String] = get_mail_ids(true)
 	if mail_ids.size() != MAIL_ORDER.size():
 		push_error(
 			"LiveOpsManager: mailbox order contains duplicate or unknown IDs."
@@ -706,6 +706,7 @@ func _get_current_date_key() -> String:
 
 func _get_ledger() -> Array[String]:
 	var result: Array[String] = []
+	var seen: Dictionary = {}
 	var raw_ledger: Variant = PavilionManager.state.get(
 		"claimed_milestone_ids",
 		[]
@@ -713,8 +714,9 @@ func _get_ledger() -> Array[String]:
 	if raw_ledger is Array:
 		for raw_entry: Variant in raw_ledger:
 			var entry: String = str(raw_entry)
-			if entry.is_empty() or entry in result:
+			if entry.is_empty() or seen.has(entry):
 				continue
+			seen[entry] = true
 			result.append(entry)
 	return result
 
@@ -733,7 +735,7 @@ func _apply_pavilion_snapshot(next_state: Dictionary) -> void:
 
 
 func _commit_ledger(ledger: Array[String]) -> bool:
-	if SaveManager.is_progress_read_only():
+	if _mail_mutation_in_progress or _login_claim_in_progress or SaveManager.is_progress_read_only():
 		return false
 	var next_state: Dictionary = _build_pavilion_snapshot(ledger)
 	var result: Dictionary = SaveManager.write_save_data(
@@ -797,7 +799,10 @@ func _get_latest_active_date_key() -> String:
 
 
 func _record_active_date(date_key: String) -> bool:
-	if get_active_login_day_count() >= LOGIN_DAY_COUNT:
+	if _login_claim_in_progress or _mail_mutation_in_progress:
+		return false
+	# Keep unclaimed rewards available until this cycle is fully collected.
+	if get_active_login_day_count() >= LOGIN_DAY_COUNT and not is_new_player_event_complete():
 		return false
 
 	var current_date: String = date_key.strip_edges()
@@ -832,7 +837,7 @@ func _record_current_active_day() -> bool:
 	return _record_active_date(_get_current_date_key())
 
 
-func get_active_login_day_count() -> int:
+func _get_total_active_login_days() -> int:
 	var seen_dates: Dictionary = {}
 	for entry: String in _get_ledger():
 		if not entry.begins_with(ACTIVE_PREFIX):
@@ -841,7 +846,26 @@ func get_active_login_day_count() -> int:
 		if not _is_valid_date_key(date_key) or seen_dates.has(date_key):
 			continue
 		seen_dates[date_key] = true
-	return clampi(seen_dates.size(), 0, LOGIN_DAY_COUNT)
+	return seen_dates.size()
+
+
+func get_login_cycle_id() -> int:
+	# The existing append-only activity ledger is the cycle authority. Seven
+	# dates mean cycle 1/day 7; the eighth committed date means cycle 2/day 1.
+	return maxi(1, ceili(float(_get_total_active_login_days()) / LOGIN_DAY_COUNT))
+
+
+func get_active_login_day_count() -> int:
+	var total: int = _get_total_active_login_days()
+	return 0 if total == 0 else (total - 1) % LOGIN_DAY_COUNT + 1
+
+
+func _login_claim_marker(day: int) -> String:
+	var cycle: int = get_login_cycle_id()
+	# Preserve legacy claims in the first cycle; never delete old markers.
+	if cycle == 1:
+		return LOGIN_CLAIM_PREFIX + str(day)
+	return LOGIN_CYCLE_CLAIM_PREFIX + "%d:%d" % [cycle, day]
 
 
 func get_login_reward(day: int) -> Dictionary:
@@ -862,7 +886,7 @@ func is_login_day_unlocked(day: int) -> bool:
 func is_login_day_claimed(day: int) -> bool:
 	if day < 1 or day > LOGIN_DAY_COUNT:
 		return false
-	return LOGIN_CLAIM_PREFIX + str(day) in _get_ledger()
+	return _login_claim_marker(day) in _get_ledger()
 
 
 func get_login_claimable_count() -> int:
@@ -882,7 +906,8 @@ func is_new_player_event_complete() -> bool:
 
 func claim_login_day(day: int) -> bool:
 	if (
-		not is_login_day_unlocked(day)
+		_login_claim_in_progress or _mail_mutation_in_progress
+		or not is_login_day_unlocked(day)
 		or is_login_day_claimed(day)
 		or SaveManager.is_progress_read_only()
 	):
@@ -893,20 +918,33 @@ func claim_login_day(day: int) -> bool:
 		return false
 
 	var ledger: Array[String] = _get_ledger()
-	var claim_marker: String = LOGIN_CLAIM_PREFIX + str(day)
+	var claim_marker: String = _login_claim_marker(day)
 	ledger.append(claim_marker)
 	var next_pavilion: Dictionary = _build_pavilion_snapshot(ledger)
 
+	_login_claim_in_progress = true
+	var cycle: int = get_login_cycle_id()
+	var source_id: String = (
+		"live_ops_login_day_%d" % day
+		if cycle == 1
+		else "live_ops_login_cycle_%d_day_%d" % [cycle, day]
+	)
 	var result: Dictionary = RewardManager.grant_reward(
 		RewardManager.SOURCE_PAVILION,
-		"live_ops_login_day_%d" % day,
+		source_id,
 		reward,
 		{"pavilion": next_pavilion}
 	)
 	if not bool(result.get("success", false)):
+		_login_claim_in_progress = false
 		return false
 
 	_apply_pavilion_snapshot(next_pavilion)
+	_login_claim_in_progress = false
+	# A player collecting an overdue final reward can start the next cycle
+	# today only if today is strictly later than the last recorded active date.
+	if is_new_player_event_complete():
+		_record_current_active_day()
 	return true
 
 
@@ -1794,7 +1832,7 @@ func is_five_elements_complete() -> bool:
 		and is_five_elements_convergence_claimed()
 	)
 
-func get_mail_ids() -> Array[String]:
+func get_mail_ids(include_deleted: bool = false) -> Array[String]:
 	var result: Array[String] = []
 	for mail_id: String in MAIL_ORDER:
 		var normalized: String = mail_id.strip_edges()
@@ -1802,14 +1840,19 @@ func get_mail_ids() -> Array[String]:
 			normalized.is_empty()
 			or normalized in result
 			or not MAIL_CATALOG.has(normalized)
+			or (not include_deleted and is_mail_deleted(normalized))
 		):
 			continue
 		result.append(normalized)
+	var server_ids: Array[String] = ServerMailManager.get_mail_ids()
+	for index: int in range(server_ids.size()-1,-1,-1):
+		if server_ids[index] not in result: result.push_front(server_ids[index])
 	return result
 
 
 func get_mail(mail_id: String) -> Dictionary:
-	if not MAIL_CATALOG.has(mail_id):
+	if mail_id.begins_with("server:"): return ServerMailManager.get_mail(mail_id)
+	if not MAIL_CATALOG.has(mail_id) or is_mail_deleted(mail_id):
 		return {}
 	var catalog_mail: Dictionary = MAIL_CATALOG[mail_id]
 	var mail: Dictionary = catalog_mail.duplicate(true)
@@ -1829,12 +1872,14 @@ func get_mail_entries() -> Array[Dictionary]:
 
 
 func is_mail_read(mail_id: String) -> bool:
+	if mail_id.begins_with("server:"): return bool(ServerMailManager.get_mail(mail_id).get("read",false))
 	if not MAIL_CATALOG.has(mail_id):
 		return false
 	return MAIL_READ_PREFIX + mail_id in _get_ledger()
 
 
 func is_mail_claimed(mail_id: String) -> bool:
+	if mail_id.begins_with("server:"): return bool(ServerMailManager.get_mail(mail_id).get("claimed",false))
 	if not MAIL_CATALOG.has(mail_id):
 		return false
 	var mail: Dictionary = MAIL_CATALOG[mail_id]
@@ -1855,30 +1900,73 @@ func get_mail_unread_count() -> int:
 func get_mail_claimable_count() -> int:
 	var count: int = 0
 	for mail_id: String in get_mail_ids():
-		var mail: Dictionary = MAIL_CATALOG.get(mail_id, {})
+		var mail: Dictionary = get_mail(mail_id)
 		var reward: Dictionary = mail.get("reward", {})
-		if not reward.is_empty() and not is_mail_claimed(mail_id):
+		if not reward.is_empty() and not is_mail_claimed(mail_id) and bool(mail.get("can_claim",true)):
 			count += 1
 	return count
+
+
+func is_mail_deleted(mail_id: String) -> bool:
+	if mail_id.begins_with("server:"): return ServerMailManager.get_mail(mail_id).is_empty()
+	return MAIL_DELETE_PREFIX + mail_id in _get_ledger()
+
+
+func mark_mail_read(mail_id: String) -> bool:
+	if mail_id.begins_with("server:"): return ServerMailManager.mark_read(mail_id)
+	if not MAIL_CATALOG.has(mail_id) or is_mail_deleted(mail_id):
+		return false
+	if is_mail_read(mail_id):
+		return true
+	var ledger: Array[String] = _get_ledger()
+	ledger.append(MAIL_READ_PREFIX + mail_id)
+	return _commit_ledger(ledger)
+
+
+func can_delete_mail(mail_id: String) -> bool:
+	if mail_id.begins_with("server:"): return ServerMailManager.can_delete_mail(mail_id)
+	return (
+		MAIL_CATALOG.has(mail_id)
+		and not is_mail_deleted(mail_id)
+		and is_mail_claimed(mail_id)
+		and not _mail_mutation_in_progress
+		and not _login_claim_in_progress
+		and not SaveManager.is_progress_read_only()
+	)
+
+
+func delete_mail(mail_id: String) -> bool:
+	if mail_id.begins_with("server:"): return ServerMailManager.delete_mail(mail_id)
+	# Tombstones hide a catalog letter without discarding its permanent claim.
+	# A future letter must use a new ID; deleted IDs cannot replay attachments.
+	if not can_delete_mail(mail_id):
+		return false
+	var ledger: Array[String] = _get_ledger()
+	ledger.append(MAIL_DELETE_PREFIX + mail_id)
+	return _commit_ledger(ledger)
 
 
 func mark_all_mail_read() -> bool:
 	var ledger: Array[String] = _get_ledger()
 	var changed: bool = false
 	for mail_id: String in get_mail_ids():
+		if mail_id.begins_with("server:"): continue
 		var marker: String = MAIL_READ_PREFIX + mail_id
 		if marker in ledger:
 			continue
 		ledger.append(marker)
 		changed = true
 	if not changed:
-		return true
-	return _commit_ledger(ledger)
+		return ServerMailManager.mark_all_read()
+	return _commit_ledger(ledger) and ServerMailManager.mark_all_read()
 
 
 func claim_mail(mail_id: String) -> bool:
+	if mail_id.begins_with("server:"): return ServerMailManager.claim_mail(mail_id)
 	if (
-		not MAIL_CATALOG.has(mail_id)
+		_mail_mutation_in_progress or _login_claim_in_progress
+		or not MAIL_CATALOG.has(mail_id)
+		or is_mail_deleted(mail_id)
 		or is_mail_claimed(mail_id)
 		or SaveManager.is_progress_read_only()
 	):
@@ -1897,6 +1985,7 @@ func claim_mail(mail_id: String) -> bool:
 	ledger.append(claim_marker)
 
 	var next_pavilion: Dictionary = _build_pavilion_snapshot(ledger)
+	_mail_mutation_in_progress = true
 	var result: Dictionary = RewardManager.grant_reward(
 		RewardManager.SOURCE_PAVILION,
 		"live_ops_mail_" + mail_id,
@@ -1904,17 +1993,39 @@ func claim_mail(mail_id: String) -> bool:
 		{"pavilion": next_pavilion}
 	)
 	if not bool(result.get("success", false)):
+		_mail_mutation_in_progress = false
 		return false
 
 	_apply_pavilion_snapshot(next_pavilion)
+	_mail_mutation_in_progress = false
 	return true
 
 
 func get_home_mail_badge_count() -> int:
-	return maxi(
-		get_mail_unread_count(),
-		get_mail_claimable_count()
-	)
+	# Count each actionable letter once, including a read/unclaimed letter
+	# alongside a different unread notice.
+	var count: int = 0
+	for mail_id: String in get_mail_ids():
+		if not is_mail_read(mail_id) or (not is_mail_claimed(mail_id) and bool(get_mail(mail_id).get("can_claim",true))):
+			count += 1
+	return count
+
+
+func apply_server_mail_reward(owner: String,mail_id: String,reward: Dictionary) -> bool:
+	if owner != ServerMailManager._owner or owner.length() != 64 or mail_id.length() != 32:
+		return false
+	var marker: String = "liveops:server_mail:claim:"+owner+":"+mail_id
+	var ledger: Array[String] = _get_ledger()
+	if marker in ledger: return true
+	if _mail_mutation_in_progress or _login_claim_in_progress or SaveManager.is_progress_read_only(): return false
+	ledger.append(marker)
+	var next_pavilion: Dictionary = _build_pavilion_snapshot(ledger)
+	_mail_mutation_in_progress = true
+	var result: Dictionary = RewardManager.grant_reward(RewardManager.SOURCE_PAVILION,"live_ops_mail_server_"+mail_id,reward,{"pavilion":next_pavilion})
+	_mail_mutation_in_progress = false
+	if not bool(result.get("success",false)): return false
+	_apply_pavilion_snapshot(next_pavilion)
+	return true
 
 
 func open_live_popup(scene_path: String) -> void:

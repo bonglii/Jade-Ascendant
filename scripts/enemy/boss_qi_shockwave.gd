@@ -1,5 +1,7 @@
 extends Area2D
 
+const PremiumAttack = preload("res://scripts/enemy/hostile_attack_polish.gd")
+
 ## Boss Qi Shockwave
 ## Close-range AoE dengan telegraph sebelum impact.
 ##
@@ -36,6 +38,7 @@ func _ready() -> void:
 
 	setup_collision_shape()
 	setup_telegraph_visual()
+	PremiumAttack.install(self,"shockwave")
 
 	await get_tree().create_timer(
 		telegraph_duration,
@@ -246,6 +249,8 @@ func create_active_shockwave() -> void:
 	)
 	ring.antialiased = true
 
+	if presentation_theme == "crimson_moon":
+		ring.default_color = Color(1.0,0.84,0.58,0.96)
 	var start_radius: float = 24.0
 	ring.points = create_ring_points(
 		start_radius,

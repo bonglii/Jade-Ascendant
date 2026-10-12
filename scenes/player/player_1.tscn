@@ -9,6 +9,8 @@
 [ext_resource type="Script" uid="uid://dncwbdal5j4b3" path="res://scripts/player/lin_yue_pavilion_aura_presentation.gd" id="7_pavilion_aura"]
 [ext_resource type="Script" uid="uid://vub7u1i071we" path="res://scripts/player/lin_yue_equipment_set_presentation.gd" id="8_equipment_set"]
 
+[ext_resource type="Script" path="res://scripts/player/lin_yue_premium_presentation.gd" id="9_premium"]
+
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_player_footprint"]
 radius = 20.0
 height = 44.0
@@ -60,3 +62,6 @@ z_index = 4
 position = Vector2(5, -17)
 scale = Vector2(1.1, 1.1)
 script = ExtResource("6_cultivation_presentation")
+
+[node name="PremiumBodyPresentation" type="Node2D" parent="."]
+script = ExtResource("9_premium")

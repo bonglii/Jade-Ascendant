@@ -24,6 +24,7 @@ var action_direction: float = 1.0
 var is_player_actor: bool = false
 var presentation_accumulator: float = 0.0
 var player_tint_active: bool = false
+var premium_boss: bool = false
 
 
 func _ready() -> void:
@@ -36,6 +37,7 @@ func _ready() -> void:
 	rest_rotation = sprite.rotation
 	age = float(get_parent().get_instance_id() % 101) * 0.1
 	is_player_actor = get_parent().is_in_group("player")
+	premium_boss = bool(get_parent().get_meta("premium_boss_presentation",false))
 
 
 func hurt() -> void:
@@ -127,21 +129,22 @@ func _update_non_player_presentation() -> void:
 	)
 	var hurt_weight: float = hurt_left / HURT_DURATION
 	var motion: float = 0.35 if SettingsManager.reduced_effects else 1.0
+	var action_amplitude: float = 1.9 if premium_boss else 1.0
 
 	sprite.scale = (
 		rest_scale
 		* Vector2(
-			1.0 + breath + action_weight * 0.035 * motion,
+			1.0 + breath + action_weight * 0.035 * motion * action_amplitude,
 			1.0 - breath - hurt_weight * 0.035 * motion
 		)
 	)
 	sprite.position = (
 		rest_position
-		+ Vector2(0.0, -action_weight * 2.0 * motion)
+		+ Vector2(0.0, -action_weight * 2.0 * motion * action_amplitude)
 	)
 	sprite.rotation = (
 		rest_rotation
-		+ action_weight * 0.07 * action_direction * motion
+		+ action_weight * 0.07 * action_direction * motion * action_amplitude
 	)
 
 	# self_modulate leaves child telegraphs and guardian status rings untouched.

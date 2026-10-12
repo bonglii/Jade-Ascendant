@@ -331,6 +331,14 @@ func _build_event_rail() -> void:
 	box.add_child(mailbox_button)
 	mailbox_badge = _add_notification_badge(mailbox_button)
 
+	var skill_book_button := _event_button(
+		preload("res://assets/ui/level_up/skill_art/spiritual_insight.png"),
+		"SKILL BOOK", Color(0.43, 0.91, 0.79)
+	)
+	skill_book_button.name = "HomeSkillBookButton"
+	skill_book_button.pressed.connect(_open_menu_scene.bind("res://scenes/ui/skill_book_screen.tscn"))
+	box.add_child(skill_book_button)
+
 	if OS.get_name() == "Android" or OS.is_debug_build():
 		treasury_button = _event_button(
 			TREASURY_ICON,

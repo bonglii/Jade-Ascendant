@@ -70,12 +70,20 @@ var guidance_arrow: Label = null
 var guidance_hint_panel: PanelContainer = null
 var guidance_hint_label: Label = null
 var guidance_phase: float = 0.0
+var _premium_dim: ColorRect
+var _objective_chip: PanelContainer
+var _objective_text: Label
+var _tutorial_art: TextureRect
+var _step_pips: Array[Label] = []
+var _manual_preview: bool = false
+var _prompt_tween: Tween
 var guidance_last_target_key: String = ""
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	tutorial_panel.visible = false
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_build_premium_tutorial()
 	_build_interactive_guidance()
 
 	if not continue_button.pressed.is_connected(_on_continue_pressed):
@@ -180,6 +188,7 @@ func _start_tutorial_runtime() -> void:
 	DebugLogger.system(str("Contextual Tutorial aktif! Stage 1-1 guidance dimulai."))
 
 func _process(delta: float) -> void:
+	_sync_premium_widgets()
 	if not tutorial_active:
 		_hide_interactive_guidance()
 		return
@@ -269,6 +278,7 @@ func _update_move_step() -> void:
 
 func _set_step(next_step: int) -> void:
 	current_step = next_step
+	_update_premium_step()
 	step_elapsed = 0.0
 	prompt_waiting = false
 	prompt_presented = false
@@ -333,7 +343,7 @@ func _set_copy(
 	step_label.text = tr(eyebrow_text)
 	title_label.text = tr(title_text)
 	body_label.text = tr(body_text)
-	status_label.text = tr(status_text)
+	status_label.text = tr("GUIDE REVIEW • CONTINUE TO NEXT PAGE") if _manual_preview and current_step < TutorialStep.ASCENSION else tr(status_text)
 	continue_button.text = tr(_get_continue_button_text())
 
 func _try_present_pending_prompt() -> void:
@@ -348,7 +358,11 @@ func _try_present_pending_prompt() -> void:
 	prompt_presented = true
 	tutorial_panel.visible = true
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	var hud: Node = get_tree().current_scene.get_node_or_null("HUD")
+	if hud != null and hud.has_method("_refresh_player_hud"):
+		hud._refresh_player_hud(true)
 	_claim_pause_for_prompt()
+	_animate_premium_prompt()
 
 func _claim_pause_for_prompt() -> void:
 	if get_tree().paused:
@@ -366,6 +380,8 @@ func _release_tutorial_pause() -> void:
 	tutorial_owns_pause = false
 
 func _get_continue_button_text() -> String:
+	if _manual_preview:
+		return "ENTER THE TRIAL" if current_step == TutorialStep.ASCENSION else "CONTINUE"
 	match current_step:
 		TutorialStep.MOVE:
 			return "BEGIN TRIAL"
@@ -378,12 +394,17 @@ func _on_continue_pressed() -> void:
 	if not tutorial_active or not prompt_waiting:
 		return
 
+	if _manual_preview and current_step < TutorialStep.ASCENSION:
+		_release_tutorial_pause()
+		_set_step(current_step+1)
+		return
 	prompt_waiting = false
 	prompt_presented = false
 	tutorial_panel.visible = false
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	step_elapsed = 0.0
 	guidance_last_target_key = ""
+	_sync_premium_widgets()
 
 	if current_step == TutorialStep.ASCENSION:
 		_complete_tutorial(false)
@@ -405,9 +426,11 @@ func _complete_tutorial(was_skipped: bool) -> void:
 	prompt_presented = false
 	current_step = TutorialStep.COMPLETE
 	tutorial_active = false
+	_manual_preview = false
 	tutorial_panel.visible = false
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_hide_interactive_guidance()
+	_sync_premium_widgets()
 	_release_tutorial_pause()
 	_save_tutorial_completed()
 	set_process(false)
@@ -637,14 +660,9 @@ func _update_interactive_guidance(delta: float) -> void:
 		return
 
 	if prompt_waiting:
-		if not tutorial_panel.visible:
-			_hide_interactive_guidance()
-			return
-		_present_guidance_at(
-			_control_center_in_overlay(continue_button),
-			tr(_get_prompt_guidance_text()),
-			"prompt_%d" % current_step
-		)
+		# The illustrated card already contains a full-width highlighted CTA.
+		# Floating arrow/ring labels obscured its copy and the progress rail.
+		_hide_interactive_guidance()
 		return
 
 	match current_step:
@@ -871,3 +889,162 @@ func _canvas_point_to_overlay(canvas_point: Vector2) -> Vector2:
 		get_global_transform_with_canvas().affine_inverse()
 		* canvas_point
 	)
+
+
+func _premium_style(accent: Color, primary: bool = false) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.006,0.032,0.040,0.99) if not primary else Color(0.075,0.17,0.14,0.99)
+	style.border_color = accent
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(16)
+	style.shadow_color = Color(0,0.007,0.010,0.5)
+	style.shadow_size = 12
+	return style
+
+func _build_premium_tutorial() -> void:
+	_premium_dim = ColorRect.new()
+	_premium_dim.name = "PremiumTutorialScrim"
+	_premium_dim.color = Color(0.002,0.009,0.016,0.54)
+	_premium_dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_premium_dim)
+	move_child(_premium_dim,0)
+	_premium_dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_premium_dim.visible = false
+	tutorial_panel.add_theme_stylebox_override("panel",_premium_style(GUIDANCE_GOLD))
+	tutorial_panel.anchor_top = 0.51
+	tutorial_panel.anchor_bottom = 0.94
+	var content: VBoxContainer = tutorial_panel.get_node("Margin/Content")
+	content.add_theme_constant_override("separation",11)
+	var top: HBoxContainer = content.get_node("TopRow")
+	step_label.add_theme_font_size_override("font_size",13)
+	step_label.add_theme_color_override("font_color",GUIDANCE_JADE)
+	skip_button.custom_minimum_size = Vector2(82,42)
+	skip_button.add_theme_font_size_override("font_size",14)
+	var hero := HBoxContainer.new()
+	hero.name = "IllustratedTutorialLesson"
+	hero.add_theme_constant_override("separation",16)
+	content.add_child(hero)
+	content.move_child(hero,1)
+	var art_frame := PanelContainer.new()
+	art_frame.custom_minimum_size = Vector2(112,132)
+	art_frame.add_theme_stylebox_override("panel",_premium_style(Color(0.3,0.68,0.60,0.65)))
+	hero.add_child(art_frame)
+	_tutorial_art = TextureRect.new()
+	_tutorial_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_tutorial_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_tutorial_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	art_frame.add_child(_tutorial_art)
+	var copy := VBoxContainer.new()
+	copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	copy.add_theme_constant_override("separation",8)
+	hero.add_child(copy)
+	title_label.reparent(copy)
+	body_label.reparent(copy)
+	title_label.add_theme_font_size_override("font_size",27)
+	title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body_label.add_theme_font_size_override("font_size",17)
+	body_label.add_theme_color_override("font_color",Color(0.85,0.93,0.90))
+	var rail := HBoxContainer.new()
+	rail.name = "FiveStepTutorialProgress"
+	rail.add_theme_constant_override("separation",8)
+	content.add_child(rail)
+	content.move_child(rail,2)
+	for i: int in range(5):
+		var pip := Label.new()
+		pip.text = "%02d" % (i+1)
+		pip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		pip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		pip.custom_minimum_size.y = 28
+		pip.add_theme_font_size_override("font_size",15)
+		rail.add_child(pip)
+		_step_pips.append(pip)
+	status_label.add_theme_font_size_override("font_size",15)
+	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	continue_button.custom_minimum_size.y = 54
+	continue_button.add_theme_font_size_override("font_size",19)
+	continue_button.add_theme_stylebox_override("normal",_premium_style(GUIDANCE_GOLD,true))
+	continue_button.add_theme_stylebox_override("hover",_premium_style(GUIDANCE_JADE,true))
+	continue_button.add_theme_stylebox_override("pressed",_premium_style(GUIDANCE_JADE,true))
+	_objective_chip = PanelContainer.new()
+	_objective_chip.name = "LiveTutorialObjective"
+	_objective_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_objective_chip.anchor_left = 0.10
+	_objective_chip.anchor_right = 0.90
+	_objective_chip.anchor_top = 0.24
+	_objective_chip.anchor_bottom = 0.24
+	_objective_chip.offset_bottom = 44
+	_objective_chip.add_theme_stylebox_override("panel",_premium_style(Color(0.27,0.77,0.62,0.78)))
+	add_child(_objective_chip)
+	_objective_text = Label.new()
+	_objective_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_objective_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_objective_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_objective_text.add_theme_font_size_override("font_size",15)
+	_objective_text.add_theme_color_override("font_color",GUIDANCE_GOLD)
+	_objective_chip.add_child(_objective_text)
+	_objective_chip.visible = false
+	resized.connect(_layout_premium_card)
+	tutorial_panel.minimum_size_changed.connect(_queue_premium_layout)
+	_update_premium_step()
+	_queue_premium_layout()
+
+func _update_premium_step() -> void:
+	if _tutorial_art == null: return
+	var paths: Array[String] = [
+		"res://assets/ui/hero/lin_yue_menu_showcase_v2.png",
+		"res://assets/ui/level_up/skill_art/spirit_sword.png",
+		"res://assets/ui/level_up/skill_art/spiritual_insight.png",
+		"res://assets/ui/level_up/skill_art/power.png",
+		"res://assets/ui/level_up/skill_art/heavenly_tribulation.png"]
+	_tutorial_art.texture = load(paths[clampi(current_step,0,4)]) as Texture2D
+	for i: int in range(_step_pips.size()):
+		_step_pips[i].text = "✓" if i < current_step else "%02d" % (i+1)
+		_step_pips[i].add_theme_color_override("font_color",GUIDANCE_GOLD if i == current_step else GUIDANCE_JADE if i < current_step else Color(0.40,0.51,0.53))
+	_queue_premium_layout()
+
+func _sync_premium_widgets() -> void:
+	if _premium_dim == null: return
+	_premium_dim.visible = tutorial_active and tutorial_panel.visible and prompt_waiting
+	_objective_chip.visible = tutorial_active and not prompt_waiting and not _is_presentationally_blocked()
+	_objective_text.text = status_label.text
+
+func _animate_premium_prompt() -> void:
+	if _prompt_tween != null and _prompt_tween.is_valid(): _prompt_tween.kill()
+	_sync_premium_widgets()
+	tutorial_panel.pivot_offset = tutorial_panel.size*0.5
+	tutorial_panel.scale = Vector2.ONE
+	tutorial_panel.modulate = Color.WHITE
+	if SettingsManager.reduced_effects: return
+	tutorial_panel.scale = Vector2(0.94,0.94)
+	tutorial_panel.modulate.a = 0.0
+	_prompt_tween = create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	_prompt_tween.set_parallel(true)
+	_prompt_tween.tween_property(tutorial_panel,"scale",Vector2.ONE,0.28).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_prompt_tween.tween_property(tutorial_panel,"modulate",Color.WHITE,0.20)
+
+
+func _queue_premium_layout() -> void:
+	_layout_premium_card.call_deferred()
+
+func _layout_premium_card() -> void:
+	if not is_inside_tree() or size.y < 1.0: return
+	var height: float = maxf(340.0,tutorial_panel.get_combined_minimum_size().y+8.0)
+	tutorial_panel.anchor_top = 1.0
+	tutorial_panel.anchor_bottom = 1.0
+	tutorial_panel.offset_top = -height-40.0
+	tutorial_panel.offset_bottom = -40.0
+
+
+func review_guide() -> void:
+	# Optional reference for returning players; no tutorial migration/reset.
+	if tutorial_active or not _is_target_stage() or not _is_tutorial_completed(): return
+	var scene: Node = get_tree().current_scene
+	player = get_tree().get_first_node_in_group("player") as Node2D
+	level_up_panel = scene.get_node_or_null("HUD/LevelUpPanel") as Control
+	pause_overlay = scene.get_node_or_null("HUD/ScreenRoot/PauseOverlay") as Control
+	game_over_ui = scene.get_node_or_null("GameOverUI") as CanvasLayer
+	victory_ui = scene.get_node_or_null("VictoryUI") as CanvasLayer
+	if _is_presentationally_blocked(): return
+	_manual_preview = true
+	tutorial_active = true
+	_set_step(TutorialStep.MOVE)

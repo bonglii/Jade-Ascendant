@@ -8,6 +8,7 @@ const DAILY_QUEST_SCENE: String = "res://scenes/ui/daily_quest_screen.tscn"
 const SETTINGS_SCENE: String = "res://scenes/ui/settings_screen.tscn"
 const CheckpointData = preload("res://scripts/managers/checkpoint_manager.gd")
 const ProfileGoogleAccountCard = preload("res://scripts/ui/google_account_card.gd")
+const PlayerIdentityCard = preload("res://scripts/ui/player_identity_card.gd")
 const EquipmentSetRuntime = preload("res://scripts/data/equipment_set_runtime.gd")
 
 @onready var spirit_stone_label: Label = %SpiritStoneLabel
@@ -45,6 +46,7 @@ var profile_overlay: Control = null
 var profile_sheet_panel: PanelContainer = null
 var profile_sheet_body: VBoxContainer = null
 var profile_sheet_rank_label: Label = null
+var profile_player_name_label: Label = null
 var profile_sheet_level_label: Label = null
 var profile_sheet_exp_bar: ProgressBar = null
 var profile_scroll: ScrollContainer = null
@@ -79,6 +81,8 @@ func _ready() -> void:
 	_ensure_hero_level_profile()
 	_configure_profile_interaction()
 	_ensure_profile_sheet()
+	PlayerIdentityManager.profile_changed.connect(_refresh_player_identity)
+	_refresh_player_identity(PlayerIdentityManager.get_profile_snapshot())
 	_ensure_hero_progression_initialized()
 	_debug_cleanup_armament_test_grants_once()
 	_refresh_home()
@@ -607,11 +611,18 @@ func _ensure_profile_sheet() -> void:
 	header_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header_text.add_theme_constant_override("separation", 1)
 	header.add_child(header_text)
+	var character_label := Label.new()
+	character_label.text = "LIN YUE  •  " + ("PROFIL PEMAIN" if SettingsManager.language == "id" else "PLAYER PROFILE")
+	character_label.add_theme_font_size_override("font_size",12)
+	character_label.add_theme_color_override("font_color",Color(0.58,0.95,0.86))
+	header_text.add_child(character_label)
 
 	var name_label := Label.new()
-	name_label.text = "LIN YUE"
+	profile_player_name_label = name_label
+	name_label.text = str(PlayerIdentityManager.get_profile_snapshot().display_name)
+	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	name_label.theme_type_variation = &"JadeHeroName"
-	name_label.add_theme_font_size_override("font_size", 33)
+	name_label.add_theme_font_size_override("font_size", 27)
 	name_label.add_theme_color_override(
 		"font_color",
 		Color(0.95, 1.0, 0.98, 1.0)
@@ -638,6 +649,7 @@ func _ensure_profile_sheet() -> void:
 	var close_button := Button.new()
 	close_button.name = "CloseButton"
 	close_button.custom_minimum_size = Vector2(48.0, 48.0)
+	close_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	close_button.text = "×"
 	close_button.focus_mode = Control.FOCUS_NONE
 	close_button.add_theme_font_size_override("font_size", 24)
@@ -695,7 +707,7 @@ func _ensure_profile_sheet() -> void:
 	content.add_child(profile_sheet_exp_bar)
 
 	var eyebrow := Label.new()
-	eyebrow.text = tr("NEXT-RUN PERMANENT STATS")
+	eyebrow.text = "PROFIL KULTIVATOR" if SettingsManager.language == "id" else "CULTIVATOR PROFILE"
 	eyebrow.theme_type_variation = &"JadeSubtitle"
 	eyebrow.add_theme_font_size_override("font_size", 16)
 	eyebrow.add_theme_color_override(
@@ -705,9 +717,7 @@ func _ensure_profile_sheet() -> void:
 	content.add_child(eyebrow)
 
 	var subtitle := Label.new()
-	subtitle.text = tr(
-		"Cultivation, equipped items and active set resonance. Run buffs excluded."
-	)
+	subtitle.text = "Identitas pemain, perkembangan permanen, dan stat pertempuran untuk run berikutnya." if SettingsManager.language == "id" else "Player identity, permanent growth and next-run combat stats."
 	subtitle.theme_type_variation = &"JadeMutedLabel"
 	subtitle.add_theme_font_size_override("font_size", 14)
 	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -728,6 +738,26 @@ func _ensure_profile_sheet() -> void:
 	profile_sheet_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	profile_sheet_body.add_theme_constant_override("separation", 10)
 	profile_scroll.add_child(profile_sheet_body)
+	profile_overlay.resized.connect(_layout_profile_sheet)
+	home_ui.item_rect_changed.connect(_layout_profile_sheet)
+	call_deferred("_layout_profile_sheet")
+
+func _refresh_player_identity(snapshot: Dictionary) -> void:
+	var display_name: String = str(snapshot.display_name) if bool(snapshot.ready) else ("Profil Pemain" if SettingsManager.language == "id" else "Player Profile")
+	if profile_player_name_label != null:
+		profile_player_name_label.text = display_name
+		profile_player_name_label.tooltip_text = display_name
+
+func _layout_profile_sheet() -> void:
+	if profile_sheet_panel == null or profile_overlay == null: return
+	# Use the existing safe-area host's bounds for this root-level overlay.
+	var safe_size: Vector2 = home_ui.size
+	var outer: Control = profile_overlay.get_node("OuterMargin")
+	outer.offset_left = home_ui.position.x+18.0
+	outer.offset_right = home_ui.position.x+safe_size.x-profile_overlay.size.x-18.0
+	outer.offset_top = home_ui.position.y+16.0
+	outer.offset_bottom = home_ui.position.y+safe_size.y-profile_overlay.size.y-16.0
+	profile_sheet_panel.custom_minimum_size = Vector2(minf(598.0,maxf(0.0,safe_size.x-36.0)),minf(1038.0,maxf(0.0,safe_size.y-32.0)))
 
 func _make_profile_style(
 	background_color: Color,
@@ -845,6 +875,8 @@ func _refresh_profile_sheet() -> void:
 		profile_sheet_body.remove_child(child)
 		child.queue_free()
 
+	var identity: PanelContainer = PlayerIdentityCard.new()
+	profile_sheet_body.add_child(identity)
 	var stats: Dictionary = _build_permanent_profile_snapshot()
 	_add_profile_quick_combat_summary(stats)
 	_add_profile_section_title(tr("PERMANENT STATS"))

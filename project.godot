@@ -42,6 +42,9 @@ PavilionManager="*res://scripts/managers/pavilion_manager.gd"
 IdleCultivationManager="*res://scripts/managers/idle_cultivation_manager.gd"
 MonetizationManager="*res://scripts/managers/monetization_manager.gd"
 GoogleAccountManager="*res://scripts/managers/google_account_manager.gd"
+PlayerIdentityManager="*res://scripts/managers/player_identity_manager.gd"
+PlayerIdentityServerClient="*res://scripts/managers/player_identity_server_client.gd"
+ServerMailManager="*res://scripts/managers/server_mail_manager.gd"
 Firebase="*uid://bfps2e72dlnwq"
 
 [display]

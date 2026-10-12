@@ -16,10 +16,21 @@ const SAVE_ARCHITECTURE_VERSION: int = 1
 
 const SCOPE_PERMANENT: String = "permanent"
 const SCOPE_ACTIVE_RUN: String = "active_run"
+const SCOPE_LOCAL_PROFILE: String = "local_profile"
 
 const SCHEMA_LEGACY_UNVERSIONED: int = 0
 
 const SAVE_DOMAINS: Dictionary = {
+	"server_mail": {
+		"owner": "ServerMailManager", "scope": SCOPE_LOCAL_PROFILE,
+		"path": "user://server_mail.save", "schema_version": 1,
+		"required_keys": ["installation_id", "cache"]
+	},
+	"player_profile": {
+		"owner": "PlayerIdentityManager", "scope": SCOPE_LOCAL_PROFILE,
+		"path": "user://player_profile.save", "schema_version": 1,
+		"required_keys": ["player_uid", "display_name"]
+	},
 	"pavilion": {
 		"owner": "PavilionManager", "scope": SCOPE_PERMANENT,
 		"path": "user://pavilion.save", "schema_version": 1,
@@ -618,7 +629,7 @@ func audit_save_architecture() -> Dictionary:
 			errors.append("domain id tidak boleh kosong")
 		if owner_name.strip_edges().is_empty():
 			errors.append(domain_id + ": owner tidak valid")
-		if scope_id not in [SCOPE_PERMANENT, SCOPE_ACTIVE_RUN]:
+		if scope_id not in [SCOPE_PERMANENT, SCOPE_ACTIVE_RUN, SCOPE_LOCAL_PROFILE]:
 			errors.append(domain_id + ": scope tidak valid")
 		if not save_path.begins_with("user://"):
 			errors.append(domain_id + ": path harus menggunakan user://")
@@ -1097,6 +1108,19 @@ func _domain_value_types_valid(path: String, data: Dictionary) -> bool:
 	var string_keys: Array[String] = []
 	var count_map: String = ""
 	match domain:
+		"server_mail":
+			string_keys = ["installation_id"]
+			if not data.get("cache") is Dictionary:
+				return false
+			var installation: String = str(data.get("installation_id",""))
+			if installation.length() != 32: return false
+			for character: String in installation:
+				if not "0123456789abcdef".contains(character): return false
+			if (data.cache as Dictionary).size() > 32: return false
+			for owner: Variant in data.cache:
+				if not owner is String or str(owner).length() != 64 or not data.cache[owner] is Array or (data.cache[owner] as Array).size() > 2000: return false
+				for entry: Variant in data.cache[owner]:
+					if not entry is Dictionary: return false
 		"progression":
 			number_keys = ["spirit_stone", "vitality_level", "sword_power_level", "swift_qi_level"]
 		"journey":

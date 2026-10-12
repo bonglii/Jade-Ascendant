@@ -50,7 +50,10 @@ const PARCHMENT_LEFT_EXTENSION: float = 16.0
 
 var live_ops: Node = null
 var _claim_busy: bool = false
+var _refreshing: bool = false
+var _delete_button: Button = null
 var _popup: Control = null
+var _popup_safe: MarginContainer = null
 var _hero: Control = null
 var _compact_inbox_button: Button = null
 var _compact_inbox_open: bool = false
@@ -63,11 +66,21 @@ var _inbox_count: Label = null
 var _letter_subject: Label = null
 var _letter_sender: Label = null
 var _letter_body: RichTextLabel = null
+var _reader_scroll: ScrollContainer = null
+var _reader_content: VBoxContainer = null
+var _letter_safe: MarginContainer = null
+var _letter_footer: VBoxContainer = null
+var _attachment_group: VBoxContainer = null
+var _displayed_id: String = ""
+var _document_signature: String = ""
+var _reader_offsets: Dictionary = {}
+var _reader_hint: Label = null
 var _attachment_caption: Label = null
 var _rewards_row: HBoxContainer = null
 var _claim_button: Button = null
 var _no_claim_hint: Label = null
 var _footer_label: Label = null
+var _server_status: Label = null
 var _selected_id: String = ""
 var _scroll_active: bool = false
 var _tap_guard_until: int = 0
@@ -88,7 +101,6 @@ func _ready() -> void:
 		_full_texture(self, HOME_ART, TextureRect.STRETCH_KEEP_ASPECT_COVERED)
 	_build_home_scrim()
 	_build_popup()
-	live_ops.mark_all_mail_read()
 	_refresh_from_authority()
 
 	var callback: Callable = Callable(self, "_on_live_ops_changed")
@@ -101,6 +113,7 @@ func _ready() -> void:
 	SceneTransitionManager.set_back_handler(_back)
 	resized.connect(_fit_popup)
 	call_deferred("_fit_popup")
+	ServerMailManager.refresh()
 
 
 func _notification(what: int) -> void:
@@ -151,6 +164,7 @@ func _build_popup() -> void:
 
 	var safe := MarginContainer.new()
 	safe.name = "PopupSafeInterior"
+	_popup_safe = safe
 	safe.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	for side: String in ["left", "right"]:
 		safe.add_theme_constant_override("margin_" + side, 48)
@@ -283,6 +297,19 @@ func _build_inbox_panel(parent: Control) -> void:
 	_inbox_count = _label("2 LETTERS", 13, MUTED)
 	_inbox_count.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(_inbox_count)
+	var sync := Button.new()
+	sync.name = "MailboxServerSyncButton"
+	sync.text = tr("SYNC MAIL")
+	sync.add_theme_font_size_override("font_size",14)
+	sync.custom_minimum_size.y = 36
+	sync.clip_text = true
+	sync.pressed.connect(ServerMailManager.refresh)
+	col.add_child(sync)
+	_server_status = _label(ServerMailManager.get_status(),10,MUTED)
+	_server_status.name = "MailboxServerStatus"
+	_server_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_server_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(_server_status)
 
 	var rule := ColorRect.new()
 	rule.custom_minimum_size.y = 2.0
@@ -327,103 +354,80 @@ func _build_parchment_panel(parent: Control) -> void:
 	)
 	paper.name = "ApprovedImperialLetterParchment"
 
-	var safe := MarginContainer.new()
-	safe.name = "LetterContentSafeArea"
-	safe.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	safe.add_theme_constant_override("margin_left", 26)
-	safe.add_theme_constant_override("margin_right", 26)
-	safe.add_theme_constant_override("margin_top", 31)
-	safe.add_theme_constant_override("margin_bottom", 29)
-	_letter_panel.add_child(safe)
-
+	_letter_safe = MarginContainer.new()
+	_letter_safe.name = "LetterContentSafeArea"
+	_letter_safe.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_letter_panel.add_child(_letter_safe)
 	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 7)
-	safe.add_child(col)
-
-	var title_spacer := Control.new()
-	title_spacer.custom_minimum_size.y = 11.0
-	title_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	col.add_child(title_spacer)
-
-	_letter_subject = _label("", 21, INK)
+	col.add_theme_constant_override("separation",8)
+	_letter_safe.add_child(col)
+	_reader_scroll = ScrollContainer.new()
+	_reader_scroll.name = "CompleteLetterReaderScroll"
+	_reader_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_reader_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_reader_scroll.custom_minimum_size.y = 48
+	_reader_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_reader_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	_reader_scroll.scroll_deadzone = DEADZONE
+	col.add_child(_reader_scroll)
+	_reader_hint = _label("SCROLL TO READ FULL LETTER",11,PAPER_MUTED)
+	_reader_hint.name = "CompleteLetterScrollHint"
+	_reader_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_reader_hint.visible = false
+	col.add_child(_reader_hint)
+	_reader_scroll.get_v_scroll_bar().changed.connect(_update_reader_hint)
+	_reader_scroll.get_v_scroll_bar().value_changed.connect(func(_value: float) -> void: _update_reader_hint())
+	_reader_content = VBoxContainer.new()
+	_reader_content.name = "FullLetterDocument"
+	_reader_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_reader_content.add_theme_constant_override("separation",10)
+	_reader_scroll.add_child(_reader_content)
+	_letter_subject = _label("",21,INK)
 	_letter_subject.name = "ActualMessageTitleSlot"
 	_letter_subject.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_letter_subject.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_letter_subject.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_letter_subject.max_lines_visible = 3
-	_letter_subject.add_theme_color_override("font_shadow_color", Color(1.0, 0.98, 0.92, 0.45))
-	col.add_child(_letter_subject)
-
-	# The decorative gold rule is embedded in LETTER_PARCHMENT. Place the
-	# sender below it, without shifting the title, body, or attachment footer.
-	var sender_slot := Control.new()
-	sender_slot.name = "SenderPositionSlot"
-	sender_slot.custom_minimum_size.y = 17.0
-	sender_slot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	col.add_child(sender_slot)
-
-	_letter_sender = _label("", 12, PAPER_MUTED)
+	# Full title and sender belong to the document, rather than fixed clipped slots.
+	_letter_subject.max_lines_visible = -1
+	_reader_content.add_child(_letter_subject)
+	_letter_sender = _label("",12,PAPER_MUTED)
+	_letter_sender.name = "FullMessageSender"
 	_letter_sender.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_letter_sender.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_letter_sender.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_letter_sender.offset_top = 13.0
-	_letter_sender.offset_bottom = 13.0
-	sender_slot.add_child(_letter_sender)
-
-	var sender_gap := Control.new()
-	sender_gap.custom_minimum_size.y = 3.0
-	sender_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	col.add_child(sender_gap)
-
-	var line := ColorRect.new()
-	line.custom_minimum_size.y = 1.0
-	line.color = Color(0.57, 0.42, 0.19, 0.48)
-	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	col.add_child(line)
-
-	# Keep the letter body comfortably away from the parchment edge on HP.
-	# Only the reading text gets extra inset; title/sender/footer stay unchanged.
-	var body_safe := MarginContainer.new()
-	body_safe.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	body_safe.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	body_safe.add_theme_constant_override("margin_left", 12)
-	body_safe.add_theme_constant_override("margin_right", 4)
-	col.add_child(body_safe)
-
-	# The reader owns its width and scrolling. A Label nested inside a
-	# ScrollContainer/VBoxContainer can collapse to a single-glyph width.
+	_letter_sender.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_reader_content.add_child(_letter_sender)
 	_letter_body = RichTextLabel.new()
 	_letter_body.name = "FullLetterTextNoTruncation"
 	_letter_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_letter_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_letter_body.custom_minimum_size = Vector2.ZERO
-	_letter_body.fit_content = false
+	_letter_body.fit_content = true
 	_letter_body.bbcode_enabled = false
-	_letter_body.scroll_active = true
-	_letter_body.scroll_following = false
+	_letter_body.scroll_active = false
+	_letter_body.mouse_filter = Control.MOUSE_FILTER_PASS
 	_letter_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_letter_body.add_theme_font_size_override("normal_font_size", 18)
-	_letter_body.add_theme_color_override("default_color", INK)
-	body_safe.add_child(_letter_body)
-
-	var footer := VBoxContainer.new()
-	footer.name = "PinnedAttachmentAndClaimFooter"
-	footer.custom_minimum_size.y = 169.0
-	footer.add_theme_constant_override("separation", 6)
-	col.add_child(footer)
-
-	var footer_rule := ColorRect.new()
-	footer_rule.custom_minimum_size.y = 1.0
-	footer_rule.color = Color(0.60, 0.43, 0.18, 0.65)
-	footer_rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	footer.add_child(footer_rule)
-
-	_attachment_caption = _label("ATTACHMENTS", 14, PAPER_MUTED)
+	_letter_body.add_theme_font_size_override("normal_font_size",18)
+	_letter_body.add_theme_color_override("default_color",INK)
+	_reader_content.add_child(_letter_body)
+	_letter_footer = VBoxContainer.new()
+	_letter_footer.name = "PinnedAttachmentAndClaimFooter"
+	_letter_footer.add_theme_constant_override("separation",6)
+	col.add_child(_letter_footer)
+	_attachment_group = VBoxContainer.new()
+	_attachment_group.name = "ResponsiveMailAttachments"
+	_attachment_group.add_theme_constant_override("separation",6)
+	_letter_footer.add_child(_attachment_group)
+	var rule := ColorRect.new()
+	rule.custom_minimum_size.y = 1
+	rule.color = Color(0.60,0.43,0.18,0.65)
+	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_attachment_group.add_child(rule)
+	_attachment_caption = _label("ATTACHMENTS",14,PAPER_MUTED)
 	_attachment_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	footer.add_child(_attachment_caption)
-
-	_rebuild_reward_slot(footer)
-	_build_claim_slot(footer)
+	_attachment_group.add_child(_attachment_caption)
+	_rebuild_reward_slot(_attachment_group)
+	_build_claim_slot(_letter_footer)
+	_delete_button = _button("DELETE MESSAGE",false)
+	_delete_button.name = "MailDeleteMessage"
+	_delete_button.clip_text = true
+	_delete_button.pressed.connect(_on_delete_pressed)
+	_letter_footer.add_child(_delete_button)
 
 
 func _rebuild_reward_slot(parent: VBoxContainer) -> void:
@@ -453,6 +457,7 @@ func _build_claim_slot(parent: VBoxContainer) -> void:
 
 	_claim_button = _button("CLAIM", true)
 	_claim_button.name = "MailClaimAttachment"
+	_claim_button.clip_text = true
 	_claim_button.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	# The shared flight presenter reads the focused button as the source position.
 	_claim_button.focus_mode = Control.FOCUS_ALL
@@ -472,15 +477,20 @@ func _fit_popup() -> void:
 	if not is_instance_valid(_popup):
 		return
 	var width_value: float = clampf(size.x * 0.945, 1.0, 685.0)
-	var height_value: float = clampf(size.y * 0.795, 1.0, 1090.0)
+	var height_value: float = clampf(size.y * (0.88 if size.y < 1000.0 else 0.795), 1.0, 1090.0)
 	_popup.position = Vector2(
 		(size.x - width_value) * 0.5,
 		(size.y - height_value) * 0.48
 	)
 	_popup.size = Vector2(width_value, height_value)
+	var side_inset: int = roundi(clampf(width_value * 0.07,24.0,48.0))
+	_popup_safe.add_theme_constant_override("margin_left",side_inset)
+	_popup_safe.add_theme_constant_override("margin_right",side_inset)
+	_popup_safe.add_theme_constant_override("margin_top",roundi(clampf(height_value * 0.059,24.0,54.0)))
+	_popup_safe.add_theme_constant_override("margin_bottom",roundi(clampf(height_value * 0.0835,36.0,91.0)))
 	if is_instance_valid(_hero):
 		var compact: bool = height_value < 750.0
-		_hero.custom_minimum_size.y = 133.0 if compact else 182.0
+		_hero.custom_minimum_size.y = (113.0 if height_value < 650.0 else 133.0) if compact else 182.0
 		var eyebrow := _hero.get_node_or_null("HeaderEyebrow") as Label
 		var title := _hero.get_node_or_null("SpiritMessagesTitle") as Label
 		var tagline := _hero.get_node_or_null("HeaderTagline") as Label
@@ -529,6 +539,41 @@ func _layout_body() -> void:
 		_letter_panel.size = Vector2(w, h)
 		_inbox_panel.visible = _compact_inbox_open
 		_letter_panel.visible = not _compact_inbox_open
+	_layout_letter_reader()
+
+
+func _layout_letter_reader() -> void:
+	if not is_instance_valid(_reader_scroll): return
+	var small: bool = _letter_panel.size.y < 500.0
+	var inset: int = 16 if small else 26
+	_letter_safe.add_theme_constant_override("margin_left",inset)
+	_letter_safe.add_theme_constant_override("margin_right",inset)
+	_letter_safe.add_theme_constant_override("margin_top",16 if small else 31)
+	_letter_safe.add_theme_constant_override("margin_bottom",16 if small else 29)
+	# On short screens only the actions remain pinned. Attachments are still
+	# reachable in the same document instead of forcing all reading space to zero.
+	var target: Node = _reader_content if small else _letter_footer
+	if _attachment_group.get_parent() != target:
+		_attachment_group.reparent(target,false)
+		if not small: _letter_footer.move_child(_attachment_group,0)
+
+
+func _update_reader_hint() -> void:
+	if not is_instance_valid(_reader_hint): return
+	var bar: VScrollBar = _reader_scroll.get_v_scroll_bar()
+	_reader_hint.visible = bar.max_value > bar.page + 1.0
+	_reader_hint.text = tr("END OF LETTER") if bar.value >= bar.max_value-bar.page-1.0 else tr("SCROLL TO READ FULL LETTER")
+
+
+func _restore_reader_scroll(id: String,signature: String,offset: int) -> void:
+	# Containers and RichTextLabel need their new text layout before restoring;
+	# setting it while the previous short document is active clamps it to zero.
+	for frame: int in range(2):
+		if not is_inside_tree(): return
+		await get_tree().process_frame
+	if not is_inside_tree() or _displayed_id != id or _document_signature != signature: return
+	_reader_scroll.scroll_vertical = offset
+	_update_reader_hint()
 
 
 func _inbox_label_height(label: Label, text_width: float, max_lines: int) -> float:
@@ -610,8 +655,10 @@ func _entries() -> Array[Dictionary]:
 
 
 func _refresh_from_authority() -> void:
-	if live_ops == null or not is_instance_valid(_inbox_list):
+	if _refreshing or live_ops == null or not is_instance_valid(_inbox_list):
 		return
+	_refreshing = true
+	if is_instance_valid(_server_status): _server_status.text = tr(ServerMailManager.get_status())
 	var entries: Array[Dictionary] = _entries()
 	var selection_found: bool = false
 	for entry: Dictionary in entries:
@@ -620,9 +667,12 @@ func _refresh_from_authority() -> void:
 			break
 	if not selection_found:
 		_selected_id = str(entries[0].get("id", "")) if not entries.is_empty() else ""
+	if not _selected_id.is_empty():
+		live_ops.mark_mail_read(_selected_id)
 	_rebuild_inbox()
 	_refresh_letter()
 	_layout_body()
+	_refreshing = false
 
 
 func _on_live_ops_changed() -> void:
@@ -747,8 +797,7 @@ func _select_mail(id: String) -> void:
 		return
 	if selection_changed:
 		_selected_id = id
-		_update_inbox_selection()
-		_refresh_letter()
+		_refresh_from_authority()
 	# On narrow viewports, selecting the current letter must still open it.
 	if _body.size.x < 450.0:
 		_compact_inbox_open = false
@@ -796,7 +845,13 @@ func _refresh_letter() -> void:
 			entry = mail
 			break
 
+	_delete_button.visible = not entry.is_empty()
+	_delete_button.disabled = not bool(live_ops.can_delete_mail(_selected_id)) or _claim_busy
+	_delete_button.tooltip_text = tr("CLAIM ATTACHMENT BEFORE DELETING") if not bool(entry.get("claimed", true)) else ""
 	if entry.is_empty():
+		_displayed_id = ""
+		_document_signature = ""
+		_reader_scroll.set_deferred("scroll_vertical",0)
 		_letter_subject.text = tr("The Empty Sky")
 		_letter_sender.text = tr("JADE SANCTUARY")
 		_letter_body.text = tr("No messages have arrived.\n\nMay the Celestial Courier bring good tidings to your cultivation path.")
@@ -808,10 +863,20 @@ func _refresh_letter() -> void:
 		_footer_label.text = tr("JADE SANCTUARY")
 		return
 
-	_letter_subject.text = tr(str(entry.get("title", "")))
-	_letter_sender.text = tr("FROM · ") + tr(str(entry.get("sender", "")))
-	_letter_body.text = tr(str(entry.get("body", "")))
-	_letter_body.scroll_to_line(0)
+	var server_letter: bool = _selected_id.begins_with("server:")
+	var subject: String = str(entry.get("title","")) if server_letter else tr(str(entry.get("title","")))
+	var sender: String = tr("FROM · ") + (str(entry.get("sender","")) if server_letter else tr(str(entry.get("sender",""))))
+	var body_text: String = str(entry.get("body","")) if server_letter else tr(str(entry.get("body","")))
+	var signature: String = JSON.stringify([_selected_id,subject,sender,body_text])
+	if signature != _document_signature:
+		if not _displayed_id.is_empty(): _reader_offsets[_displayed_id] = _reader_scroll.scroll_vertical
+		_displayed_id = _selected_id
+		_document_signature = signature
+		_letter_subject.text = subject
+		_letter_sender.text = sender
+		_letter_body.bbcode_enabled = not server_letter
+		_letter_body.text = body_text
+		_restore_reader_scroll.call_deferred(_selected_id,signature,int(_reader_offsets.get(_selected_id,0)))
 
 	var reward: Dictionary = entry.get("reward", {})
 	var has_reward: bool = not reward.is_empty()
@@ -822,10 +887,16 @@ func _refresh_letter() -> void:
 	_claim_button.visible = has_reward
 	_no_claim_hint.visible = not has_reward
 	_no_claim_hint.text = tr("MESSAGE · NO REWARD")
-	_claim_button.disabled = claimed or read_only or _claim_busy
+	var server_busy: bool = _selected_id.begins_with("server:") and ServerMailManager.is_busy_for(_selected_id)
+	var claim_allowed: bool = bool(entry.get("can_claim",true))
+	_claim_button.disabled = claimed or read_only or _claim_busy or server_busy or not claim_allowed
 	_claim_button.text = (
 		tr("CLAIMED") if claimed
+		else tr("CONNECTING") if server_busy
+		else tr("EXPIRED") if bool(entry.get("expired",false)) and not bool(entry.get("pending",false))
+		else tr("UNAVAILABLE") if not claim_allowed
 		else tr("SAVE READ ONLY") if read_only
+		else tr("RECOVER CLAIM") if bool(entry.get("pending",false))
 		else tr("CLAIM")
 	)
 	_footer_label.text = (
@@ -833,6 +904,8 @@ func _refresh_letter() -> void:
 		else tr("UNCLAIMED ATTACHMENT") if has_reward
 		else tr("OFFICIAL NOTICE")
 	)
+	# Server status already has a dedicated slot above the inbox list.
+	_footer_label.visible = false
 
 
 func _reward_tiles(reward: Dictionary) -> Array[Dictionary]:
@@ -939,6 +1012,18 @@ func _on_claim_pressed() -> void:
 	_refresh_from_authority()
 	if not success and is_instance_valid(_claim_button) and not _claim_button.disabled:
 		_claim_button.text = tr("CLAIM FAILED · RETRY")
+
+
+func _on_delete_pressed() -> void:
+	if _claim_busy or _selected_id.is_empty() or _delete_button.disabled:
+		return
+	_claim_busy = true
+	var success: bool = bool(live_ops.delete_mail(_selected_id))
+	_claim_busy = false
+	_refresh_from_authority()
+	if not success:
+		_footer_label.visible = true
+		_footer_label.text = tr("DELETE FAILED · RETRY")
 
 
 func _back() -> void:

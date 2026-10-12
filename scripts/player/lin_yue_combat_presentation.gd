@@ -159,6 +159,8 @@ func _draw() -> void:
 					fade,
 					direction
 				)
+			"Yin-Yang Blades":
+				_draw_yin_yang_signature(progress,fade,direction)
 			"Heavenly Sword Rain":
 				_draw_sword_rain_signature(
 					progress,
@@ -498,3 +500,16 @@ func get_weapon_color(weapon_name: String) -> Color:
 			return Color(0.38, 0.92, 0.84, 0.88)
 		_:
 			return Color(0.42, 0.88, 0.80, 0.82)
+
+
+func _draw_yin_yang_signature(progress: float, fade: float, direction: Vector2) -> void:
+	var origin: Vector2 = direction*12.0
+	var rotation: float = direction.angle()+progress*PI*0.7
+	var radius: float = 15.0+progress*10.0
+	var gold := Color(1.0,0.78,0.32,fade*0.78)
+	var cyan := Color(0.30,0.85,1.0,fade*0.78)
+	draw_arc(origin,radius,rotation,rotation+PI*0.8,16,gold,2.8,true)
+	draw_arc(origin,radius,rotation+PI,rotation+PI*1.8,16,cyan,2.8,true)
+	for i: int in range(2):
+		var ray: Vector2 = Vector2.RIGHT.rotated(rotation+i*PI)
+		draw_line(origin+ray*radius,origin+ray*(radius+10),gold if i == 0 else cyan,2.0,true)
