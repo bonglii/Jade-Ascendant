@@ -1955,7 +1955,7 @@ func summon_equipment(
 		) > 0
 		var duplicate_shards: int = 0
 		if already_owned:
-			duplicate_shards = int(InventoryManager.DUPLICATE_SHARDS.get(rarity, 5))
+			duplicate_shards = 0 # Retain identical copies for ascension.
 		reward_counts[item_id] = int(reward_counts.get(item_id, 0)) + 1
 		pull_results.append({
 			"item_id": item_id,

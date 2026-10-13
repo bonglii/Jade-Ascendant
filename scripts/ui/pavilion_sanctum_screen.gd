@@ -335,7 +335,7 @@ func _show_landed_entry(entry: Dictionary) -> void:
 		for copy: Label in [_result_name,_result_state,_stars_copy,_result_slot]: _landing_tween.tween_property(copy,"modulate:a",1.0,0.32)
 
 func _entry_state(entry: Dictionary) -> String:
-	if bool(entry.get("duplicate",false)): return tr("DUPLICATE • +%d SHARDS") % int(entry.get("duplicate_shards",0))
+	if bool(entry.get("duplicate",false)): return tr("DUPLICATE • +1 COPY")
 	return tr("NEW DISCOVERY")
 func _build_formation() -> void:
 	_result_name.modulate.a=1.0;_result_state.modulate.a=1.0

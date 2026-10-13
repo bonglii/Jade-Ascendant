@@ -40,7 +40,7 @@ func get_item_type(item_id: String) -> String:
 func get_item_data(item_id: String) -> Dictionary:
 	if item_id == REFINEMENT_SHARD:
 		return {"display_name": "Refinement Shard", "rarity": "rare", "item_type": ITEM_TYPE_MATERIAL,
-			"description": "Repeat clears and duplicate equipment provide shards. Use them to forge or ascend equipment."}
+			"description": "Refinement Shards support forging and cosmetics. Star ascension requires identical equipment duplicates."}
 	if not is_known_item(item_id):
 		return {}
 	if EquipmentManager.has_item_definition(item_id):
@@ -174,7 +174,7 @@ func _validate_loaded_state() -> void:
 			continue
 		validated_counts[item_id] = item_count
 	item_counts = validated_counts
-	# Convert legacy duplicates once; inventory remains a v1 count dictionary.
+	# Retain identical copies for item-specific ascension; old shards stay intact.
 	item_counts = preview_add_items({})
 
 func preview_add_items(rewards: Dictionary) -> Dictionary:
@@ -183,19 +183,6 @@ func preview_add_items(rewards: Dictionary) -> Dictionary:
 		var item_id: String = str(raw_id)
 		if is_known_item(item_id):
 			counts[item_id] = int(counts.get(item_id, 0)) + maxi(int(rewards[raw_id]), 0)
-	var shards: int = int(counts.get(REFINEMENT_SHARD, 0))
-	for raw_id in counts.keys():
-		var item_id: String = str(raw_id)
-		if item_id == REFINEMENT_SHARD or not EquipmentManager.has_item_definition(item_id):
-			continue
-		var count: int = int(counts[item_id])
-		if count <= 1:
-			continue
-		var rarity: String = str(EquipmentManager.get_item_data(item_id).get("rarity", "common"))
-		shards += (count - 1) * int(DUPLICATE_SHARDS.get(rarity, 5))
-		counts[item_id] = 1
-	if shards > 0:
-		counts[REFINEMENT_SHARD] = shards
 	return counts
 
 func save_inventory() -> void:

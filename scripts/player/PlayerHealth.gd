@@ -239,6 +239,8 @@ func take_damage(amount: float) -> void:
 		* (1.0 - damage_reduction)
 	)
 
+	var passive: Dictionary = preload("res://scripts/data/equipment_set_catalog.gd").get_active_passive(EquipmentSetRuntime.get_equipped_item_ids())
+	final_damage *= 1.0 - float(passive.get("reduction",0.0))
 	current_health -= final_damage
 	CombatFeedback.hit(get_parent(), final_damage)
 

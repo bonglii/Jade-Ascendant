@@ -573,6 +573,8 @@ func _on_rewarded_request_finished(placement: String, status: String) -> void:
 func _load_featured_items() -> void:
 	featured_items.clear()
 	var set_items: Array[String] = EquipmentSetCatalog.get_piece_ids(FEATURED_SET_ID)
+	# The banner is a featured pool, independent of the new four-piece set rule.
+	set_items.push_front("nine_heavens_star_sword")
 	for item_id: String in set_items:
 		var item_data: Dictionary = EquipmentManager.get_item_data(item_id)
 		if str(item_data.get("rarity", "")) == "legendary":

@@ -93,7 +93,9 @@ func _debug_cleanup_armament_test_grants_once() -> void:
 	# One-time cleanup for the temporary all-armament QA grant used during the
 	# combat-identity validation pass. Production/release builds never execute it.
 	# The marker prevents future legitimate debug acquisitions from being removed.
-	if not OS.is_debug_build():
+	if not OS.is_debug_build() or not OS.get_user_data_dir().contains("jade_armament_identity_qa"):
+		# A debug build alone does not prove ownership came from a QA grant.
+		# Never delete legitimate weapons/copies on a normal player profile.
 		return
 	if FileAccess.file_exists(DEBUG_QA_ARMAMENT_CLEANUP_MARKER):
 		return

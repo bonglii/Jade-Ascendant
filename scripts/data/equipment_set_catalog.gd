@@ -3,12 +3,7 @@ extends RefCounted
 ## Presentation grouping and conservative gameplay resonance for the permanent equipment collection.
 ## Gameplay bonuses are derived from equipped IDs only; no save fields are required.
 ##
-## Resonance tiers used by runtime presentation and gameplay:
-## 0-1 pieces: no set aura / no gameplay bonus
-## 2 pieces: awakened trace
-## 3 pieces: stable resonance
-## 4 pieces: strong resonance
-## 5 pieces: full resonance
+## Four armor/accessory pieces form a complete set; armament is independent.
 
 const SET_ORDER: Array[String] = [
 	"verdant_wanderer",
@@ -25,7 +20,6 @@ const SETS: Dictionary = {
 	"verdant_wanderer": {
 		"display_name": "VERDANT WANDERER",
 		"items": [
-			"wanderer_jade_jian",
 			"verdant_qi_robe",
 			"jade_guard_bracer",
 			"cloudstep_boots",
@@ -35,7 +29,6 @@ const SETS: Dictionary = {
 	"mistbound_disciple": {
 		"display_name": "MISTBOUND DISCIPLE",
 		"items": [
-			"mistveil_jian",
 			"bamboo_weave_robe",
 			"jade_edge_bracer",
 			"miststride_boots",
@@ -45,7 +38,6 @@ const SETS: Dictionary = {
 	"moon_seal": {
 		"display_name": "MOON-SEAL CONSTELLATION",
 		"items": [
-			"spirit_seal_fan",
 			"moonthread_robe",
 			"mirror_edge_bracer",
 			"starstep_boots",
@@ -55,7 +47,6 @@ const SETS: Dictionary = {
 	"crimson_shadow": {
 		"display_name": "CRIMSON SHADOW",
 		"items": [
-			"cinnabar_moon_saber",
 			"ward_keeper_robe",
 			"stormcall_bracer",
 			"shadowstep_boots",
@@ -65,7 +56,6 @@ const SETS: Dictionary = {
 	"nine_heavens": {
 		"display_name": "NINE HEAVENS ASCENDANT",
 		"items": [
-			"nine_heavens_star_sword",
 			"sovereign_mantle",
 			"tribulation_bracer",
 			"cloudtreader_boots",
@@ -75,7 +65,6 @@ const SETS: Dictionary = {
 	"jade_bastion": {
 		"display_name": "JADE BASTION",
 		"items": [
-			"mountain_ward_jian",
 			"stone_meridian_robe",
 			"earthseal_bracer",
 			"rootstep_boots",
@@ -85,7 +74,6 @@ const SETS: Dictionary = {
 	"stillwater_mirror": {
 		"display_name": "STILLWATER MIRROR",
 		"items": [
-			"stillwater_mirror_blade",
 			"glassmoon_robe",
 			"reflection_bracer",
 			"silent_ripple_boots",
@@ -95,7 +83,6 @@ const SETS: Dictionary = {
 	"solar_meridian": {
 		"display_name": "SOLAR MERIDIAN",
 		"items": [
-			"sunfire_dragon_jian",
 			"dawn_meridian_robe",
 			"solar_edict_bracer",
 			"sunstride_boots",
@@ -104,7 +91,7 @@ const SETS: Dictionary = {
 	}
 }
 
-# Each tier is incremental. A 5-piece set receives the 2/3/4/5 bonuses combined.
+# Tiers 2/3/4 are incremental; four armor/accessory pieces are complete.
 # Values stay intentionally small because individual equipment already contributes stats.
 const SET_IDENTITIES: Dictionary = {
 	"verdant_wanderer": "Balanced survival • healing • mobility",
@@ -234,15 +221,21 @@ static func get_display_name(set_id: String) -> String:
 	return str(get_set_data(set_id).get("display_name", ""))
 
 static func get_identity(set_id: String) -> String:
-	return str(SET_IDENTITIES.get(set_id, ""))
+	if get_set_rarity(set_id) in ["common","rare"]: return "Survival • Max HP"
+	return str(SET_IDENTITIES.get(set_id, "")) + " • " + str(get_four_piece_passive(set_id).get("name",""))
 
 static func get_tier_description(set_id: String, tier: int) -> String:
+	if tier not in [2,3,4]: return ""
 	var tier_data: Dictionary = TIER_DESCRIPTIONS.get(set_id, {})
-	return str(tier_data.get(tier, ""))
+	if get_set_rarity(set_id) in ["common", "rare"]:
+		return "+%d Max HP" % (tier * (2 if get_set_rarity(set_id) == "common" else 3))
+	var text: String = str(tier_data.get(tier, ""))
+	if tier == 4:
+		text += " • " + str(get_four_piece_passive(set_id).get("description", ""))
+	return text
 
 static func get_tier_descriptions(set_id: String) -> Dictionary:
-	var tier_data: Dictionary = TIER_DESCRIPTIONS.get(set_id, {})
-	return tier_data.duplicate(true)
+	return {2:get_tier_description(set_id,2),3:get_tier_description(set_id,3),4:get_tier_description(set_id,4)}
 
 static func get_piece_count(set_id: String, equipped_item_ids: Array[String]) -> int:
 	var set_data: Dictionary = get_set_data(set_id)
@@ -269,9 +262,9 @@ static func get_dominant_set_state(equipped_item_ids: Array[String]) -> Dictiona
 		"set_id": best_set_id,
 		"display_name": get_display_name(best_set_id),
 		"piece_count": best_count,
-		"max_pieces": 5,
+		"max_pieces": 4,
 		"resonant": best_count >= 2,
-		"full_resonance": best_count >= 5
+		"full_resonance": best_count >= 4
 	}
 
 static func get_set_id_for_item(item_id: String) -> String:
@@ -311,11 +304,9 @@ static func get_missing_piece_ids(
 	return result
 
 static func get_resonance_label(piece_count: int) -> String:
-	match clampi(piece_count, 0, 5):
-		5:
-			return "FULL RESONANCE"
+	match clampi(piece_count, 0, 4):
 		4:
-			return "STRONG RESONANCE"
+			return "FULL RESONANCE"
 		3:
 			return "STABLE RESONANCE"
 		2:
@@ -339,9 +330,26 @@ static func get_gameplay_bonus(
 
 	var total: float = 0.0
 	var set_tiers: Dictionary = GAMEPLAY_TIERS.get(set_id, {})
-	for tier: int in [2, 3, 4, 5]:
+	if get_set_rarity(set_id) in ["common", "rare"]:
+		return (float(piece_count) * (2.0 if get_set_rarity(set_id) == "common" else 3.0)) if stat_id == "max_health_flat" else 0.0
+	for tier: int in [2, 3, 4]:
 		if piece_count < tier:
 			break
 		var tier_data: Dictionary = set_tiers.get(tier, {})
 		total += float(tier_data.get(stat_id, 0.0))
 	return total
+
+const SET_RARITIES: Dictionary = {"verdant_wanderer":"common", "mistbound_disciple":"rare", "moon_seal":"rare", "crimson_shadow":"epic", "nine_heavens":"legendary", "jade_bastion":"rare", "stillwater_mirror":"epic", "solar_meridian":"legendary"}
+const FOUR_PIECE_PASSIVES: Dictionary = {
+	"crimson_shadow":{"kind":"bleed", "name":"BLOOD MOON", "description":"Hit memberi Bleeding: 3 tick selama 3 detik, masing-masing 8% damage hit. Tidak menumpuk; cooldown per target 3 detik.", "ratio":0.08, "color":Color(0.95,0.26,0.35)},
+	"nine_heavens":{"kind":"poison", "name":"JADE VENOM", "description":"Hit memberi Racun Giok: 4 tick selama 4 detik, masing-masing 6% damage hit. Tidak menumpuk; cooldown per target 4 detik.", "ratio":0.06, "color":Color(0.22,0.90,0.48)},
+	"stillwater_mirror":{"kind":"armor", "name":"MIRROR ARMOR", "description":"Armor mengurangi damage masuk 8%, setelah Iron Body. Tidak mengubah hitbox atau durasi invulnerable.", "reduction":0.08},
+	"solar_meridian":{"kind":"burn", "name":"SOLAR SCORCH", "description":"Hit memberi Burn: 3 tick selama 3 detik, masing-masing 9% damage hit. Tidak menumpuk; cooldown per target 3 detik.", "ratio":0.09, "color":Color(1.0,0.66,0.18)}
+}
+static func get_set_rarity(set_id: String) -> String:
+	return str(SET_RARITIES.get(set_id,"common"))
+static func get_four_piece_passive(set_id: String) -> Dictionary:
+	return FOUR_PIECE_PASSIVES.get(set_id,{}).duplicate(true)
+static func get_active_passive(ids: Array[String]) -> Dictionary:
+	var state: Dictionary=get_dominant_set_state(ids)
+	return get_four_piece_passive(str(state.set_id)) if int(state.piece_count)>=4 else {}

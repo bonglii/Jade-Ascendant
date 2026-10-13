@@ -1152,6 +1152,11 @@ func _domain_value_types_valid(path: String, data: Dictionary) -> bool:
 					var star: int = int(data["ascension_stars"][key])
 					if star < 1 or star > 5:
 						return false
+			if data.has("weapon_levels"):
+				if not data["weapon_levels"] is Dictionary: return false
+				for key: Variant in data["weapon_levels"]:
+					if not key is String or not _is_integral_number(data["weapon_levels"][key]): return false
+					if int(data["weapon_levels"][key])<1 or int(data["weapon_levels"][key])>50: return false
 		"pavilion":
 			array_keys = ["owned_cosmetics"]
 			string_keys = ["meditation_date", "cosmetic_id"]

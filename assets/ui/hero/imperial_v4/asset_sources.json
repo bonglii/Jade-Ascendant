@@ -1,0 +1,10 @@
+{
+  "generator": "Built-in image_gen",
+  "usage": "HERO unified native banner / detail artifact stage",
+  "path": "res://assets/ui/hero/imperial_v4/sanctuary_banner.png",
+  "sha256": "e7a21c4174743d069c4f7ddf519e3e20cbf4e62c2d652aefaff5ebe628030565",
+  "source_pixels": "Unmodified original generated PNG",
+  "import_size_limit": 1024,
+  "mipmaps": true,
+  "prompt": "Production game UI background only; wide 2:1 premium cinematic painterly jade sanctuary, emerald-blue misty mountains, Chinese gold-roof pavilions, jade balustrade, quiet shadow left for name and clear teal right for existing Lin Yue. No text, characters, UI, frames, dragons, sun or glow explosions."
+}

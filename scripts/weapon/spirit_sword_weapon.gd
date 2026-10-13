@@ -66,7 +66,7 @@ func create_projectile(
 ) -> void:
     var sword = projectile_scene.instantiate()
     var damage_result: Dictionary = player.player_stats.calculate_damage_result(
-        base_damage
+        base_damage * EquipmentManager.get_weapon_level_multiplier(armament_id)
     )
 
     if sword.has_method("configure_combat_profile"):
@@ -153,7 +153,7 @@ func create_resonance_projectile(
 
     var sword = projectile_scene.instantiate()
     var damage_result: Dictionary = player.player_stats.calculate_damage_result(
-        base_damage
+        base_damage * EquipmentManager.get_weapon_level_multiplier(armament_id)
     )
 
     if sword.has_method("configure_combat_profile"):

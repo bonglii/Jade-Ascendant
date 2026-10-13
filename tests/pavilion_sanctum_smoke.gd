@@ -45,7 +45,7 @@ func run() -> void:
 			check(screen.summon_ten_button.get_global_rect().end.x<=dims.x+1,label+" ten CTA inside viewport")
 			check(screen.locked_watch_ad_button.text==tr("WATCH AD • FREE 1× SUMMON"),label+" ad CTA explicit")
 			for rarity in ["common","rare","epic","legendary"]:
-				var committed: Dictionary = {"results":[{"item_id":"nine_heavens_star_sword","rarity":rarity,"duplicate":true,"duplicate_shards":75}]}
+				var committed: Dictionary = {"results":[{"item_id":"nine_heavens_star_sword","rarity":rarity,"duplicate":true,"duplicate_shards":0}]}
 				var before: Dictionary = snapshot()
 				screen._start_summon_reveal(committed)
 				check(screen.summon_reveal_overlay.visible,label+" overlay opens "+rarity)
@@ -60,14 +60,14 @@ func run() -> void:
 				screen._skip_ritual();await settle()
 				check(not screen.summon_reveal_busy,label+" skip releases lock "+rarity)
 				check(screen._stars_copy.text=="★☆☆☆☆",label+" actual ascension stars, not rarity "+rarity)
-				check(screen._result_state.text.contains("75"),label+" actual duplicate amount "+rarity)
+				check(screen._result_state.text.contains("1"),label+" actual retained duplicate copy "+rarity)
 				check(screen.summon_reveal_action.get_global_rect().end.y<=screen.summon_reveal_overlay.get_global_rect().end.y+1,label+" continue fits "+rarity)
 				check(screen.summon_reveal_action.get_global_rect().end.y<=dims.y+1,label+" continue inside physical viewport "+rarity)
 				screen._advance_summon_reveal()
 				check(not screen.summon_reveal_overlay.visible,label+" continue returns "+rarity)
 				check(snapshot()==before,label+" presentation cannot change rewards "+rarity)
 			var batch: Array = []
-			for index in range(10):batch.append({"item_id":"nine_heavens_star_sword","rarity":"legendary","duplicate":true,"duplicate_shards":75})
+			for index in range(10):batch.append({"item_id":"nine_heavens_star_sword","rarity":"legendary","duplicate":true,"duplicate_shards":0})
 			var before: Dictionary = snapshot()
 			screen._start_summon_reveal({"results":batch});screen._reveal_stage.skip();await settle()
 			check(screen._formation.get_child_count()==10,label+" ten formation seals")

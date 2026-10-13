@@ -329,6 +329,7 @@ func take_damage(amount: float) -> void:
 		return
 	var final_damage: float = amount * get_damage_taken_multiplier()
 	current_hp -= final_damage
+	preload("res://scripts/effects/equipment_set_status.gd").on_hit(self, final_damage)
 	CombatFeedback.hit(self, final_damage)
 
 	DebugLogger.combat(

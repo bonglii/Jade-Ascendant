@@ -63,9 +63,10 @@ func hit(actor: Node2D, amount: float, is_critical: bool = false) -> void:
 		return
 
 	var actor_is_player: bool = actor.is_in_group("player")
-	if not actor_is_player and not is_critical:
+	var set_dot: bool = actor.has_meta(&"jade_set_dot_inflight")
+	if not actor_is_player and not is_critical and not set_dot:
 		is_critical = _consume_actor_critical_marker(actor)
-	if not actor_is_player and not is_critical:
+	if not actor_is_player and not is_critical and not set_dot:
 		is_critical = _consume_pending_player_critical_feedback()
 
 	var presentation: Node = actor.get_node_or_null("QiPresentation")

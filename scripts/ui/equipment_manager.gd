@@ -63,6 +63,8 @@ var equipped_item_ids: Dictionary = {
 	SLOT_PENDANT: ""
 }
 var ascension_stars: Dictionary = {}
+var weapon_levels: Dictionary = {}
+var _upgrade_inflight: bool = false
 var _paid_runtime_snapshot_rc6: Dictionary = PaidEquipmentRuntimeRC6.empty()
 
 # `equipped_item_ids` and `ascension_stars` are the permanent NEXT RUN loadout.
@@ -159,7 +161,7 @@ func can_modify_equipment() -> bool:
 	# A checkpoint no longer seals the hub. Hub edits are permanent NEXT RUN
 	# choices, while gameplay continues to read the frozen run snapshot. Direct
 	# mid-combat mutation remains blocked.
-	if SaveManager.is_progress_read_only():
+	if _upgrade_inflight or SaveManager.has_pending_transaction() or SaveManager.is_progress_read_only():
 		return false
 	return not _has_gameplay_player()
 
@@ -283,80 +285,78 @@ func _build_effective_item_data(item_id: String, star: int) -> Dictionary:
 	for stat_id: String in ASCENSION_SCALABLE_STATS:
 		if item_data.has(stat_id):
 			item_data[stat_id] = float(item_data[stat_id]) * multiplier
+	if str(item_data.get("slot",""))==SLOT_ARMAMENT:
+		item_data["weapon_level"] = get_item_weapon_level(item_id)
+		item_data["weapon_level_cap"] = get_weapon_level_cap(item_id,clamped_star)
+		item_data["weapon_damage_multiplier"] = get_weapon_level_multiplier(item_id)
 	item_data["ascension_star"] = clamped_star
 	item_data["ascension_multiplier"] = multiplier
 	return item_data
 
 func get_ascension_cost_for_star(item_id: String, target_star: int) -> int:
-	if not has_item_definition(item_id):
-		return 0
-	if target_star < 2 or target_star > MAX_ASCENSION_STAR:
-		return 0
-	var rarity: String = str(get_item_data(item_id).get("rarity", RARITY_COMMON))
-	var duplicate_value: int = int(InventoryManager.DUPLICATE_SHARDS.get(rarity, 0))
-	var cost_multiplier: int = int(ASCENSION_COST_MULTIPLIERS.get(target_star, 0))
-	return maxi(duplicate_value * cost_multiplier, 0)
+	return 1 if has_item_definition(item_id) and target_star in [2,3,4,5] else 0
 
 func get_ascension_cost(item_id: String) -> int:
-	var current_star: int = get_item_star(item_id)
-	if current_star <= 0 or current_star >= MAX_ASCENSION_STAR:
-		return 0
-	return get_ascension_cost_for_star(item_id, current_star + 1)
+	return get_ascension_cost_for_star(item_id, get_item_star(item_id)+1)
 
 func can_ascend_item(item_id: String) -> bool:
-	if not has_item_definition(item_id):
-		return false
-	if not can_modify_equipment():
-		return false
-	if not InventoryManager.owns_item(item_id):
-		return false
-	var cost: int = get_ascension_cost(item_id)
-	if cost <= 0:
-		return false
-	return InventoryManager.get_item_count(InventoryManager.REFINEMENT_SHARD) >= cost
+	return can_modify_equipment() and get_ascension_cost(item_id)>0 and InventoryManager.get_item_count(item_id)>=2
 
 func ascend_item(item_id: String) -> bool:
-	if not can_ascend_item(item_id):
-		return false
-	var old_star: int = get_item_star(item_id)
-	var new_star: int = old_star + 1
-	var shard_cost: int = get_ascension_cost_for_star(item_id, new_star)
-	var shard_balance: int = InventoryManager.get_item_count(InventoryManager.REFINEMENT_SHARD)
+	if not can_ascend_item(item_id): return false
+	_upgrade_inflight=true
+	var old_star: int=get_loadout_item_star(item_id)
+	var next_stars: Dictionary=ascension_stars.duplicate(true)
+	next_stars[item_id]=old_star+1
+	var counts: Dictionary=InventoryManager.item_counts.duplicate(true)
+	counts[item_id]=int(counts[item_id])-1 # Keep the owned/equipped original.
+	var ok: bool=SaveManager.write_save_batch({"equipment":build_equipment_save_data(next_stars),"inventory":{"version":InventoryManager.SAVE_VERSION,"item_counts":counts}})
+	if ok:
+		ascension_stars=next_stars;InventoryManager.item_counts=counts
+		InventoryManager.inventory_changed.emit(item_id,int(counts[item_id]))
+		InventoryManager.item_removed.emit(item_id,1,int(counts[item_id]))
+		equipment_ascended.emit(item_id,old_star,old_star+1)
+		equipment_changed.emit(str(get_item_data(item_id).get("slot","")),get_loadout_equipped_item_id(str(get_item_data(item_id).get("slot",""))))
+	_upgrade_inflight=false
+	return ok
 
-	var next_stars: Dictionary = ascension_stars.duplicate(true)
-	next_stars[item_id] = new_star
-	var next_counts: Dictionary = InventoryManager.item_counts.duplicate(true)
-	var next_shards: int = shard_balance - shard_cost
-	if next_shards > 0:
-		next_counts[InventoryManager.REFINEMENT_SHARD] = next_shards
-	else:
-		next_counts.erase(InventoryManager.REFINEMENT_SHARD)
+func get_weapon_level_cap(item_id: String, star_override: int=0) -> int:
+	if str(get_item_data(item_id).get("slot",""))!=SLOT_ARMAMENT: return 0
+	return 10 * (get_item_star(item_id) if star_override==0 else clampi(star_override,1,5))
 
-	var equipment_target: Dictionary = build_equipment_save_data(next_stars)
-	var inventory_target: Dictionary = {
-		"version": InventoryManager.SAVE_VERSION,
-		"item_counts": next_counts
-	}
-	if not SaveManager.write_save_batch({
-		"equipment": equipment_target,
-		"inventory": inventory_target
-	}):
-		return false
+func get_item_weapon_level(item_id: String) -> int:
+	if get_weapon_level_cap(item_id)==0: return 0
+	var levels: Dictionary=weapon_levels
+	if _should_use_active_run_loadout(): levels=active_run_loadout_snapshot.get("weapon_levels",{})
+	return clampi(int(levels.get(item_id,1)),1,get_weapon_level_cap(item_id))
 
-	ascension_stars = next_stars
-	InventoryManager.item_counts = next_counts
-	InventoryManager.inventory_changed.emit(InventoryManager.REFINEMENT_SHARD, next_shards)
-	InventoryManager.item_removed.emit(InventoryManager.REFINEMENT_SHARD, shard_cost, next_shards)
-	equipment_ascended.emit(item_id, old_star, new_star)
-	var slot_id: String = str(get_item_data(item_id).get("slot", ""))
-	if get_loadout_equipped_item_id(slot_id) == item_id:
-		equipment_changed.emit(slot_id, item_id)
-	AudioManager.play_sfx("equip")
-	DebugLogger.system(str(
-		"Equipment ascended: ", item_id, " | ", old_star, "★ -> ", new_star,
-		"★ | Refinement Shards -", shard_cost
-	))
-	return true
+func get_weapon_level_multiplier(item_id: String="") -> float:
+	var id: String=get_equipped_item_id(SLOT_ARMAMENT) if item_id.is_empty() else item_id
+	return 1.0+maxi(get_item_weapon_level(id)-1,0)*0.01
+
+func get_weapon_level_cost(item_id: String) -> int:
+	return 20*(get_item_weapon_level(item_id)+1) if get_item_weapon_level(item_id)<get_weapon_level_cap(item_id) else 0
+
+func can_level_weapon(item_id: String) -> bool:
+	return can_modify_equipment() and InventoryManager.owns_item(item_id) and get_weapon_level_cost(item_id)>0 and ProgressionManager.spirit_stone>=get_weapon_level_cost(item_id)
+
+func level_weapon(item_id: String) -> bool:
+	if not can_level_weapon(item_id): return false
+	_upgrade_inflight=true
+	var cost: int=get_weapon_level_cost(item_id)
+	var next_levels: Dictionary=weapon_levels.duplicate(true)
+	next_levels[item_id]=get_item_weapon_level(item_id)+1
+	var equipment: Dictionary=build_equipment_save_data()
+	equipment["weapon_levels"]=next_levels
+	var progress: Dictionary=ProgressionManager.build_progression_save_data()
+	progress["spirit_stone"]=int(progress["spirit_stone"])-cost
+	var ok: bool=SaveManager.write_save_batch({"equipment":equipment,"progression":progress})
+	if ok:
+		weapon_levels=next_levels
+		ProgressionManager.apply_progression_save_data(progress)
+		equipment_changed.emit(SLOT_ARMAMENT,get_loadout_equipped_item_id(SLOT_ARMAMENT))
+	_upgrade_inflight=false
+	return ok
 
 func equip_item(item_id: String) -> bool:
 	if not can_modify_equipment():
@@ -522,13 +522,20 @@ func _validate_loaded_state() -> void:
 			MAX_ASCENSION_STAR
 		)
 	ascension_stars = validated_stars
+	var valid_levels: Dictionary = {}
+	for raw_id: Variant in weapon_levels:
+		var id: String = str(raw_id)
+		var cap: int = get_weapon_level_cap(id,get_loadout_item_star(id))
+		if cap>0: valid_levels[id]=clampi(int(weapon_levels[raw_id]),1,cap)
+	weapon_levels=valid_levels
 
 func build_equipment_save_data(stars_override: Dictionary = {}) -> Dictionary:
 	var stars: Dictionary = ascension_stars if stars_override.is_empty() else stars_override
 	var save_data: Dictionary = {
 		"version": SAVE_VERSION,
 		"equipped_item_ids": equipped_item_ids.duplicate(true),
-		"ascension_stars": stars.duplicate(true)
+		"ascension_stars": stars.duplicate(true),
+		"weapon_levels": weapon_levels.duplicate(true)
 	}
 	if not active_run_loadout_snapshot.is_empty():
 		save_data[ACTIVE_RUN_SNAPSHOT_SAVE_KEY] = (
@@ -571,6 +578,8 @@ func load_equipment() -> void:
 	var loaded_stars = save_data.get("ascension_stars", {})
 	if loaded_stars is Dictionary:
 		ascension_stars = loaded_stars.duplicate(true)
+	var loaded_levels: Variant = save_data.get("weapon_levels",{})
+	weapon_levels = loaded_levels.duplicate(true) if loaded_levels is Dictionary else {}
 	var loaded_snapshot: Variant = save_data.get(
 		ACTIVE_RUN_SNAPSHOT_SAVE_KEY,
 		{}
@@ -617,15 +626,18 @@ func get_secondary_bonus(stat_id: String, cap: float) -> float:
 func build_active_run_loadout_snapshot() -> Dictionary:
 	var snapshot_equipped: Dictionary = {}
 	var snapshot_stars: Dictionary = {}
+	var snapshot_levels: Dictionary = {}
 	for slot_id in get_slot_ids():
 		var item_id: String = get_loadout_equipped_item_id(slot_id)
 		snapshot_equipped[slot_id] = item_id
 		if not item_id.is_empty():
 			snapshot_stars[item_id] = get_loadout_item_star(item_id)
+			if slot_id==SLOT_ARMAMENT: snapshot_levels[item_id]=clampi(int(weapon_levels.get(item_id,1)),1,get_weapon_level_cap(item_id,get_loadout_item_star(item_id)))
 	return {
 		"version": RUN_LOADOUT_SNAPSHOT_VERSION,
 		"equipped_item_ids": snapshot_equipped,
 		"ascension_stars": snapshot_stars,
+		"weapon_levels": snapshot_levels,
 		"signature": _build_active_run_snapshot_signature(
 			snapshot_equipped,
 			snapshot_stars
@@ -689,10 +701,20 @@ func _normalize_active_run_loadout_snapshot(raw_snapshot: Variant) -> Dictionary
 	if str(raw_signature) != expected_signature:
 		return {}
 
+	var raw_levels: Variant=snapshot.get("weapon_levels",{})
+	if not raw_levels is Dictionary: return {}
+	var levels: Dictionary={}
+	var armament: String=str(normalized_equipped.get(SLOT_ARMAMENT,""))
+	for key: Variant in raw_levels:
+		if not key is String or key!=armament or not raw_levels[key] is int: return {}
+		var value: int=int(raw_levels[key])
+		if value<1 or value>get_weapon_level_cap(armament,int(normalized_stars.get(armament,1))): return {}
+		levels[key]=value
 	return {
 		"version": RUN_LOADOUT_SNAPSHOT_VERSION,
 		"equipped_item_ids": normalized_equipped,
 		"ascension_stars": normalized_stars,
+		"weapon_levels": levels,
 		"signature": expected_signature
 	}
 

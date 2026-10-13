@@ -193,9 +193,7 @@ func _show_summon_reveal_entry(entry_index: int) -> void:
 
 	var state_text: String = tr("NEW DISCOVERY")
 	if bool(entry.get("duplicate", false)):
-		state_text = tr("DUPLICATE • +%d SHARDS") % int(
-			entry.get("duplicate_shards", 0)
-		)
+		state_text = tr("DUPLICATE • +1 COPY")
 
 	if premium_summon_result != null:
 		premium_summon_result.call(

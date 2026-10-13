@@ -1052,8 +1052,7 @@ func _show_summon_reveal_entry(entry_index: int) -> void:
 		summon_reveal_signature.visible = false
 
 	if is_duplicate:
-		var shard_gain: int = int(entry.get("duplicate_shards", 0))
-		summon_reveal_state.text = tr("DUPLICATE TRANSMUTED • +%d SHARDS") % shard_gain
+		summon_reveal_state.text = tr("DUPLICATE • +1 COPY")
 		summon_reveal_state.add_theme_color_override("font_color", CYAN)
 		if summon_reveal_state.get_parent() is PanelContainer:
 			(summon_reveal_state.get_parent() as PanelContainer).add_theme_stylebox_override("panel", _chip_style(CYAN))
@@ -1647,11 +1646,7 @@ func _render_summon_result(result: Dictionary) -> void:
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var summary := _label(
 		reveal_box,
-		tr("NEW %d • DUPLICATES %d • +%d SHARDS") % [
-			new_count,
-			duplicate_count,
-			int(result.get("refinement_shards_gained", 0))
-		],
+		tr("NEW %d • IDENTICAL COPIES %d") % [new_count, duplicate_count],
 		11,
 		Color(0.76, 0.86, 0.83, 1.0)
 	)
@@ -1708,7 +1703,7 @@ func _render_summon_result(result: Dictionary) -> void:
 			var set_label := _label(box, tr(set_display_name), 9, Color(accent.r, accent.g, accent.b, 0.78))
 			set_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		if is_duplicate:
-			var duplicate_label := _label(box, tr("DUPLICATE → +%d SHARDS") % int(entry.get("duplicate_shards", 0)), 10, CYAN)
+			var duplicate_label := _label(box, tr("DUPLICATE • +1 COPY"), 10, CYAN)
 			duplicate_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		else:
 			var new_label := _label(box, tr("NEW EQUIPMENT"), 10, JADE)

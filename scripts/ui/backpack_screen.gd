@@ -393,7 +393,7 @@ func _refresh_ascension_controls() -> void:
 	ascend_button.visible = true
 	ascend_hint_label.visible = true
 	var current_star: int = EquipmentManager.get_item_star(selected_item_id)
-	var shard_balance: int = InventoryManager.get_item_count(InventoryManager.REFINEMENT_SHARD)
+	var shard_balance: int = maxi(InventoryManager.get_item_count(selected_item_id)-1,0)
 	if current_star >= EquipmentManager.MAX_ASCENSION_STAR:
 		ascension_status_label.text = "%s  •  MAX" % _format_stars(current_star)
 		ascension_preview_label.text = tr("CELESTIAL LIMIT REACHED\nCore passive +20% from 1★")
@@ -403,16 +403,16 @@ func _refresh_ascension_controls() -> void:
 		return
 	var target_star: int = current_star + 1
 	var cost: int = EquipmentManager.get_ascension_cost(selected_item_id)
-	ascension_status_label.text = "%s  →  %s\nSHARDS  %d / %d" % [_format_stars(current_star), _format_stars(target_star), shard_balance, cost]
+	ascension_status_label.text = "%s  →  %s\nDUPLIKAT IDENTIK  %d / %d" % [_format_stars(current_star), _format_stars(target_star), shard_balance, cost]
 	ascension_preview_label.text = tr("NEXT CORE PASSIVE\n%s") % _build_ascension_stat_preview(selected_item_id, target_star)
-	ascend_button.text = tr("ASCEND TO %d★  •  %d SHARDS") % [target_star, cost]
+	ascend_button.text = tr("ASCEND TO %d★  •  %d IDENTICAL COPY") % [target_star, cost]
 	if not EquipmentManager.can_modify_equipment():
 		ascend_button.text = tr("ASCENSION SEALED")
 		ascend_button.disabled = true
 		ascend_hint_label.text = tr("Finish or clear the active run before ascending equipment.")
 	elif shard_balance < cost:
 		ascend_button.disabled = true
-		ascend_hint_label.text = tr("Need %d more Refinement Shards.") % (cost - shard_balance)
+		ascend_hint_label.text = tr("Need %d more identical copies.") % (cost - shard_balance)
 	else:
 		ascend_button.disabled = false
 		ascend_hint_label.text = tr("Core passive increases. Signature Effect remains unchanged.")

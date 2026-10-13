@@ -156,6 +156,7 @@ func take_damage(amount: float) -> void:
 		return
 
 	current_hp -= amount
+	preload("res://scripts/effects/equipment_set_status.gd").on_hit(self, amount)
 	CombatFeedback.hit(self, amount)
 	current_hp = max(current_hp, 0.0)
 	DebugLogger.system(str("Elite Enemy 1 HP: ", current_hp, "/", max_hp))

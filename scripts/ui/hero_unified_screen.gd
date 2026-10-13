@@ -1,0 +1,339 @@
+extends Control
+
+## One HERO page. Gameplay/save authority stays in the existing managers.
+const Visual=preload("res://scripts/ui/equipment_visual_catalog.gd")
+const Sets=preload("res://scripts/data/equipment_set_catalog.gd")
+const Nav=preload("res://scripts/ui/wuxia_hub_nav.gd")
+const GOLD: Color=Color(0.95,0.79,0.43)
+const JADE: Color=Color(0.40,0.92,0.80)
+const TEXT: Color=Color(0.90,0.95,0.94)
+const SLOTS: Array[String]=["armament","robe","bracer","pendant","boots"]
+const SLOT_NAMES: Array[String]=["SENJATA","JUBAH","LENGAN","LIONTIN","SEPATU"]
+const FILTERS: Array[String]=["all","armament","robe","bracer","pendant","boots","material"]
+@onready var content: Control=$Content
+var scroll: ScrollContainer
+var page: VBoxContainer
+var grid: GridContainer
+var nav: Control
+var filter_id: String="all"
+var sort_id: int=0
+var query: String=""
+var selected_item_id: String=""
+var detail: Control
+var detail_open: bool=false
+var pending_refresh: bool=false
+var unit: float=1.0
+var drag_start: Vector2
+var card_buttons: Dictionary={}
+var filter_menu: OptionButton
+var search_box: LineEdit
+var header_count: Label
+
+func _ready() -> void:
+ var bg:=ColorRect.new();bg.color=Color(.006,.028,.033);bg.mouse_filter=Control.MOUSE_FILTER_IGNORE
+ add_child(bg);move_child(bg,0);bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+ scroll=ScrollContainer.new();scroll.name="HeroScroll";scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
+ scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_AUTO;scroll.follow_focus=true;scroll.scroll_deadzone=10
+ content.add_child(scroll)
+ page=VBoxContainer.new();page.name="UnifiedPage";page.size_flags_horizontal=Control.SIZE_EXPAND_FILL;page.add_theme_constant_override("separation",12);scroll.add_child(page)
+ nav=Nav.new();nav.name="HubNav";nav.active_tab=2;content.add_child(nav)
+ content.resized.connect(_layout)
+ EquipmentManager.equipment_changed.connect(func(_slot: String,_id: String):_queue_refresh())
+ InventoryManager.inventory_changed.connect(func(_id: String,_amount: int):_queue_refresh())
+ SceneTransitionManager.set_back_handler(handle_system_back)
+ _layout();_refresh_all()
+
+func _layout() -> void:
+ if not is_instance_valid(scroll):return
+ unit=clampf(content.size.x/648.0,.49,1.65)
+ var side: float=12.0*unit
+ var nav_h: float=82.0
+ nav.position=Vector2(side,content.size.y-nav_h-8.0*unit);nav.size=Vector2(content.size.x-side*2,nav_h)
+ scroll.position=Vector2(side,78.0)
+ scroll.size=Vector2(content.size.x-side*2,maxf(60,nav.position.y-86))
+ page.custom_minimum_size.x=content.size.x-side*2
+ _queue_refresh()
+
+func _queue_refresh() -> void:
+ if pending_refresh:return
+ pending_refresh=true;_refresh_all.call_deferred()
+
+func _refresh_all() -> void:
+ pending_refresh=false
+ if not is_instance_valid(page):return
+ var old_scroll: int=scroll.scroll_vertical
+ for child: Node in page.get_children():page.remove_child(child);child.queue_free()
+ card_buttons.clear()
+ page.add_theme_constant_override("separation",maxi(5,int(10*unit)))
+ var title:=_label("HERO",26,GOLD);page.add_child(title)
+ _build_banner();_build_slots();_build_resonance();_build_collection()
+ scroll.set_deferred("scroll_vertical",old_scroll)
+ scroll.set_deferred("size",Vector2(page.custom_minimum_size.x,maxf(60,nav.position.y-86)))
+ if detail_open:_show_detail(selected_item_id)
+
+func _label(value: String,font_size: int=16,tint: Color=TEXT) -> Label:
+ var label:=Label.new();label.text=value;label.mouse_filter=Control.MOUSE_FILTER_IGNORE
+ label.add_theme_font_size_override("font_size",maxi(9,int(font_size*unit)));label.add_theme_color_override("font_color",tint)
+ if font_size>=22:
+  var serif:=SystemFont.new();serif.font_names=PackedStringArray(["Noto Serif","DejaVu Serif","serif"]);label.add_theme_font_override("font",serif)
+ label.set_meta("hero_mobile_font_polished",true);label.set_meta(&"jade_mobile_readability_v2",true)
+ return label
+
+func _style(accent: Color=JADE) -> StyleBoxFlat:
+ var st:=StyleBoxFlat.new();st.bg_color=Color(.008,.045,.049,.98);st.border_color=Color(accent,.6)
+ st.set_border_width_all(1);st.border_width_bottom=3;st.set_corner_radius_all(8)
+ st.shadow_color=Color(0,0,0,.35);st.shadow_size=5;st.shadow_offset=Vector2(0,2)
+ st.content_margin_left=12*unit;st.content_margin_right=12*unit;st.content_margin_top=8*unit;st.content_margin_bottom=8*unit
+ return st
+
+func _button(value: String,primary: bool=false) -> Button:
+ var button:=Button.new();button.text=value;button.custom_minimum_size.y=maxf(44,48*unit)
+ button.add_theme_font_size_override("font_size",maxi(13,int(16*unit)))
+ button.add_theme_color_override("font_color",GOLD if primary else TEXT)
+ button.add_theme_stylebox_override("normal",_style(GOLD if primary else JADE))
+ if primary:
+  var skin:=StyleBoxTexture.new();skin.texture=load("res://assets/ui/system_v2/custom/buttons/primary_selected.svg");skin.texture_margin_left=12;skin.texture_margin_right=12;skin.texture_margin_top=10;skin.texture_margin_bottom=10
+  button.add_theme_stylebox_override("normal",skin)
+ var pressed: StyleBoxFlat=_style(GOLD);pressed.bg_color=Color(.03,.18,.17);pressed.shadow_size=0
+ button.add_theme_stylebox_override("pressed",pressed);button.add_theme_stylebox_override("hover",pressed)
+ button.set_meta("hero_mobile_font_polished",true);button.set_meta(&"jade_mobile_readability_v2",true)
+ button.mouse_filter=Control.MOUSE_FILTER_PASS
+ return button
+
+func _texture(path: String) -> TextureRect:
+ var view:=TextureRect.new();view.texture=load(path) as Texture2D;view.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
+ view.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;view.mouse_filter=Control.MOUSE_FILTER_IGNORE
+ view.texture_filter=CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+ return view
+
+func _build_banner() -> void:
+ var banner:=Control.new();banner.name="HeroBanner";banner.clip_contents=true;banner.custom_minimum_size.y=224*unit;page.add_child(banner)
+ var bg:=_texture("res://assets/ui/hero/imperial_v4/sanctuary_banner.png");bg.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_COVERED
+ banner.add_child(bg);bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+ var actor:=_texture("res://assets/ui/hero/lin_yue_menu_showcase_v2.png");actor.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+ banner.add_child(actor);actor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);actor.anchor_left=.48;actor.anchor_bottom=0;actor.offset_top=0;actor.offset_bottom=450*unit
+ var nameplate:=_label("LIN YUE",30,GOLD);banner.add_child(nameplate);nameplate.position=Vector2(18,72)*unit
+ var subtitle:=_label("PENGEMBARA GIOK",12);banner.add_child(subtitle);subtitle.position=Vector2(18,112)*unit
+ var status:=_label("✓ LOADOUT SIAP",12,JADE);banner.add_child(status);status.position=Vector2(18,175)*unit
+ if EquipmentManager.has_preserved_active_run_loadout():status.text="PERUBAHAN UNTUK RUN BARU"
+
+func _rarity_color(id: String) -> Color:
+ return {"legendary":GOLD,"epic":Color(.74,.44,.98),"rare":Color(.37,.75,.97),"common":Color(.29,.69,.53)}.get(id,JADE)
+
+func _skin_card(button: Button,rarity: String) -> void:
+ var path: String="res://assets/ui/system_v2/custom/cards/relic_card_"+rarity+".svg"
+ var st:=StyleBoxTexture.new();st.texture=load(path) as Texture2D
+ st.texture_margin_left=8;st.texture_margin_right=8;st.texture_margin_top=8;st.texture_margin_bottom=8
+ button.add_theme_stylebox_override("normal",st);button.add_theme_stylebox_override("hover",_style(_rarity_color(rarity)))
+ button.add_theme_stylebox_override("pressed",_style(GOLD))
+
+func _build_slots() -> void:
+ var row:=HBoxContainer.new();row.name="EquippedSlots";row.add_theme_constant_override("separation",6);page.add_child(row)
+ var side: float=(page.custom_minimum_size.x-24)/5
+ for i: int in range(SLOTS.size()):
+  var box:=VBoxContainer.new();box.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(box)
+  var id: String=EquipmentManager.get_loadout_equipped_item_id(SLOTS[i])
+  var button:=_button("");button.custom_minimum_size=Vector2(0,side);button.name="Slot_"+SLOTS[i];box.add_child(button)
+  button.tooltip_text=SLOT_NAMES[i]
+  if not id.is_empty():
+   _skin_card(button,str(EquipmentManager.get_item_data(id).get("rarity","common")))
+   var icon:=_texture(Visual.get_icon_path(id));button.add_child(icon);icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+   icon.offset_left=9;icon.offset_right=-9;icon.offset_top=9;icon.offset_bottom=-9
+  else:button.text="+"
+  button.pressed.connect(_slot_pressed.bind(SLOTS[i]))
+  var label:=_label(SLOT_NAMES[i],12);label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;box.add_child(label)
+
+func _equipped_ids() -> Array[String]:
+ var ids: Array[String]=[]
+ for slot: String in SLOTS:
+  var id: String=EquipmentManager.get_loadout_equipped_item_id(slot)
+  if not id.is_empty():ids.append(id)
+ return ids
+
+func _build_resonance() -> void:
+ var panel:=PanelContainer.new();panel.name="SetSummary";panel.add_theme_stylebox_override("panel",_style(GOLD));page.add_child(panel)
+ var row:=HBoxContainer.new();panel.add_child(row)
+ var state: Dictionary=Sets.get_dominant_set_state(_equipped_ids())
+ var name: String=str(state.display_name) if int(state.piece_count)>0 else "BELUM ADA SET"
+ var text:=_label(name+"  •  %d/4"%int(state.piece_count),14,GOLD);text.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+ text.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;row.add_child(text)
+ var button:=_button("STATISTIK ›");row.add_child(button);button.pressed.connect(_show_stats)
+
+func _build_collection() -> void:
+ var heading:=HBoxContainer.new();page.add_child(heading)
+ var title:=_label("BACKPACK",22,GOLD);title.size_flags_horizontal=Control.SIZE_EXPAND_FILL;heading.add_child(title)
+ var equipment_count: int=0
+ for id: String in InventoryManager.get_owned_item_ids():
+  if EquipmentManager.has_item_definition(id):equipment_count+=1
+ header_count=_label("KOLEKSI %d/42"%equipment_count,12,JADE);heading.add_child(header_count)
+ var controls:=HBoxContainer.new();controls.add_theme_constant_override("separation",8);page.add_child(controls)
+ filter_menu=OptionButton.new();filter_menu.name="Filter";filter_menu.custom_minimum_size.y=44;filter_menu.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+ for title_value: String in ["SEMUA","SENJATA","JUBAH","LENGAN","LIONTIN","SEPATU","MATERIAL"]:filter_menu.add_item(title_value)
+ filter_menu.select(maxi(FILTERS.find(filter_id),0));controls.add_child(filter_menu)
+ filter_menu.item_selected.connect(func(index: int):filter_id=FILTERS[index];_queue_refresh())
+ var sort:=OptionButton.new();sort.custom_minimum_size.y=44;sort.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+ for value: String in ["RARITAS","NAMA","BINTANG"]:sort.add_item(value)
+ sort.select(sort_id);controls.add_child(sort);sort.item_selected.connect(func(index: int):sort_id=index;_queue_refresh())
+ var search_button:=_button("⌕");search_button.custom_minimum_size.x=44;controls.add_child(search_button)
+ search_button.pressed.connect(func():
+  search_box.visible=not search_box.visible
+  if search_box.visible:search_box.grab_focus())
+ for control: OptionButton in [filter_menu,sort]:
+  control.add_theme_stylebox_override("normal",_style());control.add_theme_font_size_override("font_size",maxi(13,int(15*unit)))
+  control.set_meta("hero_mobile_font_polished",true);control.set_meta(&"jade_mobile_readability_v2",true)
+ search_box=LineEdit.new();search_box.name="Search";search_box.placeholder_text="Cari equipment / material…";search_box.text=query;search_box.custom_minimum_size.y=44;search_box.visible=not query.is_empty()
+ search_box.add_theme_font_size_override("font_size",maxi(13,int(15*unit)));page.add_child(search_box)
+ search_box.text_changed.connect(func(value: String):query=value;_rebuild_grid())
+ grid=GridContainer.new();grid.name="BackpackGrid";grid.columns=5;grid.add_theme_constant_override("h_separation",6);grid.add_theme_constant_override("v_separation",8);page.add_child(grid)
+ _rebuild_grid()
+ page.add_child(_label("Ketuk item untuk detail • Geser untuk melihat koleksi",12,Color(.6,.74,.72)))
+
+func _rebuild_grid() -> void:
+ if not is_instance_valid(grid):return
+ for child: Node in grid.get_children():grid.remove_child(child);child.queue_free()
+ card_buttons.clear()
+ var ids: Array[String]=[]
+ for id: String in InventoryManager.get_owned_item_ids():
+  var data: Dictionary=InventoryManager.get_item_data(id)
+  if filter_id=="material" and InventoryManager.get_item_type(id)!="material":continue
+  if filter_id not in ["all","material"] and str(data.get("slot",""))!=filter_id:continue
+  if not query.is_empty() and not str(data.get("display_name",id)).to_lower().contains(query.to_lower()):continue
+  ids.append(id)
+ ids.sort_custom(func(a: String,b: String):
+  if sort_id==1:return str(InventoryManager.get_item_data(a).get("display_name",a))<str(InventoryManager.get_item_data(b).get("display_name",b))
+  if sort_id==2 and EquipmentManager.get_item_star(a)!=EquipmentManager.get_item_star(b):return EquipmentManager.get_item_star(a)>EquipmentManager.get_item_star(b)
+  var ranks: Dictionary={"legendary":3,"epic":2,"rare":1,"common":0}
+  var ra: int=int(ranks.get(InventoryManager.get_item_data(a).get("rarity",""),-1))
+  var rb: int=int(ranks.get(InventoryManager.get_item_data(b).get("rarity",""),-1))
+  return ra>rb if ra!=rb else a<b)
+ var side: float=(page.custom_minimum_size.x-24)/5.0
+ for id: String in ids:
+  var data: Dictionary=InventoryManager.get_item_data(id)
+  var is_equipment: bool=EquipmentManager.has_item_definition(id)
+  var card:=_button("");card.name="Relic_"+id;card.custom_minimum_size=Vector2(side,side+18*unit);grid.add_child(card);card_buttons[id]=card
+  _skin_card(card,str(data.get("rarity","rare")))
+  var icon:=_texture(Visual.get_icon_path(id));card.add_child(icon);icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+  icon.offset_left=8*unit;icon.offset_top=7*unit;icon.offset_right=-8*unit;icon.offset_bottom=-24*unit
+  card.tooltip_text=str(data.get("display_name",id))
+  var label:=_label(_stars(EquipmentManager.get_loadout_item_star(id)) if is_equipment else "×%d"%InventoryManager.get_item_count(id),12,GOLD)
+  card.add_child(label);label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE);label.offset_top=-23*unit;label.offset_bottom=-3*unit;label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+  if is_equipment:
+   var count: int=InventoryManager.get_item_count(id)
+   if count>1:
+    var copies:=_label("×%d"%count if count<=99 else "×99+",11,TEXT);card.add_child(copies);copies.position=Vector2(maxf(4,side-42),6*unit)
+   if id in _equipped_ids():
+    var mark:=_label("✓",17,JADE);card.add_child(mark);mark.position=Vector2(5,1)*unit
+  card.button_down.connect(func():drag_start=get_global_mouse_position())
+  card.pressed.connect(_card_pressed.bind(id))
+ if ids.is_empty() and page.get_node_or_null("EmptyResult")==null:
+  var empty:=_label("Belum ada item yang cocok.",16);page.add_child(empty);empty.name="EmptyResult"
+ var empty: Node=page.get_node_or_null("EmptyResult")
+ if not ids.is_empty() and empty!=null:empty.queue_free()
+
+func _stars(rank: int) -> String:
+ return "★".repeat(clampi(rank,0,5))+"☆".repeat(5-clampi(rank,0,5))
+
+func _card_pressed(id: String) -> void:
+ if get_global_mouse_position().distance_to(drag_start)>12*unit:return
+ _show_detail(id)
+
+func _slot_pressed(slot: String) -> void:
+ var id: String=EquipmentManager.get_loadout_equipped_item_id(slot)
+ if id.is_empty():filter_id=slot;_queue_refresh();scroll.set_deferred("scroll_vertical",360*unit)
+ else:_show_detail(id)
+
+func _close_detail() -> void:
+ detail_open=false
+ if is_instance_valid(detail):detail.queue_free()
+ detail=null
+
+func _make_sheet() -> VBoxContainer:
+ if is_instance_valid(detail):content.remove_child(detail);detail.queue_free()
+ detail=Control.new();detail.name="ItemDetail";content.add_child(detail);detail.z_index=80
+ detail.position=Vector2(0,76);detail.size=Vector2(content.size.x,maxf(80,nav.position.y-82))
+ var dim:=ColorRect.new();dim.color=Color(0,0,0,.65);detail.add_child(dim);dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+ dim.gui_input.connect(func(event: InputEvent):
+  if event is InputEventMouseButton and event.pressed:_close_detail())
+ var panel:=PanelContainer.new();panel.name="DetailPanel";detail.add_child(panel);panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+ panel.offset_left=10*unit;panel.offset_right=-10*unit;panel.offset_top=24*unit;panel.add_theme_stylebox_override("panel",_style(GOLD))
+ var sc:=ScrollContainer.new();sc.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;panel.add_child(sc)
+ var body:=VBoxContainer.new();body.name="DetailBody";body.size_flags_horizontal=Control.SIZE_EXPAND_FILL;body.add_theme_constant_override("separation",14);sc.add_child(body)
+ var top:=HBoxContainer.new();body.add_child(top)
+ var title:=_label("DETAIL RELIK",20,GOLD);title.size_flags_horizontal=Control.SIZE_EXPAND_FILL;top.add_child(title)
+ var close:=_button("×");close.custom_minimum_size.x=44;close.pressed.connect(_close_detail);top.add_child(close)
+ return body
+
+func _paragraph(body: VBoxContainer,value: String,font_size: int=16,color: Color=TEXT) -> void:
+ if value.is_empty():return
+ var label:=_label(value,font_size,color);label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;body.add_child(label)
+
+func _show_detail(id: String) -> void:
+ if not InventoryManager.owns_item(id):_close_detail();return
+ selected_item_id=id;detail_open=true
+ var body: VBoxContainer=_make_sheet()
+ var data: Dictionary=InventoryManager.get_item_data(id)
+ var stage:=Control.new();stage.name="RelicArtStage";stage.clip_contents=true;stage.custom_minimum_size.y=190*unit;body.add_child(stage)
+ var landscape:=_texture("res://assets/ui/hero/imperial_v4/sanctuary_banner.png");landscape.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_COVERED;landscape.modulate=Color(.45,.58,.55);stage.add_child(landscape);landscape.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+ var icon:=_texture(Visual.get_icon_path(id));icon.name="DetailIcon";stage.add_child(icon);icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);icon.offset_top=8;icon.offset_bottom=-8
+ _paragraph(body,str(data.get("display_name",id)),24,GOLD)
+ if not EquipmentManager.has_item_definition(id):
+  _paragraph(body,"MATERIAL • Jumlah %d"%InventoryManager.get_item_count(id),16,JADE)
+  _paragraph(body,str(data.get("description","")));return
+ var star: int=EquipmentManager.get_loadout_item_star(id)
+ var effective: Dictionary=EquipmentManager.get_effective_item_data(id)
+ _paragraph(body,str(data.get("rarity","common")).to_upper()+"  •  "+SLOT_NAMES[maxi(SLOTS.find(str(data.get("slot",""))),0)],15,JADE)
+ _paragraph(body,_stars(star),24,GOLD)
+ _paragraph(body,Visual.get_stat_summary(effective),18)
+ var weapon: bool=str(data.get("slot",""))=="armament"
+ if weapon:
+  _paragraph(body,"LEVEL WEAPON %d / %d • +%d%% damage weapon"%[EquipmentManager.get_item_weapon_level(id),EquipmentManager.get_weapon_level_cap(id),roundi((EquipmentManager.get_weapon_level_multiplier(id)-1)*100)],17,JADE)
+  _paragraph(body,"Weapon berdiri sendiri, tidak dihitung sebagai bagian set. Level permanen ini berbeda dari refinement Lv.1–7 selama run.",14)
+ else:
+  var set_id: String=Sets.get_set_id_for_item(id)
+  var pieces: int=Sets.get_piece_count(set_id,_equipped_ids())
+  _paragraph(body,"%s • SET %s • %d/4"%[Sets.get_display_name(set_id),Sets.get_set_rarity(set_id).to_upper(),pieces],16,GOLD)
+  for tier: int in [2,3,4]:_paragraph(body,"%d bagian: %s%s"%[tier,Sets.get_tier_description(set_id,tier),"  ✓ AKTIF" if pieces>=tier else ""],14,JADE if pieces>=tier else TEXT)
+ _paragraph(body,Visual.get_signature_effect_name(data),16,GOLD)
+ _paragraph(body,Visual.get_signature_effect_description(data),14)
+ _paragraph(body,"DUPLIKAT IDENTIK %d • Naik bintang memakai 1 duplikat; item utama tetap dimiliki."%maxi(InventoryManager.get_item_count(id)-1,0),14)
+ var row:=HBoxContainer.new();row.add_theme_constant_override("separation",10);body.add_child(row)
+ var equip:=_button("LEPAS" if id in _equipped_ids() else "PASANG",true);equip.name="EquipAction";equip.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(equip)
+ equip.disabled=not EquipmentManager.can_modify_equipment();equip.pressed.connect(_equip_selected)
+ var ascend:=_button("NAIK BINTANG" if star<5 else "BINTANG MAX");ascend.name="AscendAction";ascend.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(ascend)
+ ascend.disabled=not EquipmentManager.can_ascend_item(id);ascend.pressed.connect(func():EquipmentManager.ascend_item(id);_queue_refresh())
+ if id in ["jade_binding_chain","celestial_returning_glaive"]:
+  var demo:=_button("DEMO SENJATA");body.add_child(demo);demo.pressed.connect(_open_binding_preview)
+ if weapon:
+  var level:=_button("NAIK LEVEL • %d Spirit Stone"%EquipmentManager.get_weapon_level_cost(id),true);level.name="LevelAction";body.add_child(level)
+  level.disabled=not EquipmentManager.can_level_weapon(id)
+  if EquipmentManager.get_item_weapon_level(id)>=EquipmentManager.get_weapon_level_cap(id):level.text="LEVEL MAX • Naikkan bintang untuk batas berikutnya" if star<5 else "LEVEL MAX 50"
+  level.pressed.connect(func():EquipmentManager.level_weapon(id);_queue_refresh())
+
+func _equip_selected() -> void:
+ var slot: String=str(EquipmentManager.get_item_data(selected_item_id).get("slot",""))
+ if selected_item_id in _equipped_ids():EquipmentManager.unequip_slot(slot)
+ else:EquipmentManager.equip_item(selected_item_id)
+ _queue_refresh()
+
+func _show_stats() -> void:
+ selected_item_id="";detail_open=false
+ var body: VBoxContainer=_make_sheet()
+ _paragraph(body,"STATISTIK LOADOUT",24,GOLD)
+ _paragraph(body,"Bonus untuk run baru; checkpoint yang aktif tetap memakai loadout tersimpan.",14)
+ _paragraph(body,"HP +%.1f\nDamage +%.1f%%\nMovement +%.1f%%\nEXP +%.1f%%\nCritical chance +%.1f%%"%[EquipmentManager.get_loadout_total_max_health_bonus()+Sets.get_gameplay_bonus("max_health_flat",_equipped_ids()),(EquipmentManager.get_loadout_damage_multiplier()-1+Sets.get_gameplay_bonus("damage_bonus",_equipped_ids()))*100,(EquipmentManager.get_loadout_movement_speed_multiplier()-1)*100,(EquipmentManager.get_loadout_experience_multiplier()-1)*100,EquipmentManager.get_loadout_critical_chance_bonus()*100],18)
+ var state: Dictionary=Sets.get_dominant_set_state(_equipped_ids())
+ _paragraph(body,"%s • %d/4"%[str(state.display_name),int(state.piece_count)],18,GOLD)
+ for tier: int in [2,3,4]:_paragraph(body,"%d bagian: %s"%[tier,Sets.get_tier_description(str(state.set_id),tier)],16)
+
+func handle_system_back() -> void:
+ for preview: String in ["ReturningGlaivePreview","JadeBindingPreview"]:
+  if get_node_or_null(preview)!=null:get_node(preview).queue_free();return
+ if is_instance_valid(detail):_close_detail();return
+ SceneTransitionManager.transition_menu_to("res://scenes/ui/main_menu.tscn",-1)
+
+func _open_binding_preview() -> void:
+ var glaive: bool=selected_item_id=="celestial_returning_glaive"
+ var name_value: String="ReturningGlaivePreview" if glaive else "JadeBindingPreview"
+ if get_node_or_null(name_value)!=null:return
+ var script: Script=load("res://scripts/ui/returning_glaive_preview.gd" if glaive else "res://scripts/ui/jade_binding_preview.gd")
+ add_child(script.new())

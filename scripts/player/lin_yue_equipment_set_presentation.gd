@@ -67,7 +67,7 @@ func _refresh_from_managers() -> void:
 
 	if visible_resonance:
 		DebugLogger.system(
-			"Equipment Set Runtime: %s %d/5 | Reduced Effects: %s"
+			"Equipment Set Runtime: %s %d/4 | Reduced Effects: %s"
 			% [
 				EquipmentSetCatalog.get_display_name(active_set_id),
 				active_piece_count,
@@ -98,7 +98,7 @@ func _draw() -> void:
 	if active_piece_count >= 4:
 		_draw_rising_wisps(primary, secondary)
 
-	if active_piece_count >= 5:
+	if active_piece_count >= 4:
 		_draw_full_resonance(primary, secondary)
 
 
@@ -218,7 +218,7 @@ func _draw_ground_resonance(primary: Color, secondary: Color) -> void:
 	)
 
 	# Five short marks make the equipment-piece relationship readable without UI text.
-	for index in range(5):
+	for index in range(4):
 		var angle: float = -PI * 0.86 + float(index) * PI * 0.43
 		var lit: bool = index < active_piece_count
 		var mark_color: Color = primary if lit else Color(primary.r, primary.g, primary.b, 0.11)

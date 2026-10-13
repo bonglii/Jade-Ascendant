@@ -1127,6 +1127,7 @@ func take_damage(amount: float) -> void:
 		return
 
 	current_hp = next_hp
+	preload("res://scripts/effects/equipment_set_status.gd").on_hit(self, applied_damage)
 	CombatFeedback.hit(self, applied_damage)
 
 	health_changed.emit(current_hp, max_hp)
