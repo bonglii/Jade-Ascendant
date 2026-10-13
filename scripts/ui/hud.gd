@@ -1,5 +1,6 @@
 extends CanvasLayer
 
+const NoticeLayout = preload("res://scripts/ui/encounter_notice_layout.gd")
 const BossPremiumCatalog = preload("res://scripts/data/boss_premium_catalog.gd")
 
 const InRunStatsOverlay = preload("res://scripts/ui/in_run_stats_overlay.gd")
@@ -601,6 +602,8 @@ func _build_encounter_banner() -> void:
 		_make_encounter_banner_style()
 	)
 	safe_area.add_child(_encounter_banner)
+	safe_area.resized.connect(func():
+		if _encounter_banner.visible: NoticeLayout.settle(_encounter_banner, safe_area))
 
 	var margin := MarginContainer.new()
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -630,6 +633,7 @@ func _build_encounter_banner() -> void:
 
 	_encounter_banner_name = Label.new()
 	_encounter_banner_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_encounter_banner_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_encounter_banner_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_encounter_banner_name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_encounter_banner_name.add_theme_font_size_override("font_size", 22)
@@ -671,11 +675,6 @@ func _show_encounter_banner(phase_text: String, accent: Color) -> void:
 		return
 	_encounter_banner_name.text = boss_name_label.text
 	_encounter_banner_phase.text = phase_text
-	var banner_height: float = maxf(90.0,_encounter_banner.get_combined_minimum_size().y+8.0)
-	_encounter_banner.anchor_top = 1.0
-	_encounter_banner.anchor_bottom = 1.0
-	_encounter_banner.offset_top = -banner_height-56.0
-	_encounter_banner.offset_bottom = -56.0
 	_encounter_banner_phase.add_theme_color_override("font_color", accent)
 	_encounter_banner_name.add_theme_color_override("font_color", HUD_GOLD)
 	if _encounter_banner_top_line != null:
@@ -685,46 +684,45 @@ func _show_encounter_banner(phase_text: String, accent: Color) -> void:
 	if _encounter_banner_tween != null and _encounter_banner_tween.is_valid():
 		_encounter_banner_tween.kill()
 	_encounter_banner.visible = true
+	NoticeLayout.settle(_encounter_banner, _encounter_banner.get_parent())
 	_encounter_banner.pivot_offset = _encounter_banner.size * 0.5
 	_encounter_banner.scale = Vector2.ONE
 	_encounter_banner.modulate = Color.WHITE
 	if _is_reduced_effects_enabled():
 		var reduced_tween := create_tween()
-		reduced_tween.tween_interval(0.70)
+		reduced_tween.tween_interval(2.85)
 		reduced_tween.tween_callback(_hide_encounter_banner)
 		_encounter_banner_tween = reduced_tween
 		return
 	_encounter_banner.scale = Vector2(0.93, 0.93)
 	_encounter_banner.modulate = Color(1.0, 0.88, 0.58, 0.0)
 	_encounter_banner_tween = create_tween()
-	_encounter_banner_tween.set_parallel(true)
 	_encounter_banner_tween.tween_property(
 		_encounter_banner,
 		"scale",
 		Vector2.ONE,
 		0.28
 	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	_encounter_banner_tween.tween_property(
+	_encounter_banner_tween.parallel().tween_property(
 		_encounter_banner,
 		"modulate",
 		Color.WHITE,
 		0.18
 	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	_encounter_banner_tween.chain().tween_interval(0.58)
-	_encounter_banner_tween.chain().set_parallel(true)
+	_encounter_banner_tween.tween_interval(2.85)
 	_encounter_banner_tween.tween_property(
 		_encounter_banner,
 		"modulate:a",
 		0.0,
 		0.22
 	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	_encounter_banner_tween.tween_property(
+	_encounter_banner_tween.parallel().tween_property(
 		_encounter_banner,
 		"scale",
 		Vector2(1.035, 1.035),
 		0.22
 	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	_encounter_banner_tween.chain().tween_callback(_hide_encounter_banner)
+	_encounter_banner_tween.tween_callback(_hide_encounter_banner)
 
 
 func _hide_encounter_banner() -> void:
@@ -917,6 +915,21 @@ func _hide_boss_panel() -> void:
 	boss_panel.scale = Vector2.ONE
 
 
+func _layout_boss_header() -> void:
+	var header: HBoxContainer = boss_phase_label.get_parent() as HBoxContainer
+	if header == null: return
+	var content: VBoxContainer = header.get_parent() as VBoxContainer
+	if content == null: return
+	if boss_panel.size.x < 440.0:
+		if boss_name_label.get_parent() != content:
+			boss_name_label.reparent(content)
+			content.move_child(boss_name_label, header.get_index())
+		boss_name_label.add_theme_font_size_override("font_size", 18)
+	elif boss_name_label.get_parent() != header:
+		boss_name_label.reparent(header)
+		header.move_child(boss_name_label, 0)
+		boss_name_label.add_theme_font_size_override("font_size", 20)
+
 func _polish_boss_header(display_name: String) -> void:
 	var profile: Dictionary = BossPremiumCatalog.get_profile(display_name)
 	if profile.is_empty(): return
@@ -954,6 +967,10 @@ func _polish_boss_header(display_name: String) -> void:
 		content.add_child(caption)
 		content.move_child(caption,0)
 	caption.text = "%s  •  TRIAL %02d" % [tr(str(profile.realm)),int(profile.stage)]
+	caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if not boss_panel.resized.is_connected(_layout_boss_header): boss_panel.resized.connect(_layout_boss_header)
+	_layout_boss_header()
+	call_deferred("_layout_boss_header")
 
 
 func _build_review_guide_entry() -> void:

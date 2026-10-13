@@ -11,9 +11,9 @@ const TOAST_TOP: float = 168.0
 const TOAST_HEIGHT: float = 142.0
 const ENTER_OFFSET: float = -26.0
 const ENTER_DURATION: float = 0.22
-const HOLD_DURATION: float = 2.75
+const HOLD_DURATION: float = 5.0
 const EXIT_DURATION: float = 0.24
-const REDUCED_HOLD_DURATION: float = 2.25
+const REDUCED_HOLD_DURATION: float = 5.0
 
 var _pending_ids: Array[String] = []
 var _current_id: String = ""
@@ -38,6 +38,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	if not _active:
+		if not _pending_ids.is_empty(): _present_next()
 		return
 	if _host == null or not is_instance_valid(_host):
 		_abort_sequence()
@@ -45,6 +46,19 @@ func _process(_delta: float) -> void:
 	var scene: Node = get_tree().current_scene
 	if scene == null or scene.get_instance_id() != _scene_instance_id:
 		_abort_sequence()
+		return
+	var safe: Control = _host.get_parent()
+	var boss_notice: bool = false
+	for node_name: String in ["BossPreWarning", "EncounterBanner"]:
+		var notice: Control = safe.get_node_or_null(node_name)
+		boss_notice = boss_notice or (notice != null and notice.visible)
+	if boss_notice:
+		_panel.visible = false
+		if _active_tween != null and _active_tween.is_valid(): _active_tween.pause()
+	elif not _panel.visible:
+		_panel.visible = true
+		_layout_toast()
+		if _active_tween != null and _active_tween.is_valid(): _active_tween.play()
 
 
 func _on_achievement_unlocked(achievement_id: String) -> void:
@@ -75,6 +89,10 @@ func _present_next() -> void:
 	if safe_area == null:
 		_pending_ids.clear()
 		return
+
+	for notice_name: String in ["BossPreWarning", "EncounterBanner"]:
+		var notice: Control = safe_area.get_node_or_null(notice_name)
+		if notice != null and notice.visible: return
 
 	_current_id = _pending_ids.pop_front()
 	var manager: Node = get_parent()
@@ -109,6 +127,7 @@ func _build_toast(safe_area: Control, data: Dictionary) -> void:
 	_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_host.z_index = 90
 	safe_area.add_child(_host)
+	safe_area.resized.connect(_layout_toast)
 	_host.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	var category: String = str(data.get("category", "achievement")).to_lower()
@@ -157,15 +176,21 @@ func _build_toast(safe_area: Control, data: Dictionary) -> void:
 	row.add_child(body)
 
 	var eyebrow := Label.new()
+	eyebrow.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	eyebrow.max_lines_visible = 2
+	eyebrow.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	eyebrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	eyebrow.add_theme_font_size_override("font_size", 11)
+	eyebrow.add_theme_font_size_override("font_size", 13)
 	eyebrow.add_theme_color_override("font_color", accent)
 	eyebrow.text = "ETERNAL RECORD DISCOVERED  •  %s" % category.to_upper()
 	body.add_child(eyebrow)
 
 	var title := Label.new()
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	title.max_lines_visible = 2
+	title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	title.add_theme_font_size_override("font_size", 19)
+	title.add_theme_font_size_override("font_size", 20)
 	title.add_theme_color_override("font_color", Color(1.0, 0.91, 0.60, 1.0))
 	title.text = str(data.get("title", _current_id))
 	body.add_child(title)
@@ -173,32 +198,55 @@ func _build_toast(safe_area: Control, data: Dictionary) -> void:
 	var description := Label.new()
 	description.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	description.custom_minimum_size = Vector2(0.0, 34.0)
-	description.add_theme_font_size_override("font_size", 11)
+	description.add_theme_font_size_override("font_size", 14)
 	description.add_theme_color_override("font_color", Color(0.78, 0.86, 0.84, 1.0))
 	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	description.max_lines_visible = 3
+	description.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	description.text = str(data.get("description", ""))
 	body.add_child(description)
 
-	var footer := HBoxContainer.new()
+	var footer := VBoxContainer.new()
 	footer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	footer.add_theme_constant_override("separation", 8)
 	body.add_child(footer)
 
 	var reward_label := Label.new()
+	reward_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	reward_label.max_lines_visible = 2
+	reward_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	reward_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	reward_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	reward_label.add_theme_font_size_override("font_size", 11)
+	reward_label.add_theme_font_size_override("font_size", 13)
 	reward_label.add_theme_color_override("font_color", Color(1.0, 0.78, 0.28, 1.0))
 	reward_label.text = "REWARD READY  •  +%d SPIRIT STONES" % reward
 	footer.add_child(reward_label)
 
 	var claim_label := Label.new()
+	claim_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	claim_label.max_lines_visible = 1
+	claim_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	claim_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	claim_label.add_theme_font_size_override("font_size", 10)
+	claim_label.add_theme_font_size_override("font_size", 12)
 	claim_label.add_theme_color_override("font_color", Color(0.54, 0.72, 0.69, 1.0))
 	claim_label.text = "CLAIM IN TRIALS"
 	footer.add_child(claim_label)
+	_layout_toast()
+	call_deferred("_layout_toast")
 
+
+func _layout_toast() -> void:
+	if not is_instance_valid(_panel) or not is_instance_valid(_host): return
+	var safe: Control = _host.get_parent()
+	var width: float = minf(560.0, safe.size.x * 0.9)
+	_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	_panel.size.x = width
+	var top: float = 12.0
+	for node_name: String in ["TopHUD", "BossPanel", "BossPreWarning", "EncounterBanner"]:
+		var strip: Control = safe.get_node_or_null(node_name)
+		if strip != null and strip.visible: top = maxf(top, strip.get_rect().end.y + 16.0)
+	_panel.size.y = maxf(TOAST_HEIGHT, _panel.get_combined_minimum_size().y)
+	_panel.position = Vector2((safe.size.x-_panel.size.x)*0.5, top)
 
 func _make_panel_style(accent: Color) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
@@ -251,62 +299,36 @@ func _play_toast_animation() -> void:
 		_active_tween.tween_callback(_finish_current)
 		return
 
-	_panel.offset_top = TOAST_TOP + ENTER_OFFSET
-	_panel.offset_bottom = TOAST_TOP + TOAST_HEIGHT + ENTER_OFFSET
 	_panel.modulate = Color(1.0, 0.90, 0.62, 0.0)
 	_panel.scale = Vector2(0.985, 0.985)
 
 	_active_tween = create_tween()
-	_active_tween.set_parallel(true)
-	_active_tween.tween_property(
-		_panel,
-		"offset_top",
-		TOAST_TOP,
-		ENTER_DURATION
-	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	_active_tween.tween_property(
-		_panel,
-		"offset_bottom",
-		TOAST_TOP + TOAST_HEIGHT,
-		ENTER_DURATION
-	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_active_tween.tween_property(
 		_panel,
 		"modulate",
 		Color.WHITE,
 		ENTER_DURATION
 	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	_active_tween.tween_property(
+	_active_tween.parallel().tween_property(
 		_panel,
 		"scale",
 		Vector2.ONE,
 		ENTER_DURATION
 	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	_active_tween.chain().tween_interval(HOLD_DURATION)
-	_active_tween.chain().set_parallel(true)
+	_active_tween.tween_interval(HOLD_DURATION)
 	_active_tween.tween_property(
 		_panel,
 		"modulate:a",
 		0.0,
 		EXIT_DURATION
 	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	_active_tween.tween_property(
-		_panel,
-		"offset_top",
-		TOAST_TOP - 16.0,
-		EXIT_DURATION
-	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	_active_tween.tween_property(
-		_panel,
-		"offset_bottom",
-		TOAST_TOP + TOAST_HEIGHT - 16.0,
-		EXIT_DURATION
-	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	_active_tween.chain().tween_callback(_finish_current)
+	_active_tween.tween_callback(_finish_current)
 
 
 func _finish_current() -> void:
 	if _host != null and is_instance_valid(_host):
+		var safe: Node = _host.get_parent()
+		if safe.resized.is_connected(_layout_toast): safe.resized.disconnect(_layout_toast)
 		_host.queue_free()
 	_host = null
 	_panel = null
@@ -322,6 +344,8 @@ func _abort_sequence() -> void:
 	if _active_tween != null and _active_tween.is_valid():
 		_active_tween.kill()
 	if _host != null and is_instance_valid(_host):
+		var safe: Node = _host.get_parent()
+		if safe.resized.is_connected(_layout_toast): safe.resized.disconnect(_layout_toast)
 		_host.queue_free()
 	_pending_ids.clear()
 	_current_id = ""

@@ -232,11 +232,13 @@ func _build_intro() -> Control:
 	box.add_child(mastery_row)
 
 	var mastery_kicker := _label("DAO FOUNDATION", 13, Color(0.74, 0.84, 0.81, 1.0))
+	mastery_kicker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	mastery_row.add_child(mastery_kicker)
 
 	mastery_value = _label("4 / 30", 16, GOLD_BRIGHT)
 	mastery_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	mastery_value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	mastery_value.size_flags_horizontal = Control.SIZE_SHRINK_END
+	mastery_value.autowrap_mode = TextServer.AUTOWRAP_OFF
 	mastery_row.add_child(mastery_value)
 
 	mastery_meter = ProgressBar.new()

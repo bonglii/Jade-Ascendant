@@ -7,6 +7,7 @@ extends Node
 ## Realm 4 and Realm 5 feel like premium encounter events rather than prototype
 ## debug cards.
 
+const NoticeLayout = preload("res://scripts/ui/encounter_notice_layout.gd")
 const BOSS_PRE_WARNING_LEAD: float = 4.25
 const BOSS_PRE_WARNING_HOLD: float = 4.20
 const BOSS_ARRIVAL_NAME_HOLD: float = 2.85
@@ -170,9 +171,9 @@ func _polish_boss_bar() -> void:
 func _make_track(accent: Color) -> StyleBoxFlat:
 	var style: StyleBoxFlat = StyleBoxFlat.new()
 	style.bg_color = Color(0.003, 0.016, 0.023, 0.98)
-	style.border_width_left = 2
+	style.border_width_left = 3
 	style.border_width_top = 2
-	style.border_width_right = 2
+	style.border_width_right = 3
 	style.border_width_bottom = 2
 	style.border_color = accent.darkened(0.18)
 	style.corner_radius_top_left = 6
@@ -295,6 +296,7 @@ func _check_boss_pre_warning() -> void:
 	_active_realm_id = _detect_realm_id()
 	_active_stage_id = _detect_stage_id()
 	_apply_warning_theme(_theme_for_realm(_active_realm_id), false)
+	NoticeLayout.decorate(_warning_panel, GOLD)
 	_show_boss_warning()
 
 
@@ -316,6 +318,9 @@ func _build_pre_boss_warning() -> void:
 	_warning_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_warning_panel.grow_vertical = Control.GROW_DIRECTION_BOTH
 	safe_area.add_child(_warning_panel)
+	_warning_panel.z_index = 60
+	safe_area.resized.connect(func():
+		if _warning_panel.visible: NoticeLayout.settle(_warning_panel, safe_area))
 
 	var shell: MarginContainer = MarginContainer.new()
 	shell.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -333,6 +338,23 @@ func _build_pre_boss_warning() -> void:
 
 	_warning_side_left = _build_warning_side()
 	root.add_child(_warning_side_left)
+	var seal := TextureRect.new()
+	seal.texture = preload("res://assets/ui/wuxia/stage_boss.png")
+	seal.custom_minimum_size = Vector2(38,38)
+	seal.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	seal.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	seal.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	seal.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_warning_side_left.get_child(0).add_child(seal)
+	var mark := Label.new()
+	mark.text = "!"
+	mark.add_theme_font_size_override("font_size", 24)
+	mark.add_theme_color_override("font_color", GOLD)
+	mark.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	mark.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	seal.add_child(mark)
+	mark.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	var center: VBoxContainer = VBoxContainer.new()
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -342,11 +364,13 @@ func _build_pre_boss_warning() -> void:
 	root.add_child(center)
 
 	_warning_header = Label.new()
+	_warning_header.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_warning_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_warning_header.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	center.add_child(_warning_header)
 
 	_warning_main = Label.new()
+	_warning_main.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_warning_main.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_warning_main.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_warning_main.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -360,18 +384,20 @@ func _build_pre_boss_warning() -> void:
 
 	var line_left: ColorRect = ColorRect.new()
 	line_left.name = "LineLeft"
-	line_left.custom_minimum_size = Vector2(52.0, 2.0)
+	line_left.custom_minimum_size = Vector2(18.0, 2.0)
 	line_left.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	footer_row.add_child(line_left)
 
 	_warning_subtitle = Label.new()
+	_warning_subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_warning_subtitle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_warning_subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_warning_subtitle.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	footer_row.add_child(_warning_subtitle)
 
 	var line_right: ColorRect = ColorRect.new()
 	line_right.name = "LineRight"
-	line_right.custom_minimum_size = Vector2(52.0, 2.0)
+	line_right.custom_minimum_size = Vector2(18.0, 2.0)
 	line_right.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	footer_row.add_child(line_right)
 
@@ -390,7 +416,12 @@ func _build_pre_boss_warning() -> void:
 	_warning_stage_chip.offset_top = -11.0
 	_warning_stage_chip.offset_bottom = 17.0
 	_warning_stage_chip.z_index = 2
-	_warning_panel.add_child(_warning_stage_chip)
+	var ornaments := Control.new()
+	ornaments.name = "WarningOrnaments"
+	ornaments.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_warning_panel.add_child(ornaments)
+	center.add_child(_warning_stage_chip)
+	_warning_stage_chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	_warning_stage_label = Label.new()
 	_warning_stage_label.anchor_right = 1.0
@@ -419,6 +450,7 @@ func _build_warning_side() -> Control:
 		var chip: ColorRect = ColorRect.new()
 		chip.name = "Chip%d" % idx
 		chip.custom_minimum_size = Vector2(12.0 if idx == 1 else 8.0, 12.0 if idx == 1 else 8.0)
+		chip.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		chip.rotation_degrees = 45.0
 		chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		holder.add_child(chip)
@@ -544,7 +576,7 @@ func _apply_warning_theme(theme: Dictionary, is_arrival: bool) -> void:
 			str(theme.get("stage_tag", "TRIAL %d-%d") % [_active_realm_id, maxi(_active_stage_id, 1)])
 		]
 		_style_label(_warning_stage_label, 11, theme.get("subtitle", GOLD))
-		_warning_stage_label.clip_text = true
+		_warning_stage_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 	var shell: Control = _warning_panel.get_child(0) as Control
 	if shell != null:
@@ -566,9 +598,9 @@ func _apply_warning_theme(theme: Dictionary, is_arrival: bool) -> void:
 func _make_warning_style(theme: Dictionary, is_arrival: bool) -> StyleBoxFlat:
 	var style: StyleBoxFlat = StyleBoxFlat.new()
 	style.bg_color = theme.get("panel_bg", Color(0.061, 0.009, 0.012, 0.94))
-	style.border_width_left = 2
+	style.border_width_left = 3
 	style.border_width_top = 2
-	style.border_width_right = 2
+	style.border_width_right = 3
 	style.border_width_bottom = 2
 	style.border_color = theme.get("border_outer", GOLD)
 	style.corner_radius_top_left = 12
@@ -579,9 +611,9 @@ func _make_warning_style(theme: Dictionary, is_arrival: bool) -> StyleBoxFlat:
 	style.shadow_size = 16 if is_arrival else 13
 	style.draw_center = true
 	style.content_margin_left = 0
-	style.content_margin_top = 0
+	style.content_margin_top = 8
 	style.content_margin_right = 0
-	style.content_margin_bottom = 0
+	style.content_margin_bottom = 8
 	return style
 
 
@@ -622,6 +654,8 @@ func _show_boss_warning() -> void:
 	if _warning_tween != null and _warning_tween.is_valid():
 		_warning_tween.kill()
 	_warning_panel.visible = true
+	NoticeLayout.decorate(_warning_panel, GOLD)
+	NoticeLayout.settle(_warning_panel, _warning_panel.get_parent())
 	_warning_panel.scale = Vector2.ONE
 	_warning_panel.modulate = Color.WHITE
 
@@ -634,7 +668,6 @@ func _show_boss_warning() -> void:
 	_warning_panel.pivot_offset = _warning_panel.size * 0.5
 	_warning_panel.scale = Vector2(0.90, 0.90)
 	_warning_panel.modulate = Color(1.0, 1.0, 1.0, 0.0)
-	_warning_panel.position = Vector2(0.0, -16.0)
 	_warning_tween.tween_property(
 		_warning_panel,
 		"modulate:a",
@@ -647,12 +680,6 @@ func _show_boss_warning() -> void:
 		Vector2.ONE,
 		0.28
 	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	_warning_tween.parallel().tween_property(
-		_warning_panel,
-		"position:y",
-		_warning_panel.position.y + 16.0,
-		0.26
-	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_warning_tween.tween_interval(BOSS_PRE_WARNING_HOLD - 0.54)
 	_warning_tween.tween_property(
 		_warning_panel,
@@ -675,13 +702,12 @@ func _hide_boss_warning() -> void:
 	_warning_panel.visible = false
 	_warning_panel.modulate = Color.WHITE
 	_warning_panel.scale = Vector2.ONE
-	_warning_panel.position = Vector2.ZERO
 
 
 func _on_boss_spawned(boss: Node) -> void:
 	_boss_warning_shown = true
 	if boss != null and is_instance_valid(boss):
-		_active_realm_id = int(boss.get("realm_id")) if boss.get("realm_id") != null else _detect_realm_id()
+		_active_realm_id = int(boss.get("realm_id")) if boss.get("realm_id") != null and int(boss.get("realm_id")) > 0 else _detect_realm_id()
 		_active_stage_id = int(boss.get("boss_stage_id")) if boss.get("boss_stage_id") != null else _detect_stage_id()
 	if _warning_tween != null and _warning_tween.is_valid():
 		_warning_tween.kill()
@@ -706,7 +732,7 @@ func _extend_boss_arrival_banner(boss: Node) -> void:
 	if old_tween != null and old_tween.is_valid():
 		old_tween.kill()
 
-	var realm_id: int = int(boss.get("realm_id")) if boss.get("realm_id") != null else _active_realm_id
+	var realm_id: int = int(boss.get("realm_id")) if boss.get("realm_id") != null and int(boss.get("realm_id")) > 0 else _active_realm_id
 	var stage_id: int = int(boss.get("boss_stage_id")) if boss.get("boss_stage_id") != null else _active_stage_id
 	var current_phase: int = int(boss.get("current_phase")) if boss.get("current_phase") != null else 1
 	var theme: Dictionary = _theme_for_realm(realm_id)
@@ -725,17 +751,14 @@ func _extend_boss_arrival_banner(boss: Node) -> void:
 		"panel",
 		_make_warning_style(theme, true)
 	)
-	# More compact, less gameplay occlusion, and positioned as a ceremonial plaque
-	# beneath the boss HP strip.
-	banner.anchor_left = 0.12
-	banner.anchor_top = 0.165
-	banner.anchor_right = 0.88
-	banner.anchor_bottom = 0.275
+	banner.z_index = 60
 	banner.visible = true
 	banner.scale = Vector2.ONE
 	banner.modulate = Color.WHITE
 
 	_add_arrival_ornaments(banner, theme, realm_id, stage_id)
+	NoticeLayout.decorate(banner, theme.get("border", GOLD))
+	NoticeLayout.settle(banner, banner.get_parent())
 
 	var name_tween: Tween = banner.create_tween()
 	if bool(SettingsManager.reduced_effects):
@@ -744,7 +767,6 @@ func _extend_boss_arrival_banner(boss: Node) -> void:
 		banner.pivot_offset = banner.size * 0.5
 		banner.scale = Vector2(0.92, 0.92)
 		banner.modulate = Color(1.0, 0.95, 0.84, 0.0)
-		banner.position = Vector2(0.0, -12.0)
 		name_tween.tween_property(
 			banner,
 			"modulate",
@@ -757,12 +779,6 @@ func _extend_boss_arrival_banner(boss: Node) -> void:
 			Vector2.ONE,
 			0.28
 		).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		name_tween.parallel().tween_property(
-			banner,
-			"position:y",
-			banner.position.y + 12.0,
-			0.26
-		).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		name_tween.tween_interval(BOSS_ARRIVAL_NAME_HOLD)
 		name_tween.tween_property(
 			banner,
@@ -775,76 +791,21 @@ func _extend_boss_arrival_banner(boss: Node) -> void:
 
 
 func _add_arrival_ornaments(banner: PanelContainer, theme: Dictionary, realm_id: int, stage_id: int) -> void:
-	if banner == null:
-		return
-	var old: Control = banner.get_node_or_null("EncounterArrivalPolish") as Control
+	var content: VBoxContainer = banner.get_child(0).get_child(0) as VBoxContainer
+	if content == null: return
+	var old: Node = content.get_node_or_null("RealmTag")
 	if old != null:
+		content.remove_child(old)
 		old.queue_free()
-
-	var overlay: Control = Control.new()
-	overlay.name = "EncounterArrivalPolish"
-	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	overlay.anchor_left = 0.0
-	overlay.anchor_top = 0.0
-	overlay.anchor_right = 1.0
-	overlay.anchor_bottom = 1.0
-	overlay.z_index = 2
-	banner.add_child(overlay)
-
-	var top_line: ColorRect = ColorRect.new()
-	top_line.anchor_left = 0.08
-	top_line.anchor_right = 0.92
-	top_line.anchor_top = 0.19
-	top_line.anchor_bottom = 0.19
-	top_line.offset_top = -1
-	top_line.offset_bottom = 1
-	top_line.color = theme.get("line", GOLD)
-	top_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	overlay.add_child(top_line)
-
-	var bottom_line: ColorRect = ColorRect.new()
-	bottom_line.anchor_left = 0.10
-	bottom_line.anchor_right = 0.90
-	bottom_line.anchor_top = 0.80
-	bottom_line.anchor_bottom = 0.80
-	bottom_line.offset_top = -1
-	bottom_line.offset_bottom = 1
-	bottom_line.color = theme.get("line", GOLD)
-	bottom_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	overlay.add_child(bottom_line)
-
-	for side_name in ["Left", "Right"]:
-		var sigil: ColorRect = ColorRect.new()
-		sigil.name = side_name + "Sigil"
-		sigil.custom_minimum_size = Vector2(14.0, 14.0)
-		sigil.color = theme.get("chip", GOLD)
-		sigil.rotation_degrees = 45.0
-		sigil.anchor_left = 0.08 if side_name == "Left" else 0.92
-		sigil.anchor_right = sigil.anchor_left
-		sigil.anchor_top = 0.50
-		sigil.anchor_bottom = 0.50
-		sigil.offset_left = -7.0
-		sigil.offset_right = 7.0
-		sigil.offset_top = -7.0
-		sigil.offset_bottom = 7.0
-		sigil.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		overlay.add_child(sigil)
-
-	var tag: Label = Label.new()
+	var tag := Label.new()
 	tag.name = "RealmTag"
-	tag.text = "%s  •  %s" % [
-		str(theme.get("realm_tag", "BOSS ENCOUNTER")),
-		str(theme.get("stage_tag", "TRIAL %d-%d") % [realm_id, maxi(stage_id, 1)])
-	]
-	tag.anchor_left = 0.20
-	tag.anchor_right = 0.80
-	tag.anchor_top = 0.03
-	tag.anchor_bottom = 0.18
+	tag.text = "%s • %s" % [str(theme.get("realm_tag", "BOSS ENCOUNTER")), str(theme.get("stage_tag", "TRIAL %d-%d") % [realm_id, maxi(stage_id,1)])]
+	tag.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	tag.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_style_label(tag, 10, theme.get("subtitle", GOLD))
-	overlay.add_child(tag)
+	_style_label(tag, 11, theme.get("subtitle", GOLD))
+	content.add_child(tag)
+	content.move_child(tag, 1)
 
 
 func _detect_realm_id() -> int:
@@ -857,7 +818,7 @@ func _detect_realm_id() -> int:
 		return 4
 	if scene_name.begins_with("Stage_5_"):
 		return 5
-	return REALM_FALLBACK
+	return int(JourneyManager.active_run_chapter_id) if JourneyManager.active_run_chapter_id>0 else int(JourneyManager.selected_chapter_id)
 
 
 func _detect_stage_id() -> int:
@@ -869,4 +830,4 @@ func _detect_stage_id() -> int:
 	var chunks: PackedStringArray = scene_name.split("_")
 	if chunks.size() >= 3:
 		return int(chunks[chunks.size() - 1])
-	return 0
+	return int(JourneyManager.active_run_stage_id) if JourneyManager.active_run_stage_id>0 else int(JourneyManager.selected_stage_id)
