@@ -813,7 +813,7 @@ func _detect_realm_id() -> int:
 		var candidate: Variant = _level_root.get("realm_id")
 		if candidate != null:
 			return int(candidate)
-	var scene_name: String = str(_level_root.name if _level_root != null else "")
+	var scene_name: String = str(_level_root.name) if _level_root != null else ""
 	if scene_name.begins_with("Stage_4_"):
 		return 4
 	if scene_name.begins_with("Stage_5_"):
@@ -826,7 +826,7 @@ func _detect_stage_id() -> int:
 		var candidate: Variant = _level_root.get("stage_id")
 		if candidate != null:
 			return int(candidate)
-	var scene_name: String = str(_level_root.name if _level_root != null else "")
+	var scene_name: String = str(_level_root.name) if _level_root != null else ""
 	var chunks: PackedStringArray = scene_name.split("_")
 	if chunks.size() >= 3:
 		return int(chunks[chunks.size() - 1])

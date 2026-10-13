@@ -787,9 +787,9 @@ func _refresh_m7b_offer_buttons() -> void:
 		if not is_instance_valid(button) or not is_instance_valid(status_label):
 			continue
 		var state: Dictionary = DailyQuestManager.m7b_get_offer_status(placement)
-		var ready: bool = bool(state.get("available", false))
-		button.disabled = not ready
-		button.text = "WATCH AD" if ready else "UNAVAILABLE"
+		var offer_available: bool = bool(state.get("available", false))
+		button.disabled = not offer_available
+		button.text = "WATCH AD" if offer_available else "UNAVAILABLE"
 		status_label.text = str(state.get("reason", "UNAVAILABLE"))
 
 
@@ -838,9 +838,9 @@ func _refresh_m7c2_offer_button() -> void:
 	if not is_instance_valid(_m7c2_focus_button) or not is_instance_valid(_m7c2_focus_status):
 		return
 	var state: Dictionary = DailyQuestManager.m7c2_get_offer_status()
-	var ready: bool = bool(state.get("available", false))
-	_m7c2_focus_button.disabled = not ready
-	_m7c2_focus_button.text = "WATCH AD" if ready else "UNAVAILABLE"
+	var offer_available: bool = bool(state.get("available", false))
+	_m7c2_focus_button.disabled = not offer_available
+	_m7c2_focus_button.text = "WATCH AD" if offer_available else "UNAVAILABLE"
 	_m7c2_focus_status.text = (
 		_m7c2_focus_message if not _m7c2_focus_message.is_empty()
 		else str(state.get("reason", "UNAVAILABLE"))

@@ -196,26 +196,26 @@ func _refresh_all() -> void:
   else:_show_detail(selected_item_id,true)
 
 func _label(value: String,font_size: int=16,tint: Color=TEXT) -> Label:
- var scale: float=popup_unit if building_popup else unit
+ var ui_scale: float=popup_unit if building_popup else unit
  var label:=Label.new();label.text=value;label.mouse_filter=Control.MOUSE_FILTER_IGNORE
- label.add_theme_font_size_override("font_size",maxi(12 if building_popup else 9,int(font_size*scale)));label.add_theme_color_override("font_color",tint)
+ label.add_theme_font_size_override("font_size",maxi(12 if building_popup else 9,int(font_size*ui_scale)));label.add_theme_color_override("font_color",tint)
  if font_size>=22:
   var serif:=SystemFont.new();serif.font_names=PackedStringArray(["Noto Serif","DejaVu Serif","serif"]);label.add_theme_font_override("font",serif)
  label.set_meta("hero_mobile_font_polished",true);label.set_meta(&"jade_mobile_readability_v2",true)
  return label
 
 func _style(accent: Color=JADE) -> StyleBoxFlat:
- var scale: float=popup_unit if building_popup else unit
+ var ui_scale: float=popup_unit if building_popup else unit
  var st:=StyleBoxFlat.new();st.bg_color=Color(.008,.045,.049,.98);st.border_color=Color(accent,.6)
  st.set_border_width_all(1);st.border_width_bottom=3;st.set_corner_radius_all(8)
  st.shadow_color=Color(0,0,0,.35);st.shadow_size=5;st.shadow_offset=Vector2(0,2)
- st.content_margin_left=12*scale;st.content_margin_right=12*scale;st.content_margin_top=8*scale;st.content_margin_bottom=8*scale
+ st.content_margin_left=12*ui_scale;st.content_margin_right=12*ui_scale;st.content_margin_top=8*ui_scale;st.content_margin_bottom=8*ui_scale
  return st
 
 func _button(value: String,primary: bool=false) -> Button:
- var scale: float=popup_unit if building_popup else unit
- var button:=Button.new();button.text=value;button.custom_minimum_size.y=maxf(44,48*scale)
- button.add_theme_font_size_override("font_size",maxi(13,int(16*scale)))
+ var ui_scale: float=popup_unit if building_popup else unit
+ var button:=Button.new();button.text=value;button.custom_minimum_size.y=maxf(44,48*ui_scale)
+ button.add_theme_font_size_override("font_size",maxi(13,int(16*ui_scale)))
  button.add_theme_color_override("font_color",GOLD if primary else TEXT)
  button.add_theme_stylebox_override("normal",_style(GOLD if primary else JADE))
  if primary:
@@ -277,8 +277,8 @@ func _build_resonance() -> void:
  var panel:=PanelContainer.new();panel.name="SetSummary";panel.add_theme_stylebox_override("panel",_style(GOLD));page.add_child(panel)
  var row:=HBoxContainer.new();panel.add_child(row)
  var state: Dictionary=Sets.get_dominant_set_state(_equipped_ids())
- var name: String=str(state.display_name) if int(state.piece_count)>0 else "BELUM ADA SET"
- var text:=_label(name+"  •  %d/4"%int(state.piece_count),14,GOLD);text.name="SetName";text.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+ var set_display_name: String=str(state.display_name) if int(state.piece_count)>0 else "BELUM ADA SET"
+ var text:=_label(set_display_name+"  •  %d/4"%int(state.piece_count),14,GOLD);text.name="SetName";text.size_flags_horizontal=Control.SIZE_EXPAND_FILL
  text.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;row.add_child(text)
  var button:=_button("STATISTIK ›");row.add_child(button);button.pressed.connect(_show_stats)
 
@@ -352,7 +352,7 @@ func _rebuild_grid() -> void:
   card.button_down.connect(func():drag_start=get_global_mouse_position())
   card.pressed.connect(_card_pressed.bind(id))
  if ids.is_empty() and page.get_node_or_null("EmptyResult")==null:
-  var empty:=_label("Belum ada item yang cocok.",16);page.add_child(empty);empty.name="EmptyResult"
+  var empty_label:=_label("Belum ada item yang cocok.",16);page.add_child(empty_label);empty_label.name="EmptyResult"
  var empty: Node=page.get_node_or_null("EmptyResult")
  if not ids.is_empty() and empty!=null:empty.queue_free()
 

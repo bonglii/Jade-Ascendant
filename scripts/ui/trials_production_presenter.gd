@@ -460,14 +460,14 @@ func _sync_trial_cards(record_ids: Array[String]) -> void:
 	var batch_start: int = Time.get_ticks_usec()
 	var built: int = 0
 	if record_ids.size() > trial_card_nodes.size() and list_host.get_node_or_null("TrialsLoadingLabel") == null:
-		var loading := Label.new()
-		loading.name = "TrialsLoadingLabel"
-		loading.text = tr("UNFOLDING RECORDS…")
-		loading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		loading.add_theme_font_size_override("font_size", 14)
-		loading.add_theme_color_override("font_color", GOLD)
-		loading.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		list_host.add_child(loading)
+		var loading_label := Label.new()
+		loading_label.name = "TrialsLoadingLabel"
+		loading_label.text = tr("UNFOLDING RECORDS…")
+		loading_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		loading_label.add_theme_font_size_override("font_size", 14)
+		loading_label.add_theme_color_override("font_color", GOLD)
+		loading_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		list_host.add_child(loading_label)
 	# Preserve the scroll offset during real state transitions and reorderings.
 	# Progress-only updates never change the cards or the scroll subtree.
 	var previous_scroll: int = 0

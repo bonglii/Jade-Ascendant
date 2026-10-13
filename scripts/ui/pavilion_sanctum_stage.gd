@@ -128,7 +128,7 @@ func _draw() -> void:
 			# Gold gate seams part around the relic; no opaque dragon covers it.
 			for side in [-1.0,1.0]:
 				for segment in range(5):
-					var angle: float = -PI/2.0+float(segment)*PI/5.0+(PI if side < 0 else 0)
+					var angle: float = -PI/2.0+float(segment)*PI/5.0+(PI if side < 0 else 0.0)
 					draw_arc(center+Vector2(side*open_amount*size.x*0.065,0),radius,angle,angle+PI/8,18,Color(tone,0.65*open_amount),2.0,true)
 	if playing:
 		var seal_size: float = radius*1.02*(1.0-0.18*smoothstep(0.45,0.74,p))

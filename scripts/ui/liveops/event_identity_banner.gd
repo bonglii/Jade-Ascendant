@@ -64,6 +64,6 @@ func _draw() -> void:
 	# Small corner inlays support the illustration instead of covering its subjects.
 	for x_side: float in [1.0,-1.0]:
 		for y_side: float in [1.0,-1.0]:
-			var corner:=Vector2(5 if x_side>0 else target.x-5,5 if y_side>0 else target.y-5)
+			var corner:=Vector2(5.0 if x_side>0 else target.x-5.0,5.0 if y_side>0 else target.y-5.0)
 			draw_line(corner,corner+Vector2(x_side*17,0),Color(1,0.85,0.5,0.9),2.0,true)
 			draw_line(corner,corner+Vector2(0,y_side*12),Color(1,0.85,0.5,0.9),2.0,true)
