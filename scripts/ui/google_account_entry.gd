@@ -135,14 +135,17 @@ func _on_account_state_changed(snapshot: Dictionary) -> void:
 	var native_available: bool = bool(snapshot.get("native_ready", false))
 	var operation_busy: bool = bool(snapshot.get("busy", false))
 	google_button.disabled = operation_busy or not native_available
-	guest_button.disabled = operation_busy
+	var preparing_guest: bool = operation_busy and str(snapshot.get("operation", "")) == "anonymous_identity"
+	guest_button.disabled = operation_busy and not preparing_guest
 	google_button.text = (
 		_local("CONNECTING...", "MENGHUBUNGKAN...")
 		if operation_busy
 		else _local("CONTINUE WITH GOOGLE", "MASUK DENGAN GOOGLE")
 	)
 	guest_button.text = _local("PLAY AS GUEST", "MAIN SEBAGAI TAMU")
-	if operation_busy:
+	if preparing_guest:
+		account_status.text = _local("Preparing player identity. You can play as Guest now.", "Menyiapkan identitas pemain. Lu sudah bisa main sebagai Tamu.")
+	elif operation_busy:
 		account_status.text = _local(
 			"Connecting to your Google account...",
 			"Sedang menghubungkan akun Google..."
@@ -182,7 +185,7 @@ func _on_guest_pressed() -> void:
 	if _moving_to_home:
 		return
 	var snapshot: Dictionary = GoogleAccountManager.get_account_snapshot()
-	if bool(snapshot.get("busy", false)):
+	if bool(snapshot.get("busy", false)) and str(snapshot.get("operation", "")) != "anonymous_identity":
 		return
 	_continue_home()
 

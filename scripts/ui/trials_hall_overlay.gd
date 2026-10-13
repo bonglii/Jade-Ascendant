@@ -21,6 +21,9 @@ var elapsed: float = 0.0
 
 
 func _ready() -> void:
+	var scene: Node = get_parent()
+	if scene != null and scene.scene_file_path in [DAILY_SCENE, ACHIEVEMENT_SCENE]:
+		scene.set_meta("trials_production_owned", true)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_process(not SettingsManager.reduced_effects)
 	queue_redraw()

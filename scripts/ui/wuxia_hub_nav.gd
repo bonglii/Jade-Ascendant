@@ -376,6 +376,8 @@ func _on_tab_hover(
 	tab_index: int,
 	is_hovered_now: bool
 ) -> void:
+	var touch_guard: Node = get_node_or_null("/root/MobileTouchPresentationGuard")
+	if touch_guard != null and touch_guard.touch_mode: is_hovered_now = false
 	if is_hovered_now:
 		hovered_tab = tab_index
 	elif hovered_tab == tab_index:

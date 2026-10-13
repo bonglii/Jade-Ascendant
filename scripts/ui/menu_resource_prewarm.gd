@@ -7,13 +7,16 @@ extends Node
 
 const PAVILION_SCENE: String = "res://scenes/ui/pavilion_screen.tscn"
 const HOME_SCENE: String = "res://scenes/ui/main_menu.tscn"
+const DAILY_SCENE: String = "res://scenes/ui/daily_quest_screen.tscn"
+const RECORDS_SCENE: String = "res://scenes/ui/achievement_screen.tscn"
 const HERO_SCENE: String = "res://scenes/ui/equipment_screen.tscn"
 
-# Keep only the noticeably heavier hub PackedScenes alive. Cultivation and
-# Trials already load in ~250 ms on the release desktop baseline, while Home,
-# Hero and Pavilion benefit materially from retaining their parsed scene graph.
+# Retain the five main menu PackedScenes only while in the hub. Trials now
+# receives the same coordinated background load as the other heavy menus.
 const FAST_NAV_SCENES: PackedStringArray = [
 	HOME_SCENE,
+	DAILY_SCENE,
+	RECORDS_SCENE,
 	HERO_SCENE,
 	PAVILION_SCENE,
 ]

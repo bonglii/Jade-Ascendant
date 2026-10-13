@@ -52,6 +52,7 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if bool(get_meta("trials_production_owned", false)): return
 	_m7b_refresh_left -= delta
 	if _m7b_refresh_left <= 0.0:
 		_m7b_refresh_left = 1.0
@@ -93,6 +94,8 @@ func _connect_manager_signals() -> void:
 
 
 func _refresh_screen() -> void:
+	# The production presenter owns the visible cards; skip hidden legacy trees.
+	if bool(get_meta("trials_production_owned", false)): return
 	DailyQuestManager.refresh_daily_date()
 
 	spirit_stone_label.text = "%d" % ProgressionManager.spirit_stone

@@ -506,6 +506,8 @@ func _find_scroll_ancestor() -> ScrollContainer:
 
 
 func _on_hover_changed(path_id: String, hovering: bool) -> void:
+	var touch_guard: Node = get_node_or_null("/root/MobileTouchPresentationGuard")
+	if touch_guard != null and touch_guard.touch_mode: hovering = false
 	if hovering:
 		hovered_path = path_id
 	elif hovered_path == path_id:

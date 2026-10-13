@@ -66,6 +66,7 @@ var reward_overlay_tween: Tween = null
 
 var intro_tween: Tween = null
 var refresh_queued: bool = false
+var card_build_epoch: int = 0
 var result_generation: int = 0
 var scroll_touch_active: bool = false
 var scroll_touch_origin: Vector2 = Vector2.ZERO
@@ -102,14 +103,8 @@ func setup(new_scene_root: Node) -> void:
 	_prime_trials_readability(reward_overlay)
 	_connect_manager_signals()
 
-	# Build both sections once at opening, not on the first tab tap.
-	# The current entry section (Daily or Achievements) is restored last.
-	var entry_section: String = active_section
-	_bind_trials_section("daily")
-	_refresh()
-	_bind_trials_section("achievement")
-	_refresh()
-	_bind_trials_section(entry_section)
+	# Only the visible section is built at entry. Both trees persist after use.
+	_bind_trials_section(active_section)
 	_refresh()
 	call_deferred("_configure_mobile_scroll_behavior")
 	call_deferred("_play_intro")
@@ -455,7 +450,24 @@ func _refresh() -> void:
 	_sync_trial_cards(_get_sorted_record_ids())
 
 
+func _exit_tree() -> void:
+	card_build_epoch += 1
+
 func _sync_trial_cards(record_ids: Array[String]) -> void:
+	if not is_inside_tree() or not is_instance_valid(scene_root) or not scene_root.is_inside_tree(): return
+	card_build_epoch += 1
+	var epoch: int = card_build_epoch
+	var batch_start: int = Time.get_ticks_usec()
+	var built: int = 0
+	if record_ids.size() > trial_card_nodes.size() and list_host.get_node_or_null("TrialsLoadingLabel") == null:
+		var loading := Label.new()
+		loading.name = "TrialsLoadingLabel"
+		loading.text = tr("UNFOLDING RECORDS…")
+		loading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		loading.add_theme_font_size_override("font_size", 14)
+		loading.add_theme_color_override("font_color", GOLD)
+		loading.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		list_host.add_child(loading)
 	# Preserve the scroll offset during real state transitions and reorderings.
 	# Progress-only updates never change the cards or the scroll subtree.
 	var previous_scroll: int = 0
@@ -506,6 +518,7 @@ func _sync_trial_cards(record_ids: Array[String]) -> void:
 		changed = true
 
 	for index: int in range(record_ids.size()):
+		if epoch != card_build_epoch or not is_inside_tree() or not is_instance_valid(scene_root) or not scene_root.is_inside_tree(): return
 		var record_id: String = record_ids[index]
 		var signature: String = _get_trial_card_signature(record_id)
 		var card: PanelContainer = trial_card_nodes.get(record_id) as PanelContainer
@@ -519,6 +532,7 @@ func _sync_trial_cards(record_ids: Array[String]) -> void:
 					list_host.remove_child(card)
 				card.queue_free()
 			card = _build_trial_card(record_id)
+			built += 1
 			_prime_trials_readability(card)
 			list_host.add_child(card)
 			trial_card_nodes[record_id] = card
@@ -532,7 +546,16 @@ func _sync_trial_cards(record_ids: Array[String]) -> void:
 		if list_host.get_child(index) != card:
 			list_host.move_child(card, index)
 			changed = true
+		if index + 1 < record_ids.size() and (built >= 2 or Time.get_ticks_usec()-batch_start >= 4000):
+			await get_tree().process_frame
+			if epoch != card_build_epoch or not is_inside_tree() or not is_instance_valid(scene_root) or not scene_root.is_inside_tree(): return
+			built = 0
+			batch_start = Time.get_ticks_usec()
 
+	var loading: Node = list_host.get_node_or_null("TrialsLoadingLabel")
+	if loading != null:
+		list_host.remove_child(loading)
+		loading.queue_free()
 	if changed:
 		call_deferred("_configure_mobile_scroll_behavior")
 		call_deferred("_restore_trials_scroll", trials_scroll, previous_scroll)
@@ -1343,8 +1366,7 @@ func _switch_section(section: String) -> void:
 		return
 	if not is_instance_valid(presentation_root):
 		return
-	# Both scroll/card trees are already built; update only summary/tab state
-	# and any record whose actual progress/claim status changed while hidden.
+	# Existing card trees persist. An unvisited section builds in bounded batches.
 	_bind_trials_section(section)
 	_refresh()
 	_configure_mobile_scroll_behavior()

@@ -64,6 +64,8 @@ func _connect_manager_signals() -> void:
 
 
 func _refresh_screen() -> void:
+	# The production presenter owns the visible cards; skip hidden legacy trees.
+	if bool(get_meta("trials_production_owned", false)): return
 	spirit_stone_label.text = "%d" % ProgressionManager.spirit_stone
 
 	var total_count: int = AchievementManager.get_achievement_ids().size()

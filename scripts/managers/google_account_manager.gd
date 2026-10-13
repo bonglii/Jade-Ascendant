@@ -18,6 +18,8 @@ var _signed_in: bool = false
 var _busy: bool = false
 var _operation: String = ""
 var _operation_nonce: int = 0
+var _operation_started_msec: int = 0
+var _last_operation_elapsed_msec: int = 0
 var _display_name: String = ""
 var _account_uid: String = ""
 var _firebase_uid: String = ""
@@ -71,6 +73,7 @@ func get_account_snapshot() -> Dictionary:
 		"signed_in": _signed_in,
 		"busy": _busy,
 		"operation": _operation,
+		"elapsed_msec": maxi(0, Time.get_ticks_msec()-_operation_started_msec) if _busy and _operation_started_msec>0 else _last_operation_elapsed_msec,
 		"display_name": _display_name,
 		"status": _status,
 		"monetization_identity_ready": not get_monetization_account_binding().is_empty(),
@@ -267,6 +270,8 @@ func request_sign_out() -> void:
 
 
 func _start_timeout(nonce: int, operation: String) -> void:
+	_operation_started_msec = Time.get_ticks_msec()
+	DebugLogger.system("ACCOUNT_LATENCY start=" + operation)
 	get_tree().create_timer(OPERATION_TIMEOUT_SECONDS).timeout.connect(
 		_on_operation_timeout.bind(nonce, operation), CONNECT_ONE_SHOT
 	)
@@ -275,6 +280,7 @@ func _start_timeout(nonce: int, operation: String) -> void:
 func _on_operation_timeout(nonce: int, operation: String) -> void:
 	if not _busy or nonce != _operation_nonce or _operation != operation:
 		return
+	_record_operation_latency("timeout")
 	_busy = false
 	_operation = ""
 	_status = "Google did not respond. Check your connection and try again."
@@ -365,7 +371,13 @@ func _on_sign_out_success(succeeded: bool) -> void:
 		_publish()
 
 
+func _record_operation_latency(outcome: String) -> void:
+	_last_operation_elapsed_msec = maxi(0, Time.get_ticks_msec()-_operation_started_msec)
+	DebugLogger.system("ACCOUNT_LATENCY operation=%s outcome=%s elapsed_ms=%d" % [_operation, outcome, _last_operation_elapsed_msec])
+	_operation_started_msec = 0
+
 func _finish_operation() -> void:
+	_record_operation_latency("callback")
 	_busy = false
 	_operation = ""
 	_link_source_uid = ""

@@ -46,6 +46,10 @@ func _bootstrap_runtime_helpers() -> void:
 		mastery.name = "CultivationMasteryManager"
 		tree.root.add_child(mastery)
 
+	if tree.root.get_node_or_null("MobileTouchPresentationGuard") == null:
+		var touch_guard: Node = preload("res://scripts/ui/mobile_touch_presentation_guard.gd").new()
+		touch_guard.name = "MobileTouchPresentationGuard"
+		tree.root.add_child(touch_guard)
 	if tree.root.get_node_or_null("LiveOpsManager") == null:
 		var live_ops: Node = LiveOpsManagerScript.new()
 		live_ops.name = "LiveOpsManager"

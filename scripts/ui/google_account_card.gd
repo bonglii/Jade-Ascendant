@@ -131,8 +131,8 @@ func _refresh(snapshot: Dictionary) -> void:
 	_action.disabled = busy or not native_ready
 	if busy:
 		_status.text = _local(
-			"Connecting with Google..." if current_operation == "sign_in" else "Signing out...",
-			"Menghubungkan Google..." if current_operation == "sign_in" else "Keluar dari akun..."
+			"Connecting with Google..." if current_operation in ["sign_in", "link_google"] else "Preparing player identity..." if current_operation == "anonymous_identity" else "Signing out...",
+			"Menghubungkan Google..." if current_operation in ["sign_in", "link_google"] else "Menyiapkan identitas pemain..." if current_operation == "anonymous_identity" else "Keluar dari akun..."
 		)
 		_status.add_theme_color_override("font_color", GOLD)
 		_action.text = _local("PLEASE WAIT", "MOHON TUNGGU")
