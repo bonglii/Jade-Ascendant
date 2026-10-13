@@ -27,6 +27,9 @@ var weapons: Array[Weapon] = []
 var attack_timers: Dictionary = {}
 var _cached_target: Node2D = null
 var _target_refresh_remaining: float = 0.0
+const CombatPerfWindow = preload("res://scripts/debug/combat_perf_window.gd")
+var _debug_frames: RefCounted = CombatPerfWindow.new()
+var _debug_last_frame_usec: int = 0
 var _debug_elapsed: float = 0.0
 var _target_searches: int = 0
 var _fired_attacks: int = 0
@@ -165,9 +168,18 @@ func _get_attack_target() -> Node2D:
 	return _cached_target
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PAUSED or what == NOTIFICATION_UNPAUSED:
+		# A deliberate pause/hit-stop must not become a false slow frame.
+		_debug_last_frame_usec = 0
+
 func _log_combat_sample(delta: float) -> void:
 	if not OS.is_debug_build():
 		return
+	var now_usec: int = Time.get_ticks_usec()
+	if _debug_last_frame_usec > 0:
+		_debug_frames.add(float(now_usec - _debug_last_frame_usec) / 1000.0, Performance.get_monitor(Performance.TIME_PROCESS)*1000.0, Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)*1000.0)
+	_debug_last_frame_usec = now_usec
 	_debug_elapsed += delta
 	if _debug_elapsed < DEBUG_SAMPLE_INTERVAL:
 		return
@@ -185,6 +197,17 @@ func _log_combat_sample(delta: float) -> void:
 			boss_attack_range
 		]
 	)
+	var frames: Dictionary = _debug_frames.snapshot()
+	DebugLogger.system(
+		"CrowdPerf | Frames: %d | Mean: %.2f ms | P95: %.2f ms | Max: %.2f ms | >33ms: %d | >50ms: %d | Process avg: %.2f ms | Physics avg/max: %.2f/%.2f ms | Draw calls: %d | Collision pairs: %d | Hostile attacks: %d" % [
+			int(frames.count), float(frames.mean_ms), float(frames.p95_ms), float(frames.max_ms), int(frames.over_33), int(frames.over_50),
+			float(frames.process_mean_ms), float(frames.physics_mean_ms), float(frames.physics_max_ms),
+			int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)),
+			int(Performance.get_monitor(Performance.PHYSICS_2D_COLLISION_PAIRS)),
+			get_tree().get_nodes_in_group("enemy_attack").size()
+		]
+	)
+	_debug_frames.reset()
 	_target_searches = 0
 	_fired_attacks = 0
 

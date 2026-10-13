@@ -96,11 +96,6 @@ func find_nearest_enemy(
 		var enemy: Node2D = enemy_node as Node2D
 		if enemy.is_queued_for_deletion():
 			continue
-		if bool(enemy.get("is_dead")):
-			continue
-		if not enemy.has_method("take_damage"):
-			continue
-
 		var distance_squared: float = (
 			global_position.distance_squared_to(enemy.global_position)
 		)
@@ -108,6 +103,11 @@ func find_nearest_enemy(
 			continue
 		if distance_squared > boss_distance_squared and enemy.is_in_group("boss"):
 			continue
+		if bool(enemy.get("is_dead")):
+			continue
+		if not enemy.has_method("take_damage"):
+			continue
+
 		if nearest_enemy == null or distance_squared < nearest_distance_squared:
 			nearest_distance_squared = distance_squared
 			nearest_enemy = enemy

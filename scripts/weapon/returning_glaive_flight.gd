@@ -109,12 +109,20 @@ func _advance(delta: float, player: Node2D, enemies: Array[Node]) -> void:
 		if float(hit_flashes[i].age) > 0.16: hit_flashes.remove_at(i)
 
 func _sweep(start: Vector2, finish: Vector2, player: Node2D, enemies: Array[Node], phase_id: int, multiplier: float) -> void:
+	# Exact broad phase only: reject outside the swept segment's padded box.
+	# Keep current positions and group membership; no delayed spatial cache.
+	var lower: Vector2=start.min(finish)-Vector2.ONE*HIT_RADIUS
+	var upper: Vector2=start.max(finish)+Vector2.ONE*HIT_RADIUS
 	for enemy: Node in enemies:
-		if not living(enemy): continue
+		if not is_instance_valid(enemy) or not enemy is Node2D: continue
+		var enemy_position: Vector2=enemy.global_position
+		if enemy_position.x<lower.x or enemy_position.x>upper.x or enemy_position.y<lower.y or enemy_position.y>upper.y:continue
+		var key: String="%d:%d" % [phase_id,enemy.get_instance_id()]
+		if hits.has(key) or not living(enemy): continue
 		var reach: float = boss_range if enemy.is_in_group("boss") else normal_range
-		if enemy.global_position.distance_to(player.global_position) > reach: continue
-		var closest: Vector2 = Geometry2D.get_closest_point_to_segment(enemy.global_position, start, finish)
-		if closest.distance_to(enemy.global_position) <= HIT_RADIUS:
+		if enemy_position.distance_squared_to(player.global_position) > reach*reach: continue
+		var closest: Vector2 = Geometry2D.get_closest_point_to_segment(enemy_position, start, finish)
+		if closest.distance_squared_to(enemy_position) <= HIT_RADIUS*HIT_RADIUS:
 			_hit(player, enemy, phase_id, multiplier)
 
 func _hit(player: Node2D, enemy: Node2D, phase_id: int, multiplier: float) -> void:
