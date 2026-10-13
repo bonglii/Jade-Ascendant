@@ -5,6 +5,11 @@ extends Control
 ## authority for seven-day progress, rewards, claims and persistent state.
 ## Daily Trials and Pavilion continue to own their own gameplay and economy.
 
+const EventArt = preload("res://scripts/ui/liveops/event_identity_catalog.gd")
+const EventBanner = preload("res://scripts/ui/liveops/event_identity_banner.gd")
+const ImperialStyle = preload("res://scripts/ui/pavilion_imperial_style.gd")
+var _activity_handles: Dictionary = {}
+
 const LiveOpsUi = preload("res://scripts/ui/liveops/live_ops_ui.gd")
 const FEATURED_EVENT_ID: String = "seven_days_of_ascension"
 const PILGRIMAGE_EVENT_ID: String = "jade_valley_pilgrimage"
@@ -464,7 +469,7 @@ func _add_activity_card(
 	card_name: String,
 	eyebrow_text: String,
 	description_text: String,
-	icon_art: Texture2D,
+	_icon_art: Texture2D,
 	accent: Color,
 	cta_text: String,
 	preview_id: String
@@ -493,50 +498,18 @@ func _add_activity_card(
 	card_content.add_theme_constant_override("separation", 7)
 	_add_panel_margin(panel, card_content, 11, 11, 11, 12)
 
-	var accent_line := ColorRect.new()
-	accent_line.custom_minimum_size.y = 3.0
-	accent_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	accent_line.color = Color(accent.r, accent.g, accent.b, 0.82)
-	accent_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	card_content.add_child(accent_line)
-
-	var icon_row := HBoxContainer.new()
-	icon_row.add_theme_constant_override("separation", 9)
-	card_content.add_child(icon_row)
-
-	var icon_frame := PanelContainer.new()
-	icon_frame.custom_minimum_size = Vector2(64.0, 64.0)
-	icon_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	icon_frame.add_theme_stylebox_override(
-		"panel",
-		_panel(
-			Color(0.002, 0.027, 0.035, 0.98),
-			Color(accent.r, accent.g, accent.b, 0.72),
-			11,
-			1,
-			4
-		)
-	)
-	icon_row.add_child(icon_frame)
-
-	var icon_margin := MarginContainer.new()
-	for side: String in ["left", "top", "right", "bottom"]:
-		icon_margin.add_theme_constant_override("margin_" + side, 4)
-	icon_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	icon_frame.add_child(icon_margin)
-
-	var icon := _texture(icon_art)
-	icon.custom_minimum_size = Vector2(54.0, 54.0)
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon_margin.add_child(icon)
-
-	# One-column cards use a compact identity row instead of stacking
-	# the eyebrow and title under the icon.
-	var identity := VBoxContainer.new()
-	identity.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	identity.add_theme_constant_override("separation", 2)
-	icon_row.add_child(identity)
-
+	panel.set_meta("event_identity",preview_id)
+	var art=EventBanner.new()
+	art.name="EventArtwork_"+preview_id
+	art.identity=preview_id
+	art.artwork=EventArt.texture_for(preview_id)
+	art.accent=accent
+	art.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	card_content.add_child(art)
+	var identity:=VBoxContainer.new()
+	identity.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	identity.add_theme_constant_override("separation",3)
+	card_content.add_child(identity)
 	var eyebrow := _label(eyebrow_text, 13, accent)
 	eyebrow.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	eyebrow.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -545,8 +518,7 @@ func _add_activity_card(
 
 	var title := _label(card_name.to_upper(), 20, GOLD_LIGHT)
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	title.max_lines_visible = 2
-	title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	title.max_lines_visible = -1
 	title.add_theme_color_override(
 		"font_shadow_color",
 		Color(0.0, 0.0, 0.0, 0.72)
@@ -557,8 +529,7 @@ func _add_activity_card(
 	var description := _label(description_text, 15, IVORY)
 	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	description.custom_minimum_size.y = 48.0
-	description.max_lines_visible = 4
-	description.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	description.max_lines_visible = -1
 	card_content.add_child(description)
 
 	# Status and CTA share a row at the approved portrait width; on
@@ -570,6 +541,7 @@ func _add_activity_card(
 	action_row.add_theme_constant_override("h_separation", 9)
 	action_row.add_theme_constant_override("v_separation", 7)
 
+	var handle: Dictionary={"panel":panel,"art":art,"accent":accent}
 	var reward_ready: bool = false
 	var preview: Dictionary = _activity_progress_preview(preview_id)
 	if not preview.is_empty():
@@ -587,7 +559,8 @@ func _add_activity_card(
 		progress_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		card_content.add_child(progress_text)
 
-		LiveOpsUi.add_progress_meter(
+		handle["progress"]=progress_text
+		handle["meter"]=LiveOpsUi.add_progress_meter(
 			card_content,
 			current_value,
 			total,
@@ -611,6 +584,7 @@ func _add_activity_card(
 		state.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		state.size_flags_stretch_ratio = 0.95
 		action_row.add_child(state)
+		handle["status"]=state
 
 		if reward_ready:
 			panel.add_theme_stylebox_override(
@@ -632,6 +606,9 @@ func _add_activity_card(
 	_wire_navigation_button(cta, preview_id)
 	action_row.add_child(cta)
 	card_content.add_child(action_row)
+	handle["cta"]=cta
+	_activity_handles[preview_id]=handle
+	art.claim_ready=reward_ready
 
 func _activity_progress_preview(preview_id: String) -> Dictionary:
 	if _live_ops == null:
@@ -746,6 +723,8 @@ func _style_activity_cta(
 		)
 	)
 
+	_apply_material_button(button,accent,reward_ready)
+
 func _refresh_event_status() -> void:
 	if _event_status == null or _event_progress == null:
 		return
@@ -774,6 +753,7 @@ func _refresh_event_status() -> void:
 	var day_count: int = int(_live_ops.get_active_login_day_count())
 	var total: int = int(_live_ops.LOGIN_DAY_COUNT)
 	var claimable: int = int(_live_ops.get_login_claimable_count())
+	_refresh_activity_handles()
 	_event_progress.text = tr("DAY %d / %d") % [day_count, total]
 	if bool(_live_ops.is_new_player_event_complete()):
 		_event_status.text = tr("NEXT CYCLE TOMORROW")
@@ -925,6 +905,8 @@ func _fit_layout() -> void:
 	# Only the card status/CTA reflows: no event state or navigation changes.
 	var action_columns: int = 2 if inner_w >= 420.0 else 1
 	for card: Node in _grid.get_children():
+		var art: Control=card.find_child("EventArtwork_*",true,false)
+		if art!=null: art.custom_minimum_size.y=clampf(inner_w*0.40,110.0,195.0)
 		var actions := card.find_child("EventCardActionRow", true, false) as GridContainer
 		if actions != null and actions.columns != action_columns:
 			actions.columns = action_columns
@@ -960,6 +942,7 @@ func _fit_layout() -> void:
 
 
 func _settle_popup_height(expected_generation: int) -> void:
+	if not is_inside_tree(): return
 	var tree: SceneTree = get_tree()
 	if tree == null:
 		return
@@ -968,6 +951,13 @@ func _settle_popup_height(expected_generation: int) -> void:
 		return
 	if not is_instance_valid(_popup) or not is_instance_valid(_scroll):
 		return
+	# Reapply width AFTER responsive rows settle. Setting it before changing
+	# their columns can clamp against the old wide minimum and crop phones.
+	_popup.size.x=minf(size.x-14.0,640.0)
+	_popup.position.x=(size.x-_popup.size.x)*0.5
+	await tree.process_frame
+	if not is_inside_tree() or expected_generation!=_layout_generation: return
+	if not is_instance_valid(_popup) or not is_instance_valid(_scroll): return
 	var body: Control = _scroll.get_child(0) as Control
 	if body == null:
 		return
@@ -1122,4 +1112,37 @@ func _button(value: String, main: bool) -> Button:
 			GOLD, 9, 2
 		)
 	)
+	b.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	_apply_material_button(b,GOLD if main else JADE,main)
 	return b
+
+func _apply_material_button(button: Button, _accent: Color, claimable: bool) -> void:
+	for mode: String in ["normal","hover","pressed","disabled"]:
+		var style=ImperialStyle.new()
+		style.corner=Vector2(17,14)
+		style.content_margin_top=8;style.content_margin_bottom=8
+		style.tint=Color(1.0,0.92,0.73) if claimable else Color(0.78,0.97,0.87)
+		if mode=="hover": style.tint=style.tint.lightened(0.12)
+		if mode=="pressed": style.tint=style.tint.darkened(0.22);style.pressed=true
+		if mode=="disabled": style.tint=Color(0.3,0.4,0.35)
+		style.selected=claimable
+		button.add_theme_stylebox_override(mode,style)
+	button.add_theme_color_override("font_color",GOLD_LIGHT if claimable else IVORY)
+	button.add_theme_color_override("font_shadow_color",Color(0,0.01,0.015,0.9))
+	button.add_theme_constant_override("shadow_offset_y",1)
+func _refresh_activity_handles() -> void:
+	for id: String in _activity_handles:
+		var h: Dictionary=_activity_handles[id]
+		var data: Dictionary=_activity_progress_preview(id)
+		if data.is_empty() or not h.has("status"): continue
+		var ready: bool=int(data.get("ready",0))>0
+		var complete: bool=bool(data.get("complete",false))
+		h.progress.text=tr("PROGRESS %d / %d") % [int(data.get("current",0)),int(data.get("total",0))]
+		h.meter.max_value=maxi(1,int(data.get("total",0)))
+		h.meter.value=int(data.get("current",0))
+		h.status.text=tr("COMPLETED") if complete else (tr("%d READY") % int(data.ready) if ready else tr("IN PROGRESS"))
+		h.status.add_theme_color_override("font_color",JADE if complete else GOLD_LIGHT if ready else h.accent)
+		if h.art.claim_ready!=ready:
+			h.art.claim_ready=ready
+			h.art.queue_redraw()
+		_apply_material_button(h.cta,h.accent,ready)

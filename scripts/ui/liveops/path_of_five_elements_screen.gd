@@ -4,13 +4,14 @@ extends Control
 ## Presentation/input only. JourneyManager remains progress authority,
 ## LiveOpsManager owns claims, and RewardManager owns reward delivery.
 
+const EventArt = preload("res://scripts/ui/liveops/event_identity_catalog.gd")
 const LiveOpsUi = preload("res://scripts/ui/liveops/live_ops_ui.gd")
 const JourneyArtCatalog = preload(
 	"res://scripts/ui/journey_art_catalog.gd"
 )
 const EVENT_ID: String = "path_of_five_elements"
 const EVENT_ICON: Texture2D = preload(
-	"res://assets/ui/home/liveops_premium/event_center_premium.png"
+	"res://assets/ui/liveops/event_identity/five_elements.png"
 )
 
 const GOLD: Color = Color(0.95, 0.75, 0.31, 1.0)
@@ -84,6 +85,8 @@ func _refresh() -> void:
 		return
 
 	LiveOpsUi.clear_container(_content)
+	EventArt.add_detail_art(_content,"five_elements")
+	call_deferred("_fit_identity_text")
 
 	var trial_ids: Array = _live_ops.call(
 		"get_five_elements_trial_ids"
@@ -1276,3 +1279,7 @@ func _claim_convergence() -> void:
 
 func _back() -> void:
 	LiveOpsUi.return_home(self)
+
+func _fit_identity_text() -> void:
+	if not is_inside_tree(): return
+	EventArt.wrap_mobile_controls(self)

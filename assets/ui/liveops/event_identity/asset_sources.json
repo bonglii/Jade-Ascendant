@@ -1,0 +1,43 @@
+{
+  "theme": "Jade Ascendant xianxia/wuxia; antique gold and jade with distinct event palettes",
+  "common_prompt": "Production landscape event banner, approximately 2:1; high-detail painterly ancient Chinese fantasy, atmospheric depth, centered readable subjects safe within the central 65%; no text, UI, frame, logo or watermark.",
+  "generation": "Built-in ImageGen, 2026-10-13; all images new original siblings; no existing bitmap overwritten.",
+  "runtime": "Godot import size limit 1024px, original PNG unchanged; cover fitting keeps aspect; native ambient overlay max 20Hz and stops offscreen/reduced effects.",
+  "assets": [
+    {
+      "asset": "assets/ui/liveops/event_identity/pilgrimage.png",
+      "identity": "pilgrimage",
+      "subject_prompt": "Emerald bamboo valley, bridge, jade trail markers, lone cultivator and dawn sanctuary.",
+      "sha256": "6bd907d986cb417ee5adb887aec154f18614548fdc65eaa44b2c34b87e40e755"
+    },
+    {
+      "asset": "assets/ui/liveops/event_identity/boss_hunt.png",
+      "identity": "boss_hunt",
+      "subject_prompt": "Crimson moon, architectural guardian mask, upright sword in a red seal and amber braziers.",
+      "sha256": "e2b9730d5d5756330989d1e28475c11e0dff9af8bc2dea753ca741bf95b529b1"
+    },
+    {
+      "asset": "assets/ui/liveops/event_identity/heavenly_ladder.png",
+      "identity": "heavenly_ladder",
+      "subject_prompt": "Azure floating staircase ascending toward a gold sky palace.",
+      "sha256": "46834d8fd7e37ddf38ddfc5564932a590c84310a6ffea2bfd92e3510f87f1ee2"
+    },
+    {
+      "asset": "assets/ui/liveops/event_identity/treasure_hunt.png",
+      "identity": "treasure_hunt",
+      "subject_prompt": "One open jade/bronze treasure chest in an ancient teal chamber.",
+      "sha256": "c5208f87ad1ec04e6683d5557fb5530d4990f5526a6571abc0cbe511511be5d3"
+    },
+    {
+      "asset": "assets/ui/liveops/event_identity/five_elements.png",
+      "identity": "five_elements",
+      "subject_prompt": "Exactly five pictorial elemental medallions: wood leaves, fire flame, earth mountain, metal sword and water wave around a convergence altar.",
+      "sha256": "10f4f43dc259578a81a57c5423e8ec632b7e01b5e5284591aeaff1b0d445e588"
+    }
+  ],
+  "existing_art_reused": {
+    "seven_day": "assets/ui/liveops/seven_day/seven_day_ascension_hero_portrait_bg.png",
+    "daily": "assets/ui/trials/trials_hall.png",
+    "pavilion": "assets/ui/pavilion/sanctum_premium/pavilion_unified.png"
+  }
+}
