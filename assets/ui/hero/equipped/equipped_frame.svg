@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="188" height="196" viewBox="0 0 188 196">
+<defs><linearGradient id="gold" x2="0" y2="1"><stop stop-color="#fff0b0"/><stop offset=".45" stop-color="#e5b652"/><stop offset="1" stop-color="#a2752c"/></linearGradient><linearGradient id="jade"><stop stop-color="#26a884"/><stop offset=".5" stop-color="#8affdc"/><stop offset="1" stop-color="#26a884"/></linearGradient></defs>
+<path d="M16 3H172L185 16V180L172 193H16L3 180V16Z" fill="none" stroke="#49e3bf" stroke-opacity=".16" stroke-width="7"/>
+<path d="M16 3H172L185 16V180L172 193H16L3 180V16Z" fill="none" stroke="url(#gold)" stroke-width="3"/>
+<path d="M20 8H168L180 20V176L168 188H20L8 176V20Z" fill="none" stroke="url(#jade)" stroke-width="1.7"/>
+<path d="M4 37V17L17 4H37M151 4H171L184 17V37M184 159V179L171 192H151M37 192H17L4 179V159" fill="none" stroke="#fff0af" stroke-width="4"/>
+<path d="m3 92 7-7 7 7-7 7Zm168 0 7-7 7 7-7 7Z" fill="#79ffd8" stroke="#fff0af"/>
+<path d="m85 190 9-5 9 5-9 5Z" fill="#fff0af"/>
+</svg>

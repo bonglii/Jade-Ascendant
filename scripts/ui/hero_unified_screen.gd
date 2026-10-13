@@ -39,6 +39,8 @@ var sheet_generation: int=0
 var loadout_refresh_pending: bool=false
 var equip_action_pending: bool=false
 var detail_progress_key: String=""
+var inventory_sync_pending: bool=false
+var detail_values: Dictionary={}
 var detail_set_header: Label
 var detail_set_lines: Array[Label]=[]
 var header_count: Label
@@ -53,7 +55,8 @@ func _ready() -> void:
  nav=Nav.new();nav.name="HubNav";nav.active_tab=2;content.add_child(nav)
  content.resized.connect(_layout)
  EquipmentManager.equipment_changed.connect(_on_equipment_changed)
- InventoryManager.inventory_changed.connect(func(_id: String,_amount: int):_queue_refresh())
+ InventoryManager.inventory_changed.connect(_on_inventory_changed)
+ SaveManager.save_write_completed.connect(_on_save_write_completed)
  SceneTransitionManager.set_back_handler(handle_system_back)
  _layout();_refresh_all()
 
@@ -73,11 +76,29 @@ func _queue_refresh() -> void:
  pending_refresh=true;_refresh_all.call_deferred()
 
 func _on_equipment_changed(_slot: String,_id: String) -> void:
- # Ascension/weapon levels change the detail's content; equip toggles do not.
- if detail_open and sheet_mode=="item" and _detail_progress_key()!=detail_progress_key:
-  _queue_refresh();return
  if loadout_refresh_pending:return
  loadout_refresh_pending=true;_refresh_loadout.call_deferred()
+
+func _on_save_write_completed(domain: String,_result: Dictionary) -> void:
+ if domain=="progression":_on_equipment_changed("","")
+
+func _on_inventory_changed(_id: String,_count: int) -> void:
+ if inventory_sync_pending:return
+ inventory_sync_pending=true;_sync_inventory.call_deferred()
+
+func _sync_inventory() -> void:
+ inventory_sync_pending=false
+ if not is_instance_valid(grid) or pending_refresh:return
+ var ids: Array[String]=_visible_item_ids()
+ var old_ids: Array=card_buttons.keys()
+ if ids.size()!=old_ids.size() or ids.any(func(id: String):return not card_buttons.has(id)):_rebuild_grid()
+ else:
+  for i: int in range(ids.size()):grid.move_child(card_buttons[ids[i]],i)
+ var owned: int=0
+ for id: String in InventoryManager.get_owned_item_ids():
+  if EquipmentManager.has_item_definition(id):owned+=1
+ header_count.text="KOLEKSI %d/42"%owned
+ _refresh_loadout()
 
 func _detail_progress_key() -> String:
  return "%s:%d:%d:%d"%[selected_item_id,EquipmentManager.get_loadout_item_star(selected_item_id),EquipmentManager.get_item_weapon_level(selected_item_id),InventoryManager.get_item_count(selected_item_id)]
@@ -92,11 +113,18 @@ func _refresh_loadout() -> void:
  for id: String in card_buttons:
   var mark: CanvasItem=card_buttons[id].get_node_or_null("EquippedMark")
   if mark!=null:mark.visible=id in ids
+  var card: Button=card_buttons[id]
+  var rank: Label=card.get_node_or_null("ItemRank")
+  if rank!=null:rank.text=_stars(EquipmentManager.get_loadout_item_star(id)) if EquipmentManager.has_item_definition(id) else "×%d"%InventoryManager.get_item_count(id)
+  var copies: Label=card.get_node_or_null("DuplicateCount")
+  if copies!=null:
+   var count: int=InventoryManager.get_item_count(id)
+   copies.text="×%d"%count if count<=99 else "×99+";copies.visible=count>1
  var state: Dictionary=Sets.get_dominant_set_state(ids)
  var summary: Label=page.find_child("SetName",true,false) as Label
  if summary!=null:summary.text=(str(state.display_name) if int(state.piece_count)>0 else "BELUM ADA SET")+"  •  %d/4"%int(state.piece_count)
  if detail_open:
-  if sheet_mode=="stats":_show_stats()
+  if sheet_mode=="stats":_show_stats(true)
   else:_sync_detail_loadout()
 
 func _sync_slot(button: Button,id: String) -> void:
@@ -112,14 +140,36 @@ func _sync_slot(button: Button,id: String) -> void:
   icon.offset_left=9;icon.offset_right=-9;icon.offset_top=9;icon.offset_bottom=-9
 
 func _sync_detail_loadout() -> void:
- if not is_instance_valid(sheet_actions) or not EquipmentManager.has_item_definition(selected_item_id):return
+ if not is_instance_valid(sheet_actions):return
+ if not InventoryManager.owns_item(selected_item_id):_close_detail();return
+ if not EquipmentManager.has_item_definition(selected_item_id):
+  if detail_values.has("material"):detail_values.material.text="MATERIAL • Jumlah %d"%InventoryManager.get_item_count(selected_item_id)
+  return
  var equip: Button=sheet_actions.find_child("EquipAction",true,false) as Button
  if equip!=null:
-  for connection: Dictionary in equip.pressed.get_connections():equip.pressed.disconnect(connection.callable)
   var equipped: bool=selected_item_id in _equipped_ids()
   equip.text="LEPAS" if equipped else "PASANG"
   equip.disabled=not EquipmentManager.can_modify_equipment()
-  equip.pressed.connect(_equip_selected.bind(selected_item_id,equipped))
+  _bind_action(equip,_equip_selected.bind(selected_item_id,equipped,sheet_generation))
+ var id: String=selected_item_id
+ var star: int=EquipmentManager.get_loadout_item_star(id)
+ if detail_values.has("stars"):detail_values.stars.text=_stars(star)
+ if detail_values.has("stats"):detail_values.stats.text=Visual.get_stat_summary(EquipmentManager.get_effective_item_data(id))
+ if detail_values.has("copies"):detail_values.copies.text="DUPLIKAT IDENTIK %d • Naik bintang memakai 1 duplikat; item utama tetap dimiliki."%maxi(InventoryManager.get_item_count(id)-1,0)
+ if detail_values.has("level"):detail_values.level.text="LEVEL WEAPON %d / %d • +%d%% damage weapon"%[EquipmentManager.get_item_weapon_level(id),EquipmentManager.get_weapon_level_cap(id),roundi((EquipmentManager.get_weapon_level_multiplier(id)-1)*100)]
+ var key: String=_detail_progress_key()
+ var ascend: Button=sheet_actions.find_child("AscendAction",true,false) as Button
+ if ascend!=null:
+  ascend.text="NAIK BINTANG" if star<5 else "BINTANG MAX"
+  ascend.disabled=not EquipmentManager.can_ascend_item(id)
+  _bind_upgrade_action(ascend,id,"star",key)
+ var level: Button=sheet_actions.find_child("LevelAction",true,false) as Button
+ if level!=null:
+  level.text="NAIK LEVEL • %d Spirit Stone"%EquipmentManager.get_weapon_level_cost(id)
+  if EquipmentManager.get_item_weapon_level(id)>=EquipmentManager.get_weapon_level_cap(id):level.text="LEVEL MAX • PERLU BINTANG" if star<5 else "LEVEL MAX 50"
+  level.disabled=not EquipmentManager.can_level_weapon(id)
+  _bind_upgrade_action(level,id,"level",key)
+ detail_progress_key=key
  var set_id: String=Sets.get_set_id_for_item(selected_item_id)
  var pieces: int=Sets.get_piece_count(set_id,_equipped_ids())
  if is_instance_valid(detail_set_header):detail_set_header.text="%s • SET %s • %d/4"%[Sets.get_display_name(set_id),Sets.get_set_rarity(set_id).to_upper(),pieces]
@@ -142,8 +192,8 @@ func _refresh_all() -> void:
  scroll.set_deferred("scroll_vertical",old_scroll)
  scroll.set_deferred("size",Vector2(page.custom_minimum_size.x,maxf(60,nav.position.y-86)))
  if detail_open:
-  if sheet_mode=="stats":_show_stats()
-  else:_show_detail(selected_item_id)
+  if sheet_mode=="stats":_show_stats(true)
+  else:_show_detail(selected_item_id,true)
 
 func _label(value: String,font_size: int=16,tint: Color=TEXT) -> Label:
  var scale: float=popup_unit if building_popup else unit
@@ -261,10 +311,7 @@ func _build_collection() -> void:
  _rebuild_grid()
  page.add_child(_label("Ketuk item untuk detail • Geser untuk melihat koleksi",12,Color(.6,.74,.72)))
 
-func _rebuild_grid() -> void:
- if not is_instance_valid(grid):return
- for child: Node in grid.get_children():grid.remove_child(child);child.queue_free()
- card_buttons.clear()
+func _visible_item_ids() -> Array[String]:
  var ids: Array[String]=[]
  for id: String in InventoryManager.get_owned_item_ids():
   var data: Dictionary=InventoryManager.get_item_data(id)
@@ -279,6 +326,13 @@ func _rebuild_grid() -> void:
   var ra: int=int(ranks.get(InventoryManager.get_item_data(a).get("rarity",""),-1))
   var rb: int=int(ranks.get(InventoryManager.get_item_data(b).get("rarity",""),-1))
   return ra>rb if ra!=rb else a<b)
+ return ids
+
+func _rebuild_grid() -> void:
+ if not is_instance_valid(grid):return
+ for child: Node in grid.get_children():grid.remove_child(child);child.queue_free()
+ card_buttons.clear()
+ var ids: Array[String]=_visible_item_ids()
  var side: float=(page.custom_minimum_size.x-24)/5.0
  for id: String in ids:
   var data: Dictionary=InventoryManager.get_item_data(id)
@@ -289,18 +343,28 @@ func _rebuild_grid() -> void:
   icon.offset_left=8*unit;icon.offset_top=7*unit;icon.offset_right=-8*unit;icon.offset_bottom=-24*unit
   card.tooltip_text=str(data.get("display_name",id))
   var label:=_label(_stars(EquipmentManager.get_loadout_item_star(id)) if is_equipment else "×%d"%InventoryManager.get_item_count(id),12,GOLD)
+  label.name="ItemRank"
   card.add_child(label);label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE);label.offset_top=-23*unit;label.offset_bottom=-3*unit;label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
   if is_equipment:
    var count: int=InventoryManager.get_item_count(id)
-   if count>1:
-    var copies:=_label("×%d"%count if count<=99 else "×99+",11,TEXT);card.add_child(copies);copies.position=Vector2(maxf(4,side-42),6*unit)
-   var mark:=_label("✓",17,JADE);mark.name="EquippedMark";card.add_child(mark);mark.position=Vector2(5,1)*unit;mark.visible=id in _equipped_ids()
+   var copies:=_label("×%d"%count if count<=99 else "×99+",11,TEXT);copies.name="DuplicateCount";card.add_child(copies);copies.position=Vector2(maxf(4,side-42),24*unit);copies.visible=count>1
+   _build_equipped_mark(card,side)
   card.button_down.connect(func():drag_start=get_global_mouse_position())
   card.pressed.connect(_card_pressed.bind(id))
  if ids.is_empty() and page.get_node_or_null("EmptyResult")==null:
   var empty:=_label("Belum ada item yang cocok.",16);page.add_child(empty);empty.name="EmptyResult"
  var empty: Node=page.get_node_or_null("EmptyResult")
  if not ids.is_empty() and empty!=null:empty.queue_free()
+
+func _build_equipped_mark(card: Button,side: float) -> void:
+ var mark:=Control.new();mark.name="EquippedMark";mark.mouse_filter=Control.MOUSE_FILTER_IGNORE;card.add_child(mark);mark.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+ var frame:=_texture("res://assets/ui/hero/equipped/equipped_frame.svg");frame.stretch_mode=TextureRect.STRETCH_SCALE;mark.add_child(frame);frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+ var badge:=PanelContainer.new();badge.name="EquippedBadge";badge.mouse_filter=Control.MOUSE_FILTER_IGNORE;mark.add_child(badge)
+ badge.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE);badge.offset_left=4;badge.offset_right=-4;badge.offset_top=4;badge.offset_bottom=maxf(17,20*unit)
+ var skin:=StyleBoxFlat.new();skin.bg_color=Color(.035,.24,.21,.97);skin.border_color=GOLD;skin.set_border_width_all(1);skin.set_corner_radius_all(3)
+ badge.add_theme_stylebox_override("panel",skin)
+ var caption:=_label("✓ AKTIF" if side<80 else "TERPAKAI",11,GOLD);caption.name="EquippedCaption";caption.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;badge.add_child(caption)
+ mark.visible=str(card.name).trim_prefix("Relic_") in _equipped_ids()
 
 func _stars(rank: int) -> String:
  return "★".repeat(clampi(rank,0,5))+"☆".repeat(5-clampi(rank,0,5))
@@ -322,7 +386,7 @@ func _close_detail() -> void:
 func _make_sheet(mode: String="item") -> VBoxContainer:
  if is_instance_valid(detail):content.remove_child(detail);detail.queue_free()
  sheet_mode=mode;sheet_generation+=1
- detail_set_header=null;detail_set_lines.clear()
+ detail_set_header=null;detail_set_lines.clear();detail_values.clear()
  detail=Control.new();detail.name="ItemDetail";content.add_child(detail);detail.z_index=80
  detail.position=Vector2(0,76);detail.size=Vector2(content.size.x,maxf(80,nav.position.y-82))
  popup_unit=minf(unit,maxf(.7,detail.size.y/700.0))
@@ -388,7 +452,8 @@ func _paragraph(body: VBoxContainer,value: String,font_size: int=16,color: Color
  if value.is_empty():return
  var label:=_label(value,font_size,color);label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;body.add_child(label)
 
-func _show_detail(id: String) -> void:
+func _show_detail(id: String,force: bool=false) -> void:
+ if not force and detail_open and sheet_mode=="item" and selected_item_id==id and detail_progress_key==_detail_progress_key():return
  if not InventoryManager.owns_item(id):_close_detail();return
  selected_item_id=id;detail_open=true
  detail_progress_key=_detail_progress_key()
@@ -400,15 +465,19 @@ func _show_detail(id: String) -> void:
  _paragraph(body,str(data.get("display_name",id)),24,GOLD)
  if not EquipmentManager.has_item_definition(id):
   _paragraph(body,"MATERIAL • Jumlah %d"%InventoryManager.get_item_count(id),16,JADE)
+  detail_values.material=body.get_child(body.get_child_count()-1)
   _paragraph(body,str(data.get("description","")));building_popup=false;return
  var star: int=EquipmentManager.get_loadout_item_star(id)
  var effective: Dictionary=EquipmentManager.get_effective_item_data(id)
  _paragraph(body,str(data.get("rarity","common")).to_upper()+"  •  "+SLOT_NAMES[maxi(SLOTS.find(str(data.get("slot",""))),0)],15,JADE)
  _paragraph(body,_stars(star),24,GOLD)
+ detail_values.stars=body.get_child(body.get_child_count()-1)
  _paragraph(body,Visual.get_stat_summary(effective),18)
+ detail_values.stats=body.get_child(body.get_child_count()-1)
  var weapon: bool=str(data.get("slot",""))=="armament"
  if weapon:
   _paragraph(body,"LEVEL WEAPON %d / %d • +%d%% damage weapon"%[EquipmentManager.get_item_weapon_level(id),EquipmentManager.get_weapon_level_cap(id),roundi((EquipmentManager.get_weapon_level_multiplier(id)-1)*100)],17,JADE)
+  detail_values.level=body.get_child(body.get_child_count()-1)
   _paragraph(body,"Weapon berdiri sendiri, tidak dihitung sebagai bagian set. Level permanen ini berbeda dari refinement Lv.1–7 selama run.",14)
  else:
   var set_id: String=Sets.get_set_id_for_item(id)
@@ -421,21 +490,23 @@ func _show_detail(id: String) -> void:
  _paragraph(body,Visual.get_signature_effect_name(data),16,GOLD)
  _paragraph(body,Visual.get_signature_effect_description(data),14)
  _paragraph(body,"DUPLIKAT IDENTIK %d • Naik bintang memakai 1 duplikat; item utama tetap dimiliki."%maxi(InventoryManager.get_item_count(id)-1,0),14)
+ detail_values.copies=body.get_child(body.get_child_count()-1)
  var row:=HBoxContainer.new();row.add_theme_constant_override("separation",8);sheet_actions.add_child(row)
  var equip:=_button("LEPAS" if id in _equipped_ids() else "PASANG",true);equip.name="EquipAction";equip.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(equip)
- equip.disabled=not EquipmentManager.can_modify_equipment();equip.pressed.connect(_equip_selected.bind(id,id in _equipped_ids()))
+ equip.disabled=not EquipmentManager.can_modify_equipment();_bind_action(equip,_equip_selected.bind(id,id in _equipped_ids(),sheet_generation))
  var ascend:=_button("NAIK BINTANG" if star<5 else "BINTANG MAX");ascend.name="AscendAction";ascend.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(ascend)
- ascend.disabled=not EquipmentManager.can_ascend_item(id);ascend.pressed.connect(func():EquipmentManager.ascend_item(id);_queue_refresh())
+ ascend.disabled=not EquipmentManager.can_ascend_item(id);_bind_upgrade_action(ascend,id,"star",detail_progress_key)
  if id in ["jade_binding_chain","celestial_returning_glaive"]:
-  var demo:=_button("DEMO SENJATA");body.add_child(demo);demo.pressed.connect(_open_binding_preview)
+  var demo:=_button("DEMO SENJATA");demo.name="DemoAction";body.add_child(demo);_bind_action(demo,_open_binding_preview.bind(id,sheet_generation))
  if weapon:
   var level:=_button("NAIK LEVEL • %d Spirit Stone"%EquipmentManager.get_weapon_level_cost(id),true);level.name="LevelAction";sheet_actions.add_child(level)
   level.disabled=not EquipmentManager.can_level_weapon(id)
   if EquipmentManager.get_item_weapon_level(id)>=EquipmentManager.get_weapon_level_cap(id):level.text="LEVEL MAX • PERLU BINTANG" if star<5 else "LEVEL MAX 50"
-  level.pressed.connect(func():EquipmentManager.level_weapon(id);_queue_refresh())
+  _bind_upgrade_action(level,id,"level",detail_progress_key)
  building_popup=false
 
-func _equip_selected(expected_id: String="",expected_equipped: Variant=null) -> void:
+func _equip_selected(expected_id: String="",expected_equipped: Variant=null,generation: int=-1) -> void:
+ if generation>=0 and generation!=sheet_generation:return
  if equip_action_pending or not detail_open or sheet_mode!="item":return
  if not expected_id.is_empty() and expected_id!=selected_item_id:return
  var equipped: bool=selected_item_id in _equipped_ids()
@@ -448,10 +519,31 @@ func _equip_selected(expected_id: String="",expected_equipped: Variant=null) -> 
  _sync_detail_loadout()
  _release_equip_action.call_deferred()
 
+func _bind_action(button: Button,callback: Callable) -> void:
+ var previous: Callable=button.get_meta("hero_action",Callable())
+ if previous.is_valid() and button.pressed.is_connected(previous):button.pressed.disconnect(previous)
+ button.pressed.connect(callback);button.set_meta("hero_action",callback)
+
+func _bind_upgrade_action(button: Button,id: String,kind: String,key: String) -> void:
+ _bind_action(button,_upgrade_selected.bind(id,kind,key,sheet_generation))
+
+func _upgrade_selected(id: String,kind: String,key: String,generation: int) -> void:
+ if equip_action_pending or not detail_open or sheet_mode!="item" or generation!=sheet_generation:return
+ if id!=selected_item_id or key!=_detail_progress_key() or not EquipmentManager.can_modify_equipment():return
+ if kind=="star" and not EquipmentManager.can_ascend_item(id):return
+ if kind=="level" and not EquipmentManager.can_level_weapon(id):return
+ if kind not in ["star","level"]:return
+ equip_action_pending=true
+ if kind=="star":EquipmentManager.ascend_item(id)
+ else:EquipmentManager.level_weapon(id)
+ _sync_detail_loadout()
+ _release_equip_action.call_deferred()
+
 func _release_equip_action() -> void:
  equip_action_pending=false
 
-func _show_stats() -> void:
+func _show_stats(force: bool=false) -> void:
+ if not force and detail_open and sheet_mode=="stats":return
  selected_item_id="";detail_open=true
  var body: VBoxContainer=_make_sheet("stats")
  _paragraph(body,"Bonus loadout untuk run berikutnya.",14)
@@ -483,7 +575,10 @@ func handle_system_back() -> void:
  if is_instance_valid(detail):_close_detail();return
  SceneTransitionManager.transition_menu_to("res://scenes/ui/main_menu.tscn",-1)
 
-func _open_binding_preview() -> void:
+func _open_binding_preview(expected_id: String="",generation: int=-1) -> void:
+ if not detail_open or sheet_mode!="item":return
+ if generation>=0 and generation!=sheet_generation:return
+ if not expected_id.is_empty() and expected_id!=selected_item_id:return
  var glaive: bool=selected_item_id=="celestial_returning_glaive"
  var name_value: String="ReturningGlaivePreview" if glaive else "JadeBindingPreview"
  if get_node_or_null(name_value)!=null:return
