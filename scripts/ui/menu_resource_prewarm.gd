@@ -9,12 +9,14 @@ const PAVILION_SCENE: String = "res://scenes/ui/pavilion_screen.tscn"
 const HOME_SCENE: String = "res://scenes/ui/main_menu.tscn"
 const DAILY_SCENE: String = "res://scenes/ui/daily_quest_screen.tscn"
 const RECORDS_SCENE: String = "res://scenes/ui/achievement_screen.tscn"
+const CULTIVATION_SCENE: String = "res://scenes/ui/cultivation_menu.tscn"
 const HERO_SCENE: String = "res://scenes/ui/equipment_screen.tscn"
 
-# Retain the five main menu PackedScenes only while in the hub. Trials now
+# Retain the six main menu PackedScenes only while in the hub. Trials now
 # receives the same coordinated background load as the other heavy menus.
 const FAST_NAV_SCENES: PackedStringArray = [
 	HOME_SCENE,
+	CULTIVATION_SCENE,
 	DAILY_SCENE,
 	RECORDS_SCENE,
 	HERO_SCENE,

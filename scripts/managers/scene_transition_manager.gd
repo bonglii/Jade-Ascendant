@@ -128,12 +128,14 @@ func _run_menu_transition(scene_path: String, _direction: int) -> void:
 		" ms"
 	))
 
+	var scene_started_at: int = Time.get_ticks_msec()
 	var change_error: Error = get_tree().change_scene_to_packed(packed_scene)
 	if change_error != OK:
 		_fail_menu_transition(change_error)
 		return
 
 	await get_tree().scene_changed
+	DebugLogger.system("Menu scene ready: %s | build %d ms" % [scene_path, Time.get_ticks_msec() - scene_started_at])
 
 	var in_tween: Tween = create_tween()
 	in_tween.set_parallel(true)

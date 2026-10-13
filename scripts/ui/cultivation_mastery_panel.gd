@@ -13,6 +13,7 @@ var action_pending: bool=false
 var status: String=""
 var _press_position: Vector2
 var _press_scroll: int = 0
+var choice_grids: Array[GridContainer]=[]
 var body: VBoxContainer
 func _ready() -> void:
  name="DaoMasteryPanel";size_flags_horizontal=Control.SIZE_EXPAND_FILL
@@ -24,7 +25,11 @@ func _ready() -> void:
  owner_manager=get_node_or_null("/root/CultivationMasteryManager")
  if owner_manager!=null:owner_manager.changed.connect(queue_refresh)
  ProgressionManager.cultivation_upgraded.connect(func(_path: String,_level: int):queue_refresh())
- resized.connect(queue_refresh);queue_refresh()
+ resized.connect(_layout_choices);_refresh()
+func _layout_choices() -> void:
+ var columns: int=1 if size.x<440 else 2
+ for grid: GridContainer in choice_grids:
+  if is_instance_valid(grid) and grid.columns!=columns:grid.columns=columns
 func queue_refresh() -> void:
  if pending:return
  pending=true;_refresh.call_deferred()
@@ -47,9 +52,9 @@ func _dragged() -> bool:
  return get_global_mouse_position().distance_to(_press_position)>8 or (scroll_owner!=null and absi(scroll_owner.scroll_vertical-_press_scroll)>6)
 func _refresh() -> void:
  pending=false
- if body==null:return
+ if not is_inside_tree() or body==null:return
  for child: Node in body.get_children():body.remove_child(child);child.queue_free()
- path_cards.clear()
+ path_cards.clear();choice_grids.clear()
  if owner_manager==null:owner_manager=get_node_or_null("/root/CultivationMasteryManager")
  if owner_manager==null or not owner_manager.ready_state:
   body.add_child(_label("DAO MASTERY",24,GOLD));body.add_child(_label("Mastery save belum siap. Progres kultivasi lama tetap tersimpan."));return
@@ -69,7 +74,7 @@ func _refresh() -> void:
   var group:=VBoxContainer.new();group.name="Path_"+path;group.add_theme_constant_override("separation",8);body.add_child(group);path_cards[path]=group
   var current: String=str(model.choices[path]);var unlocked: bool=owner_manager.path_maxed(path)
   group.add_child(_label(path.replace("_"," ").to_upper()+" • "+(_copy("MASTERY OPEN","MASTERY TERBUKA") if unlocked else _copy("REQUIRES LV.10","PERLU LV.10")),16,GOLD if unlocked else Color(.6,.7,.72)))
-  var choices:=GridContainer.new();choices.columns=1 if size.x<440 else 2;choices.add_theme_constant_override("h_separation",10);choices.add_theme_constant_override("v_separation",8);group.add_child(choices)
+  var choices:=GridContainer.new();choice_grids.append(choices);choices.columns=1 if size.x<440 else 2;choices.add_theme_constant_override("h_separation",10);choices.add_theme_constant_override("v_separation",8);group.add_child(choices)
   for id: String in Catalog.OPTIONS[path]:
    var choice:=VBoxContainer.new();choice.size_flags_horizontal=Control.SIZE_EXPAND_FILL;choices.add_child(choice)
    var button:=_button(("✓ " if current==id else "")+str(Catalog.NODES[id].name));button.name="Mastery_"+id;choice.add_child(button)

@@ -119,7 +119,7 @@ func _ready() -> void:
 	SceneTransitionManager.set_back_handler(handle_system_back)
 	_build_atmosphere()
 	_build_body()
-	_build_result_layer()
+	# Build the hidden breakthrough modal only when an actual refinement succeeds.
 	if not ProgressionManager.cultivation_upgraded.is_connected(_on_cultivation_upgraded):
 		ProgressionManager.cultivation_upgraded.connect(_on_cultivation_upgraded)
 	_refresh_all()
@@ -189,6 +189,8 @@ func _build_body() -> void:
 
 	body_content = VBoxContainer.new()
 	body_content.name = "CultivateProductionBody"
+	# Hide initial Container/font layout; reveal uses alpha only at the final size.
+	body_content.modulate.a = 0.0
 	body_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	body_content.add_theme_constant_override("separation", 14)
 	body_scroll.add_child(body_content)
@@ -916,6 +918,8 @@ func _show_result(
 	before_balance: int,
 	after_balance: int
 ) -> void:
+	if result_layer == null:
+		_build_result_layer()
 	var data: Dictionary = PATH_DATA.get(path_id, PATH_DATA["vitality"])
 	var accent: Color = data.get("accent", JADE)
 	result_icon.texture = PATH_ICONS[path_id] as Texture2D
@@ -943,7 +947,7 @@ func _show_result(
 	result_layer.modulate = Color(1.0, 1.0, 1.0, 0.0)
 	result_panel.scale = Vector2.ONE
 	await get_tree().process_frame
-	if not is_instance_valid(result_layer) or not is_instance_valid(result_panel):
+	if not is_inside_tree() or not is_instance_valid(result_layer) or not is_instance_valid(result_panel):
 		return
 	_layout_result_panel()
 
@@ -969,7 +973,7 @@ func _show_result(
 		settle.tween_property(result_icon, "scale", Vector2.ONE, 0.14).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 func _hide_result() -> void:
-	if not result_layer.visible:
+	if result_layer == null or not result_layer.visible:
 		return
 	if result_tween != null and result_tween.is_valid():
 		result_tween.kill()
@@ -983,19 +987,25 @@ func _hide_result() -> void:
 		result_layer.visible = false
 
 func _play_intro() -> void:
-	if body_content == null:
+	if not is_inside_tree() or body_content == null:
+		return
+	# Let responsive grids and text wrap settle before any pixels are shown.
+	var scene_tree: SceneTree = get_tree()
+	await scene_tree.process_frame
+	if not is_inside_tree():
+		return
+	await scene_tree.process_frame
+	if not is_inside_tree():
 		return
 	if _reduced_effects_enabled():
 		body_content.modulate = Color.WHITE
 		return
 	body_content.modulate = Color(1.0, 1.0, 1.0, 0.0)
-	body_content.position.y += 20.0
 	if intro_tween != null and intro_tween.is_valid():
 		intro_tween.kill()
 	intro_tween = create_tween()
 	intro_tween.set_parallel(true)
-	intro_tween.tween_property(body_content, "modulate:a", 1.0, 0.24)
-	intro_tween.tween_property(body_content, "position:y", body_content.position.y - 20.0, 0.30).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	intro_tween.tween_property(body_content, "modulate:a", 1.0, 0.10)
 
 func _configure_mobile_scroll() -> void:
 	# Exact production/Pavilion mobile scroll contract:
@@ -1004,7 +1014,7 @@ func _configure_mobile_scroll() -> void:
 	# - vertical scrollbar hidden on Android/iOS
 	# - STOP descendants become PASS so drag reaches the ScrollContainer
 	# Interactive meridian/refine controls add their own 6 px scroll-delta guard.
-	# The breakthrough result itself is deliberately static/non-scrollable.
+	# The breakthrough modal configures its own scrollable body when first built.
 	if body_scroll == null:
 		return
 	body_scroll.scroll_deadzone = MOBILE_SCROLL_DEADZONE
