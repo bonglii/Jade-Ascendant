@@ -27,6 +27,14 @@ var drag_start: Vector2
 var card_buttons: Dictionary={}
 var filter_menu: OptionButton
 var search_box: LineEdit
+var sheet_mode: String="item"
+var sheet_panel: PanelContainer
+var sheet_scroll: ScrollContainer
+var sheet_body: VBoxContainer
+var sheet_actions: VBoxContainer
+var sheet_root: VBoxContainer
+var popup_unit: float=1.0
+var building_popup: bool=false
 var header_count: Label
 
 func _ready() -> void:
@@ -69,26 +77,31 @@ func _refresh_all() -> void:
  _build_banner();_build_slots();_build_resonance();_build_collection()
  scroll.set_deferred("scroll_vertical",old_scroll)
  scroll.set_deferred("size",Vector2(page.custom_minimum_size.x,maxf(60,nav.position.y-86)))
- if detail_open:_show_detail(selected_item_id)
+ if detail_open:
+  if sheet_mode=="stats":_show_stats()
+  else:_show_detail(selected_item_id)
 
 func _label(value: String,font_size: int=16,tint: Color=TEXT) -> Label:
+ var scale: float=popup_unit if building_popup else unit
  var label:=Label.new();label.text=value;label.mouse_filter=Control.MOUSE_FILTER_IGNORE
- label.add_theme_font_size_override("font_size",maxi(9,int(font_size*unit)));label.add_theme_color_override("font_color",tint)
+ label.add_theme_font_size_override("font_size",maxi(12 if building_popup else 9,int(font_size*scale)));label.add_theme_color_override("font_color",tint)
  if font_size>=22:
   var serif:=SystemFont.new();serif.font_names=PackedStringArray(["Noto Serif","DejaVu Serif","serif"]);label.add_theme_font_override("font",serif)
  label.set_meta("hero_mobile_font_polished",true);label.set_meta(&"jade_mobile_readability_v2",true)
  return label
 
 func _style(accent: Color=JADE) -> StyleBoxFlat:
+ var scale: float=popup_unit if building_popup else unit
  var st:=StyleBoxFlat.new();st.bg_color=Color(.008,.045,.049,.98);st.border_color=Color(accent,.6)
  st.set_border_width_all(1);st.border_width_bottom=3;st.set_corner_radius_all(8)
  st.shadow_color=Color(0,0,0,.35);st.shadow_size=5;st.shadow_offset=Vector2(0,2)
- st.content_margin_left=12*unit;st.content_margin_right=12*unit;st.content_margin_top=8*unit;st.content_margin_bottom=8*unit
+ st.content_margin_left=12*scale;st.content_margin_right=12*scale;st.content_margin_top=8*scale;st.content_margin_bottom=8*scale
  return st
 
 func _button(value: String,primary: bool=false) -> Button:
- var button:=Button.new();button.text=value;button.custom_minimum_size.y=maxf(44,48*unit)
- button.add_theme_font_size_override("font_size",maxi(13,int(16*unit)))
+ var scale: float=popup_unit if building_popup else unit
+ var button:=Button.new();button.text=value;button.custom_minimum_size.y=maxf(44,48*scale)
+ button.add_theme_font_size_override("font_size",maxi(13,int(16*scale)))
  button.add_theme_color_override("font_color",GOLD if primary else TEXT)
  button.add_theme_stylebox_override("normal",_style(GOLD if primary else JADE))
  if primary:
@@ -179,7 +192,7 @@ func _build_collection() -> void:
   search_box.visible=not search_box.visible
   if search_box.visible:search_box.grab_focus())
  for control: OptionButton in [filter_menu,sort]:
-  control.add_theme_stylebox_override("normal",_style());control.add_theme_font_size_override("font_size",maxi(13,int(15*unit)))
+  _polish_dropdown(control)
   control.set_meta("hero_mobile_font_polished",true);control.set_meta(&"jade_mobile_readability_v2",true)
  search_box=LineEdit.new();search_box.name="Search";search_box.placeholder_text="Cari equipment / material…";search_box.text=query;search_box.custom_minimum_size.y=44;search_box.visible=not query.is_empty()
  search_box.add_theme_font_size_override("font_size",maxi(13,int(15*unit)));page.add_child(search_box)
@@ -247,21 +260,67 @@ func _close_detail() -> void:
  if is_instance_valid(detail):detail.queue_free()
  detail=null
 
-func _make_sheet() -> VBoxContainer:
+func _make_sheet(mode: String="item") -> VBoxContainer:
  if is_instance_valid(detail):content.remove_child(detail);detail.queue_free()
+ sheet_mode=mode
  detail=Control.new();detail.name="ItemDetail";content.add_child(detail);detail.z_index=80
  detail.position=Vector2(0,76);detail.size=Vector2(content.size.x,maxf(80,nav.position.y-82))
- var dim:=ColorRect.new();dim.color=Color(0,0,0,.65);detail.add_child(dim);dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+ popup_unit=minf(unit,maxf(.7,detail.size.y/700.0))
+ building_popup=true
+ var dim:=ColorRect.new();dim.color=Color(0,0,0,.62);detail.add_child(dim);dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
  dim.gui_input.connect(func(event: InputEvent):
-  if event is InputEventMouseButton and event.pressed:_close_detail())
- var panel:=PanelContainer.new();panel.name="DetailPanel";detail.add_child(panel);panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
- panel.offset_left=10*unit;panel.offset_right=-10*unit;panel.offset_top=24*unit;panel.add_theme_stylebox_override("panel",_style(GOLD))
- var sc:=ScrollContainer.new();sc.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;panel.add_child(sc)
- var body:=VBoxContainer.new();body.name="DetailBody";body.size_flags_horizontal=Control.SIZE_EXPAND_FILL;body.add_theme_constant_override("separation",14);sc.add_child(body)
- var top:=HBoxContainer.new();body.add_child(top)
- var title:=_label("DETAIL RELIK",20,GOLD);title.size_flags_horizontal=Control.SIZE_EXPAND_FILL;top.add_child(title)
+  if event is InputEventMouseButton and event.pressed and event.button_index==MOUSE_BUTTON_LEFT:_close_detail())
+ sheet_panel=PanelContainer.new();sheet_panel.name="DetailPanel";detail.add_child(sheet_panel)
+ var skin: StyleBoxFlat=_style(GOLD);skin.border_width_top=2;skin.border_width_bottom=3;skin.shadow_size=12
+ sheet_panel.add_theme_stylebox_override("panel",skin)
+ sheet_root=VBoxContainer.new();sheet_root.add_theme_constant_override("separation",8);sheet_panel.add_child(sheet_root)
+ var top:=HBoxContainer.new();top.name="PopupHeader";sheet_root.add_child(top)
+ var title:=_label("STATISTIK LOADOUT" if mode=="stats" else "DETAIL RELIK",20,GOLD);title.size_flags_horizontal=Control.SIZE_EXPAND_FILL;title.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;top.add_child(title)
  var close:=_button("×");close.custom_minimum_size.x=44;close.pressed.connect(_close_detail);top.add_child(close)
- return body
+ sheet_scroll=ScrollContainer.new();sheet_scroll.name="DescriptionScroll";sheet_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;sheet_scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_AUTO;sheet_scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL;sheet_scroll.scroll_deadzone=8;sheet_root.add_child(sheet_scroll)
+ _polish_scrollbar(sheet_scroll.get_v_scroll_bar())
+ sheet_body=VBoxContainer.new();sheet_body.name="DetailBody";sheet_body.size_flags_horizontal=Control.SIZE_EXPAND_FILL;sheet_body.size_flags_vertical=Control.SIZE_SHRINK_BEGIN;sheet_body.add_theme_constant_override("separation",8);sheet_scroll.add_child(sheet_body)
+ sheet_actions=VBoxContainer.new();sheet_actions.name="PopupActions";sheet_actions.add_theme_constant_override("separation",6);sheet_root.add_child(sheet_actions)
+ _fit_sheet.call_deferred()
+ return sheet_body
+
+func _fit_sheet() -> void:
+ await get_tree().process_frame
+ if not is_instance_valid(detail) or not is_instance_valid(sheet_panel):return
+ var width: float=minf(560.0*unit,detail.size.x-24.0*unit)
+ var max_height: float=minf((470.0 if sheet_mode=="stats" else 580.0)*popup_unit,detail.size.y*.72)
+ sheet_panel.position=Vector2((detail.size.x-width)*.5,0)
+ sheet_panel.size=Vector2(width,max_height)
+ var skin: StyleBox=sheet_panel.get_theme_stylebox("panel")
+ sheet_body.custom_minimum_size.x=maxf(0,width-skin.get_minimum_size().x-12)
+ await get_tree().process_frame
+ if not is_instance_valid(detail) or not is_instance_valid(sheet_panel):return
+ var fixed: float=sheet_root.get_child(0).get_combined_minimum_size().y+sheet_actions.get_combined_minimum_size().y+skin.get_minimum_size().y+16
+ var natural: float=sheet_body.get_combined_minimum_size().y+fixed
+ var height: float=minf(max_height,maxf(fixed+44,natural))
+ sheet_scroll.custom_minimum_size.y=maxf(44,height-fixed)
+ sheet_panel.size=Vector2(width,height)
+ sheet_panel.position.y=maxf(8,(detail.size.y-height)*.5)
+
+func _polish_dropdown(control: OptionButton) -> void:
+ var skin:=StyleBoxTexture.new();skin.texture=load("res://assets/ui/system_v2/custom/buttons/secondary_normal.svg")
+ skin.texture_margin_left=12;skin.texture_margin_right=12;skin.texture_margin_top=10;skin.texture_margin_bottom=10
+ skin.content_margin_left=14;skin.content_margin_right=28;skin.content_margin_top=8;skin.content_margin_bottom=8
+ for state: String in ["normal","normal_mirrored","hover","pressed"]:control.add_theme_stylebox_override(state,skin)
+ control.add_theme_font_size_override("font_size",maxi(14,int(16*unit)));control.add_theme_color_override("font_color",GOLD)
+ control.add_theme_icon_override("arrow",load("res://assets/ui/hero/compact_popup/dropdown_arrow.svg"))
+ var menu: PopupMenu=control.get_popup()
+ var panel: StyleBoxFlat=_style(GOLD);panel.bg_color=Color(.007,.043,.048,.99);panel.border_width_top=2;panel.shadow_size=10
+ menu.add_theme_stylebox_override("panel",panel)
+ var hover: StyleBoxFlat=_style(JADE);hover.bg_color=Color(.025,.17,.16);hover.shadow_size=0
+ menu.add_theme_stylebox_override("hover",hover)
+ menu.add_theme_font_size_override("font_size",maxi(14,int(16*unit)))
+ menu.add_theme_color_override("font_color",TEXT);menu.add_theme_color_override("font_hover_color",GOLD)
+ menu.add_theme_color_override("font_disabled_color",Color(.43,.55,.53))
+ menu.add_theme_constant_override("v_separation",maxi(16,int(20*unit)))
+ menu.add_theme_icon_override("radio_checked",load("res://assets/ui/hero/compact_popup/radio_selected.svg"))
+ menu.add_theme_icon_override("radio_unchecked",load("res://assets/ui/hero/compact_popup/radio_unselected.svg"))
+ menu.add_theme_constant_override("item_start_padding",10);menu.add_theme_constant_override("item_end_padding",12)
 
 func _paragraph(body: VBoxContainer,value: String,font_size: int=16,color: Color=TEXT) -> void:
  if value.is_empty():return
@@ -270,15 +329,15 @@ func _paragraph(body: VBoxContainer,value: String,font_size: int=16,color: Color
 func _show_detail(id: String) -> void:
  if not InventoryManager.owns_item(id):_close_detail();return
  selected_item_id=id;detail_open=true
- var body: VBoxContainer=_make_sheet()
+ var body: VBoxContainer=_make_sheet("item")
  var data: Dictionary=InventoryManager.get_item_data(id)
- var stage:=Control.new();stage.name="RelicArtStage";stage.clip_contents=true;stage.custom_minimum_size.y=190*unit;body.add_child(stage)
+ var stage:=Control.new();stage.name="RelicArtStage";stage.clip_contents=true;stage.custom_minimum_size.y=120*popup_unit;body.add_child(stage)
  var landscape:=_texture("res://assets/ui/hero/imperial_v4/sanctuary_banner.png");landscape.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_COVERED;landscape.modulate=Color(.45,.58,.55);stage.add_child(landscape);landscape.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
  var icon:=_texture(Visual.get_icon_path(id));icon.name="DetailIcon";stage.add_child(icon);icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);icon.offset_top=8;icon.offset_bottom=-8
  _paragraph(body,str(data.get("display_name",id)),24,GOLD)
  if not EquipmentManager.has_item_definition(id):
   _paragraph(body,"MATERIAL • Jumlah %d"%InventoryManager.get_item_count(id),16,JADE)
-  _paragraph(body,str(data.get("description","")));return
+  _paragraph(body,str(data.get("description","")));building_popup=false;return
  var star: int=EquipmentManager.get_loadout_item_star(id)
  var effective: Dictionary=EquipmentManager.get_effective_item_data(id)
  _paragraph(body,str(data.get("rarity","common")).to_upper()+"  •  "+SLOT_NAMES[maxi(SLOTS.find(str(data.get("slot",""))),0)],15,JADE)
@@ -296,7 +355,7 @@ func _show_detail(id: String) -> void:
  _paragraph(body,Visual.get_signature_effect_name(data),16,GOLD)
  _paragraph(body,Visual.get_signature_effect_description(data),14)
  _paragraph(body,"DUPLIKAT IDENTIK %d • Naik bintang memakai 1 duplikat; item utama tetap dimiliki."%maxi(InventoryManager.get_item_count(id)-1,0),14)
- var row:=HBoxContainer.new();row.add_theme_constant_override("separation",10);body.add_child(row)
+ var row:=HBoxContainer.new();row.add_theme_constant_override("separation",8);sheet_actions.add_child(row)
  var equip:=_button("LEPAS" if id in _equipped_ids() else "PASANG",true);equip.name="EquipAction";equip.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(equip)
  equip.disabled=not EquipmentManager.can_modify_equipment();equip.pressed.connect(_equip_selected)
  var ascend:=_button("NAIK BINTANG" if star<5 else "BINTANG MAX");ascend.name="AscendAction";ascend.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(ascend)
@@ -304,10 +363,11 @@ func _show_detail(id: String) -> void:
  if id in ["jade_binding_chain","celestial_returning_glaive"]:
   var demo:=_button("DEMO SENJATA");body.add_child(demo);demo.pressed.connect(_open_binding_preview)
  if weapon:
-  var level:=_button("NAIK LEVEL • %d Spirit Stone"%EquipmentManager.get_weapon_level_cost(id),true);level.name="LevelAction";body.add_child(level)
+  var level:=_button("NAIK LEVEL • %d Spirit Stone"%EquipmentManager.get_weapon_level_cost(id),true);level.name="LevelAction";sheet_actions.add_child(level)
   level.disabled=not EquipmentManager.can_level_weapon(id)
-  if EquipmentManager.get_item_weapon_level(id)>=EquipmentManager.get_weapon_level_cap(id):level.text="LEVEL MAX • Naikkan bintang untuk batas berikutnya" if star<5 else "LEVEL MAX 50"
+  if EquipmentManager.get_item_weapon_level(id)>=EquipmentManager.get_weapon_level_cap(id):level.text="LEVEL MAX • PERLU BINTANG" if star<5 else "LEVEL MAX 50"
   level.pressed.connect(func():EquipmentManager.level_weapon(id);_queue_refresh())
+ building_popup=false
 
 func _equip_selected() -> void:
  var slot: String=str(EquipmentManager.get_item_data(selected_item_id).get("slot",""))
@@ -316,14 +376,30 @@ func _equip_selected() -> void:
  _queue_refresh()
 
 func _show_stats() -> void:
- selected_item_id="";detail_open=false
- var body: VBoxContainer=_make_sheet()
- _paragraph(body,"STATISTIK LOADOUT",24,GOLD)
- _paragraph(body,"Bonus untuk run baru; checkpoint yang aktif tetap memakai loadout tersimpan.",14)
- _paragraph(body,"HP +%.1f\nDamage +%.1f%%\nMovement +%.1f%%\nEXP +%.1f%%\nCritical chance +%.1f%%"%[EquipmentManager.get_loadout_total_max_health_bonus()+Sets.get_gameplay_bonus("max_health_flat",_equipped_ids()),(EquipmentManager.get_loadout_damage_multiplier()-1+Sets.get_gameplay_bonus("damage_bonus",_equipped_ids()))*100,(EquipmentManager.get_loadout_movement_speed_multiplier()-1)*100,(EquipmentManager.get_loadout_experience_multiplier()-1)*100,EquipmentManager.get_loadout_critical_chance_bonus()*100],18)
- var state: Dictionary=Sets.get_dominant_set_state(_equipped_ids())
- _paragraph(body,"%s • %d/4"%[str(state.display_name),int(state.piece_count)],18,GOLD)
- for tier: int in [2,3,4]:_paragraph(body,"%d bagian: %s"%[tier,Sets.get_tier_description(str(state.set_id),tier)],16)
+ selected_item_id="";detail_open=true
+ var body: VBoxContainer=_make_sheet("stats")
+ _paragraph(body,"Bonus loadout untuk run berikutnya.",14)
+ var ids: Array[String]=_equipped_ids()
+ var metrics: Array[Array]=[
+  ["HP","+%.1f"%(EquipmentManager.get_loadout_total_max_health_bonus()+Sets.get_gameplay_bonus("max_health_flat",ids))],
+  ["DAMAGE","+%.1f%%"%((EquipmentManager.get_loadout_damage_multiplier()-1+Sets.get_gameplay_bonus("damage_bonus",ids))*100)],
+  ["MOVEMENT","+%.1f%%"%((EquipmentManager.get_loadout_movement_speed_multiplier()-1+Sets.get_gameplay_bonus("movement_speed_bonus",ids))*100)],
+  ["EXP","+%.1f%%"%((EquipmentManager.get_loadout_experience_multiplier()-1+Sets.get_gameplay_bonus("experience_bonus",ids))*100)],
+  ["CRITICAL CHANCE","+%.1f%%"%((EquipmentManager.get_loadout_critical_chance_bonus()+Sets.get_gameplay_bonus("critical_chance_bonus",ids))*100)],
+  ["SET ARMOR","%.0f%%"%(float(Sets.get_active_passive(ids).get("reduction",0.0))*100)]
+ ]
+ var stats_grid:=GridContainer.new();stats_grid.name="StatsGrid";stats_grid.columns=2;stats_grid.add_theme_constant_override("h_separation",8);stats_grid.add_theme_constant_override("v_separation",8);body.add_child(stats_grid)
+ for metric: Array in metrics:
+  var tile:=PanelContainer.new();tile.size_flags_horizontal=Control.SIZE_EXPAND_FILL;tile.add_theme_stylebox_override("panel",_style(JADE));stats_grid.add_child(tile)
+  var column:=VBoxContainer.new();column.add_theme_constant_override("separation",2);tile.add_child(column)
+  var caption:=_label(str(metric[0]),12,JADE);caption.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;column.add_child(caption)
+  column.add_child(_label(str(metric[1]),20,GOLD))
+ var state: Dictionary=Sets.get_dominant_set_state(ids)
+ if int(state.piece_count)>0:
+  _paragraph(body,"%s • %d/4"%[str(state.display_name),int(state.piece_count)],16,GOLD)
+  for tier: int in [2,3,4]:_paragraph(body,"%d bagian: %s"%[tier,Sets.get_tier_description(str(state.set_id),tier)],14,JADE if int(state.piece_count)>=tier else TEXT)
+ else:_paragraph(body,"Pasang equipment yang sekeluarga untuk mengaktifkan bonus set.",14)
+ building_popup=false
 
 func handle_system_back() -> void:
  for preview: String in ["ReturningGlaivePreview","JadeBindingPreview"]:
@@ -337,3 +413,13 @@ func _open_binding_preview() -> void:
  if get_node_or_null(name_value)!=null:return
  var script: Script=load("res://scripts/ui/returning_glaive_preview.gd" if glaive else "res://scripts/ui/jade_binding_preview.gd")
  add_child(script.new())
+
+func _polish_scrollbar(bar: VScrollBar) -> void:
+ var track:=StyleBoxFlat.new();track.bg_color=Color(.09,.25,.23,.45);track.set_corner_radius_all(3)
+ track.content_margin_left=3;track.content_margin_right=3;track.content_margin_top=0;track.content_margin_bottom=0
+ bar.add_theme_stylebox_override("scroll",track)
+ var thumb:=StyleBoxFlat.new();thumb.bg_color=Color(.33,.77,.64,.8);thumb.set_corner_radius_all(3)
+ thumb.content_margin_left=3;thumb.content_margin_right=3;thumb.content_margin_top=0;thumb.content_margin_bottom=0
+ for state: String in ["grabber","grabber_highlight","grabber_pressed"]:bar.add_theme_stylebox_override(state,thumb)
+ var blank: ImageTexture=ImageTexture.create_from_image(Image.create(1,1,false,Image.FORMAT_RGBA8))
+ for name_value: String in ["increment","increment_highlight","increment_pressed","decrement","decrement_highlight","decrement_pressed"]:bar.add_theme_icon_override(name_value,blank)
