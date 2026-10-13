@@ -1,5 +1,9 @@
 extends Control
 
+const WeightedUpgradeChoices = preload("res://scripts/data/weighted_upgrade_choices.gd")
+const OWNED_UPGRADE_WEIGHT: float = 2.5
+var _choice_rng: RandomNumberGenerator = RandomNumberGenerator.new()
+
 const SkillCatalog = preload("res://scripts/data/skill_catalog.gd")
 
 ## Level Up
@@ -92,6 +96,7 @@ var _m7d_refresh_left: float = 0.8
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	_choice_rng.randomize()
 
 	player = get_tree().get_first_node_in_group("player")
 
@@ -173,7 +178,7 @@ func show_level_up() -> void:
 		DebugLogger.system(str("Tidak ada upgrade yang tersedia."))
 		return
 
-	breakthrough_level_label.text = tr("LEVEL %d") % int(player.level)
+	_update_level_up_congratulation()
 	update_buttons()
 	_m7d_last_message = ""
 	_m7d_refresh_left = 0.8
@@ -206,11 +211,30 @@ func generate_upgrades() -> void:
 		if is_upgrade_available(upgrade_id):
 			available_upgrades.append(upgrade_id)
 
-	available_upgrades.shuffle()
+	current_upgrades = _pick_weighted_upgrades(available_upgrades, 3)
 
-	var option_count: int = min(3, available_upgrades.size())
-	for i in range(option_count):
-		current_upgrades.append(available_upgrades[i])
+
+func _pick_weighted_upgrades(candidates: Array[String], count: int) -> Array[String]:
+	var weights: Dictionary = {}
+	for upgrade_id: String in candidates:
+		var owned: bool = (
+			_get_current_weapon_level(upgrade_id) > 0
+			if upgrade_id in WEAPON_UPGRADE_IDS
+			else _get_passive_level(upgrade_id) > 0
+		)
+		weights[upgrade_id] = OWNED_UPGRADE_WEIGHT if owned else 1.0
+	return WeightedUpgradeChoices.pick(candidates, weights, count, _choice_rng)
+
+
+func _update_level_up_congratulation() -> void:
+	var level_value: int = maxi(1, int(player.level))
+	breakthrough_level_label.text = "LV. %d → %d" % [maxi(1, level_value - 1), level_value]
+	var eyebrow: Label = find_child("Eyebrow", true, false) as Label
+	if eyebrow != null:
+		eyebrow.text = "SELAMAT! LEVEL NAIK" if SettingsManager.language == "id" else "CONGRATULATIONS!"
+	var subtitle: Label = find_child("Subtitle", true, false) as Label
+	if subtitle != null:
+		subtitle.text = "Kultivasimu meningkat. Pilih satu insight." if SettingsManager.language == "id" else "Your cultivation grows. Choose one insight."
 
 
 func is_upgrade_available(upgrade_id: String) -> bool:
