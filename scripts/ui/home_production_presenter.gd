@@ -56,6 +56,13 @@ const JADE := Color(0.31, 0.91, 0.76, 1.0)
 const JADE_SOFT := Color(0.43, 0.97, 0.83, 1.0)
 const TEXT := Color(0.94, 0.99, 0.97, 1.0)
 
+var profile_shortcut: Button
+var profile_name: Label
+var profile_rank: Label
+var profile_status: Label
+var profile_exp: ProgressBar
+var profile_connection: Panel
+
 var event_scroll: ScrollContainer = null
 var event_press_scroll_y: Dictionary = {}
 var journey_deck_shell: Control = null
@@ -180,10 +187,10 @@ func _build_profile_shortcut() -> void:
 	shortcut.anchor_bottom = 0.0
 	shortcut.offset_left = 17.0
 	shortcut.offset_top = 82.0
-	shortcut.offset_right = 231.0
-	shortcut.offset_bottom = 148.0
-	shortcut.text = "PROFILE"
-	shortcut.icon = PROFILE_MEDALLION
+	shortcut.offset_right = 287.0
+	shortcut.offset_bottom = 160.0
+	shortcut.text = ""
+	profile_shortcut = shortcut
 	shortcut.expand_icon = true
 	shortcut.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	shortcut.alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -216,6 +223,95 @@ func _build_profile_shortcut() -> void:
 	)
 	shortcut.pressed.connect(_open_profile)
 	add_child(shortcut)
+	var seal := TextureRect.new()
+	seal.name = "ProfileMedallion"
+	seal.texture = PROFILE_MEDALLION
+	seal.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	seal.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	seal.position = Vector2(9, 12)
+	seal.size = Vector2(44, 44)
+	seal.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	shortcut.add_child(seal)
+	profile_connection = Panel.new()
+	profile_connection.name = "ConnectionIndicator"
+	profile_connection.position = Vector2(44, 47)
+	profile_connection.size = Vector2(9, 9)
+	profile_connection.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	shortcut.add_child(profile_connection)
+	profile_name = _label("", 17, GOLD_BRIGHT)
+	profile_name.name = "PlayerName"
+	profile_rank = _label("", 12, TEXT)
+	profile_rank.name = "CultivationRank"
+	profile_status = _label("", 11, JADE_SOFT)
+	profile_status.name = "ProfileStatus"
+	for row in [profile_name, profile_rank, profile_status]:
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		row.clip_text = true
+		shortcut.add_child(row)
+	profile_exp = ProgressBar.new()
+	profile_exp.name = "HeroExperienceProgress"
+	profile_exp.show_percentage = false
+	profile_exp.max_value = 1.0
+	profile_exp.step = 0.0
+	profile_exp.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	profile_exp.add_theme_stylebox_override("background", _panel_style(Color(.05,.15,.16), Color.TRANSPARENT, 2, 0))
+	profile_exp.add_theme_stylebox_override("fill", _panel_style(JADE, Color.TRANSPARENT, 2, 0))
+	shortcut.add_child(profile_exp)
+	var chevron := _label("›", 20, GOLD_BRIGHT)
+	chevron.name = "ProfileChevron"
+	chevron.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	shortcut.add_child(chevron)
+	shortcut.resized.connect(_layout_profile_shortcut)
+	resized.connect(_layout_profile_shortcut)
+	_layout_profile_shortcut()
+	_refresh_profile_shortcut()
+
+
+func _layout_profile_shortcut() -> void:
+	if not is_instance_valid(profile_shortcut): return
+	profile_shortcut.size = Vector2(minf(270, maxf(190, size.x - 104)), 78)
+	var chevron: Control = profile_shortcut.get_node("ProfileChevron")
+	chevron.position = Vector2(profile_shortcut.size.x-17, 27); chevron.size = Vector2(12, 22)
+	var text_width: float = profile_shortcut.size.x - 80
+	profile_name.position = Vector2(61, 7); profile_name.size = Vector2(text_width, 22)
+	profile_rank.position = Vector2(61, 29); profile_rank.size = Vector2(text_width, 17)
+	profile_status.position = Vector2(61, 46); profile_status.size = Vector2(text_width, 16)
+	profile_exp.position = Vector2(61, 66); profile_exp.size = Vector2(text_width, 4)
+
+
+func _refresh_profile_shortcut(_snapshot: Dictionary = {}) -> void:
+	if not is_instance_valid(profile_shortcut): return
+	var snapshot: Dictionary = PlayerIdentityManager.get_profile_snapshot()
+	var indonesian: bool = SettingsManager.language == "id"
+	profile_name.text = str(snapshot.get("display_name", "")) if bool(snapshot.get("ready", false)) else ("Kultivator" if indonesian else "Cultivator")
+	var level: int = ProgressionManager.get_hero_level()
+	var rank_short_names: Dictionary = {
+		"WANDERING CULTIVATOR": "PENGEMBARA" if indonesian else "WANDERER",
+		"MERIDIAN DISCIPLE": "MURID" if indonesian else "DISCIPLE",
+		"JADE ADEPT": "ADEPT GIOK" if indonesian else "JADE ADEPT",
+		"DAO MASTER": "MASTER DAO" if indonesian else "DAO MASTER",
+		"ASCENDANT": "ASCENDANT",
+		"HEAVENLY ASCENDANT": "SURGAWI" if indonesian else "HEAVENLY"
+	}
+	var rank_short: String = str(rank_short_names.get(ProgressionManager.get_hero_rank_title(), tr(ProgressionManager.get_hero_rank_title())))
+	profile_rank.text = "Lv.%02d • %s" % [level, rank_short]
+	profile_exp.value = ProgressionManager.get_hero_progress_ratio()
+	var connected: bool = str(snapshot.get("server_status", "")) == "connected"
+	var status_text: String = "ONLINE" if connected else "OFFLINE"
+	if str(snapshot.get("server_status", "")) == "sign_in_required": status_text = "LOGIN" if indonesian else "SIGN IN"
+	if str(snapshot.get("server_status", "")) in ["pending", "connecting", "registering", "resolving_ipv4", "checking_connection"]: status_text = "KONEKSI…" if indonesian else "CONNECTING"
+	if not bool(snapshot.get("ready", false)): status_text = "PROFIL BELUM SIAP" if indonesian else "PROFILE UNAVAILABLE"
+	var exp_text: String = "MAX" if ProgressionManager.get_hero_level() >= ProgressionManager.HERO_MAX_LEVEL else "EXP %d%%" % roundi(profile_exp.value * 100)
+	profile_status.text = exp_text + " • " + status_text
+	profile_status.add_theme_color_override("font_color", JADE_SOFT if connected else GOLD_BRIGHT)
+	profile_connection.add_theme_stylebox_override("panel", _panel_style(JADE if connected else GOLD, Color(.01,.08,.08), 5, 0))
+	var uid: String = str(snapshot.get("player_uid", ""))
+	profile_shortcut.tooltip_text = "%s\n%s\nUID %s\n%s\n%s" % [profile_name.text, "Lv.%02d • %s" % [level, tr(ProgressionManager.get_hero_rank_title())], uid, status_text, "Ketuk untuk profil, salin UID, dan ubah nama" if indonesian else "Tap for profile, copy UID, and rename"]
+
+
+func _on_profile_progress_changed(_level: int, _experience: int, _required: int) -> void:
+	_refresh_profile_shortcut()
 
 func _build_top_right_settings() -> void:
 	# Preserve the familiar Home Settings placement: upper-right, directly
@@ -656,6 +752,10 @@ func _position_meditation() -> void:
 
 
 func _connect_runtime_signals() -> void:
+	if not PlayerIdentityManager.profile_changed.is_connected(_refresh_profile_shortcut):
+		PlayerIdentityManager.profile_changed.connect(_refresh_profile_shortcut)
+	if not ProgressionManager.hero_progress_changed.is_connected(_on_profile_progress_changed):
+		ProgressionManager.hero_progress_changed.connect(_on_profile_progress_changed)
 	var live_ops := get_node_or_null("/root/LiveOpsManager")
 	if live_ops != null and live_ops.has_signal("live_ops_changed"):
 		if not live_ops.live_ops_changed.is_connected(_refresh_all):
@@ -663,6 +763,7 @@ func _connect_runtime_signals() -> void:
 
 
 func _refresh_all() -> void:
+	_refresh_profile_shortcut()
 	_refresh_journey()
 	_refresh_liveops_badges()
 

@@ -35,6 +35,12 @@ var sheet_actions: VBoxContainer
 var sheet_root: VBoxContainer
 var popup_unit: float=1.0
 var building_popup: bool=false
+var sheet_generation: int=0
+var loadout_refresh_pending: bool=false
+var equip_action_pending: bool=false
+var detail_progress_key: String=""
+var detail_set_header: Label
+var detail_set_lines: Array[Label]=[]
 var header_count: Label
 
 func _ready() -> void:
@@ -46,7 +52,7 @@ func _ready() -> void:
  page=VBoxContainer.new();page.name="UnifiedPage";page.size_flags_horizontal=Control.SIZE_EXPAND_FILL;page.add_theme_constant_override("separation",12);scroll.add_child(page)
  nav=Nav.new();nav.name="HubNav";nav.active_tab=2;content.add_child(nav)
  content.resized.connect(_layout)
- EquipmentManager.equipment_changed.connect(func(_slot: String,_id: String):_queue_refresh())
+ EquipmentManager.equipment_changed.connect(_on_equipment_changed)
  InventoryManager.inventory_changed.connect(func(_id: String,_amount: int):_queue_refresh())
  SceneTransitionManager.set_back_handler(handle_system_back)
  _layout();_refresh_all()
@@ -65,6 +71,64 @@ func _layout() -> void:
 func _queue_refresh() -> void:
  if pending_refresh:return
  pending_refresh=true;_refresh_all.call_deferred()
+
+func _on_equipment_changed(_slot: String,_id: String) -> void:
+ # Ascension/weapon levels change the detail's content; equip toggles do not.
+ if detail_open and sheet_mode=="item" and _detail_progress_key()!=detail_progress_key:
+  _queue_refresh();return
+ if loadout_refresh_pending:return
+ loadout_refresh_pending=true;_refresh_loadout.call_deferred()
+
+func _detail_progress_key() -> String:
+ return "%s:%d:%d:%d"%[selected_item_id,EquipmentManager.get_loadout_item_star(selected_item_id),EquipmentManager.get_item_weapon_level(selected_item_id),InventoryManager.get_item_count(selected_item_id)]
+
+func _refresh_loadout() -> void:
+ loadout_refresh_pending=false
+ if not is_instance_valid(page) or pending_refresh:return
+ var ids: Array[String]=_equipped_ids()
+ for slot: String in SLOTS:
+  var button: Button=page.find_child("Slot_"+slot,true,false) as Button
+  if button!=null:_sync_slot(button,EquipmentManager.get_loadout_equipped_item_id(slot))
+ for id: String in card_buttons:
+  var mark: CanvasItem=card_buttons[id].get_node_or_null("EquippedMark")
+  if mark!=null:mark.visible=id in ids
+ var state: Dictionary=Sets.get_dominant_set_state(ids)
+ var summary: Label=page.find_child("SetName",true,false) as Label
+ if summary!=null:summary.text=(str(state.display_name) if int(state.piece_count)>0 else "BELUM ADA SET")+"  •  %d/4"%int(state.piece_count)
+ if detail_open:
+  if sheet_mode=="stats":_show_stats()
+  else:_sync_detail_loadout()
+
+func _sync_slot(button: Button,id: String) -> void:
+ if str(button.get_meta("item_id","unset"))==id:return
+ button.set_meta("item_id",id)
+ for child: Node in button.get_children():button.remove_child(child);child.queue_free()
+ button.text="+" if id.is_empty() else ""
+ button.add_theme_stylebox_override("normal",_style(JADE))
+ button.add_theme_stylebox_override("hover",_style(JADE))
+ if not id.is_empty():
+  _skin_card(button,str(EquipmentManager.get_item_data(id).get("rarity","common")))
+  var icon:=_texture(Visual.get_icon_path(id));button.add_child(icon);icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+  icon.offset_left=9;icon.offset_right=-9;icon.offset_top=9;icon.offset_bottom=-9
+
+func _sync_detail_loadout() -> void:
+ if not is_instance_valid(sheet_actions) or not EquipmentManager.has_item_definition(selected_item_id):return
+ var equip: Button=sheet_actions.find_child("EquipAction",true,false) as Button
+ if equip!=null:
+  for connection: Dictionary in equip.pressed.get_connections():equip.pressed.disconnect(connection.callable)
+  var equipped: bool=selected_item_id in _equipped_ids()
+  equip.text="LEPAS" if equipped else "PASANG"
+  equip.disabled=not EquipmentManager.can_modify_equipment()
+  equip.pressed.connect(_equip_selected.bind(selected_item_id,equipped))
+ var set_id: String=Sets.get_set_id_for_item(selected_item_id)
+ var pieces: int=Sets.get_piece_count(set_id,_equipped_ids())
+ if is_instance_valid(detail_set_header):detail_set_header.text="%s • SET %s • %d/4"%[Sets.get_display_name(set_id),Sets.get_set_rarity(set_id).to_upper(),pieces]
+ for i: int in range(detail_set_lines.size()):
+  var label: Label=detail_set_lines[i]
+  if not is_instance_valid(label):continue
+  var tier: int=i+2
+  label.text="%d bagian: %s%s"%[tier,Sets.get_tier_description(set_id,tier),"  ✓ AKTIF" if pieces>=tier else ""]
+  label.add_theme_color_override("font_color",JADE if pieces>=tier else TEXT)
 
 func _refresh_all() -> void:
  pending_refresh=false
@@ -148,11 +212,7 @@ func _build_slots() -> void:
   var id: String=EquipmentManager.get_loadout_equipped_item_id(SLOTS[i])
   var button:=_button("");button.custom_minimum_size=Vector2(0,side);button.name="Slot_"+SLOTS[i];box.add_child(button)
   button.tooltip_text=SLOT_NAMES[i]
-  if not id.is_empty():
-   _skin_card(button,str(EquipmentManager.get_item_data(id).get("rarity","common")))
-   var icon:=_texture(Visual.get_icon_path(id));button.add_child(icon);icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-   icon.offset_left=9;icon.offset_right=-9;icon.offset_top=9;icon.offset_bottom=-9
-  else:button.text="+"
+  _sync_slot(button,id)
   button.pressed.connect(_slot_pressed.bind(SLOTS[i]))
   var label:=_label(SLOT_NAMES[i],12);label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;box.add_child(label)
 
@@ -168,7 +228,7 @@ func _build_resonance() -> void:
  var row:=HBoxContainer.new();panel.add_child(row)
  var state: Dictionary=Sets.get_dominant_set_state(_equipped_ids())
  var name: String=str(state.display_name) if int(state.piece_count)>0 else "BELUM ADA SET"
- var text:=_label(name+"  •  %d/4"%int(state.piece_count),14,GOLD);text.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+ var text:=_label(name+"  •  %d/4"%int(state.piece_count),14,GOLD);text.name="SetName";text.size_flags_horizontal=Control.SIZE_EXPAND_FILL
  text.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;row.add_child(text)
  var button:=_button("STATISTIK ›");row.add_child(button);button.pressed.connect(_show_stats)
 
@@ -234,8 +294,7 @@ func _rebuild_grid() -> void:
    var count: int=InventoryManager.get_item_count(id)
    if count>1:
     var copies:=_label("×%d"%count if count<=99 else "×99+",11,TEXT);card.add_child(copies);copies.position=Vector2(maxf(4,side-42),6*unit)
-   if id in _equipped_ids():
-    var mark:=_label("✓",17,JADE);card.add_child(mark);mark.position=Vector2(5,1)*unit
+   var mark:=_label("✓",17,JADE);mark.name="EquippedMark";card.add_child(mark);mark.position=Vector2(5,1)*unit;mark.visible=id in _equipped_ids()
   card.button_down.connect(func():drag_start=get_global_mouse_position())
   card.pressed.connect(_card_pressed.bind(id))
  if ids.is_empty() and page.get_node_or_null("EmptyResult")==null:
@@ -256,13 +315,14 @@ func _slot_pressed(slot: String) -> void:
  else:_show_detail(id)
 
 func _close_detail() -> void:
- detail_open=false
+ detail_open=false;sheet_generation+=1
  if is_instance_valid(detail):detail.queue_free()
  detail=null
 
 func _make_sheet(mode: String="item") -> VBoxContainer:
  if is_instance_valid(detail):content.remove_child(detail);detail.queue_free()
- sheet_mode=mode
+ sheet_mode=mode;sheet_generation+=1
+ detail_set_header=null;detail_set_lines.clear()
  detail=Control.new();detail.name="ItemDetail";content.add_child(detail);detail.z_index=80
  detail.position=Vector2(0,76);detail.size=Vector2(content.size.x,maxf(80,nav.position.y-82))
  popup_unit=minf(unit,maxf(.7,detail.size.y/700.0))
@@ -270,7 +330,7 @@ func _make_sheet(mode: String="item") -> VBoxContainer:
  var dim:=ColorRect.new();dim.color=Color(0,0,0,.62);detail.add_child(dim);dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
  dim.gui_input.connect(func(event: InputEvent):
   if event is InputEventMouseButton and event.pressed and event.button_index==MOUSE_BUTTON_LEFT:_close_detail())
- sheet_panel=PanelContainer.new();sheet_panel.name="DetailPanel";detail.add_child(sheet_panel)
+ sheet_panel=PanelContainer.new();sheet_panel.name="DetailPanel";sheet_panel.self_modulate.a=0.0;detail.add_child(sheet_panel)
  var skin: StyleBoxFlat=_style(GOLD);skin.border_width_top=2;skin.border_width_bottom=3;skin.shadow_size=12
  sheet_panel.add_theme_stylebox_override("panel",skin)
  sheet_root=VBoxContainer.new();sheet_root.add_theme_constant_override("separation",8);sheet_panel.add_child(sheet_root)
@@ -281,12 +341,13 @@ func _make_sheet(mode: String="item") -> VBoxContainer:
  _polish_scrollbar(sheet_scroll.get_v_scroll_bar())
  sheet_body=VBoxContainer.new();sheet_body.name="DetailBody";sheet_body.size_flags_horizontal=Control.SIZE_EXPAND_FILL;sheet_body.size_flags_vertical=Control.SIZE_SHRINK_BEGIN;sheet_body.add_theme_constant_override("separation",8);sheet_scroll.add_child(sheet_body)
  sheet_actions=VBoxContainer.new();sheet_actions.name="PopupActions";sheet_actions.add_theme_constant_override("separation",6);sheet_root.add_child(sheet_actions)
- _fit_sheet.call_deferred()
+ _fit_sheet.call_deferred(sheet_generation)
  return sheet_body
 
-func _fit_sheet() -> void:
+func _fit_sheet(expected_generation: int=-1) -> void:
+ if expected_generation<0:expected_generation=sheet_generation
  await get_tree().process_frame
- if not is_instance_valid(detail) or not is_instance_valid(sheet_panel):return
+ if expected_generation!=sheet_generation or not is_instance_valid(detail) or not is_instance_valid(sheet_panel):return
  var width: float=minf(560.0*unit,detail.size.x-24.0*unit)
  var max_height: float=minf((470.0 if sheet_mode=="stats" else 580.0)*popup_unit,detail.size.y*.72)
  sheet_panel.position=Vector2((detail.size.x-width)*.5,0)
@@ -294,13 +355,14 @@ func _fit_sheet() -> void:
  var skin: StyleBox=sheet_panel.get_theme_stylebox("panel")
  sheet_body.custom_minimum_size.x=maxf(0,width-skin.get_minimum_size().x-12)
  await get_tree().process_frame
- if not is_instance_valid(detail) or not is_instance_valid(sheet_panel):return
+ if expected_generation!=sheet_generation or not is_instance_valid(detail) or not is_instance_valid(sheet_panel):return
  var fixed: float=sheet_root.get_child(0).get_combined_minimum_size().y+sheet_actions.get_combined_minimum_size().y+skin.get_minimum_size().y+16
  var natural: float=sheet_body.get_combined_minimum_size().y+fixed
  var height: float=minf(max_height,maxf(fixed+44,natural))
  sheet_scroll.custom_minimum_size.y=maxf(44,height-fixed)
  sheet_panel.size=Vector2(width,height)
  sheet_panel.position.y=maxf(8,(detail.size.y-height)*.5)
+ sheet_panel.self_modulate.a=1.0
 
 func _polish_dropdown(control: OptionButton) -> void:
  var skin:=StyleBoxTexture.new();skin.texture=load("res://assets/ui/system_v2/custom/buttons/secondary_normal.svg")
@@ -329,6 +391,7 @@ func _paragraph(body: VBoxContainer,value: String,font_size: int=16,color: Color
 func _show_detail(id: String) -> void:
  if not InventoryManager.owns_item(id):_close_detail();return
  selected_item_id=id;detail_open=true
+ detail_progress_key=_detail_progress_key()
  var body: VBoxContainer=_make_sheet("item")
  var data: Dictionary=InventoryManager.get_item_data(id)
  var stage:=Control.new();stage.name="RelicArtStage";stage.clip_contents=true;stage.custom_minimum_size.y=120*popup_unit;body.add_child(stage)
@@ -351,13 +414,16 @@ func _show_detail(id: String) -> void:
   var set_id: String=Sets.get_set_id_for_item(id)
   var pieces: int=Sets.get_piece_count(set_id,_equipped_ids())
   _paragraph(body,"%s • SET %s • %d/4"%[Sets.get_display_name(set_id),Sets.get_set_rarity(set_id).to_upper(),pieces],16,GOLD)
-  for tier: int in [2,3,4]:_paragraph(body,"%d bagian: %s%s"%[tier,Sets.get_tier_description(set_id,tier),"  ✓ AKTIF" if pieces>=tier else ""],14,JADE if pieces>=tier else TEXT)
+  detail_set_header=body.get_child(body.get_child_count()-1) as Label
+  for tier: int in [2,3,4]:
+   _paragraph(body,"%d bagian: %s%s"%[tier,Sets.get_tier_description(set_id,tier),"  ✓ AKTIF" if pieces>=tier else ""],14,JADE if pieces>=tier else TEXT)
+   detail_set_lines.append(body.get_child(body.get_child_count()-1) as Label)
  _paragraph(body,Visual.get_signature_effect_name(data),16,GOLD)
  _paragraph(body,Visual.get_signature_effect_description(data),14)
  _paragraph(body,"DUPLIKAT IDENTIK %d • Naik bintang memakai 1 duplikat; item utama tetap dimiliki."%maxi(InventoryManager.get_item_count(id)-1,0),14)
  var row:=HBoxContainer.new();row.add_theme_constant_override("separation",8);sheet_actions.add_child(row)
  var equip:=_button("LEPAS" if id in _equipped_ids() else "PASANG",true);equip.name="EquipAction";equip.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(equip)
- equip.disabled=not EquipmentManager.can_modify_equipment();equip.pressed.connect(_equip_selected)
+ equip.disabled=not EquipmentManager.can_modify_equipment();equip.pressed.connect(_equip_selected.bind(id,id in _equipped_ids()))
  var ascend:=_button("NAIK BINTANG" if star<5 else "BINTANG MAX");ascend.name="AscendAction";ascend.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(ascend)
  ascend.disabled=not EquipmentManager.can_ascend_item(id);ascend.pressed.connect(func():EquipmentManager.ascend_item(id);_queue_refresh())
  if id in ["jade_binding_chain","celestial_returning_glaive"]:
@@ -369,11 +435,21 @@ func _show_detail(id: String) -> void:
   level.pressed.connect(func():EquipmentManager.level_weapon(id);_queue_refresh())
  building_popup=false
 
-func _equip_selected() -> void:
+func _equip_selected(expected_id: String="",expected_equipped: Variant=null) -> void:
+ if equip_action_pending or not detail_open or sheet_mode!="item":return
+ if not expected_id.is_empty() and expected_id!=selected_item_id:return
+ var equipped: bool=selected_item_id in _equipped_ids()
+ if expected_equipped!=null and bool(expected_equipped)!=equipped:return
+ if not EquipmentManager.can_modify_equipment():return
+ equip_action_pending=true
  var slot: String=str(EquipmentManager.get_item_data(selected_item_id).get("slot",""))
- if selected_item_id in _equipped_ids():EquipmentManager.unequip_slot(slot)
+ if equipped:EquipmentManager.unequip_slot(slot)
  else:EquipmentManager.equip_item(selected_item_id)
- _queue_refresh()
+ _sync_detail_loadout()
+ _release_equip_action.call_deferred()
+
+func _release_equip_action() -> void:
+ equip_action_pending=false
 
 func _show_stats() -> void:
  selected_item_id="";detail_open=true
