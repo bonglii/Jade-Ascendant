@@ -81,6 +81,8 @@ func _on_profile(snapshot: Dictionary) -> void:
 		_refreshing = false
 		_incoming.clear()
 		_owner = current
+		var notices: Node = get_node_or_null("/root/AnnouncementCenter")
+		if notices != null: notices.set_account_owner(current)
 		_server_time = 0
 		_status = "Sign in to receive server mail" if current.is_empty() else "Server mail ready"
 		_emit_changed()
@@ -95,6 +97,32 @@ func _valid_id(value: String) -> bool:
 
 func get_status() -> String:
 	return _status
+
+func get_announcement_owner() -> String:
+	return _owner
+
+func is_announcement_seen(id: String) -> bool:
+	var seen: Variant = _state.get("announcement_seen", {})
+	if not seen is Dictionary: return false
+	var ids: Variant = seen.get(_owner, [])
+	return ids is Array and id in ids
+
+func dismiss_announcement(id: String, account_owner: String) -> bool:
+	if account_owner != _owner or account_owner.is_empty() or not _valid_id(id): return false
+	var data: Dictionary = _state.duplicate(true)
+	var raw: Variant = data.get("announcement_seen", {})
+	var seen: Dictionary = raw.duplicate(true) if raw is Dictionary else {}
+	var raw_ids: Variant = seen.get(account_owner, [])
+	var ids: Array = raw_ids.duplicate() if raw_ids is Array else []
+	if id not in ids: ids.append(id)
+	while ids.size() > 500: ids.pop_front()
+	if not seen.has(account_owner) and seen.size() >= 32: seen.erase(seen.keys()[0])
+	seen[account_owner] = ids
+	data.announcement_seen = seen
+	var saved: bool = not data.is_empty() and bool(SaveManager.write_save_data(DOMAIN, data).get("success", false))
+	if saved: _state = data
+	_enqueue("announcement_read", id, {"announcement_id": id})
+	return saved
 
 func _mail_time() -> int:
 	return _server_time + maxi(0,int(float(Time.get_ticks_msec()-_observed_ticks)/1000.0)) if _server_time > 0 else 0
@@ -200,7 +228,7 @@ func _on_token(token: String) -> void:
 	var kind: String = str(_pending.kind)
 	var path: String = "/v1/mail/"+kind
 	if kind == "list": path += "?installation_id="+str(_state.installation_id)+"&after="+str(_pending.cursor)
-	var headers := PackedStringArray(["Content-Type: application/json","Accept: application/json","User-Agent: GodotEngine/4.7.2","Host: "+PlayerIdentityServerClient._endpoint_host(),"X-Jade-Owner-Binding: "+_owner,"X-Jade-Mail-Features: gifts-v2","X-Jade-Equipment-Catalog: jade-chain-v1","X-Jade-Returning-Glaive: v1","X-Jade-Client-Version: "+str(ProjectSettings.get_setting("application/config/version","1.0.6")),"Authorization: Bearer "+token])
+	var headers := PackedStringArray(["Content-Type: application/json","Accept: application/json","User-Agent: GodotEngine/4.7.2","Host: "+PlayerIdentityServerClient._endpoint_host(),"X-Jade-Owner-Binding: "+_owner,"X-Jade-Mail-Features: gifts-v2","X-Jade-Announcements: v1","X-Jade-Equipment-Catalog: jade-chain-v1","X-Jade-Returning-Glaive: v1","X-Jade-Client-Version: "+str(ProjectSettings.get_setting("application/config/version","1.0.6")),"Authorization: Bearer "+token])
 	var error: Error = _http.request(PlayerIdentityServerClient._prepare_route(_http,path),headers,HTTPClient.METHOD_GET if kind == "list" else HTTPClient.METHOD_POST,"" if kind == "list" else JSON.stringify(_pending.payload))
 	if error != OK: _fail("Server request could not start")
 
@@ -231,7 +259,8 @@ func _on_response(result: int,code: int,_headers: PackedStringArray,body: Packed
 		return
 	if str(data.get("owner_binding","")) != _owner: _fail("Mail account mismatch"); return
 	var kind: String = str(_pending.kind)
-	if kind not in ["list","read_all"] and str(data.get("mail_id","")) != str(_pending.id).trim_prefix("server:"): _fail("Mail response mismatch"); return
+	if kind not in ["list","read_all","announcement_read"] and str(data.get("mail_id","")) != str(_pending.id).trim_prefix("server:"): _fail("Mail response mismatch"); return
+	if kind == "announcement_read" and (str(data.get("announcement_id", "")) != str(_pending.id) or data.get("ok") != true): _fail("Announcement response mismatch"); return
 	if kind in ["read","read_all","delete"] and data.get("ok") != true: _fail("Mail action not confirmed"); return
 	if kind == "list":
 		if not _accept_page(data): _fail("Invalid mail catalog"); return
@@ -270,6 +299,9 @@ func _accept_page(data: Dictionary) -> bool:
 	cache[_owner] = _incoming.duplicate(true)
 	_state.cache = cache
 	_persist_cache()
+	if data.has("announcements"):
+		var notices: Node = get_node_or_null("/root/AnnouncementCenter")
+		if notices != null: notices.accept_snapshot(_owner, data.announcements, _server_time)
 	for mail: Dictionary in _incoming:
 		if bool(mail.get("pending",false)) and _has_local_receipt(str(mail.mail_id)) and _valid_id(str(mail.get("receipt_id",""))):
 			_enqueue("ack",str(mail.id),{"mail_id":mail.mail_id,"installation_id":_state.installation_id,"receipt_id":mail.receipt_id})

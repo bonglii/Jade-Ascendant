@@ -2,6 +2,7 @@ import {MailError,fail,json,readBody,exact,digest,mac,checkProof,session,login,s
 import {ownerBinding} from './worker.mjs';
 import dashboard from './dashboard.mjs';
 import {pavilionRoute} from './pavilion.mjs';
+import {announcementAdminRoute,announcementPlayerRoute,listAnnouncementEntries} from './announcements.mjs';
 import {normalizeReward,hasReward,needsGiftClient,REWARD_CATALOG} from './mail_rewards.mjs';
 export {REWARD_CATALOG};
 import {studioRoute,historyPage,countRecipients,selector,segment,audit} from './mail_studio.mjs';
@@ -78,13 +79,13 @@ export async function acknowledgeMail(db,owner,input){
  await db.batch([db.prepare('UPDATE mail_claims SET acknowledged_at=? WHERE mail_id=? AND owner_binding=? AND acknowledged_at=0').bind(nowSeconds(),id,owner),db.prepare('UPDATE mail_recipients SET read_at=CASE WHEN read_at=0 THEN ? ELSE read_at END WHERE mail_id=? AND owner_binding=?').bind(nowSeconds(),id,owner)]);
  return {mail_id:id,owner_binding:owner,delivery_state:'claimed'};
 }
-async function inbox(db,owner,url,giftClient=false,chainClient=false,glaiveClient=false){
+async function inbox(db,owner,url,giftClient=false,chainClient=false,glaiveClient=false,announcementClient=false){
  const installation=install(url.searchParams.get('installation_id'));
  const after=url.searchParams.get('after')||'';if(after&&!ID.test(after))fail(400,'invalid_cursor');
  const rows=await list(db.prepare('SELECT c.*,r.read_at,r.deleted_at,k.installation_id AS claim_installation,k.receipt_id,k.acknowledged_at,k.reserved_at FROM mail_campaigns c JOIN mail_recipients r ON r.mail_id=c.id LEFT JOIN mail_claims k ON k.mail_id=r.mail_id AND k.owner_binding=r.owner_binding WHERE r.owner_binding=? AND c.published_at>0 AND r.deleted_at=0 AND c.id>? '+(giftClient?'':"AND COALESCE(json_extract(c.reward_json,'$.celestial_jade'),0)=0 AND COALESCE(json_extract(c.reward_json,'$.pavilion_seal'),0)=0 AND NOT EXISTS(SELECT 1 FROM json_each(json_extract(c.reward_json,'$.items')) j WHERE j.key<>'refinement_shard') " )+(chainClient?'':"AND COALESCE(json_extract(c.reward_json,'$.items.jade_binding_chain'),0)=0 " )+(glaiveClient?'':"AND COALESCE(json_extract(c.reward_json,'$.items.celestial_returning_glaive'),0)=0 " )+'ORDER BY c.id LIMIT 41').bind(owner,after));
  const page=rows.slice(0,40),time=nowSeconds();
  if(page.length)await db.batch(page.map(row=>db.prepare('UPDATE mail_recipients SET delivered_at=? WHERE owner_binding=? AND mail_id=? AND delivered_at=0').bind(time,owner,row.id)));
- return {version:1,owner_binding:owner,server_time:time,next_cursor:rows.length>40?page.at(-1).id:'',entries:page.map(row=>{
+ return {version:1,owner_binding:owner,server_time:time,next_cursor:rows.length>40?page.at(-1).id:'',...(announcementClient&&rows.length<=40?{announcements:await listAnnouncementEntries(db,owner,time)}:{}),entries:page.map(row=>{
   const reward=JSON.parse(row.reward_json),claimed=row.acknowledged_at>0,own=row.claim_installation===installation,pending=!!row.reserved_at&&!claimed;
   return {id:'server:'+row.id,mail_id:row.id,title:row.title,body:row.body,sender:row.sender,reward:hasReward(reward)?reward:{},created_at:row.created_at,expires_at:row.expires_at,read:row.read_at>0,claimed:claimed||!hasReward(reward),pending:pending&&own,receipt_id:pending&&own?row.receipt_id:'',can_claim:!claimed&&hasReward(reward)&&(!pending||own)&&(pending||(!row.cancelled_at&&row.expires_at>time)),blocked_on_other_device:pending&&!own,cancelled:row.cancelled_at>0,expired:row.expires_at<=time};
  })};
@@ -100,6 +101,7 @@ export function createMailHandler({verify}={}){
   if(path==='/admin/api/login'){if(request.method!=='POST')fail(405,'method_not_allowed');return login(request,env,db);}
   if(path.startsWith('/admin/api/')){
    const auth=await session(request,env,request.method!=='GET');
+   const announcement=await announcementAdminRoute(db,env,request,url);if(announcement)return announcement;
    if(path==='/admin/api/session'&&request.method==='GET')return json(200,{...auth,reward_catalog:REWARD_CATALOG});
    const bannerResponse=await pavilionRoute(db,request,url);if(bannerResponse)return bannerResponse;
    const upgraded=await studioRoute(db,env,request,url,auth,{normalizeDraft,preview,sendMail,campaign,verifyPreview});if(upgraded)return upgraded;
@@ -127,9 +129,10 @@ export function createMailHandler({verify}={}){
   // can only narrow the signed identity, never select a different recipient.
   if(request.headers.get('x-jade-owner-binding')!==owner)fail(409,'account_changed');
   if(!await db.prepare('SELECT public_uid FROM player_identities WHERE owner_binding=?').bind(owner).first())fail(409,'profile_required');
+  const announcement=await announcementPlayerRoute(db,owner,request,url);if(announcement)return announcement;
   const version=request.headers.get('x-jade-client-version')||'';
   await db.prepare('INSERT INTO mail_player_activity(owner_binding,last_seen,client_version) VALUES(?,?,?) ON CONFLICT(owner_binding) DO UPDATE SET last_seen=excluded.last_seen,client_version=CASE WHEN excluded.client_version<>\'\' THEN excluded.client_version ELSE client_version END').bind(owner,nowSeconds(),/^[a-zA-Z0-9._+-]{1,40}$/.test(version)?version:'').run();
-  if(path==='/v1/mail/list'&&request.method==='GET')return json(200,await inbox(db,owner,url,request.headers.get('x-jade-mail-features')==='gifts-v2',request.headers.get('x-jade-equipment-catalog')==='jade-chain-v1',request.headers.get('x-jade-returning-glaive')==='v1'));
+  if(path==='/v1/mail/list'&&request.method==='GET')return json(200,await inbox(db,owner,url,request.headers.get('x-jade-mail-features')==='gifts-v2',request.headers.get('x-jade-equipment-catalog')==='jade-chain-v1',request.headers.get('x-jade-returning-glaive')==='v1',request.headers.get('x-jade-announcements')==='v1'));
   if(request.method!=='POST')fail(405,'method_not_allowed');const input=await readBody(request,512);
   if(path==='/v1/mail/claim')return json(200,await claimMail(db,owner,input,request.headers.get('x-jade-mail-features')==='gifts-v2',request.headers.get('x-jade-equipment-catalog')==='jade-chain-v1',request.headers.get('x-jade-returning-glaive')==='v1'));
   if(path==='/v1/mail/ack')return json(200,await acknowledgeMail(db,owner,input));

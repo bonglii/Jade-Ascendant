@@ -90,6 +90,10 @@ func _ready() -> void:
 			_on_rewarded_request_finished
 		)
 	hide()
+	var ceremony: Node = preload("res://scripts/ui/result_ceremony.gd").new()
+	ceremony.name = "ResultCeremony"
+	ceremony.configure(self, "defeat")
+	add_child(ceremony)
 
 
 func _process(delta: float) -> void:
@@ -103,6 +107,7 @@ func _process(delta: float) -> void:
 
 
 func show_game_over() -> void:
+	get_node("ResultCeremony").fit()
 	last_game_over_reward.clear()
 	_refresh_stage_identity()
 	_refresh_reward_summary()
@@ -749,9 +754,7 @@ func _ensure_recovery_chip() -> void:
 	if recovery_chip != null:
 		return
 
-	var reward_content: VBoxContainer = (
-		$ColorRect/SafeArea/CenterContainer/Panel/Margin/Content/RewardPanel/RewardMargin/RewardContent
-	)
+	var reward_content: VBoxContainer = reward_panel.get_node("RewardMargin/RewardContent")
 
 	if reward_content.has_node("RecoveryChip"):
 		recovery_chip = reward_content.get_node("RecoveryChip") as PanelContainer
@@ -770,6 +773,7 @@ func _refresh_recovery_chip(reward_data: Dictionary) -> void:
 		return
 
 	for child: Node in recovery_chip.get_children():
+		recovery_chip.remove_child(child)
 		child.queue_free()
 
 	var stone_amount: int = int(
@@ -817,6 +821,7 @@ func _refresh_recovery_chip(reward_data: Dictionary) -> void:
 		else tr("No Reward Recovered")
 	)
 	value_label.theme_type_variation = &"JadeHeroName"
+	value_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	value_label.add_theme_font_size_override(
 		"font_size",
 		17 if has_reward else 15
@@ -835,6 +840,7 @@ func _refresh_recovery_chip(reward_data: Dictionary) -> void:
 		)
 	)
 	caption_label.theme_type_variation = &"JadeMutedLabel"
+	caption_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	caption_label.add_theme_font_size_override("font_size", 10)
 	caption_label.add_theme_color_override(
 		"font_color",

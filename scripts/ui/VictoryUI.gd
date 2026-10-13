@@ -52,7 +52,7 @@ const INTRO_PANEL_FADE_DURATION: float = 0.30
 var victory_reward_entries: Array[Dictionary] = []
 var intro_tween: Tween = null
 var victory_seal: TextureRect = null
-var reward_chip_row: HBoxContainer = null
+var reward_chip_row: GridContainer = null
 var result_atmosphere: Control = null
 var _m7c_bridge: Node = null
 var _m7c_row: VBoxContainer = null
@@ -68,9 +68,14 @@ func _ready() -> void:
 	if not RewardManager.reward_granted.is_connected(_on_reward_granted):
 		RewardManager.reward_granted.connect(_on_reward_granted)
 	_install_m7c_victory_offer()
+	var ceremony: Node = preload("res://scripts/ui/result_ceremony.gd").new()
+	ceremony.name = "ResultCeremony"
+	ceremony.configure(self, "victory")
+	add_child(ceremony)
 	hide()
 
 func show_victory() -> void:
+	get_node("ResultCeremony").fit()
 	_refresh_stage_identity()
 	_refresh_reward_summary()
 	if SaveManager.is_progress_read_only():
@@ -398,18 +403,18 @@ func _ensure_reward_chip_row() -> void:
 	if reward_chip_row != null:
 		return
 
-	var reward_content: VBoxContainer = (
-		$ColorRect/SafeArea/CenterContainer/Panel/Margin/Content/RewardPanel/RewardMargin/RewardContent
-	)
+	var reward_content: VBoxContainer = reward_panel.get_node("RewardMargin/RewardContent")
 
 	if reward_content.has_node("RewardChipRow"):
-		reward_chip_row = reward_content.get_node("RewardChipRow") as HBoxContainer
+		reward_chip_row = reward_content.get_node("RewardChipRow") as GridContainer
 		return
 
-	reward_chip_row = HBoxContainer.new()
+	reward_chip_row = GridContainer.new()
 	reward_chip_row.name = "RewardChipRow"
-	reward_chip_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	reward_chip_row.add_theme_constant_override("separation", 10)
+	reward_chip_row.columns = 2
+	reward_chip_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	reward_chip_row.add_theme_constant_override("h_separation", 10)
+	reward_chip_row.add_theme_constant_override("v_separation", 10)
 	reward_content.add_child(reward_chip_row)
 	reward_content.move_child(reward_chip_row, 1)
 
@@ -420,9 +425,11 @@ func _populate_reward_chips() -> void:
 		return
 
 	for child: Node in reward_chip_row.get_children():
+		reward_chip_row.remove_child(child)
 		child.queue_free()
 
 	var stone_total: int = 0
+	var hero_exp_total: int = 0
 	var item_totals: Dictionary = {}
 
 	for raw_reward_entry: Variant in victory_reward_entries:
@@ -431,6 +438,7 @@ func _populate_reward_chips() -> void:
 			"reward_data",
 			{}
 		)
+		hero_exp_total += int(reward_data.get("hero_exp", 0))
 		stone_total += int(
 			reward_data.get(
 				RewardManager.REWARD_KEY_SPIRIT_STONE,
@@ -484,6 +492,8 @@ func _populate_reward_chips() -> void:
 			)
 		)
 
+	if hero_exp_total > 0:
+		reward_chip_row.add_child(_create_reward_chip("HERO EXP", "+%s" % _format_number(hero_exp_total), "res://assets/ui/meditation/premium_popup/reward_hero_exp.png", Color(0.53, 0.87, 1.0)))
 	var has_chips: bool = reward_chip_row.get_child_count() > 0
 	reward_chip_row.visible = has_chips
 	reward_summary_label.visible = not has_chips
@@ -496,7 +506,8 @@ func _create_reward_chip(
 	accent: Color
 ) -> PanelContainer:
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(178.0, 72.0)
+	panel.custom_minimum_size = Vector2(0.0, 68.0)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.add_theme_stylebox_override(
 		"panel",
 		_make_reward_chip_style(accent)
@@ -531,6 +542,7 @@ func _create_reward_chip(
 
 	var caption_label := Label.new()
 	caption_label.text = tr(caption)
+	caption_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	caption_label.theme_type_variation = &"JadeMutedLabel"
 	caption_label.add_theme_font_size_override("font_size", 10)
 	caption_label.add_theme_color_override(
