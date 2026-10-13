@@ -1802,6 +1802,21 @@ func _refresh_selected_card_motion(
 
 
 func _refresh_selected_item() -> void:
+	var binding_button: Button = selected_item_icon.get_node_or_null("BindingPreviewButton")
+	if binding_button == null:
+		binding_button = Button.new()
+		binding_button.name = "BindingPreviewButton"
+		binding_button.text = "PREVIEW"
+		binding_button.tooltip_text = "Lihat serangan Jade Binding Chain"
+		binding_button.add_theme_font_size_override("font_size", 11)
+		binding_button.custom_minimum_size.y = 44.0
+		binding_button.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+		binding_button.offset_top = -44.0
+		binding_button.add_theme_stylebox_override("normal", preload("res://scripts/ui/pavilion_imperial_style.gd").new())
+		binding_button.pressed.connect(_open_binding_preview)
+		selected_item_icon.add_child(binding_button)
+	binding_button.visible = selected_item_id in ["jade_binding_chain", "celestial_returning_glaive"]
+	binding_button.tooltip_text = "Lihat serangan " + selected_item_id.replace("_", " ")
 	if selected_item_id.is_empty():
 		selected_item_icon.texture = null
 		selected_item_name.text = "PILIH RELIK"
@@ -3465,3 +3480,11 @@ func _format_stars(
 		)
 
 	return result
+
+func _open_binding_preview() -> void:
+	if selected_item_id == "celestial_returning_glaive":
+		if get_node_or_null("ReturningGlaivePreview") == null: add_child(preload("res://scripts/ui/returning_glaive_preview.gd").new())
+		return
+	if get_node_or_null("JadeBindingPreview") != null: return
+	AudioManager.play_sfx("chain")
+	add_child(preload("res://scripts/ui/jade_binding_preview.gd").new())

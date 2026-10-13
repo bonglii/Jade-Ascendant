@@ -95,7 +95,7 @@ func _refresh() -> void:
 	for id: String in Catalog.UPGRADE_IDS:
 		if _filter != "ALL" and Catalog.get_category(id) != _filter:
 			continue
-		var haystack: String = (id + " " + tr(Catalog.get_upgrade_display_name(id)) + " " + tr(Catalog.get_upgrade_description(id))).to_lower()
+		var haystack: String = (id + " " + tr(_display_name(id)) + " " + tr(_description(id))).to_lower()
 		if not query.is_empty() and not haystack.contains(query):
 			continue
 		_list.add_child(_card(id))
@@ -121,7 +121,10 @@ func _card(id: String) -> Control:
 	card.add_child(row)
 	var icon := TextureRect.new()
 	icon.custom_minimum_size = Vector2(64,64)
-	icon.texture = load(Catalog.ICON_PATHS[id]) as Texture2D
+	icon.texture = load("res://assets/ui/equipment/final/celestial_returning_glaive.png" if _is_glaive() and id in ["spirit_sword", "sword_dao_resonance"] else "res://assets/ui/equipment/final/jade_binding_chain.png" if _is_chain() and id in ["spirit_sword", "sword_dao_resonance"] else Catalog.ICON_PATHS[id]) as Texture2D
+	var armament: String = EquipmentManager.get_equipped_item_id(EquipmentManager.SLOT_ARMAMENT)
+	if id in ["spirit_sword", "sword_dao_resonance"] and preload("res://scripts/weapon/equipment_weapon_art.gd").ENTRIES.has(armament):
+		icon.texture = load(preload("res://scripts/ui/equipment_visual_catalog.gd").get_icon_path(armament)) as Texture2D
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -132,19 +135,19 @@ func _card(id: String) -> Control:
 	text.add_theme_constant_override("separation", 5)
 	row.add_child(text)
 	text.add_child(_label(Catalog.get_category(id), 12, Color(0.42, 0.91, 0.78)))
-	text.add_child(_label(Catalog.get_upgrade_display_name(id), 21, Color(1.0, 0.88, 0.55)))
-	text.add_child(_label(Catalog.get_upgrade_description(id), 16, Color(0.89, 0.94, 0.91)))
+	text.add_child(_label(_display_name(id), 21, Color(1.0, 0.88, 0.55)))
+	text.add_child(_label(_description(id), 16, Color(0.89, 0.94, 0.91)))
 	var requirements: Dictionary = Catalog.get_requirements(id)
 	if not requirements.is_empty():
 		var names: PackedStringArray = []
 		for required: String in requirements:
-			names.append(tr(Catalog.get_upgrade_display_name(required)) + " Lv.%d" % int(requirements[required]))
+			names.append(tr(_display_name(required)) + " Lv.%d" % int(requirements[required]))
 		text.add_child(_label(tr("REQUIRES: %s") % " + ".join(names), 15, Color(0.96, 0.77, 0.39)))
 		text.add_child(_label("Once requirements are met, this synergy can appear in level-up choices. It must still be selected.", 14, Color(0.76, 0.84, 0.82)))
 	else:
 		var synergies: PackedStringArray = []
 		for synergy: String in Catalog.get_related_synergies(id):
-			synergies.append(tr(Catalog.get_upgrade_display_name(synergy)))
+			synergies.append(tr(_display_name(synergy)))
 		if not synergies.is_empty():
 			text.add_child(_label(tr("COMBINES INTO: %s") % ", ".join(synergies), 15, Color(0.55, 0.92, 0.83)))
 	return card
@@ -171,3 +174,27 @@ func _button(value: String) -> Button:
 
 func _back() -> void:
 	SceneTransitionManager.transition_menu_to("res://scenes/ui/main_menu.tscn", 1)
+
+func _is_chain() -> bool:
+	return EquipmentManager.get_equipped_item_id(EquipmentManager.SLOT_ARMAMENT) == "jade_binding_chain"
+
+func _is_glaive() -> bool:
+	return EquipmentManager.get_equipped_item_id(EquipmentManager.SLOT_ARMAMENT) == "celestial_returning_glaive"
+
+func _display_name(id: String) -> String:
+	if _is_glaive():
+		if id == "spirit_sword": return "Celestial Returning Glaive"
+		if id == "sword_dao_resonance": return "Returning Dao Resonance"
+	if _is_chain():
+		if id == "spirit_sword": return "Jade Binding Chain"
+		if id == "sword_dao_resonance": return "Binding Dao Resonance"
+	return Catalog.get_upgrade_display_name(id)
+
+func _description(id: String) -> String:
+	if _is_glaive():
+		if id == "spirit_sword": return "Your Legendary armament throws a piercing disc, spins briefly, then returns to your current position. Move to steer its path. Lv.3: crescent flight; Lv.5: staggered twin discs; Lv.7: 58-radius closure on a real catch. One hit per enemy per phase. Cooldown 2.1s, minimum 1.75s. Run level resets; equipment stars persist."
+		if id == "sword_dao_resonance": return "An outbound critical empowers only the first return hit by 40% base damage, once per disc. No additional projectile is created."
+	if _is_chain():
+		if id == "spirit_sword": return "Your equipped Legendary armament replaces the starter attack. Seal, bind, then detonate jade knots. Lv.1/3/5/7 binds 2/3/4/5 enemies in 80/92/104/116 radius. Slow 40% for 0.72s; bosses 12%. Cooldown 1.8s, minimum 1.25s. Refinement resets after the run; equipment stars persist."
+		if id == "sword_dao_resonance": return "Critical bindings release one extra 40% damage knot onto a nearby unbound enemy. Once per cast, without recursively creating more bindings."
+	return Catalog.get_upgrade_description(id)

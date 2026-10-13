@@ -295,6 +295,9 @@ func _refresh_live_loadout(stats: Node) -> void:
 		if row != null:
 			row.visible = weapon != null and is_instance_valid(weapon)
 		if weapon != null and is_instance_valid(weapon):
+			if key == "weapon_spirit_sword" and row != null:
+				var caption: Label = row.get_child(0) as Label
+				if caption != null: caption.text = weapon.get_combat_display_name().to_upper()
 			_set_value(key, "LV %d" % int(weapon.get("level")))
 
 	var sword_unlocked: bool = (

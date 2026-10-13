@@ -205,7 +205,7 @@ test('owner reset changes only admin credentials, hides plaintext and revokes se
 });
 
 test('gift catalog matches authored equipment and extended rewards freeze exact receipts',async()=>{
- const {CATALOG}=await import('./mail_rewards.mjs');assert.equal(CATALOG.equipment.length,40);const f=await fixture();await f.login();
+ const {CATALOG}=await import('./mail_rewards.mjs');assert.equal(CATALOG.equipment.length,42);const f=await fixture();await f.login();
  const reward={spirit_stone:20,celestial_jade:500,pavilion_seal:3,items:{refinement_shard:2,nine_heavens_star_sword:1}};const {mail}=await f.publish({reward});assert.deepEqual(mail.reward,reward);
  assert.equal((await f.api('/v1/mail/claim',{mail_id:mail.id,installation_id:installation})).data.error,'client_upgrade_required');
  assert.equal((await f.api('/v1/mail/list?installation_id='+installation)).data.entries.length,0);
@@ -221,4 +221,28 @@ test('Jade/seal-only gifts are claims, unsupported paid fields and forged equipm
  }
  for(const reward of [{spirit_stone:0,items:{},celestial_jade:true},{spirit_stone:0,items:{},celestial_jade:10001},{spirit_stone:0,items:{},pavilion_seal:101},{spirit_stone:0,items:{},paid_jade:1},{spirit_stone:0,items:{unknown_weapon:1}},{spirit_stone:0,items:{nine_heavens_star_sword:2}}])assert.equal((await f.api('/admin/api/preview',f.draft({reward}))).status,400);
  const {CATALOG}=await import('./mail_rewards.mjs');assert.equal((await f.api('/admin/api/preview',f.draft({reward:{spirit_stone:0,items:Object.fromEntries(CATALOG.equipment.slice(0,6).map(item=>[item.id,1]))}}))).status,400);f.db.sql.close();
+});
+
+test('new chain gifts remain unreserved for old APKs and freeze one receipt for the new catalog',async()=>{
+ const f=await fixture();await f.login();const reward={spirit_stone:0,items:{jade_binding_chain:1}};
+ const {mail}=await f.publish({reward});const old={headers:{'x-jade-mail-features':'gifts-v2'}},current={headers:{...old.headers,'x-jade-equipment-catalog':'jade-chain-v1'}};
+ assert.equal((await f.api('/v1/mail/list?installation_id='+installation,undefined,old)).data.entries.length,0);
+ assert.equal((await f.api('/v1/mail/claim',{mail_id:mail.id,installation_id:installation},old)).data.error,'client_upgrade_required');
+ assert.equal(f.db.sql.prepare('SELECT count(*) AS n FROM mail_claims WHERE mail_id=?').get(mail.id).n,0);
+ assert.equal((await f.api('/v1/mail/list?installation_id='+installation,undefined,current)).data.entries[0].reward.items.jade_binding_chain,1);
+ const claim={mail_id:mail.id,installation_id:installation};const first=await f.api('/v1/mail/claim',claim,current),again=await f.api('/v1/mail/claim',claim,current);
+ assert.equal(first.status,200);assert.deepEqual(first.data.reward,reward);assert.equal(first.data.receipt_id,again.data.receipt_id);
+ assert.equal((await f.api('/admin/api/preview',f.draft({reward:{spirit_stone:0,items:{jade_binding_chain:2}}}))).status,400);f.db.sql.close();
+});
+
+test('returning glaive gifts require their own catalog capability while existing chain builds remain compatible',async()=>{
+ const f=await fixture();await f.login();const reward={spirit_stone:0,items:{celestial_returning_glaive:1}};const {mail}=await f.publish({reward});
+ const chain={headers:{'x-jade-mail-features':'gifts-v2','x-jade-equipment-catalog':'jade-chain-v1'}},current={headers:{...chain.headers,'x-jade-returning-glaive':'v1'}};
+ assert.equal((await f.api('/v1/mail/list?installation_id='+installation,undefined,chain)).data.entries.length,0);
+ assert.equal((await f.api('/v1/mail/claim',{mail_id:mail.id,installation_id:installation},chain)).data.error,'client_upgrade_required');
+ assert.equal(f.db.sql.prepare('SELECT count(*) AS n FROM mail_claims WHERE mail_id=?').get(mail.id).n,0);
+ assert.equal((await f.api('/v1/mail/list?installation_id='+installation,undefined,current)).data.entries[0].reward.items.celestial_returning_glaive,1);
+ const claim={mail_id:mail.id,installation_id:installation};const first=await f.api('/v1/mail/claim',claim,current),again=await f.api('/v1/mail/claim',claim,current);
+ assert.equal(first.status,200);assert.deepEqual(first.data.reward,reward);assert.equal(first.data.receipt_id,again.data.receipt_id);
+ assert.equal((await f.api('/admin/api/preview',f.draft({reward:{spirit_stone:0,items:{celestial_returning_glaive:2}}}))).status,400);f.db.sql.close();
 });

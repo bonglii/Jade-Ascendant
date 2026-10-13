@@ -40,6 +40,7 @@ func _physics_process(delta: float) -> void:
 
 	velocity = move_direction * speed
 	_update_walk_animation(move_direction)
+	velocity *= preload("res://scripts/weapon/jade_binding_slow.gd").movement_factor(self)
 	move_and_slide()
 
 	if contact_damage_timer > 0.0:

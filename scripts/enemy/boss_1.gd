@@ -820,6 +820,7 @@ func update_behavior() -> void:
 			var direction: Vector2 = global_position.direction_to(player.global_position)
 			var strafe_sign: float = -1.0 if last_ranged_pattern == 1 else 1.0
 			velocity = (direction * 0.3 + direction.orthogonal() * strafe_sign).normalized() * speed
+			velocity *= preload("res://scripts/weapon/jade_binding_slow.gd").movement_factor(self)
 			move_and_slide()
 			_update_facing_to_player()
 			try_ranged_attack()
@@ -829,6 +830,7 @@ func update_behavior() -> void:
 			var ascend_direction: Vector2 = global_position.direction_to(player.global_position)
 			var ascend_sign: float = -1.0 if last_ranged_pattern % 2 == 0 else 1.0
 			velocity = (ascend_direction * 0.12 + ascend_direction.orthogonal() * ascend_sign).normalized() * speed * 0.72
+			velocity *= preload("res://scripts/weapon/jade_binding_slow.gd").movement_factor(self)
 			move_and_slide()
 			_update_facing_to_player()
 			try_ranged_attack()
@@ -854,6 +856,7 @@ func move_toward_player() -> void:
 	_update_facing_from_motion(direction)
 
 	velocity = direction * speed
+	velocity *= preload("res://scripts/weapon/jade_binding_slow.gd").movement_factor(self)
 	move_and_slide()
 
 	_play_walk_animation()

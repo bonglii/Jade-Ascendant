@@ -1,0 +1,17 @@
+{
+  "generator": "Built-in image_gen",
+  "assets": [
+    {
+      "path": "res://assets/ui/equipment/final/celestial_returning_glaive.png",
+      "prompt": "Use case: stylized-concept. Asset type: transparent legendary xianxia wuxia mobile equipment icon AND top-down spinning projectile treasure. A single circular returning glaive, an elegant symmetrical three-curved-blade golden chakram with an open ring and a small translucent azure turquoise jade core suspended by three thin antique imperial gold cloud-scroll bridges. Exactly one weapon, no sword handle. Finely engraved Chinese auspicious cloud motifs, emerald-turquoise jade inlays, three smooth crescent edges forming a balanced rotational silhouette. Premium hand-painted fantasy treasure, refined gilded metal depth, restrained cyan inner qi glow, warm antique gold highlights, consistent with jade-and-gold immortal cultivation art. Camera straight down orthographic, centered square composition, the complete weapon fits within 80 percent of canvas with generous transparent padding. Real transparent alpha everywhere outside the weapon and in open ring holes. No frame, background, title, text, stars, player, watermark, explosion or long light trails.",
+      "sha256": "bf81cbe4a525c22e56006c0a60c1e17e973c0933b148f46c4579eb164ae7bc3f",
+      "import_size_limit": 512,
+      "mipmaps": true,
+      "uses": [
+        "equipment icon",
+        "spinning combat disc",
+        "interactive Hero preview"
+      ]
+    }
+  ]
+}

@@ -155,6 +155,7 @@ func move_toward_player() -> void:
 	)
 
 	velocity = direction * speed
+	velocity *= preload("res://scripts/weapon/jade_binding_slow.gd").movement_factor(self)
 	move_and_slide()
 
 ## Memulai wind-up dan mengunci arah Player.
@@ -216,6 +217,7 @@ func begin_dash() -> void:
 func update_dash(delta: float) -> void:
 	dash_timer -= delta
 	velocity = dash_direction * dash_speed
+	velocity *= preload("res://scripts/weapon/jade_binding_slow.gd").movement_factor(self)
 	move_and_slide()
 	try_dash_damage_player()
 	if dash_timer > 0.0:

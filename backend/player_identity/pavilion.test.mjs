@@ -59,3 +59,16 @@ test('schema deployment is repeatable and preserves immutable revisions',async()
 test('server handles missing new schema as unavailable, never fabricated active configuration',async()=>{
  const f=await fixture();f.db.sql.exec('DROP TABLE pavilion_revisions;DROP TABLE pavilion_control;');const out=await f.api('/v1/pavilion/banner');assert.equal(out.status,503);assert.equal(out.data.error,'banner_unavailable');f.db.sql.close();
 });
+
+test('reviewed new chain can be rotated by dashboard with rates unchanged',async()=>{
+ assert.ok(FEATURED_CATALOG.some(x=>x.id==='jade_binding_chain'&&x.rarity==='legendary'));
+ const f=await fixture();await f.login();const input=publication({banners:[banner({featured:['jade_binding_chain']})]});
+ const out=await f.api('/admin/api/pavilion/publish',input);assert.equal(out.status,200);
+ const publicOut=await f.api('/v1/pavilion/banner');assert.deepEqual(publicOut.data.banner.featured,['jade_binding_chain']);assert.deepEqual(publicOut.data.banner.rates,BASE_RATES);f.db.sql.close();
+});
+
+test('reviewed returning glaive rotates through dashboard without changing base rates',async()=>{
+ assert.ok(FEATURED_CATALOG.some(x=>x.id==='celestial_returning_glaive'&&x.rarity==='legendary'));
+ const f=await fixture();await f.login();const out=await f.api('/admin/api/pavilion/publish',publication({banners:[banner({featured:['celestial_returning_glaive','jade_binding_chain']})]}));assert.equal(out.status,200);
+ const live=await f.api('/v1/pavilion/banner');assert.deepEqual(live.data.banner.featured,['celestial_returning_glaive','jade_binding_chain']);assert.deepEqual(live.data.banner.rates,BASE_RATES);f.db.sql.close();
+});

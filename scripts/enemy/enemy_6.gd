@@ -394,6 +394,7 @@ func move_toward_player() -> void:
 	_update_facing_from_motion(direction)
 
 	velocity = direction * speed
+	velocity *= preload("res://scripts/weapon/jade_binding_slow.gd").movement_factor(self)
 	move_and_slide()
 
 ## Menggerakkan Qi Guardian menjauh ketika Player terlalu dekat.
@@ -411,6 +412,7 @@ func move_away_from_player() -> void:
 	_update_facing_from_motion(direction)
 
 	velocity = direction * speed
+	velocity *= preload("res://scripts/weapon/jade_binding_slow.gd").movement_factor(self)
 	move_and_slide()
 
 ## Menghentikan pergerakan Qi Guardian.

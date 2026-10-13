@@ -285,6 +285,7 @@ func update_behavior() -> void:
 		var direction: Vector2 = global_position.direction_to(player.global_position)
 		var tangent: Vector2 = direction.orthogonal() * _strafe_side
 		velocity = (tangent + direction * 0.13).normalized() * speed * 0.62
+		velocity *= preload("res://scripts/weapon/jade_binding_slow.gd").movement_factor(self)
 		move_and_slide()
 		_update_facing_to_player()
 		try_ranged_attack()

@@ -59,6 +59,7 @@ func move_toward_player() -> void:
 
 	_update_visual_facing()
 	velocity = direction * speed
+	velocity *= preload("res://scripts/weapon/jade_binding_slow.gd").movement_factor(self)
 	move_and_slide()
 
 	if impact_visual_timer <= 0.0:

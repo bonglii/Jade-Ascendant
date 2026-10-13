@@ -31,6 +31,7 @@ var hit_ids: Array[int] = []
 var consumed: bool = false
 var combat_profile: Dictionary = {}
 var combat_style_id: StringName = &"spirit_sword"
+var has_equipment_art: bool = false
 
 
 func configure_combat_profile(profile: Dictionary) -> void:
@@ -64,10 +65,12 @@ func _apply_combat_profile() -> void:
 		core.default_color = combat_profile.get("trail_core", core.default_color)
 		core.width = float(combat_profile.get("trail_core_width", 2.0))
 
+	has_equipment_art = preload("res://scripts/weapon/equipment_weapon_art.gd").apply(self, str(combat_profile.get("armament_id", "")))
 	queue_redraw()
 
 
 func _draw() -> void:
+	if has_equipment_art: return
 	var motif: String = str(combat_profile.get("motif", "none"))
 	if motif == "none":
 		return

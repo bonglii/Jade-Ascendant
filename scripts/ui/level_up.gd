@@ -394,11 +394,33 @@ func get_upgrade_state_label(upgrade_id: String) -> String:
 	return "REFINE"
 
 
+func _uses_jade_binding() -> bool:
+	if weapon_manager == null: return false
+	var starter: Variant = weapon_manager.get_weapon_by_name("Spirit Sword")
+	return starter != null and str(starter.get("armament_id")) == "jade_binding_chain"
+
+func _uses_returning_glaive() -> bool:
+	if weapon_manager == null: return false
+	var starter: Variant = weapon_manager.get_weapon_by_name("Spirit Sword")
+	return starter != null and str(starter.get("armament_id")) == "celestial_returning_glaive"
+
 func get_upgrade_display_name(upgrade_id: String) -> String:
+	if _uses_returning_glaive():
+		if upgrade_id == "spirit_sword": return "Celestial Returning Glaive"
+		if upgrade_id == "sword_dao_resonance": return "Returning Dao Resonance"
+	if _uses_jade_binding():
+		if upgrade_id == "spirit_sword": return "Jade Binding Chain"
+		if upgrade_id == "sword_dao_resonance": return "Binding Dao Resonance"
 	return SkillCatalog.get_upgrade_display_name(upgrade_id)
 
 
 func get_upgrade_description(upgrade_id: String) -> String:
+	if _uses_returning_glaive():
+		if upgrade_id == "spirit_sword": return "Throw, spin, return. Move to steer the returning blade."
+		if upgrade_id == "sword_dao_resonance": return "An outbound critical empowers the first return hit by 40% base damage. Once per disc, no recursive flight."
+	if _uses_jade_binding():
+		if upgrade_id == "spirit_sword": return "Refine the jade seal, linked bindings and sequential knot judgment."
+		if upgrade_id == "sword_dao_resonance": return "A critical knot releases one extra judgment onto a nearby unbound enemy. Once per cast; cannot recurse."
 	return SkillCatalog.get_upgrade_description(upgrade_id)
 
 
@@ -426,7 +448,7 @@ func get_upgrade_effect(upgrade_id: String) -> String:
 		"sword_intent":
 			return "CRITICAL CHANCE  +5%"
 		"sword_dao_resonance":
-			return "SECONDARY SPIRIT SWORD"
+			return "FIRST RETURN HIT • +40% BASE" if _uses_returning_glaive() else ("EXTRA KNOT • 40% DAMAGE" if _uses_jade_binding() else "SECONDARY SPIRIT SWORD")
 		"yin_yang_reversal":
 			return "4s EMPOWERED ORBIT"
 		"heavenly_tribulation":
@@ -453,6 +475,14 @@ func _get_weapon_upgrade_effect(upgrade_id: String) -> String:
 
 	match upgrade_id:
 		"spirit_sword":
+			if _uses_returning_glaive():
+				if next_level == 3: return "+5 DMG • CRESCENT FLIGHT"
+				if next_level == 5: return "+5 DMG • TWIN RETURN"
+				if next_level == 7: return "+5 DMG • HEAVEN'S CLOSURE"
+				return "+5 BASE DAMAGE • RETURNING BLADE"
+			if _uses_jade_binding():
+				if next_level in [3, 5, 7]: return "+5 DMG • +1 BINDING • +12 RADIUS"
+				return "+5 BASE DAMAGE • KNOT JUDGMENT"
 			if next_level == 5:
 				return "+5 DMG • SECOND SPIRIT SWORD"
 			if next_level == 7:
@@ -562,7 +592,7 @@ func _is_final_weapon_refinement(upgrade_id: String) -> bool:
 func _is_weapon_milestone(upgrade_id: String, next_level: int) -> bool:
 	match upgrade_id:
 		"spirit_sword":
-			return next_level == 5 or next_level == 7
+			return next_level in [3, 5, 7] if _uses_jade_binding() or _uses_returning_glaive() else next_level == 5 or next_level == 7
 		"fire_orb":
 			return next_level == 3 or next_level == 5 or next_level == 7
 		"thunder_talisman":
@@ -916,7 +946,13 @@ func _update_choice_icon(button: Button, upgrade_id: String) -> void:
 	if icon == null:
 		return
 
-	var icon_path: String = str(ICON_PATHS.get(upgrade_id, ""))
+	var icon_path: String = "res://assets/ui/equipment/final/celestial_returning_glaive.png" if upgrade_id in ["spirit_sword", "sword_dao_resonance"] and _uses_returning_glaive() else "res://assets/ui/equipment/final/jade_binding_chain.png" if upgrade_id in ["spirit_sword", "sword_dao_resonance"] and _uses_jade_binding() else str(ICON_PATHS.get(upgrade_id, ""))
+	if upgrade_id in ["spirit_sword", "sword_dao_resonance"] and weapon_manager != null:
+		var starter: Node = weapon_manager.get_weapon_by_name("Spirit Sword")
+		if starter != null:
+			var armament: String = str(starter.get("armament_id"))
+			if preload("res://scripts/weapon/equipment_weapon_art.gd").ENTRIES.has(armament):
+				icon_path = preload("res://scripts/ui/equipment_visual_catalog.gd").get_icon_path(armament)
 	if icon_path.is_empty():
 		icon.texture = null
 		return

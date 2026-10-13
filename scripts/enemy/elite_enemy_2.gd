@@ -266,6 +266,7 @@ func move_toward_player() -> void:
 
 	_update_facing_from_motion(direction)
 	velocity = direction * speed
+	velocity *= preload("res://scripts/weapon/jade_binding_slow.gd").movement_factor(self)
 	move_and_slide()
 	_play_walk_animation()
 
@@ -278,6 +279,7 @@ func move_away_from_player() -> void:
 
 	_update_facing_from_motion(direction)
 	velocity = direction * speed
+	velocity *= preload("res://scripts/weapon/jade_binding_slow.gd").movement_factor(self)
 	move_and_slide()
 	_play_walk_animation()
 
@@ -439,6 +441,7 @@ func update_qi_step(delta: float) -> void:
 	)
 
 	velocity = qi_step_direction * qi_step_speed
+	velocity *= preload("res://scripts/weapon/jade_binding_slow.gd").movement_factor(self)
 	move_and_slide()
 
 	qi_step_timer -= delta

@@ -24,6 +24,8 @@ const DEFAULT_PROFILE: Dictionary = {
 }
 
 const PROFILES: Dictionary = {
+	"celestial_returning_glaive": {"style_id":"celestial_returning_glaive", "combat_display_name":"Celestial Returning Glaive", "motif":"returning_cloud"},
+	"jade_binding_chain": {"style_id": "jade_binding_chain", "combat_display_name": "Jade Binding Chain", "motif": "binding_knot"},
 	"wanderer_jade_jian": {
 		"style_id": "wanderer_jade_jian",
 		"combat_display_name": "Wanderer's Jade Jian",

@@ -38,11 +38,11 @@ const PRIORITY_RESOURCES: PackedStringArray = [
 	"res://assets/ui/pavilion/redesign/components/summon_one_button.png",
 	"res://assets/ui/pavilion/redesign/components/summon_ten_button.png",
 	# Five authored Legendary featured cards are rendered above the fold.
-	"res://assets/ui/equipment/final/nine_heavens_star_sword.png",
-	"res://assets/ui/equipment/final/sovereign_mantle.png",
-	"res://assets/ui/equipment/final/tribulation_bracer.png",
-	"res://assets/ui/equipment/final/cloudtreader_boots.png",
-	"res://assets/ui/equipment/final/ascendant_heart.png",
+	"res://assets/ui/equipment/imperial_v3/icons/nine_heavens_star_sword.png",
+	"res://assets/ui/equipment/imperial_v3/icons/sovereign_mantle.png",
+	"res://assets/ui/equipment/imperial_v3/icons/tribulation_bracer.png",
+	"res://assets/ui/equipment/imperial_v3/icons/cloudtreader_boots.png",
+	"res://assets/ui/equipment/imperial_v3/icons/ascendant_heart.png",
 ]
 
 # Deferred, below-the-fold resources — useful but not critical to the first

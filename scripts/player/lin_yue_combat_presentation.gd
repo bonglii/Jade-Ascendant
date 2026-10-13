@@ -141,6 +141,10 @@ func _draw() -> void:
 			continue
 
 		match weapon_name:
+			"Celestial Returning Glaive":
+				draw_arc(direction * 16.0, 10.0 + progress * 10.0, progress * TAU, progress * TAU + PI * 1.3, 20, Color(0.25, 0.88, 0.96, fade), 2.0, true)
+			"Jade Binding Chain":
+				preload("res://scripts/weapon/jade_binding_art.gd").knot(self, direction * 18.0, 10.0 + progress * 4.0, fade)
 			"Spirit Sword":
 				_draw_spirit_sword_signature(
 					progress,

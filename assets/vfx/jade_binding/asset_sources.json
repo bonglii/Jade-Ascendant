@@ -1,0 +1,17 @@
+{
+  "generator": "Built-in image_gen",
+  "assets": [
+    {
+      "path": "res://assets/ui/equipment/final/jade_binding_chain.png",
+      "prompt": "Use case: stylized-concept. Asset type: transparent premium wuxia xianxia mobile game equipment icon. A single legendary Jade Binding Chain weapon: beautifully articulated luminous translucent emerald jade chain links inset into aged imperial gold fittings, curling in a graceful asymmetrical S silhouette around a central carved jade binding knot and pointed ceremonial gold talisman clasp. Chinese immortal cultivation treasure, sophisticated hand painted 2D game art, precise exquisite materials, strong readable silhouette at small icon scale. Square composition centered with 12 percent transparent padding. Restrained emerald internal qi light, warm antique gold edge highlights, no background, no frame, no text, no stars, no person, no generic sword, no watermark. True transparent alpha.",
+      "sha256": "fceab4a4b908c20c9c8817c0a7753a60f4d12c3424cdaa0566235f6c7ccb67ec",
+      "import_size_limit": 512
+    },
+    {
+      "path": "res://assets/vfx/jade_binding/binding_seal.png",
+      "prompt": "Use case: stylized-concept. Asset type: transparent top-down xianxia combat ground seal texture, square. A single perfectly centered circular celestial binding seal viewed exactly straight down, imperial antique gold and luminous emerald jade filigree rings, eight evenly arranged carved jade lozenge sigils, fine interlaced Chinese endless-knot geometry in the central ring, subtly etched worn metallic ornaments, luminous thin edges. Premium immortal cultivation game VFX material, intricate authored ornament but restrained brightness, clear circular silhouette and wide transparent center so enemies remain readable. True transparent alpha background outside the disc and between all thin filigree lines, no dark plate, no solid disc, no text, no letters, no landscape, no perspective tilt, no watermark. Circle takes 82 percent of square with transparent padding, no clipped edges.",
+      "sha256": "5bb350f119cdabfcc1bb9d2ab1a509c2d0f06777290fb36db85ce66dc916be6d",
+      "import_size_limit": 512
+    }
+  ]
+}

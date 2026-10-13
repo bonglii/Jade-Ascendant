@@ -2,7 +2,7 @@
   "version": 2,
   "equipment": [
     {
-      "icon_source": "res://assets/ui/equipment/final/ascendant_heart.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/ascendant_heart.png",
       "id": "ascendant_heart",
       "max": 1,
       "name": "Ascendant Heart",
@@ -10,7 +10,7 @@
       "slot": "pendant"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/bamboo_weave_robe.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/bamboo_weave_robe.png",
       "id": "bamboo_weave_robe",
       "max": 1,
       "name": "Bamboo Weave Robe",
@@ -18,7 +18,15 @@
       "slot": "robe"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/cinnabar_moon_saber.png",
+      "icon_source": "res://assets/ui/equipment/final/celestial_returning_glaive.png",
+      "id": "celestial_returning_glaive",
+      "max": 1,
+      "name": "Celestial Returning Glaive",
+      "rarity": "legendary",
+      "slot": "armament"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/cinnabar_moon_saber.png",
       "id": "cinnabar_moon_saber",
       "max": 1,
       "name": "Cinnabar Moon Saber",
@@ -26,7 +34,7 @@
       "slot": "armament"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/cloudstep_boots.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/cloudstep_boots.png",
       "id": "cloudstep_boots",
       "max": 1,
       "name": "Cloudstep Boots",
@@ -34,7 +42,7 @@
       "slot": "boots"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/cloudtreader_boots.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/cloudtreader_boots.png",
       "id": "cloudtreader_boots",
       "max": 1,
       "name": "Cloudtreader Boots",
@@ -42,7 +50,7 @@
       "slot": "boots"
     },
     {
-      "icon_source": "res://assets/ui/equipment/sets/solar_meridian/dawn_meridian_robe.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/dawn_meridian_robe.png",
       "id": "dawn_meridian_robe",
       "max": 1,
       "name": "Dawn Meridian Robe",
@@ -50,7 +58,7 @@
       "slot": "robe"
     },
     {
-      "icon_source": "res://assets/ui/equipment/sets/jade_bastion/earthseal_bracer.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/earthseal_bracer.png",
       "id": "earthseal_bracer",
       "max": 1,
       "name": "Earthseal Bracer",
@@ -58,7 +66,7 @@
       "slot": "bracer"
     },
     {
-      "icon_source": "res://assets/ui/equipment/sets/stillwater_mirror/glassmoon_robe.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/glassmoon_robe.png",
       "id": "glassmoon_robe",
       "max": 1,
       "name": "Glassmoon Robe",
@@ -66,7 +74,7 @@
       "slot": "robe"
     },
     {
-      "icon_source": "res://assets/ui/equipment/sets/solar_meridian/golden_core_pendant.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/golden_core_pendant.png",
       "id": "golden_core_pendant",
       "max": 1,
       "name": "Golden Core Pendant",
@@ -74,7 +82,7 @@
       "slot": "pendant"
     },
     {
-      "icon_source": "res://assets/ui/equipment/sets/jade_bastion/guardian_jade_pendant.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/guardian_jade_pendant.png",
       "id": "guardian_jade_pendant",
       "max": 1,
       "name": "Guardian Jade Pendant",
@@ -82,7 +90,15 @@
       "slot": "pendant"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/jade_edge_bracer.png",
+      "icon_source": "res://assets/ui/equipment/final/jade_binding_chain.png",
+      "id": "jade_binding_chain",
+      "max": 1,
+      "name": "Jade Binding Chain",
+      "rarity": "legendary",
+      "slot": "armament"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/jade_edge_bracer.png",
       "id": "jade_edge_bracer",
       "max": 1,
       "name": "Jade Edge Bracer",
@@ -90,7 +106,7 @@
       "slot": "bracer"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/jade_guard_bracer.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/jade_guard_bracer.png",
       "id": "jade_guard_bracer",
       "max": 1,
       "name": "Jade Guard Bracer",
@@ -98,7 +114,7 @@
       "slot": "bracer"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/mirror_edge_bracer.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/mirror_edge_bracer.png",
       "id": "mirror_edge_bracer",
       "max": 1,
       "name": "Mirror-Edge Bracer",
@@ -106,7 +122,7 @@
       "slot": "bracer"
     },
     {
-      "icon_source": "res://assets/ui/equipment/sets/stillwater_mirror/mirror_heart_pendant.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/mirror_heart_pendant.png",
       "id": "mirror_heart_pendant",
       "max": 1,
       "name": "Mirror Heart Pendant",
@@ -114,7 +130,7 @@
       "slot": "pendant"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/miststride_boots.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/miststride_boots.png",
       "id": "miststride_boots",
       "max": 1,
       "name": "Miststride Boots",
@@ -122,7 +138,7 @@
       "slot": "boots"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/mistveil_jian.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/mistveil_jian.png",
       "id": "mistveil_jian",
       "max": 1,
       "name": "Mistveil Jian",
@@ -130,7 +146,7 @@
       "slot": "armament"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/moonthread_robe.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/moonthread_robe.png",
       "id": "moonthread_robe",
       "max": 1,
       "name": "Moonthread Robe",
@@ -138,7 +154,7 @@
       "slot": "robe"
     },
     {
-      "icon_source": "res://assets/ui/equipment/sets/jade_bastion/mountain_ward_jian.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/mountain_ward_jian.png",
       "id": "mountain_ward_jian",
       "max": 1,
       "name": "Mountain Ward Jian",
@@ -146,7 +162,7 @@
       "slot": "armament"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/nine_heavens_star_sword.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/nine_heavens_star_sword.png",
       "id": "nine_heavens_star_sword",
       "max": 1,
       "name": "Nine Heavens Star Sword",
@@ -154,7 +170,7 @@
       "slot": "armament"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/qi_reservoir_pendant.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/qi_reservoir_pendant.png",
       "id": "qi_reservoir_pendant",
       "max": 1,
       "name": "Qi Reservoir Pendant",
@@ -162,7 +178,7 @@
       "slot": "pendant"
     },
     {
-      "icon_source": "res://assets/ui/equipment/sets/stillwater_mirror/reflection_bracer.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/reflection_bracer.png",
       "id": "reflection_bracer",
       "max": 1,
       "name": "Reflection Bracer",
@@ -170,7 +186,7 @@
       "slot": "bracer"
     },
     {
-      "icon_source": "res://assets/ui/equipment/sets/jade_bastion/rootstep_boots.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/rootstep_boots.png",
       "id": "rootstep_boots",
       "max": 1,
       "name": "Rootstep Boots",
@@ -178,7 +194,7 @@
       "slot": "boots"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/shadowstep_boots.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/shadowstep_boots.png",
       "id": "shadowstep_boots",
       "max": 1,
       "name": "Shadowstep Boots",
@@ -186,7 +202,7 @@
       "slot": "boots"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/shrine_seal_pendant.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/shrine_seal_pendant.png",
       "id": "shrine_seal_pendant",
       "max": 1,
       "name": "Shrine Seal Pendant",
@@ -194,7 +210,7 @@
       "slot": "pendant"
     },
     {
-      "icon_source": "res://assets/ui/equipment/sets/stillwater_mirror/silent_ripple_boots.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/silent_ripple_boots.png",
       "id": "silent_ripple_boots",
       "max": 1,
       "name": "Silent Ripple Boots",
@@ -202,7 +218,7 @@
       "slot": "boots"
     },
     {
-      "icon_source": "res://assets/ui/equipment/sets/solar_meridian/solar_edict_bracer.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/solar_edict_bracer.png",
       "id": "solar_edict_bracer",
       "max": 1,
       "name": "Solar Edict Bracer",
@@ -210,7 +226,7 @@
       "slot": "bracer"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/sovereign_mantle.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/sovereign_mantle.png",
       "id": "sovereign_mantle",
       "max": 1,
       "name": "Sovereign Mantle",
@@ -218,7 +234,7 @@
       "slot": "robe"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/spirit_jade_pendant.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/spirit_jade_pendant.png",
       "id": "spirit_jade_pendant",
       "max": 1,
       "name": "Spirit Jade Pendant",
@@ -226,7 +242,7 @@
       "slot": "pendant"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/spirit_seal_fan.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/spirit_seal_fan.png",
       "id": "spirit_seal_fan",
       "max": 1,
       "name": "Spirit-Seal Fan",
@@ -234,7 +250,7 @@
       "slot": "armament"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/starstep_boots.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/starstep_boots.png",
       "id": "starstep_boots",
       "max": 1,
       "name": "Starstep Boots",
@@ -242,7 +258,7 @@
       "slot": "boots"
     },
     {
-      "icon_source": "res://assets/ui/equipment/sets/stillwater_mirror/stillwater_mirror_blade.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/stillwater_mirror_blade.png",
       "id": "stillwater_mirror_blade",
       "max": 1,
       "name": "Stillwater Mirror Blade",
@@ -250,7 +266,7 @@
       "slot": "armament"
     },
     {
-      "icon_source": "res://assets/ui/equipment/sets/jade_bastion/stone_meridian_robe.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/stone_meridian_robe.png",
       "id": "stone_meridian_robe",
       "max": 1,
       "name": "Stone Meridian Robe",
@@ -258,7 +274,7 @@
       "slot": "robe"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/stormcall_bracer.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/stormcall_bracer.png",
       "id": "stormcall_bracer",
       "max": 1,
       "name": "Stormcall Bracer",
@@ -266,7 +282,7 @@
       "slot": "bracer"
     },
     {
-      "icon_source": "res://assets/ui/equipment/sets/solar_meridian/sunfire_dragon_jian.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/sunfire_dragon_jian.png",
       "id": "sunfire_dragon_jian",
       "max": 1,
       "name": "Sunfire Dragon Jian",
@@ -274,7 +290,7 @@
       "slot": "armament"
     },
     {
-      "icon_source": "res://assets/ui/equipment/sets/solar_meridian/sunstride_boots.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/sunstride_boots.png",
       "id": "sunstride_boots",
       "max": 1,
       "name": "Sunstride Boots",
@@ -282,7 +298,7 @@
       "slot": "boots"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/sword_heart_pendant.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/sword_heart_pendant.png",
       "id": "sword_heart_pendant",
       "max": 1,
       "name": "Sword-Heart Pendant",
@@ -290,7 +306,7 @@
       "slot": "pendant"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/tribulation_bracer.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/tribulation_bracer.png",
       "id": "tribulation_bracer",
       "max": 1,
       "name": "Tribulation Bracer",
@@ -298,7 +314,7 @@
       "slot": "bracer"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/verdant_qi_robe.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/verdant_qi_robe.png",
       "id": "verdant_qi_robe",
       "max": 1,
       "name": "Verdant Qi Robe",
@@ -306,7 +322,7 @@
       "slot": "robe"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/wanderer_jade_jian.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/wanderer_jade_jian.png",
       "id": "wanderer_jade_jian",
       "max": 1,
       "name": "Wanderer's Jade Jian",
@@ -314,7 +330,7 @@
       "slot": "armament"
     },
     {
-      "icon_source": "res://assets/ui/equipment/final/ward_keeper_robe.png",
+      "icon_source": "res://assets/ui/equipment/imperial_v3/icons/ward_keeper_robe.png",
       "id": "ward_keeper_robe",
       "max": 1,
       "name": "Ward Keeper Robe",

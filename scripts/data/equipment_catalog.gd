@@ -5,6 +5,32 @@ extends RefCounted
 ## Collection Expansion Pass adds three complete five-piece set families
 ## without changing permanent loadout slots or save schema.
 const ITEMS: Dictionary = {
+	"celestial_returning_glaive": {
+		"display_name": "Celestial Returning Glaive",
+		"slot": "armament",
+		"rarity": "legendary",
+		"damage_bonus": 0.08,
+		"critical_chance_bonus": 0.02,
+		"signature_effect_name": "RETURNING HEAVEN",
+		"signature_effect_description": "Serangan awal menjadi cakram: lempar menembus, putar singkat, lalu kembali mengikuti posisi pemain. Lv.3: jalur sabit. Lv.5: dua cakram berselang. Lv.7: tebasan cincin saat berhasil kembali. Satu hit per musuh per fase; bintang meningkatkan stat.",
+		"price": 1100,
+		"forge_cost": 220,
+		"requires_chapter": 3,
+		"requires_stage": 5
+	},
+	"jade_binding_chain": {
+		"display_name": "Jade Binding Chain",
+		"slot": "armament",
+		"rarity": "legendary",
+		"damage_bonus": 0.08,
+		"critical_chance_bonus": 0.02,
+		"signature_effect_name": "JADE KNOT JUDGMENT",
+		"signature_effect_description": "Mengganti serangan awal: segel giok mengikat 2 musuh, memperlambat 40% selama 0.72s, lalu simpul meledak berurutan. Boss hanya melambat 12%. Refinement Lv.3/5/7 membuka 3/4/5 target dan radius lebih luas. Ascension meningkatkan stat, bukan durasi slow.",
+		"price": 1100,
+		"forge_cost": 220,
+		"requires_chapter": 3,
+		"requires_stage": 5
+	},
 	"wanderer_jade_jian": {
 		"display_name": "Wanderer's Jade Jian",
 		"slot": "armament",

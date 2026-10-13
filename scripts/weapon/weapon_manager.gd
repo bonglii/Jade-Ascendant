@@ -40,12 +40,18 @@ func _ready() -> void:
 
 ## Membuat weapon awal yang dimiliki Player.
 ## Internal weapon_name tetap Spirit Sword untuk kompatibilitas checkpoint v1.
-## Armament permanen hanya mengubah combat presentation profile starter art.
+## Reviewed armaments select their own starter attack; checkpoint identity stays stable.
 func initialize_weapons() -> void:
-	var spirit_sword := SpiritSwordWeapon.new()
 	var runtime_armament_id: String = EquipmentManager.get_runtime_equipped_item_id(
 		EquipmentManager.SLOT_ARMAMENT
 	)
+	var spirit_sword: SpiritSwordWeapon = SpiritSwordWeapon.new()
+	if runtime_armament_id == "jade_binding_chain":
+		spirit_sword.free()
+		spirit_sword = preload("res://scripts/weapon/jade_binding_chain_weapon.gd").new()
+	elif runtime_armament_id == "celestial_returning_glaive":
+		spirit_sword.free()
+		spirit_sword = preload("res://scripts/weapon/celestial_returning_glaive_weapon.gd").new()
 	spirit_sword.configure_armament(runtime_armament_id)
 
 	add_child(spirit_sword)
@@ -98,14 +104,14 @@ func _process(delta: float) -> void:
 			# immediately, without spending cooldown on empty space.
 			continue
 
-		if weapon.weapon_name == "Spirit Sword":
+		if weapon.weapon_name == "Spirit Sword" and str(weapon.get("armament_id")) not in ["jade_binding_chain", "celestial_returning_glaive"]:
 			AudioManager.play_sfx("sword")
 		elif weapon.weapon_name == "Fire Orb":
 			AudioManager.play_sfx("fire")
 		var attack_target_position: Vector2 = target.global_position
 		weapon.attack(player, target)
 		weapon_attack_triggered.emit(
-			weapon.weapon_name,
+			weapon.get_combat_display_name() if weapon.weapon_name == "Spirit Sword" and str(weapon.get("armament_id")) in ["jade_binding_chain", "celestial_returning_glaive"] else weapon.weapon_name,
 			attack_target_position
 		)
 		_fired_attacks += 1
@@ -326,4 +332,9 @@ func get_weapon_cooldown(weapon: Weapon) -> float:
 		* equipment_cooldown_multiplier
 	)
 
+	# Keep knot phases legible and bound concurrent casts to two at max level.
+	if weapon.weapon_name == "Spirit Sword" and str(weapon.get("armament_id")) == "jade_binding_chain":
+		return maxf(final_cooldown, 1.25)
+	if weapon.weapon_name == "Spirit Sword" and str(weapon.get("armament_id")) == "celestial_returning_glaive":
+		return maxf(final_cooldown, 1.75)
 	return max(final_cooldown, 0.1)

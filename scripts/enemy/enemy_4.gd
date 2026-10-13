@@ -231,6 +231,7 @@ func move_toward_player() -> void:
 	)
 
 	velocity = direction * speed
+	velocity *= preload("res://scripts/weapon/jade_binding_slow.gd").movement_factor(self)
 	move_and_slide()
 
 ## Memulai cast ketika cooldown selesai.

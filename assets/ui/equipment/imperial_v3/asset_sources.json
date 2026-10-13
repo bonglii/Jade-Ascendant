@@ -1,0 +1,1007 @@
+{
+  "generator": "Built-in image_gen",
+  "assets": [
+    {
+      "icon_source": "res://assets/ui/equipment/final/ascendant_heart.png",
+      "id": "ascendant_heart",
+      "max": 1,
+      "name": "Ascendant Heart",
+      "rarity": "legendary",
+      "slot": "pendant",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one legendary azure celestial core pendant, luminous sapphire orb in ornate antique-gold lotus-scroll cage, tiny star ornaments and blue silk tassel. Three-quarter catalog view with gentle dimensional depth. Rarity legendary: exquisite imperial treasure craftsmanship and intricate gold inlay.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/ascendant_heart.png",
+      "sha256": "1fa1cbc9af4f10d5b936e4981108072e7460fdec364f9d6410da5bcc2e26a258",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        165,
+        24,
+        1241,
+        1221
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/ascendant_heart.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/ascendant_heart.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/bamboo_weave_robe.png",
+      "id": "bamboo_weave_robe",
+      "max": 1,
+      "name": "Bamboo Weave Robe",
+      "rarity": "rare",
+      "slot": "robe",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one woven pale-blue cultivation robe with distinct bamboo-leaf jacquard, indigo belt and fine antique gold bamboo edging, broad flowing sleeves. Front view with gentle dimensional folds, empty garment and no body. Rarity rare: refined jade fittings and moderate gold ornament.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/bamboo_weave_robe.png",
+      "sha256": "95d881af446f734fc19bf1c65f44996ba3c06dfcca2ab5a09a73f4e7a468132d",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        24,
+        18,
+        1239,
+        1234
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/bamboo_weave_robe.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/bamboo_weave_robe.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/cinnabar_moon_saber.png",
+      "id": "cinnabar_moon_saber",
+      "max": 1,
+      "name": "Cinnabar Moon Saber",
+      "rarity": "epic",
+      "slot": "armament",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one curved crimson-jade dao saber with crescent moon cutaway near tip, lacquer-red wrapped grip, engraved antique gold moon guard, red short tassel. Orthographic side view, horizontal weapon, hilt at LEFT and tip pointing RIGHT; no diagonal rotation. Rarity epic: distinct layered heirloom ornament and rich contrasting materials.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/cinnabar_moon_saber.png",
+      "sha256": "15f49f73133f6b6ac037ec11cf8a4aac8f27578d215c9f4e49cef5095d3e15a1",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        20,
+        427,
+        1233,
+        926
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/cinnabar_moon_saber.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/cinnabar_moon_saber.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/cloudstep_boots.png",
+      "id": "cloudstep_boots",
+      "max": 1,
+      "name": "Cloudstep Boots",
+      "rarity": "common",
+      "slot": "boots",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: exactly one pair of modest dark-green cultivation boots, jade cloud embroidery, soft leather soles and small brass ankle clasps. Three-quarter catalog view with gentle dimensional depth. Rarity common: restrained ornament and practical craftsmanship.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/cloudstep_boots.png",
+      "sha256": "04f010ad94ba68011bcb5043bd90b80d7645d987992db6b20d991c272ce114e1",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        41,
+        71,
+        1210,
+        1177
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/cloudstep_boots.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/cloudstep_boots.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/cloudtreader_boots.png",
+      "id": "cloudtreader_boots",
+      "max": 1,
+      "name": "Cloudtreader Boots",
+      "rarity": "legendary",
+      "slot": "boots",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: exactly one pair of regal ivory-gold cloudwalking boots, gold sculpted cloud ankle wings, amber jade clasps and elegant long upturned toes. Three-quarter catalog view with gentle dimensional depth. Rarity legendary: exquisite imperial treasure craftsmanship and intricate gold inlay.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/cloudtreader_boots.png",
+      "sha256": "8a94d59ba4d425313f4926a0114c1de8703eecc79ae515ad32e1ab9a3e12c049",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        16,
+        34,
+        1240,
+        1213
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/cloudtreader_boots.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/cloudtreader_boots.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/solar_meridian/dawn_meridian_robe.png",
+      "id": "dawn_meridian_robe",
+      "max": 1,
+      "name": "Dawn Meridian Robe",
+      "rarity": "legendary",
+      "slot": "robe",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one brilliant antique-gold and warm ivory dawn robe, amber jade shoulder discs and radiating sun-scroll gold embroidered hems, long ceremonial sleeves. Front view with gentle dimensional folds, empty garment and no body. Rarity legendary: exquisite imperial treasure craftsmanship and intricate gold inlay.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/dawn_meridian_robe.png",
+      "sha256": "30876fd0bfefa7c599d23b627080d2239739777552df87dff3c51c7e5815f6fe",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        41,
+        12,
+        1213,
+        1238
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/dawn_meridian_robe.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/dawn_meridian_robe.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/jade_bastion/earthseal_bracer.png",
+      "id": "earthseal_bracer",
+      "max": 1,
+      "name": "Earthseal Bracer",
+      "rarity": "rare",
+      "slot": "bracer",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one thick moss-green jade cuff with gold hexagonal mountain seal medallion, earthy brown leather and blocky protective bands. Three-quarter catalog view with gentle dimensional depth. Rarity rare: refined jade fittings and moderate gold ornament.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/earthseal_bracer.png",
+      "sha256": "7c323157a0c9369c063d69c120ff15a72eafa9ccf070c1cb166d75474924c160",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        66,
+        169,
+        1200,
+        1073
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/earthseal_bracer.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/earthseal_bracer.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/stillwater_mirror/glassmoon_robe.png",
+      "id": "glassmoon_robe",
+      "max": 1,
+      "name": "Glassmoon Robe",
+      "rarity": "epic",
+      "slot": "robe",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one graceful icy-blue glassmoon cultivation robe with translucent pale-blue layered silk, silver-gold crescent embroidery and moonstone belt clasp. Front view with gentle dimensional folds, empty garment and no body. Rarity epic: distinct layered heirloom ornament and rich contrasting materials.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/glassmoon_robe.png",
+      "sha256": "a0cceffdcc9758d03973b8336cf6a511b0e87a692bcec21b64d81dbecbbb3b81",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        9,
+        9,
+        1245,
+        1239
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/glassmoon_robe.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/glassmoon_robe.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/solar_meridian/golden_core_pendant.png",
+      "id": "golden_core_pendant",
+      "max": 1,
+      "name": "Golden Core Pendant",
+      "rarity": "legendary",
+      "slot": "pendant",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one magnificent amber golden-core orb pendant in layered imperial gold sun-ray cage, fine radiating filigree and warm brown-gold silk tassel. Three-quarter catalog view with gentle dimensional depth. Rarity legendary: exquisite imperial treasure craftsmanship and intricate gold inlay.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/golden_core_pendant.png",
+      "sha256": "d0892f23db3615cb7aba78bb9635967388c19853fc255e0ed98222fe89081e97",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        172,
+        9,
+        1187,
+        1241
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/golden_core_pendant.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/golden_core_pendant.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/jade_bastion/guardian_jade_pendant.png",
+      "id": "guardian_jade_pendant",
+      "max": 1,
+      "name": "Guardian Jade Pendant",
+      "rarity": "rare",
+      "slot": "pendant",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one thick emerald-jade hexagonal guardian pendant with mountain-shaped gold center knot, robust brass frame and dark-green tassel. Three-quarter catalog view with gentle dimensional depth. Rarity rare: refined jade fittings and moderate gold ornament.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/guardian_jade_pendant.png",
+      "sha256": "c8c370b90d11687105da81698ee626c9ec9e66549550b656f94a227c93705a9e",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        165,
+        41,
+        1127,
+        1227
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/guardian_jade_pendant.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/guardian_jade_pendant.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/jade_edge_bracer.png",
+      "id": "jade_edge_bracer",
+      "max": 1,
+      "name": "Jade Edge Bracer",
+      "rarity": "rare",
+      "slot": "bracer",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one azure-jade forearm vambrace with edged gold blade fins and silver engraved scales, open cuff and layered distinct angular silhouette. Three-quarter catalog view with gentle dimensional depth. Rarity rare: refined jade fittings and moderate gold ornament.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/jade_edge_bracer.png",
+      "sha256": "581ae9dea1397f973fd0d226bcaaed2b85eb935215f94e66434edcb509af67c7",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        70,
+        23,
+        1203,
+        1216
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/jade_edge_bracer.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/jade_edge_bracer.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/jade_guard_bracer.png",
+      "id": "jade_guard_bracer",
+      "max": 1,
+      "name": "Jade Guard Bracer",
+      "rarity": "common",
+      "slot": "bracer",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one rounded emerald-jade forearm cuff with modest brass cloud trim and dark-green leather liner, compact smooth protective silhouette. Three-quarter catalog view with gentle dimensional depth. Rarity common: restrained ornament and practical craftsmanship.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/jade_guard_bracer.png",
+      "sha256": "ef913c4218cb52a1d2ccb718f22f748894fe64cbb69501f4fcf2a7010883ad8e",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        214,
+        90,
+        1102,
+        1164
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/jade_guard_bracer.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/jade_guard_bracer.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/mirror_edge_bracer.png",
+      "id": "mirror_edge_bracer",
+      "max": 1,
+      "name": "Mirror-Edge Bracer",
+      "rarity": "rare",
+      "slot": "bracer",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one pale-blue reflective forearm cuff, polished silver segmented mirror plates, thin antique gold ripple trim, clear sky-blue crystal at center, open cuff. Three-quarter catalog view with gentle dimensional depth. Rarity rare: refined jade fittings and moderate gold ornament.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/mirror_edge_bracer.png",
+      "sha256": "c1c73299f549af89fed0c6aaf1cf7d083b0c44f8bf5b5c46a82834d807bb5333",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        109,
+        94,
+        1169,
+        1160
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/mirror_edge_bracer.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/mirror_edge_bracer.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/stillwater_mirror/mirror_heart_pendant.png",
+      "id": "mirror_heart_pendant",
+      "max": 1,
+      "name": "Mirror Heart Pendant",
+      "rarity": "epic",
+      "slot": "pendant",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one pale-blue moonstone mirror pendant in thin silver-gold crescent frame, subtly reflective central polished lens and violet-blue silk tassel. Three-quarter catalog view with gentle dimensional depth. Rarity epic: distinct layered heirloom ornament and rich contrasting materials.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/mirror_heart_pendant.png",
+      "sha256": "1b17c7b8a20cda6b962b17279cef877a4a39b536126c58c3c15b088fcb72cf07",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        306,
+        31,
+        1034,
+        1214
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/mirror_heart_pendant.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/mirror_heart_pendant.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/miststride_boots.png",
+      "id": "miststride_boots",
+      "max": 1,
+      "name": "Miststride Boots",
+      "rarity": "rare",
+      "slot": "boots",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: exactly one pair of pale-blue and indigo silk-leather boots, silver mist swirls, antique gold ankle buckles and swept pointed toes. Three-quarter catalog view with gentle dimensional depth. Rarity rare: refined jade fittings and moderate gold ornament.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/miststride_boots.png",
+      "sha256": "0a328d2429b5ffbea75c552cdb3c8c3cb94d0d0293c8f47874d139bd6435c953",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        85,
+        59,
+        1200,
+        1189
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/miststride_boots.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/miststride_boots.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/mistveil_jian.png",
+      "id": "mistveil_jian",
+      "max": 1,
+      "name": "Mistveil Jian",
+      "rarity": "rare",
+      "slot": "armament",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: slender translucent ice-blue straight jian, silver mist-scroll guard, azure silk tassel and gold joints, refined airy silhouette. Orthographic side view, horizontal weapon, hilt at LEFT and tip pointing RIGHT; no diagonal rotation. Rarity rare: refined jade fittings and moderate gold ornament.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/mistveil_jian.png",
+      "sha256": "1393ea30ec921dcdc58dac492cc0811925eb7dc1493374b0e47d7666214c98f7",
+      "size": [
+        1850,
+        850
+      ],
+      "bounds": [
+        41,
+        167,
+        1810,
+        780
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/mistveil_jian.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/mistveil_jian.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/moonthread_robe.png",
+      "id": "moonthread_robe",
+      "max": 1,
+      "name": "Moonthread Robe",
+      "rarity": "rare",
+      "slot": "robe",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one dark violet midnight cultivation robe with lavender moon-thread embroidery, crescent brass shoulder clasps and folded layered sleeve panels. Front view with gentle dimensional folds, empty garment and no body. Rarity rare: refined jade fittings and moderate gold ornament.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/moonthread_robe.png",
+      "sha256": "1129b30fe0724dfe536ab6aae6b31bea9bbf752824bcf45cc0cd343400b30220",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        60,
+        22,
+        1207,
+        1227
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/moonthread_robe.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/moonthread_robe.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/jade_bastion/mountain_ward_jian.png",
+      "id": "mountain_ward_jian",
+      "max": 1,
+      "name": "Mountain Ward Jian",
+      "rarity": "rare",
+      "slot": "armament",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one sturdy broad moss-green jade jian, squared antique gold mountain ridge guard, angular stone-rune inlays, ochre-green short tassel. Orthographic side view, horizontal weapon, hilt at LEFT and tip pointing RIGHT; no diagonal rotation. Rarity rare: refined jade fittings and moderate gold ornament.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/mountain_ward_jian.png",
+      "sha256": "79c6b61b31d8a0dbf0ac8a0e1379b9fa3ac63a6448de6513ab4e7f5316ecdf6a",
+      "size": [
+        1774,
+        887
+      ],
+      "bounds": [
+        41,
+        246,
+        1732,
+        805
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/mountain_ward_jian.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/mountain_ward_jian.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/nine_heavens_star_sword.png",
+      "id": "nine_heavens_star_sword",
+      "max": 1,
+      "name": "Nine Heavens Star Sword",
+      "rarity": "legendary",
+      "slot": "armament",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one long regal azure-crystal straight jian, stepped celestial-star gold guard, luminous blue star-gem in pommel and fine gold constellation inlays. Orthographic side view, horizontal weapon, hilt at LEFT and tip pointing RIGHT; no diagonal rotation. Rarity legendary: exquisite imperial treasure craftsmanship and intricate gold inlay.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/nine_heavens_star_sword.png",
+      "sha256": "04da193be53a7c28387323067d3f144a08b4cd75ade17cf25b4bc476c048e580",
+      "size": [
+        1983,
+        793
+      ],
+      "bounds": [
+        31,
+        173,
+        1949,
+        703
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/nine_heavens_star_sword.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/nine_heavens_star_sword.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/qi_reservoir_pendant.png",
+      "id": "qi_reservoir_pendant",
+      "max": 1,
+      "name": "Qi Reservoir Pendant",
+      "rarity": "rare",
+      "slot": "pendant",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one deep-azure sapphire qi orb pendant encased in slender gold reservoir rings, small blue bead necklace loop and blue silk tassel. Three-quarter catalog view with gentle dimensional depth. Rarity rare: refined jade fittings and moderate gold ornament.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/qi_reservoir_pendant.png",
+      "sha256": "1932d31beaea801cc71b897c36f22198dec63a198dc292c425a2e5382a0a1c52",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        234,
+        15,
+        1038,
+        1248
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/qi_reservoir_pendant.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/qi_reservoir_pendant.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/stillwater_mirror/reflection_bracer.png",
+      "id": "reflection_bracer",
+      "max": 1,
+      "name": "Reflection Bracer",
+      "rarity": "epic",
+      "slot": "bracer",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one icy-blue mirror forearm guard with folded reflective silver facets, violet-blue jade lens and delicate gold ripple ribs, long tapered form. Three-quarter catalog view with gentle dimensional depth. Rarity epic: distinct layered heirloom ornament and rich contrasting materials.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/reflection_bracer.png",
+      "sha256": "00b76c394f555baf2dafea4a0c604fc15f1f2dfbe8aa5f3cccca406c60406bc8",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        62,
+        38,
+        1216,
+        1229
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/reflection_bracer.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/reflection_bracer.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/jade_bastion/rootstep_boots.png",
+      "id": "rootstep_boots",
+      "max": 1,
+      "name": "Rootstep Boots",
+      "rarity": "rare",
+      "slot": "boots",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: exactly one pair of forest-green rooted cultivation boots with gold vine lattice, moss-jade ankle plates, brown earth leather and grounded thick soles. Three-quarter catalog view with gentle dimensional depth. Rarity rare: refined jade fittings and moderate gold ornament.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/rootstep_boots.png",
+      "sha256": "2674de319131c473f049a03db1bfaf343219a973fe8fe7257bbcfafab9df9891",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        76,
+        34,
+        1187,
+        1219
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/rootstep_boots.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/rootstep_boots.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/shadowstep_boots.png",
+      "id": "shadowstep_boots",
+      "max": 1,
+      "name": "Shadowstep Boots",
+      "rarity": "epic",
+      "slot": "boots",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: exactly one pair of midnight-violet stealth boots, lavender shadow-thread panels, dark gold leaf trim and slim wrapped ankle silhouettes. Three-quarter catalog view with gentle dimensional depth. Rarity epic: distinct layered heirloom ornament and rich contrasting materials.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/shadowstep_boots.png",
+      "sha256": "6a6391a9a6b2ff801a27552531010ad1fabc79b83a45db0f150ecfba3ee9ec8f",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        35,
+        66,
+        1212,
+        1191
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/shadowstep_boots.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/shadowstep_boots.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/shrine_seal_pendant.png",
+      "id": "shrine_seal_pendant",
+      "max": 1,
+      "name": "Shrine Seal Pendant",
+      "rarity": "epic",
+      "slot": "pendant",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one angular cinnabar-red jade shrine seal pendant shaped as a tapering ceremonial tablet, gold sacred-cloud filigree and red silk tassel, no writing. Three-quarter catalog view with gentle dimensional depth. Rarity epic: distinct layered heirloom ornament and rich contrasting materials.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/shrine_seal_pendant.png",
+      "sha256": "97e44bb5a387c3adf6a6d63cb683c86e8b44895d91d7b79f2b13dd0b557805ef",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        240,
+        12,
+        1176,
+        1238
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/shrine_seal_pendant.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/shrine_seal_pendant.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/stillwater_mirror/silent_ripple_boots.png",
+      "id": "silent_ripple_boots",
+      "max": 1,
+      "name": "Silent Ripple Boots",
+      "rarity": "epic",
+      "slot": "boots",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: exactly one pair of elegant midnight-blue mirror boots with icy-blue ripple stitching, silver-gold narrow cuffs and smooth quiet low-profile soles. Three-quarter catalog view with gentle dimensional depth. Rarity epic: distinct layered heirloom ornament and rich contrasting materials.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/silent_ripple_boots.png",
+      "sha256": "56ff92e63f4bdb2410cddccc11d42dea682b56fce72aae2fdb24cf246c5216c6",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        104,
+        79,
+        1190,
+        1174
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/silent_ripple_boots.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/silent_ripple_boots.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/solar_meridian/solar_edict_bracer.png",
+      "id": "solar_edict_bracer",
+      "max": 1,
+      "name": "Solar Edict Bracer",
+      "rarity": "legendary",
+      "slot": "bracer",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one regal amber-gold forearm cuff with raised sun-wheel center jewel, engraved solar ray plates and burnt-orange jade inlays, ceremonial open cuff. Three-quarter catalog view with gentle dimensional depth. Rarity legendary: exquisite imperial treasure craftsmanship and intricate gold inlay.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/solar_edict_bracer.png",
+      "sha256": "61cb315f60b573b961e372bec0fc96126bebc1cf60cb0b333eb812fb2a05f3f1",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        48,
+        96,
+        1211,
+        1131
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/solar_edict_bracer.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/solar_edict_bracer.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/sovereign_mantle.png",
+      "id": "sovereign_mantle",
+      "max": 1,
+      "name": "Sovereign Mantle",
+      "rarity": "legendary",
+      "slot": "robe",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one regal deep-azure emperor cultivation mantle with sculpted gold dragon shoulder panels, long gold-lined split cape and sapphire clasp. Front view with gentle dimensional folds, empty garment and no body. Rarity legendary: exquisite imperial treasure craftsmanship and intricate gold inlay.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/sovereign_mantle.png",
+      "sha256": "935b9d90e0bc48f3c252d9b3e9f0ba531283a3d34288d3eb8bc42d435be6e7a1",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        32,
+        14,
+        1222,
+        1234
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/sovereign_mantle.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/sovereign_mantle.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/spirit_jade_pendant.png",
+      "id": "spirit_jade_pendant",
+      "max": 1,
+      "name": "Spirit Jade Pendant",
+      "rarity": "common",
+      "slot": "pendant",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one simple circular translucent emerald-jade pendant, carved cloud spiral, modest brass suspension cap and single short red silk tassel. Three-quarter catalog view with gentle dimensional depth. Rarity common: restrained ornament and practical craftsmanship.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/spirit_jade_pendant.png",
+      "sha256": "cede53c185b1a5d56e23a88cba221b603f609e11c935dc3f43b1bcc633bbee96",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        317,
+        47,
+        961,
+        1181
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/spirit_jade_pendant.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/spirit_jade_pendant.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/spirit_seal_fan.png",
+      "id": "spirit_seal_fan",
+      "max": 1,
+      "name": "Spirit-Seal Fan",
+      "rarity": "rare",
+      "slot": "armament",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one open ivory-and-jade folding fan, pale-blue painted cloud swirls, gilded bamboo ribs, turquoise carved seal at pivot and short blue tassel; broad fan opening faces RIGHT and pivot on LEFT. Three-quarter catalog view with gentle dimensional depth. Rarity rare: refined jade fittings and moderate gold ornament.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/spirit_seal_fan.png",
+      "sha256": "a338901d024385594cb22ae9a01ec2d6dd55828a0836568648e31f250948f68e",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        170,
+        45,
+        1200,
+        1234
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/spirit_seal_fan.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/spirit_seal_fan.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/starstep_boots.png",
+      "id": "starstep_boots",
+      "max": 1,
+      "name": "Starstep Boots",
+      "rarity": "epic",
+      "slot": "boots",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: exactly one pair of crimson cultivation boots, red jade star medallions at ankle, gold constellation piping and sturdy layered soles. Three-quarter catalog view with gentle dimensional depth. Rarity epic: distinct layered heirloom ornament and rich contrasting materials.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/starstep_boots.png",
+      "sha256": "f70bfa948537065279bcbfec828eec54eab3f19eb21086fa1db4fe49c8c0ec77",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        65,
+        52,
+        1192,
+        1199
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/starstep_boots.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/starstep_boots.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/stillwater_mirror/stillwater_mirror_blade.png",
+      "id": "stillwater_mirror_blade",
+      "max": 1,
+      "name": "Stillwater Mirror Blade",
+      "rarity": "epic",
+      "slot": "armament",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one elegant pale-blue mirror-polished straight blade, split silver-gold ripple guard, round moonstone pommel and blue-violet silk tassel. Orthographic side view, horizontal weapon, hilt at LEFT and tip pointing RIGHT; no diagonal rotation. Rarity epic: distinct layered heirloom ornament and rich contrasting materials.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/stillwater_mirror_blade.png",
+      "sha256": "f339867531982bf66cb0421e2486a04bd63814320ee4af97d75671671bf5ad48",
+      "size": [
+        2172,
+        724
+      ],
+      "bounds": [
+        42,
+        119,
+        2130,
+        681
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/stillwater_mirror_blade.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/stillwater_mirror_blade.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/jade_bastion/stone_meridian_robe.png",
+      "id": "stone_meridian_robe",
+      "max": 1,
+      "name": "Stone Meridian Robe",
+      "rarity": "rare",
+      "slot": "robe",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one earth-green sturdy cultivation robe with angular moss-jade lamellar shoulder plates, mountain-line gold embroidery and broad sage linen sash. Front view with gentle dimensional folds, empty garment and no body. Rarity rare: refined jade fittings and moderate gold ornament.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/stone_meridian_robe.png",
+      "sha256": "1902bccb70ed91aa01bd837c78988df8f89cc1acc4a178e55f139ba153075a50",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        25,
+        16,
+        1230,
+        1231
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/stone_meridian_robe.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/stone_meridian_robe.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/stormcall_bracer.png",
+      "id": "stormcall_bracer",
+      "max": 1,
+      "name": "Stormcall Bracer",
+      "rarity": "epic",
+      "slot": "bracer",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one crimson lacquer forearm vambrace with gold lightning ridge plates, warm orange storm gem and red leather liner, sharp layered storm silhouette. Three-quarter catalog view with gentle dimensional depth. Rarity epic: distinct layered heirloom ornament and rich contrasting materials.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/stormcall_bracer.png",
+      "sha256": "e3522e50e23a6b880178ed344678d5125ad5070d7f1f5c7f7e787d6fcbd14988",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        111,
+        41,
+        1196,
+        1202
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/stormcall_bracer.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/stormcall_bracer.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/solar_meridian/sunfire_dragon_jian.png",
+      "id": "sunfire_dragon_jian",
+      "max": 1,
+      "name": "Sunfire Dragon Jian",
+      "rarity": "legendary",
+      "slot": "armament",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one imperial amber-gold straight jian, sculpted gold dragon guard, orange jade center spine, restrained warm ember edge and gold-red grip. Orthographic side view, horizontal weapon, hilt at LEFT and tip pointing RIGHT; no diagonal rotation. Rarity legendary: exquisite imperial treasure craftsmanship and intricate gold inlay.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/sunfire_dragon_jian.png",
+      "sha256": "053f1b413dce9b458b410442ab19100745dff554cd75e4b01e6d0c6d15e97e8e",
+      "size": [
+        2172,
+        724
+      ],
+      "bounds": [
+        23,
+        123,
+        2149,
+        560
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "final_prompt": "Use case: stylized-concept. Create a clean physical object cutout for a premium wuxia equipment icon: one imperial antique-gold straight jian sword with an amber-jade blade inlay, ornate dragon-shaped crossguard, dark rust-red leather grip and amber pommel jewel. Horizontal side-on orthographic composition, hilt LEFT and blade tip RIGHT. Hand-painted dimensional gold metal and amber stone with finely engraved Chinese cloud motifs, matching an imperial jade equipment collection. Neutral painted surface highlights ONLY. Absolutely NO glowing aura, NO bloom, NO mist, NO fog, NO atmospheric light, NO light outside the object, NO shadow, NO black/brown backdrop, NO gradient and NO background surface. Completely transparent alpha outside the sharply isolated sword. Whole sword visible with padding. No text, title, stars, frame or human.",
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/sunfire_dragon_jian.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/sunfire_dragon_jian.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/sets/solar_meridian/sunstride_boots.png",
+      "id": "sunstride_boots",
+      "max": 1,
+      "name": "Sunstride Boots",
+      "rarity": "legendary",
+      "slot": "boots",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: exactly one pair of imperial golden dawn boots, amber solar ankle disc ornaments, burnt-orange silk panels and gold dragon toe caps. Three-quarter catalog view with gentle dimensional depth. Rarity legendary: exquisite imperial treasure craftsmanship and intricate gold inlay.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/sunstride_boots.png",
+      "sha256": "0fa2258332bd7582eee4ef9431b48f1c4d41f78dc1f89cc61e816b695428ead1",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        99,
+        38,
+        1188,
+        1175
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/sunstride_boots.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/sunstride_boots.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/sword_heart_pendant.png",
+      "id": "sword_heart_pendant",
+      "max": 1,
+      "name": "Sword-Heart Pendant",
+      "rarity": "epic",
+      "slot": "pendant",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one vivid red-jade circular heart-of-sword pendant with miniature gold jian set through its center, gold coil frame and paired short crimson tassels. Three-quarter catalog view with gentle dimensional depth. Rarity epic: distinct layered heirloom ornament and rich contrasting materials.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/sword_heart_pendant.png",
+      "sha256": "c1921b33df78785b11d8041d86af64f895018c71eaafa0d8c7e1e1f3784ab267",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        144,
+        8,
+        1104,
+        1222
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/sword_heart_pendant.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/sword_heart_pendant.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/tribulation_bracer.png",
+      "id": "tribulation_bracer",
+      "max": 1,
+      "name": "Tribulation Bracer",
+      "rarity": "legendary",
+      "slot": "bracer",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one legendary sapphire and imperial gold vambrace with stepped lightning crown fins, large blue tribulation crystal and deeply engraved dragon fittings. Three-quarter catalog view with gentle dimensional depth. Rarity legendary: exquisite imperial treasure craftsmanship and intricate gold inlay.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/tribulation_bracer.png",
+      "sha256": "125b8f99c116aa4add520e5b22c0b8a2ddec3c8ab27a49001a17111584de048b",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        150,
+        33,
+        1216,
+        1222
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/tribulation_bracer.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/tribulation_bracer.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/verdant_qi_robe.png",
+      "id": "verdant_qi_robe",
+      "max": 1,
+      "name": "Verdant Qi Robe",
+      "rarity": "common",
+      "slot": "robe",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one simple flowing forest-green cultivation robe with light jade inner lapel, modest gold edging, emerald belt clasp, readable wide sleeves. Front view with gentle dimensional folds, empty garment and no body. Rarity common: restrained ornament and practical craftsmanship.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/verdant_qi_robe.png",
+      "sha256": "6884eda0e9b039f818473a55b99e06b5cada4f69c2d5c52df280331a5cb4ad6a",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        110,
+        32,
+        1151,
+        1226
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/verdant_qi_robe.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/verdant_qi_robe.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/wanderer_jade_jian.png",
+      "id": "wanderer_jade_jian",
+      "max": 1,
+      "name": "Wanderer's Jade Jian",
+      "rarity": "common",
+      "slot": "armament",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: slender straight green-jade jian, modest aged-brass cloud guard, wrapped forest-green grip, tiny jade bead tassel, humble wanderer craft. Orthographic side view, horizontal weapon, hilt at LEFT and tip pointing RIGHT; no diagonal rotation. Rarity common: restrained ornament and practical craftsmanship.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/wanderer_jade_jian.png",
+      "sha256": "789011375e283339332528f0b2e640cbdc5fec0432321bda7e5c447786c0bb85",
+      "size": [
+        2172,
+        724
+      ],
+      "bounds": [
+        62,
+        41,
+        2133,
+        698
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "final_prompt": "Use case: background-extraction. Edit only the attached game weapon asset: remove ALL of the black/brown backdrop and ALL soft glow, halo, bloom and atmospheric haze outside the physical weapon. Make all those areas truly transparent with clean alpha. Preserve the exact weapon, every blade/guard/engraving material, its horizontal orientation with tip RIGHT, colors, grip and tassel. Keep the whole weapon intact with padding; do not redesign or add anything. Return an isolated crisp premium equipment cutout, no background or cast shadow.",
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/wanderer_jade_jian.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/wanderer_jade_jian.png"
+    },
+    {
+      "icon_source": "res://assets/ui/equipment/final/ward_keeper_robe.png",
+      "id": "ward_keeper_robe",
+      "max": 1,
+      "name": "Ward Keeper Robe",
+      "rarity": "epic",
+      "slot": "robe",
+      "prompt": "Use case: stylized-concept. Asset type: individual transparent premium wuxia xianxia mobile game equipment treasure icon. Cohesive hand-painted jade-and-antique-gold material palette with physically legible depth, precise Chinese cloud engraving, fine silk/leather texture, painterly highlights, excellent readable silhouette at small size. Exactly the described equipment, no background, human, mannequin, scene, card, frame, text, labels, stars, watermark, giant halo, surrounding particles or cast shadows. True transparent alpha around the isolated object and in holes. Entire item visible, centered square composition, occupies 78 percent of canvas with generous transparent padding. Subject: one crimson layered guardian robe with robust gold ward-plated shoulders, circular red jade belt seal, cream inner folds and heavy protective sleeves. Front view with gentle dimensional folds, empty garment and no body. Rarity epic: distinct layered heirloom ornament and rich contrasting materials.",
+      "new_path": "res://assets/ui/equipment/imperial_v3/ward_keeper_robe.png",
+      "sha256": "c885fd6a86b16b15c69e8a5c63c2718d496335a8d8e22ed8b117d661cb328240",
+      "size": [
+        1254,
+        1254
+      ],
+      "bounds": [
+        76,
+        21,
+        1180,
+        1231
+      ],
+      "import_size_limit": 256,
+      "mipmaps": true,
+      "admin_path": "res://assets/ui/equipment/imperial_v3/icons/ward_keeper_robe.png",
+      "ui_path": "res://assets/ui/equipment/imperial_v3/icons/ward_keeper_robe.png"
+    }
+  ]
+}
