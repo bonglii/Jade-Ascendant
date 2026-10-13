@@ -80,6 +80,19 @@ func run() -> void:
    mail._toggle_compact_inbox();await settled()
    check(mail._sync_button.is_visible_in_tree(),label+" sync also accessible from inbox")
    if mail._body.size.x<mail.WIDE_READER_THRESHOLD: check(mail._inbox_panel.visible and not mail._letter_panel.visible,label+" inbox toggle")
+   var card: Button=mail._mail_card_refs["server:"+LONG_ID].button
+   var previous_selection: String=mail._selected_id
+   mail._scroll_active=true;card.button_down.emit();card.pressed.emit();await settled()
+   check(mail._selected_id==previous_selection,label+" swipe cannot change selected mail")
+   if mail._body.size.x<mail.WIDE_READER_THRESHOLD:check(mail._compact_inbox_open,label+" swipe cannot open reader")
+   mail._scroll_active=false;mail._tap_guard_until=0
+   card.button_down.emit();card.pressed.emit();await settled()
+   check(mail._selected_id=="server:"+LONG_ID and mail._letter_panel.visible,label+" direct card tap opens full letter without READ")
+   if mail._body.size.x<mail.WIDE_READER_THRESHOLD:
+    check(not mail._compact_inbox_open and not mail._inbox_panel.visible,label+" card tap switches compact view to reader")
+    mail._toggle_compact_inbox();await settled()
+    card.button_down.emit();card.pressed.emit();await settled()
+    check(mail._letter_panel.visible and not mail._compact_inbox_open,label+" already-selected letter also opens with one tap")
    check(mail._reader_content.mouse_filter==Control.MOUSE_FILTER_IGNORE,label+" document does not swallow swipe input")
    for tile: Control in mail._rewards_row.get_children():check(tile.mouse_filter==Control.MOUSE_FILTER_IGNORE,label+" attachment does not swallow swipe input")
    var local_id: String=""

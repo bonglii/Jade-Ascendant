@@ -821,7 +821,7 @@ func _select_mail(id: String) -> void:
 		_selected_id = id
 		_refresh_from_authority()
 	# On narrow viewports, selecting the current letter must still open it.
-	if _body.size.x < 450.0:
+	if _body.size.x < WIDE_READER_THRESHOLD:
 		_compact_inbox_open = false
 		_layout_body()
 
