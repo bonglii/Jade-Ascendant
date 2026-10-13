@@ -57,7 +57,9 @@ func run() -> void:
 	check(not mailer._state.is_empty(),"mail install ID persisted on first startup")
 	if mailer._state.is_empty(): quit(1); return
 	check(mailer._valid_id(str(mailer._state.installation_id)),"install ID is bounded lowercase hex")
-	check(saver.get_save_domain_ids_for_scope("permanent").size() == 8,"locked eight permanent domains preserved")
+	var permanent: Array[String] = saver.get_save_domain_ids_for_scope("permanent")
+	permanent.sort()
+	check(permanent == ["achievements", "cultivation_mastery", "daily_quests", "equipment", "idle_cultivation", "inventory", "journey", "pavilion", "progression"],"all original permanent domains plus approved Mastery preserved")
 	check(saver.get_save_scope("server_mail") == "local_profile","presentation cache stays outside locked cloud schema")
 	var progression: Node = root.get_node("ProgressionManager")
 	var inventory: Node = root.get_node("InventoryManager")

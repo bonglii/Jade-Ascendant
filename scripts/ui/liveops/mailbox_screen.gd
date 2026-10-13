@@ -47,7 +47,7 @@ const INBOX_CARD_MIN_HEIGHT: float = 96.0
 const INBOX_TITLE_MAX_LINES: int = 3
 const INBOX_SENDER_MAX_LINES: int = 2
 # Slightly expand the parchment into the unused visual gap beside the inbox.
-const PARCHMENT_LEFT_EXTENSION: float = 16.0
+const WIDE_READER_THRESHOLD: float = 760.0
 
 var live_ops: Node = null
 var _claim_busy: bool = false
@@ -60,6 +60,7 @@ var _compact_inbox_button: Button = null
 var _compact_inbox_open: bool = false
 var _body: Control = null
 var _inbox_panel: PanelContainer = null
+var _inbox_safe: MarginContainer
 var _letter_panel: Control = null
 var _inbox_scroll: ScrollContainer = null
 var _inbox_list: VBoxContainer = null
@@ -82,8 +83,14 @@ var _claim_button: Button = null
 var _no_claim_hint: Label = null
 var _footer_label: Label = null
 var _server_status: Label = null
+var _action_grid: GridContainer
+var _sync_button: Button
+var _mail_title: Label
+var _mail_tagline: Label
 var _selected_id: String = ""
 var _scroll_active: bool = false
+var _reader_dragging: bool = false
+var _reader_tap_guard_until: int = 0
 var _tap_guard_until: int = 0
 var _pressed_scroll_y: Dictionary = {}
 var _mail_card_refs: Dictionary = {}
@@ -179,6 +186,7 @@ func _build_popup() -> void:
 	safe.add_child(outer)
 
 	_build_hero(outer)
+	_build_mail_toolbar(outer)
 	_build_two_column_body(outer)
 
 	# Frame must be above all content, but transparent center must never eat input.
@@ -189,65 +197,74 @@ func _build_popup() -> void:
 
 
 func _build_hero(parent: VBoxContainer) -> void:
-	_hero = Control.new()
+	_hero = PanelContainer.new()
 	_hero.name = "SpiritMessagesArtHeader"
-	_hero.custom_minimum_size.y = 187.0
+	_hero.add_theme_stylebox_override("panel", _style(Color(0.002,0.025,0.035,.94),Color(GOLD,.6),12,1))
 	parent.add_child(_hero)
-
-	var eyebrow := _label("JADE SANCTUARY  ·  CELESTIAL COURIER", 13, GOLD_LIGHT)
-	eyebrow.name = "HeaderEyebrow"
-	eyebrow.anchor_left = 0.12
-	eyebrow.anchor_right = 0.88
-	eyebrow.offset_top = 45.0
-	eyebrow.offset_bottom = 67.0
-	eyebrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_hero.add_child(eyebrow)
-
-	var title := _label("SPIRIT MESSAGES", 34, IVORY)
-	title.name = "SpiritMessagesTitle"
-	title.anchor_left = 0.0
-	title.anchor_right = 1.0
-	title.offset_top = 75.0
-	title.offset_bottom = 114.0
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_color_override("font_shadow_color", Color(0.0, 0.015, 0.025, 1.0))
-	_hero.add_child(title)
-
-	var tagline := _label("Messages from across the Cultivation World", 16, IVORY)
-	tagline.name = "HeaderTagline"
-	tagline.anchor_left = 0.02
-	tagline.anchor_right = 0.98
-	tagline.offset_top = 123.0
-	tagline.offset_bottom = 151.0
-	tagline.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	tagline.add_theme_color_override("font_shadow_color", Color(0.0, 0.015, 0.025, 1.0))
-	_hero.add_child(tagline)
-
-	_compact_inbox_button = _button("INBOX", false)
-	_compact_inbox_button.name = "NarrowViewportInboxReaderToggle"
-	_compact_inbox_button.anchor_left = 0.0
-	_compact_inbox_button.anchor_right = 0.0
-	_compact_inbox_button.offset_left = 75.0
-	_compact_inbox_button.offset_right = 159.0
-	_compact_inbox_button.offset_top = 0.0
-	_compact_inbox_button.offset_bottom = 40.0
-	_compact_inbox_button.visible = false
-	_compact_inbox_button.z_index = 6
-	_compact_inbox_button.pressed.connect(_toggle_compact_inbox)
-	_hero.add_child(_compact_inbox_button)
-
-	var close := _button("×", false)
+	var margin := MarginContainer.new()
+	for side: String in ["left","right","top","bottom"]: margin.add_theme_constant_override("margin_"+side,10)
+	_hero.add_child(margin)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation",8)
+	margin.add_child(row)
+	var words := VBoxContainer.new()
+	words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	words.add_theme_constant_override("separation",3)
+	row.add_child(words)
+	_mail_title = _label("SPIRIT MESSAGES",28,GOLD_LIGHT)
+	_mail_title.name = "SpiritMessagesTitle"
+	_mail_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	words.add_child(_mail_title)
+	_mail_tagline = _label("Messages from across the Cultivation World",14,MUTED)
+	_mail_tagline.name = "HeaderTagline"
+	_mail_tagline.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	words.add_child(_mail_tagline)
+	var close := _button("×",false)
 	close.name = "CloseSpiritMessages"
-	close.anchor_left = 1.0
-	close.anchor_right = 1.0
-	close.offset_left = -28.0
-	close.offset_right = 20.0
-	close.offset_top = 6.0
-	close.offset_bottom = 52.0
-	close.add_theme_font_size_override("font_size", 29)
-	close.z_index = 6
+	close.custom_minimum_size = Vector2(42,42)
+	close.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	close.pressed.connect(_back)
-	_hero.add_child(close)
+	_popup.add_child(close)
+	close.anchor_left = .92
+	close.anchor_right = .92
+	close.anchor_top = .083
+	close.anchor_bottom = .083
+	close.offset_left = -22
+	close.offset_right = 22
+	close.offset_top = -22
+	close.offset_bottom = 22
+	close.z_index = 6
+	close.tooltip_text = tr("CLOSE")
+	close.add_theme_font_size_override("font_size",26)
+	for state: String in ["normal","hover","pressed"]: close.add_theme_stylebox_override(state,StyleBoxEmpty.new())
+	close.add_theme_color_override("font_color",GOLD_LIGHT)
+
+func _build_mail_toolbar(parent: VBoxContainer) -> void:
+	var toolbar := VBoxContainer.new()
+	toolbar.name = "MailboxSyncToolbar"
+	toolbar.add_theme_constant_override("separation",4)
+	parent.add_child(toolbar)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation",8)
+	toolbar.add_child(row)
+	_compact_inbox_button = _button("INBOX",false)
+	_compact_inbox_button.name = "NarrowViewportInboxReaderToggle"
+	_compact_inbox_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_compact_inbox_button.pressed.connect(_toggle_compact_inbox)
+	row.add_child(_compact_inbox_button)
+	_sync_button = _button("SYNC MAIL",false)
+	_sync_button.name = "MailboxServerSyncButton"
+	_sync_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_sync_button.pressed.connect(ServerMailManager.refresh)
+	row.add_child(_sync_button)
+	_server_status = _label(ServerMailManager.get_status(),12,MUTED)
+	_server_status.name = "MailboxServerStatus"
+	_server_status.add_theme_stylebox_override("normal",_style(Color(0.002,0.02,0.028,.95),Color(GOLD,.3),6,1))
+	_server_status.max_lines_visible = 2
+	_server_status.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_server_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_server_status.tooltip_text = _server_status.text
+	toolbar.add_child(_server_status)
 
 
 func _build_two_column_body(parent: VBoxContainer) -> void:
@@ -265,6 +282,7 @@ func _build_two_column_body(parent: VBoxContainer) -> void:
 func _build_inbox_panel(parent: Control) -> void:
 	_inbox_panel = PanelContainer.new()
 	_inbox_panel.name = "InboxColumn"
+	_inbox_panel.clip_contents = true
 	var inbox_style := StyleBoxFlat.new()
 	inbox_style.bg_color = Color(0.0, 0.0, 0.0, 0.0)
 	inbox_style.border_color = Color(0.91, 0.72, 0.35, 0.24)
@@ -281,6 +299,7 @@ func _build_inbox_panel(parent: Control) -> void:
 	parent.add_child(_inbox_panel)
 
 	var safe := MarginContainer.new()
+	_inbox_safe = safe
 	for side: String in ["left", "right"]:
 		safe.add_theme_constant_override("margin_" + side, 9)
 	safe.add_theme_constant_override("margin_top", 4)
@@ -298,19 +317,6 @@ func _build_inbox_panel(parent: Control) -> void:
 	_inbox_count = _label("2 LETTERS", 13, MUTED)
 	_inbox_count.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(_inbox_count)
-	var sync := Button.new()
-	sync.name = "MailboxServerSyncButton"
-	sync.text = tr("SYNC MAIL")
-	sync.add_theme_font_size_override("font_size",14)
-	sync.custom_minimum_size.y = 36
-	sync.clip_text = true
-	sync.pressed.connect(ServerMailManager.refresh)
-	col.add_child(sync)
-	_server_status = _label(ServerMailManager.get_status(),10,MUTED)
-	_server_status.name = "MailboxServerStatus"
-	_server_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_server_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(_server_status)
 
 	var rule := ColorRect.new()
 	rule.custom_minimum_size.y = 2.0
@@ -349,6 +355,7 @@ func _build_inbox_panel(parent: Control) -> void:
 func _build_parchment_panel(parent: Control) -> void:
 	_letter_panel = Control.new()
 	_letter_panel.name = "SelectedLetterParchmentColumn"
+	_letter_panel.clip_contents = true
 	parent.add_child(_letter_panel)
 	var paper := _full_texture(
 		_letter_panel, LETTER_PARCHMENT, TextureRect.STRETCH_SCALE
@@ -357,6 +364,7 @@ func _build_parchment_panel(parent: Control) -> void:
 
 	_letter_safe = MarginContainer.new()
 	_letter_safe.name = "LetterContentSafeArea"
+	_letter_safe.clip_contents = true
 	_letter_safe.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_letter_panel.add_child(_letter_safe)
 	var col := VBoxContainer.new()
@@ -371,6 +379,12 @@ func _build_parchment_panel(parent: Control) -> void:
 	_reader_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	_reader_scroll.scroll_deadzone = DEADZONE
 	col.add_child(_reader_scroll)
+	_reader_scroll.scroll_started.connect(func():
+		_reader_dragging = true
+		_reader_tap_guard_until = Time.get_ticks_msec()+TAP_GUARD_MS)
+	_reader_scroll.scroll_ended.connect(func():
+		_reader_dragging = false
+		_reader_tap_guard_until = Time.get_ticks_msec()+TAP_GUARD_MS)
 	_reader_hint = _label("SCROLL TO READ FULL LETTER",11,PAPER_MUTED)
 	_reader_hint.name = "CompleteLetterScrollHint"
 	_reader_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -405,6 +419,9 @@ func _build_parchment_panel(parent: Control) -> void:
 	_letter_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_letter_body.add_theme_font_size_override("normal_font_size",18)
 	_letter_body.add_theme_color_override("default_color",INK)
+	_letter_body.add_theme_color_override("font_shadow_color",Color.TRANSPARENT)
+	_letter_body.add_theme_color_override("font_outline_color",Color.TRANSPARENT)
+	_letter_body.add_theme_constant_override("outline_size",0)
 	_reader_content.add_child(_letter_body)
 	_letter_footer = VBoxContainer.new()
 	_letter_footer.name = "PinnedAttachmentAndClaimFooter"
@@ -423,12 +440,20 @@ func _build_parchment_panel(parent: Control) -> void:
 	_attachment_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_attachment_group.add_child(_attachment_caption)
 	_rebuild_reward_slot(_attachment_group)
-	_build_claim_slot(_letter_footer)
+	_action_grid = GridContainer.new()
+	_action_grid.name = "PinnedMailActions"
+	_action_grid.add_theme_constant_override("h_separation",8)
+	_action_grid.add_theme_constant_override("v_separation",6)
+	_letter_footer.add_child(_action_grid)
+	_build_claim_slot(_action_grid)
 	_delete_button = _button("DELETE MESSAGE",false)
 	_delete_button.name = "MailDeleteMessage"
 	_delete_button.clip_text = true
 	_delete_button.pressed.connect(_on_delete_pressed)
-	_letter_footer.add_child(_delete_button)
+	_delete_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_action_grid.add_child(_delete_button)
+	LiveOpsUi.make_scroll_tree_touch_safe(_reader_content)
+	LiveOpsUi.make_scroll_tree_touch_safe(_inbox_list)
 
 
 func _rebuild_reward_slot(parent: VBoxContainer) -> void:
@@ -452,14 +477,16 @@ func _rebuild_reward_slot(parent: VBoxContainer) -> void:
 	reward_holder.add_child(_rewards_row)
 
 
-func _build_claim_slot(parent: VBoxContainer) -> void:
+func _build_claim_slot(parent: Container) -> void:
 	var action_slot := Control.new()
 	action_slot.custom_minimum_size.y = 56.0
+	action_slot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	parent.add_child(action_slot)
 
 	_claim_button = _button("CLAIM", true)
 	_claim_button.name = "MailClaimAttachment"
-	_claim_button.clip_text = true
+	_claim_button.clip_text = false
+	_claim_button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_claim_button.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	# The shared flight presenter reads the focused button as the source position.
 	_claim_button.focus_mode = Control.FOCUS_ALL
@@ -478,34 +505,17 @@ func _build_claim_slot(parent: VBoxContainer) -> void:
 func _fit_popup() -> void:
 	if not is_instance_valid(_popup):
 		return
-	var width_value: float = clampf(size.x * 0.945, 1.0, 685.0)
-	var height_value: float = clampf(size.y * (0.88 if size.y < 1000.0 else 0.795), 1.0, 1090.0)
-	_popup.position = Vector2(
-		(size.x - width_value) * 0.5,
-		(size.y - height_value) * 0.48
-	)
-	_popup.size = Vector2(width_value, height_value)
-	var side_inset: int = roundi(clampf(width_value * 0.07,24.0,48.0))
-	_popup_safe.add_theme_constant_override("margin_left",side_inset)
-	_popup_safe.add_theme_constant_override("margin_right",side_inset)
-	_popup_safe.add_theme_constant_override("margin_top",roundi(clampf(height_value * 0.059,24.0,54.0)))
-	_popup_safe.add_theme_constant_override("margin_bottom",roundi(clampf(height_value * 0.0835,36.0,91.0)))
-	if is_instance_valid(_hero):
-		var compact: bool = height_value < 750.0
-		_hero.custom_minimum_size.y = (113.0 if height_value < 650.0 else 133.0) if compact else 182.0
-		var eyebrow := _hero.get_node_or_null("HeaderEyebrow") as Label
-		var title := _hero.get_node_or_null("SpiritMessagesTitle") as Label
-		var tagline := _hero.get_node_or_null("HeaderTagline") as Label
-		if eyebrow != null:
-			eyebrow.visible = not compact
-		if title != null:
-			title.offset_top = 40.0 if compact else 75.0
-			title.offset_bottom = 78.0 if compact else 114.0
-			title.add_theme_font_size_override("font_size", 27 if compact else 34)
-		if tagline != null:
-			tagline.offset_top = 80.0 if compact else 123.0
-			tagline.offset_bottom = 104.0 if compact else 151.0
-			tagline.add_theme_font_size_override("font_size", 13 if compact else 16)
+	var width_value: float = minf(size.x * 0.94, 960.0 if size.x >= 1100 else 685.0)
+	var height_value: float = minf(size.y * (.94 if size.y<650 else .88), 1120.0)
+	_popup.position = Vector2((size.x-width_value)*.5,(size.y-height_value)*.5)
+	_popup.size = Vector2(width_value,height_value)
+	var inset: int = roundi(clampf(width_value*.065,18,42))
+	_popup_safe.add_theme_constant_override("margin_left",inset)
+	_popup_safe.add_theme_constant_override("margin_right",inset)
+	_popup_safe.add_theme_constant_override("margin_top",roundi(clampf(height_value*.15,48,140)))
+	_popup_safe.add_theme_constant_override("margin_bottom",roundi(clampf(height_value*.075,22,76)))
+	_mail_title.add_theme_font_size_override("font_size",20 if width_value<400 else 28)
+	_mail_tagline.visible = height_value >= 650
 	_layout_body()
 
 
@@ -515,20 +525,20 @@ func _layout_body() -> void:
 	var w: float = _body.size.x
 	var h: float = _body.size.y
 	if is_instance_valid(_compact_inbox_button):
-		_compact_inbox_button.visible = w < 450.0
+		_compact_inbox_button.visible = w < WIDE_READER_THRESHOLD
 		_compact_inbox_button.text = tr("READ") if _compact_inbox_open else tr("INBOX")
-	if w >= 450.0:
+	if w >= WIDE_READER_THRESHOLD:
 		_inbox_panel.visible = true
 		_letter_panel.visible = true
-		var left_w: float = maxf(177.0, w * 0.355)
-		_inbox_panel.position = Vector2(0.0, -8.0)
+		var left_w: float = maxf(220.0, w * 0.29)
+		_inbox_panel.position = Vector2.ZERO
 		# Size the *existing* cards from the rendered font and available width;
 		# the third line of a title or second sender line must not push NOTICE out.
 		_inbox_panel.size.x = left_w
 		_update_inbox_card_heights(left_w)
 		var list_height: float = _inbox_required_height()
-		_inbox_panel.size = Vector2(left_w, minf(h + 8.0, list_height))
-		var letter_x: float = left_w + 8.0 - PARCHMENT_LEFT_EXTENSION
+		_inbox_panel.size = Vector2(left_w, minf(h, list_height))
+		var letter_x: float = left_w + 16.0
 		_letter_panel.position = Vector2(letter_x, 0.0)
 		_letter_panel.size = Vector2(maxf(w - letter_x, 1.0), h)
 	else:
@@ -546,25 +556,30 @@ func _layout_body() -> void:
 
 func _layout_letter_reader() -> void:
 	if not is_instance_valid(_reader_scroll): return
-	var small: bool = _letter_panel.size.y < 500.0 or _rewards_row.get_child_count() > 4
-	var inset: int = 16 if small else 26
+	# Use the artwork's inner printable region, not the outer texture bounds.
+	var inset: int = roundi(_letter_panel.size.x*.12)
 	_letter_safe.add_theme_constant_override("margin_left",inset)
 	_letter_safe.add_theme_constant_override("margin_right",inset)
-	_letter_safe.add_theme_constant_override("margin_top",16 if small else 31)
-	_letter_safe.add_theme_constant_override("margin_bottom",16 if small else 29)
-	# On short screens only the actions remain pinned. Attachments are still
-	# reachable in the same document instead of forcing all reading space to zero.
-	var target: Node = _reader_content if small else _letter_footer
-	if _attachment_group.get_parent() != target:
-		_attachment_group.reparent(target,false)
-		if not small: _letter_footer.move_child(_attachment_group,0)
+	_letter_safe.add_theme_constant_override("margin_top",roundi(_letter_panel.size.y*.185))
+	_letter_safe.add_theme_constant_override("margin_bottom",roundi(_letter_panel.size.y*.085))
+	if _attachment_group.get_parent() != _reader_content:
+		_attachment_group.reparent(_reader_content,false)
+	LiveOpsUi.make_scroll_tree_touch_safe(_reader_content)
+	var printable_width: float = _letter_panel.size.x - inset*2.0
+	_action_grid.columns = 2
+	_claim_button.add_theme_font_size_override("font_size",16 if printable_width<280 else 20)
+	_delete_button.text = tr("DELETE") if printable_width < 280 else tr("DELETE MESSAGE")
+	_no_claim_hint.text = tr("NO MAIL") if _selected_id.is_empty() else tr("NOTICE") if printable_width < 280 else tr("MESSAGE · NO REWARD")
+	_rewards_row.columns = 1 if printable_width < 350.0 else 2
+	_letter_subject.add_theme_font_size_override("font_size",18 if printable_width<300 else 22)
+	_letter_body.add_theme_font_size_override("normal_font_size",16 if printable_width<300 else 18)
 
 
 func _update_reader_hint() -> void:
 	if not is_instance_valid(_reader_hint): return
 	var bar: VScrollBar = _reader_scroll.get_v_scroll_bar()
 	_reader_hint.visible = bar.max_value > bar.page + 1.0
-	_reader_hint.text = tr("END OF LETTER") if bar.value >= bar.max_value-bar.page-1.0 else tr("SCROLL TO READ FULL LETTER")
+	_reader_hint.text = tr("END OF LETTER") if bar.value >= bar.max_value-bar.page-1.0 else ("GULIR UNTUK BACA" if SettingsManager.language=="id" else "SCROLL TO READ") if _letter_panel.size.x*.76<280 else tr("SCROLL TO READ FULL LETTER")
 
 
 func _restore_reader_scroll(id: String,signature: String,offset: int) -> void:
@@ -599,8 +614,10 @@ func _inbox_label_height(label: Label, text_width: float, max_lines: int) -> flo
 func _update_inbox_card_heights(inbox_width: float) -> void:
 	if inbox_width <= 0.0:
 		return
-	# Inbox border (2), outer margins (18), card margins (18), guard (4).
-	var text_width: float = maxf(inbox_width - 42.0, 40.0)
+	var inset: int = roundi(clampf(inbox_width*.08,18,42))
+	_inbox_safe.add_theme_constant_override("margin_left",inset)
+	_inbox_safe.add_theme_constant_override("margin_right",inset)
+	var text_width: float = maxf(inbox_width - inset*2.0 - 24.0, 40.0)
 	for raw_refs: Variant in _mail_card_refs.values():
 		var refs: Dictionary = raw_refs as Dictionary
 		var item: Button = refs.get("button") as Button
@@ -660,7 +677,10 @@ func _refresh_from_authority() -> void:
 	if _refreshing or live_ops == null or not is_instance_valid(_inbox_list):
 		return
 	_refreshing = true
-	if is_instance_valid(_server_status): _server_status.text = tr(ServerMailManager.get_status())
+	if is_instance_valid(_server_status):
+		_server_status.text = tr(ServerMailManager.get_status())
+		_server_status.tooltip_text = _server_status.text
+	if is_instance_valid(_sync_button): _sync_button.disabled = bool(ServerMailManager.get("_refreshing"))
 	var entries: Array[Dictionary] = _entries()
 	var selection_found: bool = false
 	for entry: Dictionary in entries:
@@ -847,6 +867,7 @@ func _refresh_letter() -> void:
 			entry = mail
 			break
 
+	_claim_button.tooltip_text = ""
 	_delete_button.visible = not entry.is_empty()
 	_delete_button.disabled = not bool(live_ops.can_delete_mail(_selected_id)) or _claim_busy
 	_delete_button.tooltip_text = tr("CLAIM ATTACHMENT BEFORE DELETING") if not bool(entry.get("claimed", true)) else ""
@@ -857,11 +878,12 @@ func _refresh_letter() -> void:
 		_letter_subject.text = tr("The Empty Sky")
 		_letter_sender.text = tr("JADE SANCTUARY")
 		_letter_body.text = tr("No messages have arrived.\n\nMay the Celestial Courier bring good tidings to your cultivation path.")
+		_attachment_group.visible = false
 		_attachment_caption.text = tr("NO ATTACHMENTS")
 		_fill_attachment_tiles([])
 		_claim_button.visible = false
 		_no_claim_hint.visible = true
-		_no_claim_hint.text = tr("WAITING FOR A LETTER")
+		_no_claim_hint.text = tr("NO MAIL")
 		_footer_label.text = tr("JADE SANCTUARY")
 		return
 
@@ -882,6 +904,7 @@ func _refresh_letter() -> void:
 
 	var reward: Dictionary = entry.get("reward", {})
 	var has_reward: bool = not reward.is_empty()
+	_attachment_group.visible = has_reward
 	var claimed: bool = bool(entry.get("claimed", false))
 	var read_only: bool = SaveManager.is_progress_read_only()
 	_attachment_caption.text = tr("ATTACHMENTS") if has_reward else tr("SEALED NOTICE")
@@ -897,7 +920,7 @@ func _refresh_letter() -> void:
 		else tr("CONNECTING") if server_busy
 		else tr("EXPIRED") if bool(entry.get("expired",false)) and not bool(entry.get("pending",false))
 		else tr("UNAVAILABLE") if not claim_allowed
-		else tr("SAVE READ ONLY") if read_only
+		else tr("READ ONLY") if read_only
 		else tr("RECOVER CLAIM") if bool(entry.get("pending",false))
 		else tr("CLAIM")
 	)
@@ -957,7 +980,7 @@ func _fill_attachment_tiles(rewards: Array) -> void:
 		# it shrinks to one glyph and forces the pinned footer to fill the letter.
 		return
 
-	_rewards_row.columns = 1 if rewards.size() == 1 else 2
+	_rewards_row.columns = 1 if _letter_panel.size.x*.76 < 350.0 else 2
 	for raw: Variant in rewards:
 		if not (raw is Dictionary):
 			continue
@@ -993,7 +1016,7 @@ func _fill_attachment_tiles(rewards: Array) -> void:
 		pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		pic.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		content.add_child(pic)
-		var quantity := _label("×%d" % int(reward.get("amount", 0)), 17, GOLD_LIGHT)
+		var quantity := _label("×%d" % int(reward.get("amount", 0)), 17, INK)
 		# A numeric reward amount is indivisible: the shared _label() helper
 		# enables word-wrap, which splits digits inside the narrow attachment tile.
 		quantity.autowrap_mode = TextServer.AUTOWRAP_OFF
@@ -1004,9 +1027,11 @@ func _fill_attachment_tiles(rewards: Array) -> void:
 		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		stack.add_child(name_label)
+	LiveOpsUi.make_scroll_tree_touch_safe(_reader_content)
 
 
 func _on_claim_pressed() -> void:
+	if _reader_dragging or Time.get_ticks_msec()<_reader_tap_guard_until: return
 	if _claim_busy or live_ops == null or not is_instance_valid(_claim_button):
 		return
 	if _claim_button.disabled or _selected_id.is_empty():
@@ -1027,10 +1052,12 @@ func _on_claim_pressed() -> void:
 	_claim_busy = false
 	_refresh_from_authority()
 	if not success and is_instance_valid(_claim_button) and not _claim_button.disabled:
-		_claim_button.text = tr("CLAIM FAILED · RETRY")
+		_claim_button.text = tr("RETRY")
+		_claim_button.tooltip_text = tr("CLAIM FAILED · RETRY")
 
 
 func _on_delete_pressed() -> void:
+	if _reader_dragging or Time.get_ticks_msec()<_reader_tap_guard_until: return
 	if _claim_busy or _selected_id.is_empty() or _delete_button.disabled:
 		return
 	_claim_busy = true
@@ -1062,6 +1089,9 @@ func _label(value: String, font_size: int, color: Color) -> Label:
 	label.text = tr(value)
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
+	label.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+	label.add_theme_color_override("font_outline_color", Color.TRANSPARENT)
+	label.add_theme_constant_override("outline_size",0)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return label
@@ -1074,7 +1104,7 @@ func _button(value: String, primary: bool) -> Button:
 	button.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
 	button.keep_pressed_outside = false
 	button.custom_minimum_size = Vector2(0.0, 44.0)
-	button.mouse_filter = Control.MOUSE_FILTER_STOP
+	button.mouse_filter = Control.MOUSE_FILTER_PASS
 	button.add_theme_font_size_override("font_size", 16 if primary else 14)
 	button.add_theme_color_override(
 		"font_color", INK if primary else IVORY

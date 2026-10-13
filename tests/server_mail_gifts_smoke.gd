@@ -30,8 +30,8 @@ func run() -> void:
   var expected: Dictionary=JSON.parse_string(FileAccess.get_file_as_string(expect_path))
   check(pavilion.get_celestial_jade()==int(expected.jade),"restart retains gift Jade")
   check(pavilion.get_pavilion_seals()==int(expected.seals),"restart retains summon seals")
-  check(inventory.get_item_count("nine_heavens_star_sword")==1,"restart retains equipment")
-  check(inventory.get_item_count("refinement_shard")==int(expected.shards),"restart retains duplicate conversion")
+  check(inventory.get_item_count("nine_heavens_star_sword")==int(expected.copies),"restart retains identical equipment duplicates")
+  check(inventory.get_item_count("refinement_shard")==int(expected.shards),"restart retains shards without copy conversion")
   claim("a".repeat(32),{"spirit_stone":0,"items":{},"celestial_jade":100})
   check(pavilion.get_celestial_jade()==int(expected.jade),"restart replay does not add Jade")
   check(not saver.has_pending_transaction(),"restart journal settled")
@@ -66,7 +66,7 @@ func run() -> void:
  check(not mailer._has_local_receipt("d".repeat(32)),"save failure leaves no claim marker")
  check(mailer._queue.is_empty(),"save failure sends no ACK")
  saver.end_save_write_barrier("gifts_qa")
- var expected: Dictionary={"jade":pavilion.get_celestial_jade(),"seals":pavilion.get_pavilion_seals(),"shards":inventory.get_item_count("refinement_shard")}
+ var expected: Dictionary={"jade":pavilion.get_celestial_jade(),"seals":pavilion.get_pavilion_seals(),"shards":inventory.get_item_count("refinement_shard"),"copies":inventory.get_item_count("nine_heavens_star_sword")}
  var file:=FileAccess.open(expect_path,FileAccess.WRITE);file.store_string(JSON.stringify(expected));file.close()
  print("MAIL_GIFTS_QA checks=",checks," failures=",failures)
  quit(1 if failures else 0)
