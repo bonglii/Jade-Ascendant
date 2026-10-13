@@ -117,6 +117,7 @@ func spawn_elite_enemy_2() -> bool:
 	apply_stage_enemy_identity(elite_enemy, 2, true)
 	get_parent().add_child(elite_enemy)
 	elite_enemy.global_position = get_random_spawn_position()
+	elite_enemy.set_meta("qi_magnet_wave", int(wave_manager.current_wave))
 	connect_enemy_defeated_signal(elite_enemy)
 	DebugLogger.system("Realm %d-%d | elite 2 | %s" % [
 		int(stage_profile.get("realm_id", 4)),

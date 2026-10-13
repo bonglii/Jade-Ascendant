@@ -11,6 +11,19 @@ var check_left: float = 0.0
 var player: Node2D
 var sprite: AnimatedSprite2D
 var magnet_radius: float = 52.0
+var attraction_speed: float = 310.0
+var vacuum_attracted: bool = false
+
+func attract_to_player(target: Node2D) -> bool:
+	if collected or is_queued_for_deletion() or not is_instance_valid(target):
+		return false
+	player = target
+	attracted = true
+	vacuum_attracted = true
+	# Far-away shards arrive in approximately 0.65 active gameplay seconds.
+	# The existing pickup path applies XP multipliers and guards repeat contact.
+	attraction_speed = maxf(310.0, global_position.distance_to(target.global_position) / 0.65)
+	return true
 
 func _ready() -> void:
 	add_to_group("qi_pickup")
@@ -43,7 +56,10 @@ func _physics_process(delta: float) -> void:
 		check_left = 0.12
 		attracted = global_position.distance_squared_to(player.global_position) < magnet_radius * magnet_radius
 	if attracted:
-		global_position = global_position.move_toward(player.global_position, 310.0 * delta)
+		var move_speed: float = attraction_speed
+		if vacuum_attracted and player is CharacterBody2D:
+			move_speed = maxf(move_speed, (player as CharacterBody2D).velocity.length() + 310.0)
+		global_position = global_position.move_toward(player.global_position, move_speed * delta)
 		if global_position.distance_squared_to(player.global_position) < 100.0:
 			_collect(player)
 		queue_redraw()

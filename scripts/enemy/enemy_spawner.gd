@@ -9,6 +9,8 @@ signal boss_spawned_signal(boss: Node)
 signal enemy_killed
 
 const ELITE_SPAWN_WAVES: Array[int] = [4, 8]
+const QiMagnet = preload("res://scripts/pickups/qi_magnet.gd")
+var qi_magnet_awarded_waves: Dictionary = {}
 const ChapterOneCatalog = preload("res://scripts/data/chapter_one_catalog.gd")
 const ChapterTwoEnemyVisualCatalog = preload(
 	"res://scripts/data/chapter_two_enemy_visual_catalog.gd"
@@ -425,6 +427,77 @@ func connect_enemy_defeated_signal(enemy: Node) -> void:
 		return
 
 	enemy.enemy_defeated.connect(_on_enemy_defeated)
+	if enemy.has_meta("qi_magnet_wave"):
+		var spawn_wave: int = int(enemy.get_meta("qi_magnet_wave"))
+		if spawn_wave in get_qi_magnet_waves():
+			enemy.enemy_defeated.connect(_on_qi_magnet_elite_defeated.bind(enemy, spawn_wave))
+
+func get_qi_magnet_waves() -> Array[int]:
+	var schedule: Dictionary = stage_profile.get("elite_schedule", {4: 1, 8: 2})
+	var waves: Array[int] = []
+	for key: Variant in schedule:
+		var wave: int = int(key)
+		if wave >= 4 and wave < (int(wave_manager.final_wave) if wave_manager != null else 10):
+			waves.append(wave)
+	waves.sort()
+	var result: Array[int] = []
+	if waves.is_empty():
+		return result
+	result.append(waves[0])
+	for wave: int in waves:
+		if wave >= 8 and wave > result[0]:
+			result.append(wave)
+			return result
+	if waves[-1] > result[0]:
+		result.append(waves[-1])
+	return result
+
+func _on_qi_magnet_elite_defeated(enemy: Node2D, spawn_wave: int) -> void:
+	if spawn_wave not in get_qi_magnet_waves() or qi_magnet_awarded_waves.has(spawn_wave) or not is_instance_valid(enemy):
+		return
+	qi_magnet_awarded_waves[spawn_wave] = true
+	_spawn_qi_magnet.call_deferred(enemy.global_position)
+
+func _spawn_qi_magnet(at: Vector2) -> void:
+	if not is_inside_tree():
+		return
+	var magnet: Area2D = QiMagnet.new()
+	magnet.position = (get_parent() as Node2D).to_local(at)
+	get_parent().add_child(magnet)
+
+func get_qi_magnet_state() -> Dictionary:
+	var pending: Array[Dictionary] = []
+	for magnet: Node2D in get_tree().get_nodes_in_group("qi_magnet"):
+		if not magnet.is_queued_for_deletion() and magnet.get_parent() == get_parent():
+			pending.append({"x": magnet.global_position.x, "y": magnet.global_position.y})
+	return {"awarded_waves": qi_magnet_awarded_waves.keys(), "pending": pending}
+
+func restore_qi_magnet_state(state: Variant) -> void:
+	qi_magnet_awarded_waves.clear()
+	for magnet: Node in get_tree().get_nodes_in_group("qi_magnet"):
+		if magnet.get_parent() == get_parent():
+			magnet.remove_from_group("qi_magnet")
+			magnet.queue_free()
+	var eligible: Array[int] = get_qi_magnet_waves()
+	# Legacy checkpoints have no tokens. Skip past drop milestones on resume.
+	if not state is Dictionary or state.is_empty():
+		for wave: int in eligible:
+			if wave_manager != null and wave < int(wave_manager.current_wave):
+				qi_magnet_awarded_waves[wave] = true
+		return
+	var awarded: Variant = state.get("awarded_waves", [])
+	if awarded is Array:
+		for value: Variant in awarded:
+			if (value is int or value is float) and int(value) in eligible:
+				qi_magnet_awarded_waves[int(value)] = true
+	var pending: Variant = state.get("pending", [])
+	if pending is Array:
+		for i: int in range(mini(pending.size(), qi_magnet_awarded_waves.size())):
+			var item: Variant = pending[i]
+			if item is Dictionary and (item.get("x") is float or item.get("x") is int) and (item.get("y") is float or item.get("y") is int):
+				var at := Vector2(float(item.x), float(item.y))
+				if is_finite(at.x) and is_finite(at.y):
+					_spawn_qi_magnet(at)
 
 ## Mencatat satu kill ketika Enemy dikalahkan melalui combat.
 func _on_enemy_defeated() -> void:
@@ -474,6 +547,7 @@ func spawn_elite_enemy_1() -> bool:
 
 	elite_enemy.global_position = get_random_spawn_position()
 
+	elite_enemy.set_meta("qi_magnet_wave", int(wave_manager.current_wave))
 	connect_enemy_defeated_signal(elite_enemy)
 
 	DebugLogger.system(str("=========================================="))
@@ -502,6 +576,7 @@ func spawn_elite_enemy_2() -> bool:
 
 	elite_enemy.global_position = get_random_spawn_position()
 
+	elite_enemy.set_meta("qi_magnet_wave", int(wave_manager.current_wave))
 	connect_enemy_defeated_signal(elite_enemy)
 
 	DebugLogger.system(str("=========================================="))
