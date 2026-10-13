@@ -12,6 +12,7 @@ extends Area2D
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 
 var direction: Vector2 = Vector2.ZERO
+var presentation_theme: String = "jade_valley"
 var configured_sprite_frames: SpriteFrames = null
 
 func configure_sprite_frames(frames: SpriteFrames) -> void:
@@ -20,6 +21,10 @@ func configure_sprite_frames(frames: SpriteFrames) -> void:
 func _ready() -> void:
 	## Active hostile projectile must remain readable above actor bodies.
 	z_index = 4
+	if configured_sprite_frames != null:
+		var art_path: String = configured_sprite_frames.resource_path
+		presentation_theme = "nine_heavens" if "chapter3" in art_path else "crimson_moon" if "chapter2" in art_path else "jade_valley"
+	preload("res://scripts/enemy/hostile_attack_polish.gd").install(self,"projectile")
 
 	add_to_group("enemy_attack")
 	body_entered.connect(_on_body_entered)

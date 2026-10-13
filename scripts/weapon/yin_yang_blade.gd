@@ -15,6 +15,7 @@ var reversal_visual_active: bool = false
 
 
 func _ready() -> void:
+	preload("res://scripts/effects/skill_instance_polish.gd").install(self, "yin_yang_blades")
 	collision_layer = 0
 	collision_mask = 2
 	monitoring = true

@@ -380,6 +380,10 @@ func _update_choice_card(button: Button, upgrade_id: String) -> void:
 	progress_label.text = get_upgrade_progress(upgrade_id)
 
 	button.set_meta("upgrade_id", upgrade_id)
+	var engraving: Control = button.get_node_or_null("CardVisual/SkillEngraving")
+	if engraving != null:
+		engraving.skill_id = upgrade_id
+		engraving.queue_redraw()
 	_set_premium_card_text(button, upgrade_id)
 	_update_choice_icon(button, upgrade_id)
 	_apply_choice_card_style(button, upgrade_id)
@@ -696,6 +700,7 @@ func _is_new_weapon(upgrade_id: String) -> bool:
 
 
 func apply_upgrade(upgrade_id: String) -> void:
+	var applied_effect: String = get_upgrade_effect(upgrade_id)
 	match upgrade_id:
 		"spirit_sword":
 			weapon_manager.upgrade_weapon("Spirit Sword")
@@ -738,6 +743,7 @@ func apply_upgrade(upgrade_id: String) -> void:
 			selection_locked = false
 			return
 
+	preload("res://scripts/player/skill_ascension_feedback.gd").show_applied(player, upgrade_id, get_upgrade_display_name(upgrade_id), applied_effect)
 	DebugLogger.system(str("Upgrade dipilih: ", upgrade_id))
 	close_level_up()
 
@@ -1029,10 +1035,10 @@ func _apply_choice_card_style(button: Button, upgrade_id: String) -> void:
 		shadow_size + 4
 	)
 
-	button.add_theme_stylebox_override("normal", normal_style)
-	button.add_theme_stylebox_override("hover", hover_style)
+	button.add_theme_stylebox_override("normal", _engraved_skill_style(normal_style, skill_primary, state))
+	button.add_theme_stylebox_override("hover", _engraved_skill_style(hover_style, skill_primary.lightened(0.1), state))
 	button.add_theme_stylebox_override("focus", hover_style)
-	button.add_theme_stylebox_override("pressed", pressed_style)
+	button.add_theme_stylebox_override("pressed", _engraved_skill_style(pressed_style, skill_secondary, state))
 
 	var rail: ColorRect = button.get_node_or_null("CardVisual/AccentRail") as ColorRect
 	if rail != null:
@@ -1299,6 +1305,10 @@ func _build_premium_card_visual(button: Button) -> void:
 	card.clip_contents = true
 	card.set_anchors_preset(Control.PRESET_FULL_RECT)
 	button.add_child(card)
+	var engraving: Control = preload("res://scripts/ui/skill_choice_engraving.gd").new()
+	engraving.name = "SkillEngraving"
+	card.add_child(engraving)
+	engraving.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	# Layered ornamental frame. These pieces stay behind content and are tinted
 	# per skill/state at runtime, giving depth without adding heavy textures.
@@ -1820,13 +1830,13 @@ func _m7d_refresh_button() -> void:
 		return
 	var status: Dictionary = DailyQuestManager.m7d_get_offer_status()
 	var has_alternative: bool = _m7d_has_alternative_choices()
-	var ready: bool = (
+	var reroll_available: bool = (
 		bool(status.get("available", false))
 		and has_alternative
 	)
-	_m7d_button.disabled = not ready
+	_m7d_button.disabled = not reroll_available
 	_m7d_button.text = (
-		"WATCH AD • REROLL" if ready else
+		"WATCH AD • REROLL" if reroll_available else
 		"NO OTHER CHOICES" if not has_alternative else
 		str(status.get("reason", "AD UNAVAILABLE"))
 	)
@@ -1928,3 +1938,13 @@ func _m7d_clear_request() -> void:
 	_m7d_future_choices.clear()
 	selection_locked = false
 	_m7d_refresh_button()
+
+func _engraved_skill_style(source: StyleBoxFlat, accent: Color, state: String) -> StyleBoxTexture:
+	var style := StyleBoxTexture.new()
+	style.texture = load("res://assets/ui/system_v2/custom/cards/relic_card_legendary.svg" if state in ["final", "resonance", "awakening"] else "res://assets/ui/system_v2/custom/cards/relic_card_common.svg")
+	style.modulate_color = Color(0.68+accent.r*0.32,0.68+accent.g*0.32,0.68+accent.b*0.32)
+	style.texture_margin_left=20;style.texture_margin_right=20
+	style.texture_margin_top=20;style.texture_margin_bottom=20
+	for edge: String in ["left","right","top","bottom"]:
+		style.set("content_margin_"+edge,source.get("content_margin_"+edge))
+	return style

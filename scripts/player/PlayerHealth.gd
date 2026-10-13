@@ -112,11 +112,14 @@ func _on_enemy_killed() -> void:
 
 	blood_qi_kill_progress = 0
 
+	var before_recovery_health: float = current_health
 	heal(BLOOD_QI_HEAL_AMOUNT + EquipmentSetRuntime.get_capped_combined_secondary_bonus(
 		"blood_qi_heal_bonus",
 		0.75
 	))
 
+	if current_health > before_recovery_health:
+		preload("res://scripts/player/skill_ascension_feedback.gd").show_proc(get_parent(), "blood_qi")
 	DebugLogger.progression(
 		"Blood Qi Recovery | HP: %.1f/%.1f"
 		% [
@@ -277,6 +280,7 @@ func take_damage(amount: float) -> void:
 ## Mengonsumsi satu Qi Shield charge dan mengirim event actual block.
 func consume_qi_shield() -> void:
 	qi_shield_charges -= 1
+	preload("res://scripts/player/skill_ascension_feedback.gd").show_proc(get_parent(), "qi_shield")
 	CombatFeedback.pulse(get_parent().global_position, "reversal")
 	AudioManager.play_sfx("shield")
 

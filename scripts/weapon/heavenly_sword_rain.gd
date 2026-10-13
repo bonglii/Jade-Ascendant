@@ -35,6 +35,7 @@ var descent_glow: Line2D = null
 
 
 func _ready() -> void:
+	preload("res://scripts/effects/skill_instance_polish.gd").install(self, "heavenly_sword_rain")
 	z_index = 2
 	collision_layer = 0
 	collision_mask = 2

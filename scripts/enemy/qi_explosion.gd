@@ -63,6 +63,7 @@ func _presentation_color(
 	return verdant
 
 func _ready() -> void:
+	preload("res://scripts/enemy/hostile_attack_polish.gd").install(self,"explosion")
 	add_to_group("enemy_attack")
 
 	collision_layer = 0

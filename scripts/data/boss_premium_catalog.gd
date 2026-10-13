@@ -11,6 +11,9 @@ static func get_profile(display_name: String) -> Dictionary:
 	return {}
 static func theme_color(theme: String) -> Color:
 	match theme:
+		"storm": return Color(0.72,0.52,1.0)
+		"frostveil": return Color(0.48,0.89,1.0)
+		"solar_nirvana": return Color(1.0,0.64,0.25)
 		"crimson_moon": return Color(1.0,0.78,0.43)
 		"nine_heavens": return Color(0.68,0.75,1.0)
 	return Color(0.38,0.95,0.77)

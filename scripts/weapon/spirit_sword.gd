@@ -42,6 +42,7 @@ func configure_combat_profile(profile: Dictionary) -> void:
 
 
 func _ready() -> void:
+	preload("res://scripts/effects/skill_instance_polish.gd").install(self, "spirit_sword")
 	_apply_combat_profile()
 
 

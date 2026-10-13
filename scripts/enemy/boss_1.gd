@@ -239,6 +239,8 @@ var current_phase: int = PHASE_ONE
 var last_ranged_pattern: int = -1
 var facing_left: bool = true
 var visual_action_timer: float = 0.0
+var _ranged_cast_pending: bool = false
+var _radial_release_index: int = 0
 var phase_transition_timer: float = 0.0
 
 
@@ -801,6 +803,9 @@ func _play_loop_animation(
 
 ## Menentukan perilaku Boss berdasarkan jarak terhadap Player.
 func update_behavior() -> void:
+	if _ranged_cast_pending:
+		velocity = Vector2.ZERO
+		return
 	var distance_to_player: float = global_position.distance_to(player.global_position)
 
 	if distance_to_player <= melee_distance:
@@ -914,7 +919,7 @@ func attack_player() -> void:
 
 ## Memilih ranged attack tanpa mengulang pattern sebelumnya.
 func try_ranged_attack() -> void:
-	if ranged_attack_timer > 0.0:
+	if _ranged_cast_pending or ranged_attack_timer > 0.0:
 		return
 
 	var attack_pattern: int = choose_ranged_pattern()
@@ -970,9 +975,12 @@ func choose_ranged_pattern() -> int:
 
 ## Pattern #1: menembakkan satu projectile menuju posisi Player.
 func shoot_projectile() -> void:
-	if player == null or not is_instance_valid(player):
+	if _ranged_cast_pending or is_dead or player == null or not is_instance_valid(player):
 		return
 
+	var aimed_position: Vector2 = player.global_position
+	var cast_phase: int = current_phase
+	_ranged_cast_pending = true
 	_update_facing_to_player()
 
 	_play_action_animation(
@@ -980,6 +988,9 @@ func shoot_projectile() -> void:
 		PROJECTILE_CAST_VISUAL_DURATION
 	)
 
+	await get_tree().create_timer(PROJECTILE_CAST_VISUAL_DURATION * 0.48, false).timeout
+	_ranged_cast_pending = false
+	if is_dead or not is_inside_tree() or current_phase != cast_phase: return
 	var projectile = PROJECTILE_SCENE.instantiate()
 	projectile.set("damage", projectile_damage)
 	projectile.set("presentation_theme", _get_attack_presentation_theme())
@@ -987,12 +998,15 @@ func shoot_projectile() -> void:
 	get_parent().add_child(projectile)
 
 	projectile.global_position = global_position
-	projectile.setup(player.global_position)
+	projectile.setup(aimed_position)
 
 	DebugLogger.system(str("BOSS PROJECTILE FIRED!"))
 
 ## Pattern #2: menembakkan projectile secara melingkar dari posisi Boss.
 func shoot_radial_projectiles() -> void:
+	if _ranged_cast_pending or is_dead: return
+	var cast_phase: int = current_phase
+	_ranged_cast_pending = true
 	_update_facing_to_player()
 
 	_play_action_animation(
@@ -1000,18 +1014,23 @@ func shoot_radial_projectiles() -> void:
 		RADIAL_CAST_VISUAL_DURATION
 	)
 
+	await get_tree().create_timer(RADIAL_CAST_VISUAL_DURATION * 0.48, false).timeout
+	_ranged_cast_pending = false
+	if is_dead or not is_inside_tree() or current_phase != cast_phase: return
 	var projectile_count: int = get_current_radial_projectile_count()
 
 	if projectile_count <= 0:
 		return
 
 	var angle_step: float = TAU / projectile_count
+	var release_offset: float = angle_step * (0.5 if _radial_release_index % 2 == 1 else 0.0)
+	_radial_release_index += 1
 
 	for i in range(projectile_count):
 		var projectile = PROJECTILE_SCENE.instantiate()
 		projectile.set("damage", projectile_damage)
 		projectile.set("presentation_theme", _get_attack_presentation_theme())
-		var angle: float = angle_step * i
+		var angle: float = angle_step * i + release_offset
 		var direction: Vector2 = Vector2.RIGHT.rotated(angle)
 
 		get_parent().add_child(projectile)

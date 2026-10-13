@@ -139,3 +139,6 @@ func spawn_hit_visual() -> void:
 		impact_visual_scale,
 		0.1
 	)
+
+func _ready() -> void:
+	preload("res://scripts/effects/skill_instance_polish.gd").install(self, "fire_orb")

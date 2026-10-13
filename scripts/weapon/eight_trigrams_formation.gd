@@ -29,6 +29,7 @@ var _visual_refresh_elapsed: float = 0.0
 
 
 func _ready() -> void:
+	preload("res://scripts/effects/skill_instance_polish.gd").install(self, "eight_trigrams_formation")
 	z_index = -1
 	lifetime_remaining = duration
 	pulse_remaining = pulse_interval

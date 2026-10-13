@@ -85,6 +85,7 @@ func _draw() -> void:
 			draw_line(from,to,Color(tint,pulse*0.65),2,true)
 	if action_left > 0.0:
 		var charge: float = 1.0-action_left/action_length
+		_draw_action_crest(center, charge, tint)
 		var radius: float = 28.0+charge*20.0
 		for side: int in [-1,1]:
 			draw_arc(center+Vector2(side*12,8),radius,PI*(0.4 if side == 1 else 1.4),PI*(1.0 if side == 1 else 2.0),16,Color(tint,0.45*sin(charge*PI)),2.4,true)
@@ -98,3 +99,21 @@ func _on_defeat() -> void:
 	remnant.position = get_parent().position
 	world.add_child(remnant)
 	remnant.setup(sprite,profile.accent)
+
+func _draw_action_crest(center: Vector2, progress: float, tint: Color) -> void:
+	var alpha: float = sin(progress * PI) * 0.85
+	var facing: float = -1.0 if bool(get_parent().facing_left) else 1.0
+	var hand: Vector2 = center + Vector2(facing * 30, -12)
+	if action_kind in ["melee", "shockwave"]:
+		var tip: Vector2 = hand + Vector2(facing * (12 + progress * 25), -32)
+		draw_line(hand, tip, Color(tint, alpha * 0.25), 9, true)
+		draw_line(hand, tip, Color(tint.lightened(0.3), alpha), 2.8, true)
+		draw_line(hand - Vector2(6,0), hand + Vector2(6,0), Color(tint,alpha), 2, true)
+	elif action_kind == "lightning":
+		var points := PackedVector2Array([hand,hand+Vector2(10,-13),hand+Vector2(-6,-29),hand+Vector2(5,-43)])
+		draw_polyline(points,Color(tint,alpha * 0.22),8,true)
+		draw_polyline(points,Color(tint.lightened(0.4),alpha),2,true)
+	else:
+		for index: int in range(3):
+			var at: Vector2 = hand + Vector2((index-1)*11, -progress*18-8)
+			draw_colored_polygon(PackedVector2Array([at+Vector2(0,-6),at+Vector2(4,0),at+Vector2(0,6),at-Vector2(4,0)]),Color(tint,alpha * 0.7))

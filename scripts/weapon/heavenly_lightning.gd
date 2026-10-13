@@ -22,6 +22,7 @@ var _visual_active: bool = false
 
 
 func _ready() -> void:
+	preload("res://scripts/effects/skill_instance_polish.gd").install(self, "heavenly_tribulation")
 	z_index = 5
 	collision_layer = 0
 	collision_mask = ENEMY_COLLISION_MASK

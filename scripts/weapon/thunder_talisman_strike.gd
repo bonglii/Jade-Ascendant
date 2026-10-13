@@ -19,6 +19,7 @@ var _show_source_seal: bool = false
 
 
 func _ready() -> void:
+	preload("res://scripts/effects/skill_instance_polish.gd").install(self, "thunder_talisman")
 	set_process(false)
 	talisman_sprite.visible = false
 

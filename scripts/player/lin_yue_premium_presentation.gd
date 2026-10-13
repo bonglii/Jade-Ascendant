@@ -23,6 +23,8 @@ var cursor: int = 0
 var step_cursor: int = 0
 var last_position: Vector2
 var walked: float = 0.0
+var stride_phase: float = 0.0
+var stride_strength: float = 0.0
 
 func _ready() -> void:
 	actor = get_parent() as CharacterBody2D
@@ -67,10 +69,12 @@ func _process(delta: float) -> void:
 	var distance: float = actor.global_position.distance_to(last_position)
 	last_position = actor.global_position
 	walked += distance
+	stride_phase = fmod(stride_phase + minf(distance, 32.0) * TAU / 88.0, TAU)
+	stride_strength = move_toward(stride_strength, 1.0 if distance > 0.05 else 0.0, delta * 12.0)
 	sample_left -= delta
-	var moving: bool = actor.velocity.length_squared() > 16.0
+	var moving: bool = distance > 0.05 and actor.velocity.length_squared() > 16.0
 	if moving and not SettingsManager.reduced_effects and sample_left <= 0.0:
-		sample_left = 0.075
+		sample_left = 0.11
 		var ghost: Sprite2D = ghosts[cursor]
 		ghost.texture = sprite.sprite_frames.get_frame_texture(sprite.animation,sprite.frame)
 		ghost.scale = sprite.scale
@@ -95,14 +99,17 @@ func _process(delta: float) -> void:
 	tick_left = 1.0/30.0
 	var motion: float = 0.0 if SettingsManager.reduced_effects else 1.0
 	var cast: float = sin((1.0-cast_left/0.25)*PI) if cast_left > 0.0 else 0.0
-	var stride: float = sin(age*13.0) if moving else sin(age*2.4)*0.25
+	var stride: float = sin(stride_phase) * stride_strength
 	var lean: float = clampf(actor.velocity.x/240.0,-1.0,1.0)
-	sprite.scale = base_scale*Vector2(1.0+cast*0.055*motion,1.0-cast*0.035*motion)
-	sprite.position = base_position+Vector2(-lean*1.8,-absf(stride)*1.7-cast*2.0)*motion
-	sprite.rotation = (-lean*0.065+cast*0.025)*motion
+	sprite.scale = base_scale*Vector2(1.0+(cast*0.055+absf(stride)*0.018)*motion,1.0-(cast*0.035+absf(stride)*0.024)*motion)
+	sprite.position = base_position+Vector2(-lean*1.8+stride*1.25,-absf(stride)*3.5-cast*2.0)*motion
+	sprite.rotation = (-lean*0.065+stride*0.035+cast*0.025)*motion
 	_actor_material.set_shader_parameter("accent",Color(1.0,0.69,0.28) if hurt_left > 0.0 else Color(0.42,0.93,0.90))
 	_actor_material.set_shader_parameter("energy",maxf(cast*0.65,hurt_left/0.18*0.55)*motion)
 	_actor_material.set_shader_parameter("rim_strength",0.3 if SettingsManager.reduced_effects else 0.65)
+	_actor_material.set_shader_parameter("stride_phase", stride_phase)
+	_actor_material.set_shader_parameter("stride_strength", stride_strength * motion)
+	_actor_material.set_shader_parameter("side_facing", 1.0 if actor.facing_direction in ["left", "right"] else 0.0)
 	queue_redraw()
 
 func _draw() -> void:
