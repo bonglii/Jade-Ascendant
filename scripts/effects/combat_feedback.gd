@@ -62,6 +62,8 @@ func hit(actor: Node2D, amount: float, is_critical: bool = false) -> void:
 	if amount <= 0.0 or not is_finite(amount):
 		return
 
+	var mastery: Node=get_node_or_null("/root/CultivationMasteryManager")
+	if mastery!=null:mastery.on_enemy_hit(actor,amount)
 	var actor_is_player: bool = actor.is_in_group("player")
 	var set_dot: bool = actor.has_meta(&"jade_set_dot_inflight")
 	if not actor_is_player and not is_critical and not set_dot:

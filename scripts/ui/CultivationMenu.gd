@@ -67,6 +67,15 @@ const PATH_DATA: Dictionary = {
 	},
 }
 
+var result_title_label: Label
+var result_scroll: ScrollContainer
+var result_compare: GridContainer
+var result_spend_row: GridContainer
+var focus_header: GridContainer
+var focus_effects: GridContainer
+var focus_action: GridContainer
+var focus_divider: ColorRect
+var mastery_panel: Control
 var selected_path: String = "vitality"
 
 @onready var content_host: Control = $Content
@@ -114,6 +123,8 @@ func _ready() -> void:
 	if not ProgressionManager.cultivation_upgraded.is_connected(_on_cultivation_upgraded):
 		ProgressionManager.cultivation_upgraded.connect(_on_cultivation_upgraded)
 	_refresh_all()
+	content_host.resized.connect(_layout_mastery_screen)
+	_layout_mastery_screen()
 	resized.connect(_layout_result_panel)
 	call_deferred("_layout_result_panel")
 	call_deferred("_configure_mobile_scroll")
@@ -185,6 +196,8 @@ func _build_body() -> void:
 	body_content.add_child(_build_intro())
 	body_content.add_child(_build_ritual_stage())
 	body_content.add_child(_build_focus_sheet())
+	mastery_panel=preload("res://scripts/ui/cultivation_mastery_panel.gd").new()
+	mastery_panel.scroll_owner=body_scroll;body_content.add_child(mastery_panel)
 	body_content.add_child(_build_footer_ornament())
 	body_content.add_child(_spacer(2.0))
 
@@ -306,8 +319,8 @@ func _build_focus_sheet() -> PanelContainer:
 	focus_accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(focus_accent)
 
-	var header := HBoxContainer.new()
-	header.add_theme_constant_override("separation", 13)
+	var header := GridContainer.new();header.columns=3;focus_header=header
+	header.add_theme_constant_override("h_separation", 13)
 	box.add_child(header)
 
 	selected_icon = TextureRect.new()
@@ -342,15 +355,15 @@ func _build_focus_sheet() -> PanelContainer:
 	selected_description.custom_minimum_size = Vector2(0.0, 58.0)
 	box.add_child(selected_description)
 
-	var effect_row := HBoxContainer.new()
-	effect_row.add_theme_constant_override("separation", 18)
+	var effect_row := GridContainer.new();effect_row.columns=3;focus_effects=effect_row
+	effect_row.add_theme_constant_override("h_separation", 18)
 	box.add_child(effect_row)
 
 	var current_column := _effect_column("CURRENT FOUNDATION", JADE)
 	current_value = current_column.get_node("Value") as Label
 	effect_row.add_child(current_column)
 
-	var divider := ColorRect.new()
+	var divider := ColorRect.new();focus_divider=divider
 	divider.custom_minimum_size = Vector2(1.0, 62.0)
 	divider.color = Color(0.44, 0.76, 0.69, 0.18)
 	divider.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -360,8 +373,8 @@ func _build_focus_sheet() -> PanelContainer:
 	next_value = next_column.get_node("Value") as Label
 	effect_row.add_child(next_column)
 
-	var action_row := HBoxContainer.new()
-	action_row.add_theme_constant_override("separation", 11)
+	var action_row := GridContainer.new();action_row.columns=2;focus_action=action_row
+	action_row.add_theme_constant_override("h_separation", 11)
 	box.add_child(action_row)
 
 	var cost_group := VBoxContainer.new()
@@ -388,6 +401,7 @@ func _build_focus_sheet() -> PanelContainer:
 	cost_row.add_child(cost_icon)
 
 	cost_value = _label("200", 19, GOLD_BRIGHT)
+	cost_value.autowrap_mode = TextServer.AUTOWRAP_OFF
 	cost_row.add_child(cost_value)
 
 	refine_button = Button.new()
@@ -395,6 +409,7 @@ func _build_focus_sheet() -> PanelContainer:
 	refine_button.custom_minimum_size = Vector2(0.0, 70.0)
 	refine_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	refine_button.text = "REFINE MERIDIAN"
+	refine_button.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	refine_button.add_theme_font_override("font", UI_FONT)
 	refine_button.add_theme_font_size_override("font_size", 20)
 	refine_button.add_theme_color_override("font_color", Color(1.0, 0.94, 0.73, 1.0))
@@ -412,6 +427,7 @@ func _build_focus_sheet() -> PanelContainer:
 	action_row.add_child(refine_button)
 
 	refine_hint = _label("Permanent cultivation • persists between journeys", 14, MUTED)
+	refine_hint.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	refine_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(refine_hint)
 	return focus_sheet
@@ -513,9 +529,14 @@ func _build_result_layer() -> void:
 	result_shell.add_theme_constant_override("separation", 6)
 	result_panel.add_child(result_shell)
 
-	# Breakthrough result is intentionally NOT scrollable. The complete result,
-	# comparison, spend summary, and RETURN TO INNER SEA CTA must all be visible
-	# in the first frame on a phone.
+	result_scroll = ScrollContainer.new()
+	result_scroll.name = "BreakthroughResultScroll"
+	result_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	result_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	result_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	result_scroll.scroll_deadzone = MOBILE_SCROLL_DEADZONE
+	result_shell.add_child(result_scroll)
+
 	var result_body := MarginContainer.new()
 	result_body.name = "BreakthroughResultBody"
 	result_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -524,7 +545,7 @@ func _build_result_layer() -> void:
 	result_body.add_theme_constant_override("margin_top", 14)
 	result_body.add_theme_constant_override("margin_right", 24)
 	result_body.add_theme_constant_override("margin_bottom", 4)
-	result_shell.add_child(result_body)
+	result_scroll.add_child(result_body)
 
 	var box := VBoxContainer.new()
 	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -538,6 +559,7 @@ func _build_result_layer() -> void:
 	box.add_child(result_kicker)
 
 	var result_title := _label("REFINEMENT COMPLETE", 30, GOLD_BRIGHT)
+	result_title_label = result_title
 	result_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	result_title.add_theme_constant_override("outline_size", 3)
 	box.add_child(result_title)
@@ -558,6 +580,7 @@ func _build_result_layer() -> void:
 	rule_left.custom_minimum_size = Vector2(0.0, 1.0)
 	rule_left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rule_left.color = Color(GOLD.r, GOLD.g, GOLD.b, 0.30)
+	rule_left.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	rule_left.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rule_row.add_child(rule_left)
 	var seal := _label("◇", 15, GOLD)
@@ -568,6 +591,7 @@ func _build_result_layer() -> void:
 	rule_right.custom_minimum_size = Vector2(0.0, 1.0)
 	rule_right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rule_right.color = Color(JADE.r, JADE.g, JADE.b, 0.30)
+	rule_right.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	rule_right.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rule_row.add_child(rule_right)
 
@@ -601,7 +625,9 @@ func _build_result_layer() -> void:
 	result_effect.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(result_effect)
 
-	var compare_row := HBoxContainer.new()
+	var compare_row := GridContainer.new()
+	result_compare = compare_row
+	compare_row.columns = 2
 	compare_row.add_theme_constant_override("separation", 10)
 	box.add_child(compare_row)
 	var before_card := _result_stat_card("BEFORE", "+10% POWER", Color(0.67, 0.77, 0.75, 1.0))
@@ -623,7 +649,9 @@ func _build_result_layer() -> void:
 	spend_margin.add_theme_constant_override("margin_right", 15)
 	spend_margin.add_theme_constant_override("margin_bottom", 7)
 	spend_panel.add_child(spend_margin)
-	var spend_row := HBoxContainer.new()
+	var spend_row := GridContainer.new()
+	result_spend_row = spend_row
+	spend_row.columns = 2
 	spend_row.add_theme_constant_override("separation", 10)
 	spend_margin.add_child(spend_row)
 	var spend_copy := VBoxContainer.new()
@@ -658,6 +686,7 @@ func _build_result_layer() -> void:
 	continue_button.custom_minimum_size = Vector2(0.0, 56.0)
 	continue_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	continue_button.text = "RETURN TO INNER SEA"
+	continue_button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	continue_button.add_theme_font_override("font", UI_FONT)
 	continue_button.add_theme_font_size_override("font_size", 19)
 	continue_button.add_theme_color_override("font_color", Color(1.0, 0.94, 0.73, 1.0))
@@ -678,25 +707,15 @@ func _layout_result_panel() -> void:
 	if result_panel == null or size.x <= 2.0 or size.y <= 2.0:
 		return
 
-	var horizontal_margin: float = maxf(12.0, size.x * 0.045)
-	var max_available_height: float = maxf(size.y - 150.0, 500.0)
-	var resolved_minimum: Vector2 = result_panel.get_combined_minimum_size()
-	var target_height: float = clampf(
-		resolved_minimum.y + 6.0,
-		500.0,
-		minf(585.0, max_available_height)
-	)
-	var top_y: float = maxf(76.0, (size.y - target_height) * 0.46)
-
-	result_panel.anchor_left = 0.0
-	result_panel.anchor_top = 0.0
-	result_panel.anchor_right = 0.0
-	result_panel.anchor_bottom = 0.0
-	result_panel.position = Vector2(horizontal_margin, top_y)
-	result_panel.size = Vector2(
-		maxf(size.x - horizontal_margin * 2.0, 280.0),
-		target_height
-	)
+	var horizontal_margin: float = maxf(12.0, size.x * 0.065)
+	var width: float = minf(540.0, size.x - horizontal_margin * 2.0)
+	var height: float = minf(585.0, size.y * 0.76)
+	result_title_label.add_theme_font_size_override("font_size", 22 if width < 370.0 else 30)
+	result_compare.columns = 1 if width < 370.0 else 2
+	result_spend_row.columns = 1 if width < 370.0 else 2
+	result_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	result_panel.position = Vector2((size.x - width) * 0.5, (size.y - height) * 0.5)
+	result_panel.size = Vector2(width, height)
 
 func _result_stat_card(caption_text: String, value_text: String, accent: Color) -> PanelContainer:
 	var card := PanelContainer.new()
@@ -822,9 +841,9 @@ func _refresh_focus() -> void:
 	)
 
 	if maxed:
-		refine_button.disabled = true
-		refine_button.text = tr("MERIDIAN PERFECTED")
-		refine_hint.text = tr("This path has reached its current cultivation limit.")
+		refine_button.disabled = false
+		refine_button.text = "BUKA MASTERY" if SettingsManager.language=="id" else "OPEN MASTERY"
+		refine_hint.text = "Lv.10 selesai • pilih spesialisasi untuk run berikutnya"
 	else:
 		var can_afford: bool = ProgressionManager.spirit_stone >= cost
 		refine_button.disabled = not can_afford
@@ -849,13 +868,14 @@ func _on_refine_button_down() -> void:
 	_refine_press_scroll_y = body_scroll.scroll_vertical if body_scroll != null else 0
 
 func _on_refine_pressed() -> void:
+	if result_layer!=null and result_layer.visible:return
 	if body_scroll != null:
 		var scroll_delta: int = absi(body_scroll.scroll_vertical - _refine_press_scroll_y)
 		if scroll_delta >= PRESS_SCROLL_CANCEL_DISTANCE:
 			return
 
 	if _is_maxed(selected_path):
-		_refresh_focus()
+		if is_instance_valid(mastery_panel):mastery_panel.focus_path(selected_path)
 		return
 
 	var cost: int = _get_cost(selected_path)
@@ -1093,6 +1113,7 @@ func _return_to_journey() -> void:
 func _label(value: String, font_size: int, color: Color) -> Label:
 	var result := Label.new()
 	result.text = value
+	result.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	result.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	result.add_theme_font_override("font", UI_FONT)
 	result.add_theme_font_size_override("font_size", font_size)
@@ -1184,3 +1205,12 @@ func _format_count(value: int) -> String:
 		remaining = remaining.left(remaining.length() - 3)
 	groups.push_front(remaining)
 	return ".".join(groups)
+
+func _layout_mastery_screen() -> void:
+	if focus_header==null:return
+	var narrow: bool=content_host.size.x<500
+	focus_header.columns=1 if narrow else 3
+	focus_action.columns=1 if narrow else 2
+	focus_effects.columns=2 if narrow else 3
+	focus_divider.visible=not narrow
+	for label: Label in [selected_kicker,selected_name,selected_doctrine]:label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART

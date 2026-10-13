@@ -21,6 +21,7 @@ const SCOPE_LOCAL_PROFILE: String = "local_profile"
 const SCHEMA_LEGACY_UNVERSIONED: int = 0
 
 const SAVE_DOMAINS: Dictionary = {
+	"cultivation_mastery": {"owner":"CultivationMasteryManager", "scope":SCOPE_PERMANENT, "path":"user://cultivation_mastery.save", "schema_version":1, "required_keys":["choices","realm","clears","best_hits","run","trial"]},
 	"server_mail": {
 		"owner": "ServerMailManager", "scope": SCOPE_LOCAL_PROFILE,
 		"path": "user://server_mail.save", "schema_version": 1,

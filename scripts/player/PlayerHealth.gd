@@ -21,6 +21,7 @@ const BLOOD_QI_HEAL_AMOUNT: float = 1.0
 const BLOOD_QI_MAX_LEVEL: int = 5
 const REWARDED_REVIVE_HEALTH_RATIO: float = 0.60
 const REWARDED_REVIVE_INVULNERABILITY_MSEC: int = 2500
+const CultivationMastery=preload("res://scripts/data/cultivation_mastery_runtime.gd")
 const EquipmentSetRuntime = preload("res://scripts/data/equipment_set_runtime.gd")
 
 @export var max_health: float = 10.0
@@ -33,6 +34,7 @@ var qi_shield_level: int = 0
 var qi_shield_charges: int = 0
 var iron_body_level: int = 0
 var blood_qi_level: int = 0
+var mastery_kill_progress: int=0
 var blood_qi_kill_progress: int = 0
 var rewarded_revive_invulnerable_until_msec: int = 0
 
@@ -86,6 +88,10 @@ func connect_blood_qi_kill_tracker() -> void:
 
 ## Memproses progress kill Blood Qi dan memicu recovery saat threshold tercapai.
 func _on_enemy_killed() -> void:
+	if CultivationMastery.bonus("kill_heal")>0 and not is_dead:
+		mastery_kill_progress+=1
+		if mastery_kill_progress>=20:
+			mastery_kill_progress=0;heal(CultivationMastery.bonus("kill_heal"))
 	if blood_qi_level <= 0:
 		return
 
@@ -241,6 +247,7 @@ func take_damage(amount: float) -> void:
 
 	var passive: Dictionary = preload("res://scripts/data/equipment_set_catalog.gd").get_active_passive(EquipmentSetRuntime.get_equipped_item_ids())
 	final_damage *= 1.0 - float(passive.get("reduction",0.0))
+	final_damage*=1.0-CultivationMastery.bonus("reduction")
 	current_health -= final_damage
 	CombatFeedback.hit(get_parent(), final_damage)
 

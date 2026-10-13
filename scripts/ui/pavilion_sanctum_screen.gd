@@ -1,6 +1,11 @@
 extends "res://scripts/ui/pavilion_fast_first_frame.gd"
 ## Approved ritual redesign. Managers remain the only grant/save authority.
 const ImperialStyle = preload("res://scripts/ui/pavilion_imperial_style.gd")
+var _target_press_pos: Vector2
+var _target_scroll_start: int=0
+var _target_epoch: int=0
+var _target_overlay: ColorRect
+var _target_category: String="weapon"
 var _banner_title: Label
 var _banner_subtitle: Label
 var _banner_notice: Label
@@ -182,6 +187,8 @@ func _build_utility_rows() -> void:
 	_banner_notice.visible=false
 	rates_button = _button(row,tr("DROP RATES"),_show_drop_rates_overlay,false,JADE_SOFT)
 	_button(row,tr("SUMMON HISTORY"),_show_history_overlay,false,GOLD)
+	var target_button: Button=_button(summon_controls_stack,"PILIH TARGET" if SettingsManager.language=="id" else "CHOOSE TARGET",_open_target_picker,false,GOLD)
+	target_button.name="BrowseWishTargets"
 func _refresh_summon_panel() -> void:
 	_sync_banner_presentation()
 	super()
@@ -642,3 +649,101 @@ func _progress_fill_style(accent: Color) -> StyleBoxFlat:
 func _apply_first_frame_polish() -> void:
 	super()
 	if meditation_altar_icon!=null: meditation_altar_icon.texture=CELESTIAL_SEAL
+
+# Compact safe-area sheets shared by Rates, History and target selection.
+func _build_modal_overlay(title_text: String) -> ColorRect:
+	var host: Control=$SafeArea
+	var overlay:=ColorRect.new();overlay.name="PavilionCompactSheet";overlay.color=Color(0,.01,.016,.76);overlay.z_index=90
+	host.add_child(overlay);overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var panel:=PanelContainer.new();panel.name="CompactPanel";panel.self_modulate.a=0;overlay.add_child(panel)
+	panel.add_theme_stylebox_override("panel",_imperial_style(GOLD,true,false))
+	var root_box:=VBoxContainer.new();root_box.add_theme_constant_override("separation",10);panel.add_child(root_box)
+	var heading:=_label(root_box,title_text,20,GOLD);heading.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;heading.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	var sc:=ScrollContainer.new();sc.name="CompactScroll";sc.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;sc.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_AUTO;sc.follow_focus=true;sc.scroll_deadzone=8;sc.size_flags_vertical=Control.SIZE_EXPAND_FILL;root_box.add_child(sc)
+	var body:=VBoxContainer.new();body.size_flags_horizontal=Control.SIZE_EXPAND_FILL;body.size_flags_vertical=Control.SIZE_SHRINK_BEGIN;body.add_theme_constant_override("separation",10);sc.add_child(body)
+	var footer:=VBoxContainer.new();footer.name="CompactFooter";root_box.add_child(footer)
+	overlay.set_meta("content",body);overlay.set_meta("panel",panel);overlay.set_meta("scroll",sc)
+	overlay.resized.connect(_queue_compact_fit.bind(overlay,panel,root_box,sc,body,footer))
+	_queue_compact_fit(overlay,panel,root_box,sc,body,footer)
+	return overlay
+
+func _queue_compact_fit(overlay: ColorRect,panel: PanelContainer,root_box: VBoxContainer,sc: ScrollContainer,body: VBoxContainer,footer: VBoxContainer) -> void:
+	if not is_instance_valid(overlay) or overlay.is_queued_for_deletion():return
+	var generation: int=int(overlay.get_meta("fit_generation",0))+1
+	overlay.set_meta("fit_generation",generation)
+	_fit_compact_popup.call_deferred(overlay,panel,root_box,sc,body,footer,generation)
+
+func _fit_compact_popup(overlay: ColorRect,panel: PanelContainer,root_box: VBoxContainer,sc: ScrollContainer,body: VBoxContainer,footer: VBoxContainer,generation: int) -> void:
+	await get_tree().process_frame
+	if not is_instance_valid(overlay) or overlay.is_queued_for_deletion() or int(overlay.get_meta("fit_generation"))!=generation:return
+	var width: float=minf(560,overlay.size.x-24)
+	var skin: StyleBox=panel.get_theme_stylebox("panel")
+	body.custom_minimum_size.x=maxf(0,width-skin.get_minimum_size().x-12)
+	var choices: GridContainer=body.get_node_or_null("TargetChoices")
+	if choices!=null:choices.columns=1 if overlay.size.x<440 else 2
+	sc.custom_minimum_size.y=0
+	panel.size=Vector2(width,overlay.size.y*.72)
+	panel.position.x=(overlay.size.x-width)*.5
+	if body.get_child_count()>0:
+		var last: Node=body.get_child(body.get_child_count()-1)
+		if last is Button:
+			body.remove_child(last);footer.add_child(last);last.custom_minimum_size.y=44
+	for child: Node in body.get_children():
+		if child is Label:
+			if child.text==tr("History is visit-only; the frozen production save schema is unchanged."):child.text="Riwayat kunjungan Pavilion ini." if SettingsManager.language=="id" else "History for this Pavilion visit."
+			child.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+			child.add_theme_font_size_override("font_size",14)
+	await get_tree().process_frame
+	if not is_instance_valid(overlay) or overlay.is_queued_for_deletion() or int(overlay.get_meta("fit_generation"))!=generation:return
+	var fixed: float=root_box.get_child(0).get_combined_minimum_size().y+footer.get_combined_minimum_size().y+skin.get_minimum_size().y+20
+	var height: float=minf(overlay.size.y*.72,maxf(fixed+44,body.get_combined_minimum_size().y+fixed))
+	sc.custom_minimum_size.y=maxf(44,height-fixed)
+	panel.size=Vector2(width,height);panel.position.y=(overlay.size.y-height)*.5;panel.self_modulate.a=1
+
+func _close_target_picker() -> void:
+	_target_epoch+=1
+	if is_instance_valid(_target_overlay):_target_overlay.queue_free()
+	_target_overlay=null
+
+func _open_target_picker(category: String="") -> void:
+	if summon_reveal_overlay!=null and summon_reveal_overlay.visible:return
+	if not category.is_empty():_target_category=category
+	_close_target_picker();_close_rates_overlay();_close_history_overlay()
+	_target_overlay=_build_modal_overlay("PILIH TARGET SUMMON" if SettingsManager.language=="id" else "SUMMON TARGET")
+	var body: VBoxContainer=_target_overlay.get_meta("content")
+	var tabs:=HBoxContainer.new();body.add_child(tabs)
+	_button(tabs,"SENJATA" if SettingsManager.language=="id" else "WEAPON",_open_target_picker.bind("weapon"),_target_category=="weapon",GOLD)
+	_button(tabs,"SET",_open_target_picker.bind("set"),_target_category=="set",JADE)
+	_label(body,"Clear 1–5 membuka seluruh pool equipment & weapon. Target adalah satu item Legendary; ganti target mereset Fate." if SettingsManager.language=="id" else "Clear 1–5 unlocks the full equipment and weapon pool. A target is one Legendary item; changing target resets Fate.",14,MUTED_TEXT)
+	var choices:=GridContainer.new();choices.name="TargetChoices";choices.columns=1 if $SafeArea.size.x<440 else 2;choices.add_theme_constant_override("h_separation",8);choices.add_theme_constant_override("v_separation",8);body.add_child(choices)
+	var available: Array[String]=PavilionManager.get_wish_target_options()
+	for id: String in EquipmentManager.get_item_ids():
+		var data: Dictionary=EquipmentManager.get_item_data(id)
+		if str(data.get("rarity",""))!="legendary":continue
+		if (str(data.get("slot",""))=="armament")!=(_target_category=="weapon"):continue
+		var text: String=str(data.get("display_name",id))
+		if _target_category=="set":text+="\n"+EquipmentSetCatalog.get_display_name(EquipmentSetCatalog.get_set_id_for_item(id))
+		text+=("\n✓ TARGET" if id==PavilionManager.get_wish_target_item_id() else "")
+		var button:=_button(choices,text,_choose_browser_target.bind(id,_target_epoch),false,GOLD);button.name="Target_"+id
+		button.mouse_filter=Control.MOUSE_FILTER_PASS;button.button_down.connect(_target_button_down)
+		button.size_flags_horizontal=Control.SIZE_EXPAND_FILL;button.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;button.custom_minimum_size.y=76
+		button.disabled=id not in available or SaveManager.is_progress_read_only()
+		button.icon=_load_item_texture(id);button.expand_icon=true;button.add_theme_constant_override("icon_max_width",36)
+	_button(body,tr("CLOSE"),_close_target_picker,false,JADE)
+
+func _target_button_down() -> void:
+	_target_press_pos=get_global_mouse_position()
+	if is_instance_valid(_target_overlay):_target_scroll_start=(_target_overlay.get_meta("scroll") as ScrollContainer).scroll_vertical
+
+func _choose_browser_target(id: String,epoch: int=-1) -> void:
+	if epoch>=0 and epoch!=_target_epoch:return
+	if not is_instance_valid(_target_overlay) or id not in PavilionManager.get_wish_target_options():return
+	if get_global_mouse_position().distance_to(_target_press_pos)>12 or absi((_target_overlay.get_meta("scroll") as ScrollContainer).scroll_vertical-_target_scroll_start)>8:return
+	if not PavilionManager.set_wish_target(id):return
+	selected_rate_up_item_id=id;_close_target_picker();_refresh_summon_panel()
+
+func _back() -> void:
+	if is_instance_valid(_target_overlay):_close_target_picker();return
+	if is_instance_valid(locked_rates_overlay):_close_rates_overlay();return
+	if is_instance_valid(locked_history_overlay):_close_history_overlay();return
+	super()

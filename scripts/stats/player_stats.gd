@@ -7,6 +7,7 @@ extends Node
 ## Permanent upgrade diterapkan dari ProgressionManager
 ## saat game dimulai.
 
+const CultivationMastery=preload("res://scripts/data/cultivation_mastery_runtime.gd")
 const POWER_PER_LEVEL: float = 0.10
 const SWORD_POWER_PER_LEVEL: float = 0.10
 const SWIFT_QI_COOLDOWN_MULTIPLIER: float = 0.95
@@ -91,6 +92,9 @@ func calculate_damage_result(
 		conditional_damage_bonus += EquipmentSetRuntime.get_bonus(
 			"high_health_damage_bonus"
 		)
+	var mastery_health: Node=get_parent().get_node_or_null("PlayerHealth")
+	if mastery_health!=null and float(mastery_health.current_health)>=float(mastery_health.max_health)*.8:
+		conditional_damage_bonus+=CultivationMastery.bonus("high_health_damage")
 	final_damage *= 1.0 + conditional_damage_bonus
 
 	var is_critical: bool = roll_critical_hit()
@@ -260,6 +264,7 @@ func apply_permanent_sword_power() -> void:
 
 ## Menerapkan bonus Attack Speed permanen dari Swift Qi.
 func apply_permanent_swift_qi() -> void:
+	attack_cooldown*=1.0-CultivationMastery.bonus("cooldown")
 	for i in range(ProgressionManager.swift_qi_level):
 		attack_cooldown *= SWIFT_QI_COOLDOWN_MULTIPLIER
 

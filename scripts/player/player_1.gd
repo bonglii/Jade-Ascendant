@@ -9,6 +9,7 @@ signal level_changed(new_level: int)
 const MOVEMENT_SPEED_MULTIPLIER: float = 1.10
 const SPIRITUAL_INSIGHT_BONUS: float = 0.15
 const SPIRITUAL_INSIGHT_MAX_LEVEL: int = 5
+const CultivationMastery=preload("res://scripts/data/cultivation_mastery_runtime.gd")
 const EquipmentSetRuntime = preload("res://scripts/data/equipment_set_runtime.gd")
 
 @export var speed: float = 200.0
@@ -52,7 +53,7 @@ func get_effective_movement_speed() -> float:
 	var set_bonus: float = EquipmentSetRuntime.get_bonus("movement_speed_bonus")
 	return (
 		speed
-		* (EquipmentManager.get_movement_speed_multiplier() + set_bonus)
+		* (EquipmentManager.get_movement_speed_multiplier() + set_bonus + CultivationMastery.bonus("movement"))
 	)
 
 func update_facing(direction: Vector2) -> void:

@@ -1756,9 +1756,10 @@ func get_summon_pool_by_rarity() -> Dictionary:
 		"epic": [],
 		"legendary": []
 	}
+	# Gacha opens the complete equipment collection after clear 1-5.
+	# Shop/forge progression requirements remain separate.
+	if not is_summon_unlocked(): return pool
 	for item_id: String in EquipmentManager.get_item_ids():
-		if not is_item_unlocked(item_id):
-			continue
 		var item_data: Dictionary = EquipmentManager.get_item_data(item_id)
 		var rarity: String = str(item_data.get("rarity", "common"))
 		if pool.has(rarity):
