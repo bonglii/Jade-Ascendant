@@ -22,6 +22,11 @@ const EquipmentSetRuntime = preload("res://scripts/data/equipment_set_runtime.gd
 ## expires. Retarget immediately if the cached enemy dies or leaves the radius.
 const TARGET_REFRESH_INTERVAL: float = 0.12
 const DEBUG_SAMPLE_INTERVAL: float = 12.0
+const CAST_COOLDOWN_FLOORS: Dictionary = {
+	"jade_binding_chain": 1.25,
+	"celestial_returning_glaive": 1.75
+}
+const MAX_CAST_TEMPO_DAMAGE_MULTIPLIER: float = 5.0
 
 var weapons: Array[Weapon] = []
 var attack_timers: Dictionary = {}
@@ -330,6 +335,27 @@ func upgrade_weapon(weapon_name: String) -> void:
 
 ## Menghitung cooldown final weapon berdasarkan Attack Speed Player.
 func get_weapon_cooldown(weapon: Weapon) -> float:
+	var requested: float = get_requested_weapon_cooldown(weapon)
+	return maxf(requested, float(CAST_COOLDOWN_FLOORS.get(_cast_armament_id(weapon), 0.1)))
+
+
+## Attack Speed exceeding a deliberate cast cadence increases potency instead
+## of spawning extra casts. Damage is snapshotted by each weapon at launch.
+func get_cast_tempo_damage_multiplier(weapon: Weapon) -> float:
+	if not CAST_COOLDOWN_FLOORS.has(_cast_armament_id(weapon)):
+		return 1.0
+	var requested: float = get_requested_weapon_cooldown(weapon)
+	var actual: float = maxf(requested, float(CAST_COOLDOWN_FLOORS[_cast_armament_id(weapon)]))
+	return clampf(actual / requested, 1.0, MAX_CAST_TEMPO_DAMAGE_MULTIPLIER)
+
+
+func _cast_armament_id(weapon: Weapon) -> String:
+	if weapon == null or weapon.weapon_name != "Spirit Sword":
+		return ""
+	return str(weapon.get("armament_id"))
+
+
+func get_requested_weapon_cooldown(weapon: Weapon) -> float:
 	if weapon == null:
 		return 1.0
 
@@ -355,9 +381,4 @@ func get_weapon_cooldown(weapon: Weapon) -> float:
 		* equipment_cooldown_multiplier
 	)
 
-	# Keep knot phases legible and bound concurrent casts to two at max level.
-	if weapon.weapon_name == "Spirit Sword" and str(weapon.get("armament_id")) == "jade_binding_chain":
-		return maxf(final_cooldown, 1.25)
-	if weapon.weapon_name == "Spirit Sword" and str(weapon.get("armament_id")) == "celestial_returning_glaive":
-		return maxf(final_cooldown, 1.75)
-	return max(final_cooldown, 0.1)
+	return maxf(final_cooldown, 0.1)

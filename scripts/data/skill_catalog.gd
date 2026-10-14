@@ -121,13 +121,13 @@ static func get_upgrade_description(upgrade_id: String) -> String:
 		"power":
 			return "Condense martial force to amplify all damage."
 		"attack_speed":
-			return "Cycle qi faster for shorter attack intervals."
+			return "Shorten timed attacks. Chain and Glaive turn extra tempo at their casting limit into stronger hits. Orbit speed is unchanged."
 		"movement_speed":
 			return "Channel swift qi through the body to move faster."
 		"body_refinement":
 			return "Temper the body to expand vitality."
 		"qi_shield":
-			return "Block incoming hits with a protective qi layer."
+			return "Block incoming hits with qi charges. A block starts 0.3s protection, so rapid hits during that window do not consume more charges."
 		"thunder_talisman":
 			return "Chain lightning; milestones reach more enemies."
 		"yin_yang_blades":

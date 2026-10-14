@@ -6,3 +6,18 @@
 - Record meaningful mistakes and their preventive action in `docs/checkpoints/LESSONS.md` so the same issue does not repeat.
 - Speak naturally as a development partner; offer useful game-development ideas without unnecessary chatter.
 - Main/production and parked IAP remain untouched unless the user explicitly expands that scope. Player-profile server work uses its own service/database.
+
+## New weapon and equipment balance gate
+
+User-approved rule, 2026-10-14: every new weapon or equipment item must pass a balance review before it is considered finished.
+
+- Define its role and tradeoffs first. Evaluate single-target bosses, groups and practical range; rarity alone does not require winning every comparison. The item must have a useful, distinct role.
+- Inspect authoritative runtime stats, inherited scene overrides and existing assets. Measure actual hits and damage with production attack code; projectile count, chain count, animation or VFX are not proof of damage. Separate per-cast damage, persistent-effect exposure and full-run DPS.
+- Check early and late progression, level/star milestones, effective cooldown floors and the benefit of Attack Speed/Power upgrades. Avoid upgrades that promise a benefit the item cannot receive. Keep performance bounds and readable cast timing while balancing their impact on growth.
+- Verify that hitboxes, range, endpoint, release timing, returning/spinning phases and VFX describe the same attack. Check stationary and moving targets where movement can change the result.
+- Review incoming-damage pressure, simultaneous hit events, shields, armor, healing and boss counterplay when the item affects them. Do not assume independent enemy cooldowns prevent burst damage on the player.
+- Check set passives, DoT, critical hits and resonance interactions: weak first hits must not silently undermine the intended role; stacking, refresh, recursion, caps and boss modifiers must be intentional and correctly disclosed.
+- Evaluate acquisition and upgrade costs against existing items and player income. For gacha, include duplicate requirements, pity, a fixed-target default-rate simulation when relevant, and clearly scoped F2P cadence. Do not call modelled active days guaranteed calendar acquisition times or assume live-banner rates/ad availability.
+- Preserve the agreed progression: four armor/accessory pieces per set; weapon independent; identical duplicates for star ascension; permanent weapon levels separate from stars with caps increasing by star. Check unlocks and progression/idle caps when adding content.
+- Scale validation to the change: test the new item's mechanics plus representative affected existing items, reuse unchanged audit results, and broaden only for new changes or unresolved failures. Preserve saves, mobile performance, theme consistency and parked monetization gates. Label fixture measurements, design targets and phone playtest results separately.
+- Completion requires reviewable evidence, a clear balance assessment and any remaining limitations. Resolve material implementation defects; do not hide them with blanket HP/damage buffs or nerfs. Record meaningful mistakes and prevention in LESSONS.md.

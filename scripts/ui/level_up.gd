@@ -460,7 +460,7 @@ func get_upgrade_effect(upgrade_id: String) -> String:
 		"power":
 			return "+10% DAMAGE"
 		"attack_speed":
-			return "ATTACK COOLDOWN  ×0.90"
+			return "FASTER CAST • STRONGER HIT" if _uses_jade_binding() or _uses_returning_glaive() else "ATTACK COOLDOWN  ×0.90"
 		"movement_speed":
 			return "+10% MOVEMENT SPEED"
 		"body_refinement":

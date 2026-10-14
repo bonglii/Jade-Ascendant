@@ -341,10 +341,10 @@ static func get_gameplay_bonus(
 
 const SET_RARITIES: Dictionary = {"verdant_wanderer":"common", "mistbound_disciple":"rare", "moon_seal":"rare", "crimson_shadow":"epic", "nine_heavens":"legendary", "jade_bastion":"rare", "stillwater_mirror":"epic", "solar_meridian":"legendary"}
 const FOUR_PIECE_PASSIVES: Dictionary = {
-	"crimson_shadow":{"kind":"bleed", "name":"BLOOD MOON", "description":"Hit memberi Bleeding: 3 tick selama 3 detik, masing-masing 8% damage hit. Tidak menumpuk; cooldown per target 3 detik.", "ratio":0.08, "color":Color(0.95,0.26,0.35)},
-	"nine_heavens":{"kind":"poison", "name":"JADE VENOM", "description":"Hit memberi Racun Giok: 4 tick selama 4 detik, masing-masing 6% damage hit. Tidak menumpuk; cooldown per target 4 detik.", "ratio":0.06, "color":Color(0.22,0.90,0.48)},
+	"crimson_shadow":{"kind":"bleed", "name":"BLOOD MOON", "description":"Hit memberi Bleeding: 3 tick selama 3 detik, masing-masing 8% damage hit. Tidak menumpuk. Hit lebih kuat menaikkan damage tick tersisa tanpa memperpanjang durasi. Boss menerima separuh damage.", "ratio":0.08, "color":Color(0.95,0.26,0.35)},
+	"nine_heavens":{"kind":"poison", "name":"JADE VENOM", "description":"Hit memberi Racun Giok: 4 tick selama 4 detik, masing-masing 6% damage hit. Tidak menumpuk. Hit lebih kuat menaikkan damage tick tersisa tanpa memperpanjang durasi. Boss menerima separuh damage.", "ratio":0.06, "color":Color(0.22,0.90,0.48)},
 	"stillwater_mirror":{"kind":"armor", "name":"MIRROR ARMOR", "description":"Armor mengurangi damage masuk 8%, setelah Iron Body. Tidak mengubah hitbox atau durasi invulnerable.", "reduction":0.08},
-	"solar_meridian":{"kind":"burn", "name":"SOLAR SCORCH", "description":"Hit memberi Burn: 3 tick selama 3 detik, masing-masing 9% damage hit. Tidak menumpuk; cooldown per target 3 detik.", "ratio":0.09, "color":Color(1.0,0.66,0.18)}
+	"solar_meridian":{"kind":"burn", "name":"SOLAR SCORCH", "description":"Hit memberi Burn: 3 tick selama 3 detik, masing-masing 9% damage hit. Tidak menumpuk. Hit lebih kuat menaikkan damage tick tersisa tanpa memperpanjang durasi. Boss menerima separuh damage.", "ratio":0.09, "color":Color(1.0,0.66,0.18)}
 }
 static func get_set_rarity(set_id: String) -> String:
 	return str(SET_RARITIES.get(set_id,"common"))

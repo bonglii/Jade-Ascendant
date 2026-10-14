@@ -28,5 +28,7 @@ func attack(player: Node2D, target: Node2D) -> void:
 		selected.append(candidate)
 	var cast := Cast.new()
 	player.get_parent().add_child(cast)
-	cast.configure(player, selected, radius, base_damage * EquipmentManager.get_weapon_level_multiplier(armament_id))
+	var manager: Node = player.get_node_or_null("WeaponManager")
+	var tempo: float = manager.get_cast_tempo_damage_multiplier(self) if manager != null and manager.has_method("get_cast_tempo_damage_multiplier") else 1.0
+	cast.configure(player, selected, radius, base_damage * EquipmentManager.get_weapon_level_multiplier(armament_id) * tempo)
 	AudioManager.play_sfx("chain")

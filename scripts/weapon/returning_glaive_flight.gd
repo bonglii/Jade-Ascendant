@@ -7,6 +7,7 @@ const OUT_TIME: float = 0.46
 const SPIN_TIME: float = 0.24
 const RETURN_SPEED: float = 580.0
 const HIT_RADIUS: float = 24.0
+const ENDPOINT_OVERSHOOT: float = 16.0
 const CLOSURE_RADIUS: float = 58.0
 var player_ref: WeakRef
 var origin: Vector2
@@ -42,7 +43,8 @@ func configure(player: Node2D, target_position: Vector2, amount: float, level: i
 	if manager != null:
 		normal_range = manager.maximum_attack_range
 		boss_range = manager.boss_attack_range
-	var distance: float = clampf(origin.distance_to(target_position) + 32.0, 120.0, normal_range - HIT_RADIUS)
+	# Keep the spin within the target's hit radius, including close-range casts.
+	var distance: float = clampf(origin.distance_to(target_position) + ENDPOINT_OVERSHOOT, HIT_RADIUS, normal_range - HIT_RADIUS)
 	endpoint = origin + direction * distance
 	curve = 52.0 if level >= 3 else 0.0
 	side = direction_side

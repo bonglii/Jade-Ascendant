@@ -150,7 +150,7 @@ func run() -> void:
  var health: Node=load("res://tests/hero_health_fixture.gd").new();actor.add_child(health);health.iron_body_level=2
  health.take_damage(10)
  check(is_equal_approx(health.current_health,91.72),"real damage path combines10% Iron Body then8% set armor")
- eq.equipped_item_ids.boots="";health.current_health=100;health.take_damage(10)
+ eq.equipped_item_ids.boots="";health.current_health=100;health._physics_process(.31);health.take_damage(10)
  check(is_equal_approx(health.current_health,91),"missing fourth piece disables real armor")
  health.queue_free()
  equip_set("nine_heavens")

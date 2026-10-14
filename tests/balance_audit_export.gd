@@ -28,12 +28,12 @@ func run() -> void:
    var data: Dictionary=catalog.get_stage(stage_id)
    # Instantiate the authored boss scene off-tree and apply its real encounter adapter.
    var stage_scene: PackedScene=load(str(data.scene_path))
-   var scene_state: SceneState=stage_scene.get_state()
-   var boss_scene: PackedScene
-   for n: int in range(scene_state.get_node_count()):
-    if str(scene_state.get_node_name(n))!="EnemySpawner":continue
-    for prop: int in range(scene_state.get_node_property_count(n)):
-     if str(scene_state.get_node_property_name(n,prop))=="boss_scene":boss_scene=scene_state.get_node_property_value(n,prop)
+   # Instantiation off-tree resolves inherited scene properties. SceneState
+   # exposes only authored overrides, so inherited boss_scene was missed.
+   var authored_stage: Node=stage_scene.instantiate()
+   var authored_spawner: Node=authored_stage.get_node("EnemySpawner")
+   var boss_scene: PackedScene=authored_spawner.get("boss_scene")
+   authored_stage.free()
    var boss: Node
    if boss_scene!=null:
     boss=boss_scene.instantiate()

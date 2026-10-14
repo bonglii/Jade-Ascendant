@@ -131,8 +131,8 @@ func run() -> void:
  var heal_before: float=health.current_health
  for n: int in range(20):health._on_enemy_killed()
  check(is_equal_approx(health.current_health-heal_before,1),"renewal heals exactly one HP per twenty kills")
- for i: int in range(4):health.take_damage(.1)
- check(m.state.trial.status=="failed" and m.state.trial.hits==4,"four damage hits fail the trial")
+ for i: int in range(4):health._physics_process(.31);health.take_damage(.1)
+ check(m.state.trial.status=="failed" and m.state.trial.hits==4,"four distinct accepted damage hits fail the trial")
  health.heal(1);current_scene.get_node("VictoryManager")._on_boss_defeated();await settle()
  check(m.state.clears==1,"failed trial cannot increase clear count")
  paused=false;change_scene_to_file("res://scenes/ui/cultivation_menu.tscn");await settle();await settle()

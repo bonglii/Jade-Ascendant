@@ -21,6 +21,7 @@ const BLOOD_QI_HEAL_AMOUNT: float = 2.0
 const BLOOD_QI_MAX_LEVEL: int = 5
 const REWARDED_REVIVE_HEALTH_RATIO: float = 0.60
 const REWARDED_REVIVE_INVULNERABILITY_MSEC: int = 2500
+const HIT_GUARD_DURATION: float = 0.30
 const CultivationMastery=preload("res://scripts/data/cultivation_mastery_runtime.gd")
 const EquipmentSetRuntime = preload("res://scripts/data/equipment_set_runtime.gd")
 
@@ -37,6 +38,14 @@ var blood_qi_level: int = 0
 var mastery_kill_progress: int=0
 var blood_qi_kill_progress: int = 0
 var rewarded_revive_invulnerable_until_msec: int = 0
+## Transient combat protection, never checkpointed; uses the pause-aware game clock.
+var hit_guard_remaining: float = 0.0
+
+func _physics_process(delta: float) -> void:
+	hit_guard_remaining = maxf(0.0, hit_guard_remaining - delta)
+
+func is_hit_guarded() -> bool:
+	return hit_guard_remaining > 0.0
 
 func _ready() -> void:
 	apply_permanent_vitality()
@@ -232,9 +241,12 @@ func get_iron_body_reduction() -> float:
 func take_damage(amount: float) -> void:
 	if is_dead or amount <= 0 or not is_finite(amount):
 		return
-	if is_rewarded_revive_invulnerable():
+	if is_rewarded_revive_invulnerable() or is_hit_guarded():
 		return
 
+	# Reserve protection before signals/feedback to reject reentrant damage and
+	# simultaneous contacts without consuming a second shield charge.
+	hit_guard_remaining = HIT_GUARD_DURATION
 	if qi_shield_charges > 0:
 		consume_qi_shield()
 		return
@@ -368,6 +380,7 @@ func revive_from_rewarded() -> bool:
 	if not is_dead:
 		return false
 	is_dead = false
+	hit_guard_remaining = 0.0
 	current_health = clampf(
 		max_health * REWARDED_REVIVE_HEALTH_RATIO,
 		1.0,

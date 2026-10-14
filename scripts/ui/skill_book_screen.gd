@@ -192,9 +192,9 @@ func _display_name(id: String) -> String:
 
 func _description(id: String) -> String:
 	if _is_glaive():
-		if id == "spirit_sword": return "Your Legendary armament throws a piercing disc, spins briefly, then returns to your current position. Move to steer its path. Lv.3: crescent flight; Lv.5: staggered twin discs; Lv.7: 58-radius closure on a real catch. One hit per enemy per phase. Cooldown 2.1s, minimum 1.75s. Run level resets; equipment stars persist."
+		if id == "spirit_sword": return "Your Legendary armament throws a piercing disc, spins near the aimed position, then returns to your current position. Move to steer its path. Lv.3: crescent flight; Lv.5: staggered twin discs; Lv.7: 58-radius closure on a real catch. One hit per enemy per phase. Cooldown 2.1s, minimum 1.75s; extra tempo strengthens hits at that limit. Run level resets; equipment stars persist."
 		if id == "sword_dao_resonance": return "An outbound critical empowers only the first return hit by 40% base damage, once per disc. No additional projectile is created."
 	if _is_chain():
-		if id == "spirit_sword": return "Your equipped Legendary armament replaces the starter attack. Seal, bind, then detonate jade knots. Lv.1/3/5/7 binds 2/3/4/5 enemies in 80/92/104/116 radius. Slow 40% for 0.72s; bosses 12%. Cooldown 1.8s, minimum 1.25s. Refinement resets after the run; equipment stars persist."
+		if id == "spirit_sword": return "Your equipped Legendary armament replaces the starter attack. Seal, bind, then detonate jade knots. Lv.1/3/5/7 binds 2/3/4/5 enemies in 80/92/104/116 radius. Slow 40% for 0.72s; bosses 12%. Cooldown 1.8s, minimum 1.25s; extra tempo strengthens hits at that limit. Refinement resets after the run; equipment stars persist."
 		if id == "sword_dao_resonance": return "Critical bindings release one extra 40% damage knot onto a nearby unbound enemy. Once per cast, without recursively creating more bindings."
 	return Catalog.get_upgrade_description(id)

@@ -48,6 +48,10 @@ func _ready() -> void:
 
 func hurt() -> void:
 	hurt_left = HURT_DURATION
+	if is_player_actor:
+		var health: Node = get_parent().get_node_or_null("PlayerHealth")
+		if health != null and health.has_method("is_hit_guarded") and health.is_hit_guarded():
+			hurt_left = maxf(hurt_left, float(health.hit_guard_remaining))
 	presentation_accumulator = 0.0
 
 
