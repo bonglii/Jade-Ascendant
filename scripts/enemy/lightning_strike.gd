@@ -256,6 +256,9 @@ func impact() -> void:
 ## Hostile violet storm bolt + active impact.
 ## Presentation-only; timing/radius/damage are unchanged.
 func create_impact_visual() -> void:
+	if has_node("HostileAttackPolish"):
+		get_node("HostileAttackPolish").queue_redraw()
+		return
 	var bolt_points := PackedVector2Array([
 		Vector2(-7.0, -120.0),
 		Vector2(6.0, -95.0),

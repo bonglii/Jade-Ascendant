@@ -6,24 +6,29 @@ var totals: Dictionary={}
 var partial: bool=false
 var frozen: bool=false
 
-static func apply_hit(target: Node,amount: float,source: String) -> void:
- if not is_instance_valid(target) or not target.has_method("take_damage"):return
+static func apply_hit(target: Node,amount: float,source: String) -> float:
+ if not is_instance_valid(target) or not target.has_method("take_damage"):return 0.0
  # All production enemies expose current_hp. Preview fixtures may not.
  var before: Variant=target.get("current_hp")
  target.take_damage(preload("res://scripts/effects/equipment_set_combat.gd").modify_hit(target,amount,source))
- if before==null or not is_instance_valid(target):return
+ if before==null or not is_instance_valid(target):return 0.0
  var after: Variant=target.get("current_hp")
- if after==null:return
+ if after==null:return 0.0
  var applied: float=maxf(float(before)-maxf(float(after),0.0),0.0)
- if not is_finite(applied) or applied<=0.0:return
+ if not is_finite(applied) or applied<=0.0:return 0.0
  preload("res://scripts/effects/equipment_set_combat.gd").on_applied_hit(target,source,float(before))
- if not target.is_inside_tree():return
+ if not target.is_inside_tree():return applied
  var tree: SceneTree=target.get_tree()
- if tree==null:return
+ if tree==null:return applied
  var player: Node=tree.get_first_node_in_group("player")
- if player==null:return
+ if player==null:return applied
+
+ if target is Node2D and source in SOURCES and not source.begins_with("set_") and source not in ["spirit_sword","fire_orb"]:
+  var feedback: Node=tree.root.get_node_or_null("CombatFeedback")
+  if feedback!=null:feedback.weapon_impact((target as Node2D).global_position,source)
  var ledger: Node=player.get_node_or_null("WeaponManager/RunCombatLedger")
  if ledger!=null:ledger.record(source,applied)
+ return applied
 
 func record(source: String,amount: float) -> void:
  if frozen or source not in SOURCES or not is_finite(amount) or amount<=0.0:return

@@ -84,6 +84,7 @@ func _presentation_color(
 
 func _ready() -> void:
 	CombatFeedback.register_actor(self)
+	preload("res://scripts/enemy/regular_attack_presence.gd").install(self,"guardian")
 	current_hp = max_hp
 
 	setup_guardian_aura()
@@ -269,7 +270,7 @@ func create_qi_pulse_telegraph_visual() -> void:
 
 	## Sedikit scale-in membuat wind-up lebih terbaca,
 	## tetapi final ring tetap tepat ke radius gameplay.
-	qi_pulse_telegraph_ring.scale = Vector2.ONE * 0.84
+	qi_pulse_telegraph_ring.scale = Vector2.ONE # Exact danger radius throughout wind-up.
 
 	var tween := create_tween()
 	tween.set_parallel(true)
@@ -303,6 +304,9 @@ func remove_qi_pulse_telegraph_visual() -> void:
 ## Active Pulse selalu terlihat saat damage window aktif,
 ## walaupun Player berhasil keluar radius.
 func create_qi_pulse_impact_visual() -> void:
+	if has_node("AttackPresence"):
+		get_node("AttackPresence").pulse(qi_pulse_radius)
+		return
 	var pulse_ring := Line2D.new()
 	pulse_ring.z_index = 6
 	pulse_ring.width = 6.0

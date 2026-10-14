@@ -256,6 +256,9 @@ func hide_telegraph() -> void:
 ## Active impact:
 ## flash di pusat + ring jade yang mengembang hingga gameplay radius.
 func create_impact_visual() -> void:
+	if has_node("HostileAttackPolish"):
+		get_node("HostileAttackPolish").queue_redraw()
+		return
 	var flash := Polygon2D.new()
 	flash.z_index = 6
 	var flash_points := PackedVector2Array()

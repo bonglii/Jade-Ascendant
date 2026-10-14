@@ -46,6 +46,7 @@ var damage_reduction_sources: Dictionary = {}
 
 func _ready() -> void:
 	CombatFeedback.register_actor(self)
+	preload("res://scripts/enemy/regular_attack_presence.gd").install(self,"assassin")
 	current_hp = max_hp
 	_update_visual_facing()
 	_play_idle_animation()

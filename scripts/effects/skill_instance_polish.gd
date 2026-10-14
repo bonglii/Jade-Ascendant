@@ -23,6 +23,7 @@ func _process(delta: float) -> void:
  queue_redraw()
 func _draw() -> void:
  if SettingsManager.reduced_effects: return
+ if skill_id in ["yin_yang_blades","heavenly_sword_rain"]: return # Authored cels own these effects.
  var instance: Node2D = get_parent()
  var ink: Color = Art.color_for(skill_id)
  if skill_id == "spirit_sword" and bool(instance.is_resonance_projectile):

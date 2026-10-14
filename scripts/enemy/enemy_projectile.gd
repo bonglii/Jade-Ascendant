@@ -23,7 +23,7 @@ func _ready() -> void:
 	z_index = 4
 	if configured_sprite_frames != null:
 		var art_path: String = configured_sprite_frames.resource_path
-		presentation_theme = "nine_heavens" if "chapter3" in art_path else "crimson_moon" if "chapter2" in art_path else "jade_valley"
+		presentation_theme = "solar_nirvana" if "chapter5" in art_path else "frostveil" if "chapter4" in art_path else "nine_heavens" if "chapter3" in art_path else "crimson_moon" if "chapter2" in art_path else "jade_valley"
 	preload("res://scripts/enemy/hostile_attack_polish.gd").install(self,"projectile")
 
 	add_to_group("enemy_attack")
@@ -33,6 +33,7 @@ func _ready() -> void:
 		if configured_sprite_frames != null:
 			animated_sprite.sprite_frames = configured_sprite_frames
 		animated_sprite.play(&"fly")
+		if has_node("HostileAttackPolish"): animated_sprite.hide()
 
 ## Menentukan arah projectile menuju posisi target.
 func setup(target_position: Vector2) -> void:

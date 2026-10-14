@@ -558,7 +558,7 @@ func _get_weapon_upgrade_effect(upgrade_id: String) -> String:
 			if next_level == 5:
 				return "+3 DMG • 4 ORBITING BLADES"
 			if next_level == 7:
-				return "+3 DMG • 5 ORBITING BLADES"
+				return "+3 DMG • 6 ORBITING BLADES"
 			return "+3 BASE DAMAGE"
 
 		"heavenly_sword_rain":

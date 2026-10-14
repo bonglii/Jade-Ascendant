@@ -131,7 +131,7 @@ static func get_upgrade_description(upgrade_id: String) -> String:
 		"thunder_talisman":
 			return "Chain lightning; milestones reach more enemies."
 		"yin_yang_blades":
-			return "Orbiting blades; milestones add extra blades."
+			return "Wide 116px orbit: Lv.1/3/5/7 gives 2/3/4/6 blades. Lv.7 balances 3 Yin + 3 Yang. Shared target hit interval stays 0.5s; Reversal expands the orbit to 139px."
 		"heavenly_sword_rain":
 			return "Heavenly strikes; refine strike count and radius."
 		"eight_trigrams_formation":

@@ -20,9 +20,9 @@ const BASE_DAMAGE: float = 8.0
 const DAMAGE_PER_LEVEL: float = 3.0
 
 const BASE_BLADE_COUNT: int = 2
-const MAX_BLADE_COUNT: int = 5
+const MAX_BLADE_COUNT: int = 6
 
-const BASE_ORBIT_RADIUS: float = 80.0
+const BASE_ORBIT_RADIUS: float = 116.0
 const BASE_ORBIT_SPEED: float = PI
 const HIT_INTERVAL: float = 0.5
 
@@ -130,7 +130,7 @@ func apply_level_stats() -> void:
 		+ DAMAGE_PER_LEVEL * float(level - 1)
 	)
 
-	blade_count = min(
+	blade_count = 6 if level == 7 else min(
 		BASE_BLADE_COUNT
 		+ int(floor(float(level - 1) / 2.0)),
 		MAX_BLADE_COUNT
@@ -138,6 +138,7 @@ func apply_level_stats() -> void:
 
 ## Membuat ulang seluruh blade berdasarkan jumlah blade aktif.
 func rebuild_blades() -> void:
+	var phase: float = blades[0].orbit_angle if not blades.is_empty() and is_instance_valid(blades[0]) else 0.0
 	clear_blades()
 
 	if player == null:
@@ -162,8 +163,11 @@ func rebuild_blades() -> void:
 		blade.orbit_radius = get_current_orbit_radius()
 		blade.orbit_speed = get_current_orbit_speed()
 		blade.orbit_angle = (
-			angle_step * float(blade_index)
+			phase + angle_step * float(blade_index)
 		)
+		var origin: Node2D = player.get_node_or_null("CombatOrigin") as Node2D
+		blade.position = (origin.position if origin != null else Vector2.ZERO) + Vector2.RIGHT.rotated(blade.orbit_angle) * blade.orbit_radius
+		blade.rotation = blade.orbit_angle + PI * 0.5
 
 		blade.set_polarity(
 			&"yin"
@@ -179,14 +183,25 @@ func rebuild_blades() -> void:
 			_on_blade_body_contacted
 		)
 
-		player.add_child.call_deferred(blade)
-
 		blades.append(blade)
+	# Restore/refinement can rebuild several times before the deferred queue
+	# flushes. Attach only the CURRENT collection; never enqueue a stale Node
+	# argument that clear_blades may already have freed.
+	call_deferred("_attach_current_blades")
 
 	DebugLogger.system(str(
 		"Yin-Yang Blades dibuat: ",
 		blades.size()
 	))
+
+func _attach_current_blades() -> void:
+	if is_queued_for_deletion() or not is_instance_valid(player): return
+	for blade: YinYangBlade in blades:
+		if not is_instance_valid(blade) or blade.is_queued_for_deletion(): continue
+		if blade.get_parent() == null: player.add_child(blade)
+
+func _exit_tree() -> void:
+	clear_blades()
 
 ## Memproses permintaan damage dari blade.
 func damage_target(target: Node) -> void:
@@ -343,6 +358,7 @@ func update_hit_cooldowns(delta: float) -> void:
 func clear_blades() -> void:
 	for blade in blades:
 		if is_instance_valid(blade):
+			blade.set_physics_process(false)
 			blade.queue_free()
 
 	blades.clear()

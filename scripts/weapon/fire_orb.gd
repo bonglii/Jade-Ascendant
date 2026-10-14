@@ -58,9 +58,9 @@ func _on_body_entered(body: Node2D) -> void:
 
 	consumed = true
 	CombatFeedback.mark_next_hit_critical(body, is_critical)
-	preload("res://scripts/weapon/run_combat_ledger.gd").apply_hit(body,damage,"fire_orb")
+	var applied: float = preload("res://scripts/weapon/run_combat_ledger.gd").apply_hit(body,damage,"fire_orb")
 	_apply_cinder_bloom(body)
-	spawn_hit_visual()
+	if applied > 0.0: spawn_hit_visual()
 	queue_free()
 
 

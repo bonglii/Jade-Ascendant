@@ -1,0 +1,45 @@
+name: Combat Cel Polish QA
+on:
+  push:
+    branches: ['checkpoint/**']
+    paths: ['assets/effects/combat_cels/**', 'assets/shaders/hostile_cel_palette*', 'assets/weapons/sword/yin_yang_blades_spriteframes.tres', 'scripts/effects/combat*', 'scripts/enemy/**', 'scripts/weapon/**', 'scripts/ui/level_up.gd', 'scripts/data/skill_catalog.gd', 'tests/combat_cel*', 'tests/yin_yang_coverage_probe.gd', '.github/workflows/combat-cel-qa.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  targeted:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pillow
+      - run: python tests/combat_cel_asset_audit.py
+      - name: Prepare isolated Godot import
+        shell: bash
+        run: |
+          mkdir -p /tmp/jade-qa/project
+          curl -fsSL https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip -o /tmp/jade-qa/godot.zip
+          unzip -q /tmp/jade-qa/godot.zip -d /tmp/jade-qa
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          repo=Path.cwd(); qa=Path('/tmp/jade-qa/project')
+          for name in ['assets','scripts','scenes','tests','backend','addons']:(qa/name).symlink_to(repo/name,target_is_directory=True)
+          s=(repo/'project.godot').read_text()
+          s=re.sub(r'\[editor_plugins\][\s\S]*?(?=\n\[|\Z)','[editor_plugins]\nenabled=PackedStringArray()\n',s)
+          for folder in ['scripts','addons']:
+              for p in (repo/folder).rglob('*.gd.uid'):
+                  uid=p.read_text().strip()
+                  if uid in s:s=s.replace(uid,'res://'+str(p.relative_to(repo)).removesuffix('.uid'))
+          (qa/'project.godot').write_text(s)
+          PY
+          timeout 180 /tmp/jade-qa/Godot_v4.7.2-stable_linux.x86_64 --headless --audio-driver Dummy --path /tmp/jade-qa/project --editor --import
+      - name: Targeted mechanics, real collision coverage and reports
+        shell: bash
+        run: |
+          XDG_DATA_HOME=/tmp/jade_combat_cel_qa timeout 120 /tmp/jade-qa/Godot_v4.7.2-stable_linux.x86_64 --headless --audio-driver Dummy --path /tmp/jade-qa/project --script res://tests/combat_cel_smoke.gd
+          XDG_DATA_HOME=/tmp/jade_yin_coverage_qa timeout 120 /tmp/jade-qa/Godot_v4.7.2-stable_linux.x86_64 --headless --audio-driver Dummy --path /tmp/jade-qa/project --script res://tests/yin_yang_coverage_probe.gd
+          XDG_DATA_HOME=/tmp/jade_report_qa_combat_cel timeout 120 /tmp/jade-qa/Godot_v4.7.2-stable_linux.x86_64 --headless --audio-driver Dummy --path /tmp/jade-qa/project --script res://tests/run_report_smoke.gd
+          XDG_DATA_HOME=/tmp/jade_combat_pass_qa_cel timeout 120 /tmp/jade-qa/Godot_v4.7.2-stable_linux.x86_64 --headless --audio-driver Dummy --path /tmp/jade-qa/project --script res://tests/combat_skill_polish_smoke.gd

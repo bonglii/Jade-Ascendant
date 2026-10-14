@@ -51,6 +51,8 @@ func setup(
 		_impact_scale = 1.16
 
 	create_impact()
+	material = preload("res://scripts/effects/combat_cel_art.gd").palette(_main)
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 
 
 func create_impact() -> void:
@@ -67,76 +69,10 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
-	var progress: float = clampf(_elapsed / EFFECT_DURATION, 0.0, 1.0)
-	var expansion: float = 1.0 - pow(1.0 - progress, 2.0)
-	var fade: float = pow(1.0 - progress, 1.45)
-	var ring_radius: float = lerpf(10.0, 26.0, expansion) * _impact_scale
-	var segments: int = REDUCED_RING_SEGMENTS if _reduced else RING_SEGMENTS
-
-	# Slash occupies a narrow diagonal footprint so it never mimics a boss AoE.
-	_draw_slash(
-		Vector2(-18.0, 12.0), Vector2(19.0, -13.0),
-		4.8 if critical else 3.6, fade
-	)
-	_draw_slash(
-		Vector2(-12.0, -17.0), Vector2(13.0, 17.0),
-		2.8 if critical else 2.2, fade * 0.76
-	)
-
-	# The ring confirms the exact projectile hit location, not a gameplay radius.
-	draw_arc(
-		Vector2.ZERO, ring_radius, 0.0, TAU, segments,
-		Color(_main.r, _main.g, _main.b, fade * 0.85),
-		2.4 if critical else 1.9, true
-	)
-	if not _reduced:
-		draw_arc(
-			Vector2.ZERO, ring_radius * 1.24, 0.0, TAU, segments,
-			Color(_accent.r, _accent.g, _accent.b, fade * 0.28),
-			1.2, true
-		)
-
-	if progress < 0.36:
-		var flash: float = 1.0 - progress / 0.36
-		draw_circle(
-			Vector2.ZERO, (5.0 + expansion * 4.0) * _impact_scale,
-			Color(_core.r, _core.g, _core.b, flash * 0.55)
-		)
-
-	var ray_count: int = 4 if _reduced else 8
-	for index in range(ray_count):
-		var direction: Vector2 = Vector2.RIGHT.rotated(
-			float(index) * TAU / float(ray_count) + 0.20
-		)
-		var ray_start: float = (8.0 + expansion * 7.0) * _impact_scale
-		var ray_end: float = (19.0 + expansion * 17.0) * _impact_scale
-		draw_line(
-			direction * ray_start, direction * ray_end,
-			Color(_accent.r, _accent.g, _accent.b, fade * 0.72),
-			1.5 if index % 2 == 0 else 1.0, true
-		)
-
-	# Non-color silhouette: resonance receives twin orbital ticks.
-	if resonance_projectile and not critical:
-		for side in [-1.0, 1.0]:
-			draw_arc(
-				Vector2(side * 8.0, 0.0), 15.0 * _impact_scale,
-				-0.86 if side < 0.0 else 2.28,
-				0.86 if side < 0.0 else 4.0,
-				12, Color(_core.r, _core.g, _core.b, fade * 0.72), 1.5, true
-			)
-
-
-func _draw_slash(start: Vector2, finish: Vector2, width: float, fade: float) -> void:
-	var outward: float = 1.0 + (1.0 - pow(1.0 - _elapsed / EFFECT_DURATION, 2.0)) * 0.30
-	var start_point: Vector2 = start * outward * _impact_scale
-	var end_point: Vector2 = finish * outward * _impact_scale
-	if not _reduced:
-		draw_line(
-			start_point, end_point,
-			Color(_main.r, _main.g, _main.b, fade * 0.20), width * 2.5, true
-		)
-	draw_line(
-		start_point, end_point,
-		Color(_core.r, _core.g, _core.b, fade), width, true
-	)
+	var t: float = clampf(_elapsed / EFFECT_DURATION,0,1)
+	var extent: float = lerpf(38,65,1.0-pow(1.0-t,2)) * _impact_scale
+	if _reduced: extent *= .65
+	var art = preload("res://scripts/effects/combat_cel_art.gd")
+	art.paint(self,"impacts",0,Vector2.ZERO,Vector2.ONE*extent,0,pow(1.0-t,1.4))
+	if critical and not _reduced:
+		art.paint(self,"impacts",0,Vector2.ZERO,Vector2.ONE*extent*.70,PI*.50,pow(1.0-t,1.8)*.80)

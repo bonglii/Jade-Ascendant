@@ -108,7 +108,9 @@ func run() -> void:
   player.add_child(caster)
   var before_damage: float=float(ledger.totals.get(source,0))
   var before_hp: float=float(actual.current_hp)
-  if source=="yin_yang_blades":caster.activate(player)
+  if source=="yin_yang_blades":
+   caster.activate(player)
+   actual.global_position=player.get_node("CombatOrigin").global_position+Vector2(caster.get_current_orbit_radius(),0)
   else:caster.attack(player,actual)
   await create_timer(3.0,false).timeout
   var applied: float=before_hp-float(actual.current_hp)

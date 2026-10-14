@@ -9,6 +9,8 @@ signal successful_impact(
 const DEFAULT_TELEGRAPH_DURATION: float = 0.35
 const DEFAULT_ACTIVE_DURATION: float = 0.12
 const VFX_SEGMENTS: int = 40
+const IMPACT_VISUAL_DURATION: float = 0.26
+const CelArt = preload("res://scripts/effects/combat_cel_art.gd")
 
 const SWORD_START_Y: float = -76.0
 const SWORD_IMPACT_Y: float = -6.0
@@ -57,6 +59,8 @@ func _ready() -> void:
 		false
 	).timeout
 
+	monitoring = false
+	await get_tree().create_timer(maxf(IMPACT_VISUAL_DURATION - active_duration, 0.001),false).timeout
 	queue_free()
 
 
@@ -157,37 +161,6 @@ func create_telegraph_visual() -> void:
 		Color(0.92, 0.99, 1.0, 0.42)
 	)
 
-	for ring in [
-		telegraph_ring,
-		middle_ring,
-		inner_marker
-	]:
-		ring.scale = Vector2.ONE * 0.70
-
-	if not SettingsManager.reduced_effects:
-		for index in range(8):
-			var direction := Vector2.RIGHT.rotated(
-				float(index) * TAU / 8.0
-			)
-			_make_line(
-				PackedVector2Array([
-					direction * strike_radius * 0.74,
-					direction * strike_radius * 0.94
-				]),
-				1.3,
-				Color(0.74, 0.94, 1.0, 0.50)
-			)
-
-		descent_glow = _make_line(
-			PackedVector2Array([
-				Vector2(0.0, SWORD_START_Y - 12.0),
-				Vector2(0.0, SWORD_IMPACT_Y + 8.0)
-			]),
-			8.0,
-			Color(0.52, 0.86, 1.0, 0.14)
-		)
-		descent_glow.z_index = 2
-
 	var tween := create_tween()
 	tween.set_parallel(true)
 
@@ -204,7 +177,9 @@ func create_telegraph_visual() -> void:
 		)
 
 	if sword_sprite != null:
-		var target_scale: Vector2 = sword_sprite.scale
+		sword_sprite.texture = CelArt.frame("blades",0)
+		sword_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		var target_scale: Vector2 = Vector2(.32,.38)
 
 		sword_sprite.position.y = SWORD_START_Y
 		sword_sprite.scale = target_scale * 0.78
@@ -255,7 +230,7 @@ func create_impact_visual() -> void:
 	if sword_sprite != null:
 		var fade := create_tween()
 		fade.tween_property(
-			sword_sprite, "modulate:a", 0.0, active_duration
+			sword_sprite, "modulate:a", 0.0, IMPACT_VISUAL_DURATION
 		)
 
 
@@ -264,49 +239,20 @@ func _process(delta: float) -> void:
 		return
 	_impact_visual_elapsed += delta
 	queue_redraw()
-	if _impact_visual_elapsed >= active_duration:
+	if _impact_visual_elapsed >= IMPACT_VISUAL_DURATION:
 		set_process(false)
 
 
 func _draw() -> void:
-	if not has_impacted:
-		return
-
-	var progress: float = clampf(
-		_impact_visual_elapsed / maxf(active_duration, 0.01),
-		0.0, 1.0
-	)
-	var remaining: float = 1.0 - progress
-	var alpha: float = remaining * remaining
+	if not has_impacted: return
+	var t: float = clampf(_impact_visual_elapsed / IMPACT_VISUAL_DURATION,0,1)
+	var fade: float = pow(1.0-t,1.6)
 	var reduced: bool = SettingsManager.reduced_effects
-	var ring_radius: float = strike_radius * lerpf(0.28, 1.0, progress)
-
+	CelArt.paint(self,"impacts",4,Vector2.ZERO,Vector2.ONE*strike_radius*lerpf(1.15,2.0,1.0-pow(1.0-t,2)),0,fade)
 	if not reduced:
-		draw_arc(
-			Vector2.ZERO, ring_radius, 0.0, TAU, VFX_SEGMENTS,
-			Color(0.40, 0.80, 1.0, 0.17 * alpha), 9.0, true
-		)
-	draw_arc(
-		Vector2.ZERO, ring_radius, 0.0, TAU, VFX_SEGMENTS,
-		Color(0.82, 0.96, 1.0, 0.96 * alpha), 4.8, true
-	)
-	# The vertical streak communicates the falling sword, not damage width.
-	draw_line(
-		Vector2(0.0, -82.0), Vector2(0.0, 10.0),
-		Color(0.94, 0.99, 1.0, 0.92 * alpha), 4.8, true
-	)
-
-	var shard_count: int = 4 if reduced else 8
-	for index in range(shard_count):
-		var direction: Vector2 = Vector2.RIGHT.rotated(
-			TAU * float(index) / float(shard_count)
-		)
-		var shard_tip: float = minf(strike_radius * 0.82, 34.0)
-		draw_line(
-			direction * 7.0, direction * shard_tip,
-			Color(0.66, 0.94, 1.0, 0.82 * alpha),
-			2.3 if index % 2 == 0 else 1.6, true
-		)
+		CelArt.paint(self,"blades",3,Vector2.ZERO,Vector2.ONE*strike_radius*1.75,t*.22,fade*.72)
+	# Single true-radius boundary; the painted plume is purely vertical debris.
+	draw_arc(Vector2.ZERO,strike_radius*lerpf(.4,1,t),0,TAU,40,Color(.62,.9,1,fade*.60),1.2,true)
 
 
 func impact() -> void:
@@ -349,11 +295,11 @@ func damage_target(target: Node) -> bool:
 		)
 	)
 
-	preload("res://scripts/weapon/run_combat_ledger.gd").apply_hit(target,final_damage,"heavenly_sword_rain")
+	var applied: float = preload("res://scripts/weapon/run_combat_ledger.gd").apply_hit(target,final_damage,"heavenly_sword_rain")
 
 	DebugLogger.combat(
 		"Heavenly Sword Rain Hit | Damage: %.1f"
 		% final_damage
 	)
 
-	return true
+	return applied > 0.0

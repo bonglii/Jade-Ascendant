@@ -2,6 +2,10 @@ extends Node2D
 
 ## Fixed storage, one canvas draw, no per-hit Label/Line2D/particle nodes.
 const ActorPresentation = preload("res://scripts/effects/actor_presentation.gd")
+const CelArt = preload("res://scripts/effects/combat_cel_art.gd")
+const WEAPON_IMPACT_CAPACITY: int = 32
+var weapon_impacts: Array[Dictionary] = []
+var weapon_impact_cursor: int = 0
 const POOL_SIZE: int = 96
 const ARC_POOL_SIZE: int = 16
 const JADE: Color = Color(0.64, 0.94, 0.82)
@@ -45,6 +49,20 @@ func _ready() -> void:
 		effects.append({"left": 0.0})
 	for index in range(ARC_POOL_SIZE):
 		arcs.append({"left": 0.0})
+	for index in range(WEAPON_IMPACT_CAPACITY):
+		weapon_impacts.append({"left":0.0})
+
+func weapon_impact(point: Vector2, source: String) -> void:
+	if active_scene != get_tree().current_scene:
+		_reset_feedback()
+		active_scene = get_tree().current_scene
+	# Applied HP loss already verified by RunCombatLedger. Fixed ring buffer,
+	# no timers/tweens/nodes per hit and no extra camera shake.
+	weapon_impact_cursor = (weapon_impact_cursor + 1) % (12 if SettingsManager.reduced_effects else WEAPON_IMPACT_CAPACITY)
+	var entry: Dictionary = weapon_impacts[weapon_impact_cursor]
+	entry.clear()
+	entry.merge({"position":point,"index":CelArt.hit_index(source),"left":0.26,"duration":0.26})
+	_activate_feedback()
 
 func register_actor(actor: Node2D) -> void:
 	if actor.has_node("QiPresentation"):
@@ -263,6 +281,10 @@ func _process(delta: float) -> void:
 		return
 
 	var has_active_feedback: bool = false
+	for entry: Dictionary in weapon_impacts:
+		if float(entry.get("left",0.0)) <= 0.0: continue
+		if not get_tree().paused: entry.left = maxf(float(entry.left)-delta,0.0)
+		if float(entry.left)>0.0: has_active_feedback = true
 
 	for entry in effects:
 		var effect_left: float = float(entry.get("left", 0.0))
@@ -320,6 +342,7 @@ func _process(delta: float) -> void:
 	feedback_active = has_active_feedback
 
 func _reset_feedback() -> void:
+	for entry: Dictionary in weapon_impacts: entry.clear()
 	for entry in effects:
 		entry.clear()
 	for entry in arcs:
@@ -333,6 +356,12 @@ func _reset_feedback() -> void:
 	queue_redraw()
 
 func _draw() -> void:
+	for entry: Dictionary in weapon_impacts:
+		if float(entry.get("left",0.0)) <= 0.0: continue
+		var progress: float = 1.0 - float(entry.left)/float(entry.duration)
+		var extent: float = lerpf(28.0,54.0,1.0-pow(1.0-progress,2.0))
+		if SettingsManager.reduced_effects: extent *= 0.60
+		CelArt.paint(self,"impacts",int(entry.index),entry.position,Vector2.ONE*extent,0.0,pow(1.0-progress,1.35))
 	for entry in effects:
 		var left: float = float(entry.get("left", 0.0))
 		if left <= 0.0:

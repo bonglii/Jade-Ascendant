@@ -16,6 +16,7 @@ const ENEMY_PROJECTILE: PackedScene = preload(
 )
 
 const CAST_VISUAL_DURATION: float = 0.6
+const RELEASE_WINDUP: float = 0.18
 const FACING_SWITCH_DISTANCE: float = 12.0
 const PROJECTILE_AIM_DISTANCE: float = 900.0
 
@@ -33,6 +34,9 @@ var current_hp: float
 var is_dead: bool = false
 var attack_timer: float = 0.0
 var cast_visual_timer: float = 0.0
+var pending_release: float = -1.0
+var locked_aim: Vector2 = Vector2.ZERO
+var use_locked_aim: bool = false
 var facing_left: bool = false
 var damage_reduction_sources: Dictionary = {}
 var projectile_sprite_frames: SpriteFrames = null
@@ -44,6 +48,7 @@ var pair_angle_degrees: float = 4.0
 
 func _ready() -> void:
 	CombatFeedback.register_actor(self)
+	preload("res://scripts/enemy/regular_attack_presence.gd").install(self,"ranged")
 	current_hp = max_hp
 	_update_visual_facing()
 	_play_idle_animation()
@@ -86,6 +91,16 @@ func _physics_process(delta: float) -> void:
 			0.0,
 			cast_visual_timer - delta
 		)
+
+	if pending_release >= 0.0:
+		pending_release -= delta
+		velocity = Vector2.ZERO
+		if pending_release <= 0.0:
+			use_locked_aim = true
+			shoot_projectile()
+			use_locked_aim = false
+			pending_release = -1.0
+		return
 
 	_update_visual_facing()
 
@@ -200,7 +215,9 @@ func try_attack() -> void:
 	_play_cast_animation()
 	cast_visual_timer = CAST_VISUAL_DURATION
 
-	shoot_projectile()
+	locked_aim = player.global_position
+	if attack_pattern == &"predictive_pair": locked_aim += player.velocity * predictive_lead_time
+	pending_release = RELEASE_WINDUP
 	attack_timer = attack_cooldown
 
 ## Menembakkan pola projectile berdasarkan identity chapter.
@@ -215,12 +232,12 @@ func shoot_projectile() -> void:
 		&"predictive_pair":
 			_shoot_predictive_pair()
 		_:
-			_spawn_projectile_toward(player.global_position)
+			_spawn_projectile_toward(locked_aim if use_locked_aim else player.global_position)
 
 ## Crimson Moon: tiga talisman membentuk kipas yang memaksa sidestep.
 func _shoot_spread_three() -> void:
 	var base_direction: Vector2 = global_position.direction_to(
-		player.global_position
+		locked_aim if use_locked_aim else player.global_position
 	)
 	if base_direction == Vector2.ZERO:
 		base_direction = Vector2.RIGHT
@@ -240,7 +257,7 @@ func _shoot_spread_three() -> void:
 ## Nine Heavens: dua astral shots memimpin gerakan Player sehingga sekadar
 ## lari lurus tidak selalu cukup; celah di tengah tetap memberi counterplay.
 func _shoot_predictive_pair() -> void:
-	var predicted_position: Vector2 = (
+	var predicted_position: Vector2 = locked_aim if use_locked_aim else (
 		player.global_position
 		+ player.velocity * predictive_lead_time
 	)

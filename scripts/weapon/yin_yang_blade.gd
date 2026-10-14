@@ -4,7 +4,7 @@ class_name YinYangBlade
 signal body_contacted(body: Node)
 
 var orbit_angle: float = 0.0
-var orbit_radius: float = 80.0
+var orbit_radius: float = 116.0
 var orbit_speed: float = PI
 
 var polarity: StringName = &"yin"
@@ -20,6 +20,7 @@ func _ready() -> void:
 	collision_mask = 2
 	monitoring = true
 
+	aura_ring.hide() # Remove the old octagonal outline.
 	apply_polarity_visual()
 	apply_reversal_visual()
 	queue_redraw()
@@ -110,10 +111,10 @@ func apply_polarity_visual() -> void:
 
 
 func apply_reversal_visual() -> void:
-	var target_scale: Vector2 = Vector2.ONE
+	var target_scale: Vector2 = Vector2.ONE * 0.23
 
 	if reversal_visual_active:
-		target_scale = Vector2.ONE * 1.18
+		target_scale = Vector2.ONE * 0.27
 
 		if aura_ring != null:
 			aura_ring.width = 4.2
@@ -129,78 +130,7 @@ func apply_reversal_visual() -> void:
 
 
 func _draw() -> void:
-	var main_color := (
-		Color(0.30, 0.92, 0.86, 0.82)
-		if polarity == &"yin"
-		else Color(1.0, 0.78, 0.28, 0.84)
-	)
-	var pale_color := (
-		Color(0.78, 1.0, 0.96, 0.88)
-		if polarity == &"yin"
-		else Color(1.0, 0.95, 0.72, 0.90)
-	)
-
-	draw_arc(
-		Vector2.ZERO,
-		18.0 if reversal_visual_active else 16.0,
-		0.0,
-		TAU,
-		28,
-		Color(
-			main_color.r,
-			main_color.g,
-			main_color.b,
-			0.35
-		),
-		1.5,
-		true
-	)
-
-	if SettingsManager.reduced_effects:
-		return
-
-	# Root rotates tangentially, so local -X is the movement trail direction.
-	var trail_length: float = (
-		34.0 if reversal_visual_active else 26.0
-	)
-	draw_line(
-		Vector2(-7.0, 0.0),
-		Vector2(-trail_length, 0.0),
-		Color(
-			main_color.r,
-			main_color.g,
-			main_color.b,
-			0.42
-		),
-		5.5 if reversal_visual_active else 3.8,
-		true
-	)
-	draw_line(
-		Vector2(-5.0, 0.0),
-		Vector2(-trail_length * 0.78, 0.0),
-		Color(
-			pale_color.r,
-			pale_color.g,
-			pale_color.b,
-			0.72
-		),
-		1.7,
-		true
-	)
-
-	if reversal_visual_active:
-		draw_arc(
-			Vector2.ZERO,
-			23.0,
-			-PI * 0.8,
-			PI * 0.2,
-			22,
-			Color(
-				pale_color.r,
-				pale_color.g,
-				pale_color.b,
-				0.62
-			),
-			1.7,
-			true
-		)
+	if SettingsManager.reduced_effects: return
+	var art = preload("res://scripts/effects/combat_cel_art.gd")
+	# Painted crescent qi, not an octagonal halo. No visual changes the collider.
+	art.paint(self,"impacts",0,Vector2(-14,0),Vector2(42,22),PI*.08,.24 if not reversal_visual_active else .48)
