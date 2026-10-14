@@ -12,7 +12,7 @@ const SAVE_DOMAIN: String = "idle_cultivation"
 const ACCRUAL_CAP_SECONDS: int = 12 * 60 * 60
 const CLAIM_UNIT_SECONDS: int = 10 * 60
 const AUTO_POPUP_MIN_OFFLINE_SECONDS: int = 30 * 60
-const MAX_PROGRESS_TIER: int = 16
+const MAX_PROGRESS_TIER: int = 26
 const REWARDED_DOUBLE_MULTIPLIER: int = 2
 const MAX_PROCESSED_REWARDED_GRANTS: int = 32
 const Presenter = preload("res://scripts/ui/idle_cultivation_presenter.gd")
@@ -131,17 +131,20 @@ func _accepted_now() -> int:
 
 
 func is_unlocked() -> bool:
-	return JourneyManager.cleared_stage_keys.size() > 0
+	return get_progress_tier() > 0
 
 
 func get_progress_tier() -> int:
-	if not is_unlocked():
-		return 0
-	return clampi(
-		JourneyManager.cleared_stage_keys.size(),
-		1,
-		MAX_PROGRESS_TIER
-	)
+	# Count authored stages once. Duplicate/obsolete save keys are not income.
+	var cleared_count: int = 0
+	for chapter_id: int in JourneyManager.get_chapter_ids():
+		for stage_id: int in JourneyManager.get_stage_ids(chapter_id):
+			if (
+				JourneyManager.is_stage_implemented(chapter_id, stage_id)
+				and JourneyManager.is_stage_cleared(chapter_id, stage_id)
+			):
+				cleared_count += 1
+	return mini(cleared_count, MAX_PROGRESS_TIER)
 
 
 func get_accrual_cap_seconds() -> int:
@@ -207,6 +210,10 @@ func get_rates_for_tier(raw_tier: int) -> Dictionary:
 
 func get_tier_title(raw_tier: int) -> String:
 	var tier: int = clampi(raw_tier, 1, MAX_PROGRESS_TIER)
+	if tier >= 26:
+		return "SOLAR NIRVANA MEDITATION"
+	if tier >= 21:
+		return "FROSTVEIL RESONANCE"
 	if tier >= 16:
 		return "ASCENDANT MEDITATION"
 	if tier >= 11:

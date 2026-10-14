@@ -60,7 +60,7 @@ func run() -> void:
    output.weapons.append(row)
   weapon.free()
  var idle: Node=root.get_node("IdleCultivationManager")
- for tier: int in [1,3,6,11,16]:output.idle.append(idle.get_rates_for_tier(tier))
+ for tier: int in [1,3,6,11,16,21,26]:output.idle.append(idle.get_rates_for_tier(tier))
  for level: int in progression.HERO_MILESTONE_LEVELS:output.milestones.append({"level":level,"reward":rewards.get_hero_milestone_reward(level)})
  output.login_rewards=[]
  for day: int in range(1,8):output.login_rewards.append(root.get_node("LiveOpsManager").get_login_reward(day))

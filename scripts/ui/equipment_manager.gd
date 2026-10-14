@@ -335,7 +335,9 @@ func get_weapon_level_multiplier(item_id: String="") -> float:
 	return 1.0+maxi(get_item_weapon_level(id)-1,0)*0.01
 
 func get_weapon_level_cost(item_id: String) -> int:
-	return 20*(get_item_weapon_level(item_id)+1) if get_item_weapon_level(item_id)<get_weapon_level_cap(item_id) else 0
+	# Preserve the first 40-stone step; soften the long-term slope.
+	# Permanent levels still add 1% damage, independently of duplicate stars.
+	return 10*(get_item_weapon_level(item_id)+3) if get_item_weapon_level(item_id)<get_weapon_level_cap(item_id) else 0
 
 func can_level_weapon(item_id: String) -> bool:
 	return can_modify_equipment() and InventoryManager.owns_item(item_id) and get_weapon_level_cost(item_id)>0 and ProgressionManager.spirit_stone>=get_weapon_level_cost(item_id)
