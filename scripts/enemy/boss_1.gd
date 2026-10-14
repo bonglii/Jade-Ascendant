@@ -725,7 +725,8 @@ func _play_walk_animation() -> void:
 ## Memainkan animation non-loop sesuai mechanic actual.
 func _play_action_animation(
 	prefix: String,
-	target_duration: float
+	target_duration: float,
+	impact_delay: float = -1.0
 ) -> void:
 	if animated_sprite == null:
 		return
@@ -773,21 +774,30 @@ func _play_action_animation(
 		/ safe_duration
 	)
 
-	animated_sprite.play(
-		animation_name,
-		custom_speed
-	)
+	var frame_driver: Node = get_node_or_null("BossFrameDriver")
+	if frame_driver != null:
+		var frame_duration: float = safe_duration
+		var release: float = impact_delay
+		if release < 0.0:
+			release = safe_duration if prefix in ["lightning","shockwave"] else safe_duration * (.55 if prefix == "phase" else .48)
+			if prefix in ["lightning","shockwave"]: frame_duration += .20
+		frame_driver.play_action(prefix,frame_duration,release/frame_duration)
+		visual_action_timer = frame_duration
+	else:
+		animated_sprite.play(animation_name,custom_speed)
 
-	visual_action_timer = safe_duration
+	if frame_driver == null: visual_action_timer = safe_duration
 	var presentation: Node = get_node_or_null("PremiumBossPresentation")
 	if presentation != null:
-		presentation.on_action(prefix, safe_duration)
-		CombatFeedback.actor_action(self,safe_duration)
+		presentation.on_action(prefix, visual_action_timer)
+		CombatFeedback.actor_action(self,visual_action_timer)
 
 ## Helper loop animation agar tidak restart setiap physics frame.
 func _play_loop_animation(
 	animation_name: StringName
 ) -> void:
+	if has_node("BossFrameDriver"):
+		return
 	if animated_sprite == null:
 		return
 
@@ -953,6 +963,13 @@ func choose_ranged_pattern() -> int:
 
 	return available_patterns.pick_random()
 
+func _projectile_release_origin(radial: bool) -> Vector2:
+	var driver: Node = get_node_or_null("BossFrameDriver")
+	if driver == null: return global_position
+	var side: float = -1.0 if bool(driver.frozen_facing) else 1.0
+	var body_height: float = float(get_meta("boss_visible_height", 140.0))
+	return global_position + Vector2(0.0 if radial else side * 0.2, -0.55) * body_height
+
 ## Pattern #1: menembakkan satu projectile menuju posisi Player.
 func shoot_projectile() -> void:
 	if _ranged_cast_pending or is_dead or player == null or not is_instance_valid(player):
@@ -977,7 +994,7 @@ func shoot_projectile() -> void:
 
 	get_parent().add_child(projectile)
 
-	projectile.global_position = global_position
+	projectile.global_position = _projectile_release_origin(false)
 	projectile.setup(aimed_position)
 
 	DebugLogger.system(str("BOSS PROJECTILE FIRED!"))
@@ -1015,7 +1032,7 @@ func shoot_radial_projectiles() -> void:
 
 		get_parent().add_child(projectile)
 
-		projectile.global_position = global_position
+		projectile.global_position = _projectile_release_origin(true)
 		projectile.setup_direction(direction)
 
 	DebugLogger.system(str("BOSS RADIAL BURST!"))

@@ -110,7 +110,7 @@ func run() -> void:
  paused=false;player.position.y+=50
  await create_timer(.28).timeout
  check(projectiles().size()==1,"one actual shot after windup")
- if projectiles().size()==1:check(projectiles()[0].direction.is_equal_approx(boss.global_position.direction_to(target_snapshot)),"aim locks before release")
+ if projectiles().size()==1:check(projectiles()[0].direction.is_equal_approx(projectiles()[0].global_position.direction_to(target_snapshot)),"aim locks before release")
  clear_projectiles();boss.shoot_radial_projectiles();await create_timer(.34).timeout
  check(projectiles().size()==boss.get_current_radial_projectile_count(),"radial count unchanged")
  var first_direction: Vector2=projectiles()[0].direction if not projectiles().is_empty() else Vector2.ZERO

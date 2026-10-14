@@ -34,10 +34,10 @@ func run() -> void:
    var footprint: Transform2D=boss.get_node("CollisionShape2D").transform
    check(boss.has_node("PremiumBossPresentation"),"all-realm presentation "+str(data.boss_name))
    check(bool(boss.get_meta("refined_boss_art",false)),"new atlas installed "+str(data.boss_name))
-   check(sprite.sprite_frames.get_frame_count(&"walk_right")==4,"alternating walk poses")
-   check(sprite.sprite_frames.get_frame_count(&"melee_right")==4,"committed action poses")
+   check(sprite.sprite_frames.get_frame_count(&"walk_right")==6,"alternating walk poses")
+   check(sprite.sprite_frames.get_frame_count(&"melee_right")==6,"committed action poses")
    var texture: AtlasTexture=sprite.sprite_frames.get_frame_texture(&"walk_right",0)
-   check(texture.filter_clip and texture.atlas.get_width()==1024 and texture.atlas.get_height()==1280,"bounded active-realm atlas")
+   check(texture.filter_clip and texture.atlas.get_width()==960 and texture.atlas.get_height()==960,"bounded active-realm atlas")
    for phase: int in [1,2]:
     boss.current_phase=phase
     boss.position=player.position+Vector2(265,0)
@@ -59,7 +59,7 @@ func run() -> void:
    boss.update_behavior();check(boss.velocity==Vector2.ZERO,"cast recovery remains intentional")
    boss.phase_transition_timer=.3;boss._physics_process(.016)
    check(boss.velocity==Vector2.ZERO,"phase ward remains stationary")
-   boss.visual_action_timer=0;sprite.animation=&"idle_right";boss.facing_left=true;boss._play_idle_animation()
+   boss.visual_action_timer=0;sprite.animation=&"idle_right";boss.facing_left=true;boss.get_node("BossFrameDriver").action="";boss.get_node("BossFrameDriver")._physics_process(.016)
    check(sprite.flip_h,"actual facing mirrors art")
    boss.is_dead=true;boss._physics_process(.016)
    check(boss.velocity==Vector2.ZERO,"dead boss stops")

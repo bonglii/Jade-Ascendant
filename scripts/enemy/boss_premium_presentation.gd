@@ -45,8 +45,8 @@ func _process(delta: float) -> void:
 	tick -= delta
 	if tick > 0.0: return
 	tick = 1.0/(18.0 if SettingsManager.reduced_effects else 30.0)
-	_actor_material.set_shader_parameter("rim_strength",0.35 if SettingsManager.reduced_effects else 0.8)
-	_actor_material.set_shader_parameter("energy",0.0 if SettingsManager.reduced_effects else maxf(phase_left,action_left/action_length*0.6))
+	_actor_material.set_shader_parameter("rim_strength",0.08 if bool(get_parent().get_meta("frame_driven_boss",false)) else (0.35 if SettingsManager.reduced_effects else 0.8))
+	_actor_material.set_shader_parameter("energy",0.0 if SettingsManager.reduced_effects else maxf(phase_left,action_left/action_length*0.6) * (0.2 if bool(get_parent().get_meta("frame_driven_boss",false)) else 1.0))
 	queue_redraw()
 
 func _draw() -> void:
@@ -84,7 +84,7 @@ func _draw() -> void:
 			var from: Vector2 = center+Vector2(cos(angle)*36,sin(angle)*42)
 			var to: Vector2 = center+Vector2(cos(angle)*(36+24*(1-pulse)),sin(angle)*(42+24*(1-pulse)))
 			draw_line(from,to,Color(tint,pulse*0.65),2,true)
-	if action_left > 0.0:
+	if action_left > 0.0 and not bool(get_parent().get_meta("frame_driven_boss",false)):
 		var charge: float = 1.0-action_left/action_length
 		_draw_action_crest(center, charge, tint)
 		var radius: float = 28.0+charge*20.0

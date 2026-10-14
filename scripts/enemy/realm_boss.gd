@@ -350,9 +350,12 @@ func _cast_realm_pattern(pattern_name: String, target: Vector2) -> void:
 	get_tree().current_scene.add_child(spell)
 	spell.global_position = launch
 	_update_facing_to_position(target)
-	if realm_id == 4 and pattern_name in ["frost_ring", "bell_toll", "lotus_bloom"]:
-		_play_action_animation("shockwave", 0.56)
-	elif realm_id == 4 and pattern_name in ["frost_fork", "frost_crown"]:
-		_play_action_animation("melee", 0.56)
-	else:
-		_play_action_animation("lightning", 0.56)
+	# Pose families reflect the actual spell geometry, not a shared lightning gesture.
+	var family: String = "lightning"
+	if pattern_name in ["frost_lance","solar_lance","frost_fork"]:
+		family = "projectile"
+	elif pattern_name in ["mirror_gate","mirror_cross","frost_crown","solar_fan","forge_cross","phoenix_wings","eclipse_wheel"]:
+		family = "radial"
+	elif pattern_name in ["frost_ring","solar_ring","bell_toll","lotus_bloom"]:
+		family = "shockwave"
+	_play_action_animation(family, float(spell.warning_duration) + .20, float(spell.warning_duration))
