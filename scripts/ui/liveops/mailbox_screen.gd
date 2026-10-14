@@ -84,7 +84,6 @@ var _no_claim_hint: Label = null
 var _footer_label: Label = null
 var _server_status: Label = null
 var _action_grid: GridContainer
-var _sync_button: Button
 var _mail_title: Label
 var _mail_tagline: Label
 var _selected_id: String = ""
@@ -121,7 +120,7 @@ func _ready() -> void:
 	SceneTransitionManager.set_back_handler(_back)
 	resized.connect(_fit_popup)
 	call_deferred("_fit_popup")
-	ServerMailManager.refresh()
+	ServerMailManager.refresh(true)
 
 
 func _notification(what: int) -> void:
@@ -253,11 +252,6 @@ func _build_mail_toolbar(parent: VBoxContainer) -> void:
 	_compact_inbox_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_compact_inbox_button.pressed.connect(_toggle_compact_inbox)
 	row.add_child(_compact_inbox_button)
-	_sync_button = _button("SYNC MAIL",false)
-	_sync_button.name = "MailboxServerSyncButton"
-	_sync_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_sync_button.pressed.connect(ServerMailManager.refresh)
-	row.add_child(_sync_button)
 	_server_status = _label(ServerMailManager.get_status(),12,MUTED)
 	_server_status.name = "MailboxServerStatus"
 	_server_status.add_theme_stylebox_override("normal",_style(Color(0.002,0.02,0.028,.95),Color(GOLD,.3),6,1))
@@ -688,7 +682,6 @@ func _refresh_from_authority() -> void:
 	if is_instance_valid(_server_status):
 		_server_status.text = tr(ServerMailManager.get_status())
 		_server_status.tooltip_text = _server_status.text
-	if is_instance_valid(_sync_button): _sync_button.disabled = bool(ServerMailManager.get("_refreshing"))
 	var entries: Array[Dictionary] = _entries()
 	var selection_found: bool = false
 	for entry: Dictionary in entries:

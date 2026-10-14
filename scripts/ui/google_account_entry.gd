@@ -21,7 +21,14 @@ const MUTED: Color = Color(0.72, 0.81, 0.78, 1.0)
 @onready var privacy_note: Label = %PrivacyNote
 @onready var login_panel: PanelContainer = %LoginPanel
 
+const GATE_ART: String="res://assets/ui/account_gate/imperial_v1/"
 var _moving_to_home: bool = false
+var _layout_pending: bool=false
+@onready var _safe: Control=$SafeArea
+@onready var _brand: VBoxContainer=$SafeArea/Brand
+@onready var _logo: TextureRect=$SafeArea/Brand/Wordmark
+@onready var _panel_content: VBoxContainer=%PanelContent
+
 
 
 func _ready() -> void:
@@ -31,8 +38,13 @@ func _ready() -> void:
 	google_button.pressed.connect(_on_google_pressed)
 	guest_button.pressed.connect(_on_guest_pressed)
 	GoogleAccountManager.account_state_changed.connect(_on_account_state_changed)
+	resized.connect(_queue_layout)
+	_safe.resized.connect(_queue_layout)
+	login_panel.minimum_size_changed.connect(_queue_layout)
 	_apply_copy()
 	_apply_presentation()
+	_layout_gate()
+	_queue_layout()
 	GoogleAccountManager.refresh_provider()
 	_on_account_state_changed(GoogleAccountManager.get_account_snapshot())
 	# An existing restored session bypasses this screen without requiring a tap.
@@ -54,76 +66,87 @@ func _local(en: String, id: String) -> String:
 
 
 func _apply_copy() -> void:
-	eyebrow_label.text = "YUNG DEV STUDIO  ·  CELESTIAL REALMS"
-	brand_label.text = "JADE ASCENDANT"
-	panel_eyebrow.text = _local("THE CELESTIAL GATE", "GERBANG LANGIT")
-	panel_title.text = _local("Begin Your Ascension", "Awali Perjalananmu")
-	panel_description.text = _local(
-		"Choose how you enter the realm. Your cultivation journey awaits.",
-		"Pilih cara masuk ke dunia kultivasi. Perjalananmu menanti."
-	)
-	privacy_note.text = _local(
-		"Google Login does not back up your progress. Cloud Save is not available yet.",
-		"Login Google belum mencadangkan progres. Cloud Save belum tersedia."
-	)
+	eyebrow_label.text = _local("Walk the path to immortality", "Menapaki jalan keabadian")
+	brand_label.hide()
+	panel_eyebrow.hide()
+	panel_title.text = _local("Your journey begins", "Perjalananmu dimulai")
+	panel_description.text = _local("Enter the realm and begin your cultivation.", "Masuki dunia dan awali kultivasimu.")
+	privacy_note.text = _local("Progress is saved on this device.", "Progres tersimpan di perangkat ini.")
+	privacy_note.tooltip_text = _local("Google login links your identity. Cloud Save is not available yet.", "Login Google menghubungkan identitas. Cloud Save belum tersedia.")
 
+func _skin(file: String, panel: bool=false) -> StyleBoxTexture:
+	var style:=StyleBoxTexture.new()
+	style.texture=load(GATE_ART+"panel.svg") if panel else load(GATE_ART+"jade_button.png")
+	if not panel:
+		if file=="disabled":style.modulate_color=Color(.37,.49,.51,.94)
+		elif file.begins_with("secondary"):style.modulate_color=Color(.50,.70,.76)
+		elif file.ends_with("hover"):style.modulate_color=Color(1.13,1.13,1.06)
+		elif file.ends_with("pressed"):style.modulate_color=Color(.66,.79,.76)
+	if file=="secondary_pressed":style.modulate_color=Color(.35,.52,.58)
+	for edge: String in ["left","right","top","bottom"]:
+		style.set("texture_margin_"+edge,42 if panel else (16 if edge in ["left","right"] else 12))
+		style.set("content_margin_"+edge,18 if panel else (24 if edge in ["left","right"] else 8))
+	return style
 
 func _apply_presentation() -> void:
-	login_panel.add_theme_stylebox_override(
-		"panel", _panel_style()
-	)
-	_apply_button_style(google_button, true)
-	_apply_button_style(guest_button, false)
+	var serif:=SystemFont.new()
+	serif.font_names=PackedStringArray(["Noto Serif","DejaVu Serif"])
+	panel_title.add_theme_font_override("font",serif)
+	eyebrow_label.add_theme_font_override("font",serif)
+	login_panel.add_theme_stylebox_override("panel",_skin("panel",true))
+	_style_button(guest_button,true)
+	_style_button(google_button,false)
 
+func _style_button(button: Button, primary: bool) -> void:
+	var prefix: String="primary" if primary else "secondary"
+	for state: String in ["normal","hover","pressed"]:
+		button.add_theme_stylebox_override(state,_skin(prefix+"_"+state))
+	button.add_theme_stylebox_override("focus",_skin(prefix+"_hover"))
+	button.add_theme_stylebox_override("disabled",_skin("disabled"))
+	button.add_theme_color_override("font_color",GOLD if primary else IVORY)
+	button.add_theme_color_override("font_hover_color",Color(1,.95,.75))
+	button.add_theme_color_override("font_pressed_color",GOLD)
+	button.add_theme_color_override("font_disabled_color",Color(.60,.70,.69))
 
-func _panel_style() -> StyleBoxFlat:
-	var panel := StyleBoxFlat.new()
-	panel.bg_color = Color(0.004, 0.027, 0.041, 0.965)
-	panel.set_border_width_all(2)
-	panel.border_width_bottom = 3
-	panel.border_color = Color(0.91, 0.75, 0.40, 0.87)
-	panel.set_corner_radius_all(18)
-	panel.shadow_color = Color(0.0, 0.0, 0.0, 0.50)
-	panel.shadow_size = 13
-	return panel
+func _queue_layout() -> void:
+	if _layout_pending:return
+	_layout_pending=true
+	_layout_gate.call_deferred()
 
-
-func _apply_button_style(button: Button, is_google: bool) -> void:
-	var normal := StyleBoxFlat.new()
-	normal.set_corner_radius_all(11)
-	normal.set_border_width_all(2)
-	normal.content_margin_left = 13.0
-	normal.content_margin_right = 13.0
-	normal.content_margin_top = 10.0
-	normal.content_margin_bottom = 10.0
-	normal.bg_color = (
-		Color(0.95, 0.95, 0.92, 1.0)
-		if is_google else Color(0.008, 0.105, 0.110, 1.0)
-	)
-	normal.border_color = GOLD if is_google else JADE
-	var hover: StyleBoxFlat = normal.duplicate() as StyleBoxFlat
-	hover.border_color = GOLD
-	hover.bg_color = (
-		Color(1.0, 0.97, 0.87, 1.0)
-		if is_google else Color(0.017, 0.15, 0.14, 1.0)
-	)
-	var pressed: StyleBoxFlat = normal.duplicate() as StyleBoxFlat
-	pressed.bg_color = normal.bg_color.darkened(0.14)
-	var disabled: StyleBoxFlat = normal.duplicate() as StyleBoxFlat
-	disabled.bg_color = Color(0.080, 0.13, 0.14, 0.98)
-	disabled.border_color = Color(0.33, 0.45, 0.43, 0.70)
-	button.add_theme_stylebox_override("normal", normal)
-	button.add_theme_stylebox_override("hover", hover)
-	button.add_theme_stylebox_override("focus", hover)
-	button.add_theme_stylebox_override("pressed", pressed)
-	button.add_theme_stylebox_override("disabled", disabled)
-	var foreground: Color = Color(0.08, 0.13, 0.13, 1.0) if is_google else IVORY
-	button.add_theme_color_override("font_color", foreground)
-	button.add_theme_color_override("font_hover_color", foreground if is_google else GOLD)
-	button.add_theme_color_override("font_pressed_color", foreground)
-	button.add_theme_color_override("font_disabled_color", MUTED)
-	button.add_theme_font_size_override("font_size", 18)
-
+func _layout_gate() -> void:
+	_layout_pending=false
+	if not is_node_ready():return
+	var available: Vector2=_safe.size
+	var landscape: bool=available.x>available.y*1.25
+	var unit: float=clampf(minf(available.x/390.0,available.y/844.0),.83,1.24)
+	var margin: float=clampf(available.x*.04,12,28)
+	var panel_width: float=minf(available.x-margin*2,580)
+	if landscape:panel_width=minf(available.x*.48,540)
+	_panel_content.add_theme_constant_override("separation",roundi(9*unit))
+	for pair: Array in [[panel_title,25],[panel_description,15],[account_status,13],[privacy_note,12],[eyebrow_label,17]]:
+		var font_size: int=roundi(float(pair[1])*unit)
+		if pair[0].get_theme_font_size("font_size")!=font_size:pair[0].add_theme_font_size_override("font_size",font_size)
+	for button: Button in [google_button,guest_button]:
+		button.custom_minimum_size=Vector2(0,maxf(48,58*unit))
+		button.add_theme_font_size_override("font_size",maxi(14,roundi((15 if button==google_button else 17)*unit)))
+	account_status.custom_minimum_size=Vector2.ZERO
+	login_panel.size.x=panel_width
+	# Stable width before measuring wrapped copy. No scale/font entrance tween.
+	var natural: float=login_panel.get_combined_minimum_size().y
+	login_panel.size=Vector2(panel_width,natural)
+	var footer_height: float=36*unit
+	var panel_x: float=(available.x-panel_width)*.5 if not landscape else available.x-panel_width-margin
+	var panel_y: float=available.y-natural-footer_height-margin if not landscape else (available.y-natural-footer_height)*.5
+	login_panel.position=Vector2(panel_x,maxf(margin,panel_y))
+	privacy_note.position=Vector2(panel_x,login_panel.position.y+natural+8*unit)
+	privacy_note.size=Vector2(panel_width,footer_height-8*unit)
+	_brand.position=Vector2(margin,margin)
+	_brand.size.x=available.x-margin*2 if not landscape else panel_x-margin*2
+	var logo_height: float=clampf(available.y*.24,95,280) if not landscape else minf(available.y*.46,230)
+	_logo.custom_minimum_size=Vector2(0,logo_height)
+	_brand.add_theme_constant_override("separation",4*unit)
+	_brand.size.y=logo_height+30*unit
+	if landscape:_brand.position.y=maxf(margin,(available.y-_brand.size.y)*.28)
 
 func _on_account_state_changed(snapshot: Dictionary) -> void:
 	if _moving_to_home or not is_inside_tree():
@@ -135,6 +158,10 @@ func _on_account_state_changed(snapshot: Dictionary) -> void:
 	var native_available: bool = bool(snapshot.get("native_ready", false))
 	var operation_busy: bool = bool(snapshot.get("busy", false))
 	google_button.disabled = operation_busy or not native_available
+	_style_button(google_button,native_available)
+	_style_button(guest_button,not native_available)
+	_panel_content.move_child(google_button if native_available else guest_button,3)
+	_panel_content.move_child(guest_button if native_available else google_button,4)
 	var preparing_guest: bool = operation_busy and str(snapshot.get("operation", "")) == "anonymous_identity"
 	guest_button.disabled = operation_busy and not preparing_guest
 	google_button.text = (
@@ -152,8 +179,8 @@ func _on_account_state_changed(snapshot: Dictionary) -> void:
 		)
 	elif not native_available:
 		account_status.text = _local(
-			"Google Login is unavailable in this build. Guest mode remains available.",
-			"Login Google belum tersedia di build ini. Mode tamu tetap bisa dimainkan."
+			"Google login is unavailable in this build.",
+			"Login Google belum tersedia di build ini."
 		)
 	else:
 		var current_status: String = str(snapshot.get("status", ""))
@@ -164,9 +191,10 @@ func _on_account_state_changed(snapshot: Dictionary) -> void:
 			)
 		else:
 			account_status.text = _local(
-				"Google account or Guest • no forced sign-in.",
-				"Akun Google atau Tamu • login tidak diwajibkan."
+				"Choose Google or play as Guest.",
+				"Pilih Google atau main sebagai Tamu."
 			)
+	_queue_layout()
 	account_status.add_theme_color_override(
 		"font_color", GOLD if operation_busy else MUTED
 	)

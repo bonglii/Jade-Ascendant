@@ -4,6 +4,14 @@ extends Node
 ## are committed together through LiveOpsManager and RewardManager's journal.
 signal server_mail_changed
 const DOMAIN: String = "server_mail"
+const AUTO_SYNC_SECONDS: int=180
+const OPEN_STALE_SECONDS: int=30
+const MIN_SYNC_GAP_MSEC: int=15000
+var _next_refresh_msec: int=0
+var _last_started_msec: int=-MIN_SYNC_GAP_MSEC
+var _last_success_msec: int=-AUTO_SYNC_SECONDS*1000
+var _list_failures: int=0
+var _backgrounded: bool=false
 var _state: Dictionary = {}
 var _owner: String = ""
 var _auth_node: Node
@@ -33,8 +41,9 @@ func _ready() -> void:
 	PlayerIdentityManager.profile_changed.connect(_on_profile)
 	call_deferred("_initialize")
 	var timer := Timer.new()
-	timer.wait_time = 60.0
-	timer.timeout.connect(refresh)
+	timer.name = "MailAutoSync"
+	timer.wait_time = 15.0
+	timer.timeout.connect(_poll_auto_sync)
 	add_child(timer)
 	timer.start()
 
@@ -80,6 +89,10 @@ func _on_profile(snapshot: Dictionary) -> void:
 		_waiting_token = false
 		_refreshing = false
 		_incoming.clear()
+		_next_refresh_msec=0
+		_last_started_msec=-MIN_SYNC_GAP_MSEC
+		_last_success_msec=-AUTO_SYNC_SECONDS*1000
+		_list_failures=0
 		_owner = current
 		var notices: Node = get_node_or_null("/root/AnnouncementCenter")
 		if notices != null: notices.set_account_owner(current)
@@ -161,12 +174,37 @@ func is_busy_for(id: String) -> bool:
 		if str(item.get("id","")) == id: return true
 	return false
 
-func refresh() -> void:
-	if _refreshing or _owner.is_empty() or _state.is_empty() or _auth_node == null: return
-	if not bool(PlayerIdentityManager.get_profile_snapshot().get("server_registered",false)): return
-	_refreshing = true
+func _notification(what: int) -> void:
+	if what in [NOTIFICATION_APPLICATION_PAUSED,NOTIFICATION_APPLICATION_FOCUS_OUT]:
+		_backgrounded=true
+	elif what in [NOTIFICATION_APPLICATION_RESUMED,NOTIFICATION_APPLICATION_FOCUS_IN]:
+		_backgrounded=false
+		if is_node_ready():refresh.call_deferred(true)
+
+func _poll_auto_sync() -> void:
+	refresh()
+
+func _server_registered() -> bool:
+	return bool(PlayerIdentityManager.get_profile_snapshot().get("server_registered",false))
+
+func _refresh_due(now: int,on_open: bool=false) -> bool:
+	if _backgrounded or _refreshing or now-_last_started_msec<MIN_SYNC_GAP_MSEC:return false
+	if now>=_next_refresh_msec:return true
+	return on_open and _list_failures==0 and now-_last_success_msec>=OPEN_STALE_SECONDS*1000
+
+func refresh(on_open: bool=false) -> void:
+	if _owner.is_empty() or _state.is_empty() or _auth_node==null:return
+	if not _server_registered():return
+	var now: int=Time.get_ticks_msec()
+	if not _refresh_due(now,on_open):return
+	_refreshing=true
 	_incoming.clear()
-	if not _enqueue("list","",{},""): _refreshing = false
+	if _enqueue("list","",{},""):
+		_last_started_msec=now
+		_next_refresh_msec=now+AUTO_SYNC_SECONDS*1000
+	else:
+		_refreshing=false
+		_next_refresh_msec=now+MIN_SYNC_GAP_MSEC
 
 func claim_mail(id: String) -> bool:
 	var mail: Dictionary = get_mail(id)
@@ -235,7 +273,7 @@ func _on_token(token: String) -> void:
 func _on_response(result: int,code: int,_headers: PackedStringArray,body: PackedByteArray) -> void:
 	if not _busy: return
 	if _owner != _current_owner(): _on_profile(PlayerIdentityManager.get_profile_snapshot()); return
-	if result != HTTPRequest.RESULT_SUCCESS: _fail("Offline · retry server sync"); return
+	if result != HTTPRequest.RESULT_SUCCESS: _fail("Offline · automatic retry scheduled"); return
 	if code == 401 and not bool(_pending.get("refreshed_token",false)):
 		var again: Dictionary = _pending.duplicate(true)
 		again.refreshed_token = true
@@ -294,6 +332,9 @@ func _accept_page(data: Dictionary) -> bool:
 	_observed_ticks = Time.get_ticks_msec()
 	if not cursor.is_empty(): return _enqueue("list","",{},cursor)
 	_refreshing = false
+	_last_success_msec=Time.get_ticks_msec()
+	_next_refresh_msec=_last_success_msec+AUTO_SYNC_SECONDS*1000
+	_list_failures=0
 	_incoming.sort_custom(func(a: Dictionary,b: Dictionary): return int(a.created_at) > int(b.created_at))
 	var cache: Dictionary = _state.get("cache",{}).duplicate(true)
 	cache[_owner] = _incoming.duplicate(true)
@@ -379,6 +420,8 @@ func _fail(message: String) -> void:
 	if str(_pending.get("kind","")) == "list":
 		_refreshing = false
 		_incoming.clear()
+		_list_failures=mini(_list_failures+1,4)
+		_next_refresh_msec=Time.get_ticks_msec()+mini(60*(1<<(_list_failures-1)),300)*1000
 	_status = message
 	_finish()
 

@@ -40,9 +40,9 @@ func run() -> void:
    check(mail._reader_scroll.get_global_rect().position.x>=paper_rect.position.x+paper_rect.size.x*.115,label+" reading starts after ornate border")
    check(mail._reader_scroll.get_global_rect().end.x<=paper_rect.end.x-paper_rect.size.x*.115,label+" reading ends before ornate border")
    check(mail._letter_body.size.x<=mail._reader_scroll.size.x+1,label+" body never overflows horizontal viewport")
-   check(inside(mail._popup.get_global_rect(),mail._sync_button.get_global_rect()),label+" sync control stays inside popup")
+   check(mail.find_child("MailboxServerSyncButton",true,false)==null,label+" manual sync removed")
    check(inside(mail._popup.get_global_rect(),mail._server_status.get_global_rect()),label+" sync status has bounded full-width slot")
-   check(mail._sync_button.is_visible_in_tree(),label+" sync remains accessible from reader")
+   check(mail._server_status.is_visible_in_tree(),label+" sync status remains visible in reader")
    check(mail._attachment_group.get_parent()==mail._reader_content,label+" all attachments are in the scroll document")
    check(mail._mail_title.get_global_rect().position.y>=mail._popup.position.y+24,label+" title inside quiet sheet header")
 
@@ -78,7 +78,7 @@ func run() -> void:
    mail._claim_button.text="RECOVER CLAIM";await settled()
    check(inside(mail._letter_panel.get_global_rect(),mail._claim_button.get_global_rect()),label+" recovery action fits parchment without clipping")
    mail._toggle_compact_inbox();await settled()
-   check(mail._sync_button.is_visible_in_tree(),label+" sync also accessible from inbox")
+   check(mail._server_status.is_visible_in_tree(),label+" sync status also visible in inbox")
    if mail._body.size.x<mail.WIDE_READER_THRESHOLD: check(mail._inbox_panel.visible and not mail._letter_panel.visible,label+" inbox toggle")
    var card: Button=mail._mail_card_refs["server:"+LONG_ID].button
    var previous_selection: String=mail._selected_id
