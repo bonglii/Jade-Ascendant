@@ -26,7 +26,24 @@ static func modify_hit(target: Node,amount: float,source: String) -> float:
  if maximum!=null and current!=null and float(maximum)>0 and float(current)<=float(maximum)*.35:
   return amount*(1.06 if target.is_in_group("boss") else 1.12)
  return amount
-static func on_applied_hit(target: Node,source: String) -> void:
- if source.begins_with("set_") or bool(target.get("is_dead")):return
+static func on_applied_hit(target: Node,source: String, hp_before: float = -1.0) -> void:
+ if source.begins_with("set_"):return
  var passive: Dictionary=active_passive()
- if passive.get("kind","")=="frost":preload("res://scripts/weapon/jade_binding_slow.gd").apply(target,.6,.8,.94)
+ var kind: String=str(passive.get("kind",""))
+ if kind=="verdict" and hp_before>=0.0:
+  var maximum: Variant=target.get("max_hp")
+  if maximum!=null and float(maximum)>0.0 and hp_before<=float(maximum)*.35:
+   _notify_visual_proc(target,kind)
+ if bool(target.get("is_dead")):return
+ if kind=="frost":preload("res://scripts/weapon/jade_binding_slow.gd").apply(target,.6,.8,.94)
+ # Existing accepted status is proof that poison/burn was actually applied;
+ # invulnerable hits, capped-out new statuses and set DOT never invent procs.
+ if kind in ["poison","burn"]:
+  var status: Node=target.get_node_or_null("EquipmentSetStatus")
+  if status!=null and str(status.kind)==kind and int(status.ticks_left)>0:
+   _notify_visual_proc(target,kind)
+
+static func _notify_visual_proc(target: Node,kind: String) -> void:
+ if not target.is_inside_tree() or not target is Node2D:return
+ var presentation: Node=target.get_tree().get_first_node_in_group("legendary_set_vfx")
+ if presentation!=null:presentation.confirmed_proc(kind,(target as Node2D).global_position)

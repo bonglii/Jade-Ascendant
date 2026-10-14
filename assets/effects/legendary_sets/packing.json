@@ -1,0 +1,280 @@
+{
+  "cell": 256,
+  "gutter": 16,
+  "components": [
+    "ground_seal",
+    "open_halo",
+    "crest",
+    "guardian"
+  ],
+  "sets": [
+    {
+      "set_id": "celestial_aegis",
+      "source_sha256": "10916a376b762a7ae8059196dc4c287e1fadfd7f0f08cd147a57d1bd05c0d3e3",
+      "atlas_sha256": "14a7cad320f36aed2cee4268751c3b9c3d9707e494cdd6a872661b3a94568446",
+      "frames": [
+        {
+          "index": 0,
+          "region": [
+            0,
+            0,
+            256,
+            256
+          ],
+          "used_rect": [
+            16,
+            23,
+            240,
+            240
+          ]
+        },
+        {
+          "index": 1,
+          "region": [
+            256,
+            0,
+            256,
+            256
+          ],
+          "used_rect": [
+            16,
+            16,
+            240,
+            240
+          ]
+        },
+        {
+          "index": 2,
+          "region": [
+            0,
+            256,
+            256,
+            256
+          ],
+          "used_rect": [
+            16,
+            16,
+            240,
+            234
+          ]
+        },
+        {
+          "index": 3,
+          "region": [
+            256,
+            256,
+            256,
+            256
+          ],
+          "used_rect": [
+            16,
+            16,
+            235,
+            237
+          ]
+        }
+      ]
+    },
+    {
+      "set_id": "nine_heavens",
+      "source_sha256": "4d311672d189c1b28c6feb7d3eea406070a60a2a65f0dacabe459c4cace9dcd9",
+      "atlas_sha256": "fb56193ef37856ec7511ea4038b03789e05be1a6419b8ad95482e5039cab4940",
+      "frames": [
+        {
+          "index": 0,
+          "region": [
+            0,
+            0,
+            256,
+            256
+          ],
+          "used_rect": [
+            16,
+            16,
+            240,
+            240
+          ]
+        },
+        {
+          "index": 1,
+          "region": [
+            256,
+            0,
+            256,
+            256
+          ],
+          "used_rect": [
+            16,
+            16,
+            238,
+            240
+          ]
+        },
+        {
+          "index": 2,
+          "region": [
+            0,
+            256,
+            256,
+            256
+          ],
+          "used_rect": [
+            16,
+            16,
+            240,
+            240
+          ]
+        },
+        {
+          "index": 3,
+          "region": [
+            256,
+            256,
+            256,
+            256
+          ],
+          "used_rect": [
+            16,
+            16,
+            240,
+            240
+          ]
+        }
+      ]
+    },
+    {
+      "set_id": "solar_meridian",
+      "source_sha256": "e7429867668c4a4cea3aa9131b931603f4300e67a2b06edd8637beaf66a5ae15",
+      "atlas_sha256": "eb92dd56a8268fd50813b1c4fd953b5aa3988b6c5902085a10bace9c28bb1092",
+      "frames": [
+        {
+          "index": 0,
+          "region": [
+            0,
+            0,
+            256,
+            256
+          ],
+          "used_rect": [
+            16,
+            16,
+            240,
+            240
+          ]
+        },
+        {
+          "index": 1,
+          "region": [
+            256,
+            0,
+            256,
+            256
+          ],
+          "used_rect": [
+            16,
+            16,
+            240,
+            240
+          ]
+        },
+        {
+          "index": 2,
+          "region": [
+            0,
+            256,
+            256,
+            256
+          ],
+          "used_rect": [
+            16,
+            16,
+            240,
+            240
+          ]
+        },
+        {
+          "index": 3,
+          "region": [
+            256,
+            256,
+            256,
+            256
+          ],
+          "used_rect": [
+            16,
+            16,
+            240,
+            240
+          ]
+        }
+      ]
+    },
+    {
+      "set_id": "vermilion_verdict",
+      "source_sha256": "74e9718de60a8664af858ee11435de4ac2aafd81e9b651890f0fce12da45956e",
+      "atlas_sha256": "276ea17ab65ac948dd9ee3b3b761b791f4bb5260dcf61617ca4cb2176a0bb241",
+      "frames": [
+        {
+          "index": 0,
+          "region": [
+            0,
+            0,
+            256,
+            256
+          ],
+          "used_rect": [
+            25,
+            26,
+            240,
+            240
+          ]
+        },
+        {
+          "index": 1,
+          "region": [
+            256,
+            0,
+            256,
+            256
+          ],
+          "used_rect": [
+            16,
+            20,
+            229,
+            240
+          ]
+        },
+        {
+          "index": 2,
+          "region": [
+            0,
+            256,
+            256,
+            256
+          ],
+          "used_rect": [
+            16,
+            16,
+            240,
+            240
+          ]
+        },
+        {
+          "index": 3,
+          "region": [
+            256,
+            256,
+            256,
+            256
+          ],
+          "used_rect": [
+            16,
+            16,
+            211,
+            231
+          ]
+        }
+      ]
+    }
+  ]
+}

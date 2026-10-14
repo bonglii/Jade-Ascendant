@@ -16,7 +16,7 @@ static func apply_hit(target: Node,amount: float,source: String) -> void:
  if after==null:return
  var applied: float=maxf(float(before)-maxf(float(after),0.0),0.0)
  if not is_finite(applied) or applied<=0.0:return
- preload("res://scripts/effects/equipment_set_combat.gd").on_applied_hit(target,source)
+ preload("res://scripts/effects/equipment_set_combat.gd").on_applied_hit(target,source,float(before))
  if not target.is_inside_tree():return
  var tree: SceneTree=target.get_tree()
  if tree==null:return

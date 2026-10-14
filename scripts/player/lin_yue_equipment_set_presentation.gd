@@ -12,6 +12,8 @@ extends Node2D
 ## Numerical set bonuses are owned by EquipmentSetCatalog/EquipmentSetRuntime.
 
 const EquipmentSetCatalog = preload("res://scripts/data/equipment_set_catalog.gd")
+const LegendaryArt = preload("res://scripts/player/legendary_set_art.gd")
+const LegendaryVFX = preload("res://scripts/player/legendary_set_vfx.gd")
 
 const GROUND_CENTER: Vector2 = Vector2(0.0, 30.0)
 const BODY_CENTER: Vector2 = Vector2(0.0, 4.0)
@@ -21,6 +23,7 @@ var active_set_id: String = ""
 var active_piece_count: int = 0
 var elapsed: float = 0.0
 var reduced_effects: bool = false
+var legendary_vfx: Node2D
 
 
 func _ready() -> void:
@@ -60,9 +63,15 @@ func _refresh_from_managers() -> void:
 	active_set_id = str(state.get("set_id", ""))
 	active_piece_count = int(state.get("piece_count", 0))
 	reduced_effects = SettingsManager.reduced_effects
+	if legendary_vfx == null and LegendaryArt.qualifies(active_set_id, active_piece_count):
+		legendary_vfx = LegendaryVFX.new()
+		legendary_vfx.name = "LegendarySetVFX"
+		add_child(legendary_vfx)
+	if legendary_vfx != null:
+		legendary_vfx.configure(active_set_id, active_piece_count, reduced_effects)
 
 	var visible_resonance: bool = active_piece_count >= 2
-	set_process(visible_resonance and not reduced_effects)
+	set_process(visible_resonance and not reduced_effects and not LegendaryArt.qualifies(active_set_id, active_piece_count))
 	queue_redraw()
 
 	if visible_resonance:
@@ -83,6 +92,8 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	if active_piece_count < 2 or active_set_id.is_empty():
+		return
+	if LegendaryArt.qualifies(active_set_id, active_piece_count):
 		return
 
 	var palette: Array[Color] = _get_palette(active_set_id)

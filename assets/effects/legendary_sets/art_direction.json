@@ -1,0 +1,11 @@
+{
+  "generator": "Built-in imagegen",
+  "style": "Hand-painted 2D xianxia, jade/gold filigree, alpha-transparent 2x2 component kits.",
+  "constraints": "No hero baked into VFX, no background or labels. Isolated ground seal, open halo, crest and guardian. Technical resample and padding only after generation.",
+  "sets": {
+    "celestial_aegis": "Celestial Aegis: celestial refuge defensive Qi shield. Navy sapphire translucent jade and antique gold cloud filigree. Ground disk is a sixfold ornate celestial gold seal. Halo is a graceful gold cloud-scroll open circular ring with tiny sapphire diamonds, empty center. Crest is a gold guardian flame surrounding a sapphire jewel, no literal fire. Guardian is a gilded hexagonal shield plaque with rich navy interior and carved cloud motif.",
+    "nine_heavens": "Nine Heavens Ascendant: Jade Venom poison passive. Deep emerald jade, luminous green venom and antique gold. Ground disk is an ornate ninefold heavenly jade botanical seal. Halo is flowing serpentine emerald dragon-vine mist ring in gold, empty center, no literal dragon head or creature. Crest is an imperial jade poison pearl in gold leaf filigree. Guardian ornament is a curved carved jade leaf-shaped venom wisp edged in gold.",
+    "solar_meridian": "Solar Meridian: Solar Scorch burn passive. Rich amber orange, molten gold and restrained vermilion. Ground disk is an ornate radiant sun-meridian seal. Halo is an open circular ring of flowing painterly flame and gold filigree sunlight, empty center. Crest is a golden solar jewel held in a flame-shaped imperial crown. Guardian ornament is a curved golden flame-petal with orange enamel ember interior.",
+    "vermilion_verdict": "Vermilion Verdict: Final Verdict passive empowers direct hits on enemies already below 35% HP, not instant execution. Vermilion crimson, antique gold and very deep ruby. Ground disk is an ornate imperial judgment seal with four sharp gold cardinal motifs. Halo is an open circular scarlet ribbon ring with gilded edge and imperial judicial filigree, empty center. Crest is a slim vertically pointed gold-red tribunal crest. Guardian ornament is an elegant long vertical ceremonial verdict blade plaque with gold edges and ruby interior, not a weapon icon."
+  }
+}
