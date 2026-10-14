@@ -59,10 +59,11 @@ func _draw() -> void:
 	# Vertical body crest is ornamental, never a floor hazard/attack radius.
 	var theme: String = profile.theme
 	var count: int = mini(3+int(profile.stage),8)
+	_draw_identity_crest(center,tint,strength,reduced)
 	if theme == "crimson_moon":
 		for side: int in [-1,1]:
 			draw_arc(center+Vector2(side*15,lift-5),48,PI*0.35,PI*1.65,24,Color(tint,strength),2.2,true)
-	elif theme == "nine_heavens":
+	elif theme in ["nine_heavens","frostveil"]:
 		for i: int in range(count):
 			var angle: float = TAU*i/count+(0.0 if reduced else age*0.16)
 			var at: Vector2 = center+Vector2(cos(angle)*43,sin(angle)*57+lift)
@@ -117,3 +118,26 @@ func _draw_action_crest(center: Vector2, progress: float, tint: Color) -> void:
 		for index: int in range(3):
 			var at: Vector2 = hand + Vector2((index-1)*11, -progress*18-8)
 			draw_colored_polygon(PackedVector2Array([at+Vector2(0,-6),at+Vector2(4,0),at+Vector2(0,6),at-Vector2(4,0)]),Color(tint,alpha * 0.7))
+
+
+func _draw_identity_crest(center: Vector2, tint: Color, strength: float, reduced: bool) -> void:
+	# Body-tight crest: distinct silhouettes, never a second danger radius.
+	var stage: int=int(profile.stage)
+	var top: Vector2=center+Vector2(0,-48)
+	var ink:=Color(tint,strength+.12)
+	match (stage-1)%5:
+		0:
+			draw_polyline(PackedVector2Array([top+Vector2(-12,8),top,top+Vector2(12,8)]),ink,2.0,true)
+		1:
+			draw_line(top+Vector2(-11,-5),top+Vector2(11,12),ink,1.8,true)
+			draw_line(top+Vector2(11,-5),top+Vector2(-11,12),ink,1.8,true)
+		2:
+			draw_arc(top+Vector2(0,5),12,0,TAU,20,ink,1.8,true)
+			for side: int in [-1,1]:draw_line(top+Vector2(side*15,5),top+Vector2(side*7,5),ink,1.5,true)
+		3:
+			draw_polyline(PackedVector2Array([top+Vector2(0,-10),top+Vector2(9,2),top+Vector2(-4,2),top+Vector2(2,15)]),ink,2.0,true)
+		4:
+			draw_polyline(PackedVector2Array([top+Vector2(-18,8),top+Vector2(-15,-7),top+Vector2(-7,2),top+Vector2(0,-13),top+Vector2(7,2),top+Vector2(15,-7),top+Vector2(18,8)]),ink,2.1,true)
+	if not reduced and action_left>0.0:
+		var value: float=sin((1.0-action_left/action_length)*PI)
+		draw_circle(top,3.0,Color(tint,value*.6))

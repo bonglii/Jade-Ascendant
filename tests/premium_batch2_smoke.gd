@@ -106,6 +106,8 @@ func run() -> void:
 		for stage: int in stages:
 			var profile: Dictionary = stages[stage]
 			var boss: Node2D = boss_scene.instantiate()
+			if chapter >= 3:
+				boss.set_script(load("res://scripts/enemy/realm_boss.gd"))
 			boss.configure_encounter(profile)
 			boss.position = player.position+Vector2(400,-200)
 			scene.add_child(boss)
@@ -113,7 +115,7 @@ func run() -> void:
 			var premium: Node = boss.get_node_or_null("PremiumBossPresentation")
 			check(premium != null,"boss premium presentation")
 			check(premium.profile.chapter == chapter+1 and premium.profile.stage == stage,"unique encounter profile")
-			check(boss._get_attack_presentation_theme() == ["jade_valley","crimson_moon","nine_heavens"][chapter],"chapter attack identity")
+			check(boss._get_attack_presentation_theme() == ["jade_valley","crimson_moon","nine_heavens","frostveil","solar_nirvana"][chapter],"chapter attack identity")
 			for key: String in profile.get("boss_stats",{}):
 				check(boss.get(key) == profile.boss_stats[key],"original boss stat " + key)
 			var boss_collider: CollisionShape2D = boss.get_node("CollisionShape2D")
@@ -138,7 +140,7 @@ func run() -> void:
 			boss.free()
 			for remnant: Node in scene.find_children("PremiumBossDefeatRemnant*","Node2D",true,false): remnant.free()
 			roster += 1
-	check(roster == 16,"all sixteen boss identities")
+	check(roster == 26,"all26 boss encounters")
 	check(Catalog.get_profile("unsupported boss").is_empty(),"unsupported realms untouched")
 
 	var fx_script: Variant = load("res://scripts/enemy/hostile_attack_polish.gd")

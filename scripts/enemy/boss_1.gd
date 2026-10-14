@@ -1,6 +1,9 @@
 extends CharacterBody2D
 
 const PremiumPresentation = preload("res://scripts/enemy/boss_premium_presentation.gd")
+const PressureMotion = preload("res://scripts/enemy/boss_pressure_motion.gd")
+const RefinedArt = preload("res://scripts/data/boss_refinement_art.gd")
+
 const PremiumCatalog = preload("res://scripts/data/boss_premium_catalog.gd")
 
 ## Boss
@@ -23,9 +26,7 @@ const QI_SHOCKWAVE_SCENE: PackedScene = preload(
 	"res://scenes/enemy/boss_qi_shockwave.tscn"
 )
 
-const TRIAL_GUARDIAN_SPRITE_FRAMES: SpriteFrames = preload(
-	"res://assets/enemy/boss_1_valley_trial_guardian_spriteframes.tres"
-)
+const TRIAL_GUARDIAN_SPRITE_FRAMES: String = "res://assets/enemy/boss_1_valley_trial_guardian_spriteframes.tres"
 
 const TRIAL_GUARDIAN_STYLE: int = 0
 const TRIAL_GUARDIAN_DISPLAY_NAME: String = "Valley Trial Guardian"
@@ -35,9 +36,7 @@ const TRIAL_GUARDIAN_FOOTPRINT_RADIUS: float = 18.0
 const TRIAL_GUARDIAN_FOOTPRINT_HEIGHT: float = 40.0
 const TRIAL_GUARDIAN_FOOTPRINT_POSITION: Vector2 = Vector2(0.0, 12.0)
 
-const SOVEREIGN_SPRITE_FRAMES: SpriteFrames = preload(
-	"res://assets/enemy/boss_1_jade_valley_sovereign_spriteframes.tres"
-)
+const SOVEREIGN_SPRITE_FRAMES: String = "res://assets/enemy/boss_1_jade_valley_sovereign_spriteframes.tres"
 
 const SOVEREIGN_STYLE: int = 0
 const ASCENDED_SOVEREIGN_STYLE: int = 4
@@ -49,9 +48,7 @@ const SOVEREIGN_FOOTPRINT_RADIUS: float = 22.0
 const SOVEREIGN_FOOTPRINT_HEIGHT: float = 50.0
 const SOVEREIGN_FOOTPRINT_POSITION: Vector2 = Vector2(0.0, 15.0)
 
-const MISTBLADE_SPRITE_FRAMES: SpriteFrames = preload(
-	"res://assets/enemy/boss_1_mistblade_warden_spriteframes.tres"
-)
+const MISTBLADE_SPRITE_FRAMES: String = "res://assets/enemy/boss_1_mistblade_warden_spriteframes.tres"
 
 const MISTBLADE_STYLE: int = 1
 const MISTBLADE_VISUAL_POSITION: Vector2 = Vector2(0.0, -25.0)
@@ -60,9 +57,7 @@ const MISTBLADE_FOOTPRINT_RADIUS: float = 18.0
 const MISTBLADE_FOOTPRINT_HEIGHT: float = 42.0
 const MISTBLADE_FOOTPRINT_POSITION: Vector2 = Vector2(0.0, 15.0)
 
-const SHRINE_KEEPER_SPRITE_FRAMES: SpriteFrames = preload(
-	"res://assets/enemy/boss_1_jade_shrine_keeper_spriteframes.tres"
-)
+const SHRINE_KEEPER_SPRITE_FRAMES: String = "res://assets/enemy/boss_1_jade_shrine_keeper_spriteframes.tres"
 
 const SHRINE_KEEPER_STYLE: int = 2
 const SHRINE_KEEPER_VISUAL_POSITION: Vector2 = Vector2(0.0, -22.0)
@@ -71,9 +66,7 @@ const SHRINE_KEEPER_FOOTPRINT_RADIUS: float = 24.0
 const SHRINE_KEEPER_FOOTPRINT_HEIGHT: float = 52.0
 const SHRINE_KEEPER_FOOTPRINT_POSITION: Vector2 = Vector2(0.0, 14.0)
 
-const STORMPEAK_HERALD_SPRITE_FRAMES: SpriteFrames = preload(
-	"res://assets/enemy/boss_1_stormpeak_herald_spriteframes.tres"
-)
+const STORMPEAK_HERALD_SPRITE_FRAMES: String = "res://assets/enemy/boss_1_stormpeak_herald_spriteframes.tres"
 
 const STORMPEAK_HERALD_STYLE: int = 3
 const STORMPEAK_HERALD_VISUAL_POSITION: Vector2 = Vector2(0.0, -25.0)
@@ -85,9 +78,7 @@ const STORMPEAK_HERALD_FOOTPRINT_POSITION: Vector2 = Vector2(0.0, 14.0)
 # Chapter 2 — Crimson Moon Sect dedicated boss identities.
 # Combat values remain profile-driven by ChapterTwoCatalog; these constants own
 # presentation and gameplay footprint only.
-const BLOODWOOD_MOONSTALKER_SPRITE_FRAMES: SpriteFrames = preload(
-	"res://assets/enemy/boss_2_bloodwood_moonstalker_spriteframes.tres"
-)
+const BLOODWOOD_MOONSTALKER_SPRITE_FRAMES: String = "res://assets/enemy/boss_2_bloodwood_moonstalker_spriteframes.tres"
 const BLOODWOOD_MOONSTALKER_DISPLAY_NAME: String = "Bloodwood Moonstalker"
 const BLOODWOOD_MOONSTALKER_VISUAL_POSITION: Vector2 = Vector2(0.0, -22.0)
 const BLOODWOOD_MOONSTALKER_VISUAL_SCALE: Vector2 = Vector2(1.45, 1.45)
@@ -95,9 +86,7 @@ const BLOODWOOD_MOONSTALKER_FOOTPRINT_RADIUS: float = 18.0
 const BLOODWOOD_MOONSTALKER_FOOTPRINT_HEIGHT: float = 42.0
 const BLOODWOOD_MOONSTALKER_FOOTPRINT_POSITION: Vector2 = Vector2(0.0, 14.0)
 
-const CINNABAR_VEIL_ASSASSIN_SPRITE_FRAMES: SpriteFrames = preload(
-	"res://assets/enemy/boss_2_cinnabar_veil_assassin_spriteframes.tres"
-)
+const CINNABAR_VEIL_ASSASSIN_SPRITE_FRAMES: String = "res://assets/enemy/boss_2_cinnabar_veil_assassin_spriteframes.tres"
 const CINNABAR_VEIL_ASSASSIN_DISPLAY_NAME: String = "Cinnabar Veil Assassin"
 const CINNABAR_VEIL_ASSASSIN_VISUAL_POSITION: Vector2 = Vector2(0.0, -24.0)
 const CINNABAR_VEIL_ASSASSIN_VISUAL_SCALE: Vector2 = Vector2(1.42, 1.42)
@@ -105,9 +94,7 @@ const CINNABAR_VEIL_ASSASSIN_FOOTPRINT_RADIUS: float = 17.0
 const CINNABAR_VEIL_ASSASSIN_FOOTPRINT_HEIGHT: float = 40.0
 const CINNABAR_VEIL_ASSASSIN_FOOTPRINT_POSITION: Vector2 = Vector2(0.0, 14.0)
 
-const SCARLET_RITE_KEEPER_SPRITE_FRAMES: SpriteFrames = preload(
-	"res://assets/enemy/boss_2_scarlet_rite_keeper_spriteframes.tres"
-)
+const SCARLET_RITE_KEEPER_SPRITE_FRAMES: String = "res://assets/enemy/boss_2_scarlet_rite_keeper_spriteframes.tres"
 const SCARLET_RITE_KEEPER_DISPLAY_NAME: String = "Scarlet Rite Keeper"
 const SCARLET_RITE_KEEPER_VISUAL_POSITION: Vector2 = Vector2(0.0, -21.0)
 const SCARLET_RITE_KEEPER_VISUAL_SCALE: Vector2 = Vector2(1.50, 1.50)
@@ -115,9 +102,7 @@ const SCARLET_RITE_KEEPER_FOOTPRINT_RADIUS: float = 24.0
 const SCARLET_RITE_KEEPER_FOOTPRINT_HEIGHT: float = 54.0
 const SCARLET_RITE_KEEPER_FOOTPRINT_POSITION: Vector2 = Vector2(0.0, 15.0)
 
-const BLOOD_MOON_ASCENDANT_SPRITE_FRAMES: SpriteFrames = preload(
-	"res://assets/enemy/boss_2_blood_moon_ascendant_spriteframes.tres"
-)
+const BLOOD_MOON_ASCENDANT_SPRITE_FRAMES: String = "res://assets/enemy/boss_2_blood_moon_ascendant_spriteframes.tres"
 const BLOOD_MOON_ASCENDANT_DISPLAY_NAME: String = "Blood Moon Ascendant"
 const BLOOD_MOON_ASCENDANT_VISUAL_POSITION: Vector2 = Vector2(0.0, -28.0)
 const BLOOD_MOON_ASCENDANT_VISUAL_SCALE: Vector2 = Vector2(1.58, 1.58)
@@ -125,9 +110,7 @@ const BLOOD_MOON_ASCENDANT_FOOTPRINT_RADIUS: float = 19.0
 const BLOOD_MOON_ASCENDANT_FOOTPRINT_HEIGHT: float = 46.0
 const BLOOD_MOON_ASCENDANT_FOOTPRINT_POSITION: Vector2 = Vector2(0.0, 14.0)
 
-const CRIMSON_MOON_SECT_MASTER_SPRITE_FRAMES: SpriteFrames = preload(
-	"res://assets/enemy/boss_2_crimson_moon_sect_master_spriteframes.tres"
-)
+const CRIMSON_MOON_SECT_MASTER_SPRITE_FRAMES: String = "res://assets/enemy/boss_2_crimson_moon_sect_master_spriteframes.tres"
 const CRIMSON_MOON_SECT_MASTER_DISPLAY_NAME: String = "Crimson Moon Sect Master"
 const CRIMSON_MOON_SECT_MASTER_VISUAL_POSITION: Vector2 = Vector2(0.0, -29.0)
 const CRIMSON_MOON_SECT_MASTER_VISUAL_SCALE: Vector2 = Vector2(1.70, 1.70)
@@ -137,9 +120,7 @@ const CRIMSON_MOON_SECT_MASTER_FOOTPRINT_POSITION: Vector2 = Vector2(0.0, 15.0)
 
 # Chapter 3 — Nine Heavens Star Palace dedicated boss identities.
 # Combat values remain profile-driven by ChapterThreeCatalog.
-const CLOUDSEA_GATE_WARDEN_SPRITE_FRAMES: SpriteFrames = preload(
-	"res://assets/enemy/chapter3/boss_3_cloudsea_gate_warden_spriteframes.tres"
-)
+const CLOUDSEA_GATE_WARDEN_SPRITE_FRAMES: String = "res://assets/enemy/chapter3/boss_3_cloudsea_gate_warden_spriteframes.tres"
 const CLOUDSEA_GATE_WARDEN_DISPLAY_NAME: String = "Cloudsea Gate Warden"
 const CLOUDSEA_GATE_WARDEN_VISUAL_POSITION: Vector2 = Vector2(0.0, -24.0)
 const CLOUDSEA_GATE_WARDEN_VISUAL_SCALE: Vector2 = Vector2(1.48, 1.48)
@@ -147,9 +128,7 @@ const CLOUDSEA_GATE_WARDEN_FOOTPRINT_RADIUS: float = 20.0
 const CLOUDSEA_GATE_WARDEN_FOOTPRINT_HEIGHT: float = 46.0
 const CLOUDSEA_GATE_WARDEN_FOOTPRINT_POSITION: Vector2 = Vector2(0.0, 14.0)
 
-const ASTRAL_MIRROR_DAOIST_SPRITE_FRAMES: SpriteFrames = preload(
-	"res://assets/enemy/chapter3/boss_3_astral_mirror_daoist_spriteframes.tres"
-)
+const ASTRAL_MIRROR_DAOIST_SPRITE_FRAMES: String = "res://assets/enemy/chapter3/boss_3_astral_mirror_daoist_spriteframes.tres"
 const ASTRAL_MIRROR_DAOIST_DISPLAY_NAME: String = "Astral Mirror Daoist"
 const ASTRAL_MIRROR_DAOIST_VISUAL_POSITION: Vector2 = Vector2(0.0, -26.0)
 const ASTRAL_MIRROR_DAOIST_VISUAL_SCALE: Vector2 = Vector2(1.46, 1.46)
@@ -157,9 +136,7 @@ const ASTRAL_MIRROR_DAOIST_FOOTPRINT_RADIUS: float = 18.0
 const ASTRAL_MIRROR_DAOIST_FOOTPRINT_HEIGHT: float = 42.0
 const ASTRAL_MIRROR_DAOIST_FOOTPRINT_POSITION: Vector2 = Vector2(0.0, 14.0)
 
-const CONSTELLATION_SWORD_SAINT_SPRITE_FRAMES: SpriteFrames = preload(
-	"res://assets/enemy/chapter3/boss_3_constellation_sword_saint_spriteframes.tres"
-)
+const CONSTELLATION_SWORD_SAINT_SPRITE_FRAMES: String = "res://assets/enemy/chapter3/boss_3_constellation_sword_saint_spriteframes.tres"
 const CONSTELLATION_SWORD_SAINT_DISPLAY_NAME: String = "Constellation Sword Saint"
 const CONSTELLATION_SWORD_SAINT_VISUAL_POSITION: Vector2 = Vector2(0.0, -27.0)
 const CONSTELLATION_SWORD_SAINT_VISUAL_SCALE: Vector2 = Vector2(1.58, 1.58)
@@ -167,9 +144,7 @@ const CONSTELLATION_SWORD_SAINT_FOOTPRINT_RADIUS: float = 20.0
 const CONSTELLATION_SWORD_SAINT_FOOTPRINT_HEIGHT: float = 46.0
 const CONSTELLATION_SWORD_SAINT_FOOTPRINT_POSITION: Vector2 = Vector2(0.0, 14.0)
 
-const NINEFOLD_HEAVEN_ARBITER_SPRITE_FRAMES: SpriteFrames = preload(
-	"res://assets/enemy/chapter3/boss_3_ninefold_heaven_arbiter_spriteframes.tres"
-)
+const NINEFOLD_HEAVEN_ARBITER_SPRITE_FRAMES: String = "res://assets/enemy/chapter3/boss_3_ninefold_heaven_arbiter_spriteframes.tres"
 const NINEFOLD_HEAVEN_ARBITER_DISPLAY_NAME: String = "Ninefold Heaven Arbiter"
 const NINEFOLD_HEAVEN_ARBITER_VISUAL_POSITION: Vector2 = Vector2(0.0, -29.0)
 const NINEFOLD_HEAVEN_ARBITER_VISUAL_SCALE: Vector2 = Vector2(1.62, 1.62)
@@ -177,9 +152,7 @@ const NINEFOLD_HEAVEN_ARBITER_FOOTPRINT_RADIUS: float = 20.0
 const NINEFOLD_HEAVEN_ARBITER_FOOTPRINT_HEIGHT: float = 48.0
 const NINEFOLD_HEAVEN_ARBITER_FOOTPRINT_POSITION: Vector2 = Vector2(0.0, 15.0)
 
-const STAR_PALACE_CELESTIAL_SOVEREIGN_SPRITE_FRAMES: SpriteFrames = preload(
-	"res://assets/enemy/chapter3/boss_3_star_palace_celestial_sovereign_spriteframes.tres"
-)
+const STAR_PALACE_CELESTIAL_SOVEREIGN_SPRITE_FRAMES: String = "res://assets/enemy/chapter3/boss_3_star_palace_celestial_sovereign_spriteframes.tres"
 const STAR_PALACE_CELESTIAL_SOVEREIGN_DISPLAY_NAME: String = "Star Palace Celestial Sovereign"
 const STAR_PALACE_CELESTIAL_SOVEREIGN_VISUAL_POSITION: Vector2 = Vector2(0.0, -31.0)
 const STAR_PALACE_CELESTIAL_SOVEREIGN_VISUAL_SCALE: Vector2 = Vector2(1.78, 1.78)
@@ -229,6 +202,11 @@ const RANGED_ASCENDED_CROSS: int = 3
 @export var encounter_display_name: String = "Jade Valley Sovereign"
 @export_enum("Sovereign", "Mistblade", "Shrine Keeper", "Storm Herald", "Ascended Sovereign") var encounter_style: int = 0
 
+var _melee_cast_pending: bool = false
+var _pressure_clock: float = 0.0
+var _pressure_side: float = 1.0
+var _pressure_blocked: float = 0.0
+
 var current_hp: float
 var player: Node2D = null
 var is_dead: bool = false
@@ -273,8 +251,10 @@ func get_encounter_display_name() -> String:
 ## Applies art and collision that are unique to one encounter identity.
 ## Combat behavior and stage balance remain driven by the existing profile.
 func _apply_encounter_presentation() -> void:
+	var refined_available: bool = RefinedArt.has_art(encounter_display_name)
 	if encounter_style == TRIAL_GUARDIAN_STYLE and encounter_display_name == TRIAL_GUARDIAN_DISPLAY_NAME:
-		animated_sprite.sprite_frames = TRIAL_GUARDIAN_SPRITE_FRAMES
+		if not refined_available:
+			animated_sprite.sprite_frames = load(TRIAL_GUARDIAN_SPRITE_FRAMES) as SpriteFrames
 		animated_sprite.position = TRIAL_GUARDIAN_VISUAL_POSITION
 		animated_sprite.scale = TRIAL_GUARDIAN_VISUAL_SCALE
 
@@ -289,7 +269,8 @@ func _apply_encounter_presentation() -> void:
 		return
 
 	if encounter_style == SOVEREIGN_STYLE and encounter_display_name == SOVEREIGN_DISPLAY_NAME:
-		animated_sprite.sprite_frames = SOVEREIGN_SPRITE_FRAMES
+		if not refined_available:
+			animated_sprite.sprite_frames = load(SOVEREIGN_SPRITE_FRAMES) as SpriteFrames
 		animated_sprite.position = SOVEREIGN_VISUAL_POSITION
 		animated_sprite.scale = SOVEREIGN_VISUAL_SCALE
 
@@ -305,7 +286,8 @@ func _apply_encounter_presentation() -> void:
 		return
 
 	if encounter_style == ASCENDED_SOVEREIGN_STYLE and encounter_display_name == ASCENDED_SOVEREIGN_DISPLAY_NAME:
-		animated_sprite.sprite_frames = SOVEREIGN_SPRITE_FRAMES
+		if not refined_available:
+			animated_sprite.sprite_frames = load(SOVEREIGN_SPRITE_FRAMES) as SpriteFrames
 		animated_sprite.position = SOVEREIGN_VISUAL_POSITION
 		animated_sprite.scale = Vector2(1.78, 1.78)
 		var ascended_footprint := CapsuleShape2D.new()
@@ -316,7 +298,8 @@ func _apply_encounter_presentation() -> void:
 		return
 
 	if encounter_display_name == BLOODWOOD_MOONSTALKER_DISPLAY_NAME:
-		animated_sprite.sprite_frames = BLOODWOOD_MOONSTALKER_SPRITE_FRAMES
+		if not refined_available:
+			animated_sprite.sprite_frames = load(BLOODWOOD_MOONSTALKER_SPRITE_FRAMES) as SpriteFrames
 		animated_sprite.position = BLOODWOOD_MOONSTALKER_VISUAL_POSITION
 		animated_sprite.scale = BLOODWOOD_MOONSTALKER_VISUAL_SCALE
 
@@ -328,7 +311,8 @@ func _apply_encounter_presentation() -> void:
 		return
 
 	if encounter_display_name == CINNABAR_VEIL_ASSASSIN_DISPLAY_NAME:
-		animated_sprite.sprite_frames = CINNABAR_VEIL_ASSASSIN_SPRITE_FRAMES
+		if not refined_available:
+			animated_sprite.sprite_frames = load(CINNABAR_VEIL_ASSASSIN_SPRITE_FRAMES) as SpriteFrames
 		animated_sprite.position = CINNABAR_VEIL_ASSASSIN_VISUAL_POSITION
 		animated_sprite.scale = CINNABAR_VEIL_ASSASSIN_VISUAL_SCALE
 
@@ -340,7 +324,8 @@ func _apply_encounter_presentation() -> void:
 		return
 
 	if encounter_display_name == SCARLET_RITE_KEEPER_DISPLAY_NAME:
-		animated_sprite.sprite_frames = SCARLET_RITE_KEEPER_SPRITE_FRAMES
+		if not refined_available:
+			animated_sprite.sprite_frames = load(SCARLET_RITE_KEEPER_SPRITE_FRAMES) as SpriteFrames
 		animated_sprite.position = SCARLET_RITE_KEEPER_VISUAL_POSITION
 		animated_sprite.scale = SCARLET_RITE_KEEPER_VISUAL_SCALE
 
@@ -352,7 +337,8 @@ func _apply_encounter_presentation() -> void:
 		return
 
 	if encounter_display_name == BLOOD_MOON_ASCENDANT_DISPLAY_NAME:
-		animated_sprite.sprite_frames = BLOOD_MOON_ASCENDANT_SPRITE_FRAMES
+		if not refined_available:
+			animated_sprite.sprite_frames = load(BLOOD_MOON_ASCENDANT_SPRITE_FRAMES) as SpriteFrames
 		animated_sprite.position = BLOOD_MOON_ASCENDANT_VISUAL_POSITION
 		animated_sprite.scale = BLOOD_MOON_ASCENDANT_VISUAL_SCALE
 
@@ -364,7 +350,8 @@ func _apply_encounter_presentation() -> void:
 		return
 
 	if encounter_display_name == CRIMSON_MOON_SECT_MASTER_DISPLAY_NAME:
-		animated_sprite.sprite_frames = CRIMSON_MOON_SECT_MASTER_SPRITE_FRAMES
+		if not refined_available:
+			animated_sprite.sprite_frames = load(CRIMSON_MOON_SECT_MASTER_SPRITE_FRAMES) as SpriteFrames
 		animated_sprite.position = CRIMSON_MOON_SECT_MASTER_VISUAL_POSITION
 		animated_sprite.scale = CRIMSON_MOON_SECT_MASTER_VISUAL_SCALE
 
@@ -376,7 +363,8 @@ func _apply_encounter_presentation() -> void:
 		return
 
 	if encounter_display_name == CLOUDSEA_GATE_WARDEN_DISPLAY_NAME:
-		animated_sprite.sprite_frames = CLOUDSEA_GATE_WARDEN_SPRITE_FRAMES
+		if not refined_available:
+			animated_sprite.sprite_frames = load(CLOUDSEA_GATE_WARDEN_SPRITE_FRAMES) as SpriteFrames
 		animated_sprite.position = CLOUDSEA_GATE_WARDEN_VISUAL_POSITION
 		animated_sprite.scale = CLOUDSEA_GATE_WARDEN_VISUAL_SCALE
 		var gate_warden_footprint := CapsuleShape2D.new()
@@ -387,7 +375,8 @@ func _apply_encounter_presentation() -> void:
 		return
 
 	if encounter_display_name == ASTRAL_MIRROR_DAOIST_DISPLAY_NAME:
-		animated_sprite.sprite_frames = ASTRAL_MIRROR_DAOIST_SPRITE_FRAMES
+		if not refined_available:
+			animated_sprite.sprite_frames = load(ASTRAL_MIRROR_DAOIST_SPRITE_FRAMES) as SpriteFrames
 		animated_sprite.position = ASTRAL_MIRROR_DAOIST_VISUAL_POSITION
 		animated_sprite.scale = ASTRAL_MIRROR_DAOIST_VISUAL_SCALE
 		var mirror_daoist_footprint := CapsuleShape2D.new()
@@ -398,7 +387,8 @@ func _apply_encounter_presentation() -> void:
 		return
 
 	if encounter_display_name == CONSTELLATION_SWORD_SAINT_DISPLAY_NAME:
-		animated_sprite.sprite_frames = CONSTELLATION_SWORD_SAINT_SPRITE_FRAMES
+		if not refined_available:
+			animated_sprite.sprite_frames = load(CONSTELLATION_SWORD_SAINT_SPRITE_FRAMES) as SpriteFrames
 		animated_sprite.position = CONSTELLATION_SWORD_SAINT_VISUAL_POSITION
 		animated_sprite.scale = CONSTELLATION_SWORD_SAINT_VISUAL_SCALE
 		var sword_saint_footprint := CapsuleShape2D.new()
@@ -409,7 +399,8 @@ func _apply_encounter_presentation() -> void:
 		return
 
 	if encounter_display_name == NINEFOLD_HEAVEN_ARBITER_DISPLAY_NAME:
-		animated_sprite.sprite_frames = NINEFOLD_HEAVEN_ARBITER_SPRITE_FRAMES
+		if not refined_available:
+			animated_sprite.sprite_frames = load(NINEFOLD_HEAVEN_ARBITER_SPRITE_FRAMES) as SpriteFrames
 		animated_sprite.position = NINEFOLD_HEAVEN_ARBITER_VISUAL_POSITION
 		animated_sprite.scale = NINEFOLD_HEAVEN_ARBITER_VISUAL_SCALE
 		var arbiter_footprint := CapsuleShape2D.new()
@@ -420,7 +411,8 @@ func _apply_encounter_presentation() -> void:
 		return
 
 	if encounter_display_name == STAR_PALACE_CELESTIAL_SOVEREIGN_DISPLAY_NAME:
-		animated_sprite.sprite_frames = STAR_PALACE_CELESTIAL_SOVEREIGN_SPRITE_FRAMES
+		if not refined_available:
+			animated_sprite.sprite_frames = load(STAR_PALACE_CELESTIAL_SOVEREIGN_SPRITE_FRAMES) as SpriteFrames
 		animated_sprite.position = STAR_PALACE_CELESTIAL_SOVEREIGN_VISUAL_POSITION
 		animated_sprite.scale = STAR_PALACE_CELESTIAL_SOVEREIGN_VISUAL_SCALE
 		var celestial_sovereign_footprint := CapsuleShape2D.new()
@@ -431,7 +423,8 @@ func _apply_encounter_presentation() -> void:
 		return
 
 	if encounter_style == MISTBLADE_STYLE:
-		animated_sprite.sprite_frames = MISTBLADE_SPRITE_FRAMES
+		if not refined_available:
+			animated_sprite.sprite_frames = load(MISTBLADE_SPRITE_FRAMES) as SpriteFrames
 		animated_sprite.position = MISTBLADE_VISUAL_POSITION
 		animated_sprite.scale = MISTBLADE_VISUAL_SCALE
 
@@ -445,7 +438,8 @@ func _apply_encounter_presentation() -> void:
 		return
 
 	if encounter_style == SHRINE_KEEPER_STYLE:
-		animated_sprite.sprite_frames = SHRINE_KEEPER_SPRITE_FRAMES
+		if not refined_available:
+			animated_sprite.sprite_frames = load(SHRINE_KEEPER_SPRITE_FRAMES) as SpriteFrames
 		animated_sprite.position = SHRINE_KEEPER_VISUAL_POSITION
 		animated_sprite.scale = SHRINE_KEEPER_VISUAL_SCALE
 
@@ -460,7 +454,8 @@ func _apply_encounter_presentation() -> void:
 		return
 
 	if encounter_style == STORMPEAK_HERALD_STYLE:
-		animated_sprite.sprite_frames = STORMPEAK_HERALD_SPRITE_FRAMES
+		if not refined_available:
+			animated_sprite.sprite_frames = load(STORMPEAK_HERALD_SPRITE_FRAMES) as SpriteFrames
 		animated_sprite.position = STORMPEAK_HERALD_VISUAL_POSITION
 		animated_sprite.scale = STORMPEAK_HERALD_VISUAL_SCALE
 
@@ -488,6 +483,7 @@ func _get_attack_presentation_theme() -> String:
 
 func _ready() -> void:
 	_apply_encounter_presentation()
+	RefinedArt.install(self)
 	set_meta("premium_boss_presentation",not PremiumCatalog.get_profile(encounter_display_name).is_empty())
 	CombatFeedback.register_actor(self)
 	if not PremiumCatalog.get_profile(encounter_display_name).is_empty():
@@ -525,6 +521,14 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		return
 
+	_pressure_clock += delta
+	if velocity.length_squared() > 25.0 and get_last_motion().length_squared() < 0.04:
+		_pressure_blocked += delta
+		if _pressure_blocked > 0.6:
+			_pressure_side = -_pressure_side
+			_pressure_blocked = 0.0
+	else:
+		_pressure_blocked = 0.0
 	update_attack_timer(delta)
 	update_ranged_attack_timer(delta)
 	update_shockwave_timer(delta)
@@ -689,6 +693,8 @@ func _update_facing_to_player() -> void:
 func _directional_animation(
 	prefix: String
 ) -> StringName:
+	if animated_sprite != null and bool(get_meta("refined_boss_art",false)):
+		animated_sprite.flip_h = facing_left
 	var suffix: String = "right"
 
 	if facing_left:
@@ -803,54 +809,31 @@ func _play_loop_animation(
 
 ## Menentukan perilaku Boss berdasarkan jarak terhadap Player.
 func update_behavior() -> void:
-	if _ranged_cast_pending:
+	if not is_instance_valid(player):
 		velocity = Vector2.ZERO
+		return
+	# Explicit phase/cast recovery is the only intentional stationary state.
+	if _ranged_cast_pending or _melee_cast_pending or visual_action_timer > 0.0:
+		velocity = Vector2.ZERO
+		_update_facing_to_player()
 		return
 	var distance_to_player: float = global_position.distance_to(player.global_position)
-
+	_update_facing_to_player()
 	if distance_to_player <= melee_distance:
-		velocity = Vector2.ZERO
-		_update_facing_to_player()
 		try_attack()
-
-		if visual_action_timer <= 0.0:
-			_play_idle_animation()
-
-		return
-
-	if distance_to_player <= ranged_distance:
-		if encounter_style == 1:
-			# The Mistblade Warden circles while casting, instead of anchoring
-			# in one position like the shrine and gate guardians.
-			var direction: Vector2 = global_position.direction_to(player.global_position)
-			var strafe_sign: float = -1.0 if last_ranged_pattern == 1 else 1.0
-			velocity = (direction * 0.3 + direction.orthogonal() * strafe_sign).normalized() * speed
-			velocity *= preload("res://scripts/weapon/jade_binding_slow.gd").movement_factor(self)
-			move_and_slide()
-			_update_facing_to_player()
-			try_ranged_attack()
-			_play_walk_animation()
-			return
-		if encounter_style == ASCENDED_SOVEREIGN_STYLE and current_phase == PHASE_TWO:
-			var ascend_direction: Vector2 = global_position.direction_to(player.global_position)
-			var ascend_sign: float = -1.0 if last_ranged_pattern % 2 == 0 else 1.0
-			velocity = (ascend_direction * 0.12 + ascend_direction.orthogonal() * ascend_sign).normalized() * speed * 0.72
-			velocity *= preload("res://scripts/weapon/jade_binding_slow.gd").movement_factor(self)
-			move_and_slide()
-			_update_facing_to_player()
-			try_ranged_attack()
-			_play_walk_animation()
-			return
-		velocity = Vector2.ZERO
-		_update_facing_to_player()
+	elif distance_to_player <= ranged_distance:
 		try_ranged_attack()
-
-		if visual_action_timer <= 0.0:
-			_play_idle_animation()
-
+	if _ranged_cast_pending or _melee_cast_pending or visual_action_timer > 0.0:
+		velocity = Vector2.ZERO
 		return
-
-	move_toward_player()
+	velocity = PressureMotion.desired_velocity(self,player,_pressure_clock,_pressure_side)
+	velocity *= preload("res://scripts/weapon/jade_binding_slow.gd").movement_factor(self)
+	move_and_slide()
+	if get_last_motion().length_squared() > 0.01:
+		_update_facing_from_motion(velocity)
+		_play_walk_animation()
+	else:
+		_play_idle_animation()
 
 ## Menggerakkan Boss menuju Player.
 func move_toward_player() -> void:
@@ -896,26 +879,23 @@ func try_attack() -> void:
 
 ## Memberikan melee damage kepada Player.
 func attack_player() -> void:
-	if player == null or not is_instance_valid(player):
+	if _melee_cast_pending or is_dead or not is_instance_valid(player):
 		return
-
-	var player_health: PlayerHealth = player.get_node_or_null("PlayerHealth") as PlayerHealth
-
-	if player_health == null:
-		DebugLogger.system(str("WARNING: Boss tidak menemukan PlayerHealth."))
-		return
-
+	var target: Node2D = player
+	var cast_phase: int = current_phase
+	_melee_cast_pending = true
 	_update_facing_to_player()
-
-	_play_action_animation(
-		"melee",
-		MELEE_VISUAL_DURATION
-	)
-
-	DebugLogger.system(str("BOSS ATTACK!"))
-	DebugLogger.system(str("Boss Damage: ", attack_damage))
-
-	player_health.take_damage(attack_damage)
+	_play_action_animation("melee", MELEE_VISUAL_DURATION)
+	# Commit to the visible swing; a player who steps outside its true range dodges.
+	await get_tree().create_timer(MELEE_VISUAL_DURATION * 0.48, false).timeout
+	_melee_cast_pending = false
+	if is_dead or not is_inside_tree() or current_phase != cast_phase or not is_instance_valid(target):
+		return
+	if target != player or global_position.distance_squared_to(target.global_position) > melee_distance * melee_distance:
+		return
+	var player_health: PlayerHealth = target.get_node_or_null("PlayerHealth") as PlayerHealth
+	if player_health != null:
+		player_health.take_damage(attack_damage)
 
 ## Memilih ranged attack tanpa mengulang pattern sebelumnya.
 func try_ranged_attack() -> void:

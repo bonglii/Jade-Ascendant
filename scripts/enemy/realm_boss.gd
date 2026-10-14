@@ -59,11 +59,13 @@ func configure_encounter(profile: Dictionary) -> void:
 
 func _apply_encounter_presentation() -> void:
 	# Called by base _ready after the inherited AnimatedSprite2D node exists.
-	var frames: SpriteFrames = BossArt.get_frames(realm_id, boss_stage_id)
-	if frames == null:
+	var refined_available: bool = RefinedArt.has_art(encounter_display_name)
+	var frames: SpriteFrames = null if refined_available else BossArt.get_frames(realm_id, boss_stage_id)
+	if frames == null and not refined_available:
 		push_error("RealmBoss: missing art %d-%d" % [realm_id, boss_stage_id])
 		return
-	animated_sprite.sprite_frames = frames
+	if frames != null:
+		animated_sprite.sprite_frames = frames
 	animated_sprite.position = Vector2(0.0, -27.0)
 	# Chapter 4 art is fitted to its original 128x128 frames. The collider
 	# remains the old production footprint, NOT the silhouette/weapon extent.
@@ -92,7 +94,7 @@ func _apply_encounter_presentation() -> void:
 
 func _get_attack_presentation_theme() -> String:
 	# Applies only to fallback base boss spells; signature spells own their palette.
-	return "nine_heavens" if realm_id == 4 else "crimson_moon"
+	return "frostveil" if realm_id == 4 else "solar_nirvana"
 
 
 func _ready() -> void:
@@ -275,22 +277,7 @@ func _draw() -> void:
 
 
 func update_behavior() -> void:
-	# Aggressive but bounded orbit pressure for the mobile/duelist encounters.
-	# Boss still closes distance when outside ranged reach, and respects melee.
-	if not is_instance_valid(player):
-		return
-	var distance_value: float = global_position.distance_to(player.global_position)
-	var orbit_boss: bool = boss_stage_id in [2, 3, 5]
-	if orbit_boss and distance_value > melee_distance and distance_value < ranged_distance and current_phase == PHASE_TWO:
-		var direction: Vector2 = global_position.direction_to(player.global_position)
-		var tangent: Vector2 = direction.orthogonal() * _strafe_side
-		velocity = (tangent + direction * 0.13).normalized() * speed * 0.62
-		velocity *= preload("res://scripts/weapon/jade_binding_slow.gd").movement_factor(self)
-		move_and_slide()
-		_update_facing_to_player()
-		try_ranged_attack()
-		_play_walk_animation()
-		return
+	# Share reach-aware pressure/recovery with realms I–III; bespoke spells remain.
 	super.update_behavior()
 
 

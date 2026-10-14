@@ -60,11 +60,16 @@ func _draw() -> void:
 	if SettingsManager.reduced_effects: return
 	var fade: float = clampf(1.0-impact_age/0.22,0.0,1.0)
 	if kind == "lightning":
-		# Vertical branches clearly read as airborne impact, not wider damage.
+		# A fixed branching bolt with layered core. No extra particles/nodes.
+		var trunk:=PackedVector2Array([Vector2(3,-220),Vector2(-11,-175),Vector2(8,-137),Vector2(-9,-92),Vector2(5,-48),Vector2.ZERO])
+		draw_polyline(trunk,Color(tint,.10*fade),19,true)
+		draw_polyline(trunk,Color(tint,.38*fade),7,true)
+		draw_polyline(trunk,Color(tint.lightened(.65),.96*fade),2.4,true)
 		for side: int in [-1,1]:
-			var points := PackedVector2Array([Vector2(0,-190),Vector2(side*12,-144),Vector2(side*4,-103),Vector2(side*22,-56),Vector2.ZERO])
-			draw_polyline(points,Color(tint,0.18*fade),14,true)
-			draw_polyline(points,Color(tint.lightened(0.3),0.92*fade),2.2,true)
+			var branch:=PackedVector2Array([Vector2(-9,-92),Vector2(side*29,-112),Vector2(side*45,-151)])
+			draw_polyline(branch,Color(tint,.56*fade),1.7,true)
+		draw_arc(Vector2.ZERO,radius*.65,0,TAU,28,Color(tint,.48*fade),2.4,true)
+
 	else:
 		for i: int in range(10):
 			var direction: Vector2 = Vector2.RIGHT.rotated(TAU*i/10.0)
