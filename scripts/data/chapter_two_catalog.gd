@@ -90,7 +90,7 @@ const STAGES: Dictionary = {
 			{"from_wave": 4, "weights": [10, 20, 10, 10, 40, 10]},
 			{"from_wave": 7, "weights": [10, 15, 10, 15, 35, 15]}
 		],
-		"elite_schedule": {4: 2, 7: 1, 8: 2},
+		"elite_schedule": {3: 2, 6: 1, 8: 2},
 		"hazard_kind": 3,
 		"hazard_interval": 12.0,
 		"hazard_initial_delay": 8.5,
@@ -143,7 +143,7 @@ const STAGES: Dictionary = {
 			{"from_wave": 4, "weights": [10, 15, 10, 30, 10, 25]},
 			{"from_wave": 7, "weights": [10, 10, 10, 30, 15, 25]}
 		],
-		"elite_schedule": {4: 1, 6: 1, 8: 2},
+		"elite_schedule": {3: 1, 6: 1, 8: 2},
 		"hazard_kind": 4,
 		"hazard_interval": 10.5,
 		"hazard_initial_delay": 7.0,
@@ -198,7 +198,7 @@ const STAGES: Dictionary = {
 			{"from_wave": 4, "weights": [10, 20, 15, 15, 30, 10]},
 			{"from_wave": 7, "weights": [8, 17, 15, 15, 30, 15]}
 		],
-		"elite_schedule": {3: 2, 5: 1, 7: 2, 8: 2},
+		"elite_schedule": {2: 2, 4: 1, 6: 2, 8: 2},
 		"hazard_kind": 3,
 		"hazard_interval": 8.5,
 		"hazard_initial_delay": 6.5,
@@ -255,7 +255,7 @@ const STAGES: Dictionary = {
 			{"from_wave": 4, "weights": [10, 15, 15, 20, 25, 15]},
 			{"from_wave": 7, "weights": [10, 10, 15, 20, 25, 20]}
 		],
-		"elite_schedule": {3: 1, 5: 2, 7: 1, 8: 2},
+		"elite_schedule": {2: 1, 4: 2, 6: 1, 8: 2},
 		"hazard_kind": 4,
 		"hazard_interval": 9.0,
 		"hazard_initial_delay": 6.0,

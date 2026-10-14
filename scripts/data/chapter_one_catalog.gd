@@ -137,7 +137,7 @@ const STAGES: Dictionary = {
 			{"from_wave": 4, "weights": [25, 20, 15, 15, 15, 10]},
 			{"from_wave": 7, "weights": [15, 20, 15, 15, 20, 15]}
 		],
-		"elite_schedule": {4: 1, 6: 2, 8: 2},
+		"elite_schedule": {3: 1, 6: 2, 8: 2},
 		"hazard_kind": 1, "hazard_interval": 14.0,
 		"boss_name": "Jade Valley Sovereign", "boss_style": 0,
 		# Sovereign gate trial: preserve the full three-pattern kit, but give
@@ -169,7 +169,7 @@ const STAGES: Dictionary = {
 			{"from_wave": 4, "weights": [15, 15, 15, 20, 15, 20]},
 			{"from_wave": 7, "weights": [8, 12, 15, 20, 20, 25]}
 		],
-		"elite_schedule": {3: 1, 5: 2, 7: 1, 9: 2},
+		"elite_schedule": {2: 1, 4: 2, 6: 1, 8: 2},
 		"hazard_kind": 2, "secondary_hazard_kind": 1,
 		"hazard_interval": 9.5,
 		"boss_name": "Jade Valley Sovereign · Ascended", "boss_style": 4,

@@ -453,7 +453,7 @@ func get_qi_magnet_waves() -> Array[int]:
 	return result
 
 func _on_qi_magnet_elite_defeated(enemy: Node2D, spawn_wave: int) -> void:
-	if spawn_wave not in get_qi_magnet_waves() or qi_magnet_awarded_waves.has(spawn_wave) or not is_instance_valid(enemy):
+	if spawn_wave not in get_qi_magnet_waves() or qi_magnet_awarded_waves.has(spawn_wave) or qi_magnet_awarded_waves.size() >= 2 or not is_instance_valid(enemy):
 		return
 	qi_magnet_awarded_waves[spawn_wave] = true
 	_spawn_qi_magnet.call_deferred(enemy.global_position)
@@ -488,8 +488,15 @@ func restore_qi_magnet_state(state: Variant) -> void:
 	var awarded: Variant = state.get("awarded_waves", [])
 	if awarded is Array:
 		for value: Variant in awarded:
-			if (value is int or value is float) and int(value) in eligible:
-				qi_magnet_awarded_waves[int(value)] = true
+			# Saved milestone IDs belong to the run's original schedule.
+			# Keep old wave5/9 awards after rescheduling; cap the shared ledger
+			# so the new wave4/8 schedule cannot grant two additional tokens.
+			if qi_magnet_awarded_waves.size() >= 2:
+				break
+			if value is int or value is float:
+				var saved_wave: float = float(value)
+				if is_finite(saved_wave) and floorf(saved_wave) == saved_wave and saved_wave >= 4 and saved_wave <= 9:
+					qi_magnet_awarded_waves[int(value)] = true
 	var pending: Variant = state.get("pending", [])
 	if pending is Array:
 		for i: int in range(mini(pending.size(), qi_magnet_awarded_waves.size())):
@@ -510,6 +517,19 @@ func _on_enemy_defeated() -> void:
 
 	enemy_killed.emit()
 
+## Only one authored elite is active at a time. A scheduled slot may wait
+## within its wave; after that wave it is skipped, never piled into the boss.
+func has_active_scheduled_elite() -> bool:
+	for enemy: Node in get_tree().get_nodes_in_group("enemy"):
+		if (
+			enemy.get_parent() == get_parent()
+			and enemy.has_meta("qi_magnet_wave")
+			and not enemy.is_queued_for_deletion()
+			and not bool(enemy.get("is_dead"))
+		):
+			return true
+	return false
+
 ## Memeriksa apakah wave saat ini memiliki jadwal spawn Elite Enemy.
 func try_spawn_elite_for_current_wave() -> void:
 	var current_wave: int = wave_manager.current_wave
@@ -517,7 +537,7 @@ func try_spawn_elite_for_current_wave() -> void:
 	if not schedule.has(current_wave):
 		return
 
-	if elite_spawned_waves.has(current_wave):
+	if elite_spawned_waves.has(current_wave) or has_active_scheduled_elite():
 		return
 
 	var elite_spawned: bool = false
