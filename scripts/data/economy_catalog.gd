@@ -44,7 +44,7 @@ const DAILY_COMPLETION_JADE: int = 20
 const ACTIVE_DAY_CYCLE_LENGTH: int = 7
 const ACTIVE_DAY_CYCLE_BONUS_JADE: int = 160
 const ACTIVE_DAY_CYCLE_BONUS_SEALS: int = 4
-const REWARDED_AD_MAX_PER_CYCLE: int = 3
+const REWARDED_AD_MAX_PER_CYCLE: int = 7
 const REWARDED_AD_SEALS: int = 1
 
 ## Progression milestones intentionally begin after the Pavilion unlock.

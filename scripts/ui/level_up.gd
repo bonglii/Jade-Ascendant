@@ -464,7 +464,7 @@ func get_upgrade_effect(upgrade_id: String) -> String:
 		"movement_speed":
 			return "+10% MOVEMENT SPEED"
 		"body_refinement":
-			return "MAX HP  +2  •  RESTORE 2 HP"
+			return "MAX HP  +%.0f  •  RESTORE %.0f HP" % [PlayerHealth.BODY_REFINEMENT_HP_PER_LEVEL, PlayerHealth.BODY_REFINEMENT_HP_PER_LEVEL]
 		"qi_shield":
 			return "QI SHIELD  +1 CHARGE"
 		"spiritual_insight":
@@ -472,7 +472,7 @@ func get_upgrade_effect(upgrade_id: String) -> String:
 		"iron_body":
 			return "DAMAGE TAKEN  -5%"
 		"blood_qi":
-			return "HEAL 1 HP • FASTER PROC"
+			return "HEAL %.0f HP • FASTER PROC" % PlayerHealth.BLOOD_QI_HEAL_AMOUNT
 		"sword_intent":
 			return "CRITICAL CHANCE  +5%"
 		"sword_dao_resonance":

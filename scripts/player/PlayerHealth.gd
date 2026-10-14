@@ -11,13 +11,13 @@ signal health_changed(current_health: float, max_health: float)
 signal qi_shield_blocked(remaining_charges: int)
 signal died
 
-const BODY_REFINEMENT_HP_PER_LEVEL: float = 2.0
+const BODY_REFINEMENT_HP_PER_LEVEL: float = 5.0
 const QI_SHIELD_CHARGE_PER_LEVEL: int = 1
 const IRON_BODY_REDUCTION_PER_LEVEL: float = 0.05
 const IRON_BODY_MAX_LEVEL: int = 5
 const BLOOD_QI_BASE_KILLS_REQUIRED: int = 20
 const BLOOD_QI_KILL_REDUCTION_PER_LEVEL: int = 2
-const BLOOD_QI_HEAL_AMOUNT: float = 1.0
+const BLOOD_QI_HEAL_AMOUNT: float = 2.0
 const BLOOD_QI_MAX_LEVEL: int = 5
 const REWARDED_REVIVE_HEALTH_RATIO: float = 0.60
 const REWARDED_REVIVE_INVULNERABILITY_MSEC: int = 2500

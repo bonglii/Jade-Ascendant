@@ -40,6 +40,8 @@ var _consent_form: ConsentForm
 
 var _active_request_id: int = -1
 var _reward_earned_for_request: bool = false
+var _request_finishing: bool = false
+var _last_load_error_code: int = -1
 
 var _consent_retry_timer: Timer
 var _consent_retry_delay_seconds: float = CONSENT_RETRY_INITIAL_SECONDS
@@ -52,19 +54,23 @@ func _ready() -> void:
 
 	if OS.get_name() != "Android":
 		_state = "unsupported_platform"
+		_trace_state()
 		return
 
 	if not OS.is_debug_build() and not _production_configuration_valid():
 		_state = "disabled_invalid_release_config"
+		_trace_state()
 		return
 
 	_ad_unit_id = _resolve_rewarded_ad_unit_id()
 	if _ad_unit_id.is_empty():
 		_state = "disabled_missing_release_ad_unit"
+		_trace_state()
 		return
 
 	if not _native_plugins_available():
 		_state = "native_plugin_missing"
+		_trace_state()
 		push_error("AdMobProvider: native AdMob/UMP plugin tidak tersedia.")
 		return
 
@@ -107,15 +113,17 @@ func show_rewarded(request_id: int, placement: String) -> void:
 
 	_active_request_id = request_id
 	_reward_earned_for_request = false
+	_request_finishing = false
 	_state = "rewarded_showing"
+	_trace_state()
 
 	var content_callback := FullScreenContentCallback.new()
-	content_callback.on_ad_dismissed_full_screen_content = _on_rewarded_dismissed
-	content_callback.on_ad_failed_to_show_full_screen_content = _on_rewarded_failed_to_show
+	content_callback.on_ad_dismissed_full_screen_content = _on_rewarded_dismissed.bind(request_id)
+	content_callback.on_ad_failed_to_show_full_screen_content = _on_rewarded_failed_to_show.bind(request_id)
 	_rewarded_ad.full_screen_content_callback = content_callback
 
 	var reward_listener := OnUserEarnedRewardListener.new()
-	reward_listener.on_user_earned_reward = _on_user_earned_reward
+	reward_listener.on_user_earned_reward = _on_user_earned_reward.bind(request_id)
 	_rewarded_ad.show(reward_listener)
 
 
@@ -141,6 +149,7 @@ func show_privacy_options() -> bool:
 func get_runtime_status() -> Dictionary:
 	return {
 		"provider": "admob",
+		"last_load_error_code": _last_load_error_code,
 		"state": _state,
 		"test_mode": OS.is_debug_build(),
 		"consent_gate_open": _consent_gate_open,
@@ -241,6 +250,7 @@ func _native_plugins_available() -> bool:
 
 func _begin_consent_update() -> void:
 	_state = "consent_updating"
+	_trace_state()
 	_consent_gate_open = false
 	_destroy_rewarded_ad()
 	if (
@@ -264,6 +274,7 @@ func _on_consent_update_success() -> void:
 
 func _on_consent_update_failure(_form_error) -> void:
 	_state = "consent_update_failed"
+	_trace_state()
 	_consent_gate_open = false
 	_destroy_rewarded_ad()
 	_schedule_consent_retry()
@@ -282,6 +293,7 @@ func _evaluate_consent_after_update() -> void:
 		and information.get_is_consent_form_available()
 	):
 		_state = "consent_form_loading"
+		_trace_state()
 		UserMessagingPlatform.load_consent_form(
 			_on_consent_form_loaded,
 			_on_consent_form_load_failure
@@ -289,6 +301,7 @@ func _evaluate_consent_after_update() -> void:
 		return
 
 	_state = "consent_unresolved"
+	_trace_state()
 	_consent_gate_open = false
 	_destroy_rewarded_ad()
 	_schedule_consent_retry()
@@ -297,6 +310,7 @@ func _evaluate_consent_after_update() -> void:
 func _on_consent_form_loaded(consent_form: ConsentForm) -> void:
 	if consent_form == null:
 		_state = "consent_form_missing"
+		_trace_state()
 		_consent_gate_open = false
 		_consent_form = null
 		_destroy_rewarded_ad()
@@ -305,11 +319,13 @@ func _on_consent_form_loaded(consent_form: ConsentForm) -> void:
 
 	_consent_form = consent_form
 	_state = "consent_form_showing"
+	_trace_state()
 	_consent_form.show(_on_consent_form_dismissed)
 
 
 func _on_consent_form_load_failure(_form_error) -> void:
 	_state = "consent_form_load_failed"
+	_trace_state()
 	_consent_gate_open = false
 	_consent_form = null
 	_destroy_rewarded_ad()
@@ -320,6 +336,7 @@ func _on_consent_form_dismissed(form_error) -> void:
 	_consent_form = null
 	if form_error != null:
 		_state = "consent_form_dismiss_failed"
+		_trace_state()
 		_consent_gate_open = false
 		_destroy_rewarded_ad()
 		_schedule_consent_retry()
@@ -331,6 +348,7 @@ func _on_consent_form_dismissed(form_error) -> void:
 		return
 
 	_state = "consent_not_granted"
+	_trace_state()
 	_consent_gate_open = false
 	_destroy_rewarded_ad()
 
@@ -338,6 +356,7 @@ func _on_consent_form_dismissed(form_error) -> void:
 func _on_privacy_options_dismissed(form_error) -> void:
 	if form_error != null:
 		_state = "privacy_options_failed"
+		_trace_state()
 		return
 
 	_destroy_rewarded_ad()
@@ -346,12 +365,14 @@ func _on_privacy_options_dismissed(form_error) -> void:
 		_consent_gate_open = true
 		if _ads_initialized:
 			_state = "ads_initialized"
+			_trace_state()
 			_load_rewarded_ad()
 		else:
 			_initialize_mobile_ads()
 	else:
 		_consent_gate_open = false
 		_state = "consent_not_granted"
+		_trace_state()
 
 
 func _consent_allows_ads(consent_status: int) -> bool:
@@ -407,6 +428,7 @@ func _initialize_mobile_ads() -> void:
 
 	_initialization_started = true
 	_state = "ads_initializing"
+	_trace_state()
 
 	var listener := OnInitializationCompleteListener.new()
 	listener.on_initialization_complete = _on_mobile_ads_initialized
@@ -417,6 +439,7 @@ func _on_mobile_ads_initialized(_initialization_status) -> void:
 	_ads_initialized = true
 	_initialization_started = false
 	_state = "ads_initialized"
+	_trace_state()
 	_load_rewarded_ad()
 
 
@@ -433,6 +456,7 @@ func _load_rewarded_ad() -> void:
 
 	_rewarded_loading = true
 	_state = "rewarded_loading"
+	_trace_state()
 
 	var request := AdRequest.new()
 	request.keywords = []
@@ -448,22 +472,29 @@ func _load_rewarded_ad() -> void:
 
 
 func _on_rewarded_loaded(ad: RewardedAd) -> void:
+	_last_load_error_code = -1
 	_rewarded_loading = false
 	_retry_delay_seconds = LOAD_RETRY_INITIAL_SECONDS
 
 	if ad == null:
 		_state = "rewarded_load_empty"
+		_trace_state()
 		_schedule_load_retry()
 		return
 
 	_destroy_rewarded_ad()
 	_rewarded_ad = ad
 	_state = "rewarded_ready"
+	_trace_state()
 
 
-func _on_rewarded_failed_to_load(_load_error) -> void:
+func _on_rewarded_failed_to_load(load_error) -> void:
+	_last_load_error_code = int(load_error.code) if load_error != null else -1
+	if OS.get_name() == "Android":
+		print("JADE_ADS_QA load_error_code=", _last_load_error_code)
 	_rewarded_loading = false
 	_state = "rewarded_load_failed"
+	_trace_state()
 	_schedule_load_retry()
 
 
@@ -486,44 +517,53 @@ func _schedule_load_retry() -> void:
 	)
 
 
-func _on_user_earned_reward(_rewarded_item) -> void:
-	if _active_request_id < 0 or _reward_earned_for_request:
+func _on_user_earned_reward(_rewarded_item, request_id: int) -> void:
+	if request_id < 0 or request_id != _active_request_id or _reward_earned_for_request:
 		return
-
 	_reward_earned_for_request = true
-	_emit_reward_confirmed(_active_request_id)
+	if OS.get_name() == "Android":
+		print("JADE_ADS_QA earned=confirmed")
+	_emit_reward_confirmed(request_id)
 
 
-func _on_rewarded_dismissed() -> void:
-	if _active_request_id < 0:
-		_destroy_rewarded_ad()
-		_load_rewarded_ad()
+func _on_rewarded_dismissed(request_id: int) -> void:
+	if request_id < 0 or request_id != _active_request_id or _request_finishing:
 		return
+	_request_finishing = true
+	# Drain already queued SDK callbacks for this request; never credit a later ad.
+	_finalize_rewarded_dismissal.call_deferred(request_id)
 
-	var finished_request: int = _active_request_id
+
+func _finalize_rewarded_dismissal(request_id: int) -> void:
+	if request_id != _active_request_id or not _request_finishing:
+		return
 	var status: String = "completed" if _reward_earned_for_request else "cancelled"
-
 	_active_request_id = -1
 	_reward_earned_for_request = false
+	_request_finishing = false
 	_destroy_rewarded_ad()
 	_state = "ads_initialized"
-	request_finished.emit(finished_request, status)
+	_trace_state()
+	request_finished.emit(request_id, status)
 	_load_rewarded_ad()
 
 
-func _on_rewarded_failed_to_show(_ad_error) -> void:
-	if _active_request_id < 0:
-		_destroy_rewarded_ad()
-		_load_rewarded_ad()
+func _on_rewarded_failed_to_show(_ad_error, request_id: int) -> void:
+	if request_id < 0 or request_id != _active_request_id or _request_finishing:
 		return
-
-	var failed_request: int = _active_request_id
 	_active_request_id = -1
 	_reward_earned_for_request = false
+	_request_finishing = false
 	_destroy_rewarded_ad()
 	_state = "rewarded_show_failed"
-	request_finished.emit(failed_request, "failed")
+	_trace_state()
+	request_finished.emit(request_id, "failed")
 	_schedule_load_retry()
+
+
+func _trace_state() -> void:
+	if OS.get_name() == "Android":
+		print("JADE_ADS_QA state=", _state, " test=", OS.is_debug_build())
 
 
 func _destroy_rewarded_ad() -> void:

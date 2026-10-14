@@ -11,10 +11,20 @@ func run() -> void:
  var economy: Script=load("res://scripts/data/economy_catalog.gd")
  var sets: Script=load("res://scripts/data/equipment_set_catalog.gd")
  var output: Dictionary={"stages":[],"equipment":[],"sets":[],"weapons":[],"idle":[],"milestones":[],"economy":{"rates":economy.get_base_drop_rates(),"pity":economy.get_pity_limits(),"single":economy.get_summon_cost(1),"ten":economy.get_summon_cost(10),"daily_completion_jade":economy.DAILY_COMPLETION_JADE,"cycle_jade":economy.ACTIVE_DAY_CYCLE_BONUS_JADE,"cycle_seals":economy.ACTIVE_DAY_CYCLE_BONUS_SEALS,"ad_cap_per_cycle":economy.REWARDED_AD_MAX_PER_CYCLE}}
+ var authored_level: Node=load("res://scenes/levels/level_1.tscn").instantiate()
+ var health: Node=authored_level.get_node("player_1/PlayerHealth")
+ output.player={"authored_max_health":health.max_health,"body_refinement_hp":health.BODY_REFINEMENT_HP_PER_LEVEL,"blood_qi_heal":health.BLOOD_QI_HEAL_AMOUNT}
+ authored_level.free()
+ output.permanent_weapon_progression=[]
+ for stars: int in range(1,6):
+  var cap: int=10*stars
+  var cost: int=0
+  for level: int in range(1,cap):cost+=20*(level+1)
+  output.permanent_weapon_progression.append({"stars":stars,"level_cap":cap,"max_damage_multiplier":1.0+(cap-1)*.01,"total_stones_from_level1":cost})
  var chapters: Array[String]=["one","two","three","four","five"]
  for i: int in range(5):
   var catalog: Script=load("res://scripts/data/chapter_"+chapters[i]+"_catalog.gd")
-  for stage_id: int in range(1,6):
+  for stage_id: int in catalog.STAGES:
    var data: Dictionary=catalog.get_stage(stage_id)
    # Instantiate the authored boss scene off-tree and apply its real encounter adapter.
    var stage_scene: PackedScene=load(str(data.scene_path))

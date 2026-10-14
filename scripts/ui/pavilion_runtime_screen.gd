@@ -625,7 +625,7 @@ func _refresh_rewarded_seal_section() -> void:
 			Color(0.62, 0.68, 0.66, 1.0)
 		)
 		_show_rewarded_message(
-			tr("Rewarded ad unavailable. Try again shortly."),
+			_rewarded_unavailable_message(MonetizationManager.get_provider_runtime_status()),
 			Color(0.76, 0.82, 0.78, 1.0)
 		)
 	rewarded_seal_button.disabled = true
@@ -668,7 +668,7 @@ func _request_rewarded_seal() -> void:
 		RewardedBridge.PLACEMENT_ID
 	):
 		_show_rewarded_message(
-			tr("Rewarded ad unavailable. Try again shortly."),
+			_rewarded_unavailable_message(MonetizationManager.get_provider_runtime_status()),
 			Color(0.76, 0.82, 0.78, 1.0)
 		)
 		_refresh_rewarded_seal_section()
@@ -728,7 +728,7 @@ func _on_rewarded_request_finished(
 			)
 		_:
 			_show_rewarded_message(
-				tr("Rewarded ad unavailable. Try again shortly."),
+				_rewarded_unavailable_message(MonetizationManager.get_provider_runtime_status()),
 				Color(0.76, 0.82, 0.78, 1.0)
 			)
 
@@ -747,3 +747,18 @@ func _show_rewarded_message(
 		accent
 	)
 	rewarded_seal_message_label.visible = not message.is_empty()
+
+
+func _rewarded_unavailable_message(runtime: Dictionary) -> String:
+	match str(runtime.get("state", "")):
+		"unsupported_platform": return tr("Rewarded ads are available on Android.")
+		"native_plugin_missing": return tr("Ad plugin missing. Install the latest Android build.")
+		"disabled_invalid_release_config", "disabled_missing_release_ad_unit":
+			return tr("Ad configuration unavailable. Contact support.")
+		"consent_update_failed", "consent_unresolved", "consent_form_load_failed":
+			return tr("Privacy setup could not finish. Check connection; retry is automatic.")
+	match int(runtime.get("last_load_error_code", -1)):
+		2: return tr("Ad network connection failed. Retry is automatic.")
+		3: return tr("No ad available right now. Retry is automatic.")
+		1: return tr("Ad request configuration failed. Contact support.")
+	return tr("Rewarded ad unavailable. Try again shortly.")
