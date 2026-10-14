@@ -18,7 +18,7 @@ func run() -> void:
  check(p.get_summon_pool_by_rarity().values().all(func(a: Array):return a.is_empty()),"No summon before1-5")
  for stage: int in range(1,6):j.cleared_stage_keys.append(j.get_stage_key(1,stage))
  var pool: Dictionary=p.get_summon_pool_by_rarity()
- var targets: Array[String]=["void_piercer_spear","astral_resonance_bell"]
+ var targets: Array[String]=["void_piercer_spear"]
  for set_id: String in ["frost_lotus","vermilion_verdict","celestial_aegis"]:
   for id: String in sets.get_piece_ids(set_id):
    check(id in pool[str(eq.get_item_data(id).rarity)],"new armor in pool "+id)
@@ -26,7 +26,7 @@ func run() -> void:
    inv.item_counts[id]=2;check(eq.ascend_item(id),"matching armor duplicate ascends "+id)
  check("phoenix_war_fan" in pool.epic,"fan epic pool")
  check(not p.get_wish_target_options().has("phoenix_war_fan"),"Epic uses ordinary Epic drop; no false Legendary wish")
- var out: Dictionary={"scope":"Production offline sampler, expanded57-item pool, default rates, fixed Legendary target, fresh pity, seed14102026; no live/ad/calendar guarantee.","experiments_per_target":1000,"targets":{}}
+ var out: Dictionary={"scope":"Production offline sampler, active56-item pool after Bell retirement, default rates, fixed Legendary target, fresh pity, seed14102026; no live/ad/calendar guarantee.","experiments_per_target":1000,"targets":{}}
  var rng_seed: int=p.rng.seed
  var rng_state: int=p.rng.state
  p.rng.seed=14102026

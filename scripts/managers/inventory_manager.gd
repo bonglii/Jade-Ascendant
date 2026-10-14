@@ -61,6 +61,7 @@ func get_owned_item_ids() -> Array[String]:
 	var owned_item_ids: Array[String] = []
 	for raw_item_id in item_counts.keys():
 		var item_id := str(raw_item_id)
+		if bool(EquipmentManager.get_item_data(item_id).get("retired",false)): continue
 		if get_item_count(item_id) <= 0:
 			continue
 		owned_item_ids.append(item_id)

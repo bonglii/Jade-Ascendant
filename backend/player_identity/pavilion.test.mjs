@@ -75,9 +75,9 @@ test('reviewed returning glaive rotates through dashboard without changing base 
 
 test('arsenal banners expose reviewed legendary entries only to supported clients',async()=>{
  const f=await fixture();await f.login();
- for(const id of ['vermilion_verdict_robe','celestial_aegis_pendant','void_piercer_spear','astral_resonance_bell'])assert.ok(FEATURED_CATALOG.some(x=>x.id===id));
+ for(const id of ['vermilion_verdict_robe','celestial_aegis_pendant','void_piercer_spear'])assert.ok(FEATURED_CATALOG.some(x=>x.id===id));
  assert.ok(!FEATURED_CATALOG.some(x=>x.id==='phoenix_war_fan'));
- const newBanner=banner({featured:['void_piercer_spear','astral_resonance_bell']});
+ const newBanner=banner({featured:['void_piercer_spear']});
  assert.equal((await f.api('/admin/api/pavilion/publish',publication({banners:[newBanner]}))).status,200);
  assert.equal((await f.api('/v1/pavilion/banner')).data.banner,null);
  assert.deepEqual((await f.api('/v1/pavilion/banner',undefined,{headers:{'x-jade-ascendant-arsenal':'v1'}})).data.banner.featured,newBanner.featured);
@@ -86,3 +86,5 @@ test('arsenal banners expose reviewed legendary entries only to supported client
  assert.deepEqual(publicSnapshot({revision:2,document:normalized}).banner.featured,['nine_heavens_star_sword']);
  f.db.sql.close();
 });
+
+test("retired Bell is filtered from historical banners",()=>{assert.ok(!FEATURED_CATALOG.some(x=>x.id==="astral_resonance_bell"));assert.throws(()=>normalizeDocument({banners:[banner({featured:["astral_resonance_bell"]})]}),/invalid_banner_equipment/);assert.equal(publicSnapshot({revision:1,document:{banners:[banner({featured:["astral_resonance_bell"]})]}},Math.floor(Date.now()/1000),true).banner,null);});

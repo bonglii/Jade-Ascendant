@@ -90,6 +90,7 @@ func run() -> void:
 	await process_frame
 	await process_frame
 	var book: Control = current_scene
+	book._set_mode("SKILLS")
 	check(book._list.get_child_count() == 18,"book all skills")
 	for category: String in ["WEAPONS","PASSIVES","SYNERGIES"]:
 		book._set_filter(category)

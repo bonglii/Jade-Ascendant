@@ -61,7 +61,7 @@ func accept_snapshot(input: Variant) -> bool:
 		if not b.featured is Array or b.featured.is_empty() or b.featured.size()>5: return false
 		var seen: Array=[]
 		for id: Variant in b.featured:
-			if not id is String or id in seen or str(EquipmentManager.get_item_data(id).get("rarity",""))!="legendary": return false
+			if not id is String or id in seen or id not in EquipmentManager.get_item_ids() or str(EquipmentManager.get_item_data(id).get("rarity",""))!="legendary": return false
 			seen.append(id)
 		if not b.rates is Dictionary or not _exact(b.rates,BASE_RATES.keys()): return false
 		var total: int=0

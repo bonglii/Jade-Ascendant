@@ -14,4 +14,4 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
-      - run: node --test backend/player_identity/identity.test.mjs backend/player_identity/mail.test.mjs backend/player_identity/pavilion.test.mjs
+      - run: node --test backend/player_identity/announcements.test.mjs backend/player_identity/identity.test.mjs backend/player_identity/mail.test.mjs backend/player_identity/pavilion.test.mjs

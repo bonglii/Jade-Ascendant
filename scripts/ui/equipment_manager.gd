@@ -111,6 +111,7 @@ func has_item_definition(item_id: String) -> bool:
 func get_item_ids() -> Array[String]:
 	var item_ids: Array[String] = []
 	for raw_item_id in EQUIPMENT_CATALOG.keys():
+		if bool(EQUIPMENT_CATALOG[raw_item_id].get("retired",false)): continue
 		item_ids.append(str(raw_item_id))
 	item_ids.sort()
 	return item_ids
@@ -300,6 +301,7 @@ func get_ascension_cost(item_id: String) -> int:
 	return get_ascension_cost_for_star(item_id, get_item_star(item_id)+1)
 
 func can_ascend_item(item_id: String) -> bool:
+	if bool(get_item_data(item_id).get("retired",false)): return false
 	return can_modify_equipment() and get_ascension_cost(item_id)>0 and InventoryManager.get_item_count(item_id)>=2
 
 func ascend_item(item_id: String) -> bool:
@@ -340,6 +342,7 @@ func get_weapon_level_cost(item_id: String) -> int:
 	return 10*(get_item_weapon_level(item_id)+3) if get_item_weapon_level(item_id)<get_weapon_level_cap(item_id) else 0
 
 func can_level_weapon(item_id: String) -> bool:
+	if bool(get_item_data(item_id).get("retired",false)): return false
 	return can_modify_equipment() and InventoryManager.owns_item(item_id) and get_weapon_level_cost(item_id)>0 and ProgressionManager.spirit_stone>=get_weapon_level_cost(item_id)
 
 func level_weapon(item_id: String) -> bool:
@@ -361,6 +364,7 @@ func level_weapon(item_id: String) -> bool:
 	return ok
 
 func equip_item(item_id: String) -> bool:
+	if bool(get_item_data(item_id).get("retired",false)): return false
 	if not can_modify_equipment():
 		push_warning(
 			"EquipmentManager: equipment tidak dapat diubah saat gameplay "
@@ -496,6 +500,9 @@ func get_critical_chance_bonus() -> float:
 	)
 
 func _validate_loaded_state() -> void:
+	# Retired ownership, stars and levels remain archived; old active snapshots can Continue.
+	for slot: String in equipped_item_ids:
+		if bool(get_item_data(str(equipped_item_ids[slot])).get("retired",false)): equipped_item_ids[slot]=""
 	var validated: Dictionary = {}
 	for slot_id in get_slot_ids():
 		var item_id := str(

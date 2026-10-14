@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "equipment": [
     {
       "icon_source": "res://assets/ui/equipment/imperial_v3/icons/ascendant_heart.png",
@@ -8,14 +8,6 @@
       "name": "Ascendant Heart",
       "rarity": "legendary",
       "slot": "pendant"
-    },
-    {
-      "id": "astral_resonance_bell",
-      "name": "Astral Resonance Bell",
-      "slot": "armament",
-      "rarity": "legendary",
-      "max": 1,
-      "icon_source": "res://assets/ui/equipment/expansion_20261014/astral_resonance_bell.png"
     },
     {
       "icon_source": "res://assets/ui/equipment/imperial_v3/icons/bamboo_weave_robe.png",

@@ -2149,6 +2149,7 @@ func get_item_unlock_requirement(item_id: String) -> Dictionary:
 
 
 func is_item_unlocked(item_id: String) -> bool:
+	if bool(EquipmentManager.get_item_data(item_id).get("retired",false)): return false
 	var requirement := get_item_unlock_requirement(item_id)
 	if requirement.is_empty():
 		return false

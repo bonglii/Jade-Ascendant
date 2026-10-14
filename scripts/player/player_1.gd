@@ -11,6 +11,8 @@ const SPIRITUAL_INSIGHT_BONUS: float = 0.15
 const SPIRITUAL_INSIGHT_MAX_LEVEL: int = 5
 const CultivationMastery=preload("res://scripts/data/cultivation_mastery_runtime.gd")
 const EquipmentSetRuntime = preload("res://scripts/data/equipment_set_runtime.gd")
+const FrameDriver = preload("res://scripts/player/lin_yue_frame_driver.gd")
+var locomotion: RefCounted = FrameDriver.new()
 
 @export var speed: float = 200.0
 
@@ -30,9 +32,10 @@ var facing_direction: String = "down"
 
 func _ready() -> void:
 	CombatFeedback.register_actor(self)
+	locomotion.setup(animated_sprite)
 	_play_animation_if_available("idle_" + facing_direction)
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	var direction: Vector2 = Input.get_vector(
 		"ui_left",
 		"ui_right",
@@ -44,10 +47,11 @@ func _physics_process(_delta: float) -> void:
 	if keyboard_direction.length_squared() > direction.length_squared():
 		direction = keyboard_direction
 	velocity = direction * get_effective_movement_speed()
+	var start: Vector2 = global_position
 	move_and_slide()
 
 	update_facing(direction)
-	update_animation(direction)
+	locomotion.advance(delta,facing_direction,global_position.distance_to(start))
 
 func get_effective_movement_speed() -> float:
 	var set_bonus: float = EquipmentSetRuntime.get_bonus("movement_speed_bonus")
@@ -226,3 +230,6 @@ func add_experience(amount: int) -> void:
 func resolve_pending_level_up() -> void:
 	if not get_tree().paused and experience >= experience_to_next_level:
 		level_up()
+
+func request_hurt_pose() -> void:
+	locomotion.react_to_hit()

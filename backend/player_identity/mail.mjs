@@ -3,7 +3,7 @@ import {ownerBinding} from './worker.mjs';
 import dashboard from './dashboard.mjs';
 import {pavilionRoute} from './pavilion.mjs';
 import {announcementAdminRoute,announcementPlayerRoute,listAnnouncementEntries} from './announcements.mjs';
-import {normalizeReward,hasReward,needsGiftClient,REWARD_CATALOG,EXPANSION_ITEM_IDS} from './mail_rewards.mjs';
+import {normalizeReward,hasReward,needsGiftClient,REWARD_CATALOG,EXPANSION_CLIENT_FENCE_IDS as EXPANSION_ITEM_IDS} from './mail_rewards.mjs';
 export {REWARD_CATALOG};
 import {studioRoute,historyPage,countRecipients,selector,segment,audit} from './mail_studio.mjs';
 export {MailError};
@@ -14,7 +14,7 @@ const list=async statement=>(await statement.all()).results;
 const install=value=>{if(!ID.test(value||''))fail(400,'invalid_installation');return value;};
 const mailId=value=>{if(!ID.test(value||''))fail(400,'invalid_mail_id');return value;};
 const integer=(value,min,max)=>{if(!Number.isSafeInteger(value)||value<min||value>max)fail(400,'invalid_amount');return value;};
-export function normalizeDraft(input,time=nowSeconds()){
+export function normalizeDraft(input,time=nowSeconds(),allowRetired=false){
  exact(input,['title','body','sender','audience','target_uid','expires_at','reward','segment']);
  const text=(value,max)=>{if(typeof value!=='string'||!value.trim()||value.length>max||/[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(value))fail(400,'invalid_text');return value.trim();};
  if(!['uid','all','segment'].includes(input.audience))fail(400,'invalid_audience');
@@ -23,7 +23,7 @@ export function normalizeDraft(input,time=nowSeconds()){
  if(input.audience!=='uid'&&input.target_uid)fail(400,'invalid_uid');
  integer(input.expires_at,time+60,time+90*86400);
  const reward=input.reward;if(!reward||typeof reward!=='object'||Array.isArray(reward))fail(400,'invalid_reward');
- const normalizedReward=normalizeReward(reward);
+ const normalizedReward=normalizeReward(reward,allowRetired);
  return {title:text(input.title,100),body:text(input.body,4000),sender:text(input.sender,60),audience:input.audience,target_uid:target,expires_at:input.expires_at,reward:normalizedReward,...(input.audience==='segment'?{segment:segment(input.segment)}:{})};
 }
 const recipientCount=countRecipients;
@@ -36,9 +36,9 @@ export async function sendMail(db,env,input,jobId=''){
  exact(input,['draft','recipient_count','confirm_expires_at','confirm_token','request_id']);mailId(input.request_id);
  // Expiry can pass during a lost-response retry; existing immutable sends may
  // be read again, but never republished or expanded to newly registered users.
- const draft=normalizeDraft(input.draft,Math.min(nowSeconds(),Number(input.draft?.expires_at)-60));
- const fingerprint=await digest(JSON.stringify(draft));
  const existing=await db.prepare('SELECT * FROM mail_campaigns WHERE request_id=?').bind(input.request_id).first();
+ const draft=normalizeDraft(input.draft,Math.min(nowSeconds(),Number(input.draft?.expires_at)-60),Boolean(existing));
+ const fingerprint=await digest(JSON.stringify(draft));
  if(existing){if(existing.fingerprint!==fingerprint)fail(409,'request_reused');return campaign(db,existing);}
  if(draft.expires_at<=nowSeconds()+60)fail(400,'invalid_expiry');
  integer(input.recipient_count,1,50000);integer(input.confirm_expires_at,nowSeconds()+1,nowSeconds()+300);

@@ -205,7 +205,7 @@ test('owner reset changes only admin credentials, hides plaintext and revokes se
 });
 
 test('gift catalog matches authored equipment and extended rewards freeze exact receipts',async()=>{
- const {CATALOG}=await import('./mail_rewards.mjs');assert.equal(CATALOG.equipment.length,57);const f=await fixture();await f.login();
+ const {CATALOG}=await import('./mail_rewards.mjs');assert.equal(CATALOG.equipment.length,56);const f=await fixture();await f.login();
  const reward={spirit_stone:20,celestial_jade:500,pavilion_seal:3,items:{refinement_shard:2,nine_heavens_star_sword:1}};const {mail}=await f.publish({reward});assert.deepEqual(mail.reward,reward);
  assert.equal((await f.api('/v1/mail/claim',{mail_id:mail.id,installation_id:installation})).data.error,'client_upgrade_required');
  assert.equal((await f.api('/v1/mail/list?installation_id='+installation)).data.entries.length,0);
@@ -248,7 +248,7 @@ test('returning glaive gifts require their own catalog capability while existing
 });
 
 test('arsenal expansion gifts require upgraded client and reserve each new item exactly once',async()=>{
- const {EXPANSION_ITEM_IDS}=await import('./mail_rewards.mjs');assert.equal(EXPANSION_ITEM_IDS.length,15);
+ const {EXPANSION_ITEM_IDS}=await import('./mail_rewards.mjs');assert.equal(EXPANSION_ITEM_IDS.length,14);
  const f=await fixture();await f.login();
  const headers={'x-jade-mail-features':'gifts-v2','x-jade-equipment-catalog':'jade-chain-v1','x-jade-returning-glaive':'v1','x-jade-ascendant-arsenal':'v1'};
  for(const id of EXPANSION_ITEM_IDS){
@@ -261,5 +261,20 @@ test('arsenal expansion gifts require upgraded client and reserve each new item 
  }
  const legacyHeaders={...headers};delete legacyHeaders['x-jade-ascendant-arsenal'];
  assert.equal((await f.api('/v1/mail/list?installation_id='+installation,undefined,{headers:legacyHeaders})).data.entries.length,0);
- assert.equal((await f.api('/v1/mail/list?installation_id='+installation,undefined,{headers})).data.entries.length,15);f.db.sql.close();
+ assert.equal((await f.api('/v1/mail/list?installation_id='+installation,undefined,{headers})).data.entries.length,14);f.db.sql.close();
+});
+
+test("retired Bell cannot be sent as a new gift",async()=>{const {normalizeReward}=await import("./mail_rewards.mjs");assert.throws(()=>normalizeReward({spirit_stone:0,items:{astral_resonance_bell:1}}),/invalid_equipment/);});
+
+test('historical Bell receipts preserve client fence and immutable send retries',async()=>{
+ const {normalizeDraft}=await import('./mail.mjs');const {digest}=await import('./mail_admin.mjs');
+ const f=await fixture();await f.login();const {mail,input}=await f.publish({reward:{spirit_stone:0,items:{phoenix_war_fan:1}}});
+ const draft=normalizeDraft({...input.draft,reward:{spirit_stone:0,items:{astral_resonance_bell:1}}},Math.floor(Date.now()/1000),true);
+ f.db.sql.prepare('UPDATE mail_campaigns SET reward_json=?,fingerprint=? WHERE id=?').run(JSON.stringify(draft.reward),await digest(JSON.stringify(draft)),mail.id);
+ const retry=await f.api('/admin/api/send',{...input,draft});assert.equal(retry.status,200);assert.equal(retry.data.id,mail.id);
+ const changed=await f.api('/admin/api/send',{...input,draft:{...draft,title:'Changed'}});assert.equal(changed.status,409);
+ const headers={'x-jade-mail-features':'gifts-v2','x-jade-equipment-catalog':'jade-chain-v1','x-jade-returning-glaive':'v1'};
+ const claim={mail_id:mail.id,installation_id:installation};assert.equal((await f.api('/v1/mail/claim',claim,{headers})).status,409);
+ headers['x-jade-ascendant-arsenal']='v1';const reserved=await f.api('/v1/mail/claim',claim,{headers});assert.equal(reserved.status,200);assert.equal(reserved.data.reward.items.astral_resonance_bell,1);
+ assert.equal((await f.api('/v1/mail/claim',claim,{headers})).data.receipt_id,reserved.data.receipt_id);f.db.sql.close();
 });

@@ -5,7 +5,7 @@ import hashlib, json, wave, struct
 root = Path(__file__).resolve().parents[1]
 catalog = json.loads((root / 'backend/player_identity/mail_reward_catalog.json').read_text())
 ids = [x for x in catalog['equipment'] if '/expansion_20261014/' in x['icon_source']]
-assert len(ids) == 15
+assert len(ids) == 14
 checks = 1
 for item in ids:
     path = root / item['icon_source'][6:]

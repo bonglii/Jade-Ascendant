@@ -16,7 +16,7 @@ func run() -> void:
  var catalog: Script=load("res://scripts/data/equipment_set_catalog.gd")
  var ids: Array[String]=[]
  for set_id: String in ["frost_lotus","vermilion_verdict","celestial_aegis"]:ids.append_array(catalog.get_piece_ids(set_id))
- ids.append_array(["phoenix_war_fan","void_piercer_spear","astral_resonance_bell"])
+ ids.append_array(["phoenix_war_fan","void_piercer_spear"])
  for id: String in ids:
   inv.item_counts[id]=2
   var path: String=load("res://scripts/ui/equipment_visual_catalog.gd").get_icon_path(id)
@@ -27,7 +27,7 @@ func run() -> void:
  if skip!=null:skip.pressed.emit()
  await settle()
  var screen: Control=current_scene
- check(screen.header_count.text.ends_with("/57"),"collection total derives from expanded catalog")
+ check(screen.header_count.text.ends_with("/56"),"collection total derives from expanded catalog")
  for dims: Vector2i in [Vector2i(320,568),Vector2i(390,844),Vector2i(648,1152),Vector2i(896,504)]:
   root.size=dims;await settle();screen._layout();await settle()
   for id: String in ids:
@@ -42,7 +42,7 @@ func run() -> void:
  screen.queue_free();await settle();current_scene=null
  root.size=Vector2i(648,900)
  var sets: Array[String]=["frost_lotus","vermilion_verdict","celestial_aegis"]
- var weapons: Array[String]=["phoenix_war_fan","void_piercer_spear","astral_resonance_bell"]
+ var weapons: Array[String]=["phoenix_war_fan","void_piercer_spear"]
  for index: int in range(3):
   eq.active_run_loadout_snapshot={}
   eq.equipped_item_ids={"armament":weapons[index],"robe":"","bracer":"","boots":"","pendant":""}

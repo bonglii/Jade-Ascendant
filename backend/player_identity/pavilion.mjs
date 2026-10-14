@@ -33,7 +33,7 @@ export function activeBanner(document,time){
 export function publicSnapshot(current,time=nowSeconds(),expansionClient=false){
  let validUntil=time+300;
  for(const b of current.document.banners)if(b.enabled)for(const point of [b.starts_at,b.ends_at])if(point>time)validUntil=Math.min(validUntil,point);
- return {version:1,revision:current.revision,server_time:time,valid_until:validUntil,banner:(()=>{const selected=activeBanner(current.document,time);if(!selected||expansionClient)return selected;const featured=selected.featured.filter(id=>!EXPANSION_ITEM_IDS.includes(id));return featured.length?{...selected,featured}:null;})()};
+ return {version:1,revision:current.revision,server_time:time,valid_until:validUntil,banner:(()=>{const selected=activeBanner(current.document,time);if(!selected)return null;const featured=selected.featured.filter(id=>id!=="astral_resonance_bell"&&(expansionClient||!EXPANSION_ITEM_IDS.includes(id)));return featured.length?{...selected,featured}:null;})()};
 }
 export async function publishDocument(db,input){
  exact(input,['expected_revision','request_id','document']);number(input.expected_revision,0,Number.MAX_SAFE_INTEGER-1);if(!ID.test(input.request_id||''))fail(400,'invalid_banner_id');

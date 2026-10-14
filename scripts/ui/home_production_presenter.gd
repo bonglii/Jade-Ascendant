@@ -429,7 +429,7 @@ func _build_event_rail() -> void:
 
 	var skill_book_button := _event_button(
 		preload("res://assets/ui/level_up/skill_art/spiritual_insight.png"),
-		"SKILL BOOK", Color(0.43, 0.91, 0.79)
+		"LIBRARY", Color(0.43, 0.91, 0.79)
 	)
 	skill_book_button.name = "HomeSkillBookButton"
 	skill_book_button.pressed.connect(_open_menu_scene.bind("res://scenes/ui/skill_book_screen.tscn"))

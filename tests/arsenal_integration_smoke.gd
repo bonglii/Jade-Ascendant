@@ -21,7 +21,7 @@ func run() -> void:
  var inv: Node=root.get_node("InventoryManager")
  var progress: Node=root.get_node("ProgressionManager")
  progress.spirit_stone=99999
- for id: String in ["phoenix_war_fan","void_piercer_spear","astral_resonance_bell"]:
+ for id: String in ["phoenix_war_fan","void_piercer_spear"]:
   eq.active_run_loadout_snapshot={};root.get_node("SaveManager").delete_active_run_save("checkpoint")
   inv.item_counts[id]=1
   check(not eq.can_ascend_item(id),"one copy cannot ascend "+id)

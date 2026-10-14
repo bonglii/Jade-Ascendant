@@ -18,7 +18,7 @@ func run() -> void:
  if not OS.get_user_data_dir().contains("jade_arsenal_qa_restart"): quit(2);return
  var args: PackedStringArray=OS.get_cmdline_user_args()
  var id: String=args[args.find("--armament")+1]
- if id not in ["phoenix_war_fan","void_piercer_spear","astral_resonance_bell"]:quit(2);return
+ if id not in ["phoenix_war_fan","void_piercer_spear"]:quit(2);return
  await create_timer(.3).timeout
  var eq: Node=root.get_node("EquipmentManager")
  var inv: Node=root.get_node("InventoryManager")
