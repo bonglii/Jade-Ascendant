@@ -53,7 +53,7 @@ const ONBOARDING_STEPS: Dictionary = {
 		{
 			"eyebrow": "JADE PAVILION",
 			"title": "RESOURCES & CELESTIAL ARMORY",
-			"body": "Spirit Stones support permanent growth. Refinement Shards support deterministic forging. Celestial Jade and Pavilion Seals power the Celestial Armory. Summoning unlocks after Chapter 1 • Stage 5."
+			"body": "Spirit Stones support permanent growth. Equipment forging also uses Spirit Stones. Identical duplicates refine equipment stars. Celestial Jade and Pavilion Seals power the Celestial Armory. Summoning unlocks after Chapter 1 • Stage 5."
 		},
 		{
 			"eyebrow": "CHOOSE YOUR PATH",
@@ -241,6 +241,10 @@ func _maybe_show_onboarding() -> void:
 		return
 	_prepare_onboarding_state()
 	_tutorial_key = _tutorial_key_for_scene()
+	# The contextual refine guide replaces the old generic Hero card after 1-1.
+	if _tutorial_key == "equipment" and JourneyManager.is_stage_cleared(1, 1):
+		_mark_tutorial_complete()
+		return
 	if _tutorial_key.is_empty() or _is_tutorial_complete(_tutorial_key):
 		return
 	var tutorial_steps: Array = ONBOARDING_STEPS.get(_tutorial_key, [])

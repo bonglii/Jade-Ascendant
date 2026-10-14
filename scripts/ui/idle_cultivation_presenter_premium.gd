@@ -542,17 +542,6 @@ func _build_premium_rewards(
 		hero_card.get_node("Body/Value") as Label
 	)
 
-	var shard_card: PanelContainer = (
-		_premium_reward_card(
-			REWARD_SHARD_FRAME,
-			SHARD_ICON,
-			"REFINEMENT"
-		)
-	)
-	row.add_child(shard_card)
-	_shard_reward_value = (
-		shard_card.get_node("Body/Value") as Label
-	)
 
 
 func _premium_reward_card(
@@ -826,6 +815,9 @@ func _refresh_popup() -> void:
 				0
 			)
 		)
+
+	if _rate_label != null and int(rates.get("shard_interval_units", 0)) > 0:
+		_rate_label.text += " • +20 / %s" % _format_duration(int(rates["shard_interval_units"]) * int(manager.call("get_claim_unit_seconds")))
 
 	if _yield_note_label != null:
 		_yield_note_label.text = (

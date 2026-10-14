@@ -714,7 +714,7 @@ func _refresh_footer() -> void:
 	var shard_amount: int = int(reward.get("refinement_shard", 0))
 	if is_instance_valid(_shard_reward_value):
 		_shard_reward_value.text = str(shard_amount)
-	_shard_reward_slot.modulate.a = 1.0 if shard_amount > 0 else 0.0
+	_shard_reward_slot.visible = false
 
 	var progress_locked: bool = SaveManager.is_progress_read_only()
 	if state == "ready":
@@ -924,7 +924,7 @@ func _accent(day: int, state: String) -> Color:
 func _reward(day: int) -> Dictionary:
 	if live_ops == null:
 		return {}
-	var data: Dictionary = live_ops.get_login_reward(day)
+	var data: Dictionary = RewardManager.retire_fragments(live_ops.get_login_reward(day))
 	var items_raw: Variant = data.get("items", {})
 	var shards: int = 0
 	if items_raw is Dictionary:

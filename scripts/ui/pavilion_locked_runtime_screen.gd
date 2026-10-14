@@ -332,7 +332,7 @@ func _build_forge_section() -> void:
 	compact_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var compact_hint := _label(
 		compact_copy,
-		tr("Common/Rare can use Spirit Stones. Higher rarities use Refinement Shards."),
+		tr("Equipment uses Spirit Stones for purchase or forging. Summoning preserves identical duplicates."),
 		13,
 		TEXT_MUTED
 	)

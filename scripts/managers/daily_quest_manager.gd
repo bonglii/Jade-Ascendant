@@ -602,7 +602,7 @@ func m7b_commit_sdk_reward(placement: String, expected_day: String, grant_id: St
 		"refinement_supply":
 			if not JourneyManager.is_stage_cleared(1, 3):
 				return {"success": false, "error": "Refinement supply not unlocked."}
-			items[InventoryManager.REFINEMENT_SHARD] = 2
+			stones = 40 # Placement ID and daily cap retained; obsolete material retired.
 		_:
 			return {"success": false, "error": "Unknown offer."}
 	var next_claims: Array[String] = m7b_claimed_placement_ids.duplicate()

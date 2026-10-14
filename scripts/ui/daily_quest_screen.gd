@@ -742,7 +742,7 @@ func _build_m7b_offer_board() -> PanelContainer:
 	_m7b_status_labels.clear()
 	for offer: Dictionary in [
 		{"id": "daily_completion_cache", "title": "+50 SPIRIT STONES"},
-		{"id": "refinement_supply", "title": "+2 REFINEMENT SHARDS"},
+		{"id": "refinement_supply", "title": "+40 SPIRIT STONES"},
 	]:
 		var placement: String = str(offer["id"])
 		var row := HBoxContainer.new()

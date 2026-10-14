@@ -257,10 +257,8 @@ func preview_reward_for_seconds(
 		)
 		next_shard_progress = total_shard_units % shard_interval
 	var items: Dictionary = {}
-	if shard_amount > 0:
-		items[InventoryManager.REFINEMENT_SHARD] = shard_amount
 	var reward_data: Dictionary = RewardManager.create_reward_data(
-		units * stones_per_unit,
+		units * stones_per_unit + shard_amount * InventoryManager.LEGACY_FRAGMENT_STONES,
 		items,
 		units * hero_exp_per_unit
 	)

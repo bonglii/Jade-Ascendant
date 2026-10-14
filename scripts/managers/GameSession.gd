@@ -69,6 +69,11 @@ func _bootstrap_runtime_helpers() -> void:
 		resource_bar.name = "HubResourceBarManager"
 		tree.root.add_child(resource_bar)
 
+	if tree.root.get_node_or_null("RefineOnboarding") == null:
+		var guide: Node = preload("res://scripts/ui/refine_onboarding.gd").new()
+		guide.name = "RefineOnboarding"
+		tree.root.add_child(guide)
+
 	if tree.root.get_node_or_null("RewardDeliveryPresenter") == null:
 		var reward_delivery: Node = RewardDeliveryPresenterScript.new()
 		reward_delivery.name = "RewardDeliveryPresenter"

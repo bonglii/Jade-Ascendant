@@ -935,6 +935,7 @@ func _refresh_letter() -> void:
 
 
 func _reward_tiles(reward: Dictionary) -> Array[Dictionary]:
+	reward = RewardManager.retire_fragments(reward)
 	var tiles: Array[Dictionary] = []
 	var stone_amount: int = maxi(int(reward.get(RewardManager.REWARD_KEY_SPIRIT_STONE, 0)), 0)
 	if stone_amount > 0:

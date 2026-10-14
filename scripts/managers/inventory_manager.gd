@@ -16,6 +16,7 @@ const ITEM_TYPE_EQUIPMENT: String = "equipment"
 const ITEM_TYPE_MATERIAL: String = "material"
 const ITEM_TYPE_CONSUMABLE: String = "consumable"
 const REFINEMENT_SHARD: String = "refinement_shard"
+const LEGACY_FRAGMENT_STONES: int = 20
 const DUPLICATE_SHARDS: Dictionary = {"common": 5, "rare": 12, "epic": 30, "legendary": 75}
 
 var item_counts: Dictionary = {}
@@ -26,6 +27,7 @@ func _ready() -> void:
 	_migrate_equipped_items_to_inventory()
 	save_inventory()
 	print_inventory_status()
+	call_deferred("migrate_legacy_fragments")
 
 func is_known_item(item_id: String) -> bool:
 	return item_id == REFINEMENT_SHARD or EquipmentManager.has_item_definition(item_id)
@@ -61,6 +63,7 @@ func get_owned_item_ids() -> Array[String]:
 	var owned_item_ids: Array[String] = []
 	for raw_item_id in item_counts.keys():
 		var item_id := str(raw_item_id)
+		if item_id == REFINEMENT_SHARD: continue
 		if bool(EquipmentManager.get_item_data(item_id).get("retired",false)): continue
 		if get_item_count(item_id) <= 0:
 			continue
@@ -78,6 +81,8 @@ func get_total_item_count() -> int:
 	return total_count
 
 func add_item(item_id: String, amount: int = 1) -> bool:
+	if item_id == REFINEMENT_SHARD:
+		return bool(RewardManager.grant_reward(RewardManager.SOURCE_PAVILION, "legacy_fragment", RewardManager.create_reward_data(amount * LEGACY_FRAGMENT_STONES)).get("success", false)) if amount > 0 else false
 	if amount <= 0:
 		return false
 	if not is_known_item(item_id):
@@ -227,3 +232,19 @@ func print_inventory_status() -> void:
 			": ",
 			get_item_count(item_id)
 		))
+
+## One atomic transaction, idempotent because the legacy balance is erased only
+## after its matching Spirit Stone target is committed. Preserve it on failure.
+func migrate_legacy_fragments() -> bool:
+	var legacy: int = get_item_count(REFINEMENT_SHARD)
+	if legacy <= 0: return true
+	if SaveManager.is_progress_read_only(): return false
+	var counts: Dictionary = item_counts.duplicate(true)
+	counts.erase(REFINEMENT_SHARD)
+	var progression: Dictionary = ProgressionManager.build_progression_save_data()
+	progression["spirit_stone"] = int(progression["spirit_stone"]) + legacy * LEGACY_FRAGMENT_STONES
+	if not SaveManager.write_save_batch({"inventory": {"version": SAVE_VERSION, "item_counts": counts}, "progression": progression}): return false
+	item_counts = counts
+	ProgressionManager.apply_progression_save_data(progression)
+	inventory_changed.emit(REFINEMENT_SHARD, 0)
+	return true

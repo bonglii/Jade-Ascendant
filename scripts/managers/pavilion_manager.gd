@@ -191,6 +191,8 @@ var _purchase_repair_pending: bool = false
 var _purchase_repair_view: Dictionary = {"status": "not_connected"}
 
 
+var summon_delivery_active: bool = false
+
 func _ready() -> void:
 	banner_client=BannerClient.new()
 	banner_client.name="BannerConfiguration"
@@ -1989,6 +1991,7 @@ func summon_equipment(
 
 	state = next_state
 	InventoryManager.item_counts = next_counts
+	summon_delivery_active = true
 	for raw_item_id in reward_counts.keys():
 		var reward_item_id: String = str(raw_item_id)
 		var previous_count: int = int(previous_counts.get(reward_item_id, 0))
@@ -2000,6 +2003,7 @@ func summon_equipment(
 			int(reward_counts[reward_item_id]),
 			next_count
 		)
+	summon_delivery_active = false
 	if previous_shards != next_shards:
 		InventoryManager.inventory_changed.emit(
 			InventoryManager.REFINEMENT_SHARD,
@@ -2171,12 +2175,11 @@ func get_equipment_forge_cost(item_id: String) -> int:
 	var item: Dictionary = EquipmentManager.get_item_data(item_id)
 	if item.is_empty():
 		return 0
-	return maxi(int(item.get("forge_cost", 0)), 0)
+	return maxi(int(item.get("forge_cost", 0)), 0) * InventoryManager.LEGACY_FRAGMENT_STONES
 
 
-## Legacy deterministic forge remains unchanged in Foundation v2. The next
-## Pavilion UI pass will route high-rarity acquisition through summon / shard
-## forging together so no existing screen is left with misleading prices.
+## Forging retains its unlocks/ownership gate and uses the retired material
+## exchange rate for Stone pricing. Legacy boolean selects the forge route.
 func acquire_equipment(item_id: String, use_shards: bool = false) -> bool:
 	last_error = ""
 	if SaveManager.is_progress_read_only():
@@ -2189,7 +2192,7 @@ func acquire_equipment(item_id: String, use_shards: bool = false) -> bool:
 		return false
 	var item: Dictionary = EquipmentManager.get_item_data(item_id)
 	if not use_shards and not can_buy_equipment_with_stones(item_id):
-		last_error = "Epic and Legendary equipment use Summon or Refinement Shard forging."
+		last_error = "Epic and Legendary equipment use Summon or Spirit Stone forging."
 		return false
 	var price: int = (
 		get_equipment_forge_cost(item_id)
@@ -2197,23 +2200,18 @@ func acquire_equipment(item_id: String, use_shards: bool = false) -> bool:
 		else int(item.get("price", 0))
 	)
 	var balance: int = (
-		InventoryManager.get_item_count(InventoryManager.REFINEMENT_SHARD)
-		if use_shards
-		else ProgressionManager.spirit_stone
+		ProgressionManager.spirit_stone
 	)
 	if price <= 0 or balance < price:
 		last_error = (
-			"Insufficient Refinement Shards."
+			"Insufficient Spirit Stones."
 			if use_shards
 			else "Insufficient Spirit Stones."
 		)
 		return false
 	var progression_data: Dictionary = ProgressionManager.build_progression_save_data()
 	var counts: Dictionary = InventoryManager.preview_add_items({item_id: 1})
-	if use_shards:
-		counts[InventoryManager.REFINEMENT_SHARD] = balance - price
-	else:
-		progression_data["spirit_stone"] = balance - price
+	progression_data["spirit_stone"] = balance - price
 	if not SaveManager.write_save_batch({
 		"progression": progression_data,
 		"inventory": {"version": 1, "item_counts": counts}
@@ -2223,11 +2221,6 @@ func acquire_equipment(item_id: String, use_shards: bool = false) -> bool:
 	ProgressionManager.apply_progression_save_data(progression_data)
 	InventoryManager.item_counts = counts
 	InventoryManager.inventory_changed.emit(item_id, 1)
-	if use_shards:
-		InventoryManager.inventory_changed.emit(
-			InventoryManager.REFINEMENT_SHARD,
-			balance - price
-		)
 	InventoryManager.item_added.emit(item_id, 1, 1)
 	AudioManager.play_sfx("equip")
 	pavilion_changed.emit()
@@ -2251,8 +2244,8 @@ func get_cosmetic_cost(cosmetic_id: String) -> Dictionary:
 	if definition.is_empty():
 		return {"spirit_stone": 0, "refinement_shard": 0}
 	return {
-		"spirit_stone": maxi(int(definition.get("stone_cost", 0)), 0),
-		"refinement_shard": maxi(int(definition.get("shard_cost", 0)), 0)
+		"spirit_stone": maxi(int(definition.get("stone_cost", 0)), 0) + maxi(int(definition.get("shard_cost", 0)), 0) * InventoryManager.LEGACY_FRAGMENT_STONES,
+		"refinement_shard": 0 # Legacy callers can read zero; no active fragment cost.
 	}
 
 
@@ -2303,7 +2296,7 @@ func acquire_cosmetic(cosmetic_id: String) -> bool:
 		InventoryManager.REFINEMENT_SHARD
 	)
 	if shard_balance < shard_cost:
-		last_error = "Insufficient Refinement Shards."
+		last_error = "Insufficient Spirit Stones."
 		return false
 	var progression_data: Dictionary = ProgressionManager.build_progression_save_data()
 	progression_data["spirit_stone"] = (

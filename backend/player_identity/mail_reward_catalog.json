@@ -468,12 +468,6 @@
       "name": "Pavilion Seal",
       "max": 100,
       "icon_source": "res://assets/ui/shared/resources/pavilion_seal_premium.png"
-    },
-    {
-      "id": "refinement_shard",
-      "name": "Refinement Shard",
-      "max": 500,
-      "icon_source": "res://assets/ui/shared/resources/refinement_shard_premium.png"
     }
   ]
 }

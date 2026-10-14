@@ -159,8 +159,8 @@ const PILGRIMAGE_MILESTONES: Dictionary = {
 		"chapter_id": 1,
 		"stage_id": 4,
 		"reward": {
-			"spirit_stone": 125,
-			"items": {"refinement_shard": 1},
+			"spirit_stone": 145,
+			"items": {},
 		},
 	},
 	"sovereign_gate": {
@@ -171,8 +171,8 @@ const PILGRIMAGE_MILESTONES: Dictionary = {
 		"chapter_id": 1,
 		"stage_id": 5,
 		"reward": {
-			"spirit_stone": 200,
-			"items": {"refinement_shard": 2},
+			"spirit_stone": 240,
+			"items": {},
 		},
 	},
 }
@@ -190,35 +190,35 @@ const BOSS_HUNT_MILESTONES: Dictionary = {
 		"description": "Clear Stage 1-5 and defeat the Jade Valley Sovereign.",
 		"chapter_id": 1,
 		"stage_id": 5,
-		"reward": {"spirit_stone": 150, "items": {"refinement_shard": 1}},
+		"reward": {"spirit_stone": 170, "items": {}},
 	},
 	"crimson_moon_master": {
 		"title": "CRIMSON MOON BOUNTY",
 		"description": "Clear Stage 2-5 and defeat the Crimson Moon Sect Master.",
 		"chapter_id": 2,
 		"stage_id": 5,
-		"reward": {"spirit_stone": 250, "items": {"refinement_shard": 2}},
+		"reward": {"spirit_stone": 290, "items": {}},
 	},
 	"star_palace_sovereign": {
 		"title": "STAR PALACE BOUNTY",
 		"description": "Clear Stage 3-5 and defeat the Star Palace Celestial Sovereign.",
 		"chapter_id": 3,
 		"stage_id": 5,
-		"reward": {"spirit_stone": 400, "items": {"refinement_shard": 3}},
+		"reward": {"spirit_stone": 460, "items": {}},
 	},
 	"frostbound_sovereign": {
 		"title": "FROSTBOUND BOUNTY",
 		"description": "Clear Stage 4-5 and defeat the Frostbound Sovereign.",
 		"chapter_id": 4,
 		"stage_id": 5,
-		"reward": {"spirit_stone": 600, "items": {"refinement_shard": 4}},
+		"reward": {"spirit_stone": 680, "items": {}},
 	},
 	"primordial_sun_sovereign": {
 		"title": "PRIMORDIAL SUN BOUNTY",
 		"description": "Clear Stage 5-5 and defeat the Primordial Sun Sovereign.",
 		"chapter_id": 5,
 		"stage_id": 5,
-		"reward": {"spirit_stone": 900, "items": {"refinement_shard": 5}},
+		"reward": {"spirit_stone": 1000, "items": {}},
 	},
 }
 const HEAVENLY_LADDER_MILESTONE_ORDER: Array[String] = [
@@ -240,37 +240,37 @@ const HEAVENLY_LADDER_MILESTONES: Dictionary = {
 	"cloud_step": {
 		"title": "CLOUD STEP",
 		"required_clears": 6,
-		"reward": {"spirit_stone": 100, "items": {"refinement_shard": 1}},
+		"reward": {"spirit_stone": 120, "items": {}},
 	},
 	"jade_stair": {
 		"title": "JADE STAIR",
 		"required_clears": 9,
-		"reward": {"spirit_stone": 140, "items": {"refinement_shard": 1}},
+		"reward": {"spirit_stone": 160, "items": {}},
 	},
 	"starward_step": {
 		"title": "STARWARD STEP",
 		"required_clears": 12,
-		"reward": {"spirit_stone": 200, "items": {"refinement_shard": 2}},
+		"reward": {"spirit_stone": 240, "items": {}},
 	},
 	"heaven_gate": {
 		"title": "HEAVEN GATE",
 		"required_clears": 15,
-		"reward": {"spirit_stone": 260, "items": {"refinement_shard": 2}},
+		"reward": {"spirit_stone": 300, "items": {}},
 	},
 	"celestial_arch": {
 		"title": "CELESTIAL ARCH",
 		"required_clears": 18,
-		"reward": {"spirit_stone": 340, "items": {"refinement_shard": 3}},
+		"reward": {"spirit_stone": 400, "items": {}},
 	},
 	"sovereign_height": {
 		"title": "SOVEREIGN HEIGHT",
 		"required_clears": 22,
-		"reward": {"spirit_stone": 450, "items": {"refinement_shard": 4}},
+		"reward": {"spirit_stone": 530, "items": {}},
 	},
 	"ascendant_summit": {
 		"title": "ASCENDANT SUMMIT",
 		"required_clears": 26,
-		"reward": {"spirit_stone": 600, "items": {"refinement_shard": 5}},
+		"reward": {"spirit_stone": 700, "items": {}},
 	},
 }
 
@@ -285,27 +285,27 @@ const TREASURE_HUNT_CACHES: Dictionary = {
 	"verdant_realm_cache": {
 		"title": "VERDANT REALM CACHE",
 		"chapter_id": 1,
-		"reward": {"spirit_stone": 150, "items": {"refinement_shard": 1}},
+		"reward": {"spirit_stone": 170, "items": {}},
 	},
 	"crimson_moon_cache": {
 		"title": "CRIMSON MOON CACHE",
 		"chapter_id": 2,
-		"reward": {"spirit_stone": 250, "items": {"refinement_shard": 2}},
+		"reward": {"spirit_stone": 290, "items": {}},
 	},
 	"star_palace_cache": {
 		"title": "STAR PALACE CACHE",
 		"chapter_id": 3,
-		"reward": {"spirit_stone": 350, "items": {"refinement_shard": 3}},
+		"reward": {"spirit_stone": 410, "items": {}},
 	},
 	"frostveil_cache": {
 		"title": "FROSTVEIL CACHE",
 		"chapter_id": 4,
-		"reward": {"spirit_stone": 500, "items": {"refinement_shard": 4}},
+		"reward": {"spirit_stone": 580, "items": {}},
 	},
 	"solar_nirvana_cache": {
 		"title": "SOLAR NIRVANA CACHE",
 		"chapter_id": 5,
-		"reward": {"spirit_stone": 700, "items": {"refinement_shard": 5}},
+		"reward": {"spirit_stone": 800, "items": {}},
 	},
 }
 
@@ -320,42 +320,42 @@ const FIVE_ELEMENTS_TRIALS: Dictionary = {
 	"wood_resonance": {
 		"title": "WOOD RESONANCE",
 		"required_stage_keys": ["1-2", "2-1", "3-2"],
-		"reward": {"spirit_stone": 140, "items": {"refinement_shard": 1}},
+		"reward": {"spirit_stone": 160, "items": {}},
 	},
 	"fire_tempering": {
 		"title": "FIRE TEMPERING",
 		"required_stage_keys": ["1-4", "2-3", "5-2"],
-		"reward": {"spirit_stone": 220, "items": {"refinement_shard": 2}},
+		"reward": {"spirit_stone": 260, "items": {}},
 	},
 	"earth_foundation": {
 		"title": "EARTH FOUNDATION",
 		"required_stage_keys": ["1-3", "3-3", "4-2"],
-		"reward": {"spirit_stone": 300, "items": {"refinement_shard": 2}},
+		"reward": {"spirit_stone": 340, "items": {}},
 	},
 	"metal_edge": {
 		"title": "METAL EDGE",
 		"required_stage_keys": ["2-4", "3-4", "4-4"],
-		"reward": {"spirit_stone": 380, "items": {"refinement_shard": 3}},
+		"reward": {"spirit_stone": 440, "items": {}},
 	},
 	"water_flow": {
 		"title": "WATER FLOW",
 		"required_stage_keys": ["2-2", "4-3", "5-3"],
-		"reward": {"spirit_stone": 460, "items": {"refinement_shard": 3}},
+		"reward": {"spirit_stone": 520, "items": {}},
 	},
 }
 const FIVE_ELEMENTS_CONVERGENCE_REWARD: Dictionary = {
-	"spirit_stone": 500,
-	"items": {"refinement_shard": 4},
+	"spirit_stone": 580,
+	"items": {},
 }
 
 const LOGIN_REWARDS: Dictionary = {
 	1: {"spirit_stone": 100, "items": {}},
-	2: {"spirit_stone": 150, "items": {"refinement_shard": 2}},
-	3: {"spirit_stone": 200, "items": {"refinement_shard": 3}},
-	4: {"spirit_stone": 250, "items": {"refinement_shard": 5}},
-	5: {"spirit_stone": 300, "items": {"refinement_shard": 7}},
-	6: {"spirit_stone": 400, "items": {"refinement_shard": 10}},
-	7: {"spirit_stone": 600, "items": {"refinement_shard": 20}},
+	2: {"spirit_stone": 190, "items": {}},
+	3: {"spirit_stone": 260, "items": {}},
+	4: {"spirit_stone": 350, "items": {}},
+	5: {"spirit_stone": 440, "items": {}},
+	6: {"spirit_stone": 600, "items": {}},
+	7: {"spirit_stone": 1000, "items": {}},
 }
 
 const MAIL_ORDER: Array[String] = [
@@ -372,8 +372,8 @@ const MAIL_CATALOG: Dictionary = {
 			+ "Accept these supplies and prepare for the trials ahead."
 		),
 		"reward": {
-			"spirit_stone": 150,
-			"items": {"refinement_shard": 3},
+			"spirit_stone": 210,
+			"items": {},
 		},
 	},
 	"celestial_path_notice": {

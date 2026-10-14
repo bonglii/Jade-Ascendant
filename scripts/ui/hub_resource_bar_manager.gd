@@ -157,11 +157,6 @@ func _install_resource_bar(scene_root: Node, scene_path: String) -> void:
 		SPIRIT_STONE_ICON,
 		tr("Spirit Stone")
 	)
-	_shard_value = _add_resource_cell(
-		row,
-		REFINEMENT_SHARD_ICON,
-		tr("Refinement Shard")
-	)
 	_jade_value = _add_resource_cell(
 		row,
 		CELESTIAL_JADE_ICON,
@@ -237,12 +232,12 @@ func _cache_value_labels() -> void:
 	if not is_instance_valid(_resource_bar):
 		return
 	var row := _resource_bar.get_node_or_null("ResourceRow") as HBoxContainer
-	if row == null or row.get_child_count() < 4:
+	if row == null or row.get_child_count() < 3:
 		return
 	_stone_value = _cell_value_label(row.get_child(0))
-	_shard_value = _cell_value_label(row.get_child(1))
-	_jade_value = _cell_value_label(row.get_child(2))
-	_seal_value = _cell_value_label(row.get_child(3))
+	_shard_value = null
+	_jade_value = _cell_value_label(row.get_child(1))
+	_seal_value = _cell_value_label(row.get_child(2))
 
 
 func _cell_value_label(cell_node: Node) -> Label:

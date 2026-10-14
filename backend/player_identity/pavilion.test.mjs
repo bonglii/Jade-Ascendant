@@ -27,7 +27,7 @@ async function fixture(){
   const response=await handler(req,env);const data=await response.json();return {response,data,status:response.status};
  }
  async function login(){const out=await api('/admin/api/login',{password:secret});assert.equal(out.status,200);cookie=out.response.headers.get('set-cookie').split(';')[0];csrf=out.data.csrf;return out;}
- const draft=(extra={})=>({title:'A Jade gift',body:'Good luck, cultivator.',sender:'JADE SANCTUARY',audience:'uid',target_uid:a.public_uid,expires_at:Math.floor(Date.now()/1000)+86400,reward:{spirit_stone:200,items:{refinement_shard:2}},...extra});
+ const draft=(extra={})=>({title:'A Jade gift',body:'Good luck, cultivator.',sender:'JADE SANCTUARY',audience:'uid',target_uid:a.public_uid,expires_at:Math.floor(Date.now()/1000)+86400,reward:{spirit_stone:240,items:{}},...extra});
  async function publish(extra={}){const preview=await api('/admin/api/preview',draft(extra));assert.equal(preview.status,200);const input={...preview.data,request_id:crypto.randomUUID().replaceAll('-','')};delete input.recipient_count_unused;const out=await api('/admin/api/send',input);assert.equal(out.status,200);return {mail:out.data,input};}
  return {db,env,api,login,publish,draft,alice,bob,a,b};
 }

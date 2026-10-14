@@ -353,7 +353,7 @@ func _refresh_detail_panel() -> void:
 		selected_effect_label.text = tr("PAVILION RESOURCE")
 		selected_action_button.text = tr("OPEN JADE PAVILION")
 		selected_action_button.disabled = false
-		selected_hint_label.text = tr("Use Refinement Shards to forge or ascend equipment.")
+		selected_hint_label.text = tr("Use identical duplicates to refine equipment stars. Forging uses Spirit Stones.")
 		return
 
 	ascension_panel.visible = true

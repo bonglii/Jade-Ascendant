@@ -38,9 +38,8 @@ const KEY_INVENTORY_ITEM: String = "inventory_item"
 
 const WALLET_INDEX: Dictionary = {
 	KEY_SPIRIT_STONE: 0,
-	KEY_REFINEMENT_SHARD: 1,
-	KEY_CELESTIAL_JADE: 2,
-	KEY_PAVILION_SEAL: 3,
+	KEY_CELESTIAL_JADE: 1,
+	KEY_PAVILION_SEAL: 2,
 }
 
 const GOLD: Color = Color(1.0, 0.79, 0.30, 1.0)
@@ -70,6 +69,7 @@ var _poll_elapsed: float = 0.0
 
 var _last_scene_id: int = 0
 var _last_spirit_stone: int = 0
+var _flight_tweens: Array[Tween] = []
 var _last_refinement_shard: int = 0
 var _last_celestial_jade: int = 0
 var _last_pavilion_seal: int = 0
@@ -161,6 +161,7 @@ func _cache_authoritative_values() -> void:
 func _refresh_scene_context() -> void:
 	var scene: Node = get_tree().current_scene
 	if scene == null:
+		if _last_scene_id != 0: _clear_flight_context()
 		_run_player = null
 		_last_scene_id = 0
 		return
@@ -169,6 +170,7 @@ func _refresh_scene_context() -> void:
 	if scene_id == _last_scene_id:
 		return
 
+	_clear_flight_context()
 	_last_scene_id = scene_id
 	_run_player = scene.find_child("player_1", true, false)
 	if _run_player != null:
@@ -230,32 +232,20 @@ func _on_reward_granted(
 func _on_item_added(
 	item_id: String,
 	amount: int,
-	new_count: int
+	_new_count: int
 ) -> void:
-	if amount <= 0:
+	if amount <= 0 or PavilionManager.summon_delivery_active:
 		return
 
 	var source := _capture_source()
 	var claim_all: bool = _source_is_claim_all(source)
 
-	if item_id == InventoryManager.REFINEMENT_SHARD:
-		_queue_delivery(
-			KEY_REFINEMENT_SHARD,
-			amount,
-			REFINEMENT_SHARD_ICON,
-			source,
-			claim_all
-		)
-		_last_refinement_shard = maxi(new_count, 0)
-		return
+	if item_id == InventoryManager.REFINEMENT_SHARD: return
 
-	# Equipment and other inventory acquisitions travel toward Hero / Inventory.
-	# We deliberately use the authored Hero navigation icon as the generic
-	# inventory-delivery glyph instead of guessing an item-art field contract.
 	_queue_delivery(
 		KEY_INVENTORY_ITEM,
 		amount,
-		HERO_ICON,
+		load(preload("res://scripts/ui/equipment_visual_catalog.gd").get_icon_path(item_id)) as Texture2D if EquipmentManager.has_item_definition(item_id) else HERO_ICON,
 		source,
 		claim_all
 	)
@@ -313,14 +303,7 @@ func _poll_fallback_resource_gains() -> void:
 			source,
 			claim_all
 		)
-	if current_shard > _last_refinement_shard:
-		_queue_delivery(
-			KEY_REFINEMENT_SHARD,
-			current_shard - _last_refinement_shard,
-			REFINEMENT_SHARD_ICON,
-			source,
-			claim_all
-		)
+
 	if current_jade > _last_celestial_jade:
 		_queue_delivery(
 			KEY_CELESTIAL_JADE,
@@ -412,11 +395,14 @@ func _queue_delivery(
 func _flush_claim_all() -> void:
 	var grouped: Dictionary = {}
 	for entry: Dictionary in _pending_claim_all:
-		var key: String = str(entry.get("key", ""))
-		if key.is_empty():
+		var resource_key: String = str(entry.get("key", ""))
+		var texture: Texture2D = entry.get("texture") as Texture2D
+		var key: String = resource_key + (":" + texture.resource_path if resource_key == KEY_INVENTORY_ITEM and texture != null else "")
+		if resource_key.is_empty():
 			continue
 		if not grouped.has(key):
 			grouped[key] = {
+				"resource_key": resource_key,
 				"amount": 0,
 				"count": 0,
 				"texture": entry.get("texture"),
@@ -440,8 +426,9 @@ func _flush_claim_all() -> void:
 		var group: Dictionary = grouped[key]
 		var timer := get_tree().create_timer(delay, true, false, true)
 		timer.timeout.connect(
-			_play_delivery_now.bind(
-				key,
+			_play_delivery_in_scene.bind(
+				_last_scene_id,
+				str(group.get("resource_key", key)),
 				int(group.get("amount", 0)),
 				group.get("texture") as Texture2D,
 				group.get("source", _viewport_center()) as Vector2,
@@ -460,6 +447,7 @@ func _play_delivery_now(
 	claim_all: bool,
 	source_count: int
 ) -> void:
+	if _overlay.get_child_count() >= 48: return # Cosmetic bound; the grant already committed.
 	var target: Control = _resolve_destination(resource_key)
 	if target == null:
 		return
@@ -514,6 +502,7 @@ func _play_single_delivery(
 
 	_play_audio("claim")
 	var tween := create_tween()
+	_track_flight(tween)
 	tween.tween_method(
 		_update_bezier.bind(
 			icon,
@@ -566,7 +555,7 @@ func _play_claim_all_delivery(
 	_overlay.add_child(core)
 
 	var total_label := Label.new()
-	total_label.text = "+%d" % amount	
+	total_label.text = "+%d" % amount
 	total_label.size = Vector2(120.0, 32.0)
 	total_label.global_position = merge_point + Vector2(-60.0, 36.0)
 	total_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -599,6 +588,7 @@ func _play_claim_all_delivery(
 
 		var delay: float = float(index) * 0.055
 		var mini_tween := create_tween()
+		_track_flight(mini_tween)
 		mini_tween.tween_interval(delay)
 		mini_tween.set_parallel(true)
 		mini_tween.tween_property(
@@ -637,13 +627,14 @@ func _play_claim_all_delivery(
 
 	core.modulate.a = 1.0
 	var core_tween := create_tween()
+	_track_flight(core_tween)
 	core_tween.set_parallel(true)
 	core_tween.tween_property(
 		core,
 		"scale",
 		Vector2(1.14, 1.14),
 		0.11
-	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	core_tween.tween_property(total_label, "modulate:a", 1.0, 0.10)
 
 	await get_tree().create_timer(0.13, true, false, true).timeout
@@ -661,6 +652,7 @@ func _play_claim_all_delivery(
 	core.queue_free()
 
 	var label_tween := create_tween()
+	_track_flight(label_tween)
 	label_tween.set_parallel(true)
 	label_tween.tween_property(
 		total_label,
@@ -683,6 +675,7 @@ func _play_claim_all_delivery(
 	)
 
 	var tween := create_tween()
+	_track_flight(tween)
 	tween.tween_method(
 		_update_bezier.bind(
 			main_icon,
@@ -760,6 +753,7 @@ func _resolve_destination(resource_key: String) -> Control:
 		var inventory_destination := _find_control_by_names([
 			"InventoryButton",
 			"BackpackButton",
+			"BackpackTitle",
 			"HeroTab",
 			"HeroStage",
 		])
@@ -967,12 +961,26 @@ func _create_fly_icon(
 	icon.size = Vector2(size_px, size_px)
 	icon.pivot_offset = icon.size * 0.5
 	icon.z_index = 4
+	var seal := TextureRect.new()
+	seal.name = "DeliverySeal"
+	seal.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	seal.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	seal.texture = preload("res://assets/ui/main_menu/polish/sanctuary_medallion.svg")
+	seal.modulate = Color(0.62, 0.94, 0.83, 0.44)
+	icon.add_child(seal)
+	icon.move_child(seal, 0)
+	seal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	seal.offset_left = -5; seal.offset_top = -5; seal.offset_right = 5; seal.offset_bottom = 5
+	seal.show_behind_parent = true
 	return icon
 
 
 func _create_trail(accent: Color) -> Line2D:
 	var trail := Line2D.new()
-	trail.width = TRAIL_WIDTH
+	trail.width = 1.6
+	trail.width_curve = Curve.new()
+	trail.width_curve.add_point(Vector2(0.0, 0.04))
+	trail.width_curve.add_point(Vector2(1.0, 1.0))
 	trail.default_color = accent
 	trail.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	trail.end_cap_mode = Line2D.LINE_CAP_ROUND
@@ -1013,6 +1021,7 @@ func _fade_trail(trail: Line2D) -> void:
 	if not is_instance_valid(trail):
 		return
 	var tween := create_tween()
+	_track_flight(tween)
 	tween.tween_property(trail, "modulate:a", 0.0, 0.12)
 	tween.tween_callback(trail.queue_free)
 
@@ -1021,18 +1030,21 @@ func _pulse_target(target: Control, accent: Color) -> void:
 	if target == null or not is_instance_valid(target):
 		return
 
+	var previous: Tween = target.get_meta("jade_reward_pulse") as Tween if target.has_meta("jade_reward_pulse") else null
+	if previous != null and previous.is_valid(): previous.kill()
 	target.pivot_offset = target.size * 0.5
 	target.scale = Vector2.ONE
 	target.modulate = Color.WHITE
 
-	var tween := create_tween()
+	var tween := target.create_tween()
+	target.set_meta("jade_reward_pulse", tween)
 	tween.set_parallel(true)
 	tween.tween_property(
 		target,
 		"scale",
-		Vector2(1.10, 1.10),
+		Vector2(1.035, 1.035),
 		0.10
-	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_property(
 		target,
 		"modulate",
@@ -1092,11 +1104,12 @@ func _play_impact_flash(target: Control, accent: Color) -> void:
 	_overlay.add_child(flash)
 
 	var tween := create_tween()
+	_track_flight(tween)
 	tween.set_parallel(true)
 	tween.tween_property(
 		flash,
 		"scale",
-		Vector2(1.48, 1.48),
+		Vector2(1.22, 1.22),
 		0.19
 	)
 	tween.tween_property(flash, "modulate:a", 0.0, 0.19)
@@ -1131,3 +1144,21 @@ func _format_count(value: int) -> String:
 	if safe_value >= 10000:
 		return "%.1fK" % (float(safe_value) / 1000.0)
 	return str(safe_value)
+
+func _play_delivery_in_scene(scene_id: int, resource_key: String, amount: int, texture: Texture2D, source: Vector2, claim_all: bool, source_count: int) -> void:
+	var scene: Node = get_tree().current_scene
+	if scene == null or scene.get_instance_id() != scene_id: return
+	_play_delivery_now(resource_key, amount, texture, source, claim_all, source_count)
+
+func _track_flight(tween: Tween) -> void:
+	_flight_tweens = _flight_tweens.filter(func(value: Tween): return value != null and value.is_valid())
+	_flight_tweens.append(tween)
+
+func _clear_flight_context() -> void:
+	_pending_claim_all.clear()
+	_claim_all_elapsed = 0.0
+	_wallet_visual_holds.clear()
+	for flight: Tween in _flight_tweens:
+		if flight != null and flight.is_valid(): flight.kill()
+	_flight_tweens.clear()
+	for child: Node in _overlay.get_children(): child.queue_free()

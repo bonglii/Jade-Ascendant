@@ -7,7 +7,7 @@ extends Node
 
 const REWARDS: Dictionary = {
 	"daily_completion_cache": {"stones": 50, "shards": 0},
-	"refinement_supply": {"stones": 0, "shards": 2},
+	"refinement_supply": {"stones": 40, "shards": 0},
 }
 const NON_REVIVE_DAILY_TARGET: int = 5
 
@@ -118,7 +118,7 @@ func _on_sdk_reward(placement: String, grant_id: String) -> void:
 		var reward: Dictionary = REWARDS[placement]
 		amount = int(reward.get("stones", 0)) + int(reward.get("shards", 0))
 	var message: String = (
-		"+50 Spirit Stones" if placement == "daily_completion_cache" else "+2 Refinement Shards"
+		"+50 Spirit Stones" if placement == "daily_completion_cache" else "+40 Spirit Stones"
 	) if succeeded else str(result.get("error", "Reward save failed."))
 	MonetizationManager.publish_reward_delivery_result(
 		placement, succeeded, amount, message

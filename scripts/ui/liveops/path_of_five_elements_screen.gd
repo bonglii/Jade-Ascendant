@@ -1202,6 +1202,7 @@ func _element_label(trial_id: String) -> String:
 
 
 func _reward_text(reward: Dictionary) -> String:
+	reward = RewardManager.retire_fragments(reward)
 	var items: Dictionary = reward.get("items", {})
 	var stone_count: int = int(reward.get("spirit_stone", 0))
 	var shard_count: int = int(items.get("refinement_shard", 0))

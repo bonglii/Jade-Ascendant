@@ -1983,14 +1983,8 @@ func _build_forge_tooltip(item_id: String) -> String:
 		return "Relik sudah mencapai 5★."
 
 	var cost: int = EquipmentManager.get_ascension_cost(item_id)
-	var shards: int = InventoryManager.get_item_count(
-		InventoryManager.REFINEMENT_SHARD
-	)
-	return "Tempa ke %d★ • Biaya %d Refinement Shard • Dimiliki %d" % [
-		current_star + 1,
-		cost,
-		shards
-	]
+	return "Tempa ke %d★ • 1 duplikat identik • Dimiliki %d" % [current_star + 1, InventoryManager.get_item_count(item_id)]
+
 
 
 func _apply_action_button_styles() -> void:

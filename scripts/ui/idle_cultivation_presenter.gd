@@ -437,10 +437,10 @@ func _refresh_popup() -> void:
 		_format_duration(seconds)
 	]
 	_progress_bar.value = float(seconds)
-	var shard_text: String = tr("SHARDS LOCKED")
+	var shard_text: String = tr("BONUS LOCKED")
 	var interval: int = int(rates.get("shard_interval_units", 0))
 	if interval > 0:
-		shard_text = "1 SHARD / %s" % _format_duration(
+		shard_text = "+20 STONE / %s" % _format_duration(
 			interval * int(manager.call("get_claim_unit_seconds"))
 		)
 	_rate_label.text = "%d STONE / H  •  %d HERO EXP / H  •  %s" % [

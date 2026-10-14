@@ -52,24 +52,24 @@ const HERO_EXP_STAGE_BASE: Dictionary = {
 ## these one-time bundles accelerate cultivation/ascension but do not gate power.
 const HERO_MILESTONE_REWARD_CATALOG: Dictionary = {
 	10: {
-		"spirit_stone": 300,
-		"items": {"refinement_shard": 5}
+		"spirit_stone": 400,
+		"items": {}
 	},
 	20: {
-		"spirit_stone": 500,
-		"items": {"refinement_shard": 10}
+		"spirit_stone": 700,
+		"items": {}
 	},
 	30: {
-		"spirit_stone": 750,
-		"items": {"refinement_shard": 20}
+		"spirit_stone": 1150,
+		"items": {}
 	},
 	40: {
-		"spirit_stone": 1000,
-		"items": {"refinement_shard": 30}
+		"spirit_stone": 1600,
+		"items": {}
 	},
 	50: {
-		"spirit_stone": 1500,
-		"items": {"refinement_shard": 75}
+		"spirit_stone": 3000,
+		"items": {}
 	}
 }
 
@@ -284,7 +284,7 @@ func get_stage_clear_reward(
 	)
 	if hero_exp > 0:
 		reward_data[REWARD_KEY_HERO_EXP] = hero_exp
-	return reward_data
+	return retire_fragments(reward_data)
 
 func _get_catalog_stage_clear_reward(
 	stage_data: Dictionary,
@@ -341,6 +341,7 @@ func get_reward_summary(
 	reward_data: Dictionary,
 	empty_text: String = "No Reward"
 ) -> String:
+	reward_data = retire_fragments(reward_data)
 	var summary_lines: Array[String] = []
 	var spirit_stone_amount := int(
 		reward_data.get(REWARD_KEY_SPIRIT_STONE, 0)
@@ -461,7 +462,7 @@ func create_reward_data(
 	}
 	if hero_exp_amount > 0:
 		reward_data[REWARD_KEY_HERO_EXP] = hero_exp_amount
-	return reward_data
+	return retire_fragments(reward_data)
 
 func get_reward_validation_error(
 	source_type: String,
@@ -627,7 +628,17 @@ func get_run_end_domains() -> Dictionary:
 		domains["checkpoint"] = checkpoint_data
 	return domains
 
+func retire_fragments(reward_data: Dictionary) -> Dictionary:
+	var result: Dictionary = reward_data.duplicate(true)
+	var items: Dictionary = result.get(REWARD_KEY_ITEMS, {}).duplicate(true)
+	var legacy: int = maxi(int(items.get(InventoryManager.REFINEMENT_SHARD, 0)), 0)
+	items.erase(InventoryManager.REFINEMENT_SHARD)
+	result[REWARD_KEY_ITEMS] = items
+	result[REWARD_KEY_SPIRIT_STONE] = int(result.get(REWARD_KEY_SPIRIT_STONE, 0)) + legacy * InventoryManager.LEGACY_FRAGMENT_STONES
+	return result
+
 func _normalize_reward_data(reward_data: Dictionary) -> Dictionary:
+	reward_data = retire_fragments(reward_data)
 	var normalized_items: Dictionary = {}
 	var raw_items: Dictionary = reward_data.get(
 		REWARD_KEY_ITEMS,
@@ -691,6 +702,7 @@ func _build_grant_result(
 
 ## What the player will actually receive after duplicate conversion; pure preview.
 func preview_received_reward(reward_data: Dictionary) -> Dictionary:
+	reward_data = retire_fragments(reward_data)
 	var next_counts: Dictionary = InventoryManager.preview_add_items(reward_data.get(REWARD_KEY_ITEMS, {}))
 	var received: Dictionary = {}
 	for raw_id in next_counts:

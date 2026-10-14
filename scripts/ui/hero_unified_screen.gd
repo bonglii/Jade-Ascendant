@@ -111,6 +111,7 @@ func _refresh_loadout() -> void:
   var button: Button=page.find_child("Slot_"+slot,true,false) as Button
   if button!=null:_sync_slot(button,EquipmentManager.get_loadout_equipped_item_id(slot))
  for id: String in card_buttons:
+  _sync_refine_dot(card_buttons[id], id)
   var mark: CanvasItem=card_buttons[id].get_node_or_null("EquippedMark")
   if mark!=null:mark.visible=id in ids
   var card: Button=card_buttons[id]
@@ -128,7 +129,8 @@ func _refresh_loadout() -> void:
   else:_sync_detail_loadout()
 
 func _sync_slot(button: Button,id: String) -> void:
- if str(button.get_meta("item_id","unset"))==id:return
+ if str(button.get_meta("item_id","unset"))==id:
+  _sync_refine_dot(button,id);return
  button.set_meta("item_id",id)
  for child: Node in button.get_children():button.remove_child(child);child.queue_free()
  button.text="+" if id.is_empty() else ""
@@ -138,6 +140,7 @@ func _sync_slot(button: Button,id: String) -> void:
   _skin_card(button,str(EquipmentManager.get_item_data(id).get("rarity","common")))
   var icon:=_texture(Visual.get_icon_path(id));button.add_child(icon);icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
   icon.offset_left=9;icon.offset_right=-9;icon.offset_top=9;icon.offset_bottom=-9
+ _sync_refine_dot(button,id)
 
 func _sync_detail_loadout() -> void:
  if not is_instance_valid(sheet_actions):return
@@ -284,7 +287,7 @@ func _build_resonance() -> void:
 
 func _build_collection() -> void:
  var heading:=HBoxContainer.new();page.add_child(heading)
- var title:=_label("BACKPACK",22,GOLD);title.size_flags_horizontal=Control.SIZE_EXPAND_FILL;heading.add_child(title)
+ var title:=_label("BACKPACK",22,GOLD);title.name="BackpackTitle";title.size_flags_horizontal=Control.SIZE_EXPAND_FILL;heading.add_child(title)
  var equipment_count: int=0
  for id: String in InventoryManager.get_owned_item_ids():
   if EquipmentManager.has_item_definition(id):equipment_count+=1
@@ -349,6 +352,7 @@ func _rebuild_grid() -> void:
    var count: int=InventoryManager.get_item_count(id)
    var copies:=_label("×%d"%count if count<=99 else "×99+",11,TEXT);copies.name="DuplicateCount";card.add_child(copies);copies.position=Vector2(maxf(4,side-42),24*unit);copies.visible=count>1
    _build_equipped_mark(card,side)
+  _sync_refine_dot(card,id)
   card.button_down.connect(func():drag_start=get_global_mouse_position())
   card.pressed.connect(_card_pressed.bind(id))
  if ids.is_empty() and page.get_node_or_null("EmptyResult")==null:
@@ -594,3 +598,16 @@ func _polish_scrollbar(bar: VScrollBar) -> void:
  for state: String in ["grabber","grabber_highlight","grabber_pressed"]:bar.add_theme_stylebox_override(state,thumb)
  var blank: ImageTexture=ImageTexture.create_from_image(Image.create(1,1,false,Image.FORMAT_RGBA8))
  for name_value: String in ["increment","increment_highlight","increment_pressed","decrement","decrement_highlight","decrement_pressed"]:bar.add_theme_icon_override(name_value,blank)
+
+func _sync_refine_dot(card: Button, id: String) -> void:
+ var dot: Panel = card.get_node_or_null("RefineReadyDot") as Panel
+ var ready: bool = not id.is_empty() and (EquipmentManager.can_ascend_item(id) or EquipmentManager.can_level_weapon(id))
+ if dot == null and not ready: return
+ if dot == null:
+  dot = Panel.new();dot.name="RefineReadyDot";dot.mouse_filter=Control.MOUSE_FILTER_IGNORE;dot.z_index=90
+  card.add_child(dot);dot.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+  var side: float=clampf(13*unit,10,17)
+  dot.offset_left=-side-5;dot.offset_right=-5;dot.offset_top=5;dot.offset_bottom=side+5
+  var skin:=StyleBoxFlat.new();skin.bg_color=Color(.94,.13,.17);skin.border_color=Color(1,.81,.48);skin.set_border_width_all(1);skin.set_corner_radius_all(9)
+  skin.shadow_color=Color(.55,.02,.07,.32);skin.shadow_size=3;dot.add_theme_stylebox_override("panel",skin)
+ dot.visible=ready

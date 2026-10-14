@@ -333,13 +333,12 @@ func _build_wallet_header() -> void:
 	wallet_header.add_child(margin)
 
 	var wallet_grid: GridContainer = GridContainer.new()
-	wallet_grid.columns = 4
+	wallet_grid.columns = 3
 	wallet_grid.add_theme_constant_override("h_separation", 5)
 	wallet_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	margin.add_child(wallet_grid)
 
 	stone_balance_label = _compact_resource_chip(wallet_grid, SPIRIT_STONE_ICON, tr("Spirit Stone"), GOLD)
-	shard_balance_label = _compact_resource_chip(wallet_grid, REFINEMENT_SHARD_ICON, tr("Refinement Shard"), CYAN)
 	jade_balance_label = _compact_resource_chip(wallet_grid, CELESTIAL_JADE_ICON, tr("Celestial Jade"), VIOLET)
 	seal_balance_label = _compact_resource_chip(wallet_grid, PAVILION_SEAL_ICON, tr("Pavilion Seal"), JADE)
 
@@ -1225,7 +1224,7 @@ func _build_forge_section() -> void:
 		content,
 		tr("DETERMINISTIC SAFETY NET"),
 		tr("Equipment Forge"),
-		tr("Common/Rare may use Spirit Stones. Epic/Legendary use Summon or Refinement Shard forging."),
+		tr("Common/Rare use Spirit Stones. Epic/Legendary use Summon or Spirit Stone forging."),
 		GOLD
 	)
 	_label(forge, tr("RARITY"), 12, TEXT_MUTED)
@@ -2063,16 +2062,13 @@ func _create_equipment_card(item_id: String, data: Dictionary) -> PanelContainer
 			box.add_child(action_row)
 			var stone_price := int(data.get("price", 0))
 			var buy := _button(action_row, tr("%d STONES") % stone_price, _buy.bind(item_id, false), false, GOLD)
-			var forge_button := _button(action_row, tr("%d SHARDS") % shard_price, _buy.bind(item_id, true), false, CYAN)
 			buy.add_theme_font_size_override("font_size", 11)
-			forge_button.add_theme_font_size_override("font_size", 11)
 			buy.disabled = sealed or ProgressionManager.spirit_stone < stone_price
-			forge_button.disabled = sealed or InventoryManager.get_item_count(InventoryManager.REFINEMENT_SHARD) < shard_price
 		else:
 			_state_badge(box, tr("SUMMON • OR FORGE"), VIOLET)
-			var forge_only := _button(box, tr("FORGE • %d SHARDS") % shard_price, _buy.bind(item_id, true), false, CYAN)
+			var forge_only := _button(box, tr("FORGE • %d STONES") % shard_price, _buy.bind(item_id, true), false, CYAN)
 			forge_only.add_theme_font_size_override("font_size", 11)
-			forge_only.disabled = sealed or InventoryManager.get_item_count(InventoryManager.REFINEMENT_SHARD) < shard_price
+			forge_only.disabled = sealed or ProgressionManager.spirit_stone < shard_price
 	return card
 
 
@@ -2111,6 +2107,8 @@ func _select_cosmetic(cosmetic_id: String) -> void:
 func _buy(item_id: String, use_shards: bool) -> void:
 	if PavilionManager.acquire_equipment(item_id, use_shards):
 		_set_status(tr("Equipment acquired. Open Hero to equip it."), JADE)
+		var result: Node = get_tree().root.get_node_or_null("RewardClaimResultPresenter")
+		if result != null: result.show_claimed_reward(tr("PAVILION FORGE"), {"items": {item_id: 1}})
 	else:
 		_set_status(tr(PavilionManager.last_error), Color(0.95, 0.48, 0.42))
 

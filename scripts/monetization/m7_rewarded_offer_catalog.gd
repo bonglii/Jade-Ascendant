@@ -42,8 +42,8 @@ const PLANNED_DISABLED_PLACEMENTS: Dictionary = {
 		"requires": "all_active_daily_quests_claimed"
 	},
 	"refinement_supply": {
-		"kind": "refinement_shard",
-		"amount": 2,
+		"kind": "spirit_stone",
+		"amount": 40,
 		"daily_limit": 1,
 		"requires": "verified_grant_and_inventory_save"
 	},

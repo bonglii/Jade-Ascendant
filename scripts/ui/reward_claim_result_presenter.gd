@@ -389,6 +389,7 @@ func _build_result_popup(
 	claim_count: int
 ) -> void:
 	_close_popup()
+	reward_data = RewardManager.retire_fragments(reward_data)
 
 	_popup = Control.new()
 	_popup.name = "UnifiedRewardClaimPopup"
@@ -404,15 +405,15 @@ func _build_result_popup(
 	scrim.set_anchors_and_offsets_preset(
 		Control.PRESET_FULL_RECT
 	)
-	scrim.color = Color(0.0, 0.0, 0.0, 0.62)
+	scrim.color = Color(0.0, 0.012, 0.017, 0.48)
 	scrim.mouse_filter = Control.MOUSE_FILTER_STOP
 	scrim.gui_input.connect(_on_scrim_input)
 	_popup.add_child(scrim)
 
 	_panel = PanelContainer.new()
-	_panel.anchor_left = 0.10
+	_panel.anchor_left = 0.14
 	_panel.anchor_top = 0.5
-	_panel.anchor_right = 0.90
+	_panel.anchor_right = 0.86
 	_panel.anchor_bottom = 0.5
 	_panel.offset_top = 0.0
 	_panel.offset_bottom = 0.0
@@ -476,8 +477,18 @@ func _build_result_popup(
 	)
 	_scroll.add_child(_body)
 
+	var seal := TextureRect.new()
+	seal.name = "ClaimJadeSeal"
+	seal.texture = preload("res://assets/ui/main_menu/polish/sanctuary_medallion.svg")
+	seal.custom_minimum_size = Vector2(48, 48)
+	seal.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	seal.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	seal.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_body.add_child(seal)
+
 	var eyebrow := Label.new()
 	eyebrow.text = source_label
+	eyebrow.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	eyebrow.horizontal_alignment = (
 		HORIZONTAL_ALIGNMENT_CENTER
 	)
@@ -497,6 +508,7 @@ func _build_result_popup(
 		if claim_count > 1
 		else tr("REWARD CLAIMED")
 	)
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title.horizontal_alignment = (
 		HORIZONTAL_ALIGNMENT_CENTER
 	)
@@ -518,7 +530,7 @@ func _build_result_popup(
 	_body.add_child(divider)
 
 	var heading := Label.new()
-	heading.text = tr("REWARDS RECEIVED")
+	heading.text = tr("TERSIMPAN DI KOLEKSI")
 	heading.horizontal_alignment = (
 		HORIZONTAL_ALIGNMENT_CENTER
 	)
@@ -551,6 +563,7 @@ func _build_result_popup(
 		reward_grid,
 		reward_data
 	)
+	reward_grid.columns = mini(3, maxi(1, reward_grid.get_child_count()))
 
 	var saved := Label.new()
 	saved.text = tr(
@@ -581,7 +594,7 @@ func _build_result_popup(
 	)
 
 	_panel.modulate.a = 0.0
-	_panel.scale = Vector2(0.94, 0.94)
+	_panel.scale = Vector2(0.98, 0.98)
 	_panel.pivot_offset = Vector2(
 		_panel.size.x * 0.5,
 		_panel.size.y * 0.5
@@ -600,7 +613,7 @@ func _build_result_popup(
 		Vector2.ONE,
 		0.18
 	).set_trans(
-		Tween.TRANS_BACK
+		Tween.TRANS_CUBIC
 	).set_ease(
 		Tween.EASE_OUT
 	)
@@ -720,6 +733,7 @@ func _add_reward_cards(
 						)
 					)
 				).to_upper()
+				accent = EquipmentVisualCatalog.get_rarity_color(str(item_data.get("rarity", "rare")))
 
 			grid.add_child(
 				_reward_card(
@@ -750,7 +764,7 @@ func _add_reward_cards(
 
 
 func _reward_card(
-	frame_texture: Texture2D,
+	_frame_texture: Texture2D,
 	icon_texture: Texture2D,
 	label_text: String,
 	amount: int,
@@ -765,26 +779,23 @@ func _reward_card(
 		155.0
 	)
 
-	var transparent := StyleBoxFlat.new()
-	transparent.bg_color = Color.TRANSPARENT
-	panel.add_theme_stylebox_override(
-		"panel",
-		transparent
-	)
-
-	var frame := TextureRect.new()
-	frame.set_anchors_and_offsets_preset(
-		Control.PRESET_FULL_RECT
-	)
-	frame.offset_left = -2.0
-	frame.offset_top = -8.0
-	frame.offset_right = 2.0
-	frame.offset_bottom = 4.0
-	frame.texture = frame_texture
-	frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	frame.stretch_mode = TextureRect.STRETCH_SCALE
-	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(frame)
+	panel.name = "ClaimRewardCard"
+	panel.clip_contents = true
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_theme_stylebox_override("panel", _panel_style(Color(0.025, 0.090, 0.095, 0.98), Color(accent.r, accent.g, accent.b, 0.55), 10, 3))
+	# Existing authored equipment/resource icons remain the visual focus.
+	var accent_line := ColorRect.new()
+	accent_line.color = Color(accent.r, accent.g, accent.b, 0.65)
+	accent_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var ornament := Control.new()
+	ornament.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(ornament)
+	ornament.add_child(accent_line)
+	accent_line.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	accent_line.offset_left = 14
+	accent_line.offset_right = -14
+	accent_line.offset_top = 4
+	accent_line.offset_bottom = 5
 
 	var content_margin := MarginContainer.new()
 	content_margin.set_anchors_and_offsets_preset(
@@ -895,29 +906,14 @@ func _premium_continue_button() -> Button:
 		Color(0.94, 0.99, 1.0, 1.0)
 	)
 
-	for state_name: String in [
-		"normal",
-		"hover",
-		"pressed",
-		"focus",
-	]:
-		var transparent := StyleBoxFlat.new()
-		transparent.bg_color = Color.TRANSPARENT
-		button.add_theme_stylebox_override(
-			state_name,
-			transparent
-		)
+	for state_name: String in ["normal", "hover", "pressed", "focus"]:
+		var style := StyleBoxTexture.new()
+		var variant: String = "pressed" if state_name == "pressed" else ("selected" if state_name == "focus" else "normal")
+		style.texture = load("res://assets/ui/system_v2/custom/buttons/primary_%s.svg" % variant) as Texture2D
+		style.texture_margin_left = 18; style.texture_margin_right = 18
+		style.texture_margin_top = 12; style.texture_margin_bottom = 12
+		button.add_theme_stylebox_override(state_name, style)
 
-	var frame := TextureRect.new()
-	frame.set_anchors_and_offsets_preset(
-		Control.PRESET_FULL_RECT
-	)
-	frame.texture = CLAIM_BLUE_FRAME
-	frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	frame.stretch_mode = TextureRect.STRETCH_SCALE
-	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	frame.show_behind_parent = true
-	button.add_child(frame)
 	return button
 
 
@@ -958,11 +954,7 @@ func _fit_popup_to_content() -> void:
 		body_at_start.get_combined_minimum_size().y
 		+ 24.0
 	)
-	var available_height: float = maxf(
-		get_viewport().get_visible_rect().size.y
-		- 180.0,
-		420.0
-	)
+	var available_height: float = maxf(100.0, get_viewport().get_visible_rect().size.y * 0.72)
 	var final_height: float = minf(
 		desired_height,
 		available_height
@@ -996,10 +988,10 @@ func _fit_popup_to_content() -> void:
 
 
 func _is_live_popup_layout(
-	popup_ref: Control,
-	panel_ref: PanelContainer,
-	scroll_ref: ScrollContainer,
-	body_ref: VBoxContainer
+	popup_ref: Variant,
+	panel_ref: Variant,
+	scroll_ref: Variant,
+	body_ref: Variant
 ) -> bool:
 	if (
 		popup_ref == null

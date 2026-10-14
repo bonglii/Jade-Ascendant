@@ -9,7 +9,7 @@ export function normalizeReward(input,allowRetired=false){
  const raw=input.items??{};if(!raw||typeof raw!=='object'||Array.isArray(raw))fail(400,'invalid_reward');
  const items={};let equipment=0;
  for(const id of Object.keys(raw).sort()){
-  if(id==='refinement_shard'){const amount=integer(raw[id],0,500);if(amount)items[id]=amount;continue;}
+  if(id==='refinement_shard'){if(!allowRetired)fail(400,'retired_material');const amount=integer(raw[id],0,500);if(amount)items[id]=amount;continue;}
   if(!catalog.equipment.some(item=>item.id===id)&&!(allowRetired&&id==="astral_resonance_bell"))fail(400,'invalid_equipment');
   items[id]=integer(raw[id],1,1);if(++equipment>5)fail(400,'equipment_limit');
  }
