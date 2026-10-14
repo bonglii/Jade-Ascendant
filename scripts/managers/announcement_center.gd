@@ -145,7 +145,7 @@ func _build() -> void:
 	_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	_shade.add_child(_panel)
 	var frame := TextureRect.new()
-	frame.texture = load("res://assets/ui/results/premium_v2/frame_jade.png")
+	frame.texture = load("res://assets/ui/results/quiet/jade.svg")
 	frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	frame.stretch_mode = TextureRect.STRETCH_SCALE
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -212,9 +212,9 @@ func _fit() -> void:
 		inset_top = maxf(16.0, float(safe.position.y) * area.size.y / float(window.y))
 		inset_bottom = maxf(16.0, float(maxi(0, window.y - safe.end.y)) * area.size.y / float(window.y))
 	var desired := Vector2(minf(460.0, area.size.x - 32.0), minf(620.0, area.size.y - inset_top - inset_bottom))
-	_margin.add_theme_constant_override("margin_left", int(desired.x * 0.18))
-	_margin.add_theme_constant_override("margin_right", int(desired.x * 0.18))
-	_margin.add_theme_constant_override("margin_top", int(desired.y * 0.18))
-	_margin.add_theme_constant_override("margin_bottom", int(desired.y * 0.115))
+	_margin.add_theme_constant_override("margin_left", 24)
+	_margin.add_theme_constant_override("margin_right", 24)
+	_margin.add_theme_constant_override("margin_top", 28)
+	_margin.add_theme_constant_override("margin_bottom", 24)
 	_panel.size = desired
 	_panel.position = Vector2((area.size.x - desired.x) * 0.5, inset_top + (area.size.y - inset_top - inset_bottom - desired.y) * 0.5)

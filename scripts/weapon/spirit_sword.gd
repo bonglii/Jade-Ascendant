@@ -243,7 +243,7 @@ func _on_body_entered(body: Node2D) -> void:
 	hit_ids.append(body.get_instance_id())
 
 	CombatFeedback.mark_next_hit_critical(body, is_critical)
-	body.take_damage(damage)
+	preload("res://scripts/weapon/run_combat_ledger.gd").apply_hit(body,damage,"spirit_sword")
 	spawn_hit_visual()
 
 	if is_critical:

@@ -13,13 +13,13 @@ const HOME_ART: Texture2D = preload(
 	"res://assets/ui/main_menu/main_menu_key_art_lin_yue.png"
 )
 const MAIL_BACKGROUND: Texture2D = preload(
-	"res://assets/ui/liveops/mail/spirit_messages_background_frame_fitted.png"
+	"res://assets/ui/results/quiet/jade.svg"
 )
 const MAIL_FRAME: Texture2D = preload(
 	"res://assets/ui/liveops/mail/spirit_messages_jade_frame.png"
 )
 const LETTER_PARCHMENT: Texture2D = preload(
-	"res://assets/ui/liveops/mail/spirit_messages_parchment.png"
+	"res://assets/ui/results/quiet/paper.svg"
 )
 const SPIRIT_ICON: Texture2D = preload(
 	"res://assets/ui/shared/resources/spirit_stone_premium.png"
@@ -193,6 +193,7 @@ func _build_popup() -> void:
 	var frame := _full_texture(_popup, MAIL_FRAME, TextureRect.STRETCH_SCALE)
 	frame.name = "ApprovedJadeGoldOverlay"
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.hide() # Quiet sheet background owns the border; no ornate overlay.
 	frame.z_index = 5
 
 
@@ -485,7 +486,7 @@ func _build_claim_slot(parent: Container) -> void:
 
 	_claim_button = _button("CLAIM", true)
 	_claim_button.name = "MailClaimAttachment"
-	_claim_button.clip_text = false
+	_claim_button.clip_text = true
 	_claim_button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_claim_button.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	# The shared flight presenter reads the focused button as the source position.
@@ -509,11 +510,11 @@ func _fit_popup() -> void:
 	var height_value: float = minf(size.y * (.94 if size.y<650 else .88), 1120.0)
 	_popup.position = Vector2((size.x-width_value)*.5,(size.y-height_value)*.5)
 	_popup.size = Vector2(width_value,height_value)
-	var inset: int = roundi(clampf(width_value*.065,18,42))
+	var inset: int = 24
 	_popup_safe.add_theme_constant_override("margin_left",inset)
 	_popup_safe.add_theme_constant_override("margin_right",inset)
-	_popup_safe.add_theme_constant_override("margin_top",roundi(clampf(height_value*.15,48,140)))
-	_popup_safe.add_theme_constant_override("margin_bottom",roundi(clampf(height_value*.075,22,76)))
+	_popup_safe.add_theme_constant_override("margin_top",28)
+	_popup_safe.add_theme_constant_override("margin_bottom",24)
 	_mail_title.add_theme_font_size_override("font_size",20 if width_value<400 else 28)
 	_mail_tagline.visible = height_value >= 650
 	_layout_body()
@@ -560,13 +561,17 @@ func _layout_letter_reader() -> void:
 	var inset: int = roundi(_letter_panel.size.x*.12)
 	_letter_safe.add_theme_constant_override("margin_left",inset)
 	_letter_safe.add_theme_constant_override("margin_right",inset)
-	_letter_safe.add_theme_constant_override("margin_top",roundi(_letter_panel.size.y*.185))
-	_letter_safe.add_theme_constant_override("margin_bottom",roundi(_letter_panel.size.y*.085))
+	_letter_safe.add_theme_constant_override("margin_top",24)
+	_letter_safe.add_theme_constant_override("margin_bottom",24)
 	if _attachment_group.get_parent() != _reader_content:
 		_attachment_group.reparent(_reader_content,false)
+	# Keep claim/delete accessible while shrinking the decorative vertical gap.
+	var short_paper: bool=_letter_panel.size.y<280
+	_letter_safe.add_theme_constant_override("margin_top",12 if short_paper else 24)
+	_letter_safe.add_theme_constant_override("margin_bottom",12 if short_paper else 24)
 	LiveOpsUi.make_scroll_tree_touch_safe(_reader_content)
 	var printable_width: float = _letter_panel.size.x - inset*2.0
-	_action_grid.columns = 2
+	_action_grid.columns = 1 if printable_width < 240 else 2
 	_claim_button.add_theme_font_size_override("font_size",16 if printable_width<280 else 20)
 	_delete_button.text = tr("DELETE") if printable_width < 280 else tr("DELETE MESSAGE")
 	_no_claim_hint.text = tr("NO MAIL") if _selected_id.is_empty() else tr("NOTICE") if printable_width < 280 else tr("MESSAGE · NO REWARD")
@@ -577,6 +582,9 @@ func _layout_letter_reader() -> void:
 
 func _update_reader_hint() -> void:
 	if not is_instance_valid(_reader_hint): return
+	if _letter_panel.size.y<280:
+		_reader_hint.hide()
+		return
 	var bar: VScrollBar = _reader_scroll.get_v_scroll_bar()
 	_reader_hint.visible = bar.max_value > bar.page + 1.0
 	_reader_hint.text = tr("END OF LETTER") if bar.value >= bar.max_value-bar.page-1.0 else ("GULIR UNTUK BACA" if SettingsManager.language=="id" else "SCROLL TO READ") if _letter_panel.size.x*.76<280 else tr("SCROLL TO READ FULL LETTER")

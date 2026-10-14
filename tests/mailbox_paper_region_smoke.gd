@@ -44,7 +44,7 @@ func run() -> void:
    check(inside(mail._popup.get_global_rect(),mail._server_status.get_global_rect()),label+" sync status has bounded full-width slot")
    check(mail._sync_button.is_visible_in_tree(),label+" sync remains accessible from reader")
    check(mail._attachment_group.get_parent()==mail._reader_content,label+" all attachments are in the scroll document")
-   check(mail._mail_title.get_global_rect().position.y>=mail._popup.position.y+mail._popup.size.y*.13,label+" title below outer frame ornament")
+   check(mail._mail_title.get_global_rect().position.y>=mail._popup.position.y+24,label+" title inside quiet sheet header")
 
    check(mail._selected_id=="server:"+LONG_ID,label+" server mail selected")
    check(mail._letter_subject.text==fixture[0].title and mail._letter_subject.max_lines_visible==-1,label+" full title without line cap")

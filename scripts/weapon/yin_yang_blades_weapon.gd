@@ -217,7 +217,7 @@ func damage_target(target: Node) -> void:
 		)
 	)
 
-	target.take_damage(final_damage)
+	preload("res://scripts/weapon/run_combat_ledger.gd").apply_hit(target,final_damage,"yin_yang_blades")
 
 	hit_cooldowns[target_id] = HIT_INTERVAL
 

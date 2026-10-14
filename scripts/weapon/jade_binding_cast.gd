@@ -58,7 +58,7 @@ func _hit(player: Node2D, enemy: Node2D, multiplier: float) -> void:
 	if stats == null: return
 	var result: Dictionary = stats.calculate_damage_result(base_damage * multiplier)
 	CombatFeedback.mark_next_hit_critical(enemy, bool(result.is_critical))
-	enemy.take_damage(float(result.damage))
+	preload("res://scripts/weapon/run_combat_ledger.gd").apply_hit(enemy,float(result.damage),"jade_binding_chain")
 	# Keep the existing critical resonance meaningful without spawning a sword,
 	# recursively triggering another cast or hitting the same victim twice.
 	if resonance_used or not bool(result.is_critical) or not stats.has_sword_dao_resonance(): return
@@ -79,7 +79,7 @@ func _hit(player: Node2D, enemy: Node2D, multiplier: float) -> void:
 		resonance_age = age
 		var bonus: Dictionary = stats.calculate_damage_result(base_damage * 0.40)
 		CombatFeedback.mark_next_hit_critical(candidate, bool(bonus.is_critical))
-		candidate.take_damage(float(bonus.damage))
+		preload("res://scripts/weapon/run_combat_ledger.gd").apply_hit(candidate,float(bonus.damage),"jade_binding_chain")
 
 func _draw() -> void:
 	var reduced: bool = SettingsManager.reduced_effects

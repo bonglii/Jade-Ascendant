@@ -58,7 +58,7 @@ func _on_body_entered(body: Node2D) -> void:
 
 	consumed = true
 	CombatFeedback.mark_next_hit_critical(body, is_critical)
-	body.take_damage(damage)
+	preload("res://scripts/weapon/run_combat_ledger.gd").apply_hit(body,damage,"fire_orb")
 	_apply_cinder_bloom(body)
 	spawn_hit_visual()
 	queue_free()
@@ -107,7 +107,7 @@ func _apply_cinder_bloom(primary_target: Node2D) -> void:
 			continue
 
 		CombatFeedback.mark_next_hit_critical(enemy, is_critical)
-		enemy.take_damage(splash_damage)
+		preload("res://scripts/weapon/run_combat_ledger.gd").apply_hit(enemy,splash_damage,"fire_orb")
 		splash_hits += 1
 
 	if splash_hits > 0:

@@ -220,7 +220,7 @@ func damage_target(target: Node) -> void:
 		)
 	)
 
-	target.take_damage(final_damage)
+	preload("res://scripts/weapon/run_combat_ledger.gd").apply_hit(target,final_damage,"heavenly_tribulation")
 
 	DebugLogger.combat(
 		"Heavenly Lightning Hit | Damage: %.1f"

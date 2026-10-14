@@ -144,6 +144,7 @@ func save_checkpoint() -> bool:
 
 	save_data["wave"] = wave_manager.current_wave
 	save_data["wave_timer"] = wave_manager.wave_timer
+	save_data["run_combat_report"] = weapon_manager.get_node("RunCombatLedger").snapshot()
 	var magnet_spawner: Node = get_parent().get_node_or_null("EnemySpawner")
 	if magnet_spawner != null:
 		save_data["qi_magnet_state"] = magnet_spawner.get_qi_magnet_state()
@@ -605,6 +606,10 @@ static func normalize_checkpoint_save_data(
 		):
 			return {}
 
+	if save_data.has("run_combat_report") and not preload("res://scripts/weapon/run_combat_ledger.gd").valid_snapshot(save_data.run_combat_report):
+		# Optional display statistics cannot invalidate an otherwise valid run.
+		save_data = save_data.duplicate(true)
+		save_data.erase("run_combat_report")
 	var normalized_data: Dictionary = save_data.duplicate(true)
 	# Backward compatibility: every checkpoint created before explicit Fire Orb
 	# ownership existed came from the old starter loadout where Fire Orb was
@@ -767,6 +772,7 @@ func load_checkpoint() -> bool:
 
 	if save_data.has("wave_timer"):
 		wave_manager.wave_timer = save_data["wave_timer"]
+	weapon_manager.get_node("RunCombatLedger").restore(save_data.get("run_combat_report", {}))
 	var magnet_spawner: Node = get_parent().get_node_or_null("EnemySpawner")
 	if magnet_spawner != null:
 		magnet_spawner.restore_qi_magnet_state(save_data.get("qi_magnet_state", {}))

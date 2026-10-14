@@ -423,4 +423,4 @@ func _apply_damage_pulse() -> void:
 				base_damage
 			)
 		)
-		body.take_damage(final_damage)
+		preload("res://scripts/weapon/run_combat_ledger.gd").apply_hit(body,final_damage,"eight_trigrams_formation")

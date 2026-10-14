@@ -349,7 +349,7 @@ func damage_target(target: Node) -> bool:
 		)
 	)
 
-	target.take_damage(final_damage)
+	preload("res://scripts/weapon/run_combat_ledger.gd").apply_hit(target,final_damage,"heavenly_sword_rain")
 
 	DebugLogger.combat(
 		"Heavenly Sword Rain Hit | Damage: %.1f"

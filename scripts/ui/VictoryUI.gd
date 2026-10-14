@@ -76,6 +76,7 @@ func _ready() -> void:
 
 func show_victory() -> void:
 	get_node("ResultCeremony").fit()
+	get_node("ResultCeremony").call_deferred("capture_run_report")
 	_refresh_stage_identity()
 	_refresh_reward_summary()
 	if SaveManager.is_progress_read_only():

@@ -44,6 +44,9 @@ var _fired_attacks: int = 0
 
 func _ready() -> void:
 	DebugLogger.system(str("WeaponManager aktif!"))
+	var ledger: Node=preload("res://scripts/weapon/run_combat_ledger.gd").new()
+	ledger.name="RunCombatLedger"
+	add_child(ledger)
 	initialize_weapons()
 
 ## Membuat weapon awal yang dimiliki Player.

@@ -48,7 +48,7 @@ func _physics_process(delta: float) -> void:
    queue_free();return
   clock-=1.0;ticks_left-=1
   enemy.set_meta(DOT_META,true)
-  enemy.take_damage(tick_damage)
+  preload("res://scripts/weapon/run_combat_ledger.gd").apply_hit(enemy,tick_damage,"set_"+kind)
   enemy.remove_meta(DOT_META)
   if ticks_left<=0:queue_free()
  queue_redraw()

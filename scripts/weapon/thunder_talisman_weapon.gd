@@ -101,7 +101,7 @@ func hit_target(player: Node2D, target: Node2D) -> void:
 		)
 	)
 
-	target.take_damage(final_damage)
+	preload("res://scripts/weapon/run_combat_ledger.gd").apply_hit(target,final_damage,"thunder_talisman")
 
 	DebugLogger.system(str(
 		"Thunder Talisman Hit: ",

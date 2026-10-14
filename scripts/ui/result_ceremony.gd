@@ -24,7 +24,7 @@ func _ready() -> void:
 	_panel.add_theme_stylebox_override("panel", empty)
 	var frame := TextureRect.new()
 	frame.name = "CeremonialResultFrame"
-	frame.texture = load("res://assets/ui/results/premium_v2/frame_%s.png" % ("crimson" if _mode == "defeat" else "jade"))
+	frame.texture = load("res://assets/ui/results/quiet/%s.svg" % ("crimson" if _mode == "defeat" else "jade"))
 	frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	frame.stretch_mode = TextureRect.STRETCH_SCALE
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -57,9 +57,18 @@ func _ready() -> void:
 		_seal.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		_seal.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		_seal.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_seal.custom_minimum_size = Vector2(0, 96)
+		_seal.custom_minimum_size = Vector2(0, 56)
 	var title: Label = _host.get("victory_label" if _mode == "victory" else "game_over_label") as Label
-	title.add_theme_font_size_override("font_size", 36 if _mode == "victory" else 30)
+	title.add_theme_font_size_override("font_size", 30)
+	if _mode == "victory":
+		_seal.hide()
+		_host.get("eyebrow_label").hide()
+		_host.get("hint_label").hide()
+		_host.get("balance_label").hide()
+		_install_run_report()
+	if _host.get("result_atmosphere") != null:
+		_host.get("result_atmosphere").hide()
+		_host.get("result_atmosphere").set_process(false)
 	for button: Button in _content.find_children("*", "Button", true, false):
 		var primary: bool = button == _host.get("main_menu_button") if _mode == "victory" else button == _host.get("retry_button")
 		style_button(button, ("red" if _mode == "defeat" else "jade") if primary else "navy")
@@ -69,12 +78,16 @@ func _ready() -> void:
 
 static func style_button(button: Button, palette: String) -> void:
 	button.custom_minimum_size = Vector2(0, 56)
-	button.add_theme_font_size_override("font_size", 17)
+	button.add_theme_font_size_override("font_size", 16)
 	for pair: Array in [["normal", "normal"], ["hover", "hover"], ["pressed", "pressed"], ["disabled", "pressed"]]:
 		var style := StyleBoxTexture.new()
-		style.texture = load("res://assets/ui/results/premium_v2/%s_%s.png" % [palette, pair[1]])
-		style.content_margin_left = 22
-		style.content_margin_right = 22
+		style.texture = load("res://assets/ui/results/quiet/button_%s_%s.svg" % [palette, pair[1]])
+		style.content_margin_left = 14
+		style.content_margin_right = 14
+		style.texture_margin_left=12
+		style.texture_margin_right=12
+		style.texture_margin_top=12
+		style.texture_margin_bottom=12
 		style.content_margin_top = 12
 		style.content_margin_bottom = 12
 		button.add_theme_stylebox_override(str(pair[0]), style)
@@ -90,13 +103,90 @@ static func style_button(button: Button, palette: String) -> void:
 
 func fit() -> void:
 	if not is_instance_valid(_safe) or _safe.size.x <= 1: return
-	var desired := Vector2(minf(544, _safe.size.x - 24), minf(840, _safe.size.y - 24))
+	var desired := Vector2(minf(520, _safe.size.x - 24), minf(740, _safe.size.y - 24))
 	_panel.custom_minimum_size = desired
-	_margin.add_theme_constant_override("margin_left", int(desired.x * 0.145))
-	_margin.add_theme_constant_override("margin_right", int(desired.x * 0.145))
-	_margin.add_theme_constant_override("margin_top", int(desired.y * 0.18))
-	_margin.add_theme_constant_override("margin_bottom", int(desired.y * 0.115))
+	_margin.add_theme_constant_override("margin_left", 24)
+	_margin.add_theme_constant_override("margin_right", 24)
+	_margin.add_theme_constant_override("margin_top", 32)
+	_margin.add_theme_constant_override("margin_bottom", 28)
 	if _seal != null:
-		_seal.custom_minimum_size = Vector2(0, 96)
+		_seal.custom_minimum_size = Vector2(0, 56)
 	var grid: GridContainer = _host.get("reward_chip_row") as GridContainer if _mode == "victory" else null
-	if grid != null: grid.columns = 2 if desired.x * 0.71 >= 350 else 1
+	if grid != null: grid.columns = 2 if desired.x - 48 >= 300 else 1
+
+var _report: VBoxContainer
+var _report_rows: VBoxContainer
+var _damage_tab: Button
+var _skills_tab: Button
+var _show_skills: bool=false
+var _report_damage: Array[Dictionary]=[]
+var _report_skills: Array[Dictionary]=[]
+var _report_partial: bool=false
+
+func _install_run_report() -> void:
+	_report=VBoxContainer.new()
+	_report.name="RunReport"
+	_report.add_theme_constant_override("separation",10)
+	_body.add_child(_report)
+	var tabs:=HBoxContainer.new()
+	_report.add_child(tabs)
+	_damage_tab=Button.new();_skills_tab=Button.new()
+	for button: Button in [_damage_tab,_skills_tab]:
+		button.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+		button.toggle_mode=true
+		button.custom_minimum_size=Vector2(0,44)
+		tabs.add_child(button)
+		style_button(button,"navy")
+	_damage_tab.pressed.connect(func():_show_skills=false;_refresh_report_rows())
+	_skills_tab.pressed.connect(func():_show_skills=true;_refresh_report_rows())
+	_report_rows=VBoxContainer.new()
+	_report_rows.add_theme_constant_override("separation",8)
+	_report.add_child(_report_rows)
+
+func capture_run_report() -> void:
+	if _mode!="victory":return
+	var player: Node=get_tree().get_first_node_in_group("player")
+	if player==null:return
+	var ledger: Node=player.get_node_or_null("WeaponManager/RunCombatLedger")
+	if ledger==null:return
+	ledger.frozen=true
+	_report_damage=ledger.damage_rows();_report_skills=ledger.skills();_report_partial=ledger.partial
+	_refresh_report_rows()
+
+func _report_label(text: String,color: Color,font_size: int=15) -> Label:
+	var label:=Label.new();label.text=text
+	label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	label.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	label.add_theme_color_override("font_color",color)
+	label.add_theme_font_size_override("font_size",font_size)
+	return label
+
+func _refresh_report_rows() -> void:
+	if _report_rows==null:return
+	for child: Node in _report_rows.get_children():_report_rows.remove_child(child);child.queue_free()
+	var indonesian: bool=SettingsManager.language=="id"
+	_damage_tab.text="DAMAGE"
+	_skills_tab.text="SKILL" if indonesian else "SKILLS"
+	_damage_tab.set_pressed_no_signal(not _show_skills);_skills_tab.set_pressed_no_signal(_show_skills)
+	if _show_skills:
+		for skill: Dictionary in _report_skills:
+			var row:=HBoxContainer.new();row.add_theme_constant_override("separation",8);_report_rows.add_child(row)
+			var icon:=TextureRect.new();icon.texture=load(str(preload("res://scripts/data/skill_catalog.gd").ICON_PATHS.get(str(skill.id),"")))
+			icon.custom_minimum_size=Vector2(28,28);icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;row.add_child(icon)
+			row.add_child(_report_label(str(skill.name),Color(.84,.91,.86)))
+			var level:=_report_label("Lv."+str(skill.level),Color(.83,.75,.51));level.name="ReportSkillLevel";level.autowrap_mode=TextServer.AUTOWRAP_OFF;level.custom_minimum_size.x=44;level.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;level.size_flags_horizontal=Control.SIZE_SHRINK_END;row.add_child(level)
+	else:
+		var total: float=0
+		for item: Dictionary in _report_damage:total+=float(item.damage)
+		_report_rows.add_child(_report_label(("TOTAL TERCATAT" if indonesian else "TOTAL RECORDED")+"  "+str(roundi(total)),Color(.94,.84,.60),17))
+		for item: Dictionary in _report_damage:
+			var row:=VBoxContainer.new();row.add_theme_constant_override("separation",4);_report_rows.add_child(row)
+			var heading:=HBoxContainer.new();row.add_child(heading)
+			heading.add_child(_report_label(str(item.name),Color(.84,.91,.86)))
+			var number:=_report_label(str(roundi(float(item.damage))),Color(.96,.86,.65));number.name="ReportDamageAmount";number.autowrap_mode=TextServer.AUTOWRAP_OFF;number.custom_minimum_size.x=56;number.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;number.size_flags_horizontal=Control.SIZE_SHRINK_END;heading.add_child(number)
+			var bar:=ProgressBar.new();bar.custom_minimum_size.y=4;bar.show_percentage=false;bar.max_value=maxf(total,1);bar.value=float(item.damage);row.add_child(bar)
+			var fill:=StyleBoxFlat.new();fill.bg_color=Color(.30,.72,.59);fill.set_corner_radius_all(2);bar.add_theme_stylebox_override("fill",fill)
+			var bg:=StyleBoxFlat.new();bg.bg_color=Color(.1,.23,.24);bg.set_corner_radius_all(2);bar.add_theme_stylebox_override("background",bg)
+		if _report_partial:
+			_report_rows.add_child(_report_label("Catatan damage dimulai setelah Continue." if indonesian else "Damage tracking started after Continue.",Color(.65,.74,.72),12))
+	_scroll.set_deferred("scroll_vertical",0)

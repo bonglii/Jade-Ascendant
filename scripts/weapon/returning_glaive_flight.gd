@@ -140,7 +140,7 @@ func _hit(player: Node2D, enemy: Node2D, phase_id: int, multiplier: float) -> vo
 	if phase_id == 0 and bool(result.is_critical): outbound_critical = true
 	CombatFeedback.mark_next_hit_critical(enemy, bool(result.is_critical))
 	var hit_position: Vector2 = enemy.global_position
-	enemy.take_damage(float(result.damage))
+	preload("res://scripts/weapon/run_combat_ledger.gd").apply_hit(enemy,float(result.damage),"celestial_returning_glaive")
 	if hit_flashes.size() >= 6: hit_flashes.pop_front()
 	hit_flashes.append({"position":hit_position, "age":0.0})
 
