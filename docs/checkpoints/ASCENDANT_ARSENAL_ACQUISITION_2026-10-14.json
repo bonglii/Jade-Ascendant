@@ -1,0 +1,22 @@
+{
+  "experiments_per_target": 1000,
+  "scope": "Production offline sampler, expanded57-item pool, default rates, fixed Legendary target, fresh pity, seed14102026; no live/ad/calendar guarantee.",
+  "targets": {
+    "astral_resonance_bell": {
+      "hard_upper_bound": 495,
+      "maximum_observed": 393,
+      "mean_first": 43.281,
+      "mean_five": 210.757,
+      "median_five": 208,
+      "p95_five": 286
+    },
+    "void_piercer_spear": {
+      "hard_upper_bound": 495,
+      "maximum_observed": 339,
+      "mean_first": 42.069,
+      "mean_five": 209.135,
+      "median_five": 211,
+      "p95_five": 280
+    }
+  }
+}

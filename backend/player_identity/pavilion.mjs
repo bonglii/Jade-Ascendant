@@ -1,3 +1,4 @@
+import {EXPANSION_ITEM_IDS} from './mail_rewards.mjs';
 import {fail,json,exact,readBody,digest,randomId,nowSeconds} from './mail_admin.mjs';
 import {REWARD_CATALOG} from './mail_rewards.mjs';
 const ID=/^[a-f0-9]{32}$/;
@@ -29,10 +30,10 @@ export function activeBanner(document,time){
  // Most recent entry has priority; this also allows immediate replacements.
  return [...document.banners].reverse().find(b=>b.enabled&&b.starts_at<=time&&b.ends_at>time)||null;
 }
-export function publicSnapshot(current,time=nowSeconds()){
+export function publicSnapshot(current,time=nowSeconds(),expansionClient=false){
  let validUntil=time+300;
  for(const b of current.document.banners)if(b.enabled)for(const point of [b.starts_at,b.ends_at])if(point>time)validUntil=Math.min(validUntil,point);
- return {version:1,revision:current.revision,server_time:time,valid_until:validUntil,banner:activeBanner(current.document,time)};
+ return {version:1,revision:current.revision,server_time:time,valid_until:validUntil,banner:(()=>{const selected=activeBanner(current.document,time);if(!selected||expansionClient)return selected;const featured=selected.featured.filter(id=>!EXPANSION_ITEM_IDS.includes(id));return featured.length?{...selected,featured}:null;})()};
 }
 export async function publishDocument(db,input){
  exact(input,['expected_revision','request_id','document']);number(input.expected_revision,0,Number.MAX_SAFE_INTEGER-1);if(!ID.test(input.request_id||''))fail(400,'invalid_banner_id');

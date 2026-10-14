@@ -72,3 +72,17 @@ test('reviewed returning glaive rotates through dashboard without changing base 
  const f=await fixture();await f.login();const out=await f.api('/admin/api/pavilion/publish',publication({banners:[banner({featured:['celestial_returning_glaive','jade_binding_chain']})]}));assert.equal(out.status,200);
  const live=await f.api('/v1/pavilion/banner');assert.deepEqual(live.data.banner.featured,['celestial_returning_glaive','jade_binding_chain']);assert.deepEqual(live.data.banner.rates,BASE_RATES);f.db.sql.close();
 });
+
+test('arsenal banners expose reviewed legendary entries only to supported clients',async()=>{
+ const f=await fixture();await f.login();
+ for(const id of ['vermilion_verdict_robe','celestial_aegis_pendant','void_piercer_spear','astral_resonance_bell'])assert.ok(FEATURED_CATALOG.some(x=>x.id===id));
+ assert.ok(!FEATURED_CATALOG.some(x=>x.id==='phoenix_war_fan'));
+ const newBanner=banner({featured:['void_piercer_spear','astral_resonance_bell']});
+ assert.equal((await f.api('/admin/api/pavilion/publish',publication({banners:[newBanner]}))).status,200);
+ assert.equal((await f.api('/v1/pavilion/banner')).data.banner,null);
+ assert.deepEqual((await f.api('/v1/pavilion/banner',undefined,{headers:{'x-jade-ascendant-arsenal':'v1'}})).data.banner.featured,newBanner.featured);
+ const mixed=banner({featured:['nine_heavens_star_sword','void_piercer_spear']});
+ const normalized=normalizeDocument({banners:[mixed]});
+ assert.deepEqual(publicSnapshot({revision:2,document:normalized}).banner.featured,['nine_heavens_star_sword']);
+ f.db.sql.close();
+});

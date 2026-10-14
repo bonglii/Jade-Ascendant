@@ -97,7 +97,7 @@ func _sync_inventory() -> void:
  var owned: int=0
  for id: String in InventoryManager.get_owned_item_ids():
   if EquipmentManager.has_item_definition(id):owned+=1
- header_count.text="KOLEKSI %d/42"%owned
+ header_count.text="KOLEKSI %d/%d"%[owned,EquipmentManager.get_item_ids().size()]
  _refresh_loadout()
 
 func _detail_progress_key() -> String:
@@ -288,7 +288,7 @@ func _build_collection() -> void:
  var equipment_count: int=0
  for id: String in InventoryManager.get_owned_item_ids():
   if EquipmentManager.has_item_definition(id):equipment_count+=1
- header_count=_label("KOLEKSI %d/42"%equipment_count,12,JADE);heading.add_child(header_count)
+ header_count=_label("KOLEKSI %d/%d"%[equipment_count,EquipmentManager.get_item_ids().size()],12,JADE);heading.add_child(header_count)
  var controls:=HBoxContainer.new();controls.add_theme_constant_override("separation",8);page.add_child(controls)
  filter_menu=OptionButton.new();filter_menu.name="Filter";filter_menu.custom_minimum_size.y=44;filter_menu.size_flags_horizontal=Control.SIZE_EXPAND_FILL
  for title_value: String in ["SEMUA","SENJATA","JUBAH","LENGAN","LIONTIN","SEPATU","MATERIAL"]:filter_menu.add_item(title_value)

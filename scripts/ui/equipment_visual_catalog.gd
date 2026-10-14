@@ -4,6 +4,22 @@ extends RefCounted
 ## Gameplay authority remains in EquipmentManager / InventoryManager.
 
 const ITEM_ICON_PATHS: Dictionary = {
+	"frost_lotus_robe":"res://assets/ui/equipment/expansion_20261014/frost_lotus_robe.png",
+	"frost_lotus_bracer":"res://assets/ui/equipment/expansion_20261014/frost_lotus_bracer.png",
+	"frost_lotus_boots":"res://assets/ui/equipment/expansion_20261014/frost_lotus_boots.png",
+	"frost_lotus_pendant":"res://assets/ui/equipment/expansion_20261014/frost_lotus_pendant.png",
+	"vermilion_verdict_robe":"res://assets/ui/equipment/expansion_20261014/vermilion_verdict_robe.png",
+	"vermilion_verdict_bracer":"res://assets/ui/equipment/expansion_20261014/vermilion_verdict_bracer.png",
+	"vermilion_verdict_boots":"res://assets/ui/equipment/expansion_20261014/vermilion_verdict_boots.png",
+	"vermilion_verdict_pendant":"res://assets/ui/equipment/expansion_20261014/vermilion_verdict_pendant.png",
+	"celestial_aegis_robe":"res://assets/ui/equipment/expansion_20261014/celestial_aegis_robe.png",
+	"celestial_aegis_bracer":"res://assets/ui/equipment/expansion_20261014/celestial_aegis_bracer.png",
+	"celestial_aegis_boots":"res://assets/ui/equipment/expansion_20261014/celestial_aegis_boots.png",
+	"celestial_aegis_pendant":"res://assets/ui/equipment/expansion_20261014/celestial_aegis_pendant.png",
+	"phoenix_war_fan":"res://assets/ui/equipment/expansion_20261014/phoenix_war_fan.png",
+	"void_piercer_spear":"res://assets/ui/equipment/expansion_20261014/void_piercer_spear.png",
+	"astral_resonance_bell":"res://assets/ui/equipment/expansion_20261014/astral_resonance_bell.png",
+
 	"celestial_returning_glaive": "res://assets/ui/equipment/final/celestial_returning_glaive.png",
 	"jade_binding_chain": "res://assets/ui/equipment/final/jade_binding_chain.png",
 	"wanderer_jade_jian": "res://assets/ui/equipment/imperial_v3/icons/wanderer_jade_jian.png",

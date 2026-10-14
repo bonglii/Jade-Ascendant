@@ -17,3 +17,5 @@ export function normalizeReward(input){
 }
 export const hasReward=reward=>reward.spirit_stone>0||(reward.celestial_jade||0)>0||(reward.pavilion_seal||0)>0||Object.values(reward.items).some(x=>x>0);
 export const needsGiftClient=reward=>(reward.celestial_jade||0)>0||(reward.pavilion_seal||0)>0||Object.keys(reward.items).some(id=>id!=='refinement_shard');
+
+export const EXPANSION_ITEM_IDS=catalog.equipment.filter(x=>/^(frost_lotus_|vermilion_verdict_|celestial_aegis_)/.test(x.id)||["phoenix_war_fan","void_piercer_spear","astral_resonance_bell"].includes(x.id)).map(x=>x.id);

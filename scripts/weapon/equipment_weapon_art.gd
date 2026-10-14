@@ -1,8 +1,11 @@
 extends RefCounted
 
-## Presentation-only crops of original generated art. All collision/damage stays
-## in the original Spirit Sword projectile. No PNG pixels are edited here.
+## Presentation-only icon/crop metadata. Classic swords apply this to their
+## original projectile. Custom armaments keep their own bounded cast mechanics.
 const ENTRIES: Dictionary = {
+	"phoenix_war_fan": {"path":"res://assets/ui/equipment/expansion_20261014/phoenix_war_fan.png", "bounds":Rect2(0,0,1,1)},
+	"void_piercer_spear": {"path":"res://assets/ui/equipment/expansion_20261014/void_piercer_spear.png", "bounds":Rect2(0,0,1,1)},
+	"astral_resonance_bell": {"path":"res://assets/ui/equipment/expansion_20261014/astral_resonance_bell.png", "bounds":Rect2(0,0,1,1)},
 	"cinnabar_moon_saber": {"path":"res://assets/ui/equipment/imperial_v3/cinnabar_moon_saber.png", "bounds":Rect2(0.01594896,0.34051037,0.96730463,0.39792663)},
 	"mistveil_jian": {"path":"res://assets/ui/equipment/imperial_v3/mistveil_jian.png", "bounds":Rect2(0.02216216,0.19647059,0.95621622,0.72117647)},
 	"mountain_ward_jian": {"path":"res://assets/ui/equipment/imperial_v3/mountain_ward_jian.png", "bounds":Rect2(0.02311161,0.27733935,0.95321308,0.63021421)},

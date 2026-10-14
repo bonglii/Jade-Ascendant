@@ -89,6 +89,9 @@ func _draw() -> void:
 	var primary: Color = palette[0]
 	var secondary: Color = palette[1]
 
+	if active_set_id in ["frost_lotus","vermilion_verdict","celestial_aegis"]:
+		_draw_new_identity(primary,secondary)
+		return
 	_draw_body_presence(primary, secondary)
 	_draw_ground_resonance(primary, secondary)
 
@@ -104,6 +107,9 @@ func _draw() -> void:
 
 func _get_palette(set_id: String) -> Array[Color]:
 	match set_id:
+		"frost_lotus":return [Color(.25,.82,1),Color(.75,.95,1)]
+		"vermilion_verdict":return [Color(1,.25,.18),Color(1,.79,.32)]
+		"celestial_aegis":return [Color(.58,.66,1),Color(1,.88,.58)]
 		"mistbound_disciple":
 			return [
 				Color(0.30, 0.82, 1.00, 1.0),
@@ -333,3 +339,34 @@ func _draw_full_resonance(primary: Color, secondary: Color) -> void:
 		1.4,
 		true
 	)
+
+func _draw_new_identity(primary: Color,secondary: Color) -> void:
+	var full: bool=active_piece_count==4
+	var alpha: float=.65 if full else .30
+	var clock: float=0 if reduced_effects else elapsed
+	draw_arc(GROUND_CENTER,33,0,TAU,40,Color(primary,alpha*.7),1.5,true)
+	if active_set_id=="frost_lotus":
+		for index: int in range(6 if full else 3):
+			var angle: float=index*TAU/6+clock*.16
+			var start: Vector2=GROUND_CENTER+Vector2(cos(angle),sin(angle)*.45)*18
+			var middle: Vector2=GROUND_CENTER+Vector2(cos(angle),sin(angle)*.45)*43
+			var normal:=Vector2(-sin(angle),cos(angle)*.45)*9
+			draw_colored_polygon(PackedVector2Array([start,middle+normal,middle+Vector2(cos(angle),sin(angle)*.45)*12,middle-normal]),Color(primary,alpha*.18))
+			draw_polyline(PackedVector2Array([start,middle+normal,middle+Vector2(cos(angle),sin(angle)*.45)*12,middle-normal,start]),Color(secondary,alpha*.75),1.2,true)
+	elif active_set_id=="vermilion_verdict":
+		for index: int in range(4 if full else 2):
+			var angle: float=index*TAU/4+clock*.45
+			var at: Vector2=BODY_CENTER+Vector2(cos(angle)*38,sin(angle)*20-9)
+			draw_colored_polygon(PackedVector2Array([at+Vector2(0,-14),at+Vector2(4,0),at+Vector2(0,7),at+Vector2(-4,0)]),Color(primary,alpha*.5))
+			draw_line(at+Vector2(0,-14),at+Vector2(0,7),Color(secondary,alpha),1.6)
+	else:
+		var hex:=PackedVector2Array()
+		for index: int in range(7):
+			var angle: float=index*TAU/6-PI*.5+sin(clock*.35)*.04
+			hex.append(BODY_CENTER+Vector2(cos(angle)*39,sin(angle)*44))
+		draw_polyline(hex,Color(secondary,alpha*.85),1.6,true)
+		if full:
+			draw_arc(BODY_CENTER,45,clock*.12,clock*.12+TAU*.72,42,Color(primary,alpha*.42),2,true)
+			for at: Vector2 in hex:draw_circle(at,2.1,Color(secondary,alpha*.8))
+	if full:
+		draw_arc(BODY_CENTER+Vector2(0,-31),11,PI,TAU,22,Color(secondary,alpha*.7),1.2,true)

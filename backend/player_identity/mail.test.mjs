@@ -205,7 +205,7 @@ test('owner reset changes only admin credentials, hides plaintext and revokes se
 });
 
 test('gift catalog matches authored equipment and extended rewards freeze exact receipts',async()=>{
- const {CATALOG}=await import('./mail_rewards.mjs');assert.equal(CATALOG.equipment.length,42);const f=await fixture();await f.login();
+ const {CATALOG}=await import('./mail_rewards.mjs');assert.equal(CATALOG.equipment.length,57);const f=await fixture();await f.login();
  const reward={spirit_stone:20,celestial_jade:500,pavilion_seal:3,items:{refinement_shard:2,nine_heavens_star_sword:1}};const {mail}=await f.publish({reward});assert.deepEqual(mail.reward,reward);
  assert.equal((await f.api('/v1/mail/claim',{mail_id:mail.id,installation_id:installation})).data.error,'client_upgrade_required');
  assert.equal((await f.api('/v1/mail/list?installation_id='+installation)).data.entries.length,0);
@@ -245,4 +245,21 @@ test('returning glaive gifts require their own catalog capability while existing
  const claim={mail_id:mail.id,installation_id:installation};const first=await f.api('/v1/mail/claim',claim,current),again=await f.api('/v1/mail/claim',claim,current);
  assert.equal(first.status,200);assert.deepEqual(first.data.reward,reward);assert.equal(first.data.receipt_id,again.data.receipt_id);
  assert.equal((await f.api('/admin/api/preview',f.draft({reward:{spirit_stone:0,items:{celestial_returning_glaive:2}}}))).status,400);f.db.sql.close();
+});
+
+test('arsenal expansion gifts require upgraded client and reserve each new item exactly once',async()=>{
+ const {EXPANSION_ITEM_IDS}=await import('./mail_rewards.mjs');assert.equal(EXPANSION_ITEM_IDS.length,15);
+ const f=await fixture();await f.login();
+ const headers={'x-jade-mail-features':'gifts-v2','x-jade-equipment-catalog':'jade-chain-v1','x-jade-returning-glaive':'v1','x-jade-ascendant-arsenal':'v1'};
+ for(const id of EXPANSION_ITEM_IDS){
+  const {mail}=await f.publish({reward:{spirit_stone:0,items:{[id]:1}}});const claim={mail_id:mail.id,installation_id:installation};
+  const legacy={...headers};delete legacy['x-jade-ascendant-arsenal'];
+  assert.equal((await f.api('/v1/mail/claim',claim,{headers:legacy})).status,409);
+  assert.equal(f.db.sql.prepare('SELECT count(*) AS n FROM mail_claims WHERE mail_id=?').get(mail.id).n,0);
+  const out=await f.api('/v1/mail/claim',claim,{headers});assert.equal(out.status,200);assert.equal(out.data.reward.items[id],1);
+  assert.equal((await f.api('/v1/mail/claim',claim,{headers})).data.receipt_id,out.data.receipt_id);
+ }
+ const legacyHeaders={...headers};delete legacyHeaders['x-jade-ascendant-arsenal'];
+ assert.equal((await f.api('/v1/mail/list?installation_id='+installation,undefined,{headers:legacyHeaders})).data.entries.length,0);
+ assert.equal((await f.api('/v1/mail/list?installation_id='+installation,undefined,{headers})).data.entries.length,15);f.db.sql.close();
 });

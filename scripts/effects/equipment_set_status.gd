@@ -54,6 +54,7 @@ func _physics_process(delta: float) -> void:
  queue_redraw()
 
 func _draw() -> void:
+ _draw_head_marker()
  if SettingsManager.reduced_effects: return
  var pulse: float=0.65+0.15*sin(age*4.0)
  var color: Color=Color(tint,pulse)
@@ -62,3 +63,26 @@ func _draw() -> void:
   var point: Vector2=Vector2(sin(age*1.5+i*2.0)*11,-20-i*4-fmod(age*10.0,8.0))
   if kind=="bleed":draw_line(point,point+Vector2(1,4),color,1.5,true)
   else:draw_circle(point,1.8,color)
+
+func _draw_head_marker() -> void:
+ var enemy: Node2D=get_parent() as Node2D
+ if enemy==null:return
+ if ticks_left<=0 or kind not in ["bleed","poison","burn"]:return
+ var y: float=-44.0
+ var sprite: AnimatedSprite2D=enemy.get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+ if sprite!=null and sprite.sprite_frames!=null:
+  var texture: Texture2D=sprite.sprite_frames.get_frame_texture(sprite.animation,sprite.frame)
+  if texture!=null:y=minf(y,sprite.position.y-texture.get_height()*absf(sprite.scale.y)*.5-10)
+ var at:=Vector2(0,y)
+ draw_circle(at,9,Color(.025,.045,.06,.94))
+ draw_arc(at,9,0,TAU,20,Color(tint,.95),1.5,true)
+ if kind=="bleed":
+  var drop:=PackedVector2Array([at+Vector2(0,-6),at+Vector2(4,0),at+Vector2(3,4),at+Vector2(0,5),at+Vector2(-3,4),at+Vector2(-4,0)])
+  draw_colored_polygon(drop,tint)
+ elif kind=="poison":
+  draw_rect(Rect2(at+Vector2(-2,-6),Vector2(4,3)),tint)
+  draw_circle(at+Vector2(0,2),4.5,tint)
+  draw_line(at+Vector2(-2,-6),at+Vector2(2,-6),Color(.7,1,.8),1.5)
+ else:
+  draw_colored_polygon(PackedVector2Array([at+Vector2(0,-6),at+Vector2(4,2),at+Vector2(0,6),at+Vector2(-4,2)]),tint)
+ for index: int in range(ticks_left):draw_circle(at+Vector2((index-(ticks_left-1)*.5)*4,13),1.1,tint)

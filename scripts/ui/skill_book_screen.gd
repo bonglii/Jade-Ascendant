@@ -182,6 +182,10 @@ func _is_glaive() -> bool:
 	return EquipmentManager.get_equipped_item_id(EquipmentManager.SLOT_ARMAMENT) == "celestial_returning_glaive"
 
 func _display_name(id: String) -> String:
+	var armament: String = EquipmentManager.get_equipped_item_id(EquipmentManager.SLOT_ARMAMENT)
+	if preload("res://scripts/data/ascendant_arsenal_catalog.gd").IDS.has(armament):
+		if id == "spirit_sword": return preload("res://scripts/data/ascendant_arsenal_catalog.gd").NAMES[armament]
+		if id == "sword_dao_resonance": return "Ascendant Dao Resonance"
 	if _is_glaive():
 		if id == "spirit_sword": return "Celestial Returning Glaive"
 		if id == "sword_dao_resonance": return "Returning Dao Resonance"
@@ -191,6 +195,10 @@ func _display_name(id: String) -> String:
 	return Catalog.get_upgrade_display_name(id)
 
 func _description(id: String) -> String:
+	var armament: String = EquipmentManager.get_equipped_item_id(EquipmentManager.SLOT_ARMAMENT)
+	if preload("res://scripts/data/ascendant_arsenal_catalog.gd").IDS.has(armament):
+		if id == "spirit_sword": return preload("res://scripts/data/ascendant_arsenal_catalog.gd").description(armament)
+		if id == "sword_dao_resonance": return preload("res://scripts/data/ascendant_arsenal_catalog.gd").resonance(armament)
 	if _is_glaive():
 		if id == "spirit_sword": return "Your Legendary armament throws a piercing disc, spins near the aimed position, then returns to your current position. Move to steer its path. Lv.3: crescent flight; Lv.5: staggered twin discs; Lv.7: 58-radius closure on a real catch. One hit per enemy per phase. Cooldown 2.1s, minimum 1.75s; extra tempo strengthens hits at that limit. Run level resets; equipment stars persist."
 		if id == "sword_dao_resonance": return "An outbound critical empowers only the first return hit by 40% base damage, once per disc. No additional projectile is created."

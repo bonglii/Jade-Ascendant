@@ -18,7 +18,7 @@ func run() -> void:
   check(change_scene_to_file("res://scenes/levels/level_1.tscn")==OK,"restart scene")
   await create_timer(.4).timeout
   var restored: Node=current_scene.get_node("player_1/WeaponManager/RunCombatLedger")
-  check(not restored.partial and restored.totals.size()==12,"restart complete source ledger")
+  check(not restored.partial and restored.totals.size()==Ledger.SOURCES.size(),"restart complete source ledger")
   var durable: Dictionary=root.get_node("SaveManager").read_save_data("checkpoint").data.run_combat_report
   check(restored.totals==durable.totals and float(restored.totals.get("fire_orb",0))>=33.5,"restart restores latest autosaved cumulative damage")
   check(is_equal_approx(float(restored.totals.get("celestial_returning_glaive",0)),53.5),"restart cumulative phase-capped damage")

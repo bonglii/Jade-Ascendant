@@ -48,7 +48,7 @@ export function createHandler({verify=verifyAuth,register=registerIdentity}={}) 
     if(url.pathname==='/v1/pavilion/banner') {
       if(request.method!=='GET')return reply(405,{error:'method_not_allowed'});
       if(!env.PROFILE_DB)return reply(503,{error:'service_unavailable'});
-      try {const db=env.PROFILE_DB.withSession?env.PROFILE_DB.withSession('first-primary'):env.PROFILE_DB;return reply(200,publicSnapshot(await currentDocument(db)));}
+      try {const db=env.PROFILE_DB.withSession?env.PROFILE_DB.withSession('first-primary'):env.PROFILE_DB;return reply(200,publicSnapshot(await currentDocument(db),undefined,request.headers.get('x-jade-ascendant-arsenal')==='v1'));}
       catch {return reply(503,{error:'banner_unavailable'});}
     }
     if(url.pathname.startsWith('/admin')||url.pathname.startsWith('/v1/mail/')) {

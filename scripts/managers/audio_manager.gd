@@ -22,6 +22,10 @@ const MUSIC: Dictionary = {
 }
 
 const SFX: Dictionary = {
+	"phoenix_fan":[preload("res://assets/audio/arsenal_20261014/phoenix_fan.wav")],
+	"void_thrust":[preload("res://assets/audio/arsenal_20261014/void_thrust.wav")],
+	"astral_bell":[preload("res://assets/audio/arsenal_20261014/astral_bell.wav")],
+
 	"ui": [
 		preload("res://assets/audio/presentation_v2/ui_tap_01.wav"),
 		preload("res://assets/audio/presentation_v2/ui_tap_02.wav")

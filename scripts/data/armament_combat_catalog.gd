@@ -24,6 +24,10 @@ const DEFAULT_PROFILE: Dictionary = {
 }
 
 const PROFILES: Dictionary = {
+	"phoenix_war_fan":{"style_id":"phoenix_war_fan","combat_display_name":"Phoenix War Fan","motif":"phoenix_war_fan"},
+	"void_piercer_spear":{"style_id":"void_piercer_spear","combat_display_name":"Void Piercer Spear","motif":"void_piercer_spear"},
+	"astral_resonance_bell":{"style_id":"astral_resonance_bell","combat_display_name":"Astral Resonance Bell","motif":"astral_resonance_bell"},
+
 	"celestial_returning_glaive": {"style_id":"celestial_returning_glaive", "combat_display_name":"Celestial Returning Glaive", "motif":"returning_cloud"},
 	"jade_binding_chain": {"style_id": "jade_binding_chain", "combat_display_name": "Jade Binding Chain", "motif": "binding_knot"},
 	"wanderer_jade_jian": {

@@ -1,0 +1,219 @@
+{
+  "frost_lotus_robe": {
+    "source": "frost_lotus",
+    "component_regions": [
+      1
+    ],
+    "bounds": [
+      34,
+      28,
+      614,
+      615
+    ],
+    "size": [
+      256,
+      256
+    ]
+  },
+  "frost_lotus_bracer": {
+    "source": "frost_lotus",
+    "component_regions": [
+      2
+    ],
+    "bounds": [
+      679,
+      131,
+      1226,
+      575
+    ],
+    "size": [
+      256,
+      256
+    ]
+  },
+  "frost_lotus_boots": {
+    "source": "frost_lotus",
+    "component_regions": [
+      6
+    ],
+    "bounds": [
+      70,
+      682,
+      629,
+      1210
+    ],
+    "size": [
+      256,
+      256
+    ]
+  },
+  "frost_lotus_pendant": {
+    "source": "frost_lotus",
+    "component_regions": [
+      5
+    ],
+    "bounds": [
+      767,
+      640,
+      1223,
+      1224
+    ],
+    "size": [
+      256,
+      256
+    ]
+  },
+  "celestial_aegis_robe": {
+    "source": "celestial_aegis",
+    "component_regions": [
+      1
+    ],
+    "bounds": [
+      17,
+      13,
+      652,
+      647
+    ],
+    "size": [
+      256,
+      256
+    ]
+  },
+  "celestial_aegis_bracer": {
+    "source": "celestial_aegis",
+    "component_regions": [
+      2,
+      3
+    ],
+    "bounds": [
+      688,
+      50,
+      1240,
+      648
+    ],
+    "size": [
+      256,
+      256
+    ]
+  },
+  "celestial_aegis_boots": {
+    "source": "celestial_aegis",
+    "component_regions": [
+      6,
+      7
+    ],
+    "bounds": [
+      37,
+      682,
+      667,
+      1200
+    ],
+    "size": [
+      256,
+      256
+    ]
+  },
+  "celestial_aegis_pendant": {
+    "source": "celestial_aegis",
+    "component_regions": [
+      5
+    ],
+    "bounds": [
+      753,
+      625,
+      1209,
+      1241
+    ],
+    "size": [
+      256,
+      256
+    ]
+  },
+  "vermilion_verdict_robe": {
+    "source": "vermilion_verdict",
+    "component_regions": [
+      1
+    ],
+    "bounds": [
+      44,
+      9,
+      664,
+      628
+    ],
+    "size": [
+      256,
+      256
+    ]
+  },
+  "vermilion_verdict_bracer": {
+    "source": "vermilion_verdict",
+    "component_regions": [
+      3,
+      4
+    ],
+    "bounds": [
+      714,
+      59,
+      1191,
+      560
+    ],
+    "size": [
+      256,
+      256
+    ]
+  },
+  "vermilion_verdict_boots": {
+    "source": "vermilion_verdict",
+    "component_regions": [
+      8,
+      9
+    ],
+    "bounds": [
+      122,
+      648,
+      585,
+      1225
+    ],
+    "size": [
+      256,
+      256
+    ]
+  },
+  "vermilion_verdict_pendant": {
+    "source": "vermilion_verdict",
+    "component_regions": [
+      7
+    ],
+    "bounds": [
+      809,
+      622,
+      1195,
+      1242
+    ],
+    "size": [
+      256,
+      256
+    ]
+  },
+  "phoenix_war_fan": {
+    "source": "phoenix_war_fan",
+    "size": [
+      512,
+      512
+    ]
+  },
+  "void_piercer_spear": {
+    "source": "void_piercer_spear",
+    "size": [
+      512,
+      512
+    ]
+  },
+  "astral_resonance_bell": {
+    "source": "astral_resonance_bell",
+    "size": [
+      512,
+      512
+    ]
+  }
+}

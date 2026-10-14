@@ -383,6 +383,7 @@ func _update_choice_card(button: Button, upgrade_id: String) -> void:
 	var engraving: Control = button.get_node_or_null("CardVisual/SkillEngraving")
 	if engraving != null:
 		engraving.skill_id = upgrade_id
+		engraving.armament_id = _arsenal_id() if upgrade_id in ["spirit_sword","sword_dao_resonance"] else ""
 		engraving.queue_redraw()
 	_set_premium_card_text(button, upgrade_id)
 	_update_choice_icon(button, upgrade_id)
@@ -422,6 +423,13 @@ func get_upgrade_state_label(upgrade_id: String) -> String:
 	return "REFINE"
 
 
+func _arsenal_id() -> String:
+	if weapon_manager == null: return ""
+	var starter: Variant = weapon_manager.get_weapon_by_name("Spirit Sword")
+	if starter == null: return ""
+	var id: String = str(starter.get("armament_id"))
+	return id if preload("res://scripts/data/ascendant_arsenal_catalog.gd").IDS.has(id) else ""
+
 func _uses_jade_binding() -> bool:
 	if weapon_manager == null: return false
 	var starter: Variant = weapon_manager.get_weapon_by_name("Spirit Sword")
@@ -433,6 +441,9 @@ func _uses_returning_glaive() -> bool:
 	return starter != null and str(starter.get("armament_id")) == "celestial_returning_glaive"
 
 func get_upgrade_display_name(upgrade_id: String) -> String:
+	if not _arsenal_id().is_empty():
+		if upgrade_id == "spirit_sword": return preload("res://scripts/data/ascendant_arsenal_catalog.gd").NAMES[_arsenal_id()]
+		if upgrade_id == "sword_dao_resonance": return "Ascendant Dao Resonance"
 	if _uses_returning_glaive():
 		if upgrade_id == "spirit_sword": return "Celestial Returning Glaive"
 		if upgrade_id == "sword_dao_resonance": return "Returning Dao Resonance"
@@ -443,6 +454,9 @@ func get_upgrade_display_name(upgrade_id: String) -> String:
 
 
 func get_upgrade_description(upgrade_id: String) -> String:
+	if not _arsenal_id().is_empty():
+		if upgrade_id == "spirit_sword": return preload("res://scripts/data/ascendant_arsenal_catalog.gd").summary(_arsenal_id())
+		if upgrade_id == "sword_dao_resonance": return preload("res://scripts/data/ascendant_arsenal_catalog.gd").resonance(_arsenal_id())
 	if _uses_returning_glaive():
 		if upgrade_id == "spirit_sword": return "Throw, spin, return. Move to steer the returning blade."
 		if upgrade_id == "sword_dao_resonance": return "An outbound critical empowers the first return hit by 40% base damage. Once per disc, no recursive flight."
@@ -460,7 +474,7 @@ func get_upgrade_effect(upgrade_id: String) -> String:
 		"power":
 			return "+10% DAMAGE"
 		"attack_speed":
-			return "FASTER CAST • STRONGER HIT" if _uses_jade_binding() or _uses_returning_glaive() else "ATTACK COOLDOWN  ×0.90"
+			return "FASTER CAST • STRONGER HIT" if _uses_jade_binding() or _uses_returning_glaive() or not _arsenal_id().is_empty() else "ATTACK COOLDOWN  ×0.90"
 		"movement_speed":
 			return "+10% MOVEMENT SPEED"
 		"body_refinement":
@@ -476,6 +490,7 @@ func get_upgrade_effect(upgrade_id: String) -> String:
 		"sword_intent":
 			return "CRITICAL CHANCE  +5%"
 		"sword_dao_resonance":
+			if not _arsenal_id().is_empty(): return "ONE CRITICAL HIT • +40%"
 			return "FIRST RETURN HIT • +40% BASE" if _uses_returning_glaive() else ("EXTRA KNOT • 40% DAMAGE" if _uses_jade_binding() else "SECONDARY SPIRIT SWORD")
 		"yin_yang_reversal":
 			return "4s EMPOWERED ORBIT"
@@ -500,6 +515,8 @@ func _get_weapon_upgrade_effect(upgrade_id: String) -> String:
 
 	var current_level: int = _get_current_weapon_level(upgrade_id)
 	var next_level: int = current_level + 1
+	if upgrade_id == "spirit_sword" and not _arsenal_id().is_empty():
+		return preload("res://scripts/data/ascendant_arsenal_catalog.gd").effect(_arsenal_id(), next_level)
 
 	match upgrade_id:
 		"spirit_sword":
@@ -620,7 +637,7 @@ func _is_final_weapon_refinement(upgrade_id: String) -> bool:
 func _is_weapon_milestone(upgrade_id: String, next_level: int) -> bool:
 	match upgrade_id:
 		"spirit_sword":
-			return next_level in [3, 5, 7] if _uses_jade_binding() or _uses_returning_glaive() else next_level == 5 or next_level == 7
+			return next_level in [3, 5, 7] if _uses_jade_binding() or _uses_returning_glaive() or not _arsenal_id().is_empty() else next_level == 5 or next_level == 7
 		"fire_orb":
 			return next_level == 3 or next_level == 5 or next_level == 7
 		"thunder_talisman":
@@ -1626,6 +1643,11 @@ func _get_choice_visual_state(upgrade_id: String) -> String:
 
 
 func _get_skill_theme(upgrade_id: String) -> Array:
+	if upgrade_id in ["spirit_sword","sword_dao_resonance"]:
+		match _arsenal_id():
+			"phoenix_war_fan": return [Color(1,.43,.19),Color(1,.87,.47),Color(.11,.035,.025,.992)]
+			"void_piercer_spear": return [Color(.69,.52,1),Color(.94,.86,1),Color(.045,.025,.105,.992)]
+			"astral_resonance_bell": return [Color(.94,.75,.33),Color(.55,.91,1),Color(.025,.065,.10,.992)]
 	var raw_theme: Variant = SKILL_THEME_COLORS.get(upgrade_id, [])
 	if raw_theme is Array and (raw_theme as Array).size() >= 3:
 		return raw_theme as Array

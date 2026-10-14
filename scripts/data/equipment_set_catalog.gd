@@ -13,10 +13,17 @@ const SET_ORDER: Array[String] = [
 	"nine_heavens",
 	"jade_bastion",
 	"stillwater_mirror",
-	"solar_meridian"
+	"solar_meridian",
+	"frost_lotus",
+	"vermilion_verdict",
+	"celestial_aegis"
 ]
 
 const SETS: Dictionary = {
+	"frost_lotus":{"display_name":"FROST LOTUS","items":["frost_lotus_robe","frost_lotus_bracer","frost_lotus_boots","frost_lotus_pendant"]},
+	"vermilion_verdict":{"display_name":"VERMILION VERDICT","items":["vermilion_verdict_robe","vermilion_verdict_bracer","vermilion_verdict_boots","vermilion_verdict_pendant"]},
+	"celestial_aegis":{"display_name":"CELESTIAL AEGIS","items":["celestial_aegis_robe","celestial_aegis_bracer","celestial_aegis_boots","celestial_aegis_pendant"]},
+
 	"verdant_wanderer": {
 		"display_name": "VERDANT WANDERER",
 		"items": [
@@ -94,6 +101,10 @@ const SETS: Dictionary = {
 # Tiers 2/3/4 are incremental; four armor/accessory pieces are complete.
 # Values stay intentionally small because individual equipment already contributes stats.
 const SET_IDENTITIES: Dictionary = {
+	"frost_lotus":"LOTUS CHILL",
+	"vermilion_verdict":"FINAL VERDICT",
+	"celestial_aegis":"CELESTIAL REFUGE",
+
 	"verdant_wanderer": "Balanced survival • healing • mobility",
 	"mistbound_disciple": "Mobile tempo • cooldown • moving damage",
 	"moon_seal": "Growth • critical precision • recovery",
@@ -105,6 +116,10 @@ const SET_IDENTITIES: Dictionary = {
 }
 
 const TIER_DESCRIPTIONS: Dictionary = {
+	"frost_lotus":{2:"+5 Max HP",3:"+2% Movement",4:"+1% Damage"},
+	"vermilion_verdict":{2:"+1% Damage",3:"+1% Critical chance",4:"+6 Max HP"},
+	"celestial_aegis":{2:"+6 Max HP",3:"+2% Movement",4:"+2% EXP"},
+
 	"verdant_wanderer": {
 		2: "+4 Max HP",
 		3: "+2% Movement",
@@ -156,6 +171,10 @@ const TIER_DESCRIPTIONS: Dictionary = {
 }
 
 const GAMEPLAY_TIERS: Dictionary = {
+	"frost_lotus":{2:{"max_health_flat":5.0},3:{"movement_speed_bonus":0.02},4:{"damage_bonus":0.01}},
+	"vermilion_verdict":{2:{"damage_bonus":0.01},3:{"critical_chance_bonus":0.01},4:{"max_health_flat":6.0}},
+	"celestial_aegis":{2:{"max_health_flat":6.0},3:{"movement_speed_bonus":0.02},4:{"experience_bonus":0.02}},
+
 	"verdant_wanderer": {
 		2: {"max_health_flat": 4.0},
 		3: {"movement_speed_bonus": 0.02},
@@ -339,8 +358,16 @@ static func get_gameplay_bonus(
 		total += float(tier_data.get(stat_id, 0.0))
 	return total
 
-const SET_RARITIES: Dictionary = {"verdant_wanderer":"common", "mistbound_disciple":"rare", "moon_seal":"rare", "crimson_shadow":"epic", "nine_heavens":"legendary", "jade_bastion":"rare", "stillwater_mirror":"epic", "solar_meridian":"legendary"}
+const SET_RARITIES: Dictionary = {
+	"frost_lotus":"epic",
+	"vermilion_verdict":"legendary",
+	"celestial_aegis":"legendary",
+"verdant_wanderer":"common", "mistbound_disciple":"rare", "moon_seal":"rare", "crimson_shadow":"epic", "nine_heavens":"legendary", "jade_bastion":"rare", "stillwater_mirror":"epic", "solar_meridian":"legendary"}
 const FOUR_PIECE_PASSIVES: Dictionary = {
+	"frost_lotus":{"kind":"frost","name":"LOTUS CHILL","description":"Hit langsung memperlambat musuh 20% selama 0.60 detik; boss 6%. Slow terkuat berlaku, tidak menumpuk."},
+	"vermilion_verdict":{"kind":"verdict","name":"FINAL VERDICT","description":"Hit langsung ke musuh yang sudah berada pada HP 35% atau kurang mendapat +12% damage; boss +6%. Bukan instant kill dan tidak memperkuat DoT."},
+	"celestial_aegis":{"kind":"aegis","name":"CELESTIAL REFUGE","description":"Setelah 8 detik tanpa hit diterima, pulihkan 1 Qi Shield bila charge kosong. Maksimal 1 charge dari pasif; hit dan block mereset waktu. Pause membekukan waktu. Continue memulai jeda baru, bukan shield gratis."},
+
 	"crimson_shadow":{"kind":"bleed", "name":"BLOOD MOON", "description":"Hit memberi Bleeding: 3 tick selama 3 detik, masing-masing 8% damage hit. Tidak menumpuk. Hit lebih kuat menaikkan damage tick tersisa tanpa memperpanjang durasi. Boss menerima separuh damage.", "ratio":0.08, "color":Color(0.95,0.26,0.35)},
 	"nine_heavens":{"kind":"poison", "name":"JADE VENOM", "description":"Hit memberi Racun Giok: 4 tick selama 4 detik, masing-masing 6% damage hit. Tidak menumpuk. Hit lebih kuat menaikkan damage tick tersisa tanpa memperpanjang durasi. Boss menerima separuh damage.", "ratio":0.06, "color":Color(0.22,0.90,0.48)},
 	"stillwater_mirror":{"kind":"armor", "name":"MIRROR ARMOR", "description":"Armor mengurangi damage masuk 8%, setelah Iron Body. Tidak mengubah hitbox atau durasi invulnerable.", "reduction":0.08},

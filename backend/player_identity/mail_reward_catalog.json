@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "equipment": [
     {
       "icon_source": "res://assets/ui/equipment/imperial_v3/icons/ascendant_heart.png",
@@ -10,12 +10,52 @@
       "slot": "pendant"
     },
     {
+      "id": "astral_resonance_bell",
+      "name": "Astral Resonance Bell",
+      "slot": "armament",
+      "rarity": "legendary",
+      "max": 1,
+      "icon_source": "res://assets/ui/equipment/expansion_20261014/astral_resonance_bell.png"
+    },
+    {
       "icon_source": "res://assets/ui/equipment/imperial_v3/icons/bamboo_weave_robe.png",
       "id": "bamboo_weave_robe",
       "max": 1,
       "name": "Bamboo Weave Robe",
       "rarity": "rare",
       "slot": "robe"
+    },
+    {
+      "id": "celestial_aegis_boots",
+      "name": "Celestial Aegis Boots",
+      "slot": "boots",
+      "rarity": "legendary",
+      "max": 1,
+      "icon_source": "res://assets/ui/equipment/expansion_20261014/celestial_aegis_boots.png"
+    },
+    {
+      "id": "celestial_aegis_bracer",
+      "name": "Celestial Aegis Bracer",
+      "slot": "bracer",
+      "rarity": "legendary",
+      "max": 1,
+      "icon_source": "res://assets/ui/equipment/expansion_20261014/celestial_aegis_bracer.png"
+    },
+    {
+      "id": "celestial_aegis_pendant",
+      "name": "Celestial Aegis Pendant",
+      "slot": "pendant",
+      "rarity": "legendary",
+      "max": 1,
+      "icon_source": "res://assets/ui/equipment/expansion_20261014/celestial_aegis_pendant.png"
+    },
+    {
+      "id": "celestial_aegis_robe",
+      "name": "Celestial Aegis Robe",
+      "slot": "robe",
+      "rarity": "legendary",
+      "max": 1,
+      "icon_source": "res://assets/ui/equipment/expansion_20261014/celestial_aegis_robe.png"
     },
     {
       "icon_source": "res://assets/ui/equipment/final/celestial_returning_glaive.png",
@@ -64,6 +104,38 @@
       "name": "Earthseal Bracer",
       "rarity": "rare",
       "slot": "bracer"
+    },
+    {
+      "id": "frost_lotus_boots",
+      "name": "Frost Lotus Boots",
+      "slot": "boots",
+      "rarity": "epic",
+      "max": 1,
+      "icon_source": "res://assets/ui/equipment/expansion_20261014/frost_lotus_boots.png"
+    },
+    {
+      "id": "frost_lotus_bracer",
+      "name": "Frost Lotus Bracer",
+      "slot": "bracer",
+      "rarity": "epic",
+      "max": 1,
+      "icon_source": "res://assets/ui/equipment/expansion_20261014/frost_lotus_bracer.png"
+    },
+    {
+      "id": "frost_lotus_pendant",
+      "name": "Frost Lotus Pendant",
+      "slot": "pendant",
+      "rarity": "epic",
+      "max": 1,
+      "icon_source": "res://assets/ui/equipment/expansion_20261014/frost_lotus_pendant.png"
+    },
+    {
+      "id": "frost_lotus_robe",
+      "name": "Frost Lotus Robe",
+      "slot": "robe",
+      "rarity": "epic",
+      "max": 1,
+      "icon_source": "res://assets/ui/equipment/expansion_20261014/frost_lotus_robe.png"
     },
     {
       "icon_source": "res://assets/ui/equipment/imperial_v3/icons/glassmoon_robe.png",
@@ -168,6 +240,14 @@
       "name": "Nine Heavens Star Sword",
       "rarity": "legendary",
       "slot": "armament"
+    },
+    {
+      "id": "phoenix_war_fan",
+      "name": "Phoenix War Fan",
+      "slot": "armament",
+      "rarity": "epic",
+      "max": 1,
+      "icon_source": "res://assets/ui/equipment/expansion_20261014/phoenix_war_fan.png"
     },
     {
       "icon_source": "res://assets/ui/equipment/imperial_v3/icons/qi_reservoir_pendant.png",
@@ -320,6 +400,46 @@
       "name": "Verdant Qi Robe",
       "rarity": "common",
       "slot": "robe"
+    },
+    {
+      "id": "vermilion_verdict_boots",
+      "name": "Vermilion Verdict Boots",
+      "slot": "boots",
+      "rarity": "legendary",
+      "max": 1,
+      "icon_source": "res://assets/ui/equipment/expansion_20261014/vermilion_verdict_boots.png"
+    },
+    {
+      "id": "vermilion_verdict_bracer",
+      "name": "Vermilion Verdict Bracer",
+      "slot": "bracer",
+      "rarity": "legendary",
+      "max": 1,
+      "icon_source": "res://assets/ui/equipment/expansion_20261014/vermilion_verdict_bracer.png"
+    },
+    {
+      "id": "vermilion_verdict_pendant",
+      "name": "Vermilion Verdict Pendant",
+      "slot": "pendant",
+      "rarity": "legendary",
+      "max": 1,
+      "icon_source": "res://assets/ui/equipment/expansion_20261014/vermilion_verdict_pendant.png"
+    },
+    {
+      "id": "vermilion_verdict_robe",
+      "name": "Vermilion Verdict Robe",
+      "slot": "robe",
+      "rarity": "legendary",
+      "max": 1,
+      "icon_source": "res://assets/ui/equipment/expansion_20261014/vermilion_verdict_robe.png"
+    },
+    {
+      "id": "void_piercer_spear",
+      "name": "Void Piercer Spear",
+      "slot": "armament",
+      "rarity": "legendary",
+      "max": 1,
+      "icon_source": "res://assets/ui/equipment/expansion_20261014/void_piercer_spear.png"
     },
     {
       "icon_source": "res://assets/ui/equipment/imperial_v3/icons/wanderer_jade_jian.png",

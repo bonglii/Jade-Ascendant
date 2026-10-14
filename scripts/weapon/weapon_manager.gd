@@ -24,7 +24,10 @@ const TARGET_REFRESH_INTERVAL: float = 0.12
 const DEBUG_SAMPLE_INTERVAL: float = 12.0
 const CAST_COOLDOWN_FLOORS: Dictionary = {
 	"jade_binding_chain": 1.25,
-	"celestial_returning_glaive": 1.75
+	"celestial_returning_glaive": 1.75,
+	"phoenix_war_fan": .9,
+	"void_piercer_spear": 1.35,
+	"astral_resonance_bell": 2.4
 }
 const MAX_CAST_TEMPO_DAMAGE_MULTIPLIER: float = 5.0
 
@@ -63,6 +66,9 @@ func initialize_weapons() -> void:
 	elif runtime_armament_id == "celestial_returning_glaive":
 		spirit_sword.free()
 		spirit_sword = preload("res://scripts/weapon/celestial_returning_glaive_weapon.gd").new()
+	elif runtime_armament_id in ["phoenix_war_fan","void_piercer_spear","astral_resonance_bell"]:
+		spirit_sword.free()
+		spirit_sword=load("res://scripts/weapon/"+runtime_armament_id+"_weapon.gd").new()
 	spirit_sword.configure_armament(runtime_armament_id)
 
 	add_child(spirit_sword)
@@ -115,14 +121,14 @@ func _process(delta: float) -> void:
 			# immediately, without spending cooldown on empty space.
 			continue
 
-		if weapon.weapon_name == "Spirit Sword" and str(weapon.get("armament_id")) not in ["jade_binding_chain", "celestial_returning_glaive"]:
+		if weapon.weapon_name == "Spirit Sword" and str(weapon.get("armament_id")) not in CAST_COOLDOWN_FLOORS:
 			AudioManager.play_sfx("sword")
 		elif weapon.weapon_name == "Fire Orb":
 			AudioManager.play_sfx("fire")
 		var attack_target_position: Vector2 = target.global_position
 		weapon.attack(player, target)
 		weapon_attack_triggered.emit(
-			weapon.get_combat_display_name() if weapon.weapon_name == "Spirit Sword" and str(weapon.get("armament_id")) in ["jade_binding_chain", "celestial_returning_glaive"] else weapon.weapon_name,
+			weapon.get_combat_display_name() if weapon.weapon_name == "Spirit Sword" and str(weapon.get("armament_id")) in CAST_COOLDOWN_FLOORS else weapon.weapon_name,
 			attack_target_position
 		)
 		_fired_attacks += 1

@@ -65,6 +65,9 @@ func _ready() -> void:
 	DebugLogger.system(str("Vitality Level: ", ProgressionManager.vitality_level))
 
 	connect_blood_qi_kill_tracker()
+	var guard: Node=preload("res://scripts/effects/celestial_aegis_guard.gd").new()
+	guard.name="CelestialAegisGuard"
+	add_child(guard)
 
 ## Menghubungkan Blood Qi ke event kill terpusat dari EnemySpawner.
 func connect_blood_qi_kill_tracker() -> void:

@@ -35,7 +35,7 @@ func refresh() -> void:
 	_busy=true
 	var route: Node=get_node_or_null("/root/PlayerIdentityServerClient")
 	if route==null: _busy=false;return
-	var headers:=PackedStringArray(["Accept: application/json","Host: "+route._endpoint_host(),"User-Agent: GodotEngine/4.7.2"])
+	var headers:=PackedStringArray(["Accept: application/json","X-Jade-Ascendant-Arsenal: v1","Host: "+route._endpoint_host(),"User-Agent: GodotEngine/4.7.2"])
 	if _http.request(route._prepare_route(_http,"/v1/pavilion/banner"),headers)!=OK: _busy=false
 func current() -> Dictionary:
 	if _expires_ticks>0 and Time.get_ticks_msec()<_expires_ticks: return _banner.duplicate(true)

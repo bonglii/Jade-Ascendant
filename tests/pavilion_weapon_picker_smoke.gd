@@ -17,9 +17,9 @@ func run() -> void:
  journey.cleared_stage_keys.append(journey.get_stage_key(1,5))
  var pool: Dictionary=pavilion.get_summon_pool_by_rarity();var count: int=0
  for rarity: String in pool:count+=pool[rarity].size()
- check(count==equipment.get_item_ids().size(),"all 42 equipment open at 1-5")
+ check(count==equipment.get_item_ids().size(),"all equipment open at 1-5")
  for id: String in equipment.get_item_ids():check(id in pool[str(equipment.get_item_data(id).rarity)],"correct rarity pool "+id)
- for id: String in ["jade_binding_chain","celestial_returning_glaive","nine_heavens_star_sword"]:check(id in pavilion.get_wish_target_options(),"weapon target open at 1-5 "+id)
+ for id: String in ["jade_binding_chain","celestial_returning_glaive","nine_heavens_star_sword","void_piercer_spear","astral_resonance_bell"]:check(id in pavilion.get_wish_target_options(),"weapon target open at 1-5 "+id)
  check(not pavilion.is_item_unlocked("celestial_returning_glaive"),"shop/forge stage gate kept separate")
  pavilion.state.pavilion_seals=50;pavilion.state.starter_seals_claimed=true
  root.content_scale_size=Vector2i.ZERO;root.size=Vector2i(648,1152)
@@ -42,7 +42,7 @@ func run() -> void:
   screen._open_target_picker("weapon");await settle()
   overlay=screen._target_overlay;panel=overlay.get_meta("panel")
   check(panel.get_global_rect().end.x<=overlay.get_global_rect().end.x+1,"picker width fits "+str(viewport))
-  for id: String in ["jade_binding_chain","celestial_returning_glaive","nine_heavens_star_sword"]:
+  for id: String in ["jade_binding_chain","celestial_returning_glaive","nine_heavens_star_sword","void_piercer_spear","astral_resonance_bell"]:
    var button: Button=overlay.find_child("Target_"+id,true,false)
    check(button!=null and not button.disabled,"weapon selectable "+id+str(viewport))
   screen._open_target_picker("set");await settle()
