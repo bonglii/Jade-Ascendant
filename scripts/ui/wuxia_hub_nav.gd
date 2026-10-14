@@ -68,6 +68,9 @@ const TAB_DATA: Array[Dictionary] = [
 	},
 ]
 
+@export var sanctuary_style: bool = false
+var sanctuary_frame: StyleBoxTexture
+
 var tab_buttons: Array[Button] = []
 var tab_labels: Array[Label] = []
 var tab_icons: Array[TextureRect] = []
@@ -91,7 +94,16 @@ func _ready() -> void:
 	custom_minimum_size = Vector2(0.0, UiTokens.NAV_HEIGHT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_build_shared_styles()
+	if sanctuary_style:
+		sanctuary_frame = StyleBoxTexture.new()
+		sanctuary_frame.texture = load("res://assets/ui/home/sanctuary/frame_compact.png") as Texture2D
+		sanctuary_frame.draw_center = false
+		sanctuary_frame.texture_margin_left = 38
+		sanctuary_frame.texture_margin_right = 38
+		sanctuary_frame.texture_margin_top = 20
+		sanctuary_frame.texture_margin_bottom = 20
 	_build_tabs()
+	if sanctuary_style:resized.connect(_fit_sanctuary_labels)
 	_refresh_notification_badge()
 	set_process(true)
 
@@ -242,6 +254,9 @@ func _build_tabs() -> void:
 
 		var label := Label.new()
 		label.name = "Label"
+		if sanctuary_style:
+			label.set_meta(&"jade_mobile_readability_v2",true)
+			label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		label.anchor_left = 0.0
 		label.anchor_top = 0.0
@@ -293,6 +308,16 @@ func _refresh_translated_labels() -> void:
 		)
 		tab_labels[tab_index].text = tr(key)
 		tab_buttons[tab_index].tooltip_text = tr(key)
+	if sanctuary_style:_fit_sanctuary_labels()
+
+
+func _fit_sanctuary_labels() -> void:
+	for label: Label in tab_labels:
+		var font: Font = label.get_theme_font("font")
+		var font_size: int = UiTokens.NAV_LABEL_FONT_SIZE
+		var available: float = maxf(30,size.x / TAB_DATA.size() - 7)
+		while font_size > 9 and font.get_string_size(label.text,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size).x > available:font_size -= 1
+		label.add_theme_font_size_override("font_size",font_size)
 
 
 func _create_trials_badge(button: Button) -> Label:
@@ -485,6 +510,8 @@ func _draw() -> void:
 			)
 		)
 	)
+	if sanctuary_frame != null:
+		draw_style_box(sanctuary_frame, Rect2(Vector2.ZERO,size))
 	_draw_shell_accents(nav_width, nav_height)
 
 	for tab_index: int in range(tab_buttons.size()):

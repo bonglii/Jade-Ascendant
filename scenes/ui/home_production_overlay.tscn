@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3]
 
-[ext_resource type="Script" path="res://scripts/ui/home_production_presenter.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/ui/home_sanctuary_presenter.gd" id="1_script"]
 [ext_resource type="Theme" path="res://assets/ui/jade_ui_theme.tres" id="2_theme"]
 
 [node name="HomeProductionOverlay" type="Control"]

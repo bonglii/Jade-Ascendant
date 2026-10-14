@@ -169,6 +169,8 @@ func _install_resource_bar(scene_root: Node, scene_path: String) -> void:
 	)
 
 	_resource_bar = bar
+	if scene_path == HOME_SCENE and bool(scene_root.get_meta("sanctuary_home_ready", false)):
+		_install_sanctuary_wallet(scene_root)
 
 
 func _resource_host(scene_root: Node, scene_path: String) -> Control:
@@ -403,6 +405,12 @@ func _enforce_pavilion_layout(scene_root: Node) -> void:
 
 
 func _format_count(value: int) -> String:
+	if _bound_scene_path == HOME_SCENE and is_instance_valid(_resource_bar) and _resource_bar.has_node("WalletSource0"):
+		for threshold: int in [1000000000, 1000000, 10000]:
+			if value >= threshold:
+				var divisor: float = 1000.0 if threshold == 10000 else float(threshold)
+				var suffix: String = "K" if threshold == 10000 else ("M" if threshold == 1000000 else "B")
+				return "%s%s" % [String.num(floorf(value/divisor*10)/10,1).trim_suffix(".0"),suffix]
 	var remaining: String = str(maxi(value, 0))
 	var groups: Array[String] = []
 	while remaining.length() > 3:
@@ -410,3 +418,70 @@ func _format_count(value: int) -> String:
 		remaining = remaining.left(remaining.length() - 3)
 	groups.push_front(remaining)
 	return ".".join(groups)
+
+func _install_sanctuary_wallet(scene_root: Node) -> void:
+	var bar: Control = _resource_bar
+	if not is_instance_valid(bar): return
+	bar.offset_bottom = 64.0
+	var legacy_frame: Control = bar.get_node_or_null("Frame") as Control
+	if legacy_frame != null: legacy_frame.hide()
+	var art: Script = load("res://scripts/ui/home_sanctuary_art.gd")
+	var glass: Control = art.fill(bar)
+	bar.move_child(glass, 0)
+	var border: Control = art.frame(bar)
+	bar.move_child(border, 1)
+	for index: int in range(3):
+		var button := Button.new()
+		button.name = "WalletSource%d" % index
+		button.set_meta(&"jade_mobile_readability_v2",true)
+		button.focus_mode = Control.FOCUS_NONE
+		button.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
+		button.keep_pressed_outside = false
+		var empty := StyleBoxEmpty.new()
+		for state: String in ["normal", "hover", "pressed", "focus"]: button.add_theme_stylebox_override(state, empty)
+		bar.add_child(button)
+		button.pressed.connect(_on_sanctuary_currency_source.bind(scene_root.get_instance_id(), index))
+		var plus := Label.new()
+		plus.name = "Plus"
+		plus.text = "+"
+		plus.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		plus.add_theme_color_override("font_color",Color(.95,.79,.4))
+		plus.set_meta(&"jade_mobile_readability_v2",true)
+		button.add_child(plus)
+	var layout_callback := func(): _layout_sanctuary_wallet.call_deferred()
+	bar.resized.connect(layout_callback)
+	var row: Control = bar.get_node("ResourceRow") as Control
+	row.resized.connect(layout_callback)
+	for cell: Control in row.get_children(): cell.resized.connect(layout_callback)
+	_layout_sanctuary_wallet.call_deferred()
+
+func _layout_sanctuary_wallet() -> void:
+	if not is_instance_valid(_resource_bar): return
+	var row: HBoxContainer = _resource_bar.get_node_or_null("ResourceRow") as HBoxContainer
+	if row == null or row.get_child_count()!=3: return
+	var unit: float = clampf(_resource_bar.size.x / 610.0,.49,1.8)
+	for index: int in range(3):
+		var cell: Control = row.get_child(index) as Control
+		cell.add_theme_constant_override("separation", 3)
+		(cell.get_child(0) as Control).custom_minimum_size = Vector2.ONE*maxf(18,27*unit)
+		var value: Label = _cell_value_label(cell)
+		if value != null:
+			value.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			value.custom_minimum_size.x = 28*unit
+			value.add_theme_font_size_override("font_size",maxi(12,roundi(20*unit)))
+			value.set_meta(&"jade_mobile_readability_v2",true)
+		var button: Button = _resource_bar.get_node_or_null("WalletSource%d"%index) as Button
+		if button == null: continue
+		button.position = row.position+cell.position
+		button.size = cell.size
+		var plus: Label = button.get_node("Plus") as Label
+		plus.add_theme_font_size_override("font_size",maxi(14,roundi(22*unit)))
+		plus.position = Vector2(maxf(0,cell.size.x-24*unit),0)
+		plus.size = Vector2(22*unit,cell.size.y)
+		plus.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
+func _on_sanctuary_currency_source(scene_id: int, index: int) -> void:
+	var scene: Node = get_tree().current_scene
+	if scene == null or scene.get_instance_id()!=scene_id or SceneTransitionManager.is_transitioning: return
+	var presenter: Node = scene.get_node_or_null("HomeUI/HomeProductionOverlay")
+	if presenter != null and presenter.has_method("open_currency_sources"): presenter.open_currency_sources(index)

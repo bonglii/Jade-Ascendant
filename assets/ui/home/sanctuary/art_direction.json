@@ -1,0 +1,24 @@
+{
+  "approved_reference": "2a7b0a37-95dd-4004-955c-acc276828be5.png",
+  "background": "New clean illustration preserving selected first-layout character composition; no UI baked in.",
+  "frame": "Generated gold/jade open-alpha border; technical crop [3,160,1534,835], proportional resize only.",
+  "margins": {
+    "panel": [
+      76,
+      40
+    ],
+    "compact": [
+      38,
+      20
+    ]
+  },
+  "future_animation_prompt": "6-second seamless 9:16 loop, fixed camera and composition, preserve face/pose/sword. Subtle breathing, gentle hair and robe sway, slow jade aura, waterfall and mist movement. No cuts, zoom, facial morphs, gestures or new objects. Match first and last frame.",
+  "animation_status": "Static authored background installed. Animated input remains user-supplied later.",
+  "library_icon": "Original vector jade grimoire; scaled native SVG with gold detailing.",
+  "runtime_assets": {
+    "assets/ui/home/sanctuary/library_seal.svg": "ed7c217b930db1264bc83a5ca03202bc4069ebc6108244789566750c6f64a133",
+    "assets/ui/home/sanctuary/background.png": "7bb1fc8bbe5ec2396bc60ec913f0e64fe2702a5bec7c64ed96111f65c11b02eb",
+    "assets/ui/home/sanctuary/frame_panel.png": "1b8504f9e409c45386e08fd4eaa3a0bb46e438fcdc6780aa17c9304fb96bb405",
+    "assets/ui/home/sanctuary/frame_compact.png": "ffefe63dd453b1838bbefe8dbdb66ac0cab8070bb1c3425fde48bf3c2e56d1a8"
+  }
+}
