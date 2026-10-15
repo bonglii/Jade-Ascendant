@@ -22,7 +22,31 @@ const HEADER = Object.freeze({
   'referrer-policy':'no-referrer',
   'vary':'Authorization, X-Firebase-AppCheck',
 });
-const reply = (status,body) => new Response(JSON.stringify(body),{status,headers:HEADER});
+const reply = (status,body) => {
+  // Fixed server-owned labels only, no request/token/account/response payload logs.
+  console.info('JADE_IAP_REPAIR status='+status+' stage='+(status===200?'server_reconciled':body.error));
+  return new Response(JSON.stringify(body),{status,headers:HEADER});
+};
+async function emptyPost(request) {
+  if(![null,'0'].includes(request.headers.get('content-length')))return false;
+  if(request.body===null)return true;
+  let reader,timer;
+  try {
+    reader=request.body.getReader();
+    const deadline=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('body_deadline')),1000);});
+    // A real zero-byte HTTP body may be represented by a non-null stream.
+    // Bound both waiting and empty chunks; never buffer an arbitrary client body.
+    for(let i=0;i<8;i++){
+      const {value,done}=await Promise.race([reader.read(),deadline]);
+      if(value?.byteLength)return false;
+      if(done)return true;
+    }
+    return false;
+  } catch {return false;} finally {
+    clearTimeout(timer);
+    if(reader){try{void reader.cancel().catch(()=>{});reader.releaseLock();}catch{}}
+  }
+}
 const sha = v => createHash('sha256').update(v,'utf8').digest('hex');
 export class PurchaseRepairError extends Error {
   constructor(code) { super(code); this.name='PurchaseRepairError'; this.code=code; }
@@ -101,7 +125,7 @@ export function createVerifiedPurchaseRepairHandler({
   return async (request, env) => {
     if(request.method!=='POST') return reply(405,{error:'method_not_allowed'});
     const url=new URL(request.url);
-    if(url.search || request.body!==null || ![null,'0'].includes(request.headers.get('content-length')))
+    if(url.search || !await emptyPost(request))
       return reply(400,{error:'unexpected_request_data'});
     if(env?.JADE_IAP_BACKEND_ENABLED!=='true' ||
        env?.JADE_VERIFIED_PURCHASE_REPAIR_ENABLED!=='true')

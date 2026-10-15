@@ -212,3 +212,39 @@ test('all ledger records are validated before first new credit',async()=>{
  assert.equal(f.get(UID).events.length,0);
  }finally{f.close();}
 });
+
+test('native zero-byte POST stream is accepted and replay cannot credit twice',async()=>{
+ const f=fixture();try{f.ledger(UID);
+  const handler=createVerifiedPurchaseRepairHandler({verifyIdentity:()=>IDENTITY(UID)});
+  const env={DB:f.db,JADE_IAP_BACKEND_ENABLED:'true',JADE_VERIFIED_PURCHASE_REPAIR_ENABLED:'true'};
+  for(let i=0;i<2;i++){
+   const req=new Request('https://example.com/v1/iap/recover-verified',{method:'POST',headers:{'content-length':'0'},body:''});
+   assert.notEqual(req.body,null);
+   const out=await handler(req,env);assert.equal(out.status,200);
+   assert.equal((await out.json()).new_wallet_credits,i===0?1:0);
+  }
+  assert.equal(f.get(UID).wallet.balance,100);assert.equal(f.get(UID).events.length,1);
+ }finally{f.close();}
+});
+
+test('empty stream repair returns zero receipts without inventing wallet/account ownership',async()=>{
+ const f=fixture();try{
+  const handler=createVerifiedPurchaseRepairHandler({verifyIdentity:()=>IDENTITY(UID)});
+  const env={DB:f.db,JADE_IAP_BACKEND_ENABLED:'true',JADE_VERIFIED_PURCHASE_REPAIR_ENABLED:'true'};
+  const out=await handler(new Request('https://example.com/v1/iap/recover-verified',{method:'POST',body:''}),env);
+  assert.equal(out.status,200);assert.deepEqual(await out.json(),{repair_contract_version:1,state:'server_reconciled',verified_purchases:0,new_wallet_credits:0});
+  assert.equal(f.get(UID).wallet,null);assert.equal(f.get(UID).events.length,0);
+ }finally{f.close();}
+});
+test('declared zero length cannot hide a non-empty recovery payload',async()=>{
+ let calls=0;const handler=createVerifiedPurchaseRepairHandler({verifyIdentity:()=>{calls++;throw Error();},repair:()=>assert.fail()});
+ const out=await handler(new Request('https://example.com/v1/iap/recover-verified',{method:'POST',headers:{'content-length':'0'},body:'{}'}),{});
+ assert.equal(out.status,400);assert.equal(calls,0);
+});
+test('non-terminating recovery body is bounded without reaching identity or ledger',async()=>{
+ let calls=0,cancelled=false;
+ const handler=createVerifiedPurchaseRepairHandler({verifyIdentity:()=>{calls++;throw Error();},repair:()=>assert.fail()});
+ const body=new ReadableStream({cancel(){cancelled=true;}});
+ const out=await handler(new Request('https://example.com/v1/iap/recover-verified',{method:'POST',body,duplex:'half'}),{});
+ assert.equal(out.status,400);assert.equal(calls,0);assert.equal(cancelled,true);
+});
