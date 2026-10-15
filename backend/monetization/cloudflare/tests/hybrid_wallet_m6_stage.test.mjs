@@ -1,3 +1,4 @@
+import {seedRefundPrerequisites} from './fixtures/refund_prerequisites.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
@@ -13,6 +14,7 @@ const grant=(id='a')=>({purchase_contract_version:1,state:'grant_ready',grant_id
 class SqliteD1 {
   constructor(){this.db=new DatabaseSync(':memory:');this.db.exec('PRAGMA foreign_keys=ON');
     for(const f of ['0001_iap_ledger.sql','0002_wallet_ledger.sql'])this.db.exec(readFileSync(new URL('../migrations/'+f,import.meta.url),'utf8'));
+    seedRefundPrerequisites(this.db);
     this.queue=Promise.resolve();}
   withSession(name){assert.equal(name,'first-primary');return this;}
   prepare(sql){const s=this.db.prepare(sql);return {bind:(...args)=>({first:async()=>s.get(...args)??null,run:async()=>s.run(...args)})};}

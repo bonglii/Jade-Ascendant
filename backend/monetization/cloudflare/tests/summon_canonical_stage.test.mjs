@@ -1,3 +1,4 @@
+import {seedRefundPrerequisites} from './fixtures/refund_prerequisites.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -28,6 +29,7 @@ class SqliteD1 {
       const file=`000${i}_`+['iap_ledger','wallet_ledger','summon_outcomes','summon_canonical'][i-1]+'.sql';
       this.db.exec(readFileSync(new URL('../migrations/'+file,import.meta.url),'utf8'));
     }
+    seedRefundPrerequisites(this.db);
     this.queue=Promise.resolve();
   }
   withSession(name){assert.equal(name,'first-primary');return this;}

@@ -118,7 +118,9 @@ test('invalid audience fails before any DB write',async()=>{
  const f=fixture();try{assert.equal((await handler()(req(push(notice()),await jwt({aud:'https://evil.invalid/route'})),env(f.db))).status,401);assert.equal(f.voids().length,0);}finally{f.close();}
 });
 test('tampered signature fails before any DB write',async()=>{
- const f=fixture();try{const signed=await jwt();const tail=signed.slice(-1);const altered=signed.slice(0,-1)+(tail==='A'?'B':'A');
+ const f=fixture();try{const signed=await jwt();const parts=signed.split('.');
+  const signature=Buffer.from(parts[2],'base64url');signature[0]^=1;
+  const altered=parts.slice(0,2).join('.')+'.'+signature.toString('base64url');
   assert.equal((await handler()(req(push(notice()),altered),env(f.db))).status,401);assert.equal(f.voids().length,0);}finally{f.close();}
 });
 test('expired JWT is rejected before DB',async()=>{

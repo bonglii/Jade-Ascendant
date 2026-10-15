@@ -1,0 +1,42 @@
+# Opt-in gameplay V2 staging; production configuration remains unchanged.
+name = "jade-ascendant-iap-staging"
+main = "src/worker_staging_tester_r1.mjs"
+compatibility_date = "2026-09-01"
+workers_dev = true
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+JADE_PAID_GAMEPLAY_V2_ENABLED = "true"
+JADE_STAGING_ACCOUNT_GUARD = "true"
+JADE_IAP_BACKEND_ENABLED = "true"
+JADE_PAID_WALLET_READ_ENABLED = "true"
+JADE_SUMMON_RECOVERY_READ_ENABLED = "false"
+JADE_PAID_WALLET_CREDIT_V2_ENABLED = "true"
+JADE_PAID_SUMMON_WRITE_ENABLED = "false"
+JADE_PAID_ENTITLEMENTS_READ_ENABLED = "false"
+JADE_PAID_LOADOUT_READ_ENABLED = "false"
+JADE_PAID_LOADOUT_WRITE_ENABLED = "false"
+JADE_TRUSTED_PROGRESSION_READ_ENABLED = "false"
+JADE_SUMMON_RECOVERY_INDEX_READ_ENABLED = "false"
+JADE_REFUND_RECONCILIATION_READY = "true"
+JADE_PAID_SUMMON_PURCHASE_UNLOCK_ENABLED = "false"
+FIREBASE_PROJECT_ID = "jade-ascendant"
+FIREBASE_PROJECT_NUMBER = "350718070767"
+JADE_ANDROID_FIREBASE_APP_ID = "1:350718070767:android:e5520012a501d2856cf01a"
+
+JADE_CANONICAL_ONBOARDING_RC12_ENABLED = "true"
+
+JADE_REFUND_CRON_JOB_RC7_ENABLED = "true"
+
+JADE_REFUND_RTDN_PUSH_RC9_ENABLED = "false"
+
+JADE_VERIFIED_PURCHASE_REPAIR_ENABLED = "true"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "jade-iap-ledger-staging"
+database_id = "c7c9841f-cbd3-4563-b13f-21ed90d45120"
+migrations_dir = "migrations"
+
+[triggers]
+crons = ["*/15 * * * *"]

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
@@ -13,7 +13,7 @@ const src = join(monet, 'cloudflare', 'src');
 mkdirSync(src, { recursive: true });
 mkdirSync(join(monet, 'src'), { recursive: true });
 writeFileSync(join(fixture, 'package.json'), '{"type":"module"}');
-for (const name of ['index.mjs', 'd1_ledger.mjs', 'play_api.mjs', 'jwt_verify.mjs', 'paid_wallet_read_route_m8.mjs', 'd1_wallet.mjs', 'hybrid_paid_wallet_view_stage.mjs', 'summon_recovery_route_m11.mjs', 'paid_purchase_credit_route_m13.mjs', 'purchase_wallet_authority.mjs', 'paid_summon_write_route_rc.mjs', 'paid_entitlements_read_route_rc.mjs', 'summon_canonical_stage.mjs', 'summon_trusted_resolver_stage.mjs', 'summon_catalog_pinned.mjs']) {
+for (const name of readdirSync(resolve(fileURLToPath(import.meta.url), '..', '..', 'src')).filter(n=>n.endsWith('.mjs'))) {
   copyFileSync(resolve(fileURLToPath(import.meta.url), '..', '..', 'src', name), join(src, name));
 }
 copyFileSync(resolve(fileURLToPath(import.meta.url), '..', '..', '..', 'src', 'product_catalog.mjs'), join(monet, 'src', 'product_catalog.mjs'));

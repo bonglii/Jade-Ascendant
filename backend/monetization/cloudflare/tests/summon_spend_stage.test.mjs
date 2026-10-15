@@ -1,3 +1,4 @@
+import {seedRefundPrerequisites} from './fixtures/refund_prerequisites.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -18,6 +19,7 @@ class SqliteD1 {
   constructor() {
     this.db=new DatabaseSync(':memory:'); this.db.exec('PRAGMA foreign_keys=ON;');
     for(const n of migrationPaths) this.db.exec(readFileSync(new URL('../migrations/'+n,import.meta.url),'utf8'));
+    seedRefundPrerequisites(this.db);
     this.queue=Promise.resolve();
   }
   withSession(m) {assert.equal(m,'first-primary');return this;}

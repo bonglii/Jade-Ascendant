@@ -1,3 +1,4 @@
+import {seedRefundPrerequisites} from './fixtures/refund_prerequisites.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
@@ -16,6 +17,7 @@ class SqliteD1 {
     this.db.exec('PRAGMA foreign_keys=ON;');
     this.db.exec(purchasesSchema);
     this.db.exec(walletSchema);
+    seedRefundPrerequisites(this.db);
     this.queue = Promise.resolve();
   }
   withSession(mode) { assert.equal(mode, 'first-primary'); return this; }

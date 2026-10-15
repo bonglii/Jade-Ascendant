@@ -76,6 +76,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
     private val ioExecutor = Executors.newSingleThreadExecutor { job ->
         Thread(job, "jade-iap-cloudflare-transport").apply { isDaemon = true }
     }
+    private val pendingPaid by lazy { PendingPaidPurchaseStore(FirebaseApp.getInstance().applicationContext) }
     @Volatile private var appCheckInitialized: Boolean = false
 
     override fun getPluginName() = BuildConfig.GODOT_PLUGIN_NAME
@@ -198,7 +199,35 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
         appCheckReady() && (PAID_PURCHASE_V2_TRANSPORT_APPROVED || sandboxCreditEnabled())
 
     @UsedByGodot
+    fun getPendingPaidPurchaseProductV2(): String = try {
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user == null || !isAllowedPurchaseUser(user)) ""
+        else pendingPaid.first(user.uid)?.product ?: ""
+    } catch (_: Exception) { "JOURNAL_UNAVAILABLE" }
+
+    @UsedByGodot
+    fun resumePendingPaidPurchaseV2(product: String) {
+        try {
+            val user = FirebaseAuth.getInstance().currentUser
+            if (user == null || !isAllowedPurchaseUser(user)) { emitPaidPurchaseResult(false, "AUTH_REQUIRED", ""); return }
+            val record = pendingPaid.first(user.uid)
+            if (record == null || record.product != product) { emitPaidPurchaseResult(false, "JOURNAL_UNAVAILABLE", ""); return }
+            authorizeDurablePaidWalletPurchaseV2(product, record.token)
+        } catch (_: Exception) { emitPaidPurchaseResult(false, "JOURNAL_UNAVAILABLE", "") }
+    }
+
+    @UsedByGodot
+    fun authorizeDurablePaidWalletPurchaseV2(product: String, purchaseTokenValue: String) {
+        authorizeWalletPurchase(product, purchaseTokenValue)
+    }
+
+    @UsedByGodot
     fun authorizePaidWalletPurchaseV2(purchaseTokenValue: String) {
+        // Old callers lack product correlation: do not consume a non-durable token.
+        emitPaidPurchaseResult(false, "DURABLE_CLIENT_REQUIRED", "")
+    }
+
+    private fun authorizeWalletPurchase(product: String, purchaseTokenValue: String) {
         if (!PAID_PURCHASE_V2_TRANSPORT_APPROVED && !sandboxCreditEnabled()) {
             emitPaidPurchaseResult(false, "PAID_PURCHASE_V2_LOCKED", ""); return
         }
@@ -219,6 +248,8 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
             val user = FirebaseAuth.getInstance().currentUser
             if (user == null || !isAllowedPurchaseUser(user)) { finish(false, "AUTH_REQUIRED"); return }
             val uid = user.uid
+            try { pendingPaid.save(uid, product, purchaseTokenValue) }
+            catch (_: Exception) { finish(false, "JOURNAL_UNAVAILABLE"); return }
             fun authorize(forceRefresh: Boolean) {
                 if (finished.get()) return
                 if (!isSameUser(uid)) { finish(false, "ACCOUNT_CHANGED"); return }
@@ -240,7 +271,14 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
                                     if (!isSameUser(uid)) finish(false, "ACCOUNT_CHANGED")
                                     else if (!result.success && result.status == "WALLET_PURCHASE_UNAUTHENTICATED" && !forceRefresh)
                                         authorize(true) // one fresh Auth + App Check retry, same purchase token
-                                    else finish(result.success, result.status, result.grantJson)
+                                    else {
+                                        // Only a validated durable server-wallet receipt can retire retry evidence.
+                                        if (result.success) {
+                                            try { pendingPaid.removeConfirmed(uid, product, purchaseTokenValue) }
+                                            catch (_: Exception) { /* Keep evidence; idempotent replay repairs cleanup. */ }
+                                        }
+                                        finish(result.success, result.status, result.grantJson)
+                                    }
                                 }
                             } catch (_: Exception) { finish(false, "APP_CHECK_UNAVAILABLE") }
                         }

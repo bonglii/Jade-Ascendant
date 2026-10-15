@@ -1,3 +1,4 @@
+import {seedRefundPrerequisites} from './fixtures/refund_prerequisites.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -30,6 +31,7 @@ class SqliteD1 {
     for(const filename of ['0001_iap_ledger.sql','0002_wallet_ledger.sql','0003_summon_outcomes.sql','0004_summon_canonical.sql']){
       this.sqlite.exec(readFileSync(new URL('../migrations/'+filename,import.meta.url),'utf8'));
     }
+    seedRefundPrerequisites(this.sqlite);
     this.queue = Promise.resolve();
   }
   withSession(mode){assert.equal(mode,'first-primary'); return this;}

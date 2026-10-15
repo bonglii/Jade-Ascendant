@@ -1,3 +1,4 @@
+import {seedRefundPrerequisites} from './fixtures/refund_prerequisites.mjs';
 /** Real repo integration: run AFTER installing RC3 into project source.
  * These tests intentionally execute the actual canonical stage and pinned RNG resolver.
  */
@@ -22,12 +23,13 @@ class DB{
       '0004_summon_canonical.sql','0005_paid_loadout.sql','0006_trusted_progress_evidence.sql','0007_summon_request_index.sql']){
       this.sql.exec(readFileSync(new URL('../migrations/'+name,import.meta.url),'utf8'));
     }
+    seedRefundPrerequisites(this.sql);
     this.queue=Promise.resolve();
   }
   withSession(mode){assert.equal(mode,'first-primary');return this;}
   prepare(sql){return {bind:(...args)=>({
     first:async()=>this.sql.prepare(sql).get(...args)??null,
-    all:async()=>this.sql.prepare(sql).all(...args),
+    all:async()=>({results:this.sql.prepare(sql).all(...args)}),
     run:async()=>this.sql.prepare(sql).run(...args),
   })};}
   batch(steps){
@@ -81,25 +83,28 @@ test('RC3 replay of SAME UUID never writes a second event or recovery index row'
 test('RC3 missing trusted proof fails before RNG and does not debit',async()=>{
   const db=new DB();await db.seed({withProof:false});let rolls=0;
   const fake=createTestOnlyTrustedResolver(low=>{rolls++;return low;});
-  await assert.rejects(spend(db,fake));
+  await assert.rejects(spend(db,fake),{code:'unverified_progress'});
   assert.equal(rolls,0);
   assert.deepEqual(db.counts(),{balance:1200,walletEvents:1,outcomes:0,recoveryIds:0,revision:0});
   db.close();
 });
 test('RC3 proof revoked after preflight but before batch CAS rolls back ALL writes',async()=>{
   const db=new DB();await db.seed();
+  let invoked=0;
   const revoking=async args=>{
+    invoked++;
     db.sql.prepare("UPDATE iap_trusted_stage_evidence_v1 SET status='revoked' WHERE owner_key=?").run(owner);
     return resolver(args);
   };
   await assert.rejects(spend(db,revoking));
+  assert.equal(invoked,1);
   assert.deepEqual(db.counts(),{balance:1200,walletEvents:1,outcomes:0,recoveryIds:0,revision:0});
   db.close();
 });
 test('RC3 recovery-index SQL failure rolls back debit, outcome and canonical item',async()=>{
   const db=new DB();await db.seed();
   db.sql.exec("CREATE TRIGGER rc3_abort_index BEFORE INSERT ON iap_summon_request_index_v1 BEGIN SELECT RAISE(ABORT,'test_index_error'); END;");
-  await assert.rejects(spend(db));
+  await assert.rejects(spend(db),/test_index_error/);
   assert.deepEqual(db.counts(),{balance:1200,walletEvents:1,outcomes:0,recoveryIds:0,revision:0});
   db.close();
 });

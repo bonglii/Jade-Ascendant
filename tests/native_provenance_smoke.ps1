@@ -7,7 +7,11 @@ foreach ($name in @('Get-JadeNativeTextHash','Test-JadeNativeInputs')) {
     $definition=$ast.Find({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq $name},$true)
     Invoke-Expression $definition.Extent.Text
 }
-$meta=Get-Content -Raw (Join-Path $repo 'docs/checkpoints/IAP_DELIVERY_NATIVE.json') | ConvertFrom-Json
+# CI/local rebuild receipts describe the binary just compiled; historical portable
+# metadata must never be relabelled as proof for changed native source.
+$receipt=Join-Path $repo '.local/native_bridge_receipts/debug.json'
+if (Test-Path -LiteralPath $receipt) { $meta=Get-Content -Raw -LiteralPath $receipt | ConvertFrom-Json }
+else { $meta=Get-Content -Raw (Join-Path $repo 'docs/checkpoints/IAP_DELIVERY_NATIVE.json') | ConvertFrom-Json }
 if (-not (Test-JadeNativeInputs $meta)) {throw 'Matching native inputs rejected'}
 $key='backend/monetization/android_bridge/bridge/src/main/java/com/yungdevstudio/jadeascendant/monetizationbridge/TrustedIapHttps.kt'
 $meta.inputs.PSObject.Properties[$key].Value='0'*64

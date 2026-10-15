@@ -1270,7 +1270,24 @@ func restore_iap_purchases() -> void:
 			"Secure purchase recovery is not available yet."
 		)
 		return
+	if _resume_native_pending_purchase_v2():
+		return
 	billing_provider.call("restore_purchases")
+
+func _resume_native_pending_purchase_v2() -> bool:
+	if not _has_secure_purchase_transport(): return false
+	if not purchase_authority_bridge.call("has_java_method", "getPendingPaidPurchaseProductV2"): return false
+	if not purchase_authority_bridge.call("has_java_method", "resumePendingPaidPurchaseV2"): return false
+	var product: String = str(purchase_authority_bridge.call("getPendingPaidPurchaseProductV2"))
+	if product.is_empty(): return false
+	if not get_iap_product_catalog().has(product):
+		billing_purchase_state_changed.emit("", "recovery_unavailable", "Purchase recovery is unavailable. No new payment was started.")
+		return true
+	secure_purchase_in_flight_product_id = product
+	_secure_purchase_in_flight_binding_m14 = GoogleAccountManager.get_monetization_account_binding()
+	secure_purchase_recovery_rescan_requested = true
+	purchase_authority_bridge.call("resumePendingPaidPurchaseV2", product)
+	return true
 
 
 
@@ -1282,7 +1299,7 @@ func _connect_secure_purchase_transport() -> bool:
 	if bridge == null:
 		return false
 	if (
-		not bridge.call("has_java_method", "authorizePaidWalletPurchaseV2")
+		not bridge.call("has_java_method", "authorizeDurablePaidWalletPurchaseV2")
 		or not bridge.call("has_java_method", "isPaidWalletPurchaseV2TransportConfigured")
 		or not bridge.has_signal("paidPurchaseWalletCreditResult")
 	):
@@ -1297,7 +1314,7 @@ func _has_secure_purchase_transport() -> bool:
 	return (
 		purchase_authority_bridge != null
 		and is_instance_valid(purchase_authority_bridge)
-		and purchase_authority_bridge.call("has_java_method", "authorizePaidWalletPurchaseV2")
+		and purchase_authority_bridge.call("has_java_method", "authorizeDurablePaidWalletPurchaseV2")
 		and purchase_authority_bridge.call("has_java_method", "isPaidWalletPurchaseV2TransportConfigured")
 		and purchase_authority_bridge.has_signal("paidPurchaseWalletCreditResult")
 	)
@@ -1479,7 +1496,8 @@ func _on_billing_purchase_ready(
 	secure_purchase_in_flight_product_id = product_id
 	_secure_purchase_in_flight_binding_m14 = GoogleAccountManager.get_monetization_account_binding()
 	purchase_authority_bridge.call(
-		"authorizePaidWalletPurchaseV2",
+		"authorizeDurablePaidWalletPurchaseV2",
+		product_id,
 		_purchase_token
 	)
 
@@ -1507,7 +1525,7 @@ func _on_paid_purchase_wallet_credit_m14(success: bool, result_status: String, r
 	_secure_purchase_in_flight_binding_m14 = ""
 	if product_id.is_empty():
 		return
-	_last_purchase_stage=result_status if result_status in ["PAID_WALLET_SERVER_CREDITED","AUTH_REQUIRED","AUTH_TOKEN_UNAVAILABLE","APP_CHECK_NOT_READY","APP_CHECK_TOKEN_UNAVAILABLE","APP_CHECK_UNAVAILABLE","ACCOUNT_CHANGED","PAID_PURCHASE_V2_LOCKED","WALLET_PURCHASE_UNAUTHENTICATED","WALLET_PURCHASE_FORBIDDEN","WALLET_PURCHASE_NOT_READY","WALLET_PURCHASE_RATE_LIMITED","WALLET_PURCHASE_BACKEND_LOCKED","WALLET_PURCHASE_HTTP_FAILURE","WALLET_PURCHASE_NETWORK_UNAVAILABLE","INVALID_WALLET_PURCHASE_RESPONSE","REQUEST_TIMEOUT","BUSY"] else "verification_unavailable"
+	_last_purchase_stage=result_status if result_status in ["PAID_WALLET_SERVER_CREDITED","AUTH_REQUIRED","AUTH_TOKEN_UNAVAILABLE","APP_CHECK_NOT_READY","APP_CHECK_TOKEN_UNAVAILABLE","APP_CHECK_UNAVAILABLE","ACCOUNT_CHANGED","PAID_PURCHASE_V2_LOCKED","WALLET_PURCHASE_UNAUTHENTICATED","WALLET_PURCHASE_FORBIDDEN","WALLET_PURCHASE_NOT_READY","WALLET_PURCHASE_RATE_LIMITED","WALLET_PURCHASE_BACKEND_LOCKED","WALLET_PURCHASE_HTTP_FAILURE","WALLET_PURCHASE_NETWORK_UNAVAILABLE","INVALID_WALLET_PURCHASE_RESPONSE","REQUEST_TIMEOUT","BUSY","JOURNAL_UNAVAILABLE","DURABLE_CLIENT_REQUIRED"] else "verification_unavailable"
 	if expected_binding.is_empty() or _live_server_jade_owner() != expected_binding:
 		_cancel_secure_purchase_recovery_rescan()
 		_invalidate_paid_purchase_receipt_m14("identity_changed")
