@@ -1,0 +1,114 @@
+extends SceneTree
+const Paid = preload("res://scripts/monetization/paid_gameplay_v2.gd")
+const Fixture = preload("res://tests/fixtures/paid_gameplay_manager_v2.gd")
+var checks: int=0
+var failures: int=0
+class Bridge extends Node:
+ var id: String=""
+ var body: String=""
+ func requestPaidGameplayV2(request_id: String, raw: String) -> void:
+  id=request_id;body=raw
+func _initialize() -> void: call_deferred("run")
+func check(ok: bool, message: String) -> void:
+ checks+=1
+ if not ok: failures+=1;push_error("PAID_V2_QA "+message)
+func state(binding: String="") -> Dictionary:
+ if binding.is_empty(): binding="a".repeat(64)
+ return {"paid_gameplay_version":2,"account_binding":binding,"catalog_hash":Paid.HASH,"state":"ready","revision":0,"wallet":{"balance":1500,"revision":1},"inventory":{"cloudstep_boots":9},"stars":{"cloudstep_boots":2},"slots":{"armament":"","robe":"","bracer":"","boots":"cloudstep_boots","pendant":""},"pity":{"rare_plus":0,"epic_plus":10,"legendary":10},"wish":"","wish_guaranteed":false,"lifetime_pulls":10,"rates":{"common":6000,"rare":2900,"epic":900,"legendary":200},"lease_seconds":120}
+func reply(manager: Node, bridge: Bridge, snapshot: Dictionary, op: Variant=null) -> void:
+ manager.call("_on_result",bridge.id,true,"PAID_GAMEPLAY_VERIFIED",JSON.stringify({"snapshot":snapshot,"operation":op}))
+func run() -> void:
+ if not OS.get_user_data_dir().contains("jade_paid_v2_qa"): quit(2);return
+ await process_frame
+ check(Paid.local_catalog_hash()==Paid.HASH,"shipping catalog pin")
+ var good: Dictionary=state()
+ check(Paid.valid_snapshot(good,"a".repeat(64)),"known valid contract")
+ var decoded: Variant=JSON.parse_string(JSON.stringify(good))
+ check(Paid.valid_snapshot(decoded,"a".repeat(64)),"actual Godot JSON floating-number decoding")
+ check(not Paid.valid_snapshot(good,"b".repeat(64)),"account isolation")
+ for v: Variant in [-1,0.5,true,"1500",INF,NAN]:
+  var bad: Dictionary=good.duplicate(true);bad.wallet.balance=v
+  check(not Paid.valid_snapshot(bad,"a".repeat(64)),"invalid wallet value")
+ var bad: Dictionary=good.duplicate(true);bad.slots.armament="cloudstep_boots"
+ check(not Paid.valid_snapshot(bad,"a".repeat(64)),"slot boundary")
+ bad=good.duplicate(true);bad.stars.cloudstep_boots=6
+ check(not Paid.valid_snapshot(bad,"a".repeat(64)),"max stars")
+ bad=good.duplicate(true);bad.rates.common=6001
+ check(not Paid.valid_snapshot(bad,"a".repeat(64)),"fixed odds")
+ bad=good.duplicate(true);bad.state="unfunded"
+ check(not Paid.valid_snapshot(bad,"a".repeat(64)),"unfunded cannot assert ownership")
+ bad=good.duplicate(true);bad.inventory.fake_item=1;bad.stars.fake_item=1
+ check(not Paid.valid_snapshot(bad,"a".repeat(64)),"unknown equipment")
+ var manager: Node=Fixture.new();var bridge:=Bridge.new();root.add_child(bridge);root.add_child(manager)
+ manager.set("test_bridge",bridge);manager.set("_binding","a".repeat(64))
+ var journal: String=manager.call("_journal_path")
+ check(not FileAccess.file_exists(journal),"isolated empty journal")
+ check(manager.call("refresh"),"read dispatch")
+ manager.call("_on_result","foreign",true,"PAID_GAMEPLAY_VERIFIED",JSON.stringify({"snapshot":good,"operation":null}))
+ check(bool(manager.get("busy")),"foreign callback ignored")
+ reply(manager,bridge,good)
+ check(manager.call("checkout_ready"),"verified read unlocks candidate checkout")
+ check(int(manager.call("paid_balance"))==1500,"wallet display")
+ var cmd: Dictionary={"request_id":"11111111-1111-4111-8111-111111111111","expected_revision":0,"kind":"refine","item_id":"cloudstep_boots"}
+ check(Paid.valid_command(cmd),"known valid command")
+ var wrong: Dictionary=cmd.duplicate();wrong.balance=9999
+ check(not Paid.valid_command(wrong),"client balance is forbidden in commands")
+ wrong=cmd.duplicate();wrong.item_id="fake_item"
+ check(not Paid.valid_command(wrong),"unknown command item")
+ check(manager.call("_persist",cmd),"durable command journal")
+ check(not manager.call("_persist",cmd),"second pending command refused")
+ check(manager.call("refresh"),"pending resumes identical request")
+ check(bridge.id==cmd.request_id and JSON.parse_string(bridge.body)==cmd,"replay identity preserved")
+ manager.set("_next_read",Time.get_ticks_msec()+60000);manager.set("_deadline",0);manager.call("_process",1.0)
+ check(not bool(manager.get("busy")),"timeout releases UI")
+ check(FileAccess.file_exists(journal),"timeout retains retry evidence")
+ check(manager.call("refresh"),"recovery after timeout")
+ var updated: Dictionary=good.duplicate(true);updated.revision=1;updated.inventory.cloudstep_boots=8;updated.stars.cloudstep_boots=3
+ reply(manager,bridge,updated,{"request_id":cmd.request_id,"kind":"refine","outcome":null})
+ check(not FileAccess.file_exists(journal),"only matching server receipt retires pending command")
+ check(int(manager.call("item_star","cloudstep_boots"))==3,"confirmed stars")
+ var original: Node=PavilionManager.paid_gameplay;PavilionManager.paid_gameplay=manager
+ var host:=Control.new();root.add_child(host)
+ for dimensions: Vector2 in [Vector2(320,568),Vector2(390,844),Vector2(648,1152),Vector2(860,405)]:
+  host.size=dimensions
+  load("res://scripts/ui/paid_armory_panel.gd").open_for(host,"cloudstep_boots")
+  await process_frame;await process_frame
+  var panel: Control=host.get_node("ServerArmory")
+  panel.size=dimensions;panel.call("_fit")
+  await process_frame
+  var frame: Control=panel.get("_panel")
+  check(frame.position.x>=0 and frame.position.y>=0 and frame.get_rect().end.x<=dimensions.x and frame.get_rect().end.y<=dimensions.y,"armory fits "+str(dimensions))
+  var scroller: ScrollContainer=panel.get("_scroll")
+  check(scroller.vertical_scroll_mode==ScrollContainer.SCROLL_MODE_SHOW_NEVER and scroller.horizontal_scroll_mode==ScrollContainer.SCROLL_MODE_DISABLED,"armory scrollbar policy")
+  panel.call("_close");await process_frame
+ host.free()
+ var local_jade: int=PavilionManager.get_local_celestial_jade()
+ check(PavilionManager.get_celestial_jade()==local_jade+1500,"combined display")
+ check(PavilionManager._save_state(),"isolated local save writes")
+ var saved: Dictionary=SaveManager.read_save_data("pavilion")
+ check(saved.get("data",{}).get("celestial_jade",-1)==local_jade,"paid wallet excluded from local save")
+ var local: Dictionary=EquipmentManager.equipped_item_ids.duplicate(true)
+ var stars: Dictionary=EquipmentManager.ascension_stars.duplicate(true)
+ var frozen: Dictionary=EquipmentManager.active_run_loadout_snapshot.duplicate(true)
+ EquipmentManager.equipped_item_ids.boots="";EquipmentManager.active_run_loadout_snapshot={}
+ check(EquipmentManager.get_loadout_equipped_item_id("boots")=="cloudstep_boots","actual equipment overlay")
+ check(EquipmentManager.get_loadout_item_star("cloudstep_boots")==3,"actual equipment star overlay")
+ var previous_count: int=InventoryManager.get_item_count("cloudstep_boots")
+ InventoryManager._migrate_equipped_items_to_inventory()
+ check(InventoryManager.get_item_count("cloudstep_boots")==previous_count,"legacy inventory migration cannot mint paid equipment")
+ var snapshot: Dictionary=EquipmentManager.build_active_run_loadout_snapshot()
+ check(snapshot.equipped_item_ids.boots=="" and not snapshot.ascension_stars.has("cloudstep_boots"),"paid ownership excluded from offline run save")
+ var player:=Node2D.new();root.add_child(player);player.add_to_group("player")
+ check(EquipmentManager.get_runtime_equipped_item_id("boots")=="cloudstep_boots","combat reads paid loadout")
+ manager.snapshot.slots.boots=""
+ check(EquipmentManager.get_runtime_equipped_item_id("boots")=="cloudstep_boots","run selection frozen across remote changes")
+ manager.set("_expires",0)
+ check(EquipmentManager.get_runtime_equipped_item_id("boots")=="","expired lease removes paid overlay")
+ player.free();PavilionManager.paid_gameplay=original
+ EquipmentManager.equipped_item_ids=local;EquipmentManager.ascension_stars=stars;EquipmentManager.active_run_loadout_snapshot=frozen
+ manager.set("test_binding","b".repeat(64));manager.set("_binding","b".repeat(64))
+ check(manager.call("_read_pending").is_empty(),"another account has its own journal")
+ manager.free();bridge.free()
+ print("PAID_GAMEPLAY_V2_CHECKS=",checks,"; FAILURES=",failures)
+ await process_frame
+ quit(0 if failures==0 else 1)

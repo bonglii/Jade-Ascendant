@@ -2,6 +2,7 @@ param(
     [string]$SdkRoot = 'D:\SDK',
     [ValidateSet('locked','staging')][string]$Target = 'locked',
     [switch]$SandboxCredit,
+    [switch]$GameplayV2,
     [string]$GradlePath = ''
 )
 $ErrorActionPreference = 'Stop'
@@ -14,6 +15,7 @@ function Get-JadeNativeTextHash([string]$Path) {
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $oldTarget = $env:JADE_IAP_TARGET
 $oldCredit = $env:JADE_IAP_SANDBOX_CREDIT
+$oldGameplay = $env:JADE_IAP_GAMEPLAY_V2
 $oldSdk = $env:ANDROID_HOME
 $oldSdkRoot = $env:ANDROID_SDK_ROOT
 $work = $null
@@ -21,6 +23,7 @@ $backups = @()
 $written = @()
 $keepWork = $false
 try {
+    if ($GameplayV2 -and (-not $SandboxCredit -or $Target -ne 'staging')) { throw 'Gameplay V2 candidate requires -Target staging -SandboxCredit.' }
     if ($SandboxCredit -and $Target -ne 'staging') { throw 'Sandbox credit requires -Target staging.' }
     if (-not (Test-Path -LiteralPath (Join-Path $SdkRoot 'platforms\android-36\android.jar'))) { throw ('Android SDK 36 was not found in: ' + $SdkRoot) }
     if ($env:JAVA_HOME -and (Test-Path -LiteralPath (Join-Path $env:JAVA_HOME 'bin\javac.exe'))) {
@@ -48,6 +51,8 @@ try {
     if (-not (Test-Path -LiteralPath $GradlePath)) { throw 'Gradle launcher was not found.' }
     $env:ANDROID_HOME = $SdkRoot
     $env:ANDROID_SDK_ROOT = $SdkRoot
+    $env:JADE_IAP_GAMEPLAY_V2 = 'off'
+    if ($GameplayV2) { $env:JADE_IAP_GAMEPLAY_V2 = 'on' }
     $env:JADE_IAP_TARGET = $Target
     $env:JADE_IAP_SANDBOX_CREDIT = 'off'
     if ($SandboxCredit) { $env:JADE_IAP_SANDBOX_CREDIT = 'on' }
@@ -134,6 +139,7 @@ try {
 } finally {
     $env:JADE_IAP_TARGET = $oldTarget
     $env:JADE_IAP_SANDBOX_CREDIT = $oldCredit
+    $env:JADE_IAP_GAMEPLAY_V2 = $oldGameplay
     $env:ANDROID_HOME = $oldSdk
     $env:ANDROID_SDK_ROOT = $oldSdkRoot
     if (-not $keepWork -and $work -and (Test-Path -LiteralPath $work)) { Remove-Item -LiteralPath $work -Recurse -Force }

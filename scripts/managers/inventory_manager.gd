@@ -150,7 +150,7 @@ func _is_equipped(item_id: String) -> bool:
 func _migrate_equipped_items_to_inventory() -> void:
 	var migrated_count: int = 0
 	for slot_id in EquipmentManager.get_slot_ids():
-		var item_id := EquipmentManager.get_equipped_item_id(slot_id)
+		var item_id := str(EquipmentManager.equipped_item_ids.get(slot_id,""))
 		if item_id.is_empty():
 			continue
 		if not is_known_item(item_id):

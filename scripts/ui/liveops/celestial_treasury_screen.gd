@@ -920,9 +920,9 @@ func _update_details() -> void:
 	# price-sort implementation details. Keep real transaction messages for
 	# pending purchases, failure, cancellation and save recovery.
 	var body: String = str(OFFER_COPY.get(_selected_id, ""))
-	if not bool(PavilionManager.get_paid_delivery_readiness().ready):body+="\nPurchased Jade fulfillment is being updated. Checkout is paused; recover existing purchases below."
+	if not bool(PavilionManager.get_paid_delivery_readiness().ready):body+="\nConnect to verify your server wallet before checkout. Recover any pending purchase below."
 	elif not _billing_ready:body+="\nPurchases are unavailable in this build."
-	elif PavilionManager.is_iap_tester_credit_only():body+="\nTEST PURCHASE: server test wallet only. Paid spending is not enabled. Use a Play test payment method."
+	elif PavilionManager.is_iap_tester_credit_only():body+="\nTEST PURCHASE: uses the staging server wallet. Choose a Play test payment method."
 
 	if (
 		not _billing_message.is_empty()
@@ -1037,7 +1037,7 @@ func _on_purchase_delivery_finished(product_id: String, success: bool, message: 
 	_active_purchase_id = ""
 	_message_product_id = product_id
 	_billing_message = (
-		"PURCHASE VERIFIED · TEST SERVER WALLET CREDITED"
+		("TEST PURCHASE VERIFIED · SERVER WALLET CREDITED" if PavilionManager.is_iap_tester_credit_only() else "PURCHASE VERIFIED · SERVER WALLET CREDITED")
 		if success
 		else tr(message)
 	)

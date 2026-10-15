@@ -16,6 +16,8 @@ require(jadeIapTarget == "locked" || jadeIapTarget == "staging") {
 val jadeSandboxCredit = providers.environmentVariable("JADE_IAP_SANDBOX_CREDIT").orElse("off").get()
 require(jadeSandboxCredit == "on" || jadeSandboxCredit == "off") { "Invalid JADE_IAP_SANDBOX_CREDIT" }
 require(jadeSandboxCredit == "off" || jadeIapTarget == "staging") { "Sandbox credit requires staging target" }
+val jadeGameplayV2 = providers.environmentVariable("JADE_IAP_GAMEPLAY_V2").orElse("off").get()
+require(jadeGameplayV2 in setOf("on", "off")) { "Invalid JADE_IAP_GAMEPLAY_V2" }
 val jadeIapWorkerBaseUrl = when (jadeIapTarget) {
     "staging" -> "https://jade-ascendant-iap-staging.jade-ascendant-studio.workers.dev"
     else -> "https://iap-disabled.invalid"
@@ -28,9 +30,11 @@ android {
     // Production/release AAR remains locked even if sandbox environment is set.
     buildTypes {
         getByName("debug") {
+            buildConfigField("boolean", "JADE_IAP_GAMEPLAY_V2_ENABLED", (jadeIapTarget == "staging" && jadeGameplayV2 == "on").toString())
             buildConfigField("boolean", "JADE_IAP_STAGING_CREDIT_ENABLED", (jadeIapTarget == "staging" && jadeSandboxCredit == "on").toString())
         }
         getByName("release") {
+            buildConfigField("boolean", "JADE_IAP_GAMEPLAY_V2_ENABLED", "false")
             buildConfigField("boolean", "JADE_IAP_STAGING_CREDIT_ENABLED", "false")
             buildConfigField("String", "JADE_IAP_WORKER_BASE_URL", "\"https://iap-disabled.invalid\"")
             buildConfigField("String", "JADE_IAP_TARGET", "\"locked\"")

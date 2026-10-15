@@ -7,11 +7,14 @@ extends Node
 ## IMPORTANT: Celestial Jade can only enter runtime through a trusted verified
 ## grant API. The current shipping OfflineProvider does not grant paid currency.
 
+var paid_gameplay: Node
+const PaidGameplayV2 = preload("res://scripts/monetization/paid_gameplay_v2.gd")
 var banner_client: Node
 const BannerClient = preload("res://scripts/managers/pavilion_banner_client.gd")
 
 signal pavilion_changed
 signal summon_completed(result: Dictionary)
+signal paid_summon_finished(result: Dictionary)
 signal store_products_updated(products: Dictionary)
 signal billing_purchase_state_changed(
 	product_id: String,
@@ -205,6 +208,10 @@ var _purchase_repair_view: Dictionary = {"status": "not_connected"}
 var summon_delivery_active: bool = false
 
 func _ready() -> void:
+	paid_gameplay = PaidGameplayV2.new()
+	paid_gameplay.name = "PaidGameplayV2"
+	add_child(paid_gameplay)
+	paid_gameplay.connect("changed", _paid_gameplay_changed)
 	banner_client=BannerClient.new()
 	banner_client.name="BannerConfiguration"
 	add_child(banner_client)
@@ -412,8 +419,16 @@ func _save_state() -> bool:
 	return true
 
 
-func get_celestial_jade() -> int:
+func get_local_celestial_jade() -> int:
 	return maxi(int(state.get("celestial_jade", 0)), 0)
+func get_celestial_jade() -> int:
+	return get_local_celestial_jade() + (int(paid_gameplay.call("paid_balance")) if is_instance_valid(paid_gameplay) else 0)
+func _paid_gameplay_changed() -> void:
+	pavilion_changed.emit()
+	for slot: String in EquipmentManager.get_slot_ids():
+		EquipmentManager.equipment_changed.emit(slot, EquipmentManager.get_loadout_equipped_item_id(slot))
+	if is_instance_valid(paid_gameplay) and bool(paid_gameplay.call("checkout_ready")) and not secure_purchase_authority_ready:
+		call_deferred("_refresh_secure_purchase_context")
 
 
 func _live_server_jade_owner() -> String:
@@ -422,7 +437,10 @@ func _live_server_jade_owner() -> String:
 func get_server_jade_view() -> Dictionary:
 	_server_jade.bind_owner(_live_server_jade_owner())
 	var view: Dictionary=_server_jade.snapshot(Time.get_ticks_msec())
-	view["available_local"]=get_celestial_jade()
+	view["available_local"]=get_local_celestial_jade()
+	if is_instance_valid(paid_gameplay) and bool(paid_gameplay.call("is_verified_ready")):
+		view["balance"]=int(paid_gameplay.call("paid_balance"))
+		view["confirmed"]=true
 	view["last_purchase_stage"]=_last_purchase_stage
 	view["account_ref"]=_live_server_jade_owner().substr(0,12)
 	view["read_stage"]=_server_read_stage
@@ -528,14 +546,14 @@ func get_hybrid_wallet_m7_status() -> Dictionary:
 	if not (grants is Array):
 		return {"error": "invalid_local_grants", "runtime_cutover": false}
 	return HybridWalletGameBridgeM7.status_from_local(
-		get_celestial_jade(), grants as Array,
+		get_local_celestial_jade(), grants as Array,
 		not SECURE_PURCHASE_ACTIVATION_APPROVED
 	)
 
 
 func preview_hybrid_summon_m7(pull_count: int, source: String = "auto") -> Dictionary:
 	return HybridWalletGameBridgeM7.preview_summon(
-		get_celestial_jade(), pull_count, source
+		get_local_celestial_jade(), pull_count, source
 	)
 
 
@@ -1035,7 +1053,7 @@ func get_lifetime_pulls() -> int:
 
 func get_economy_summary() -> Dictionary:
 	return {
-		"celestial_jade": get_celestial_jade(),
+		"celestial_jade": get_local_celestial_jade(),
 		"pavilion_seals": get_pavilion_seals(),
 		"refinement_shards": InventoryManager.get_item_count(InventoryManager.REFINEMENT_SHARD),
 		"spirit_stones": ProgressionManager.spirit_stone,
@@ -1188,7 +1206,8 @@ func get_native_iap_network_route() -> String:
 	return route if route in ["not_attempted","doh_primary","doh_secondary","system","unavailable"] else "unavailable"
 
 func get_paid_delivery_readiness() -> Dictionary:
-	return {"ready":false,"reason":"paid_inventory_contract_mismatch","recovery_available":_server_recovery_bridge()!=null}
+	var usable: bool = is_instance_valid(paid_gameplay) and bool(paid_gameplay.call("checkout_ready"))
+	return {"ready":usable,"reason":"ready" if usable else "server_connection_required","recovery_available":_server_recovery_bridge()!=null}
 
 func is_iap_purchase_supported(product_id: String) -> bool:
 	return (
@@ -1546,6 +1565,7 @@ func _on_paid_purchase_wallet_credit_m14(success: bool, result_status: String, r
 	_server_jade.accept(expected_binding,_paid_purchase_receipt_m14,Time.get_ticks_msec())
 	server_jade_recovery_changed.emit(get_server_jade_view())
 	request_server_jade_snapshot()
+	if is_instance_valid(paid_gameplay): paid_gameplay.call("refresh")
 	last_error = ""
 	billing_purchase_state_changed.emit(product_id, "wallet_credited", "Purchase credited to server wallet.")
 	purchase_delivery_finished.emit(product_id, true, "Purchase credited to server wallet.")
@@ -2049,6 +2069,9 @@ func _sanitize_wish_target() -> void:
 
 func can_summon(pull_count: int, payment_method: String = PAYMENT_AUTO) -> bool:
 	last_error = ""
+	if is_instance_valid(paid_gameplay) and bool(paid_gameplay.get("busy")):
+		last_error = "Wait for server verification."
+		return false
 	if SaveManager.is_progress_read_only():
 		last_error = "Restart the game to recover a pending save."
 		return false
@@ -2074,6 +2097,23 @@ func can_summon(pull_count: int, payment_method: String = PAYMENT_AUTO) -> bool:
 	return true
 
 
+func request_paid_summon(pull_count: int) -> bool:
+	if summon_delivery_active or not is_instance_valid(paid_gameplay) or not is_summon_unlocked(): return false
+	if not bool(paid_gameplay.call("can_summon",pull_count)): return false
+	summon_delivery_active=true
+	var callback:=Callable(self,"_on_paid_summon_finished_v2")
+	paid_gameplay.connect("finished",callback,CONNECT_ONE_SHOT)
+	if not bool(paid_gameplay.call("submit","summon",{"pull_count":pull_count})):
+		if paid_gameplay.is_connected("finished",callback): paid_gameplay.disconnect("finished",callback)
+		summon_delivery_active=false
+		return false
+	return true
+func _on_paid_summon_finished_v2(result: Dictionary) -> void:
+	summon_delivery_active=false
+	if bool(result.get("success",false)) and result.get("operation",{}).get("kind")=="summon": summon_completed.emit(result)
+	paid_summon_finished.emit(result)
+
+
 func summon_equipment(
 	pull_count: int,
 	payment_method: String = PAYMENT_AUTO
@@ -2083,11 +2123,12 @@ func summon_equipment(
 		return _summon_failure(last_error)
 
 	var payment: Dictionary = _resolve_summon_payment(pull_count, payment_method)
+	if payment.is_empty(): return _summon_failure("Payment is unavailable.")
 	var next_state: Dictionary = state.duplicate(true)
 	if str(payment.get("method", "")) == PAYMENT_SEAL:
 		next_state["pavilion_seals"] = get_pavilion_seals() - int(payment["amount"])
 	else:
-		next_state["celestial_jade"] = get_celestial_jade() - int(payment["amount"])
+		next_state["celestial_jade"] = get_local_celestial_jade() - int(payment["amount"])
 
 	var pool: Dictionary = get_summon_pool_by_rarity()
 	var rates_snapshot: Dictionary = get_effective_drop_rates_basis_points()
@@ -2209,7 +2250,7 @@ func _resolve_summon_payment(pull_count: int, payment_method: String) -> Diction
 		if payment_method == PAYMENT_SEAL:
 			return {}
 	if payment_method in [PAYMENT_AUTO, PAYMENT_JADE]:
-		if get_celestial_jade() >= jade_cost:
+		if get_local_celestial_jade() >= jade_cost:
 			return {"method": PAYMENT_JADE, "amount": jade_cost}
 	return {}
 

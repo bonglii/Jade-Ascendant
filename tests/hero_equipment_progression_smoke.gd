@@ -187,10 +187,8 @@ func run() -> void:
   check(screen.detail.get_global_rect().end.y<=screen.nav.position.y+1,"detail never covers navigation")
   screen._close_detail()
  screen.filter_id="material";screen._refresh_all();await process_frame
- check(screen.card_buttons.size()==1 and screen.card_buttons.has("refinement_shard"),"unified material filter")
- screen._show_detail("refinement_shard");await process_frame
- check(screen.detail.find_child("AscendAction",true,false)==null,"material cannot ascend")
- screen._close_detail();screen.filter_id="all";screen._refresh_all();await process_frame
+ check(screen.card_buttons.is_empty(),"retired refinement fragment stays hidden")
+ screen.filter_id="all";screen._refresh_all();await process_frame
  screen.query="no_such_equipment";screen._rebuild_grid();screen._rebuild_grid()
  check(screen.page.get_node_or_null("EmptyResult")!=null,"empty search state")
  screen.query="";screen._rebuild_grid()

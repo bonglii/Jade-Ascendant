@@ -18,8 +18,12 @@ func _scan(node: Node) -> void:
  if node is ScrollContainer:_track_scroll(node)
  for child: Node in node.get_children():_scan(child)
 func _on_node_added(node: Node) -> void:
- if node is Button:_track.call_deferred(node)
- if node is ScrollContainer:_track_scroll.call_deferred(node)
+ if node is Button or node is ScrollContainer:_track_queued.call_deferred(weakref(node))
+func _track_queued(ref: WeakRef) -> void:
+ var node: Object=ref.get_ref()
+ if not is_instance_valid(node):return
+ if node is Button:_track(node)
+ elif node is ScrollContainer:_track_scroll(node)
 func _track_scroll(scroll: ScrollContainer) -> void:
  if not is_instance_valid(scroll) or not scroll.is_inside_tree():return
  var id: int=scroll.get_instance_id()
@@ -58,9 +62,11 @@ func _queue_apply(button: Button) -> void:
  if _applying or not is_instance_valid(button):return
  var id: int=button.get_instance_id()
  if _pending.has(id):return
- _pending[id]=true;_apply_queued.call_deferred(button,id)
-func _apply_queued(button: Button,id: int) -> void:
- _pending.erase(id);_apply(button)
+ _pending[id]=true;_apply_queued.call_deferred(weakref(button),id)
+func _apply_queued(ref: WeakRef,id: int) -> void:
+ _pending.erase(id)
+ var button: Object=ref.get_ref()
+ if is_instance_valid(button) and button is Button:_apply(button)
 func _apply(button: Button) -> void:
  if _applying or not touch_mode or not is_instance_valid(button) or not button.is_inside_tree():return
  _applying=true

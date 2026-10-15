@@ -1,6 +1,10 @@
 extends "res://scripts/ui/pavilion_fast_first_frame.gd"
 ## Approved ritual redesign. Managers remain the only grant/save authority.
 const ImperialStyle = preload("res://scripts/ui/pavilion_imperial_style.gd")
+var _paid_status: Label
+var _paid_buttons: Array[Button] = []
+var _paid_reveal_busy: bool = false
+var _paid_reveal_mode: bool = false
 var _target_press_pos: Vector2
 var _target_scroll_start: int=0
 var _target_epoch: int=0
@@ -173,7 +177,42 @@ func _build_summon_ctas() -> void:
 	for button: Button in [summon_one_button,summon_ten_button]:
 		button.custom_minimum_size = Vector2(0,66)
 		button.add_theme_font_size_override("font_size",16)
+func _build_paid_summons() -> void:
+	_paid_status = _label(summon_controls_stack, "", 13, JADE)
+	_paid_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var row := HBoxContainer.new(); summon_controls_stack.add_child(row)
+	for count: int in [1,10]:
+		var cost: int=100 if count==1 else 900
+		var button: Button=_button(row,"%d× · %d PAID JADE"%[count,cost],_summon_paid.bind(count),true,GOLD)
+		button.custom_minimum_size=Vector2(0,54);button.add_theme_font_size_override("font_size",13)
+		_paid_buttons.append(button)
+	_button(summon_controls_stack,"SERVER ARMORY · TARGET & GEAR",func() -> void: load("res://scripts/ui/paid_armory_panel.gd").open_for($SafeArea),false,JADE)
+	if is_instance_valid(PavilionManager.paid_gameplay): PavilionManager.paid_gameplay.connect("changed",_refresh_paid_summons)
+	if not PavilionManager.paid_summon_finished.is_connected(_on_paid_summon_finished): PavilionManager.paid_summon_finished.connect(_on_paid_summon_finished)
+	_refresh_paid_summons()
+func _refresh_paid_summons() -> void:
+	if not is_instance_valid(_paid_status): return
+	var paid: Node=PavilionManager.paid_gameplay
+	var view: Dictionary=paid.get("snapshot") if is_instance_valid(paid) else {}
+	var pity: Dictionary=view.get("pity",{})
+	_paid_status.text="SERVER STANDARD · %d PAID JADE\n60%% Common · 29%% Rare · 9%% Epic · 2%% Legendary\nSeparate pity: %d/10 · %d/30 · %d/50"%[int(paid.call("paid_balance")) if paid!=null else 0,int(pity.get("rare_plus",0)),int(pity.get("epic_plus",0)),int(pity.get("legendary",0))]
+	for i: int in range(_paid_buttons.size()):
+		_paid_buttons[i].disabled=paid==null or not bool(paid.call("can_summon",1 if i==0 else 10)) or not PavilionManager.is_summon_unlocked() or _paid_reveal_busy or (is_instance_valid(summon_reveal_overlay) and summon_reveal_overlay.visible)
+func _summon_paid(count: int) -> void:
+	if _paid_reveal_busy or (is_instance_valid(summon_reveal_overlay) and summon_reveal_overlay.visible): return
+	_paid_reveal_busy=true;_refresh_paid_summons()
+	if not PavilionManager.request_paid_summon(count):
+		_paid_reveal_busy=false;_set_status("Connect or recover your pending server request.",GOLD);_refresh_paid_summons()
+func _on_paid_summon_finished(result: Dictionary) -> void:
+	if not _paid_reveal_busy: return
+	_paid_reveal_busy=false
+	if bool(result.get("success",false)) and result.get("operation",{}).get("kind")=="summon":
+		_paid_reveal_mode=true
+		_record_session_history(result);_start_summon_reveal(result)
+	else: _set_status(str(result.get("error","Recover your server request.")),GOLD)
+	_sync_wallet_balances();_refresh_summon_panel();_refresh_paid_summons()
 func _build_utility_rows() -> void:
+	_build_paid_summons()
 	locked_watch_ad_button = _button(summon_controls_stack,tr("WATCH AD • FREE 1× SUMMON"),_request_locked_rewarded_ad,false,JADE)
 	locked_watch_ad_button.custom_minimum_size = Vector2(0,48)
 	locked_watch_ad_button.add_theme_font_size_override("font_size",14)
@@ -203,6 +242,7 @@ func _refresh_summon_panel() -> void:
 	elif _banner_notice!=null: _banner_notice.visible=false
 	if summon_one_button != null: summon_one_button.text = _summon_button_text(1)
 	if summon_ten_button != null: summon_ten_button.text = _summon_button_text(10)
+	_refresh_paid_summons()
 func _refresh_rewarded_seal_section() -> void:
 	super()
 	if _ad_hint == null: return
@@ -211,7 +251,8 @@ func _refresh_rewarded_seal_section() -> void:
 	if rewarded_seal_state_label != null and locked_watch_ad_button.disabled:
 		_ad_hint.text = rewarded_seal_state_label.text
 func _summon(count: int) -> void:
-	if summon_reveal_overlay != null and summon_reveal_overlay.visible: return
+	if _paid_reveal_busy or (summon_reveal_overlay != null and summon_reveal_overlay.visible): return
+	_paid_reveal_mode=false
 	super(count)
 func _build_summon_reveal_overlay() -> void:
 	if summon_reveal_overlay != null: return
@@ -473,7 +514,7 @@ func _button(parent_node: Node, value: String, callback: Callable, primary: bool
 	return button
 
 func _actual_stars(id: String) -> String:
-	var star: int = EquipmentManager.get_loadout_item_star(id)
+	var star: int = int(PavilionManager.paid_gameplay.call("item_star",id)) if _paid_reveal_mode else EquipmentManager.get_loadout_item_star(id)
 	return "★".repeat(star)+"☆".repeat(maxi(0,EquipmentManager.MAX_ASCENSION_STAR-star))
 func _begin_formation_detail(index: int) -> void:
 	_formation_detail = true
@@ -626,7 +667,7 @@ func _sync_banner_presentation() -> void:
 func _button_pressure(button: Button, down: bool) -> void:
 	if SettingsManager.reduced_effects or not is_instance_valid(button): return
 	button.pivot_offset=button.size/2.0
-	var previous: Variant=button.get_meta("pressure_tween",null)
+	var previous: Variant=button.get_meta("pressure_tween") if button.has_meta("pressure_tween") else null
 	if previous is Tween: previous.kill()
 	var tween:=create_tween()
 	button.set_meta("pressure_tween",tween)

@@ -2021,7 +2021,7 @@ func apply_server_mail_reward(owner_binding: String,mail_id: String,reward: Dict
 	if _mail_mutation_in_progress or _login_claim_in_progress or SaveManager.is_progress_read_only(): return false
 	ledger.append(marker)
 	var next_pavilion: Dictionary = _build_pavilion_snapshot(ledger)
-	next_pavilion["celestial_jade"] = PavilionManager.get_celestial_jade() + int(reward.get("celestial_jade",0))
+	next_pavilion["celestial_jade"] = PavilionManager.get_local_celestial_jade() + int(reward.get("celestial_jade",0))
 	next_pavilion["pavilion_seals"] = PavilionManager.get_pavilion_seals() + int(reward.get("pavilion_seal",0))
 	_mail_mutation_in_progress = true
 	var result: Dictionary = RewardManager.grant_reward(RewardManager.SOURCE_PAVILION,"live_ops_mail_server_"+mail_id,reward,{"pavilion":next_pavilion})

@@ -31,6 +31,7 @@ const CAST_COOLDOWN_FLOORS: Dictionary = {
 }
 const MAX_CAST_TEMPO_DAMAGE_MULTIPLIER: float = 5.0
 
+var _paid_starter_id: String = ""
 var weapons: Array[Weapon] = []
 var attack_timers: Dictionary = {}
 var _cached_target: Node2D = null
@@ -59,6 +60,8 @@ func initialize_weapons() -> void:
 	var runtime_armament_id: String = EquipmentManager.get_runtime_equipped_item_id(
 		EquipmentManager.SLOT_ARMAMENT
 	)
+	if EquipmentManager._paid_selected_v2(EquipmentManager.SLOT_ARMAMENT, true) == runtime_armament_id:
+		_paid_starter_id = runtime_armament_id
 	var spirit_sword: SpiritSwordWeapon = SpiritSwordWeapon.new()
 	if runtime_armament_id == "jade_binding_chain":
 		spirit_sword.free()
@@ -101,11 +104,14 @@ func _process(delta: float) -> void:
 	_target_refresh_remaining -= delta
 	_log_combat_sample(delta)
 
+	var paid_starter_allowed: bool = _paid_starter_id.is_empty() or EquipmentManager._paid_selected_v2(EquipmentManager.SLOT_ARMAMENT,true) == _paid_starter_id
 	var target: Node2D = null
 	for weapon in weapons:
 		if weapon == null or not is_instance_valid(weapon):
 			continue
 		if not attack_timers.has(weapon):
+			continue
+		if weapon.weapon_name == "Spirit Sword" and not paid_starter_allowed:
 			continue
 
 		attack_timers[weapon] -= delta

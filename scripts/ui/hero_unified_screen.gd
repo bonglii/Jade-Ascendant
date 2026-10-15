@@ -206,7 +206,10 @@ func _refresh_all() -> void:
  var backpack: VBoxContainer=page
  page=fixed_deck
  page.add_theme_constant_override("separation",maxi(4,int(8*unit)))
- var title:=_label("HERO",26,GOLD);page.add_child(title)
+ var heading:=HBoxContainer.new();page.add_child(heading)
+ var title:=_label("HERO",26,GOLD);title.size_flags_horizontal=Control.SIZE_EXPAND_FILL;heading.add_child(title)
+ var armory:=_button("SERVER ARMORY");armory.custom_minimum_size=Vector2(0,38);heading.add_child(armory)
+ armory.pressed.connect(func() -> void: load("res://scripts/ui/paid_armory_panel.gd").open_for(content))
  if content.size.y>=620 or content.size.y>content.size.x:_build_banner()
  _build_slots();_build_resonance()
  page=backpack
@@ -415,6 +418,9 @@ func _card_pressed(id: String) -> void:
  _show_detail(id)
 
 func _slot_pressed(slot: String) -> void:
+ var paid: Node=PavilionManager.paid_gameplay
+ if is_instance_valid(paid) and not str(paid.call("selected_slot",slot)).is_empty():
+  load("res://scripts/ui/paid_armory_panel.gd").open_for(content,str(paid.call("selected_slot",slot)));return
  var id: String=EquipmentManager.get_loadout_equipped_item_id(slot)
  if id.is_empty():filter_id=slot;filter_menu.select(maxi(FILTERS.find(slot),0));_rebuild_grid();scroll.set_deferred("scroll_vertical",0)
  else:_show_detail(id)

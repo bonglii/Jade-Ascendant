@@ -158,7 +158,18 @@ func _using_paid_runtime_rc6() -> bool:
 			return true
 	return false
 
+func _paid_v2() -> Node:
+	var pavilion: Node = get_tree().root.get_node_or_null("PavilionManager") if is_inside_tree() else null
+	return pavilion.get("paid_gameplay") if pavilion != null else null
+func _paid_selected_v2(slot: String, runtime: bool = false) -> String:
+	var paid: Node = _paid_v2()
+	return str(paid.call("selected_slot", slot, runtime)) if paid != null else ""
+func _paid_star_v2(item_id: String, runtime: bool = false) -> int:
+	var paid: Node = _paid_v2()
+	return int(paid.call("item_star", item_id, runtime)) if paid != null else 0
 func can_modify_equipment() -> bool:
+	var paid: Node = _paid_v2()
+	if paid != null and bool(paid.get("busy")): return false
 	# A checkpoint no longer seals the hub. Hub edits are permanent NEXT RUN
 	# choices, while gameplay continues to read the frozen run snapshot. Direct
 	# mid-combat mutation remains blocked.
@@ -182,18 +193,22 @@ func get_item_data(item_id: String) -> Dictionary:
 	return item_data.duplicate(true)
 
 func get_loadout_equipped_item_id(slot_id: String) -> String:
+	var paid: String = _paid_selected_v2(slot_id)
+	if not paid.is_empty(): return paid
 	if not is_valid_slot(slot_id):
 		return ""
 	return str(equipped_item_ids.get(slot_id, ""))
 
 func get_runtime_equipped_item_id(slot_id: String) -> String:
+	var paid: String = _paid_selected_v2(slot_id, true)
+	if not paid.is_empty(): return paid
 	if not is_valid_slot(slot_id):
 		return ""
 	var paid_id: String = _paid_runtime_item_rc6(slot_id)
 	if not paid_id.is_empty():
 		return paid_id
 	if active_run_loadout_snapshot.is_empty():
-		return get_loadout_equipped_item_id(slot_id)
+		return str(equipped_item_ids.get(slot_id, ""))
 	var runtime_equipped: Dictionary = active_run_loadout_snapshot.get(
 		"equipped_item_ids",
 		{}
@@ -203,7 +218,7 @@ func get_runtime_equipped_item_id(slot_id: String) -> String:
 func get_equipped_item_id(slot_id: String) -> String:
 	# Keep the established API safe for gameplay callers without changing hub
 	# semantics. Menu scenes have no real player node and therefore see NEXT RUN.
-	if _should_use_active_run_loadout() or not _paid_runtime_item_rc6(slot_id).is_empty():
+	if _has_gameplay_player() or _should_use_active_run_loadout() or not _paid_runtime_item_rc6(slot_id).is_empty():
 		return get_runtime_equipped_item_id(slot_id)
 	return get_loadout_equipped_item_id(slot_id)
 
@@ -226,11 +241,13 @@ func get_runtime_equipped_item_data(slot_id: String) -> Dictionary:
 	)
 
 func get_equipped_item_data(slot_id: String) -> Dictionary:
-	if _should_use_active_run_loadout() or not _paid_runtime_item_rc6(slot_id).is_empty():
+	if _has_gameplay_player() or _should_use_active_run_loadout() or not _paid_runtime_item_rc6(slot_id).is_empty():
 		return get_runtime_equipped_item_data(slot_id)
 	return get_loadout_equipped_item_data(slot_id)
 
 func get_loadout_item_star(item_id: String) -> int:
+	if has_item_definition(item_id) and _paid_selected_v2(str(get_item_data(item_id).get("slot", ""))) == item_id:
+		return _paid_star_v2(item_id)
 	if not has_item_definition(item_id):
 		return 0
 	return clampi(
@@ -240,6 +257,8 @@ func get_loadout_item_star(item_id: String) -> int:
 	)
 
 func get_runtime_item_star(item_id: String) -> int:
+	if has_item_definition(item_id) and _paid_selected_v2(str(get_item_data(item_id).get("slot", "")), true) == item_id:
+		return _paid_star_v2(item_id, true)
 	if not has_item_definition(item_id):
 		return 0
 	var slot_id: String = str(get_item_data(item_id).get("slot", ""))
@@ -262,7 +281,7 @@ func get_item_star(item_id: String) -> int:
 		var slot_id: String = str(get_item_data(item_id).get("slot", ""))
 		if _paid_runtime_item_rc6(slot_id) == item_id:
 			return 1
-	if _should_use_active_run_loadout():
+	if _has_gameplay_player() or _should_use_active_run_loadout():
 		return get_runtime_item_star(item_id)
 	return get_loadout_item_star(item_id)
 
@@ -301,6 +320,7 @@ func get_ascension_cost(item_id: String) -> int:
 	return get_ascension_cost_for_star(item_id, get_item_star(item_id)+1)
 
 func can_ascend_item(item_id: String) -> bool:
+	if _paid_selected_v2(str(get_item_data(item_id).get("slot", ""))) == item_id: return false
 	if bool(get_item_data(item_id).get("retired",false)): return false
 	return can_modify_equipment() and get_ascension_cost(item_id)>0 and InventoryManager.get_item_count(item_id)>=2
 
@@ -329,7 +349,7 @@ func get_weapon_level_cap(item_id: String, star_override: int=0) -> int:
 func get_item_weapon_level(item_id: String) -> int:
 	if get_weapon_level_cap(item_id)==0: return 0
 	var levels: Dictionary=weapon_levels
-	if _should_use_active_run_loadout(): levels=active_run_loadout_snapshot.get("weapon_levels",{})
+	if _should_use_active_run_loadout() and _paid_selected_v2(SLOT_ARMAMENT, true) != item_id: levels=active_run_loadout_snapshot.get("weapon_levels",{})
 	return clampi(int(levels.get(item_id,1)),1,get_weapon_level_cap(item_id))
 
 func get_weapon_level_multiplier(item_id: String="") -> float:
@@ -343,7 +363,7 @@ func get_weapon_level_cost(item_id: String) -> int:
 
 func can_level_weapon(item_id: String) -> bool:
 	if bool(get_item_data(item_id).get("retired",false)): return false
-	return can_modify_equipment() and InventoryManager.owns_item(item_id) and get_weapon_level_cost(item_id)>0 and ProgressionManager.spirit_stone>=get_weapon_level_cost(item_id)
+	return can_modify_equipment() and (InventoryManager.owns_item(item_id) or _paid_star_v2(item_id) > 0) and get_weapon_level_cost(item_id)>0 and ProgressionManager.spirit_stone>=get_weapon_level_cost(item_id)
 
 func level_weapon(item_id: String) -> bool:
 	if not can_level_weapon(item_id): return false
@@ -391,6 +411,8 @@ func equip_item(item_id: String) -> bool:
 			+ item_id
 		)
 		return false
+	if not _paid_selected_v2(slot_id).is_empty():
+		return false # Clear the server slot in Server Armory before local equip.
 	var previous_item_id := get_loadout_equipped_item_id(slot_id)
 	if previous_item_id == item_id:
 		return false
@@ -406,6 +428,9 @@ func equip_item(item_id: String) -> bool:
 	return true
 
 func unequip_slot(slot_id: String) -> bool:
+	var paid: Node = _paid_v2()
+	if not _paid_selected_v2(slot_id).is_empty():
+		return can_modify_equipment() and bool(paid.call("submit", "equip", {"slot":slot_id,"item_id":""}))
 	if not can_modify_equipment():
 		push_warning(
 			"EquipmentManager: equipment tidak dapat diubah saat gameplay "
@@ -429,6 +454,7 @@ func unequip_slot(slot_id: String) -> bool:
 	return true
 
 func _get_stat_total(stat_id: String, use_runtime: bool) -> float:
+	use_runtime = use_runtime or _has_gameplay_player()
 	var total_bonus: float = 0.0
 	for slot_id in get_slot_ids():
 		var item_data: Dictionary = (
@@ -534,7 +560,9 @@ func _validate_loaded_state() -> void:
 	var valid_levels: Dictionary = {}
 	for raw_id: Variant in weapon_levels:
 		var id: String = str(raw_id)
-		var cap: int = get_weapon_level_cap(id,get_loadout_item_star(id))
+		# Store legitimate earned levels without truncating paid progression before login.
+		# Effective runtime level remains capped by verified stars in get_item_weapon_level.
+		var cap: int = 50 if str(get_item_data(id).get("slot",""))==SLOT_ARMAMENT else 0
 		if cap>0: valid_levels[id]=clampi(int(weapon_levels[raw_id]),1,cap)
 	weapon_levels=valid_levels
 
@@ -637,11 +665,11 @@ func build_active_run_loadout_snapshot() -> Dictionary:
 	var snapshot_stars: Dictionary = {}
 	var snapshot_levels: Dictionary = {}
 	for slot_id in get_slot_ids():
-		var item_id: String = get_loadout_equipped_item_id(slot_id)
+		var item_id: String = str(equipped_item_ids.get(slot_id, ""))
 		snapshot_equipped[slot_id] = item_id
 		if not item_id.is_empty():
-			snapshot_stars[item_id] = get_loadout_item_star(item_id)
-			if slot_id==SLOT_ARMAMENT: snapshot_levels[item_id]=clampi(int(weapon_levels.get(item_id,1)),1,get_weapon_level_cap(item_id,get_loadout_item_star(item_id)))
+			snapshot_stars[item_id] = clampi(int(ascension_stars.get(item_id, 1)), 1, 5)
+			if slot_id==SLOT_ARMAMENT: snapshot_levels[item_id]=clampi(int(weapon_levels.get(item_id,1)),1,get_weapon_level_cap(item_id,clampi(int(ascension_stars.get(item_id, 1)), 1, 5)))
 	return {
 		"version": RUN_LOADOUT_SNAPSHOT_VERSION,
 		"equipped_item_ids": snapshot_equipped,
