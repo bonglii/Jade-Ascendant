@@ -74,9 +74,11 @@ internal object PaidGameplayContractV2 {
  fun commandOrNull(id: String, raw: String): String? = try {
   require(uuid.matches(id) && raw.toByteArray(Charsets.UTF_8).size <= 1024)
   val c=JSONObject(raw); val kind=c.getString("kind")
-  val extra=when(kind){"initialize"->emptySet();"summon"->setOf("pull_count");"equip"->setOf("slot","item_id");"refine","wish"->setOf("item_id");else->error("kind")}
+  val extra=when(kind){"initialize"->emptySet();"summon"->setOf("pull_count");"equip"->setOf("slot","item_id");"refine","wish"->setOf("item_id");"run_start"->setOf("run_id","weapon_level");"run_resume"->setOf("run_id");else->error("kind")}
   require(keys(c)==setOf("request_id","expected_revision","kind")+extra && c.getString("request_id")==id)
   require(whole(c.opt("expected_revision"),0,9_007_199_254_740_989L))
+  if("run_id" in extra) require(c.opt("run_id") is String && uuid.matches(c.getString("run_id")))
+  if(kind=="run_start") require(whole(c.opt("weapon_level"),0,50))
   if(kind=="initialize") require(c.getLong("expected_revision")==0L)
   if(kind=="summon") require(whole(c.opt("pull_count"),1,10) && c.getInt("pull_count") in setOf(1,10))
   if("item_id" in extra){val item=c.getString("item_id");require(item=="" || item in items)
@@ -119,6 +121,13 @@ internal object PaidGameplayContractV2 {
      val id=item.getString("item_id");require(id in items && items[id]?.second==item.getString("rarity") && whole(item.opt("duplicate_shards"),0,0))
      for(flag in listOf("duplicate","hard_legendary_pity","wish_hit","wish_fate_activated","wish_fate_consumed")) require(item.opt(flag) is Boolean)
     }
+   }else if(kind=="run_start" || kind=="run_resume"){
+    val r=op.getJSONObject("outcome");require(exact(r,"run_id","slots","stars","weapon_level") && r.getString("run_id")==c.getString("run_id"))
+    val rs=r.getJSONObject("slots");val rt=r.getJSONObject("stars");require(keys(rs)==slots)
+    val ids=slots.map{rs.getString(it)}.filter{it!=""}.toSet();require(keys(rt)==ids)
+    for(slot in slots){val id=rs.getString(slot);require(id=="" || (inv.has(id) && items[id]?.first==slot && whole(rt.opt(id),1,5)))}
+    val arm=rs.getString("armament");require(whole(r.opt("weapon_level"),if(arm=="")0L else 1L,if(arm=="")0L else rt.getLong(arm)*10))
+    if(kind=="run_start") require(r.getLong("weapon_level")==c.getLong("weapon_level"))
    }else require(op.isNull("outcome"))
   }
   raw.toString()

@@ -2,7 +2,7 @@ name: IAP delivery boundaries
 on:
   push:
     branches: ['checkpoint/iap-fasttrack-20261010']
-    paths: ['scripts/managers/pavilion_manager.gd', 'scripts/monetization/paid_gameplay_v2.gd', 'scripts/ui/paid_armory_panel.gd', 'scripts/ui/equipment_manager.gd', 'scripts/ui/hero_unified_screen.gd', 'scripts/ui/pavilion_sanctum_screen.gd', 'tests/paid_gameplay_v2_smoke.gd', 'tests/fixtures/paid_gameplay_manager_v2.gd', 'scripts/ui/mobile_touch_presentation_guard.gd', 'scripts/ui/liveops/celestial_treasury_screen.gd', 'scripts/weapon/weapon_manager.gd', 'scripts/managers/inventory_manager.gd', 'scripts/managers/live_ops_manager.gd', 'backend/**', 'addons/JadeMonetizationNativeBridge/**', 'tests/*publish*.ps1', 'tests/native_provenance_smoke.ps1', 'docs/checkpoints/IAP_DELIVERY_NATIVE.json', '.github/workflows/iap-delivery-qa.yml']
+    paths: ['scripts/managers/pavilion_manager.gd', 'scripts/monetization/paid_gameplay_v2.gd', 'scripts/ui/paid_armory_panel.gd', 'scripts/ui/equipment_manager.gd', 'scripts/ui/hero_unified_screen.gd', 'scripts/ui/pavilion_sanctum_screen.gd', 'tests/paid_gameplay_v2_smoke.gd', 'tests/paid_run_recovery_smoke.gd', 'tests/qa_runtime_teardown.gd', 'scripts/managers/checkpoint_manager.gd', 'scripts/managers/scene_transition_manager.gd', 'tests/fixtures/paid_gameplay_manager_v2.gd', 'scripts/ui/mobile_touch_presentation_guard.gd', 'scripts/ui/liveops/celestial_treasury_screen.gd', 'scripts/weapon/weapon_manager.gd', 'scripts/managers/inventory_manager.gd', 'scripts/managers/live_ops_manager.gd', 'backend/**', 'addons/JadeMonetizationNativeBridge/**', 'tests/*publish*.ps1', 'tests/native_provenance_smoke.ps1', 'docs/checkpoints/IAP_DELIVERY_NATIVE.json', '.github/workflows/iap-delivery-qa.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -78,14 +78,14 @@ jobs:
         run: |
           set -euo pipefail
           qa_failed=0
-          for spec in 'paid_gameplay_v2_smoke:jade_paid_v2_qa:' 'iap_delivery_boundary_smoke:jade_iap_boundary_qa:' 'server_jade_delivery_smoke:jade_server_delivery_qa:' 'hero_equipment_progression_smoke:jade_hero_qa:' 'hero_equipment_progression_smoke:jade_hero_qa:resume' 'hero_upgrade_burst_smoke:jade_hero_qa_burst:' 'pavilion_sanctum_smoke:jade_gacha_qa:' 'pavilion_sanctum_smoke:jade_gacha_qa:restart'; do
+          for spec in 'paid_gameplay_v2_smoke:jade_paid_v2_qa:' 'paid_run_recovery_smoke:jade_paid_run_qa:' 'paid_run_recovery_smoke:jade_paid_run_qa:resume' 'iap_delivery_boundary_smoke:jade_iap_boundary_qa:' 'server_jade_delivery_smoke:jade_server_delivery_qa:' 'hero_equipment_progression_smoke:jade_hero_qa:' 'hero_equipment_progression_smoke:jade_hero_qa:resume' 'hero_upgrade_burst_smoke:jade_hero_qa_burst:' 'pavilion_sanctum_smoke:jade_gacha_qa:' 'pavilion_sanctum_smoke:jade_gacha_qa:restart'; do
             IFS=: read -r test_name qa_home mode <<< "$spec"
             args=()
             if [[ -n "$mode" ]]; then args=(-- "--$mode"); fi
             log="/tmp/${test_name}${mode:+_$mode}.log"
             if XDG_DATA_HOME="/tmp/$qa_home" timeout 120 /tmp/jade-qa/Godot_v4.7.2-stable_linux.x86_64 --headless --audio-driver Dummy --path /tmp/jade-qa/project --script "res://tests/$test_name.gd" "${args[@]}" 2>&1 | tee "$log"; then
-              if rg 'ERROR:|SCRIPT ERROR:' "$log"; then qa_failed=1; fi
-              if ! rg -q '(CHECKS|checks)=[1-9][0-9]*' "$log"; then
+              if grep -E 'ERROR:|SCRIPT ERROR:' "$log"; then qa_failed=1; fi
+              if ! grep -Eq '(CHECKS|checks)=[1-9][0-9]*' "$log"; then
                 echo "Missing QA completion marker: $test_name $mode"
                 qa_failed=1
               fi

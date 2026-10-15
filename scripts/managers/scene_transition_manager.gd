@@ -309,6 +309,18 @@ func _finish_transition() -> void:
 		_fail_transition(ERR_INVALID_DATA)
 		return
 
+	if completed_path.begins_with("res://scenes/levels/"):
+		var pavilion: Node=get_node_or_null("/root/PavilionManager")
+		var session: Node=get_node_or_null("/root/GameSession")
+		var paid: Node=pavilion.get("paid_gameplay") if pavilion!=null else null
+		if paid!=null:
+			if is_instance_valid(loading_screen): loading_screen.configure({"title":"VERIFYING RUN","subtitle":"Restoring your equipment securely","tip":"Your saved run stays intact if the connection is interrupted."})
+			var allowed: bool=await paid.call("prepare_scene_run",bool(session.get("continue_game")) if session!=null else false)
+			if not allowed:
+				_fail_transition(ERR_UNAUTHORIZED,true)
+				_show_paid_run_notice()
+				return
+
 	var change_error: Error = get_tree().change_scene_to_packed(packed_scene)
 	if change_error != OK:
 		_fail_transition(change_error)
@@ -323,10 +335,11 @@ func _finish_transition() -> void:
 	DebugLogger.system(str("Celestial Gate selesai: ", completed_path))
 	transition_completed.emit(completed_path)
 
-func _fail_transition(error_code: Error) -> void:
+func _fail_transition(error_code: Error, network_gate: bool=false) -> void:
 	var failed_path: String = target_scene_path
 	set_process(false)
-	push_error(
+	var report: Callable=push_warning if network_gate else push_error
+	report.call(
 		"SceneTransitionManager: gagal membuka scene "
 		+ failed_path
 		+ ". Error code: "
@@ -346,3 +359,16 @@ func _reset_state() -> void:
 	loading_screen = null
 	completing_transition = false
 	previous_tree_paused = false
+
+func _show_paid_run_notice() -> void:
+	if get_node_or_null("PaidRunNotice")!=null: return
+	var dialog:=AcceptDialog.new(); dialog.name="PaidRunNotice"; dialog.title="RUN VERIFICATION"
+	dialog.dialog_text="Reconnect using the account that owns this run, then retry. Your checkpoint is preserved."
+	dialog.dialog_autowrap=true; dialog.ok_button_text="UNDERSTOOD"
+	var frame:=preload("res://scripts/ui/pavilion_imperial_style.gd").new(); frame.selected=true
+	dialog.add_theme_stylebox_override("panel",frame)
+	dialog.add_theme_color_override("font_color",Color(0.95,0.86,0.65))
+	dialog.get_ok_button().custom_minimum_size=Vector2(160,44)
+	add_child(dialog); dialog.confirmed.connect(dialog.queue_free); dialog.canceled.connect(dialog.queue_free)
+	var viewport: Vector2i=get_viewport().get_visible_rect().size
+	dialog.popup_centered(Vector2i(mini(380,maxi(200,viewport.x-32)),190))

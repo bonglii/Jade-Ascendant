@@ -1,10 +1,10 @@
 # Paid client V2 candidate — 2026-10-15
 
-Current validation: see `IAP_CLIENT_V2_VALIDATION.md`. Published backend and native
-CI pass; the latest journal correction passes 1,686 local Godot checks using the
-actual retained CI engine. The historical evidence below describes the initial
-candidate and does not override that newer validation record.
-
+Current status: `IAP_PAID_RUN_RECOVERY.md` supersedes the historical limitations
+below for the new run-lock source. The immutable server run, pre-instantiation
+gate and separate-process recovery fixture are implemented; new native compilation,
+deployed staging/device and production evidence are still pending. This is not
+money-ready and is not an instruction to export.
 
 Base: a5fff4decc2d29ef24151dc4318cc1f0dba9a47f.
 The actual pushed base matches the reconstructed server tree. Its GitHub backend

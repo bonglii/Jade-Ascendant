@@ -118,5 +118,6 @@ func run() -> void:
 		await settle()
 		current_scene = null
 	check(root.get_node("InventoryManager").item_counts==inventory_before and eq.ascension_stars==stars_before, "visuals do not consume or ascend inventory")
+	await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
 	print("LEGENDARY_VFX_QA checks=",checks," failures=",failures)
 	quit(1 if failures else 0)

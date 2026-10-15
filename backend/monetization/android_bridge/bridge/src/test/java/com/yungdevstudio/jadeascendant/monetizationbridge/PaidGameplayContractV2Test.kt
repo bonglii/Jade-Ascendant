@@ -47,4 +47,32 @@ class PaidGameplayContractV2Test {
   val c=JSONObject().put("request_id",request).put("kind","summon").put("expected_revision",0).put("pull_count",2)
   assertNull(PaidGameplayContractV2.commandOrNull(request,c.toString()))
  }
+
+ private fun runCommand(kind: String="run_start")=JSONObject().put("request_id",request).put("expected_revision",1).put("kind",kind).put("run_id",request).also{if(kind=="run_start")it.put("weapon_level",0)}
+ private fun runReply(c: JSONObject): JSONObject {
+  val s=snapshot();val frozen=JSONObject().put("run_id",request).put("slots",JSONObject(s.getJSONObject("slots").toString())).put("stars",JSONObject(s.getJSONObject("stars").toString())).put("weapon_level",0)
+  return read(s).put("operation",JSONObject().put("request_id",request).put("kind",c.getString("kind")).put("outcome",frozen))
+ }
+ @Test fun runCommandsHaveExactOpaqueReferenceAndNoCallerOwnership(){
+  for(kind in listOf("run_start","run_resume")){
+   val c=runCommand(kind);assertNotNull(PaidGameplayContractV2.commandOrNull(request,c.toString()))
+   assertNull(PaidGameplayContractV2.commandOrNull(request,JSONObject(c.toString()).put("slots",JSONObject()).toString()))
+   assertNull(PaidGameplayContractV2.commandOrNull(request,c.put("run_id","bad").toString()))
+  }
+  assertNull(PaidGameplayContractV2.commandOrNull(request,runCommand().put("weapon_level",1.5).toString()))
+ }
+ @Test fun runReceiptIsOwnedCorrelatedAndBounded(){
+  val c=runCommand();val r=runReply(c)
+  assertNotNull(PaidGameplayContractV2.canonicalOrNull(r,uid,request,c.toString()))
+  val o=r.getJSONObject("operation").getJSONObject("outcome")
+  o.put("run_id","22222222-2222-4222-8222-222222222222");assertNull(PaidGameplayContractV2.canonicalOrNull(r,uid,request,c.toString()))
+  o.put("run_id",request);o.getJSONObject("slots").put("armament","jade_binding_chain");assertNull(PaidGameplayContractV2.canonicalOrNull(r,uid,request,c.toString()))
+ }
+ @Test fun restoredRunDoesNotRequireMatchingCurrentHubSelection(){
+  val c=runCommand("run_resume");val r=runReply(c);val s=r.getJSONObject("snapshot")
+  s.getJSONObject("slots").put("boots","");s.getJSONObject("stars").put("cloudstep_boots",2)
+  assertNotNull(PaidGameplayContractV2.canonicalOrNull(r,uid,request,c.toString()))
+  r.getJSONObject("operation").getJSONObject("outcome").getJSONObject("stars").put("cloudstep_boots",6)
+  assertNull(PaidGameplayContractV2.canonicalOrNull(r,uid,request,c.toString()))
+ }
 }

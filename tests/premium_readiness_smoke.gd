@@ -124,6 +124,6 @@ func run() -> void:
  var defeat: Node=current_scene.get_node("GameOverUI")
  defeat.show_game_over();await frames(18);root.size=Vector2i(390,844);await frames();await capture("premium-defeat")
  paused=false
- root.get_node("AudioManager").release_runtime_audio();current_scene.queue_free();await frames()
+ await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self);current_scene.queue_free();await frames()
  print("PREMIUM_READINESS checks=",checks," failures=",failures)
  quit(0 if failures==0 else 1)

@@ -35,3 +35,22 @@
 - Reproduce with the exact CI engine artifact before delivering another patch.
   Run every affected client check, including existing separate-process modes;
   collect all failures in CI rather than stopping before later checks execute.
+
+### Paid run recovery and complete CI evidence — 2026-10-15
+- Resolve server run selection before constructing the player. A local run ID is
+  a reference, never ownership proof; recheck account, live ownership and refunds.
+- New-run preflight must read next-run earned levels directly and bound them by
+  verified stars, rather than a getter that can still reflect the previous scene.
+- A missing/removed run needs a durable cancellation receipt so a bad checkpoint
+  does not trap the entire account behind an unretirable pending command.
+- Do not assume rg exists on hosted runners. Use provisioned/base tools and retain
+  all runtime logs; aggregate failures so later suites are not hidden.
+- Stop scene-polled audio context before QA teardown and allow the mixer to drain.
+  Otherwise a passing suite can recreate playback and fail on leaked exit resources.
+- New manager integration uses runtime root lookups to avoid adding autoload compile
+  dependencies. Run Godot checks sequentially per isolated project/import cache.
+- Warm gameplay resources explicitly when testing gate/receipt semantics; disclose
+  that cold threaded-load behavior/device latency is a separate test boundary.
+- Persistent fixture dictionary keys must be String, using ["item_id"] writes.
+  Dot insertion into an empty Dictionary can create StringName keys that strict
+  save validation correctly rejects; never weaken the save validator to accept it.

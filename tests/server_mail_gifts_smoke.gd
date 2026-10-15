@@ -35,6 +35,7 @@ func run() -> void:
   claim("a".repeat(32),{"spirit_stone":0,"items":{},"celestial_jade":100})
   check(pavilion.get_celestial_jade()==int(expected.jade),"restart replay does not add Jade")
   check(not saver.has_pending_transaction(),"restart journal settled")
+  await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
   print("MAIL_GIFTS_RESTART checks=",checks," failures=",failures);quit(1 if failures else 0);return
  var manifest: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://backend/player_identity/mail_reward_catalog.json"))
  var active_count: int=0
@@ -71,5 +72,6 @@ func run() -> void:
  saver.end_save_write_barrier("gifts_qa")
  var expected: Dictionary={"jade":pavilion.get_celestial_jade(),"seals":pavilion.get_pavilion_seals(),"shards":inventory.get_item_count("refinement_shard"),"copies":inventory.get_item_count("nine_heavens_star_sword")}
  var file:=FileAccess.open(expect_path,FileAccess.WRITE);file.store_string(JSON.stringify(expected));file.close()
+ await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
  print("MAIL_GIFTS_QA checks=",checks," failures=",failures)
  quit(1 if failures else 0)

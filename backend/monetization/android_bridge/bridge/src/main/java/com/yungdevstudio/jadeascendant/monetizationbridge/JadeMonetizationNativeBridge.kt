@@ -635,6 +635,9 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
     }
 
     @UsedByGodot
+    fun getPaidRunContractVersionV2(): Int = 1
+
+    @UsedByGodot
     fun isPaidGameplayV2Configured(): Boolean = appCheckReady() && sandboxCreditEnabled() && BuildConfig.JADE_IAP_GAMEPLAY_V2_ENABLED
 
     @UsedByGodot

@@ -121,7 +121,7 @@ try {
     & git diff --cached --quiet
     $difference = $LASTEXITCODE
     if ($difference -eq 1) {
-        & git commit -m 'feat(iap): wire paid client and fix SDK setup'
+        & git commit -m 'feat(iap): persist verified combat run loadouts'
         if ($LASTEXITCODE -ne 0) { throw 'Commit failed.' }
     } elseif ($difference -ne 0) { throw 'Cannot inspect package changes.' }
     & git push origin $branch

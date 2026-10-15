@@ -106,4 +106,8 @@ func run() -> void:
  screen.get_node("JadeBindingPreview").queue_free();await frames();screen._close_detail();old_demo.call();await frames()
  check(screen.get_node_or_null("JadeBindingPreview")==null,"closed popup demo callback rejected")
  print("HERO_UPGRADE_BURST_CHECKS=",checks,";FAILURES=",failures)
- quit(1 if failures else 0)
+ await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
+ if current_scene!=null: current_scene.queue_free()
+ await process_frame;await process_frame
+ await create_timer(.1,true).timeout
+ call_deferred("quit",1 if failures else 0)

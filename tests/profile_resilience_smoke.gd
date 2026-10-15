@@ -94,6 +94,6 @@ func run() -> void:
  client._on_response(HTTPRequest.RESULT_CANT_CONNECT,0,[],PackedByteArray(),client._nonce)
  check(not client._busy,"exhausted recovery routes back off")
  client._nonce+=1;client._busy=false;client.queue_free();auth.queue_free()
- root.get_node("AudioManager").release_runtime_audio()
+ await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
  print("PROFILE_RESILIENCE checks=",checks," failures=",failures)
  quit(0 if failures==0 else 1)

@@ -8,7 +8,7 @@ try {
         $text -notmatch '(?m)^JADE_STAGING_ACCOUNT_GUARD\s*=\s*"true"\s*$' -or
         $text -notmatch '(?m)^main\s*=\s*"src/worker_staging_tester_r1.mjs"\s*$') { throw 'Unexpected staging target. No remote command was run.' }
     $migrations=@(Get-ChildItem -LiteralPath (Join-Path $repo 'backend/monetization/cloudflare/migrations') -Filter '*.sql' | Sort-Object Name)
-    if ($migrations.Count -ne 11 -or $migrations[-1].Name -ne '0011_paid_gameplay_v2.sql') { throw 'Unexpected migration set. Nothing deployed.' }
+    if ($migrations.Count -ne 12 -or $migrations[-1].Name -ne '0012_paid_runs_v2.sql') { throw 'Unexpected migration set. Nothing deployed.' }
     $commands=@()
     foreach ($file in $migrations) {
         $sql=([regex]::Replace([IO.File]::ReadAllText($file.FullName),'(?m)^\s*--[^\r\n]*','')).Trim()

@@ -68,6 +68,6 @@ func run() -> void:
  check(manager._busy,"resume does not prematurely complete pending logout")
  manager._busy=false;manager._operation=""
  check(root.get_node("InventoryManager").item_counts==inv,"account UI never merges/mutates inventory")
- manager.queue_free();auth.queue_free();root.get_node("AudioManager").release_runtime_audio()
+ manager.queue_free();auth.queue_free();await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
  print("GOOGLE_CALLBACK_RESILIENCE checks=",checks," failures=",failures)
  quit(0 if failures==0 else 1)

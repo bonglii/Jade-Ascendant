@@ -348,6 +348,10 @@ func get_weapon_level_cap(item_id: String, star_override: int=0) -> int:
 
 func get_item_weapon_level(item_id: String) -> int:
 	if get_weapon_level_cap(item_id)==0: return 0
+	var paid: Node=_paid_v2()
+	if _has_gameplay_player() and paid!=null:
+		var frozen_paid_level: int=int(paid.call("runtime_weapon_level",item_id))
+		if frozen_paid_level>0: return mini(frozen_paid_level,get_weapon_level_cap(item_id))
 	var levels: Dictionary=weapon_levels
 	if _should_use_active_run_loadout() and _paid_selected_v2(SLOT_ARMAMENT, true) != item_id: levels=active_run_loadout_snapshot.get("weapon_levels",{})
 	return clampi(int(levels.get(item_id,1)),1,get_weapon_level_cap(item_id))

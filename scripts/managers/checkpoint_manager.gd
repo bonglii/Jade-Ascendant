@@ -136,6 +136,13 @@ func save_checkpoint() -> bool:
 		"rewarded_revive_used": rewarded_revive_used
 	}
 
+	var pavilion: Node=get_node_or_null("/root/PavilionManager")
+	var paid: Node=pavilion.get("paid_gameplay") if pavilion!=null else null
+	if paid!=null:
+		if not paid.call("can_checkpoint_run"): return false
+		var paid_ref: Dictionary=paid.call("checkpoint_run_ref")
+		if not paid_ref.is_empty(): save_data["paid_run_ref"]=paid_ref
+
 	if JourneyManager.has_active_run():
 		save_data["chapter_id"] = JourneyManager.active_run_chapter_id
 		save_data["stage_id"] = JourneyManager.active_run_stage_id
@@ -605,6 +612,9 @@ static func normalize_checkpoint_save_data(
 			or int(save_data.get("stage_id", 0)) <= 0
 		):
 			return {}
+
+	if save_data.has("paid_run_ref") and not preload("res://scripts/monetization/paid_gameplay_v2.gd").valid_run_ref(save_data.paid_run_ref):
+		return {}
 
 	if save_data.has("run_combat_report") and not preload("res://scripts/weapon/run_combat_ledger.gd").valid_snapshot(save_data.run_combat_report):
 		# Optional display statistics cannot invalidate an otherwise valid run.

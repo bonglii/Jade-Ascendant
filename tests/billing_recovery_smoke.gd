@@ -145,6 +145,6 @@ func run() -> void:
  check(pavilion.state==before, "all recovery tests preserve real balances/save state")
  provider._retry_nonce+=1; provider.queue_free()
  await process_frame
- root.get_node("AudioManager").release_runtime_audio()
+ await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
  print("BILLING_RECOVERY checks=",checks," failures=",failures)
  quit(0 if failures==0 else 1)

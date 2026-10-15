@@ -25,12 +25,20 @@ var _clock: float = 0.0
 var _run_started: bool = false
 var _run_slots: Dictionary = {}
 var _run_stars: Dictionary = {}
+var _run_ref: Dictionary = {}
+var _run_weapon_level: int = 0
+var _run_prepared: bool = false
+var _run_entered: bool = false
+var _preparing_run: bool = false
+var _last_result: Dictionary = {}
 
 func _service(name_id: String) -> Node:
 	return get_tree().root.get_node_or_null(NodePath(name_id)) if is_inside_tree() else null
 func _live_binding() -> String:
 	var account: Node = _service("GoogleAccountManager")
 	return str(account.call("get_monetization_account_binding")) if account != null else ""
+func _init() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 func _ready() -> void:
 	call_deferred("_setup")
 func _setup() -> void:
@@ -46,6 +54,8 @@ func _identity_changed(_ready_identity: bool) -> void:
 		_command = {}
 		busy = false
 		_run_slots = {}; _run_stars = {}; _run_started = get_tree().get_first_node_in_group("player") != null
+		if not _run_started: _reset_run()
+		_last_result = {}
 		_invalidate("account_changed")
 		finished.emit({"success": false, "error": "Account changed."})
 	_next_read = 0
@@ -56,18 +66,19 @@ func _process(delta: float) -> void:
 	_clock = 0.0
 	var now: int = Time.get_ticks_msec()
 	var running: bool = get_tree().get_first_node_in_group("player") != null
+	if running: _run_entered = true
 	if running and not _run_started:
 		_run_started = true
 		_run_slots = snapshot.get("slots", {}).duplicate(true) if _fresh() else {}
 		_run_stars = snapshot.get("stars", {}).duplicate(true) if _fresh() else {}
-	elif not running:
-		_run_started = false; _run_slots = {}; _run_stars = {}
+	elif not running and _run_entered and not _preparing_run:
+		_reset_run()
 	if busy and now >= _deadline:
 		busy = false; _request_id = ""; _command = {}
 		_invalidate("request_timeout")
 		finished.emit({"success": false, "error": "Connection interrupted. Recover the same request."})
 	if not snapshot.is_empty() and now >= _expires: _invalidate("connection_required")
-	if not busy and now >= _next_read:
+	if not busy and not _preparing_run and now >= _next_read:
 		_next_read = now + 15000
 		refresh()
 func _invalidate(reason: String) -> void:
@@ -106,8 +117,9 @@ static func local_catalog_hash() -> String:
 func _bridge() -> Object:
 	if local_catalog_hash() != HASH or not Engine.has_singleton(SINGLETON): return null
 	var native: Object = Engine.get_singleton(SINGLETON)
-	for method: String in ["isPaidGameplayV2Configured", "requestPaidGameplayV2"]:
+	for method: String in ["isPaidGameplayV2Configured", "requestPaidGameplayV2", "getPaidRunContractVersionV2"]:
 		if not native.call("has_java_method", method): return null
+	if int(native.call("getPaidRunContractVersionV2"))!=1: return null
 	if not bool(native.call("isPaidGameplayV2Configured")) or not native.has_signal("paidGameplayResultV2"): return null
 	if not native.is_connected("paidGameplayResultV2", _on_result): native.connect("paidGameplayResultV2", _on_result)
 	return native
@@ -125,10 +137,12 @@ func _new_id() -> String:
 	return "%s-%s-%s-%s-%s" % [h.substr(0,8), h.substr(8,4), h.substr(12,4), h.substr(16,4), h.substr(20,12)]
 static func valid_command(cmd: Dictionary) -> bool:
 	var kind: String=str(cmd.get("kind",""))
-	var fields: Dictionary={"initialize":[],"summon":["pull_count"],"equip":["slot","item_id"],"refine":["item_id"],"wish":["item_id"]}
+	var fields: Dictionary={"initialize":[],"summon":["pull_count"],"equip":["slot","item_id"],"refine":["item_id"],"wish":["item_id"],"run_start":["run_id","weapon_level"],"run_resume":["run_id"]}
 	if not fields.has(kind) or cmd.size()!=3+fields[kind].size() or not _uuid(str(cmd.get("request_id",""))) or not _whole(cmd.get("expected_revision"),0,9007199254740989): return false
 	for field: String in fields[kind]:
 		if not cmd.has(field): return false
+	if cmd.has("run_id") and (not cmd.run_id is String or not _uuid(cmd.run_id)): return false
+	if kind=="run_start" and not _whole(cmd.get("weapon_level"),0,50): return false
 	if kind=="initialize" and int(cmd.expected_revision)!=0: return false
 	if kind=="summon" and (not _whole(cmd.get("pull_count"),1,10) or int(cmd.pull_count) not in [1,10]): return false
 	if cmd.has("item_id"):
@@ -143,7 +157,8 @@ static func canonical_command(cmd: Dictionary) -> Dictionary:
 	if not valid_command(cmd): return {}
 	var canonical: Dictionary = cmd.duplicate(true)
 	canonical.expected_revision = int(canonical.expected_revision)
-	if canonical.has("pull_count"): canonical.pull_count = int(canonical.pull_count)
+	for field: String in ["pull_count", "weapon_level"]:
+		if canonical.has(field): canonical[field] = int(canonical[field])
 	return canonical
 func _journal_path() -> String:
 	return "user://jade_paid_commands_v2_" + _binding + ".json" if _hex(_binding) else ""
@@ -176,13 +191,13 @@ func refresh() -> bool:
 func submit(kind: String, extra: Dictionary = {}) -> bool:
 	if busy or not _read_pending().is_empty() or _binding != _live_binding(): return false
 	if kind != "initialize" and not is_verified_ready(): return false
-	if get_tree().get_first_node_in_group("player") != null: return false
+	if get_tree().get_first_node_in_group("player") != null and kind not in ["run_start", "run_resume"]: return false
 	var saves: Node = _service("SaveManager")
 	if saves == null or bool(saves.call("is_progress_read_only")) or bool(saves.call("has_pending_transaction")): return false
 	if kind == "summon":
 		var pavilion: Node = _service("PavilionManager")
 		if pavilion == null or not bool(pavilion.call("is_summon_unlocked")) or not can_summon(int(extra.get("pull_count", 0))): return false
-	if kind not in ["initialize", "summon", "equip", "refine", "wish"]: return false
+	if kind not in ["initialize", "summon", "equip", "refine", "wish", "run_start", "run_resume"]: return false
 	if _bridge() == null: return false
 	var cmd: Dictionary = {"request_id": _new_id(), "expected_revision": int(snapshot.get("revision", 0)), "kind": kind}
 	for key: String in extra:
@@ -195,6 +210,7 @@ func _dispatch(cmd: Dictionary) -> bool:
 	if native == null: _invalidate("transport_unavailable"); return false
 	_owner = _binding; _command = canonical_command(cmd) if not cmd.is_empty() else {}
 	_request_id = str(cmd.get("request_id", _new_id()))
+	_last_result = {}
 	busy = true; _deadline = Time.get_ticks_msec() + 48000; status = "loading"
 	changed.emit()
 	native.call("requestPaidGameplayV2", _request_id, "" if _command.is_empty() else JSON.stringify(_command))
@@ -250,6 +266,8 @@ func _on_result(request_id: String, success: bool, result_status: String, payloa
 	else:
 		if not op is Dictionary or op.size() != 3 or op.get("request_id") != cmd.request_id or op.get("kind") not in [cmd.kind, "not_committed"]:
 			_invalidate("invalid_receipt"); finished.emit(result); return
+		if op.kind in ["run_start", "run_resume"] and not valid_run_outcome(op.get("outcome"), next, str(cmd.run_id)):
+			_invalidate("invalid_run_receipt"); finished.emit(result); return
 		var pending: Dictionary = _read_pending()
 		if pending != cmd or DirAccess.remove_absolute(_journal_path()) != OK:
 			_invalidate("journal_unavailable"); finished.emit(result); return
@@ -259,5 +277,87 @@ func _on_result(request_id: String, success: bool, result_status: String, payloa
 			result.merge({"payment_method": "paid_jade", "payment_amount": 100 if int(cmd.pull_count) == 1 else 900, "refinement_shards_gained": 0}, true)
 	snapshot = next.duplicate(true); _expires = Time.get_ticks_msec() + 120000
 	_next_read = Time.get_ticks_msec() + 60000; status = "verified"
+	_last_result = result.duplicate(true)
 	changed.emit(); finished.emit(result)
 	if next.state == "initialize_required": call_deferred("submit", "initialize")
+
+static func valid_run_ref(value: Variant) -> bool:
+	return value is Dictionary and value.size() == 3 and value.get("version") == 1 and value.get("binding") is String and _hex(value.binding) and value.get("run_id") is String and _uuid(value.run_id)
+static func valid_run_outcome(value: Variant, state: Dictionary, run_id: String) -> bool:
+	if not value is Dictionary or value.size()!=4 or value.get("run_id")!=run_id or not _uuid(run_id): return false
+	if not value.get("slots") is Dictionary or value.slots.size()!=5 or not value.get("stars") is Dictionary: return false
+	var ids: Array[String]=[]
+	for slot: String in SLOTS:
+		var id: Variant=value.slots.get(slot)
+		if not id is String: return false
+		if id!="":
+			if not Catalog.ITEMS.has(id) or str(Catalog.ITEMS[id].slot)!=slot or not state.get("inventory",{}).has(id) or not _whole(value.stars.get(id),1,5): return false
+			ids.append(id)
+	if value.stars.size()!=ids.size(): return false
+	var arm: String=value.slots.armament
+	return _whole(value.get("weapon_level"),0 if arm=="" else 1,0 if arm=="" else int(value.stars[arm])*10)
+func _reset_run() -> void:
+	_run_slots={}; _run_stars={}; _run_ref={}; _run_weapon_level=0
+	_run_started=false; _run_prepared=false; _run_entered=false
+func checkpoint_run_ref() -> Dictionary:
+	return _run_ref.duplicate(true)
+func can_checkpoint_run() -> bool:
+	return _run_slots.is_empty() or _run_slots.values().all(func(id: Variant) -> bool: return id=="") or valid_run_ref(_run_ref)
+func runtime_weapon_level(item_id: String) -> int:
+	if not _run_prepared or selected_slot("armament",true)!=item_id: return 0
+	return clampi(_run_weapon_level,1,item_star(item_id,true)*10)
+func _checkpoint_for_gate() -> Dictionary:
+	var script: Script=load("res://scripts/managers/checkpoint_manager.gd")
+	var result: Dictionary=script.read_checkpoint_result()
+	return result.get("data",{}) if bool(result.get("success",false)) else {}
+func _await_transport() -> void:
+	while busy: await get_tree().process_frame
+func _seal_run(ref: Dictionary, frozen: Dictionary) -> void:
+	_run_ref=ref.duplicate(true); _run_slots=frozen.get("slots",{}).duplicate(true)
+	_run_stars=frozen.get("stars",{}).duplicate(true); _run_weapon_level=int(frozen.get("weapon_level",0))
+	_run_prepared=true; _run_started=true; _run_entered=false
+func prepare_scene_run(continuing: bool) -> bool:
+	if _preparing_run: return false
+	_preparing_run=true
+	var ok: bool=await _prepare_scene_run(continuing)
+	_preparing_run=false
+	if not ok: _reset_run()
+	return ok
+func _prepare_scene_run(continuing: bool) -> bool:
+	var saved: Dictionary=_checkpoint_for_gate() if continuing else {}
+	if continuing and saved.is_empty(): return false
+	var ref: Variant=saved.get("paid_run_ref",{})
+	# Legacy/local checkpoints must never acquire the current hub's paid selection.
+	if continuing and not saved.has("paid_run_ref"):
+		_seal_run({},{}); return true
+	if continuing and (not valid_run_ref(ref) or ref.binding!=_live_binding()): return false
+	var owner: String=_live_binding()
+	await _await_transport()
+	if owner!=_live_binding(): return false
+	if not _read_pending().is_empty():
+		if not refresh(): return false
+		await _await_transport()
+		if owner!=_live_binding() or not _read_pending().is_empty(): return false
+	if not continuing and not is_verified_ready():
+		_seal_run({},{}); return true
+	if continuing:
+		if not refresh(): return false
+		await _await_transport()
+		if owner!=_live_binding() or not is_verified_ready(): return false
+	var selected: Dictionary=snapshot.get("slots",{})
+	if not continuing and selected.values().all(func(id: Variant) -> bool: return id==""):
+		_seal_run({},{}); return true
+	var run_id: String=str(ref.run_id) if continuing else _new_id()
+	var extra: Dictionary={"run_id":run_id}
+	if not continuing:
+		var equipment: Node=_service("EquipmentManager")
+		var arm: String=str(selected.get("armament",""))
+		extra.weapon_level=0 if arm=="" else clampi(int(equipment.get("weapon_levels").get(arm,1)),1,item_star(arm)*10)
+	if not submit("run_resume" if continuing else "run_start",extra): return false
+	await _await_transport()
+	if owner!=_live_binding() or not _last_result.get("success",false) or not _fresh(): return false
+	var op: Dictionary=_last_result.get("operation",{})
+	var frozen: Variant=op.get("outcome")
+	if not valid_run_outcome(frozen,snapshot,run_id): return false
+	_seal_run({"version":1,"binding":owner,"run_id":run_id},frozen)
+	return true

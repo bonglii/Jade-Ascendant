@@ -39,13 +39,25 @@ jobs:
       - name: Runtime bounds, touch, save and account regressions
         shell: bash
         run: |
-          set -o pipefail
+          set -euo pipefail
+          qa_failed=0
           for entry in 'premium_readiness_smoke:jade_premium_batch_qa' 'profile_resilience_smoke:jade_profile_resilience_qa' 'google_callback_resilience_smoke:jade_google_callback_qa' 'billing_recovery_smoke:jade_billing_recovery_qa' 'hero_upgrade_burst_smoke:jade_hero_qa' 'run_report_smoke:jade_report_qa' 'legendary_set_vfx_smoke:jade_legendary_qa' 'combat_skill_polish_smoke:jade_combat_pass_qa' 'player_server_binding_smoke:jade_profile_qa' 'server_mail_smoke:jade_server_mail_qa' 'server_mail_gifts_smoke:jade_mail_gifts_qa'; do
             name="${entry%%:*}"; qa_tag="${entry#*:}"
-            XDG_DATA_HOME="/tmp/$qa_tag" timeout 110 /tmp/jade-qa/Godot_v4.7.2-stable_linux.x86_64 --headless --audio-driver Dummy --path /tmp/jade-qa/project --script "res://tests/$name.gd" > "/tmp/$name.log" 2>&1
-            cat "/tmp/$name.log"
-            ! rg 'SCRIPT ERROR:|_FAIL ' "/tmp/$name.log"
+            log="/tmp/$name.log"
+            if XDG_DATA_HOME="/tmp/$qa_tag" timeout 110 /tmp/jade-qa/Godot_v4.7.2-stable_linux.x86_64 --headless --audio-driver Dummy --path /tmp/jade-qa/project --script "res://tests/$name.gd" > "$log" 2>&1; then
+              if grep -E 'ERROR:|SCRIPT ERROR:|_FAIL ' "$log"; then qa_failed=1; fi
+              if ! grep -Eq '(CHECKS|checks)=[1-9][0-9]*' "$log"; then qa_failed=1; fi
+            else
+              qa_failed=1
+            fi
+            cat "$log"
           done
+          exit "$qa_failed"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: premium-runtime-checks
+          path: /tmp/*smoke.log
   native-compile:
     runs-on: ubuntu-latest
     steps:
@@ -55,6 +67,8 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
