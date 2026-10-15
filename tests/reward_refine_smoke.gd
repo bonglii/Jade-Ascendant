@@ -119,6 +119,6 @@ func run() -> void:
  check(delivery._overlay.get_child_count()==cosmetic_before,"gacha item cannot leak before reveal")
  root.get_node("PavilionManager").summon_delivery_active=false
  guide.set_process(false)
- root.get_node("AudioManager").release_runtime_audio()
+ await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
  current_scene.queue_free();await frames(8)
  print("REWARD_REFINE_SMOKE checks=%d failures=%d"%[checks,failures]);quit(1 if failures else 0)

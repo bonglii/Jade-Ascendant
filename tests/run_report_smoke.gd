@@ -23,7 +23,7 @@ func run() -> void:
   check(restored.totals==durable.totals and float(restored.totals.get("fire_orb",0))>=33.5,"restart restores latest autosaved cumulative damage")
   check(is_equal_approx(float(restored.totals.get("celestial_returning_glaive",0)),53.5),"restart cumulative phase-capped damage")
   print("RUN_REPORT_RESTART checks=",checks," failures=",failures)
-  quit(1 if failures else 0)
+  await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self);quit(1 if failures else 0)
   return
  root.get_node("GameSession").start_new_game()
  check(change_scene_to_file("res://scenes/levels/level_1.tscn")==OK,"actual arena")
@@ -148,4 +148,4 @@ func run() -> void:
     check(label.get_line_count()==1 and label.size.x>=40,"numbers stay one line")
     check(label.get_global_rect().end.x<=ceremony._scroll.get_global_rect().end.x+1,"numbers inside reader")
  print("RUN_REPORT_QA checks=",checks," failures=",failures)
- quit(1 if failures else 0)
+ await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self);quit(1 if failures else 0)

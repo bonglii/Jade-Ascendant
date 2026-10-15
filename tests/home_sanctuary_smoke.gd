@@ -137,7 +137,7 @@ func run() -> void:
   root.size=Vector2i(390,844);await frames();root.size=Vector2i(648,1152);await frames()
  check(save.read_save_data("checkpoint").data.defeat_pending,"navigation preserves saved run status")
 
- root.get_node("AudioManager").release_runtime_audio();current_scene.queue_free();await frames(8)
+ await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self);current_scene.queue_free();await frames(8)
  root.size=Vector2i(320,568);await frames(3)
  root.size=Vector2i(648,1152);await frames(3)
  check(not is_instance_valid(root.get_node("HubResourceBarManager")._resource_bar),"leaving Home releases wallet and viewport callbacks")

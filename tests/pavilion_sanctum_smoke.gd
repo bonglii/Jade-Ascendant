@@ -20,7 +20,7 @@ func run() -> void:
 		var expected: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("user://gacha_expect.json"))
 		check(pavilion.get_pavilion_seals()==int(expected.seals),"restart retains seals after exactly one summon")
 		check(pavilion.get_lifetime_pulls()==int(expected.pulls),"restart retains committed pull count")
-		print("GACHA_RESTART checks=",checks," failures=",failures);quit(1 if failures else 0);return
+		print("GACHA_RESTART checks=",checks," failures=",failures);await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self);quit(1 if failures else 0);return
 	var journey: Node = root.get_node("JourneyManager")
 	for chapter: int in journey.get_chapter_ids():
 		for stage: int in journey.get_stage_ids(chapter):
@@ -132,4 +132,4 @@ func run() -> void:
 	screen.queue_free();viewport.queue_free();await settle()
 	await create_timer(0.75).timeout
 	print("GACHA_NATIVE_QA checks=",checks," failures=",failures)
-	quit(1 if failures else 0)
+	await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self);quit(1 if failures else 0)

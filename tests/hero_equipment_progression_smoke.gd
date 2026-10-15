@@ -58,7 +58,7 @@ func run() -> void:
   check(eq.get_item_weapon_level("nine_heavens_star_sword")==3,"actual Continue applies frozen permanent level")
   var starter: Node=current_scene.get_node("player_1/WeaponManager").get_weapon_by_name("Spirit Sword")
   check(starter.level==5 and starter.base_damage==30,"run refinement remains independent")
-  print("HERO_RULES_RESTART_CHECKS=",checks,";FAILURES=",failures);quit(1 if failures else 0);return
+  print("HERO_RULES_RESTART_CHECKS=",checks,";FAILURES=",failures);await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self);quit(1 if failures else 0);return
  eq.active_run_loadout_snapshot.clear();eq.weapon_levels.clear();eq.ascension_stars.clear();inv.item_counts.clear()
  for set_id: String in Sets.SET_ORDER:
   var pieces: Array[String]=Sets.get_piece_ids(set_id)
@@ -205,4 +205,4 @@ func run() -> void:
  eq.weapon_levels[sword]=12
  check(saver.write_save_batch({"equipment":eq.build_equipment_save_data(),"inventory":{"version":1,"item_counts":inv.item_counts}}),"new fields persist through existing journal")
  print("HERO_RULES_CHECKS=",checks,";FAILURES=",failures)
- quit(1 if failures else 0)
+ await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self);quit(1 if failures else 0)

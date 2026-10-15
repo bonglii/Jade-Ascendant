@@ -80,6 +80,12 @@ try {
                         if ($payload.activation -in @('tester_credit_only','locked')) { $activation = $payload.activation }
                         Record ('IAP_STAGING_ACTIVATION=' + $activation)
                         Record ('IAP_STAGING_TESTER_GUARD=' + ($payload.tester_guard -eq $true))
+                        $runContract = 'not_advertised'
+                        if ($payload.paid_run_contract -is [int] -or $payload.paid_run_contract -is [long]) {
+                            if ($payload.paid_run_contract -in @(0,1)) { $runContract = [string]$payload.paid_run_contract }
+                        }
+                        Record ('IAP_STAGING_PAID_RUN_CONTRACT=' + $runContract)
+                        Record 'NOTE=Health advertises code/config only; run check_iap_staging_schema.cmd for schema/refund freshness.'
                     }
                 } catch { Record ($service.Name + '_HEALTH=INVALID_JSON') }
             }

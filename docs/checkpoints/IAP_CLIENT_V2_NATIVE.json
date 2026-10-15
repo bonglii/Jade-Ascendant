@@ -1,9 +1,9 @@
 {
   "native_contract": "PASS",
   "evidence": "COMPILE_JVM_JNI_ONLY_NOT_LIVE_PLAY",
-  "workflow_url": "https://github.com/bonglii/Jade-Ascendant/actions/runs/38738864296",
-  "compiled_commit": "e48945710e947893756c9d04d92e16f6bd5aa9ec",
-  "bridge_source_sha256": "46903498d93bf95a488affd736ecbf4138677cdf29dd3c68725efce8a0b9c7cc",
+  "workflow_url": "https://github.com/bonglii/Jade-Ascendant/actions/runs/38751119455",
+  "compiled_commit": "92b822ab5680f67d54da4b199eb4a3bde667466e",
+  "bridge_source_sha256": "34677dbc308b6eabdbe8ba28072ac8dde0f575609423639c77e3502c221e212c",
   "inputs": {
     "backend/monetization/android_bridge/bridge/src/debug/java/com/yungdevstudio/jadeascendant/monetizationbridge/AppCheckProviderInstall.kt": "5d4a8abb2e4b01aa9128c134378bdf6e4933c6be0df7240333253bd2509ade5f",
     "backend/monetization/android_bridge/bridge/build.gradle.kts": "4c935d9bec9c5b6c5cb12c5c9bf38399bb3ee9da768a37f3c9a255ac25e1a783",
@@ -23,25 +23,28 @@
     "backend/monetization/android_bridge/bridge/src/main/java/com/yungdevstudio/jadeascendant/monetizationbridge/SecurePurchaseGrantContract.kt": "13ba8487e5ff2d5915d498deb86cbf9f3c5e0297567b19ba058fd1c21f32cdcb",
     "backend/monetization/android_bridge/bridge/src/main/java/com/yungdevstudio/jadeascendant/monetizationbridge/PaidWalletViewContractM8.kt": "6b4ceb305af5ffc736a937140f05807379e16945fa8cb0fd830a197bd3c0f1ee",
     "backend/monetization/android_bridge/bridge/src/main/java/com/yungdevstudio/jadeascendant/monetizationbridge/PaidSummonRecoveryContractM12.kt": "18a9f2ae8b4d213fdd7dc5cc1a42fd52206cfe563aaa90b0f2ba030bef5e35d6",
-    "backend/monetization/android_bridge/bridge/src/main/java/com/yungdevstudio/jadeascendant/monetizationbridge/JadeMonetizationNativeBridge.kt": "46903498d93bf95a488affd736ecbf4138677cdf29dd3c68725efce8a0b9c7cc",
-    "backend/monetization/android_bridge/bridge/src/main/java/com/yungdevstudio/jadeascendant/monetizationbridge/PaidGameplayContractV2.kt": "cb707c1d7ba40c01def64509c770e2ab838d8b8862838876a59c702010390f81"
+    "backend/monetization/android_bridge/bridge/src/main/java/com/yungdevstudio/jadeascendant/monetizationbridge/JadeMonetizationNativeBridge.kt": "34677dbc308b6eabdbe8ba28072ac8dde0f575609423639c77e3502c221e212c",
+    "backend/monetization/android_bridge/bridge/src/main/java/com/yungdevstudio/jadeascendant/monetizationbridge/PaidGameplayContractV2.kt": "a9f22d309f32776718497e7e9dc5af92a2ba25bf0c6ada596f212d80df98e5f7"
   },
   "artifacts": [
     {
       "variant": "debug",
-      "sha256": "9fc09d329cb77829f81b39552cae216a4c7afced1075976c3a84013274d6fef1",
+      "sha256": "6d776c6f9d8eb1dda473a14537110327a2d8a740aabf438380ead8c133c5a946",
       "target": "staging",
-      "jvm_tests": 88,
+      "jvm_tests": 91,
       "jvm_failures": 0,
       "jni_verified_by": "build_native_bridge.ps1 GitHub Actions"
     },
     {
       "variant": "release",
-      "sha256": "5b7becf49625bc943d8bc0095e5fe31eac0b2346ead25a0870ea60864b173a67",
+      "sha256": "49f6a98580f9e1ca82fff7270ce627572bce85bcfa63c68dc89e940b091d1a5e",
       "target": "locked",
-      "jvm_tests": 88,
+      "jvm_tests": 91,
       "jvm_failures": 0,
       "jni_verified_by": "build_native_bridge.ps1 GitHub Actions"
     }
-  ]
+  ],
+  "artifact_id": 11980808443,
+  "artifact_zip_sha256": "ca0728638e59d0f89c31435112e4990789ea7146368cefac6c132fe5c5d62551",
+  "paid_run_contract_version": 1
 }

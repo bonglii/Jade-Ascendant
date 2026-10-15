@@ -15,10 +15,14 @@ function fetch(request, env, ctx) {
     const credit = env?.JADE_IAP_BACKEND_ENABLED === 'true'
       && env?.JADE_PAID_WALLET_CREDIT_V2_ENABLED === 'true'
       && env?.JADE_CANONICAL_ONBOARDING_RC12_ENABLED === 'true';
+    const gameplay = credit && env?.JADE_PAID_GAMEPLAY_V2_ENABLED === 'true'
+      && env?.JADE_REFUND_RECONCILIATION_READY === 'true';
     return new Response(JSON.stringify({
       service:'jade-iap-staging',
       activation: credit ? 'tester_credit_only' : 'locked',
       tester_guard: env?.JADE_STAGING_ACCOUNT_GUARD === 'true',
+      gameplay_contract: gameplay ? 2 : 0,
+      paid_run_contract: gameplay ? 1 : 0,
     }), {status:200,headers});
   }
   return guardedFetch(request, env, ctx);

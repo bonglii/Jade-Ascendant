@@ -1,6 +1,8 @@
 # Paid client V2 candidate — 2026-10-15
 
-Current status: `IAP_PAID_RUN_RECOVERY.md` supersedes the historical limitations
+Current status: see `IAP_NATIVE_STAGING_CANDIDATE.md` for installed verified AARs and current limits. Historical status follows.
+
+Previous status: `IAP_PAID_RUN_RECOVERY.md` supersedes the historical limitations
 below for the new run-lock source. The immutable server run, pre-instantiation
 gate and separate-process recovery fixture are implemented; new native compilation,
 deployed staging/device and production evidence are still pending. This is not

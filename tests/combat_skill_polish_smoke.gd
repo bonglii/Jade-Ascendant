@@ -133,4 +133,4 @@ func run() -> void:
   check(spell.has_node("SkillInstancePolish"),"actual spell wrapper "+scene_name)
   spell.free()
  print("COMBAT_SKILL_POLISH_QA checks=%d failures=%d" % [checks,failures])
- quit(0 if failures==0 else 1)
+ await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self);quit(0 if failures==0 else 1)

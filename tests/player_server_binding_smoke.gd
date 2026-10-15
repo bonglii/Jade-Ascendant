@@ -173,4 +173,4 @@ func run() -> void:
 	await process_frame
 	await process_frame
 	print("SERVER_BINDING_QA checks=%d failures=%d" % [checks,failures])
-	quit(0 if failures == 0 else 1)
+	await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self);quit(0 if failures == 0 else 1)

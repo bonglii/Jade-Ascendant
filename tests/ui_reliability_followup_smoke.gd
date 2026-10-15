@@ -132,6 +132,6 @@ func run() -> void:
  if DisplayServer.get_name()=="headless":cache._on_scene_changed()
  check(cache._warm_cache.is_empty(),"hub texture retention is released on gameplay entry")
  current_scene.get_node("EnemySpawner").process_mode=Node.PROCESS_MODE_DISABLED
- root.get_node("AudioManager").release_runtime_audio();current_scene.queue_free();await frames()
+ await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self);current_scene.queue_free();await frames()
  print("UI_RELIABILITY checks=",checks," failures=",failures)
  quit(0 if failures==0 else 1)

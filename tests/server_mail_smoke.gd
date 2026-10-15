@@ -77,9 +77,10 @@ func run() -> void:
 		check(progression.spirit_stone == before,"recovered pending receipt never adds currency twice")
 		check(not saver.has_pending_transaction(),"journal recovery completed")
 		print("SERVER_MAIL_RESTART checks=",checks," failures=",failures)
-		quit(1 if failures else 0)
+		await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self);quit(1 if failures else 0)
 		return
 	if "--crash-prepare" in OS.get_cmdline_user_args():
+		await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
 		var next_progression: Dictionary = progression.build_progression_save_data()
 		next_progression.spirit_stone += 37 # Historical 17 Stone + one retired fragment at 20 Stone.
 		var counts: Dictionary = inventory.item_counts.duplicate(true)
@@ -93,7 +94,7 @@ func run() -> void:
 		file.store_string(JSON.stringify(expected))
 		file.close()
 		print("SERVER_MAIL_CRASH_PREPARE checks=",checks," failures=",failures)
-		quit(1 if failures else 0)
+		quit(1 if failures else 0) # No await after the intentional partial commit.
 		return
 	mailer._state.cache[owner] = [entry(MAIL_ID)]
 	check("server:"+MAIL_ID in ops.get_mail_ids(),"server mail joins real mailbox catalog")
@@ -139,4 +140,4 @@ func run() -> void:
 	check(mailer._queue.is_empty() and not mailer._busy,"account switch cancels in-flight operations")
 	check(progression.spirit_stone == stones_before+240,"account switch never grants prior pending response")
 	print("SERVER_MAIL_SMOKE checks=",checks," failures=",failures)
-	quit(1 if failures else 0)
+	await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self);quit(1 if failures else 0)

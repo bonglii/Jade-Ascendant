@@ -60,4 +60,4 @@ func run()->void:
  check(treasury._subtitle.text.contains("UNCONFIRMED"),"resize retains live balance disclosure")
  treasury.queue_free()
  manager.queue_free();bridge.queue_free()
- print("SERVER_JADE_DELIVERY checks=%d failures=%d"%[checks,failures]);quit(1 if failures else 0)
+ print("SERVER_JADE_DELIVERY checks=%d failures=%d"%[checks,failures]);await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self);quit(1 if failures else 0)

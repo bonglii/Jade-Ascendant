@@ -54,3 +54,15 @@
 - Persistent fixture dictionary keys must be String, using ["item_id"] writes.
   Dot insertion into an empty Dictionary can create StringName keys that strict
   save validation correctly rejects; never weaken the save validator to accept it.
+
+### Native artifact and CI teardown — 2026-10-15
+- A source-level bridge contract is insufficient: install only AARs whose real build receipts match every compile input, archive digest and JVM result. Keep debug staging and release locked distinct.
+- Runtime audio release resets background state. Suppress queued semantic SFX after release and cover all success/restart exits; never weaken CI error scanners.
+- A crash-recovery fixture must quit immediately after its deliberate partial commit. Drain presentation resources before that boundary, never await after it.
+- Public health cannot prove schema, refund freshness or a purchase. Use separate read-only readiness evidence and Android purchase evidence.
+- Avoid assuming ripgrep exists on hosted runners. Existing portable grep checks retain the same strict patterns.
+
+### Windows installer path inventory — 2026-10-16
+- Do not wrap ConvertFrom-Json pipeline output in an array and assume a flat list on Windows PowerShell 5.1. Assign the decoded JSON directly and enumerate strings into a validated path map.
+- Keep Git stderr separate from machine-readable numstat stdout; validate row syntax, duplicate paths and the complete manifest. Report the actual rejected row/path instead of a generic error.
+- A Linux patch/tree check does not verify Windows PowerShell execution. Label that limit and retain strict allowlisting rather than bypassing the failing guard.

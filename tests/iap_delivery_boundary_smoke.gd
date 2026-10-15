@@ -47,4 +47,4 @@ func run()->void:
  treasury._on_server_repair_changed({"status":"timeout"})
  check(treasury._billing_message.contains("do not purchase again"),"timeout guides recovery rather than another charge")
  treasury.queue_free();manager.queue_free();bridge.queue_free();await process_frame
- print("IAP_DELIVERY_BOUNDARY checks=%d failures=%d"%[checks,failures]);quit(1 if failures else 0)
+ print("IAP_DELIVERY_BOUNDARY checks=%d failures=%d"%[checks,failures]);await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self);quit(1 if failures else 0)
