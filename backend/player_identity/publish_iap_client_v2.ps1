@@ -121,7 +121,7 @@ try {
     & git diff --cached --quiet
     $difference = $LASTEXITCODE
     if ($difference -eq 1) {
-        & git commit -m 'chore(iap): install verified staging native candidate'
+        & git commit -m 'fix(iap): preserve Firebase signing-key fetch context'
         if ($LASTEXITCODE -ne 0) { throw 'Commit failed.' }
     } elseif ($difference -ne 0) { throw 'Cannot inspect package changes.' }
     & git push origin $branch

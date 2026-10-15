@@ -16,14 +16,14 @@ function fixture(){
  vm.runInContext("bannerState={catalog};bannerPicked=new Set(['jade_binding_chain']);bannerReview={keep:true};bannerRequest={keep:true};",context);
  return {context,$,paint(){vm.runInContext('paintBannerPicks()',context);},picked(){return vm.runInContext('[...bannerPicked]',context);}};
 }
-test('dashboard Legendary catalog includes all four weapons and both new weapons',()=>{
- const weapons=FEATURED_CATALOG.filter(x=>x.slot==='armament');assert.equal(weapons.length,4);
- for(const id of ['jade_binding_chain','celestial_returning_glaive','nine_heavens_star_sword'])assert(weapons.some(x=>x.id===id));
+test('dashboard Legendary catalog contains the five supported weapons without the retired bell',()=>{
+ const weapons=FEATURED_CATALOG.filter(x=>x.slot==='armament');
+ assert.deepEqual(weapons.map(x=>x.id).sort(),['celestial_returning_glaive','jade_binding_chain','nine_heavens_star_sword','sunfire_dragon_jian','void_piercer_spear']);
  assert(pavilionHTML.includes('banner-category'));
 });
 test('weapon category shows weapons without hiding existing chosen state',()=>{
  const f=fixture();f.$('banner-category').value='weapon';f.paint();
- assert.equal(f.$('banner-selection').children.length,4);
+ assert.equal(f.$('banner-selection').children.length,5);
  assert(f.$('banner-selection').children.some(x=>x['aria-pressed']==='true'));
  assert.equal(f.picked()[0],'jade_binding_chain');
 });

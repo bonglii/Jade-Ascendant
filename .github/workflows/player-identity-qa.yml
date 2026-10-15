@@ -2,7 +2,7 @@ name: Player Identity and Mail Server QA
 on:
   push:
     branches: ['checkpoint/**']
-    paths: ['backend/player_identity/**', 'scripts/managers/player_identity*', '.github/workflows/player-identity-qa.yml']
+    paths: ['backend/player_identity/**', 'backend/monetization/cloudflare/src/jwt_verify.mjs', 'scripts/managers/player_identity*', '.github/workflows/player-identity-qa.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -14,4 +14,4 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
-      - run: node --test backend/player_identity/announcements.test.mjs backend/player_identity/identity.test.mjs backend/player_identity/mail.test.mjs backend/player_identity/pavilion.test.mjs
+      - run: node --test backend/player_identity/*.test.mjs

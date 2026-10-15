@@ -31,7 +31,8 @@ async function loadKeys(url, fetcher, force = false) {
   const pending = (async () => {
     let response;
     // Workerd supports manual/follow. Explicitly reject redirects below.
-    try { response = await fetcher(url, { redirect: "manual", signal: AbortSignal.timeout(5000) }); }
+    try { // Workerd native fetch requires its global receiver, as the profile verifier does.
+    response = await fetcher.call(globalThis, url, { redirect: "manual", signal: AbortSignal.timeout(5000) }); }
     catch { throw new InvalidIdentity(); }
     if (!response.ok || response.status >= 300) throw new InvalidIdentity();
     let parsed;

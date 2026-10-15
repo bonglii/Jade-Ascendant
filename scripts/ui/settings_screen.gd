@@ -1143,7 +1143,9 @@ func get_support_summary() -> String:
 	summary += "\nBilling state=%s\nPlay connected=%s\nProducts=%d\nPurchase authority ready=%s\nRecovery waiting=%s\nProfile retry seconds=%d" % [str(billing.get("state", "unknown")), str(bool(billing.get("billing_client_ready", false))), int(billing.get("product_count", 0)), str(bool(billing.get("secure_purchase_authority_ready", false))), str(bool(billing.get("restore_waiting_for_callback", false))), int(route.get("retry_in_seconds", 0))]
 	var jade: Dictionary=PavilionManager.get_server_jade_view()
 	summary+="\nPurchase result stage=%s\nPurchased Jade=%d\nPurchased Jade confirmed=%s\nPurchased Jade revision=%d"%[str(jade.last_purchase_stage),int(jade.balance),str(bool(jade.confirmed)),int(jade.revision)]
-	summary+="\nIAP account ref=%s\nWallet read stage=%s\nWallet repair stage=%s\nPurchased gameplay ready=false\nNative IAP route=%s"%[str(jade.get("account_ref","")),str(jade.get("read_stage","not_attempted")),str(jade.get("repair_stage","not_attempted")),PavilionManager.get_native_iap_network_route()]
+	var gameplay: Node = PavilionManager.get("paid_gameplay") as Node
+	var gameplay_ready: bool = is_instance_valid(gameplay) and bool(gameplay.call("is_verified_ready"))
+	summary+="\nIAP account ref=%s\nWallet read stage=%s\nWallet repair stage=%s\nPurchased gameplay ready=%s\nNative IAP route=%s"%[str(jade.get("account_ref","")),str(jade.get("read_stage","not_attempted")),str(jade.get("repair_stage","not_attempted")),str(gameplay_ready),PavilionManager.get_native_iap_network_route()]
 	return summary
 
 
