@@ -16,6 +16,7 @@
   "docs/checkpoints/IAP_CLIENT_V2_CI_REPAIR.md",
   "docs/checkpoints/IAP_CLIENT_V2_NATIVE.json",
   "docs/checkpoints/IAP_CLIENT_V2_STATUS.md",
+  "docs/checkpoints/IAP_CLIENT_V2_VALIDATION.md",
   "docs/checkpoints/LESSONS.md",
   "scripts/managers/inventory_manager.gd",
   "scripts/managers/live_ops_manager.gd",

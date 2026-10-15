@@ -1,7 +1,7 @@
 extends Control
 ## Compact, scroll-safe authenticated armory. No local paid inventory writes.
 const Visual = preload("res://scripts/ui/equipment_visual_catalog.gd")
-const Skin = preload("res://scripts/ui/pavilion_imperial_style.gd")
+const ArmoryFrame = preload("res://scripts/ui/pavilion_imperial_style.gd")
 const GOLD = Color(0.95,0.79,0.43)
 const JADE = Color(0.40,0.92,0.80)
 var _paid: Node
@@ -26,7 +26,7 @@ func _ready() -> void:
 	var veil := ColorRect.new(); veil.color=Color(0.002,0.015,0.02,0.96); veil.mouse_filter=Control.MOUSE_FILTER_STOP
 	add_child(veil); veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_panel=PanelContainer.new(); add_child(_panel)
-	var skin:=Skin.new(); skin.selected=true; _panel.add_theme_stylebox_override("panel",skin)
+	var skin:=ArmoryFrame.new(); skin.selected=true; _panel.add_theme_stylebox_override("panel",skin)
 	_scroll=ScrollContainer.new(); _scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
 	_scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_SHOW_NEVER; _scroll.scroll_deadzone=10; _scroll.follow_focus=false
 	_panel.add_child(_scroll)
@@ -59,11 +59,11 @@ func _text(parent: Node, text: String, color: Color = Color(0.88,0.94,0.92), fon
 	label.mouse_filter=Control.MOUSE_FILTER_IGNORE; parent.add_child(label); return label
 func _button(parent: Node, text: String, action: Callable, color: Color = GOLD) -> Button:
 	var button:=Button.new(); button.text=text; button.custom_minimum_size=Vector2(0,48)
-	button.size_flags_horizontal=Control.SIZE_EXPAND_FILL; button.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
+	button.clip_text=true; button.size_flags_horizontal=Control.SIZE_EXPAND_FILL; button.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 	button.focus_mode=Control.FOCUS_NONE; button.mouse_filter=Control.MOUSE_FILTER_PASS
-	var skin:=Skin.new(); skin.tint=color
+	var skin:=ArmoryFrame.new(); skin.tint=color
 	button.add_theme_stylebox_override("normal",skin); button.add_theme_stylebox_override("hover",skin)
-	var pressed:=Skin.new(); pressed.pressed=true; pressed.tint=color; button.add_theme_stylebox_override("pressed",pressed)
+	var pressed:=ArmoryFrame.new(); pressed.pressed=true; pressed.tint=color; button.add_theme_stylebox_override("pressed",pressed)
 	button.add_theme_font_size_override("font_size",13); parent.add_child(button)
 	button.button_down.connect(func() -> void: _touch=get_global_mouse_position())
 	button.pressed.connect(func() -> void:

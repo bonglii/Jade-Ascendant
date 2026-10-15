@@ -3,6 +3,7 @@ const Paid = preload("res://scripts/monetization/paid_gameplay_v2.gd")
 const Fixture = preload("res://tests/fixtures/paid_gameplay_manager_v2.gd")
 var checks: int=0
 var failures: int=0
+var watchdog: Timer
 class Bridge extends Node:
  var id: String=""
  var body: String=""
@@ -17,8 +18,13 @@ func state(binding: String="") -> Dictionary:
  return {"paid_gameplay_version":2,"account_binding":binding,"catalog_hash":Paid.HASH,"state":"ready","revision":0,"wallet":{"balance":1500,"revision":1},"inventory":{"cloudstep_boots":9},"stars":{"cloudstep_boots":2},"slots":{"armament":"","robe":"","bracer":"","boots":"cloudstep_boots","pendant":""},"pity":{"rare_plus":0,"epic_plus":10,"legendary":10},"wish":"","wish_guaranteed":false,"lifetime_pulls":10,"rates":{"common":6000,"rare":2900,"epic":900,"legendary":200},"lease_seconds":120}
 func reply(manager: Node, bridge: Bridge, snapshot: Dictionary, op: Variant=null) -> void:
  manager.call("_on_result",bridge.id,true,"PAID_GAMEPLAY_VERIFIED",JSON.stringify({"snapshot":snapshot,"operation":op}))
+func _on_deadline() -> void:
+ push_error("PAID_V2_QA aborted after 25 seconds; inspect the first preceding script error")
+ quit(1)
 func run() -> void:
  if not OS.get_user_data_dir().contains("jade_paid_v2_qa"): quit(2);return
+ watchdog=Timer.new();watchdog.one_shot=true;watchdog.wait_time=25
+ root.add_child(watchdog);watchdog.timeout.connect(_on_deadline);watchdog.start()
  await process_frame
  var pavilion: Node=root.get_node("PavilionManager")
  var equipment: Node=root.get_node("EquipmentManager")
@@ -113,6 +119,7 @@ func run() -> void:
  manager.set("test_binding","b".repeat(64));manager.set("_binding","b".repeat(64))
  check(manager.call("_read_pending").is_empty(),"another account has its own journal")
  manager.free();bridge.free()
+ watchdog.stop();watchdog.free()
  print("PAID_GAMEPLAY_V2_CHECKS=",checks,"; FAILURES=",failures)
  await process_frame
  quit(0 if failures==0 else 1)

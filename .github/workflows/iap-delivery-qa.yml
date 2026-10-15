@@ -69,6 +69,10 @@ jobs:
           (qa/'project.godot').write_text(s)
           PY
           timeout 180 /tmp/jade-qa/Godot_v4.7.2-stable_linux.x86_64 --headless --audio-driver Dummy --path /tmp/jade-qa/project --editor --import
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iap-godot-qa-tool
+          path: /tmp/jade-qa/Godot_v4.7.2-stable_linux.x86_64
       - name: Paid client boundaries and affected equipment UI
         shell: bash
         run: |

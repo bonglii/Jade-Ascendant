@@ -6,6 +6,11 @@ const HASH: String = "16cfc8c6171f52bb60dfc76eb756769f6e13ce7122d87bec531bb46d75
 const Catalog = preload("res://scripts/data/equipment_catalog.gd")
 const SLOTS: Array[String] = ["armament", "robe", "bracer", "boots", "pendant"]
 const SINGLETON: String = "JadeMonetizationNativeBridge"
+const SNAPSHOT_FIELDS: Array[String] = [
+	"paid_gameplay_version", "account_binding", "catalog_hash", "state", "revision",
+	"wallet", "inventory", "stars", "slots", "pity", "wish", "wish_guaranteed",
+	"lifetime_pulls", "rates", "lease_seconds"
+]
 var snapshot: Dictionary = {}
 var status: String = "not_connected"
 var busy: bool = false
@@ -194,7 +199,9 @@ static func _parse_json(text: String) -> Variant:
 static func _whole(value: Variant, low: int = 0, high: int = 1000000000) -> bool:
 	return typeof(value) in [TYPE_INT, TYPE_FLOAT] and is_finite(float(value)) and float(value) == floor(float(value)) and float(value) >= low and float(value) <= high
 static func valid_snapshot(value: Dictionary, binding: String) -> bool:
-	if value.size() != 16 or value.get("paid_gameplay_version") != 2 or value.get("account_binding") != binding or value.get("catalog_hash") != HASH: return false
+	for field: String in SNAPSHOT_FIELDS:
+		if not value.has(field): return false
+	if value.size() != SNAPSHOT_FIELDS.size() or value.get("paid_gameplay_version") != 2 or value.get("account_binding") != binding or value.get("catalog_hash") != HASH: return false
 	if value.get("state") not in ["ready", "unfunded", "initialize_required"] or not _whole(value.get("revision"), 0, 9007199254740990) or value.get("lease_seconds") != 120: return false
 	for field: String in ["wallet", "inventory", "stars", "slots", "pity", "rates"]:
 		if not value.get(field) is Dictionary: return false
