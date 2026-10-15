@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://c6v5hx43vhd8v" path="res://scripts/ui/settings_screen.gd" id="1_script"]
 [ext_resource type="Script" uid="uid://bwa0wej15sgvf" path="res://scripts/ui/mobile_safe_area.gd" id="2_safe"]
 [ext_resource type="Theme" uid="uid://d0fwhrxw25bsx" path="res://assets/ui/jade_ui_theme.tres" id="3_theme"]
-[ext_resource type="Texture2D" uid="uid://q77j4c4gegrb" path="res://assets/ui/main_menu/main_menu_key_art_lin_yue.png" id="4_bg"]
+[ext_resource type="Texture2D" path="res://assets/ui/settings/neo/control_sanctum.svg" id="4_bg"]
 [ext_resource type="Texture2D" uid="uid://doog3thxi45kx" path="res://assets/ui/icons/settings.svg" id="5_settings"]
 [ext_resource type="Texture2D" uid="uid://rot6l84ghrjj" path="res://assets/ui/wuxia/realm_frame.png" id="6_frame"]
 [ext_resource type="Texture2D" uid="uid://db8r5vi12ni2x" path="res://assets/ui/wuxia/trial_frame.png" id="7_card"]

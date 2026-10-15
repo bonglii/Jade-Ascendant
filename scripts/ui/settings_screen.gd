@@ -24,6 +24,11 @@ const SCROLL_GESTURE_DEADZONE: float = 15.0
 
 var is_syncing_ui: bool = false
 var presentation_toggles: Dictionary = {}
+var presentation_toggle_labels: Dictionary = {}
+var quality_choice: OptionButton
+var connection_status: Label
+var connection_retry: Button
+var _connection_tick: float = 0.0
 var fps_choice: OptionButton = null
 var language_choice: OptionButton = null
 var joystick_size_choice: OptionButton = null
@@ -64,6 +69,7 @@ func _ready() -> void:
 	# SafeArea configures touch scrolling via call_deferred. Our policy must run
 	# afterward so the local deadzone is not overwritten by its shared default.
 	call_deferred("_configure_settings_scroll_gestures")
+	_finish_neo_settings.call_deferred()
 	_play_settings_entrance()
 	DebugLogger.system(str("Settings Screen aktif!"))
 
@@ -81,9 +87,11 @@ func _configure_settings_scroll_gestures() -> void:
 	# vertical gestures can reach the ScrollContainer. OptionButton defaults to
 	# action-on-PRESS, which opens popups in the middle of swipes. Every dropdown
 	# in this screen instead opens only on a deliberate release.
-	for option: OptionButton in [joystick_size_choice, fps_choice, language_choice]:
-		if option == null:
-			continue
+	for option: OptionButton in [joystick_size_choice, fps_choice, language_choice, quality_choice]:
+		if option == null: continue
+		option.fit_to_longest_item = false
+		option.clip_text = true
+		option.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		option.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
 		option.mouse_filter = Control.MOUSE_FILTER_PASS
 
@@ -161,7 +169,7 @@ func _register_scroll_drag(viewport_position: Vector2) -> void:
 	_scroll_gesture_active = true
 	_scroll_gesture_generation += 1
 	# An already-open popup must not remain stacked above a scrolling page.
-	for option: OptionButton in [joystick_size_choice, fps_choice, language_choice]:
+	for option: OptionButton in [joystick_size_choice, fps_choice, language_choice, quality_choice]:
 		if option != null and option.get_popup().visible:
 			option.get_popup().hide()
 
@@ -240,7 +248,14 @@ func _sync_from_settings() -> void:
 		var toggle: CheckButton = presentation_toggles[key] as CheckButton
 		if toggle != null:
 			toggle.set_pressed_no_signal(bool(SettingsManager.get(str(key))))
-			toggle.text = _local("ON", "AKTIF") if toggle.button_pressed else _local("OFF", "MATI")
+			toggle.text = ""
+			var state_label: Label = presentation_toggle_labels.get(key)
+			if state_label != null:
+				state_label.text = _local("ON", "AKTIF") if toggle.button_pressed else _local("OFF", "MATI")
+				toggle.tooltip_text = state_label.text
+	routing_status_label.visible = not SettingsManager.are_audio_buses_ready()
+	if quality_choice != null:
+		quality_choice.select(["custom", "battery", "balanced", "premium"].find(SettingsManager.get_quality_preset()))
 	if fps_choice != null:
 		fps_choice.select(0 if SettingsManager.frame_limit == 60 else 1)
 	if language_choice != null:
@@ -383,6 +398,14 @@ func _build_presentation_options() -> void:
 	)
 	var system_box: VBoxContainer = system_card.get_child(0) as VBoxContainer
 	_add_section_rule(system_box, GOLD)
+	_add_setting_label(system_box, _local("Visual Profile", "Profil Visual"), _local("Choose a preset, then fine-tune any setting below.", "Pilih preset, lalu sesuaikan pengaturan di bawah."))
+	quality_choice = OptionButton.new()
+	quality_choice.name = "QualityProfile"
+	for title: String in [_local("CUSTOM", "KUSTOM"), _local("BATTERY", "HEMAT BATERAI"), _local("BALANCED", "SEIMBANG"), "PREMIUM"]: quality_choice.add_item(title)
+	quality_choice.custom_minimum_size.y = 56
+	system_box.add_child(quality_choice)
+	_apply_dropdown_polish(quality_choice)
+	quality_choice.item_selected.connect(_on_quality_selected)
 	_add_setting_label(system_box, _local("Frame Rate", "Frame Rate"),
 		_local("60 FPS for smooth play, 30 FPS to save battery.",
 			"60 FPS untuk gerakan halus, 30 FPS untuk hemat baterai."))
@@ -410,6 +433,7 @@ func _build_presentation_options() -> void:
 	privacy.pressed.connect(_open_privacy)
 	system_box.add_child(privacy)
 
+	_build_connection_support(parent_box, source_card)
 	_build_monetization_qa(parent_box, source_card)
 
 
@@ -441,8 +465,21 @@ func _add_combat_toggle(box: VBoxContainer, item: Dictionary) -> void:
 	toggle.custom_minimum_size = Vector2(90, 58)
 	toggle.add_theme_color_override("font_color", JADE)
 	toggle.add_theme_font_size_override("font_size", 14)
-	row.add_child(toggle)
+	var switch_box := VBoxContainer.new()
+	switch_box.name = "Switch_" + str(item.get("key", ""))
+	switch_box.custom_minimum_size.x = 90
+	switch_box.add_theme_constant_override("separation", 2)
+	row.add_child(switch_box)
+	var state_label := Label.new()
+	state_label.name = "ToggleState"
+	state_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	state_label.add_theme_font_size_override("font_size", 14)
+	state_label.add_theme_color_override("font_color", JADE)
+	state_label.set_meta(&"jade_mobile_readability_v2", true)
+	switch_box.add_child(state_label)
+	switch_box.add_child(toggle)
 	var key: String = str(item.get("key", ""))
+	presentation_toggle_labels[key] = state_label
 	toggle.toggled.connect(_on_presentation_toggled.bind(key))
 	presentation_toggles[key] = toggle
 	_add_section_rule(box, Color(0.25, 0.68, 0.60, 0.26))
@@ -519,6 +556,9 @@ func _apply_dropdown_polish(option: OptionButton) -> void:
 		return
 	# Native OptionButton defaults to click-on-PRESS. Within ScrollContainer this
 	# is indistinguishable from the beginning of a scroll until the finger moves.
+	option.fit_to_longest_item = false
+	option.clip_text = true
+	option.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	option.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
 	option.mouse_filter = Control.MOUSE_FILTER_PASS
 	option.pressed.connect(_on_dropdown_pressed.bind(option))
@@ -639,28 +679,13 @@ func _style_for_control(accent: Color) -> StyleBoxFlat:
 	return sb
 
 
-func _make_premium_card_style(accent: Color) -> StyleBoxFlat:
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.004, 0.029, 0.042, 0.977)
-	sb.border_width_left = 2
-	sb.border_width_right = 2
-	sb.border_width_top = 2
-	sb.border_width_bottom = 3
-	sb.border_color = Color(accent.r, accent.g, accent.b, 0.75)
-	sb.corner_radius_top_left = 16
-	sb.corner_radius_top_right = 16
-	sb.corner_radius_bottom_left = 16
-	sb.corner_radius_bottom_right = 16
-	sb.content_margin_left = 20.0
-	sb.content_margin_right = 20.0
-	sb.content_margin_top = 18.0
-	sb.content_margin_bottom = 20.0
-	sb.shadow_color = Color(accent.r, accent.g, accent.b, 0.14)
-	sb.shadow_size = 11
-	sb.expand_margin_left = 1.0
-	sb.expand_margin_right = 1.0
-	sb.expand_margin_top = 1.0
-	sb.expand_margin_bottom = 1.0
+func _make_premium_card_style(accent: Color) -> StyleBox:
+	var sb := StyleBoxTexture.new()
+	var palette: String = "gold" if accent == GOLD else ("aqua" if accent == AQUA else "jade")
+	sb.texture = load("res://assets/ui/settings/neo/command_card_%s.svg" % palette)
+	for side: String in ["left", "right", "top", "bottom"]:
+		sb.set("texture_margin_" + side, 24.0)
+		sb.set("content_margin_" + side, 18.0)
 	return sb
 
 
@@ -737,7 +762,7 @@ func _build_sticky_navigation() -> void:
 	rail.anchor_bottom = 0.018
 	rail.offset_bottom = 71.0
 	rail.mouse_filter = Control.MOUSE_FILTER_PASS
-	var rail_style: StyleBoxFlat = _make_premium_card_style(GOLD)
+	var rail_style: StyleBox = _make_premium_card_style(GOLD)
 	rail_style.content_margin_top = 8.0
 	rail_style.content_margin_bottom = 8.0
 	rail.add_theme_stylebox_override("panel", rail_style)
@@ -750,10 +775,13 @@ func _build_sticky_navigation() -> void:
 	back_button.text = _local("‹  HOME", "‹  BERANDA")
 	_stylize_button(back_button, GOLD)
 	var gap := Control.new()
-	gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	gap.custom_minimum_size.x = 4
 	row.add_child(gap)
 	var status := Label.new()
-	status.text = _local("SETTINGS  •  DEVICE", "PENGATURAN  •  PERANGKAT")
+	status.text = _local("SETTINGS", "PENGATURAN")
+	status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	status.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	status.add_theme_font_size_override("font_size", 14)
 	status.add_theme_color_override("font_color", JADE)
 	status.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -1063,3 +1091,71 @@ func _on_monetization_qa_rewarded_completed(placement: String) -> void:
 		return
 	monetization_qa_event_label.text = "Last event: REWARD CALLBACK OK • " + placement
 	_refresh_monetization_qa()
+
+func _on_quality_selected(index: int) -> void:
+	if is_syncing_ui or _scroll_gesture_active or bool(quality_choice.get_meta("jade_scroll_cancelled", false)): return
+	SettingsManager.set_quality_preset(["custom", "battery", "balanced", "premium"][clampi(index, 0, 3)])
+	_sync_from_settings()
+
+func _build_connection_support(parent_box: VBoxContainer, source: PanelContainer) -> void:
+	var card: PanelContainer = _create_settings_card(parent_box, source, _local("ACCOUNT & SUPPORT", "AKUN & BANTUAN"), _local("Connection", "Koneksi"), _local("Retry your profile connection or copy a private support summary.", "Coba ulang koneksi profil atau salin ringkasan bantuan."))
+	card.name = "ConnectionSupportCard"
+	var box: VBoxContainer = card.get_child(0)
+	connection_status = Label.new()
+	connection_status.name = "ConnectionStatus"
+	connection_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	connection_status.add_theme_color_override("font_color", JADE)
+	box.add_child(connection_status)
+	connection_retry = Button.new()
+	connection_retry.name = "RetryProfile"
+	connection_retry.text = _local("RETRY CONNECTION", "COBA KONEKSI LAGI")
+	box.add_child(connection_retry)
+	connection_retry.pressed.connect(func():
+		if not bool(connection_retry.get_meta("jade_scroll_cancelled", false)): PlayerIdentityServerClient.connect_profile())
+	var copy := Button.new()
+	copy.name = "CopySupportSummary"
+	copy.text = _local("COPY SUPPORT SUMMARY", "SALIN RINGKASAN BANTUAN")
+	box.add_child(copy)
+	copy.pressed.connect(func():
+		if not bool(copy.get_meta("jade_scroll_cancelled", false)): DisplayServer.clipboard_set(get_support_summary()))
+
+func _process(delta: float) -> void:
+	_connection_tick += delta
+	if _connection_tick < 1.0: return
+	_connection_tick = 0.0
+	_refresh_connection_support()
+
+func _refresh_connection_support() -> void:
+	if connection_status == null: return
+	var snapshot: Dictionary = PlayerIdentityServerClient.get_connection_snapshot()
+	var status: String = str(PlayerIdentityManager.get_profile_snapshot().get("server_status", "pending"))
+	connection_status.text = status.replace("_", " ").to_upper()
+	connection_retry.disabled = not bool(snapshot.can_retry)
+
+func get_support_summary() -> String:
+	# Explicit allowlist only: no email, raw Firebase UID, tokens, account hash or save payload.
+	var profile: Dictionary = PlayerIdentityManager.get_profile_snapshot()
+	var route: Dictionary = PlayerIdentityServerClient.get_connection_snapshot()
+	var account: Dictionary = GoogleAccountManager.get_account_snapshot()
+	var billing: Dictionary = PavilionManager.get_billing_runtime_status()
+	var summary: String = "JADE SUPPORT\nVersion=%s\nOS=%s\nPublic UID=%s\nProfile=%s\nRoute=%s\nStage=%s\nFPS=%d\nReduced effects=%s" % [str(ProjectSettings.get_setting("application/config/version", "unreported")), OS.get_name(), str(profile.get("player_uid", "")), str(profile.get("server_status", "pending")), str(route.route), str(route.stage), SettingsManager.frame_limit, str(SettingsManager.reduced_effects)]
+	summary += "\nGoogle native=%s\nGoogle signed in=%s\nGoogle busy=%s\nGoogle elapsed ms=%d\nPurchase identity ready=%s" % [str(bool(account.get("native_ready", false))), str(bool(account.get("signed_in", false))), str(bool(account.get("busy", false))), int(account.get("elapsed_msec", 0)), str(bool(account.get("monetization_identity_ready", false)))]
+	summary += "\nBilling state=%s\nPlay connected=%s\nProducts=%d\nPurchase authority ready=%s\nRecovery waiting=%s\nProfile retry seconds=%d" % [str(billing.get("state", "unknown")), str(bool(billing.get("billing_client_ready", false))), int(billing.get("product_count", 0)), str(bool(billing.get("secure_purchase_authority_ready", false))), str(bool(billing.get("restore_waiting_for_callback", false))), int(route.get("retry_in_seconds", 0))]
+	var jade: Dictionary=PavilionManager.get_server_jade_view()
+	summary+="\nPurchase result stage=%s\nPurchased Jade=%d\nPurchased Jade confirmed=%s\nPurchased Jade revision=%d"%[str(jade.last_purchase_stage),int(jade.balance),str(bool(jade.confirmed)),int(jade.revision)]
+	return summary
+
+
+func _finish_neo_settings() -> void:
+	for card: PanelContainer in find_children("*", "PanelContainer", true, false):
+		if card.name == "GoogleAccountCard": card.add_theme_stylebox_override("panel", _make_premium_card_style(GOLD))
+	for button: Button in find_children("*", "Button", true, false):
+		button.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
+		button.clip_text = not button is CheckButton
+		if not button is CheckButton and not button is OptionButton: _stylize_button(button, JADE)
+	for label: Label in find_children("*", "Label", true, false):
+		if label in [master_value_label, music_value_label, sfx_value_label, joystick_opacity_label]: continue
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		label.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+		if label.get_parent() is HBoxContainer: label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_refresh_connection_support()

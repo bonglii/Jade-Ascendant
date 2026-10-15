@@ -9,14 +9,9 @@ var refresh_left: float = 0.0
 var plate: StyleBoxFlat = StyleBoxFlat.new()
 var proc_id: String = ""
 var proc_left: float = 0.0
-static func show_applied(player: Node2D, id: String, display_name: String, effect: String) -> void:
- var feedback: Node2D = player.get_node_or_null("SkillAscensionFeedback")
- if feedback == null:
-  feedback = (load("res://scripts/player/skill_ascension_feedback.gd") as GDScript).new()
-  feedback.name = "SkillAscensionFeedback";player.add_child(feedback)
- feedback.skill_id = id;feedback.title = display_name;feedback.benefit = effect.replace("\n"," · ")
- feedback.remaining = 1.65
- feedback.set_process(true);feedback.queue_redraw()
+static func show_applied(_player: Node2D, _id: String, _display_name: String, _effect: String) -> void:
+ # Compatibility entry point: upgrades already acknowledge in the choice UI.
+ pass
 static func show_proc(player: Node2D, id: String) -> void:
  var feedback: Node2D = player.get_node_or_null("SkillAscensionFeedback")
  if feedback == null:

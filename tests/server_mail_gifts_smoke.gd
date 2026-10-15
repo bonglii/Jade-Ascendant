@@ -37,7 +37,10 @@ func run() -> void:
   check(not saver.has_pending_transaction(),"restart journal settled")
   print("MAIL_GIFTS_RESTART checks=",checks," failures=",failures);quit(1 if failures else 0);return
  var manifest: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://backend/player_identity/mail_reward_catalog.json"))
- check(manifest.equipment.size()==Catalog.ITEMS.size(),"backend/client catalog counts match")
+ var active_count: int=0
+ for id: String in Catalog.ITEMS:
+  if not bool(Catalog.ITEMS[id].get("retired",false)):active_count+=1
+ check(manifest.equipment.size()==active_count,"backend/client active catalog counts match; retired Bell excluded")
  for item: Dictionary in manifest.equipment:
   check(Catalog.ITEMS.has(item.id) and Catalog.ITEMS[item.id].rarity==item.rarity and Catalog.ITEMS[item.id].display_name==item.name,"catalog identity "+str(item.id))
  var jade: int=pavilion.get_celestial_jade();var seals: int=pavilion.get_pavilion_seals();var stones: int=progression.spirit_stone
@@ -48,7 +51,7 @@ func run() -> void:
  claim("b".repeat(32),{"spirit_stone":250,"celestial_jade":50,"pavilion_seal":3,"items":{"nine_heavens_star_sword":1,"refinement_shard":2}})
  check(pavilion.get_celestial_jade()==jade+150,"mixed Jade exact amount")
  check(pavilion.get_pavilion_seals()==seals+3,"real summon seal counter incremented")
- check(progression.spirit_stone==stones+250,"mixed Stone exact amount")
+ check(progression.spirit_stone==stones+290,"historical fragments convert once at 20 Stone each")
  check(inventory.get_item_count("nine_heavens_star_sword")==1,"equipment reaches permanent ownership")
  var result: Dictionary=root.get_node("RewardManager").get_last_grant_result()
  check(result.applied_reward_data.get("celestial_jade")==50 and result.applied_reward_data.get("pavilion_seal")==3,"claim popup reports actual bonus currencies")

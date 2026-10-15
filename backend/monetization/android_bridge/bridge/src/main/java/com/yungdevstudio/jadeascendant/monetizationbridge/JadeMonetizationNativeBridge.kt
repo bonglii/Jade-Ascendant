@@ -76,6 +76,8 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
     override fun getPluginName() = BuildConfig.GODOT_PLUGIN_NAME
 
     override fun getPluginSignals(): MutableSet<SignalInfo> = mutableSetOf(
+        SignalInfo("paidWalletSnapshotResultV2", String::class.java, Boolean::class.javaObjectType, String::class.java, String::class.java),
+        SignalInfo("paidVerifiedPurchaseRepairResultV2", String::class.java, Boolean::class.javaObjectType, String::class.java, String::class.java),
         SignalInfo(
             "purchaseAuthorityResult",
             Boolean::class.javaObjectType,
@@ -126,6 +128,24 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
         ),
     )
 
+    @Volatile private var appCheckRetryAt: Long = 0L
+
+    @Synchronized
+    private fun appCheckReady(): Boolean {
+        if (appCheckInitialized) return true
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (now < appCheckRetryAt) return false
+        appCheckRetryAt = now + 2000L
+        return try {
+            val app = FirebaseApp.getInstance()
+            if (app.options.projectId != "jade-ascendant") false else {
+                AppCheckProviderInstall.install(app)
+                appCheckInitialized = true
+                true
+            }
+        } catch (_: Exception) { false }
+    }
+
     override fun onMainCreate(activity: Activity?): View? {
         if (activity != null) {
             try {
@@ -134,7 +154,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
                 } catch (_: Exception) {
                     FirebaseApp.initializeApp(activity)
                 }
-                if (app != null) {
+                if (app != null && app.options.projectId == "jade-ascendant") {
                     AppCheckProviderInstall.install(app)
                     appCheckInitialized = true
                 }
@@ -146,7 +166,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
     }
 
     @UsedByGodot
-    fun isSecurePurchaseTransportConfigured(): Boolean = appCheckInitialized
+    fun isSecurePurchaseTransportConfigured(): Boolean = appCheckReady()
 
     /** Legacy pre-wallet route is permanently retired. Never return a local grant. */
     @UsedByGodot
@@ -170,7 +190,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
 
     @UsedByGodot
     fun isPaidWalletPurchaseV2TransportConfigured(): Boolean =
-        appCheckInitialized && (PAID_PURCHASE_V2_TRANSPORT_APPROVED || sandboxCreditEnabled())
+        appCheckReady() && (PAID_PURCHASE_V2_TRANSPORT_APPROVED || sandboxCreditEnabled())
 
     @UsedByGodot
     fun authorizePaidWalletPurchaseV2(purchaseTokenValue: String) {
@@ -182,7 +202,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
             emitPaidPurchaseResult(false, "BUSY", "")
             return
         }
-        if (!appCheckInitialized) {
+        if (!appCheckReady()) {
             finishPaidPurchase(false, "APP_CHECK_NOT_READY", "")
             return
         }
@@ -244,7 +264,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
             emitPaidWalletResult(false, "BUSY", "")
             return
         }
-        if (!appCheckInitialized) {
+        if (!appCheckReady()) {
             finishPaidWallet(false, "APP_CHECK_NOT_READY", "")
             return
         }
@@ -302,7 +322,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
             emitEntitlements(false, "BUSY", "")
             return
         }
-        if (!appCheckInitialized) {
+        if (!appCheckReady()) {
             finishEntitlements(false, "APP_CHECK_NOT_READY", "")
             return
         }
@@ -397,7 +417,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
             emitRecoveryResult(false, "BUSY", "")
             return
         }
-        if (!appCheckInitialized) {
+        if (!appCheckReady()) {
             finishRecovery(false, "APP_CHECK_NOT_READY", "")
             return
         }
@@ -446,7 +466,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
 
     /** RC4 paid summon: caller MUST persist the same UUID before invoking this. */
     @UsedByGodot
-    fun isPaidSummonTransportConfigured(): Boolean = appCheckInitialized && PAID_SUMMON_TRANSPORT_APPROVED
+    fun isPaidSummonTransportConfigured(): Boolean = appCheckReady() && PAID_SUMMON_TRANSPORT_APPROVED
 
     @UsedByGodot
     fun commitPaidSummon(requestId: String, pullCount: Int) {
@@ -455,7 +475,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
             emitPaidSummonResult(false, "INVALID_SUMMON_REQUEST", ""); return
         }
         if (!paidSummonBusy.compareAndSet(false, true)) { emitPaidSummonResult(false, "BUSY", ""); return }
-        if (!appCheckInitialized) { finishPaidSummon(false, "APP_CHECK_NOT_READY", ""); return }
+        if (!appCheckReady()) { finishPaidSummon(false, "APP_CHECK_NOT_READY", ""); return }
         try {
             val user = FirebaseAuth.getInstance().currentUser
             if (user == null || !isAllowedPurchaseUser(user)) { finishPaidSummon(false, "AUTH_REQUIRED", ""); return }
@@ -640,7 +660,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
 
     /** RC6 only. Backend + native + Godot approval are all independently OFF. */
     @UsedByGodot
-    fun isPaidLoadoutReadConfigured(): Boolean = appCheckInitialized && PAID_LOADOUT_READ_APPROVED
+    fun isPaidLoadoutReadConfigured(): Boolean = appCheckReady() && PAID_LOADOUT_READ_APPROVED
 
     @UsedByGodot
     fun refreshPaidLoadout() {
@@ -655,7 +675,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
     }
 
     @UsedByGodot
-    fun isPaidLoadoutWriteConfigured(): Boolean = appCheckInitialized && PAID_LOADOUT_WRITE_APPROVED
+    fun isPaidLoadoutWriteConfigured(): Boolean = appCheckReady() && PAID_LOADOUT_WRITE_APPROVED
 
     @UsedByGodot
     fun updatePaidLoadout(requestId: String, expectedLoadoutRevision: Long,
@@ -694,21 +714,32 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
      */
     private fun requestSignedRC6(endpoint: String, method: String, body: String?,
         flag: AtomicBoolean, signal: String, completedStatus: String,
-        canonical: (JSONObject) -> String?) {
-        if (!flag.compareAndSet(false, true)) {
-            emitRC6(signal, false, "BUSY", "")
-            return
+        requestId: String? = null, canonical: (JSONObject) -> String?) {
+        fun emit(ok: Boolean, status: String, payload: String) {
+            if (requestId == null) emitRC6(signal, ok, status, payload)
+            else runOnHostThread { emitSignal(signal, requestId, ok, status, payload) }
         }
+        if (!flag.compareAndSet(false, true)) { emit(false, "BUSY", ""); return }
+        val finished = AtomicBoolean(false)
+        val timeoutHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        var timeout: Runnable? = null
         fun finish(ok: Boolean, status: String, payload: String = "") {
+            if (!finished.compareAndSet(false, true)) return
+            timeout?.let { timeoutHandler.removeCallbacks(it) }
             flag.set(false)
-            emitRC6(signal, ok, status, payload)
+            emit(ok, status, payload)
         }
-        if (!appCheckInitialized) { finish(false, "APP_CHECK_NOT_READY"); return }
+        if (requestId != null) {
+            timeout = Runnable { finish(false, "REQUEST_TIMEOUT") }
+            timeoutHandler.postDelayed(timeout!!, 45_000L)
+        }
+        if (!appCheckReady()) { finish(false, "APP_CHECK_NOT_READY"); return }
         try {
             val user = FirebaseAuth.getInstance().currentUser
             if (user == null || !isAllowedPurchaseUser(user)) { finish(false, "AUTH_REQUIRED"); return }
             val uid = user.uid
             user.getIdToken(false).addOnCompleteListener authListener@{ authTask ->
+                if (finished.get()) return@authListener
                 try {
                     val idToken = if (authTask.isSuccessful) authTask.result?.token else null
                     if (idToken.isNullOrBlank() || !isSameUser(uid)) {
@@ -716,12 +747,14 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
                     }
                     FirebaseAppCheck.getInstance().getLimitedUseAppCheckToken()
                         .addOnCompleteListener checkListener@{ appTask ->
+                            if (finished.get()) return@checkListener
                             try {
                                 val appToken = if (appTask.isSuccessful) appTask.result?.token else null
                                 if (appToken.isNullOrBlank() || !isSameUser(uid)) {
                                     finish(false, "APP_CHECK_UNAVAILABLE"); return@checkListener
                                 }
-                                ioExecutor.execute {
+                                ioExecutor.execute ioTask@{
+                                    if (finished.get()) return@ioTask
                                     val result = requestOverHttpsRC6(endpoint, method, body, idToken, appToken, canonical)
                                     if (!isSameUser(uid)) finish(false, "ACCOUNT_CHANGED")
                                     else finish(result.success, if (result.success) completedStatus else result.status, result.grantJson)
@@ -782,7 +815,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
     /** Explicitly locked server-ledger repair; does not accept raw Play tokens. */
     @UsedByGodot
     fun isVerifiedPurchaseRepairTransportConfigured(): Boolean =
-        appCheckInitialized && PAID_VERIFIED_REPAIR_APPROVED
+        appCheckReady() && PAID_VERIFIED_REPAIR_APPROVED
 
     @UsedByGodot
     fun repairVerifiedPlayPurchases() {
@@ -794,6 +827,36 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
             "paidVerifiedPurchaseRepairResult", "SERVER_LEDGER_RECONCILED") { json ->
             VerifiedPurchaseRepairContract.canonicalOrNull(json)
         }
+    }
+
+    /** Tester-only correlated reads/repair. Release cannot enable this path. */
+    @UsedByGodot
+    fun isPaidWalletRecoveryReadConfigured(): Boolean = appCheckReady() && sandboxCreditEnabled()
+
+    @UsedByGodot
+    fun refreshPaidWalletSnapshotV2(requestId: String) {
+        if (!recoveryRequestAllowed(requestId, "paidWalletSnapshotResultV2")) return
+        requestSignedRC6(PAID_WALLET_ENDPOINT, "GET", null, paidWalletBusy,
+            "paidWalletSnapshotResultV2", "WALLET_SNAPSHOT_READ_ONLY", requestId) { json ->
+            PaidWalletViewContractM8.canonicalOrNull(json)
+        }
+    }
+
+    @UsedByGodot
+    fun repairVerifiedPlayPurchasesV2(requestId: String) {
+        if (!recoveryRequestAllowed(requestId, "paidVerifiedPurchaseRepairResultV2")) return
+        requestSignedRC6(PAID_VERIFIED_REPAIR_ENDPOINT, "POST", null, purchaseRepairBusy,
+            "paidVerifiedPurchaseRepairResultV2", "SERVER_LEDGER_RECONCILED", requestId) { json ->
+            VerifiedPurchaseRepairContract.canonicalOrNull(json)
+        }
+    }
+
+    private fun recoveryRequestAllowed(requestId: String, signal: String): Boolean {
+        val valid = requestId.matches(Regex("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$"))
+        val allowed = valid && isPaidWalletRecoveryReadConfigured()
+        if (!allowed) runOnHostThread { emitSignal(signal, requestId, false,
+            if (!valid) "INVALID_REQUEST_ID" else "TESTER_RECOVERY_LOCKED", "") }
+        return allowed
     }
 
     private fun readLimited(stream: InputStream): ByteArray {

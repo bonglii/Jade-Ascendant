@@ -58,8 +58,8 @@ func _ready() -> void:
 
 	_footer = _make_label(
 		_local(
-			"Cloud Save is not active. Gameplay progress and purchases remain in this device's local save.",
-			"Cloud Save belum aktif. Progres game dan riwayat pembelian masih tersimpan lokal di perangkat ini."
+			"Cloud Save is not active. Gameplay progress stays on this device. Verified purchases are linked to your account.",
+			"Cloud Save belum aktif. Progres game tetap di perangkat ini. Pembelian terverifikasi terhubung ke akunmu."
 		), 13, MUTED
 	)
 	content.add_child(_footer)

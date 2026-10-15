@@ -103,7 +103,7 @@ func _ready() -> void:
 		sanctuary_frame.texture_margin_top = 20
 		sanctuary_frame.texture_margin_bottom = 20
 	_build_tabs()
-	if sanctuary_style:resized.connect(_fit_sanctuary_labels)
+	resized.connect(_fit_sanctuary_labels)
 	_refresh_notification_badge()
 	set_process(true)
 
@@ -308,7 +308,7 @@ func _refresh_translated_labels() -> void:
 		)
 		tab_labels[tab_index].text = tr(key)
 		tab_buttons[tab_index].tooltip_text = tr(key)
-	if sanctuary_style:_fit_sanctuary_labels()
+	_fit_sanctuary_labels()
 
 
 func _fit_sanctuary_labels() -> void:

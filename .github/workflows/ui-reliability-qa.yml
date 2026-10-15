@@ -1,0 +1,54 @@
+name: UI readability wallet and Hero entry
+on:
+  push:
+    branches: ['checkpoint/**']
+    paths: ['scripts/ui/settings_screen.gd', 'scripts/ui/home_sanctuary_presenter.gd', 'scripts/ui/hub_resource_bar_manager.gd', 'scripts/ui/hero_unified_screen.gd', 'scripts/ui/menu_resource_prewarm.gd', 'scripts/managers/live_ops_manager.gd', 'tests/ui_reliability_followup_smoke.gd', 'backend/player_identity/*ui_reliability*', '.github/workflows/ui-reliability-qa.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare isolated Godot runtime
+        shell: bash
+        run: |
+          mkdir -p /tmp/jade-qa/project
+          curl -fsSL https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip -o /tmp/jade-qa/godot.zip
+          unzip -q /tmp/jade-qa/godot.zip -d /tmp/jade-qa
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          repo=Path.cwd();qa=Path('/tmp/jade-qa/project')
+          for p in repo.iterdir():
+              if p.name not in ['.git','.godot','project.godot']:(qa/p.name).symlink_to(p,target_is_directory=p.is_dir())
+          s=(repo/'project.godot').read_text()
+          s=re.sub(r'\[editor_plugins\][\s\S]*?(?=\n\[|\Z)','[editor_plugins]\nenabled=PackedStringArray()\n',s)
+          for p in repo.rglob('*.gd.uid'):s=s.replace(p.read_text().strip(),'res://'+str(p.relative_to(repo)).removesuffix('.uid'))
+          s+='\n[threading]\nworker_pool/max_threads=2\n'
+          (qa/'project.godot').write_text(s)
+          PY
+          timeout 180 /tmp/jade-qa/Godot_v4.7.2-stable_linux.x86_64 --headless --editor --path /tmp/jade-qa/project --import --quit
+      - name: Targeted runtime regressions
+        shell: bash
+        run: |
+          set -o pipefail
+          for entry in 'ui_reliability_followup_smoke:jade_ui_reliability_qa' 'hero_upgrade_burst_smoke:jade_hero_qa' 'home_sanctuary_smoke:jade_home_sanctuary_qa' 'premium_readiness_smoke:jade_premium_batch_qa'; do
+            name="${entry%%:*}"; qa_tag="${entry#*:}"
+            XDG_DATA_HOME="/tmp/$qa_tag" timeout 115 /tmp/jade-qa/Godot_v4.7.2-stable_linux.x86_64 --headless --audio-driver Dummy --path /tmp/jade-qa/project --script "res://tests/$name.gd" > "/tmp/$name.log" 2>&1
+            cat "/tmp/$name.log"
+            ! rg 'SCRIPT ERROR:|UI_RELIABILITY_FAIL|HERO_UPGRADE_BURST_FAILURE|HOME_SANCTUARY_FAIL|PREMIUM_BATCH_FAIL' "/tmp/$name.log"
+          done
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Windows PowerShell parse
+        shell: powershell
+        run: |
+          foreach ($name in @('apply_ui_reliability','publish_ui_reliability')) {
+            $tokens=$null;$errors=$null
+            [void][Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD ('backend/player_identity/'+$name+'.ps1')),[ref]$tokens,[ref]$errors)
+            if ($errors.Count) { throw ($errors | Out-String) }
+          }

@@ -2035,7 +2035,13 @@ func open_live_popup(scene_path: String) -> void:
 	if SceneTransitionManager.is_transitioning or not ResourceLoader.exists(scene_path, "PackedScene"):
 		return
 	var tree := get_tree()
-	if tree == null or tree.current_scene == null or tree.current_scene.scene_file_path != MAIN_MENU_SCENE:
+	if tree == null or tree.current_scene == null: return
+	var host_path: String = tree.current_scene.scene_file_path
+	var treasury_from_hub: bool = scene_path == "res://scenes/ui/celestial_treasury_screen.tscn" and host_path in [
+		"res://scenes/ui/cultivation_menu.tscn", "res://scenes/ui/equipment_screen.tscn",
+		"res://scenes/ui/daily_quest_screen.tscn", "res://scenes/ui/achievement_screen.tscn",
+		"res://scenes/ui/pavilion_screen.tscn"]
+	if host_path != MAIN_MENU_SCENE and not treasury_from_hub:
 		SceneTransitionManager.transition_menu_to(scene_path, 1)
 		return
 	if is_instance_valid(_active_live_popup):

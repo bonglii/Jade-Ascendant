@@ -1,4 +1,5 @@
 extends Node2D
+const OPACITY_BOOST: float = 1.4
 
 ## One bounded presentation per player, driven by confirmed gameplay events.
 ## Component frames have transparent gutters. Continuous transforms/alpha own
@@ -135,7 +136,7 @@ func _clock(speed: float) -> float:
 func _paint(node: Node2D, index: int, at: Vector2, size: Vector2, angle: float, alpha: float) -> void:
 	if frames.size() != 4 or alpha <= 0.001: return
 	node.draw_set_transform(at, angle, Vector2.ONE)
-	node.draw_texture_rect(frames[index], Rect2(-size * 0.5, size), false, Color(1,1,1,clampf(alpha * _strength(),0,1)))
+	node.draw_texture_rect(frames[index], Rect2(-size * 0.5, size), false, Color(1,1,1,clampf(minf(.96, alpha * OPACITY_BOOST) * _strength(),0,1)))
 	node.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _draw() -> void:

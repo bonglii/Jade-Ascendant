@@ -51,7 +51,7 @@ func run() -> void:
  check(presenter.profile_name.text==root.get_node("PlayerIdentityManager").get_profile_snapshot().display_name,"actual player name")
  check(presenter.boss_progress.text.begins_with(str(live.get_boss_hunt_unlocked_count())),"actual boss event progress")
  check(not presenter.boss_reward.text.contains("JADE"),"does not invent sample preview reward")
- check(home.get_node("KeyArt").texture.resource_path.contains("sanctuary/background"),"clean authored backdrop installed")
+ check(home.get_node("KeyArt").texture.resource_path.contains("sanctuary/motion/lin_yue_poster"),"approved local motion poster installed")
  var count: int=presenter.get_child_count()
  var font: int=presenter.profile_name.get_theme_font_size("font_size")
  await create_timer(.7).timeout
@@ -119,7 +119,7 @@ func run() -> void:
   ["res://scenes/ui/chapter_select.tscn","_call_main_menu",["_on_journey_pressed"]],
   ["res://scenes/ui/skill_book_screen.tscn","_open_menu_scene",[presenter.LIBRARY_SCENE]],
   ["res://scenes/ui/daily_quest_screen.tscn","open_currency_sources",[0]],
-  ["res://scenes/ui/pavilion_screen.tscn","open_currency_sources",[1]]
+  ["res://scenes/ui/pavilion_screen.tscn","open_currency_sources",[2]]
  ]
  for route: Array in routes:
   # Rebind to the current scene, since previous Home ownership has ended.

@@ -1,0 +1,22 @@
+{
+  "native_contract": "PASS",
+  "artifacts": [
+    {
+      "variant": "debug",
+      "jni_methods": 20,
+      "sha256": "1da393406dba4c8cd851ff132fc3d4daab150d9d84073e433728fcfc66440bbb"
+    },
+    {
+      "variant": "release",
+      "jni_methods": 20,
+      "sha256": "848e64a351fb781424e2cc54a3c801f5f38b9d181f5d579861de6acdf6e16d3c"
+    }
+  ],
+  "bridge_source_sha256": "d0e67a5595100c3278f9a9b644918fcf9f23fb44387c9bcec8bddac74d3f81ec",
+  "build": "Linux JDK17 Gradle8.13 SDK36; debug staging tester credit, release locked",
+  "unit_tests": {
+    "debug": 66,
+    "release": 66,
+    "failures": 0
+  }
+}

@@ -33,14 +33,14 @@ export async function verifyAuth(request,env,options={}) {
   if(!Number.isSafeInteger(claims.exp)||claims.exp<=time) reject('token_expired');
   if(!Number.isSafeInteger(claims.iat)||claims.iat>time+30) reject('token_issued_time');
   if(typeof claims.sub!=='string'||!claims.sub||claims.sub.length>128) reject('token_subject');
-  if(!Number.isSafeInteger(claims.auth_time)||claims.auth_time>Math.floor(Date.now()/1000)+30) reject('token_auth_time');
+  if(!Number.isSafeInteger(claims.auth_time)||claims.auth_time>time+30) reject('token_auth_time');
   if(!['anonymous','google.com'].includes(claims.firebase?.sign_in_provider)) reject('token_provider');
   let lookupStage='',lookupUnavailable=false;
   const fetcher=async(...args)=>{
     let response;
     try {
       // Runtime native functions may require their original receiver. Keep
-      // the shared IAP verifier untouched and adapt only this profile fetch.
+      // the runtime receiver while preserving the profile diagnostics.
       const source=options.fetcher??globalThis.fetch;
       const [url,init]=args;
       // workerd accepts only follow/manual; "error" throws before any network
@@ -57,7 +57,7 @@ export async function verifyAuth(request,env,options={}) {
     let keys;
     try { keys=(await response.clone().json()).keys; }
     catch { lookupStage='keys_format';lookupUnavailable=true;return response; }
-    if(!Array.isArray(keys)||!keys.length) { lookupStage='keys_format';lookupUnavailable=true; }
+    if(!Array.isArray(keys)||!keys.length||keys.length>32||keys.some(k=>!k||typeof k!=="object"||typeof k.kid!=="string"||typeof k.kty!=="string")) { lookupStage='keys_format';lookupUnavailable=true; }
     else if(!keys.some(k=>k.kid===header.kid&&k.kty==='RSA'&&(!k.alg||k.alg==='RS256')&&(!k.use||k.use==='sig'))) lookupStage='token_signing_key';
     return response;
   };

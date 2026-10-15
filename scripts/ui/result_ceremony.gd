@@ -24,7 +24,7 @@ func _ready() -> void:
 	_panel.add_theme_stylebox_override("panel", empty)
 	var frame := TextureRect.new()
 	frame.name = "CeremonialResultFrame"
-	frame.texture = load("res://assets/ui/results/quiet/%s.svg" % ("crimson" if _mode == "defeat" else "jade"))
+	frame.texture = load("res://assets/ui/results/neo/%s.svg" % ("crimson" if _mode == "defeat" else "jade"))
 	frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	frame.stretch_mode = TextureRect.STRETCH_SCALE
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -36,6 +36,7 @@ func _ready() -> void:
 	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_scroll.custom_minimum_size = Vector2(0, 80)
 	_scroll.scroll_deadzone = 10
+	_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
 	_body = VBoxContainer.new()
 	_body.name = "ResultBody"
 	_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -103,8 +104,14 @@ static func style_button(button: Button, palette: String) -> void:
 
 func fit() -> void:
 	if not is_instance_valid(_safe) or _safe.size.x <= 1: return
-	var desired := Vector2(minf(520, _safe.size.x - 24), minf(740, _safe.size.y - 24))
+	var available: Vector2 = _safe.size - Vector2(24,24)
+	var fixed_height: float = 76.0
+	for child: Control in _content.get_children():
+		if child != _scroll and child.visible: fixed_height += child.get_combined_minimum_size().y + 8
+	var natural: float = _body.get_combined_minimum_size().y + fixed_height
+	var desired := Vector2(minf(520, available.x), minf(clampf(natural, 480, 740), available.y))
 	_panel.custom_minimum_size = desired
+	_panel.size = desired
 	_margin.add_theme_constant_override("margin_left", 24)
 	_margin.add_theme_constant_override("margin_right", 24)
 	_margin.add_theme_constant_override("margin_top", 32)
@@ -171,7 +178,7 @@ func _refresh_report_rows() -> void:
 	if _show_skills:
 		for skill: Dictionary in _report_skills:
 			var row:=HBoxContainer.new();row.add_theme_constant_override("separation",8);_report_rows.add_child(row)
-			var icon:=TextureRect.new();icon.texture=load(str(preload("res://scripts/data/skill_catalog.gd").ICON_PATHS.get(str(skill.id),"")))
+			var icon:=TextureRect.new();icon.name="ReportSkillIcon_"+str(skill.id);icon.texture=load(preload("res://scripts/data/skill_catalog.gd").get_icon_path(str(skill.id),str(skill.get("armament_id",""))))
 			icon.custom_minimum_size=Vector2(28,28);icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;row.add_child(icon)
 			row.add_child(_report_label(str(skill.name),Color(.84,.91,.86)))
 			var level:=_report_label("Lv."+str(skill.level),Color(.83,.75,.51));level.name="ReportSkillLevel";level.autowrap_mode=TextServer.AUTOWRAP_OFF;level.custom_minimum_size.x=44;level.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;level.size_flags_horizontal=Control.SIZE_SHRINK_END;row.add_child(level)
@@ -190,3 +197,4 @@ func _refresh_report_rows() -> void:
 		if _report_partial:
 			_report_rows.add_child(_report_label("Catatan damage dimulai setelah Continue." if indonesian else "Damage tracking started after Continue.",Color(.65,.74,.72),12))
 	_scroll.set_deferred("scroll_vertical",0)
+	fit.call_deferred()

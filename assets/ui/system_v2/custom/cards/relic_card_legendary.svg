@@ -24,7 +24,7 @@
   <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
 </filter>
 </defs>
-<path d="M12 2 H176 L186 12 V164 L176 174 H12 L2 164 V12 Z" fill="url(#bg)" stroke="#F0B84B" stroke-width="1.5" />
+<path d="M12 2 H176 L186 12 V164 L176 174 H12 L2 164 V12 Z" fill="url(#bg)" stroke="#F0B84B" stroke-width="2.8" />
 <path d="M18 8 H170 L180 18" fill="none" stroke="#F0B84B" stroke-opacity="0.62" stroke-width="1"/>
 <path d="M8 158 L18 168 H170" fill="none" stroke="#F0B84B" stroke-opacity="0.34" stroke-width="1"/>
 <path d="M8 34 H180" stroke="#F0B84B" stroke-opacity="0.18" stroke-width="1"/>

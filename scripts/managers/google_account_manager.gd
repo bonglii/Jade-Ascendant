@@ -280,14 +280,60 @@ func _start_timeout(nonce: int, operation: String) -> void:
 func _on_operation_timeout(nonce: int, operation: String) -> void:
 	if not _busy or nonce != _operation_nonce or _operation != operation:
 		return
+	_operation_nonce += 1
+	if _reconcile_completed_operation(operation): return
 	_record_operation_latency("timeout")
 	_busy = false
 	_operation = ""
-	_status = "Google did not respond. Check your connection and try again."
+	_link_source_uid = ""
+	_status = "Sign out did not complete. Please try again." if operation == "sign_out" else "Google did not respond. Check your connection and try again."
 	_publish()
 
 
+func _reconcile_completed_operation(operation: String) -> bool:
+	# Reconcile the requested operation, not merely the existence of a session.
+	if _auth != null:
+		var native_signed: bool = bool(_auth.call("is_signed_in"))
+		if operation == "sign_out" and not native_signed:
+			_finish_operation()
+			_set_guest()
+			call_deferred("ensure_monetization_identity")
+			return true
+		if operation != "sign_out" and native_signed:
+			var data: Variant = _auth.call("get_current_user_data")
+			if data is Dictionary and _timeout_user_matches_operation(operation, data):
+				_finish_operation()
+				_apply_user(data)
+				return true
+	return false
+
+
+func _notification(what: int) -> void:
+	if what != NOTIFICATION_APPLICATION_RESUMED or not _native_ready or not is_inside_tree(): return
+	# Let the native activity result settle first. Never start another sign-in.
+	get_tree().create_timer(0.25).timeout.connect(_reconcile_after_resume.bind(_operation_nonce))
+
+
+func _reconcile_after_resume(nonce: int) -> void:
+	if nonce != _operation_nonce or _auth == null: return
+	if _busy:
+		_reconcile_completed_operation(_operation)
+	else:
+		_sync_native_session()
+
+
+func _timeout_user_matches_operation(operation: String, data: Dictionary) -> bool:
+	var uid: String = str(data.get("uid", ""))
+	if uid.is_empty(): return false
+	if operation == "anonymous_identity": return true
+	if bool(data.get("isAnonymous", false)): return false
+	if operation == "link_google":
+		return not _link_source_uid.is_empty() and uid == _link_source_uid
+	return operation == "sign_in"
+
+
 func _on_auth_success(data: Dictionary) -> void:
+	if not _callback_matches_native_user(data): return
 	if _operation not in ["sign_in", "anonymous_identity"]:
 		return
 	var completed_operation: String = _operation
@@ -298,7 +344,7 @@ func _on_auth_success(data: Dictionary) -> void:
 
 
 func _on_auth_failure(_message: String) -> void:
-	if not _busy:
+	if not _busy or _operation not in ["sign_in", "anonymous_identity"]:
 		return
 	var failed_operation: String = _operation
 	_finish_operation()
@@ -314,6 +360,7 @@ func _on_auth_failure(_message: String) -> void:
 
 
 func _on_link_with_google_success(data: Dictionary) -> void:
+	if not _callback_matches_native_user(data): return
 	if _operation != "link_google":
 		return
 	var expected_uid: String = _link_source_uid
@@ -337,6 +384,9 @@ func _on_link_with_google_failure(_message: String) -> void:
 
 
 func _on_auth_state_changed(signed_in: bool, user_data: Dictionary) -> void:
+	# Ignore a delayed signed-out event if native auth already has a new user.
+	if not signed_in and _auth != null and bool(_auth.call("is_signed_in")): return
+	if signed_in and not _callback_matches_native_user(user_data): return
 	# Interactive Google operations finish only through their explicit result
 	# signals. This prevents an intermediate anonymous auth callback from
 	# changing the visible account state or purchase owner.
@@ -362,6 +412,7 @@ func _on_auth_state_changed(signed_in: bool, user_data: Dictionary) -> void:
 func _on_sign_out_success(succeeded: bool) -> void:
 	if _operation != "sign_out":
 		return
+	if succeeded and _auth != null and bool(_auth.call("is_signed_in")): return
 	_finish_operation()
 	if succeeded:
 		_set_guest()
@@ -425,3 +476,8 @@ func _set_guest() -> void:
 
 func _publish() -> void:
 	account_state_changed.emit(get_account_snapshot())
+
+func _callback_matches_native_user(data: Dictionary) -> bool:
+	if _auth == null or not bool(_auth.call("is_signed_in")): return false
+	var current: Variant = _auth.call("get_current_user_data")
+	return current is Dictionary and not str(data.get("uid", "")).is_empty() and str(current.get("uid", "")) == str(data.get("uid", ""))

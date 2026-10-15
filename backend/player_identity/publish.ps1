@@ -6,7 +6,7 @@ try {
     if ($LASTEXITCODE -ne 0 -or $branch -ne 'checkpoint/iap-fasttrack-20261010') { throw 'Use the authorized checkpoint branch; main/production are protected.' }
     $origin = (& git remote get-url origin).Trim()
     if ($LASTEXITCODE -ne 0 -or $origin -notmatch 'github\.com[:/]bonglii/Jade-Ascendant(?:\.git)?$') { throw 'Unexpected repository remote.' }
-    $paths = @(Get-Content -Raw -LiteralPath 'backend/player_identity/publish_paths.json' | ConvertFrom-Json)
+    $paths = Get-Content -Raw -LiteralPath 'backend/player_identity/publish_paths.json' | ConvertFrom-Json
     $staged = @(& git diff --cached --name-only)
     if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect existing staging area.' }
     foreach ($path in $staged) { if ($paths -notcontains $path) { throw ('Unrelated staged file; preserve it before publishing: ' + $path) } }

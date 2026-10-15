@@ -5,6 +5,8 @@ const FIREBASE_KEYS = "https://www.googleapis.com/service_accounts/v1/jwk/secure
 const APP_CHECK_KEYS = "https://firebaseappcheck.googleapis.com/v1/jwks";
 const encoder = new TextEncoder();
 const keySets = new Map();
+const pendingKeys = new Map();
+const lastRotationRefresh = new Map();
 
 export class InvalidIdentity extends Error {
   constructor() { super("Invalid identity."); this.name = "InvalidIdentity"; }
@@ -21,20 +23,26 @@ function decodeJson(value) {
   catch { throw new InvalidIdentity(); }
 }
 
-async function loadKeys(url, fetcher) {
+async function loadKeys(url, fetcher, force = false) {
   const now = Date.now();
   const cached = keySets.get(url);
-  if (cached?.expires > now) return cached.keys;
-  let response;
-  try { response = await fetcher(url, { redirect: "error", signal: AbortSignal.timeout(5000) }); }
-  catch { throw new InvalidIdentity(); }
-  if (!response.ok) throw new InvalidIdentity();
-  let parsed;
-  try { parsed = await response.json(); } catch { throw new InvalidIdentity(); }
-  if (!Array.isArray(parsed.keys) || parsed.keys.length === 0) throw new InvalidIdentity();
-  // Short cache: safe even when Google rotates signing keys.
-  keySets.set(url, { keys: parsed.keys, expires: now + 15 * 60 * 1000 });
-  return parsed.keys;
+  if (!force && cached?.expires > now) return cached.keys;
+  if (pendingKeys.has(url)) return pendingKeys.get(url);
+  const pending = (async () => {
+    let response;
+    // Workerd supports manual/follow. Explicitly reject redirects below.
+    try { response = await fetcher(url, { redirect: "manual", signal: AbortSignal.timeout(5000) }); }
+    catch { throw new InvalidIdentity(); }
+    if (!response.ok || response.status >= 300) throw new InvalidIdentity();
+    let parsed;
+    try { parsed = await response.json(); } catch { throw new InvalidIdentity(); }
+    if (!Array.isArray(parsed?.keys) || !parsed.keys.length || parsed.keys.length > 32 ||
+        parsed.keys.some(k => !k || typeof k !== "object" || typeof k.kid !== "string" || !k.kid || typeof k.kty !== "string")) throw new InvalidIdentity();
+    keySets.set(url, { keys: parsed.keys, expires: now + 15 * 60 * 1000 });
+    return parsed.keys;
+  })();
+  pendingKeys.set(url, pending);
+  try { return await pending; } finally { if (pendingKeys.get(url) === pending) pendingKeys.delete(url); }
 }
 
 export async function verifyJwt(token, { jwksUrl, issuer, audience, subject, requireTyp = false, fetcher = fetch, now = Date.now() }) {
@@ -45,8 +53,15 @@ export async function verifyJwt(token, { jwksUrl, issuer, audience, subject, req
   const payload = decodeJson(parts[1]);
   if (!header || typeof header !== "object" || header.alg !== "RS256" || typeof header.kid !== "string" || !header.kid ||
       (requireTyp && header.typ !== "JWT") || !payload || typeof payload !== "object") throw new InvalidIdentity();
-  const keys = await loadKeys(jwksUrl, fetcher);
-  const jwk = keys.find(k => k.kid === header.kid && k.kty === "RSA" && (!k.alg || k.alg === "RS256") && (!k.use || k.use === "sig"));
+  let keys = await loadKeys(jwksUrl, fetcher);
+  const matches = k => k.kid === header.kid && k.kty === "RSA" && (!k.alg || k.alg === "RS256") && (!k.use || k.use === "sig");
+  let jwk = keys.find(matches);
+  if (!jwk && Date.now() - (lastRotationRefresh.get(jwksUrl) || 0) >= 30000) {
+    // One bounded refresh per endpoint, not per untrusted token kid.
+    lastRotationRefresh.set(jwksUrl, Date.now());
+    keys = await loadKeys(jwksUrl, fetcher, true);
+    jwk = keys.find(matches);
+  }
   if (!jwk) throw new InvalidIdentity();
   try {
     const publicKey = await crypto.subtle.importKey("jwk", jwk, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);

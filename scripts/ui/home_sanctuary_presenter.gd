@@ -198,7 +198,7 @@ func _refresh_journey() -> void:
  var has_checkpoint: bool=checkpoint_available
  if continue_button.visible!=has_checkpoint:
   continue_button.visible=has_checkpoint;_queue_layout()
- continue_button.text=tr("CONTINUE")+" ›" if size.x<420 else tr("CONTINUE RUN")
+ continue_button.text=tr("CONTINUE")+" ›" if size.x<560 else tr("CONTINUE RUN")
  if has_checkpoint and menu.has_method("_get_continue_button_text"):
   continue_button.tooltip_text=str(menu.call("_get_continue_button_text"))
  var locked: bool=SaveManager.is_progress_read_only()
@@ -252,9 +252,9 @@ func _layout_sanctuary() -> void:
  if nav!=null:
   nav.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
   nav.offset_left=side;nav.offset_right=-side;nav.offset_top=-nav_height-8;nav.offset_bottom=-8
- var header_y: float=72.0
+ var header_y: float=78.0
  var header_h: float=maxf(76,88*u)
- var icon_side: float=maxf(42,48*u)
+ var icon_side: float=maxf(48,54*u)
  _rect(settings_shortcut,Vector2(size.x-side-icon_side,header_y+4),Vector2(icon_side,icon_side))
  _rect(mailbox_button,Vector2(settings_shortcut.position.x-icon_side-7*u,header_y+4),Vector2(icon_side,icon_side))
  var profile_w: float=minf(330*u,mailbox_button.position.x-side-10)
@@ -273,10 +273,11 @@ func _layout_sanctuary() -> void:
  _rect(hero_title,Vector2(side+8*u,maxf(header_y+header_h+14, size.y*.19)),Vector2(size.x*.42,65*u))
  _rect(title_name,Vector2.ZERO,Vector2(hero_title.size.x,42*u));_font(title_name,35,true)
  _rect(title_role,Vector2(0,43*u),Vector2(hero_title.size.x,17*u));_font(title_role,12)
- var card_h: float=maxf(122,145*u)
+ var compact: bool=size.x<560
+ var card_h: float=184.0 if compact else maxf(152,158*u)
  var event_h: float=maxf(142,174*u)
  var shortcut_h: float=90.0 if size.x<420 else maxf(65,80*u)
- var heading_h: float=maxf(24,27*u)
+ var heading_h: float=maxf(44,36*u)
  var gap: float=maxf(6,9*u)
  var panel_h: float=card_h+event_h+shortcut_h+heading_h+gap*3
  var bottom: float=size.y-nav_height-20
@@ -288,35 +289,44 @@ func _layout_sanctuary() -> void:
  lower_stack.add_theme_constant_override("separation",int(gap))
  journey_card.custom_minimum_size.y=card_h;event_card.custom_minimum_size.y=event_h;shortcuts.custom_minimum_size.y=shortcut_h
  var width: float=lower_scroll.size.x
- var map_w: float=width*.22
+ var map_w: float=width*(.20 if compact else .22)
  var thumb: Control=journey_card.get_node("RealmVignette")
- _rect(thumb,Vector2(12*u,12*u),Vector2(map_w-17*u,card_h-24*u))
+ var summary_h: float=100.0 if compact else card_h-24*u
+ _rect(thumb,Vector2(12*u,12*u),Vector2(map_w-17*u,summary_h))
  var text_start: float=map_w+8*u
- var action_w: float=width*.31
- var text_width: float=width-text_start-action_w-18*u
- _rect(chapter_label,Vector2(text_start,23*u),Vector2(text_width,16*u));_font(chapter_label,12,true)
- _rect(realm_title,Vector2(text_start,43*u),Vector2(text_width,48*u));_font(realm_title,20,true)
- _rect(next_path_label,Vector2(text_start,91*u),Vector2(text_width,16*u));_font(next_path_label,12)
- _rect(realm_progress,Vector2(text_start,card_h-26*u),Vector2(maxf(30,text_width-43*u),8*u))
- _rect(progress_label,Vector2(text_start+maxf(30,text_width-40*u),card_h-32*u),Vector2(42*u,18*u));_font(progress_label,11)
- journey_button.text=tr("JOURNEY")+" ›" if size.x<420 else tr("ENTER JOURNEY")+" ›"
- continue_button.text=tr("CONTINUE")+" ›" if size.x<420 else tr("CONTINUE RUN")
- _font_button(journey_button,18);_font_button(continue_button,15)
- var action_x: float=width-action_w-12*u
- var button_h: float=maxf(42,56*u)
- if continue_button.visible:
-  _rect(journey_button,Vector2(action_x,15*u),Vector2(action_w,button_h));_rect(continue_button,Vector2(action_x,card_h-button_h-12*u),Vector2(action_w,button_h))
+ var action_w: float=width-24 if compact else width*.39
+ var text_width: float=width-text_start-18*u if compact else width-text_start-action_w-22*u
+ _rect(chapter_label,Vector2(text_start,16 if compact else 23*u),Vector2(text_width,20));_font(chapter_label,13,true)
+ _rect(realm_title,Vector2(text_start,38 if compact else 46*u),Vector2(text_width,48));_font(realm_title,22,true)
+ _rect(next_path_label,Vector2(text_start,83 if compact else 100*u),Vector2(text_width,20));_font(next_path_label,13)
+ var meter_y: float=109.0 if compact else card_h-24*u
+ _rect(realm_progress,Vector2(text_start,meter_y),Vector2(maxf(30,text_width-43*u),7))
+ _rect(progress_label,Vector2(text_start+maxf(30,text_width-40*u),meter_y-5),Vector2(42*u,20));_font(progress_label,12)
+ journey_button.text=tr("ENTER JOURNEY")+" ›"
+ continue_button.text=tr("CONTINUE")+" ›" if compact else tr("CONTINUE RUN")
+ var button_h: float=50.0 if compact else maxf(52,64*u)
+ var action_x: float=12.0 if compact else width-action_w-12*u
+ if compact:
+  var button_y: float=card_h-button_h-12
+  if continue_button.visible:
+   _rect(journey_button,Vector2(action_x,button_y),Vector2((action_w-8)*.59,button_h))
+   _rect(continue_button,Vector2(action_x+(action_w-8)*.59+8,button_y),Vector2((action_w-8)*.41,button_h))
+  else:_rect(journey_button,Vector2(action_x,button_y),Vector2(action_w,button_h))
+ elif continue_button.visible:
+  _rect(journey_button,Vector2(action_x,15*u),Vector2(action_w,button_h))
+  _rect(continue_button,Vector2(action_x,card_h-button_h-12*u),Vector2(action_w,button_h))
  else:_rect(journey_button,Vector2(action_x,(card_h-button_h)*.5),Vector2(action_w,button_h))
- _font_button(journey_button,18);_font_button(continue_button,15)
+ _font_button(journey_button,20);_font_button(continue_button,17)
  var heading: Control=lower_stack.get_node("EventsHeading");heading.custom_minimum_size.y=heading_h
  var caption: Label=heading.get_node("EventsCaption");_rect(caption,Vector2(3*u,0),Vector2(width*.66,heading_h));_font(caption,18,true)
- _rect(all_events_button,Vector2(width*.68,0),Vector2(width*.32,heading_h));_font_button(all_events_button,12)
+ all_events_button.text=tr("EVENTS")+" ›" if compact else tr("ALL EVENTS")+" ›"
+ _rect(all_events_button,Vector2(width*.66,0),Vector2(width*.34,heading_h));_font_button(all_events_button,15)
  _rect(event_card.get_node("EventKind"),Vector2(25,20)*u,Vector2(width*.57,16*u));_font(event_card.get_node("EventKind"),11)
- _rect(event_card.get_node("FeaturedTitle"),Vector2(25,44)*u,Vector2(width*.5,61*u));_font(event_card.get_node("FeaturedTitle"),25,true)
+ _rect(event_card.get_node("FeaturedTitle"),Vector2(25,44)*u,Vector2(width*.56,maxf(42,61*u)));_font(event_card.get_node("FeaturedTitle"),25,true)
  _rect(boss_progress,Vector2(25*u,event_h-maxf(51,62*u)),Vector2(width*.6,18*u));_font(boss_progress,13)
  _rect(event_card.get_node("UpcomingRewardIcon"),Vector2(25*u,event_h-maxf(32,42*u)),Vector2(24,24)*u)
  _rect(boss_reward,Vector2(55*u,event_h-maxf(31,41*u)),Vector2(width*.5,22*u));_font(boss_reward,12)
- _rect(event_action,Vector2(width*.69,event_h-maxf(35,46*u)),Vector2(width*.28,27*u));_font(event_action,13,true)
+ _rect(event_action,Vector2(width*.55,event_h-maxf(35,46*u)),Vector2(width*.42,maxf(22,27*u)));_font(event_action,13,true)
  var shortcut_w: float=(width-14)/3.0
  for button: Button in [seven_day_button,meditation_button,library_button]:
   var icon: Control=button.get_node("ShortcutIcon")
@@ -326,14 +336,14 @@ func _layout_sanctuary() -> void:
    _rect(icon,Vector2((shortcut_w-32)*.5,8),Vector2(32,32))
    var title: Label=button.get_node("Title");var state: Label=button.get_node("State")
    title.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;state.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
-   _rect(title,Vector2(6,42),Vector2(shortcut_w-12,18));_font(title,14,true)
-   _rect(state,Vector2(6,61),Vector2(shortcut_w-12,16));_font(state,11)
+   _rect(title,Vector2(6,42),Vector2(shortcut_w-12,18));_font(title,16,true)
+   _rect(state,Vector2(6,61),Vector2(shortcut_w-12,16));_font(state,12)
    continue
   (button.get_node("Title") as Label).horizontal_alignment=HORIZONTAL_ALIGNMENT_LEFT
   (button.get_node("State") as Label).horizontal_alignment=HORIZONTAL_ALIGNMENT_LEFT
   var tx: float=iw+11*u;var tw: float=shortcut_w-tx-10*u
-  _rect(button.get_node("Title"),Vector2(tx,17*u),Vector2(tw,23*u));_font(button.get_node("Title"),14,true)
-  _rect(button.get_node("State"),Vector2(tx,44*u),Vector2(tw,17*u));_font(button.get_node("State"),11)
+  _rect(button.get_node("Title"),Vector2(tx,17*u),Vector2(tw,23*u));_font(button.get_node("Title"),16,true)
+  _rect(button.get_node("State"),Vector2(tx,44*u),Vector2(tw,17*u));_font(button.get_node("State"),12)
 
 func _button(name_value: String,action: Callable,parent: Node=null) -> Button:
  var button:=Button.new();button.name=name_value;button.focus_mode=Control.FOCUS_NONE
@@ -381,13 +391,21 @@ func _copy(parent: Node,value: String,font_size: int,color: Color=TEXT,serif: bo
  return label
 
 func _font(label: Label,source_size: int,serif: bool=false) -> void:
- label.add_theme_font_size_override("font_size",maxi(10,roundi(source_size*portrait_unit)))
+ label.add_theme_font_size_override("font_size",maxi(11,roundi(source_size*portrait_unit)))
  if serif:label.add_theme_font_override("font",Art.SERIF)
  if label.has_meta("sanctuary_layout_size"):label.size=label.get_meta("sanctuary_layout_size")
 
 func _font_button(button: Button,source_size: int) -> void:
- button.add_theme_font_size_override("font_size",maxi(11,roundi(source_size*portrait_unit)))
+ var primary: bool=button in [journey_button,continue_button]
+ var margin: float=clampf(20*portrait_unit,12,26) if primary else 6.0
+ if primary and size.x<560 and is_instance_valid(continue_button) and continue_button.visible:margin=8.0
+ var style: StyleBox=button.get_theme_stylebox("normal")
+ style.content_margin_left=margin;style.content_margin_right=margin
  button.add_theme_font_override("font",Art.SERIF);button.add_theme_color_override("font_color",GOLD_BRIGHT)
+ var font_size: int=maxi(16 if primary else 14,roundi(source_size*portrait_unit))
+ var available: float=maxf(0,button.size.x-margin*2)
+ while font_size>14 and Art.SERIF.get_string_size(button.text,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size).x>available:font_size-=1
+ button.add_theme_font_size_override("font_size",font_size)
 
 func _red_dot(parent: Control) -> Panel:
  var dot:=Panel.new();dot.name="ReadyDot";dot.mouse_filter=Control.MOUSE_FILTER_IGNORE
@@ -407,4 +425,6 @@ func _rect(node: Control,position_value: Vector2,size_value: Vector2) -> void:
  node.position=position_value;node.size=size_value
 
 func open_currency_sources(index: int) -> void:
- _open_menu_scene("res://scenes/ui/daily_quest_screen.tscn" if index==0 else "res://scenes/ui/pavilion_screen.tscn")
+ if index==1:
+  _open_live_popup("res://scenes/ui/celestial_treasury_screen.tscn")
+ else:_open_menu_scene("res://scenes/ui/daily_quest_screen.tscn" if index==0 else "res://scenes/ui/pavilion_screen.tscn")

@@ -1,0 +1,87 @@
+name: Premium UI and account readiness
+on:
+  push:
+    branches: ['checkpoint/**']
+    paths: ['scripts/ui/**', 'scripts/managers/**', 'scripts/monetization/**', 'scripts/data/skill_catalog.gd', 'scripts/player/**', 'scripts/weapon/run_combat_ledger.gd', 'assets/ui/results/neo/**', 'assets/ui/settings/neo/**', 'backend/player_identity/**', 'backend/monetization/**', 'tests/*resilience*', 'tests/billing_recovery_smoke.gd', 'tests/premium_readiness*', '.github/workflows/premium-readiness-qa.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  focused-qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Signed auth, Play verification, idempotent credit and refund
+        run: node --test backend/player_identity/identity.test.mjs backend/monetization/cloudflare/tests/{auth_runtime_resilience,jwt_verify,play_api,paid_purchase_credit_route_m13,wallet_refund_credit_rc8}.test.mjs
+      - name: Prepare isolated Godot project
+        shell: bash
+        run: |
+          mkdir -p /tmp/jade-qa/project
+          curl -fsSL https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip -o /tmp/jade-qa/godot.zip
+          unzip -q /tmp/jade-qa/godot.zip -d /tmp/jade-qa
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          repo=Path.cwd(); qa=Path('/tmp/jade-qa/project')
+          for p in repo.iterdir():
+              if p.name not in ['.git','.godot','project.godot']:(qa/p.name).symlink_to(p,target_is_directory=p.is_dir())
+          s=(repo/'project.godot').read_text()
+          s=re.sub(r'\[editor_plugins\][\s\S]*?(?=\n\[|\Z)','[editor_plugins]\nenabled=PackedStringArray()\n',s)
+          for p in repo.rglob('*.gd.uid'):
+              s=s.replace(p.read_text().strip(),'res://'+str(p.relative_to(repo)).removesuffix('.uid'))
+          s+='\n[threading]\nworker_pool/max_threads=2\n'
+          (qa/'project.godot').write_text(s)
+          PY
+          timeout 180 /tmp/jade-qa/Godot_v4.7.2-stable_linux.x86_64 --headless --editor --path /tmp/jade-qa/project --import --quit
+      - name: Runtime bounds, touch, save and account regressions
+        shell: bash
+        run: |
+          set -o pipefail
+          for entry in 'premium_readiness_smoke:jade_premium_batch_qa' 'profile_resilience_smoke:jade_profile_resilience_qa' 'google_callback_resilience_smoke:jade_google_callback_qa' 'billing_recovery_smoke:jade_billing_recovery_qa' 'hero_upgrade_burst_smoke:jade_hero_qa' 'run_report_smoke:jade_report_qa' 'legendary_set_vfx_smoke:jade_legendary_qa' 'combat_skill_polish_smoke:jade_combat_pass_qa' 'player_server_binding_smoke:jade_profile_qa' 'server_mail_smoke:jade_server_mail_qa' 'server_mail_gifts_smoke:jade_mail_gifts_qa'; do
+            name="${entry%%:*}"; qa_tag="${entry#*:}"
+            XDG_DATA_HOME="/tmp/$qa_tag" timeout 110 /tmp/jade-qa/Godot_v4.7.2-stable_linux.x86_64 --headless --audio-driver Dummy --path /tmp/jade-qa/project --script "res://tests/$name.gd" > "/tmp/$name.log" 2>&1
+            cat "/tmp/$name.log"
+            ! rg 'SCRIPT ERROR:|_FAIL ' "/tmp/$name.log"
+          done
+  native-compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Android SDK 36
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - name: Compile both variants and run JVM contracts
+        env:
+          JADE_IAP_TARGET: locked
+          JADE_IAP_SANDBOX_CREDIT: 'off'
+        run: gradle -p backend/monetization/android_bridge --no-daemon :bridge:testDebugUnitTest :bridge:testReleaseUnitTest :bridge:assembleDebug :bridge:assembleRelease
+      - name: Verify compiled JNI and release locks
+        run: python backend/monetization/android_bridge/tools/verify_native_aar.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-bridge-locked-candidate
+          path: |
+            backend/monetization/android_bridge/bridge/build/outputs/aar/*.aar
+            backend/monetization/android_bridge/bridge/build/test-results/**/TEST-*.xml
+  windows-launchers:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse actual Windows PowerShell launchers
+        shell: powershell
+        run: |
+          foreach ($name in @('apply_premium_readiness','publish_premium_readiness','deploy_profile_resilience','build_native_bridge','diagnose_connectivity','check_account_iap','apply_account_iap','publish_account_iap')) {
+            $tokens=$null; $errors=$null
+            [void][Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD ('backend/player_identity/'+$name+'.ps1')),[ref]$tokens,[ref]$errors)
+            if ($errors.Count) { throw ($errors | Out-String) }
+          }

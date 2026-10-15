@@ -717,7 +717,6 @@ func _is_new_weapon(upgrade_id: String) -> bool:
 
 
 func apply_upgrade(upgrade_id: String) -> void:
-	var applied_effect: String = get_upgrade_effect(upgrade_id)
 	match upgrade_id:
 		"spirit_sword":
 			weapon_manager.upgrade_weapon("Spirit Sword")
@@ -760,7 +759,6 @@ func apply_upgrade(upgrade_id: String) -> void:
 			selection_locked = false
 			return
 
-	preload("res://scripts/player/skill_ascension_feedback.gd").show_applied(player, upgrade_id, get_upgrade_display_name(upgrade_id), applied_effect)
 	DebugLogger.system(str("Upgrade dipilih: ", upgrade_id))
 	close_level_up()
 
@@ -993,13 +991,11 @@ func _update_choice_icon(button: Button, upgrade_id: String) -> void:
 	if icon == null:
 		return
 
-	var icon_path: String = "res://assets/ui/equipment/final/celestial_returning_glaive.png" if upgrade_id in ["spirit_sword", "sword_dao_resonance"] and _uses_returning_glaive() else "res://assets/ui/equipment/final/jade_binding_chain.png" if upgrade_id in ["spirit_sword", "sword_dao_resonance"] and _uses_jade_binding() else str(ICON_PATHS.get(upgrade_id, ""))
-	if upgrade_id in ["spirit_sword", "sword_dao_resonance"] and weapon_manager != null:
+	var armament: String = ""
+	if weapon_manager != null:
 		var starter: Node = weapon_manager.get_weapon_by_name("Spirit Sword")
-		if starter != null:
-			var armament: String = str(starter.get("armament_id"))
-			if preload("res://scripts/weapon/equipment_weapon_art.gd").ENTRIES.has(armament):
-				icon_path = preload("res://scripts/ui/equipment_visual_catalog.gd").get_icon_path(armament)
+		if starter != null: armament = str(starter.get("armament_id"))
+	var icon_path: String = preload("res://scripts/data/skill_catalog.gd").get_icon_path(upgrade_id, armament)
 	if icon_path.is_empty():
 		icon.texture = null
 		return

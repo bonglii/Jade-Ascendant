@@ -1,7 +1,7 @@
 extends CanvasLayer
 
 const MAIN_MENU_SCENE: String = "res://scenes/ui/main_menu.tscn"
-const VICTORY_BACKDROP_ART: String = "res://assets/ui/results/victory_sanctum.svg"
+const VICTORY_BACKDROP_ART: String = "res://assets/ui/results/neo/jade_backdrop.svg"
 const VICTORY_SEAL_ART: String = "res://assets/ui/results/victory_seal.svg"
 const SPIRIT_STONE_ICON: String = "res://assets/ui/icons/spirit_stone.svg"
 const REFINEMENT_SHARD_ICON: String = "res://assets/ui/equipment/refinement_shard.svg"
@@ -123,7 +123,7 @@ func _refresh_stage_identity() -> void:
 
 func _refresh_reward_summary() -> void:
 	var presentation_blocks: Array[String] = []
-	var clear_state: String = "STAGE CLEAR • REWARD SECURED"
+	var clear_state: String = "STAGE CLEAR"
 	for raw_reward_entry in victory_reward_entries:
 		var reward_entry: Dictionary = raw_reward_entry
 		var source_type: String = str(reward_entry.get("source_type", ""))

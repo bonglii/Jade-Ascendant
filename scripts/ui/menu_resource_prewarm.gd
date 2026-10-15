@@ -59,6 +59,11 @@ const SECONDARY_RESOURCES: PackedStringArray = [
 	"res://assets/ui/hero/lin_yue_menu_showcase_v2.png",
 ]
 
+const HERO_PRESENTATION: PackedStringArray = [
+ "res://assets/ui/hero/imperial_v4/sanctuary_banner.png",
+ "res://assets/ui/hero/lin_yue_menu_showcase_v2.png",
+]
+
 const IDLE_DELAY_SECONDS: float = 0.18
 
 var _warm_cache: Dictionary = {}
@@ -133,6 +138,12 @@ func _start_prewarm(generation_id: int) -> void:
 		await _prewarm_packed_scene(path_value, generation_id)
 		if not _is_current_run(generation_id):
 			return
+		await get_tree().process_frame
+
+	for path_value: String in HERO_PRESENTATION:
+		await _await_idle_navigation(generation_id)
+		if not _is_current_run(generation_id): return
+		await _prewarm_texture(path_value, generation_id)
 		await get_tree().process_frame
 
 	for path_value: String in PRIORITY_RESOURCES:
@@ -270,3 +281,10 @@ func _prewarm_texture(path_value: String, generation_id: int) -> void:
 
 func _is_current_run(generation_id: int) -> bool:
 	return is_inside_tree() and generation_id == _generation
+
+func get_hub_texture(path: String) -> Texture2D:
+	# Retain only textures actually requested by the hub; clear on gameplay entry.
+	if _warm_cache.has(path): return _warm_cache[path] as Texture2D
+	var texture: Texture2D = load(path) as Texture2D
+	if texture != null: _warm_cache[path] = texture
+	return texture

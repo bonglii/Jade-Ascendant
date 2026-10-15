@@ -26,6 +26,7 @@ signal purchase_delivery_finished(
 signal billing_entitlements_changed(product_ids: Array[String])
 ## Display-only paid wallet update; never a credit/debit/summon authorization.
 signal paid_wallet_snapshot_m9_changed(view: Dictionary)
+signal server_jade_recovery_changed(view: Dictionary)
 ## M14 server-credit acknowledgment is volatile display only.
 signal paid_purchase_receipt_m14_changed(view: Dictionary)
 ## M12 committed summon recovery is a volatile DISPLAY snapshot only.
@@ -56,6 +57,7 @@ const HybridPaidWalletSnapshotM9 = preload(
 )
 ## Explicit follow-up approval needed AFTER Worker read route QA.
 const HYBRID_PAID_WALLET_DISPLAY_SYNC_APPROVED: bool = false
+const ServerJadeView = preload("res://scripts/monetization/server_jade_recovery_view.gd")
 const HybridPaidPurchaseReceiptM14 = preload("res://scripts/monetization/hybrid_paid_purchase_receipt_m14.gd")
 const HybridPaidSummonRecoveryM12 = preload(
 	"res://scripts/monetization/hybrid_paid_summon_recovery_m12.gd"
@@ -186,6 +188,13 @@ var _paid_summon_binding_rc4: String = ""
 var _paid_summon_commit_view_rc4: Dictionary = HybridPaidSummonCommitRC4.empty()
 var _paid_wallet_pending_m9: bool = false
 var _paid_wallet_view_m9: Dictionary = HybridPaidWalletSnapshotM9.empty()
+var _server_jade = ServerJadeView.new()
+var _server_identity_owner: String=""
+var _last_purchase_stage: String="not_started"
+var _server_read_id: String=""
+var _server_read_owner: String=""
+var _server_repair_id: String=""
+var _server_repair_owner: String=""
 var _purchase_repair_binding: String = ""
 var _purchase_repair_pending: bool = false
 var _purchase_repair_view: Dictionary = {"status": "not_connected"}
@@ -403,6 +412,97 @@ func _save_state() -> bool:
 
 func get_celestial_jade() -> int:
 	return maxi(int(state.get("celestial_jade", 0)), 0)
+
+
+func _live_server_jade_owner() -> String:
+	return GoogleAccountManager.get_monetization_account_binding()
+
+func get_server_jade_view() -> Dictionary:
+	_server_jade.bind_owner(_live_server_jade_owner())
+	var view: Dictionary=_server_jade.snapshot(Time.get_ticks_msec())
+	view["available_local"]=get_celestial_jade()
+	view["last_purchase_stage"]=_last_purchase_stage
+	return view
+
+func _server_recovery_bridge() -> Object:
+	if not _staging_sandbox_credit_approved() or not Engine.has_singleton(PURCHASE_AUTHORITY_SINGLETON):return null
+	var bridge: Object=Engine.get_singleton(PURCHASE_AUTHORITY_SINGLETON)
+	for method: String in ["isPaidWalletRecoveryReadConfigured","refreshPaidWalletSnapshotV2","repairVerifiedPlayPurchasesV2"]:
+		if not bridge.call("has_java_method",method):return null
+	if not bool(bridge.call("isPaidWalletRecoveryReadConfigured")):return null
+	for spec: Array in [["paidWalletSnapshotResultV2","_on_server_wallet_v2"],["paidVerifiedPurchaseRepairResultV2","_on_server_repair_v2"]]:
+		if not bridge.has_signal(spec[0]):return null
+		var callback:=Callable(self,spec[1])
+		if not bridge.is_connected(spec[0],callback):bridge.connect(spec[0],callback)
+	return bridge
+
+func _new_server_read_id() -> String:
+	var bytes: PackedByteArray=Crypto.new().generate_random_bytes(16)
+	if bytes.size()!=16:return ""
+	bytes[6]=(int(bytes[6])&15)|64;bytes[8]=(int(bytes[8])&63)|128
+	var value: String=bytes.hex_encode()
+	return "%s-%s-%s-%s-%s"%[value.substr(0,8),value.substr(8,4),value.substr(12,4),value.substr(16,4),value.substr(20,12)]
+
+func request_server_jade_snapshot() -> bool:
+	if not _server_read_id.is_empty():return false
+	var owner: String=_live_server_jade_owner()
+	if owner.is_empty():return false
+	var bridge: Object=_server_recovery_bridge()
+	if bridge==null:return false
+	_server_jade.bind_owner(owner)
+	_server_read_id=_new_server_read_id()
+	if _server_read_id.is_empty():return false
+	_server_read_owner=owner
+	var request_id: String=_server_read_id
+	get_tree().create_timer(46.0).timeout.connect(_server_recovery_timeout.bind(request_id,false))
+	bridge.call("refreshPaidWalletSnapshotV2",request_id)
+	return true
+
+func recover_server_jade() -> bool:
+	# Repairs ONLY already-verified server ledger records; never a local grant.
+	if not _server_repair_id.is_empty():return false
+	var owner: String=_live_server_jade_owner()
+	if owner.is_empty():return false
+	var bridge: Object=_server_recovery_bridge()
+	if bridge==null:return false
+	_server_repair_id=_new_server_read_id()
+	if _server_repair_id.is_empty():return false
+	_server_repair_owner=owner
+	var request_id: String=_server_repair_id
+	get_tree().create_timer(46.0).timeout.connect(_server_recovery_timeout.bind(request_id,true))
+	bridge.call("repairVerifiedPlayPurchasesV2",request_id)
+	return true
+
+func _server_recovery_timeout(request_id: String, repair: bool) -> void:
+	if repair:
+		if request_id!=_server_repair_id:return
+		_server_repair_id="";_server_repair_owner=""
+	else:
+		if request_id!=_server_read_id:return
+		_server_read_id="";_server_read_owner=""
+	_server_jade.unavailable()
+	server_jade_recovery_changed.emit(get_server_jade_view())
+
+func _on_server_wallet_v2(request_id: String, success: bool, status: String, payload: String) -> void:
+	if request_id.is_empty() or request_id!=_server_read_id:return
+	var owner: String=_server_read_owner
+	_server_read_id="";_server_read_owner=""
+	if owner.is_empty() or owner!=_live_server_jade_owner():return
+	var view: Dictionary=HybridPaidWalletSnapshotM9.from_native_result(success,status,payload)
+	_server_jade.bind_owner(owner)
+	if not _server_jade.accept(owner,view,Time.get_ticks_msec()):
+		if view.get("status")!="ready":_server_jade.unavailable()
+	server_jade_recovery_changed.emit(get_server_jade_view())
+
+func _on_server_repair_v2(request_id: String, success: bool, status: String, payload: String) -> void:
+	if request_id.is_empty() or request_id!=_server_repair_id:return
+	var owner: String=_server_repair_owner
+	_server_repair_id="";_server_repair_owner=""
+	if owner.is_empty() or owner!=_live_server_jade_owner():return
+	var result: Dictionary=ServerJadeView.parse_repair(payload) if success and status=="SERVER_LEDGER_RECONCILED" else {}
+	_purchase_repair_view={"status":"unavailable"} if result.is_empty() else result
+	paid_verified_purchase_repair_changed.emit(get_paid_verified_purchase_repair_view())
+	request_server_jade_snapshot()
 
 
 ## M7 read-only Hybrid inspection: local balance remains unclassified.
@@ -1137,6 +1237,8 @@ func restore_iap_purchases() -> void:
 			"Secure purchase recovery is not available yet."
 		)
 		return
+	recover_server_jade()
+	request_server_jade_snapshot()
 	billing_provider.call("restore_purchases")
 
 
@@ -1179,6 +1281,9 @@ func _is_secure_purchase_transport_configured() -> bool:
 
 
 ## Staging-only: the native debug AAR attests its own locked target at runtime.
+func is_iap_tester_credit_only() -> bool:
+	return not SECURE_PURCHASE_ACTIVATION_APPROVED and _staging_sandbox_credit_approved()
+
 func _staging_sandbox_credit_approved() -> bool:
 	if OS.get_name() != "Android" or not Engine.has_singleton(PURCHASE_AUTHORITY_SINGLETON):
 		return false
@@ -1215,6 +1320,14 @@ func _connect_secure_purchase_identity() -> void:
 
 
 func _on_monetization_identity_changed(_identity_ready: bool) -> void:
+	var owner: String=_live_server_jade_owner()
+	if not owner.is_empty() and owner==_server_identity_owner:
+		_refresh_secure_purchase_context()
+		return
+	_server_identity_owner=owner;_last_purchase_stage="not_started"
+	_server_jade.bind_owner(owner)
+	_server_read_id="";_server_read_owner="";_server_repair_id="";_server_repair_owner=""
+	server_jade_recovery_changed.emit(get_server_jade_view())
 	_invalidate_paid_entitlements_rc("identity_changed")
 	_invalidate_verified_purchase_repair("account_changed")
 	_invalidate_paid_purchase_receipt_m14("identity_changed")
@@ -1362,7 +1475,8 @@ func _on_paid_purchase_wallet_credit_m14(success: bool, result_status: String, r
 	_secure_purchase_in_flight_binding_m14 = ""
 	if product_id.is_empty():
 		return
-	if expected_binding.is_empty() or GoogleAccountManager.get_monetization_account_binding() != expected_binding:
+	_last_purchase_stage=result_status if result_status in ["PAID_WALLET_SERVER_CREDITED","AUTH_REQUIRED","AUTH_TOKEN_UNAVAILABLE","APP_CHECK_NOT_READY","APP_CHECK_TOKEN_UNAVAILABLE","APP_CHECK_UNAVAILABLE","ACCOUNT_CHANGED","PAID_PURCHASE_V2_LOCKED","WALLET_PURCHASE_UNAUTHENTICATED","WALLET_PURCHASE_FORBIDDEN","WALLET_PURCHASE_NOT_READY","WALLET_PURCHASE_RATE_LIMITED","WALLET_PURCHASE_BACKEND_LOCKED","WALLET_PURCHASE_HTTP_FAILURE","WALLET_PURCHASE_NETWORK_UNAVAILABLE","INVALID_WALLET_PURCHASE_RESPONSE","BUSY"] else "verification_unavailable"
+	if expected_binding.is_empty() or _live_server_jade_owner() != expected_binding:
 		_cancel_secure_purchase_recovery_rescan()
 		_invalidate_paid_purchase_receipt_m14("identity_changed")
 		_fail_secure_purchase_delivery(product_id, "Account changed during purchase verification.")
@@ -1371,10 +1485,17 @@ func _on_paid_purchase_wallet_credit_m14(success: bool, result_status: String, r
 		success, result_status, receipt_json
 	)
 	paid_purchase_receipt_m14_changed.emit(get_paid_purchase_receipt_m14())
+	if _live_server_jade_owner()!=expected_binding:
+		_fail_secure_purchase_delivery(product_id,"Account changed during purchase verification.")
+		return
 	if _paid_purchase_receipt_m14.get("status", "") != "credited":
 		_cancel_secure_purchase_recovery_rescan()
 		_fail_secure_purchase_delivery(product_id, "Server wallet credit unavailable. Retry purchase recovery.")
 		return
+	_server_jade.bind_owner(expected_binding)
+	_server_jade.accept(expected_binding,_paid_purchase_receipt_m14,Time.get_ticks_msec())
+	server_jade_recovery_changed.emit(get_server_jade_view())
+	request_server_jade_snapshot()
 	last_error = ""
 	billing_purchase_state_changed.emit(product_id, "wallet_credited", "Purchase credited to server wallet.")
 	purchase_delivery_finished.emit(product_id, true, "Purchase credited to server wallet.")

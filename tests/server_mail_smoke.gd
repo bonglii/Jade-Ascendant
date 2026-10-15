@@ -81,8 +81,8 @@ func run() -> void:
 		return
 	if "--crash-prepare" in OS.get_cmdline_user_args():
 		var next_progression: Dictionary = progression.build_progression_save_data()
-		next_progression.spirit_stone += 17
-		var counts: Dictionary = inventory.preview_add_items({"refinement_shard":1})
+		next_progression.spirit_stone += 37 # Historical 17 Stone + one retired fragment at 20 Stone.
+		var counts: Dictionary = inventory.item_counts.duplicate(true)
 		var next_pavilion: Dictionary = pavilion.state.duplicate(true)
 		next_pavilion.claimed_milestone_ids.append("liveops:server_mail:claim:"+owner+":"+CRASH_ID)
 		var targets: Dictionary = {"progression":next_progression,"inventory":{"version":1,"item_counts":counts},"pavilion":next_pavilion}
@@ -101,19 +101,19 @@ func run() -> void:
 	var stones_before: int = progression.spirit_stone
 	var shards_before: int = inventory.get_item_count("refinement_shard")
 	response(delivery())
-	check(progression.spirit_stone == stones_before+200,"server-approved receipt grants stones")
-	check(inventory.get_item_count("refinement_shard") == shards_before+2,"server-approved receipt grants ordinary item")
+	check(progression.spirit_stone == stones_before+240,"server-approved receipt grants stones")
+	check(inventory.get_item_count("refinement_shard") == shards_before,"retired fragments never reenter inventory")
 	check(mailer._has_local_receipt(MAIL_ID),"reward and receipt commit together")
 	check(ops.is_mail_claimed("server:"+MAIL_ID),"pending ack displays already applied reward")
 	check(not mailer.can_delete_mail("server:"+MAIL_ID),"pending ack cannot delete recovery state")
 	check(mailer._queue.size() == 1 and str(mailer._queue[0].kind) == "ack","ack queued after successful durable grant")
 	response(delivery())
-	check(progression.spirit_stone == stones_before+200,"lost response retry is locally idempotent")
-	check(inventory.get_item_count("refinement_shard") == shards_before+2,"lost response cannot duplicate item")
+	check(progression.spirit_stone == stones_before+240,"lost response retry is locally idempotent")
+	check(inventory.get_item_count("refinement_shard") == shards_before,"lost response cannot duplicate item")
 	var malformed: Dictionary = delivery()
 	malformed.owner_binding = "wrong"
 	response(malformed)
-	check(progression.spirit_stone == stones_before+200,"wrong owner response cannot grant")
+	check(progression.spirit_stone == stones_before+240,"wrong owner response cannot grant")
 	check(not mailer._valid_reward({"spirit_stone":true,"items":{}}),"boolean reward rejected")
 	check(not mailer._valid_reward({"spirit_stone":"200","items":{}}),"string reward rejected")
 	check(not mailer._valid_reward({"spirit_stone":-1,"items":{}}),"negative reward rejected")
@@ -125,7 +125,7 @@ func run() -> void:
 	check(bool(barrier.get("success",false)),"write barrier acquired")
 	check(not mailer._apply_delivery(delivery(other)),"failed save blocks delivery acknowledgement")
 	check(not mailer._has_local_receipt(other),"failed save cannot mark claim")
-	check(progression.spirit_stone == stones_before+200,"failed save leaves wallet unchanged")
+	check(progression.spirit_stone == stones_before+240,"failed save leaves wallet unchanged")
 	saver.end_save_write_barrier("mail_qa")
 	var expected: Dictionary = {"stones":progression.spirit_stone,"shards":inventory.get_item_count("refinement_shard"),"installation":mailer._state.installation_id}
 	var file := FileAccess.open(expect_path,FileAccess.WRITE)
@@ -137,6 +137,6 @@ func run() -> void:
 	mailer._on_profile({})
 	check(mailer.get_mail_ids().is_empty(),"account switch hides prior account mailbox")
 	check(mailer._queue.is_empty() and not mailer._busy,"account switch cancels in-flight operations")
-	check(progression.spirit_stone == stones_before+200,"account switch never grants prior pending response")
+	check(progression.spirit_stone == stones_before+240,"account switch never grants prior pending response")
 	print("SERVER_MAIL_SMOKE checks=",checks," failures=",failures)
 	quit(1 if failures else 0)

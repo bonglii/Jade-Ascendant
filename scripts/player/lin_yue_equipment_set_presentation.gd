@@ -200,12 +200,12 @@ func _draw_body_presence(primary: Color, secondary: Color) -> void:
 	draw_circle(
 		BODY_CENTER,
 		46.0 * breathing,
-		Color(primary.r, primary.g, primary.b, 0.025 * strength)
+		Color(primary.r, primary.g, primary.b, _full_opacity(0.025 * strength))
 	)
 	draw_circle(
 		BODY_CENTER,
 		30.0 * breathing,
-		Color(secondary.r, secondary.g, secondary.b, 0.040 * strength)
+		Color(secondary.r, secondary.g, secondary.b, _full_opacity(0.040 * strength))
 	)
 
 
@@ -218,7 +218,7 @@ func _draw_ground_resonance(primary: Color, secondary: Color) -> void:
 
 	draw_polyline(
 		_ellipse_points(GROUND_CENTER, radius_x, radius_y, angle_offset),
-		Color(primary.r, primary.g, primary.b, alpha),
+		Color(primary.r, primary.g, primary.b, _full_opacity(alpha)),
 		2.25,
 		true
 	)
@@ -229,7 +229,7 @@ func _draw_ground_resonance(primary: Color, secondary: Color) -> void:
 			radius_y * 0.70,
 			-angle_offset
 		),
-		Color(secondary.r, secondary.g, secondary.b, alpha * 0.68),
+		Color(secondary.r, secondary.g, secondary.b, _full_opacity(alpha * 0.68)),
 		1.4,
 		true
 	)
@@ -238,7 +238,7 @@ func _draw_ground_resonance(primary: Color, secondary: Color) -> void:
 	for index in range(4):
 		var angle: float = -PI * 0.86 + float(index) * PI * 0.43
 		var lit: bool = index < active_piece_count
-		var mark_color: Color = primary if lit else Color(primary.r, primary.g, primary.b, 0.11)
+		var mark_color: Color = primary if lit else Color(primary.r, primary.g, primary.b, _full_opacity(0.11))
 		var point := GROUND_CENTER + Vector2(
 			cos(angle) * radius_x,
 			sin(angle) * radius_y
@@ -319,14 +319,14 @@ func _draw_full_resonance(primary: Color, secondary: Color) -> void:
 
 	draw_polyline(
 		star,
-		Color(primary.r, primary.g, primary.b, 0.58),
+		Color(primary.r, primary.g, primary.b, _full_opacity(0.58)),
 		1.8,
 		true
 	)
 	draw_circle(
 		crown_center,
 		3.0,
-		Color(secondary.r, secondary.g, secondary.b, 0.62)
+		Color(secondary.r, secondary.g, secondary.b, _full_opacity(0.62))
 	)
 
 	var full_alpha: float = _pulse(0.23, 0.40, 1.1)
@@ -336,7 +336,7 @@ func _draw_full_resonance(primary: Color, secondary: Color) -> void:
 		orbit_rotation,
 		orbit_rotation + PI * 1.35,
 		36,
-		Color(primary.r, primary.g, primary.b, full_alpha),
+		Color(primary.r, primary.g, primary.b, _full_opacity(full_alpha)),
 		2.0,
 		true
 	)
@@ -346,14 +346,14 @@ func _draw_full_resonance(primary: Color, secondary: Color) -> void:
 		-orbit_rotation,
 		-orbit_rotation + PI * 1.15,
 		36,
-		Color(secondary.r, secondary.g, secondary.b, full_alpha * 0.78),
+		Color(secondary.r, secondary.g, secondary.b, _full_opacity(full_alpha * 0.78)),
 		1.4,
 		true
 	)
 
 func _draw_new_identity(primary: Color,secondary: Color) -> void:
 	var full: bool=active_piece_count==4
-	var alpha: float=.65 if full else .30
+	var alpha: float=_full_opacity(.65) if full else .30
 	var clock: float=0 if reduced_effects else elapsed
 	draw_arc(GROUND_CENTER,33,0,TAU,40,Color(primary,alpha*.7),1.5,true)
 	if active_set_id=="frost_lotus":
@@ -381,3 +381,6 @@ func _draw_new_identity(primary: Color,secondary: Color) -> void:
 			for at: Vector2 in hex:draw_circle(at,2.1,Color(secondary,alpha*.8))
 	if full:
 		draw_arc(BODY_CENTER+Vector2(0,-31),11,PI,TAU,22,Color(secondary,alpha*.7),1.2,true)
+
+func _full_opacity(value: float) -> float:
+	return clampf(value * (1.4 if active_piece_count >= 4 else 1.0), 0.0, 1.0)

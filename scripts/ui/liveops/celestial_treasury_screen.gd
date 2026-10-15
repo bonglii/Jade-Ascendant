@@ -6,7 +6,7 @@ const LiveOpsUi = preload("res://scripts/ui/liveops/live_ops_ui.gd")
 ## Approved V6.2 layout/artwork. This Control owns presentation, never grants.
 ## Google Play Billing owns localized product details and checkout. Purchased
 ## tokens pass transiently through the secure native bridge to server authority;
-## the server verifies and consumes before PavilionManager can save a grant.
+## the server verifies, consumes and credits its own wallet. No client grant.
 ## Six consumable Celestial Jade packs only. No fabricated offer or price.
 
 const EconomyCatalog = preload("res://scripts/data/economy_catalog.gd")
@@ -106,6 +106,7 @@ var _details_purchase: Button
 var _details_restore: Button
 var _cards_by_id: Dictionary = {}
 var _prices_sorted: bool = false
+var _pending_products: Array[String] = []
 
 func _ready() -> void:
 	# Retain the previous shipping policy: Android builds can open Treasury;
@@ -122,6 +123,7 @@ func _ready() -> void:
 	_layout_ui()
 	resized.connect(_layout_ui)
 	PavilionManager.refresh_iap_store_products()
+	PavilionManager.request_server_jade_snapshot()
 	_refresh_storefront()
 	# LiveOpsManager installs a generic close handler after add_child().
 	# Defer to restore the details-aware handler once the popup is installed.
@@ -508,11 +510,7 @@ func _layout_ui() -> void:
 	_set_font(_title, 20 if popup_w < 355.0 else (23 if compact else 35))
 	_subtitle.position = Vector2(safe_x, popup_h * 0.160)
 	_subtitle.size = Vector2(safe_w, 22.0)
-	# Do not silently ellipsize the price disclosure on compact displays.
-	_subtitle.text = (
-		"Celestial Jade · Ascension Treasures"
-		if compact else "Celestial Jade · Treasures for Your Ascension"
-	)
+	_update_balance_subtitle()
 	_set_font(_subtitle, 14 if not compact else 11)
 	_close_button.position = Vector2(popup_w - maxf(59.0, popup_w * 0.135), popup_h * 0.085)
 	_close_button.size = Vector2(44.0, 44.0)
@@ -801,6 +799,8 @@ func _back() -> void:
 # --- Google Play Billing: authoritative runtime integration ---
 
 func _connect_runtime_signals() -> void:
+	PavilionManager.server_jade_recovery_changed.connect(_on_server_jade_changed)
+	PavilionManager.paid_verified_purchase_repair_changed.connect(_on_server_jade_changed)
 	if not PavilionManager.store_products_updated.is_connected(_on_store_products_updated):
 		PavilionManager.store_products_updated.connect(_on_store_products_updated)
 	if not PavilionManager.billing_purchase_state_changed.is_connected(_on_purchase_state_changed):
@@ -813,12 +813,21 @@ func _connect_runtime_signals() -> void:
 		PavilionManager.pavilion_changed.connect(_on_pavilion_changed)
 
 
+func _update_balance_subtitle() -> void:
+	var jade_view: Dictionary=PavilionManager.get_server_jade_view()
+	var paid: String=_thousands(int(jade_view.balance)) if bool(jade_view.confirmed) else ("LAST " + _thousands(int(jade_view.balance)) if int(jade_view.balance)>=0 else "UNCONFIRMED")
+	_subtitle.text="AVAILABLE %s  ·  PURCHASED %s"%[_thousands(PavilionManager.get_celestial_jade()),paid]
+	_subtitle.tooltip_text="Available Jade is usable locally. Purchased Jade is held by the test server; paid spending remains unavailable."
+
+
 func _refresh_storefront() -> void:
 	# Monetary prices are NEVER inferred from the art or the tier quantity.
 	var runtime: Dictionary = PavilionManager.get_billing_runtime_status()
 	_billing_ready = bool(runtime.get("ready", false))
 	_billing_state = str(runtime.get("state", "unavailable"))
 	_live_price_data = PavilionManager.get_iap_store_products()
+	_update_balance_subtitle()
+
 	if OS.is_debug_build():
 		var qa_parts: PackedStringArray = PackedStringArray([
 			"state=" + _billing_state,
@@ -911,6 +920,9 @@ func _update_details() -> void:
 	# price-sort implementation details. Keep real transaction messages for
 	# pending purchases, failure, cancellation and save recovery.
 	var body: String = str(OFFER_COPY.get(_selected_id, ""))
+	if not _billing_ready:body+="\nPurchases are unavailable in this build."
+	elif PavilionManager.is_iap_tester_credit_only():body+="\nTEST PURCHASE: server test wallet only. Paid spending is not enabled. Use a Play test payment method."
+
 	if (
 		not _billing_message.is_empty()
 		and (_message_product_id.is_empty() or _message_product_id == _selected_id)
@@ -921,14 +933,18 @@ func _update_details() -> void:
 
 	var can_purchase: bool = (
 		not _purchase_busy
+		and _selected_id not in _pending_products
+		and _billing_ready
 		and not shown_price.is_empty()
 		and PavilionManager.is_iap_purchase_supported(_selected_id)
 	)
 	_details_purchase.disabled = not can_purchase
 	if _purchase_busy:
 		_details_purchase.text = "PROCESSING PURCHASE..."
+	elif _selected_id in _pending_products:
+		_details_purchase.text = "PENDING PLAY APPROVAL"
 	elif can_purchase:
-		_details_purchase.text = "BUY NOW  ·  " + shown_price
+		_details_purchase.text = ("TEST PURCHASE  ·  " if PavilionManager.is_iap_tester_credit_only() else "BUY NOW  ·  ") + shown_price
 	else:
 		_details_purchase.text = "UNAVAILABLE"
 	_details_restore.disabled = _purchase_busy
@@ -967,7 +983,11 @@ func _on_store_products_updated(_products: Dictionary) -> void:
 
 
 func _on_purchase_state_changed(product_id: String, status: String, message: String) -> void:
-	if status in ["opening", "pending", "verification_required"]:
+	if status=="pending":
+		if not product_id.is_empty() and product_id not in _pending_products:_pending_products.append(product_id)
+		_purchase_busy=false;_active_purchase_id=""
+	elif status in ["opening", "verification_required"]:
+		_pending_products.erase(product_id)
 		_purchase_busy = true
 		if not product_id.is_empty():
 			_active_purchase_id = product_id
@@ -992,6 +1012,10 @@ func _on_purchase_state_changed(product_id: String, status: String, message: Str
 		"secure_verification_unavailable",
 		"secure_verification_failed",
 		"delivered",
+		"wallet_credited",
+		"account_changed",
+		"recovery_timeout",
+		"recovery_unavailable",
 	]:
 		_purchase_busy = false
 		_active_purchase_id = ""
@@ -1002,13 +1026,14 @@ func _on_purchase_state_changed(product_id: String, status: String, message: Str
 
 
 func _on_purchase_delivery_finished(product_id: String, success: bool, message: String) -> void:
+	_pending_products.erase(product_id)
 	# Delivery is terminal for this Treasury presentation transaction on both
 	# success and failure. Recovery can start another verification afterwards.
 	_purchase_busy = false
 	_active_purchase_id = ""
 	_message_product_id = product_id
 	_billing_message = (
-		"PURCHASE SAVED · REWARD DELIVERED"
+		"PURCHASE VERIFIED · TEST SERVER WALLET CREDITED"
 		if success
 		else tr(message)
 	)
@@ -1020,4 +1045,7 @@ func _on_entitlements_changed(_product_ids: Array[String]) -> void:
 
 
 func _on_pavilion_changed() -> void:
+	_refresh_storefront()
+
+func _on_server_jade_changed(_view: Dictionary) -> void:
 	_refresh_storefront()

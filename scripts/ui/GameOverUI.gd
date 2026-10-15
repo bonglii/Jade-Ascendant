@@ -5,7 +5,7 @@ const M7E2Gate = preload("res://scripts/monetization/m7e2_legacy_security_gate.g
 ## Menangani Retry stage yang sama dan kembali ke Main Menu.
 
 const MAIN_MENU_SCENE: String = "res://scenes/ui/main_menu.tscn"
-const DEFEAT_BACKDROP_ART: String = "res://assets/ui/results/defeat_sanctum.svg"
+const DEFEAT_BACKDROP_ART: String = "res://assets/ui/results/neo/crimson_backdrop.svg"
 const DEFEAT_SEAL_ART: String = "res://assets/ui/results/defeat_seal.svg"
 const SPIRIT_STONE_ICON: String = "res://assets/ui/icons/spirit_stone.svg"
 const EndRunAtmosphereScript = preload("res://scripts/ui/end_run_atmosphere.gd")

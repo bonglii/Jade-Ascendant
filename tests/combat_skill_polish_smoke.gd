@@ -52,7 +52,7 @@ func run() -> void:
    check(card.get_node("CardVisual/SkillEngraving").skill_id==id,"choice engraving "+id)
    check(card.get_theme_stylebox("normal") is StyleBoxTexture,"textured choice "+id)
    load("res://scripts/player/skill_ascension_feedback.gd").show_applied(player,id,panel.get_upgrade_display_name(id),panel.get_upgrade_effect(id))
-   check(player.get_node("SkillAscensionFeedback").skill_id==id,"applied feedback "+id)
+   check(player.get_node_or_null("SkillAscensionFeedback")==null,"selection feedback removed "+id)
   var viewport_rect: Rect2=root.get_visible_rect()
   var cards_fit: bool=true
   for card: Button in panel.upgrade_buttons:
@@ -63,7 +63,7 @@ func run() -> void:
  check(root.get_node("InventoryManager").item_counts==inventory_before,"visual study creates no rewards")
  var before_power: int=player.get_node("PlayerStats").power_level
  panel.apply_upgrade("power")
- check(player.get_node("PlayerStats").power_level==before_power+1 and player.get_node("SkillAscensionFeedback").skill_id=="power","one real upgrade with matching feedback")
+ check(player.get_node("PlayerStats").power_level==before_power+1 and player.get_node_or_null("SkillAscensionFeedback")==null,"one real upgrade without character popup")
  var health: Node=player.get_node("PlayerHealth")
  health.qi_shield_charges=1;health.consume_qi_shield()
  check(health.qi_shield_charges==0 and player.get_node("SkillAscensionFeedback").proc_id=="qi_shield","actual shield block proc")

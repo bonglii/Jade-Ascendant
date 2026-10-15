@@ -23,9 +23,11 @@ func run() -> void:
 	var client: Node = root.get_node("PlayerIdentityServerClient")
 	client._health_probe_enabled = false # Fixture callbacks do not make live GETs.
 	client._prefer_ipv4 = false # Resolver outcomes are injected below.
+	client._trusted_attempted = true # Dedicated resilience fixture covers encrypted DNS.
+	client._token_refresh_used = true # Dedicated fixture covers the single 401 refresh.
 	var saves: Node = root.get_node("SaveManager")
 	check(client._http.use_threads,"HTTP worker thread enabled")
-	check(client._http.timeout == 30.0,"finite mobile request budget")
+	check(client._http.timeout == 12.0,"finite mobile request budget")
 	check(client.process_mode == Node.PROCESS_MODE_ALWAYS,"transport continues during gameplay pause")
 	var auth := FakeAuth.new()
 	root.add_child(auth)
@@ -43,7 +45,7 @@ func run() -> void:
 	for malformed: Dictionary in [ {"version":1,"public_uid":"JA123456789A","owner_binding":"wrong"}, {"version":1,"public_uid":"JA-123456789","owner_binding":owner}, {"version":2,"public_uid":"JA123456789A","owner_binding":owner}, {"version":true,"public_uid":"JA123456789A","owner_binding":owner} ]:
 		check(not manager.accept_server_identity(owner,malformed),"reject malformed server response")
 		check(str(manager.get_profile_snapshot().player_uid) == local_uid,"invalid response keeps local identity")
-	check(client._health_http.timeout == 10.0 and client._health_http.body_size_limit == 2048,"bounded read-only health probe")
+	check(client._health_http.timeout == 6.0 and client._health_http.body_size_limit == 2048,"bounded read-only health probe")
 	check(client._stage_name(HTTPClient.STATUS_RESOLVING) == "dns","DNS stage identified")
 	check(client._stage_name(HTTPClient.STATUS_CONNECTING) == "connect_tls","TCP/TLS stage identified without overclaim")
 	check(client._stage_name(HTTPClient.STATUS_REQUESTING) == "request","request stage identified")
@@ -88,6 +90,7 @@ func run() -> void:
 		{"result":HTTPRequest.RESULT_SUCCESS,"code":200,"body":"not JSON","status":"invalid_response"},
 		{"result":HTTPRequest.RESULT_SUCCESS,"code":200,"body":"[]","status":"invalid_response"}]
 	for fixture: Dictionary in cases:
+		client._token_refresh_used = true # Classification after recovery has already been attempted.
 		client._busy = true
 		client._pending_owner = owner
 		client._on_response(int(fixture.result),int(fixture.code),PackedStringArray(),str(fixture.body).to_utf8_buffer())

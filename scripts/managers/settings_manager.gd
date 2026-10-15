@@ -207,3 +207,18 @@ func _read_volume(config: ConfigFile, key: String, fallback: float) -> float:
 		return fallback
 	var numeric: float = float(value)
 	return clampf(numeric, 0.0, 1.0) if is_finite(numeric) else fallback
+
+func get_quality_preset() -> String:
+	if frame_limit == 30 and reduced_effects and not screen_shake: return "battery"
+	if frame_limit == 60 and reduced_effects and not screen_shake: return "balanced"
+	if frame_limit == 60 and not reduced_effects and screen_shake: return "premium"
+	return "custom"
+
+func set_quality_preset(id: String) -> void:
+	if id not in ["battery", "balanced", "premium"]: return
+	frame_limit = 30 if id == "battery" else 60
+	reduced_effects = id != "premium"
+	screen_shake = id == "premium"
+	_apply_presentation()
+	_save_settings()
+	settings_changed.emit()

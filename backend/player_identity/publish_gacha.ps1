@@ -6,7 +6,7 @@ try {
     if ($LASTEXITCODE -ne 0 -or $branch -ne 'checkpoint/iap-fasttrack-20261010') { throw 'Use the authorized checkpoint branch; main/production are protected.' }
     $origin = (& git remote get-url origin).Trim()
     if ($LASTEXITCODE -ne 0 -or $origin -notmatch 'github\.com[:/]bonglii/Jade-Ascendant(?:\.git)?$') { throw 'Unexpected repository remote.' }
-    $paths = @(Get-Content -Raw -LiteralPath 'backend/player_identity/publish_paths.json' | ConvertFrom-Json)
+    $paths = Get-Content -Raw -LiteralPath 'backend/player_identity/publish_paths.json' | ConvertFrom-Json
     $gachaPaths = @(
         'assets/ui/pavilion/sanctum_premium/pavilion_unified.png',
         'assets/ui/pavilion/sanctum_premium/pavilion_unified.png.import',

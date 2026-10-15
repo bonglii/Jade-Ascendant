@@ -258,6 +258,7 @@ func _start_next() -> void:
 
 func _on_token(token: String) -> void:
 	if not _waiting_token or not _busy: return
+	if not preload("res://scripts/managers/trusted_profile_dns.gd").token_owner_matches(token, _owner): return
 	_waiting_token = false
 	if _owner != _current_owner(): _on_profile(PlayerIdentityManager.get_profile_snapshot()); return
 	var pattern := RegEx.new()

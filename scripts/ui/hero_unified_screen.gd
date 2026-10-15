@@ -4,6 +4,7 @@ extends Control
 const Visual=preload("res://scripts/ui/equipment_visual_catalog.gd")
 const Sets=preload("res://scripts/data/equipment_set_catalog.gd")
 const Nav=preload("res://scripts/ui/wuxia_hub_nav.gd")
+const HERO_SERIF: Font=preload("res://assets/ui/library/fonts/archive_serif.ttf")
 const GOLD: Color=Color(0.95,0.79,0.43)
 const JADE: Color=Color(0.40,0.92,0.80)
 const TEXT: Color=Color(0.90,0.95,0.94)
@@ -12,6 +13,7 @@ const SLOT_NAMES: Array[String]=["SENJATA","JUBAH","LENGAN","LIONTIN","SEPATU"]
 const FILTERS: Array[String]=["all","armament","robe","bracer","pendant","boots","material"]
 @onready var content: Control=$Content
 var scroll: ScrollContainer
+var fixed_deck: VBoxContainer
 var page: VBoxContainer
 var grid: GridContainer
 var nav: Control
@@ -44,12 +46,18 @@ var detail_values: Dictionary={}
 var detail_set_header: Label
 var detail_set_lines: Array[Label]=[]
 var header_count: Label
+var last_layout_size: Vector2=Vector2(-1,-1)
+var _build_count: int=0
+var _last_build_usec: int=0
+var _relic_styles: Dictionary={}
+var _relic_pressed: StyleBoxFlat
 
 func _ready() -> void:
  var bg:=ColorRect.new();bg.color=Color(.006,.028,.033);bg.mouse_filter=Control.MOUSE_FILTER_IGNORE
  add_child(bg);move_child(bg,0);bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+ fixed_deck=VBoxContainer.new();fixed_deck.name="FixedHeroLoadout";content.add_child(fixed_deck)
  scroll=ScrollContainer.new();scroll.name="HeroScroll";scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
- scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_AUTO;scroll.follow_focus=true;scroll.scroll_deadzone=10
+ scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_SHOW_NEVER;scroll.follow_focus=false;scroll.scroll_deadzone=10
  content.add_child(scroll)
  page=VBoxContainer.new();page.name="UnifiedPage";page.size_flags_horizontal=Control.SIZE_EXPAND_FILL;page.add_theme_constant_override("separation",12);scroll.add_child(page)
  nav=Nav.new();nav.name="HubNav";nav.active_tab=2;content.add_child(nav)
@@ -58,17 +66,19 @@ func _ready() -> void:
  InventoryManager.inventory_changed.connect(_on_inventory_changed)
  SaveManager.save_write_completed.connect(_on_save_write_completed)
  SceneTransitionManager.set_back_handler(handle_system_back)
- _layout();_refresh_all()
+ _layout()
 
 func _layout() -> void:
- if not is_instance_valid(scroll):return
+ if not is_instance_valid(scroll) or content.size.is_equal_approx(last_layout_size):return
+ last_layout_size=content.size
  unit=clampf(content.size.x/648.0,.49,1.65)
  var side: float=12.0*unit
  var nav_h: float=82.0
  nav.position=Vector2(side,content.size.y-nav_h-8.0*unit);nav.size=Vector2(content.size.x-side*2,nav_h)
- scroll.position=Vector2(side,78.0)
- scroll.size=Vector2(content.size.x-side*2,maxf(60,nav.position.y-86))
+ fixed_deck.position=Vector2(side,78.0)
+ fixed_deck.size.x=content.size.x-side*2
  page.custom_minimum_size.x=content.size.x-side*2
+ fixed_deck.custom_minimum_size.x=page.custom_minimum_size.x
  _queue_refresh()
 
 func _queue_refresh() -> void:
@@ -108,7 +118,7 @@ func _refresh_loadout() -> void:
  if not is_instance_valid(page) or pending_refresh:return
  var ids: Array[String]=_equipped_ids()
  for slot: String in SLOTS:
-  var button: Button=page.find_child("Slot_"+slot,true,false) as Button
+  var button: Button=content.find_child("Slot_"+slot,true,false) as Button
   if button!=null:_sync_slot(button,EquipmentManager.get_loadout_equipped_item_id(slot))
  for id: String in card_buttons:
   _sync_refine_dot(card_buttons[id], id)
@@ -122,7 +132,7 @@ func _refresh_loadout() -> void:
    var count: int=InventoryManager.get_item_count(id)
    copies.text="×%d"%count if count<=99 else "×99+";copies.visible=count>1
  var state: Dictionary=Sets.get_dominant_set_state(ids)
- var summary: Label=page.find_child("SetName",true,false) as Label
+ var summary: Label=content.find_child("SetName",true,false) as Label
  if summary!=null:summary.text=(str(state.display_name) if int(state.piece_count)>0 else "BELUM ADA SET")+"  •  %d/4"%int(state.piece_count)
  if detail_open:
   if sheet_mode=="stats":_show_stats(true)
@@ -184,16 +194,27 @@ func _sync_detail_loadout() -> void:
   label.add_theme_color_override("font_color",JADE if pieces>=tier else TEXT)
 
 func _refresh_all() -> void:
+ var started_usec: int=Time.get_ticks_usec()
  pending_refresh=false
  if not is_instance_valid(page):return
  var old_scroll: int=scroll.scroll_vertical
- for child: Node in page.get_children():page.remove_child(child);child.queue_free()
+ for container: VBoxContainer in [fixed_deck,page]:
+  for child: Node in container.get_children():container.remove_child(child);child.queue_free()
  card_buttons.clear()
+ _relic_styles.clear();_relic_pressed=null
  page.add_theme_constant_override("separation",maxi(5,int(10*unit)))
+ var backpack: VBoxContainer=page
+ page=fixed_deck
+ page.add_theme_constant_override("separation",maxi(4,int(8*unit)))
  var title:=_label("HERO",26,GOLD);page.add_child(title)
- _build_banner();_build_slots();_build_resonance();_build_collection()
+ if content.size.y>=620 or content.size.y>content.size.x:_build_banner()
+ _build_slots();_build_resonance()
+ page=backpack
+ _build_collection()
+ _layout_sections.call_deferred()
  scroll.set_deferred("scroll_vertical",old_scroll)
- scroll.set_deferred("size",Vector2(page.custom_minimum_size.x,maxf(60,nav.position.y-86)))
+ _build_count+=1;_last_build_usec=Time.get_ticks_usec()-started_usec
+ DebugLogger.system("Hero UI ready | builds %d | build %d ms"%[_build_count,roundi(_last_build_usec/1000.0)])
  if detail_open:
   if sheet_mode=="stats":_show_stats(true)
   else:_show_detail(selected_item_id,true)
@@ -203,7 +224,7 @@ func _label(value: String,font_size: int=16,tint: Color=TEXT) -> Label:
  var label:=Label.new();label.text=value;label.mouse_filter=Control.MOUSE_FILTER_IGNORE
  label.add_theme_font_size_override("font_size",maxi(12 if building_popup else 9,int(font_size*ui_scale)));label.add_theme_color_override("font_color",tint)
  if font_size>=22:
-  var serif:=SystemFont.new();serif.font_names=PackedStringArray(["Noto Serif","DejaVu Serif","serif"]);label.add_theme_font_override("font",serif)
+  label.add_theme_font_override("font",HERO_SERIF)
  label.set_meta("hero_mobile_font_polished",true);label.set_meta(&"jade_mobile_readability_v2",true)
  return label
 
@@ -231,31 +252,45 @@ func _button(value: String,primary: bool=false) -> Button:
  return button
 
 func _texture(path: String) -> TextureRect:
- var view:=TextureRect.new();view.texture=load(path) as Texture2D;view.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
+ var view:=TextureRect.new()
+ var cache: Node=get_node_or_null("/root/MenuResourcePrewarm")
+ view.texture=cache.get_hub_texture(path) if cache!=null and cache.has_method("get_hub_texture") else load(path) as Texture2D;view.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
  view.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;view.mouse_filter=Control.MOUSE_FILTER_IGNORE
  view.texture_filter=CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
  return view
 
 func _build_banner() -> void:
- var banner:=Control.new();banner.name="HeroBanner";banner.clip_contents=true;banner.custom_minimum_size.y=224*unit;page.add_child(banner)
+ var banner:=Control.new();banner.name="HeroBanner";banner.clip_contents=true;banner.custom_minimum_size.y=maxf(80,142*unit);page.add_child(banner)
  var bg:=_texture("res://assets/ui/hero/imperial_v4/sanctuary_banner.png");bg.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_COVERED
  banner.add_child(bg);bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
  var actor:=_texture("res://assets/ui/hero/lin_yue_menu_showcase_v2.png");actor.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
  banner.add_child(actor);actor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);actor.anchor_left=.48;actor.anchor_bottom=0;actor.offset_top=0;actor.offset_bottom=450*unit
- var nameplate:=_label("LIN YUE",30,GOLD);banner.add_child(nameplate);nameplate.position=Vector2(18,72)*unit
- var subtitle:=_label("PENGEMBARA GIOK",12);banner.add_child(subtitle);subtitle.position=Vector2(18,112)*unit
- var status:=_label("✓ LOADOUT SIAP",12,JADE);banner.add_child(status);status.position=Vector2(18,175)*unit
+ var nameplate:=_label("LIN YUE",30,GOLD);banner.add_child(nameplate);nameplate.position=Vector2(18,28)*unit
+ var subtitle:=_label("PENGEMBARA GIOK",12);banner.add_child(subtitle);subtitle.position=Vector2(18,66)*unit
+ var status:=_label("✓ LOADOUT SIAP",12,JADE);banner.add_child(status);status.position=Vector2(18,109)*unit
  if EquipmentManager.has_preserved_active_run_loadout():status.text="PERUBAHAN UNTUK RUN BARU"
 
 func _rarity_color(id: String) -> Color:
  return {"legendary":GOLD,"epic":Color(.74,.44,.98),"rare":Color(.37,.75,.97),"common":Color(.29,.69,.53)}.get(id,JADE)
 
 func _skin_card(button: Button,rarity: String) -> void:
- var path: String="res://assets/ui/system_v2/custom/cards/relic_card_"+rarity+".svg"
- var st:=StyleBoxTexture.new();st.texture=load(path) as Texture2D
- st.texture_margin_left=8;st.texture_margin_right=8;st.texture_margin_top=8;st.texture_margin_bottom=8
- button.add_theme_stylebox_override("normal",st);button.add_theme_stylebox_override("hover",_style(_rarity_color(rarity)))
- button.add_theme_stylebox_override("pressed",_style(GOLD))
+ if not _relic_styles.has(rarity):
+  var st:=StyleBoxTexture.new();st.texture=load("res://assets/ui/system_v2/custom/cards/relic_card_"+rarity+".svg") as Texture2D
+  st.texture_margin_left=8;st.texture_margin_right=8;st.texture_margin_top=8;st.texture_margin_bottom=8
+  _relic_styles[rarity]=st
+ if _relic_pressed==null:_relic_pressed=_style(GOLD)
+ var normal: StyleBox=_relic_styles[rarity]
+ button.add_theme_stylebox_override("normal",normal);button.add_theme_stylebox_override("hover",normal)
+ button.add_theme_stylebox_override("pressed",_relic_pressed)
+
+func _relic_button() -> Button:
+ # Collection cards install rarity skins directly, without creating discarded CTA skins.
+ var card:=Button.new()
+ card.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE;card.focus_mode=Control.FOCUS_NONE
+ card.mouse_filter=Control.MOUSE_FILTER_PASS
+ card.add_theme_color_override("font_color",TEXT)
+ card.set_meta("hero_mobile_font_polished",true);card.set_meta(&"jade_mobile_readability_v2",true)
+ return card
 
 func _build_slots() -> void:
  var row:=HBoxContainer.new();row.name="EquippedSlots";row.add_theme_constant_override("separation",6);page.add_child(row)
@@ -263,7 +298,7 @@ func _build_slots() -> void:
  for i: int in range(SLOTS.size()):
   var box:=VBoxContainer.new();box.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(box)
   var id: String=EquipmentManager.get_loadout_equipped_item_id(SLOTS[i])
-  var button:=_button("");button.custom_minimum_size=Vector2(0,side);button.name="Slot_"+SLOTS[i];box.add_child(button)
+  var button:=_button("");button.custom_minimum_size=Vector2(0,minf(side,48) if content.size.y<620 and content.size.x>content.size.y else side);button.name="Slot_"+SLOTS[i];box.add_child(button)
   button.tooltip_text=SLOT_NAMES[i]
   _sync_slot(button,id)
   button.pressed.connect(_slot_pressed.bind(SLOTS[i]))
@@ -296,10 +331,10 @@ func _build_collection() -> void:
  filter_menu=OptionButton.new();filter_menu.name="Filter";filter_menu.custom_minimum_size.y=44;filter_menu.size_flags_horizontal=Control.SIZE_EXPAND_FILL
  for title_value: String in ["SEMUA","SENJATA","JUBAH","LENGAN","LIONTIN","SEPATU","MATERIAL"]:filter_menu.add_item(title_value)
  filter_menu.select(maxi(FILTERS.find(filter_id),0));controls.add_child(filter_menu)
- filter_menu.item_selected.connect(func(index: int):filter_id=FILTERS[index];_queue_refresh())
+ filter_menu.item_selected.connect(func(index: int):filter_id=FILTERS[index];_rebuild_grid())
  var sort:=OptionButton.new();sort.custom_minimum_size.y=44;sort.size_flags_horizontal=Control.SIZE_EXPAND_FILL
  for value: String in ["RARITAS","NAMA","BINTANG"]:sort.add_item(value)
- sort.select(sort_id);controls.add_child(sort);sort.item_selected.connect(func(index: int):sort_id=index;_queue_refresh())
+ sort.select(sort_id);controls.add_child(sort);sort.item_selected.connect(func(index: int):sort_id=index;_rebuild_grid())
  var search_button:=_button("⌕");search_button.custom_minimum_size.x=44;controls.add_child(search_button)
  search_button.pressed.connect(func():
   search_box.visible=not search_box.visible
@@ -340,14 +375,15 @@ func _rebuild_grid() -> void:
  for id: String in ids:
   var data: Dictionary=InventoryManager.get_item_data(id)
   var is_equipment: bool=EquipmentManager.has_item_definition(id)
-  var card:=_button("");card.name="Relic_"+id;card.custom_minimum_size=Vector2(side,side+18*unit);grid.add_child(card);card_buttons[id]=card
+  var card:=_relic_button();card.name="Relic_"+id;card.custom_minimum_size=Vector2(side,side+maxf(22,28*unit));grid.add_child(card);card_buttons[id]=card
   _skin_card(card,str(data.get("rarity","rare")))
   var icon:=_texture(Visual.get_icon_path(id));card.add_child(icon);icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-  icon.offset_left=8*unit;icon.offset_top=7*unit;icon.offset_right=-8*unit;icon.offset_bottom=-24*unit
+  icon.offset_left=8*unit;icon.offset_top=7*unit;icon.offset_right=-8*unit;icon.offset_bottom=-maxf(24,30*unit)
   card.tooltip_text=str(data.get("display_name",id))
   var label:=_label(_stars(EquipmentManager.get_loadout_item_star(id)) if is_equipment else "×%d"%InventoryManager.get_item_count(id),12,GOLD)
   label.name="ItemRank"
-  card.add_child(label);label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE);label.offset_top=-23*unit;label.offset_bottom=-3*unit;label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+  label.add_theme_font_size_override("font_size",maxi(11,int(16*unit)));label.add_theme_constant_override("outline_size",1)
+  card.add_child(label);label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE);label.offset_top=-maxf(22,28*unit);label.offset_bottom=-2;label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
   if is_equipment:
    var count: int=InventoryManager.get_item_count(id)
    var copies:=_label("×%d"%count if count<=99 else "×99+",11,TEXT);copies.name="DuplicateCount";card.add_child(copies);copies.position=Vector2(maxf(4,side-42),24*unit);copies.visible=count>1
@@ -374,12 +410,13 @@ func _stars(rank: int) -> String:
  return "★".repeat(clampi(rank,0,5))+"☆".repeat(5-clampi(rank,0,5))
 
 func _card_pressed(id: String) -> void:
- if get_global_mouse_position().distance_to(drag_start)>12*unit:return
+ if card_buttons.has(id) and bool(card_buttons[id].get_meta("jade_scroll_cancelled",false)):return
+ if get_global_mouse_position().distance_to(drag_start)>12:return
  _show_detail(id)
 
 func _slot_pressed(slot: String) -> void:
  var id: String=EquipmentManager.get_loadout_equipped_item_id(slot)
- if id.is_empty():filter_id=slot;_queue_refresh();scroll.set_deferred("scroll_vertical",360*unit)
+ if id.is_empty():filter_id=slot;filter_menu.select(maxi(FILTERS.find(slot),0));_rebuild_grid();scroll.set_deferred("scroll_vertical",0)
  else:_show_detail(id)
 
 func _close_detail() -> void:
@@ -433,6 +470,9 @@ func _fit_sheet(expected_generation: int=-1) -> void:
  sheet_panel.self_modulate.a=1.0
 
 func _polish_dropdown(control: OptionButton) -> void:
+ control.fit_to_longest_item=false;control.clip_text=true;control.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
+ control.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE;control.focus_mode=Control.FOCUS_NONE
+ control.add_theme_constant_override("arrow_margin",8)
  var skin:=StyleBoxTexture.new();skin.texture=load("res://assets/ui/system_v2/custom/buttons/secondary_normal.svg")
  skin.texture_margin_left=12;skin.texture_margin_right=12;skin.texture_margin_top=10;skin.texture_margin_bottom=10
  skin.content_margin_left=14;skin.content_margin_right=28;skin.content_margin_top=8;skin.content_margin_bottom=8
@@ -611,3 +651,10 @@ func _sync_refine_dot(card: Button, id: String) -> void:
   var skin:=StyleBoxFlat.new();skin.bg_color=Color(.94,.13,.17);skin.border_color=Color(1,.81,.48);skin.set_border_width_all(1);skin.set_corner_radius_all(9)
   skin.shadow_color=Color(.55,.02,.07,.32);skin.shadow_size=3;dot.add_theme_stylebox_override("panel",skin)
  dot.visible=ready
+
+func _layout_sections() -> void:
+ if not is_instance_valid(fixed_deck):return
+ var height: float=fixed_deck.get_combined_minimum_size().y
+ fixed_deck.size=Vector2(page.custom_minimum_size.x,height)
+ scroll.position=Vector2(fixed_deck.position.x,fixed_deck.position.y+height+8)
+ scroll.size=Vector2(page.custom_minimum_size.x,maxf(40,nav.position.y-scroll.position.y-8))

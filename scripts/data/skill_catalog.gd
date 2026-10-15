@@ -173,3 +173,11 @@ static func get_related_synergies(id: String) -> Array[String]:
 	for synergy: String in RESONANCE_UPGRADE_IDS:
 		if get_requirements(synergy).has(id): result.append(synergy)
 	return result
+
+static func get_icon_path(upgrade_id: String, armament_id: String = "") -> String:
+	# Pure resolver: actual run identity must be supplied by the caller.
+	if upgrade_id in ["spirit_sword", "sword_dao_resonance"] and not armament_id.is_empty():
+		var visual: Script = load("res://scripts/ui/equipment_visual_catalog.gd")
+		var path: String = visual.get_icon_path(armament_id)
+		if not path.is_empty(): return path
+	return str(ICON_PATHS.get(upgrade_id, ""))
