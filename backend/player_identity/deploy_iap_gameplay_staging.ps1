@@ -12,6 +12,8 @@ try {
     $commands=@()
     foreach ($file in $migrations) {
         $sql=([regex]::Replace([IO.File]::ReadAllText($file.FullName),'(?m)^\s*--[^\r\n]*','')).Trim()
+        # npx.cmd crosses cmd.exe on Windows: never pass a multiline SQL argument.
+        $sql=[regex]::Replace($sql,'\s+',' ').Trim()
         if ($sql -match '(?i)\b(DROP|DELETE|ALTER|ATTACH|DETACH|REPLACE)\b' -or $sql -match '(?i)\b(INSERT|UPDATE)\s+(?:INTO\s+)?iap_') { throw ('Non-additive migration refused: '+$file.Name) }
         $commands+=@{Name=$file.Name;Sql=$sql}
     }
@@ -25,4 +27,5 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Staging deployment failed. No production configuration was used.' }
     Write-Host 'IAP_GAMEPLAY_STAGING_DEPLOY=PASS; PRODUCTION=UNCHANGED'
     Write-Host 'Wait for the next successful refund cron (up to 15 minutes). No fake readiness watermark is written.'
+    exit 0
 } catch {Write-Error $_ -ErrorAction Continue;exit 1}
