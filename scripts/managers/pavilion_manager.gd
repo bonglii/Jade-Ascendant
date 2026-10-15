@@ -448,7 +448,7 @@ func get_server_jade_view() -> Dictionary:
 	return view
 
 func _server_recovery_bridge() -> Object:
-	if not _staging_sandbox_credit_approved() or not Engine.has_singleton(PURCHASE_AUTHORITY_SINGLETON):return null
+	if not _paid_iap_transport_approved() or not Engine.has_singleton(PURCHASE_AUTHORITY_SINGLETON):return null
 	var bridge: Object=Engine.get_singleton(PURCHASE_AUTHORITY_SINGLETON)
 	for method: String in ["isPaidWalletRecoveryReadConfigured","refreshPaidWalletSnapshotV2","repairVerifiedPlayPurchasesV2"]:
 		if not bridge.call("has_java_method",method):return null
@@ -1361,11 +1361,24 @@ func _staging_sandbox_credit_approved() -> bool:
 		and bool(native_bridge.call("isSandboxIapCreditEnabled"))
 	)
 
+func _production_iap_candidate_approved() -> bool:
+	if OS.get_name() != "Android" or not Engine.has_singleton(PURCHASE_AUTHORITY_SINGLETON):
+		return false
+	var native_bridge: Object = Engine.get_singleton(PURCHASE_AUTHORITY_SINGLETON)
+	return (
+		native_bridge != null
+		and native_bridge.call("has_java_method", "isProductionIapCandidateEnabled")
+		and bool(native_bridge.call("isProductionIapCandidateEnabled"))
+	)
+
+func _paid_iap_transport_approved() -> bool:
+	return _staging_sandbox_credit_approved() or _production_iap_candidate_approved()
+
 func _compute_secure_purchase_authority_ready(
 	account_binding: String
 ) -> bool:
 	return (
-		(SECURE_PURCHASE_ACTIVATION_APPROVED or _staging_sandbox_credit_approved())
+		(SECURE_PURCHASE_ACTIVATION_APPROVED or _paid_iap_transport_approved())
 		and not account_binding.is_empty()
 		and _is_secure_purchase_transport_configured()
 	)

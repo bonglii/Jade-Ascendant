@@ -101,3 +101,11 @@
 - A zero-byte POST can have a non-null Request.body stream. Testing only method POST plus Content-Length:0 without an actual empty body missed the Android HTTP representation. Validate actual bytes with bounded time/chunks, and keep non-empty request data rejected.
 - The client recovery allowlist omitted fixed native errors such as INVALID_REQUEST, hiding the actual diagnosis as unavailable. Preserve fixed safe labels and add server-side status/stage-only logs without secrets or account payloads.
 - Zero recovered receipts must never imply guaranteed restoration of consumed purchases absent from the server ledger. Test replay, zero-ledger behavior and disguised/nonterminating bodies without inventing credits.
+
+
+### IAP lifecycle and production candidate — 2026-10-16
+- Test card credit, ordinary RESTORE, paid summons, interrupted consume, refund and release attestation are distinct evidence. Preserve successful checkpoints and never claim one proves the others.
+- A staging allowlist with one UID cannot prove a second allowed account has an independent wallet. Use an optional bounded second tester hash without replacing the first, and keep unexpected accounts denied.
+- Enabling a release endpoint in source is not compiled-native evidence. Build a separate candidate, inspect actual flags/JNI/App Check provider, retain source hashes and do not relabel old AAR receipts or install uncompiled binaries.
+- A read-only ledger script cannot decide current device gameplay readiness. Report unknown rather than a hardcoded false. Use Format-List for wide account diagnostics to avoid one-letter vertical headers.
+- The prepared Worker entrypoint imports node:crypto; its opt-in config needs nodejs_compat. Verify the actual candidate config with a Wrangler dry-run in CI, while keeping every payment gate locked by default.

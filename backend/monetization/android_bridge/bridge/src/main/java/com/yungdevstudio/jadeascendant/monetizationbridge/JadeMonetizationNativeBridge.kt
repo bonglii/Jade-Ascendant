@@ -186,19 +186,19 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
      * M14 server-wallet credit transport. Separate build-time lock plus Godot
      * and Worker locks. No response is permitted to credit the local save.
      */
-    // Debug-only sandbox credit; all release AARs and normal builds fail closed.
-    private fun sandboxCreditEnabled(): Boolean =
-        BuildConfig.DEBUG &&
-        BuildConfig.JADE_IAP_TARGET == "staging" &&
-        BuildConfig.JADE_IAP_STAGING_CREDIT_ENABLED &&
-        BuildConfig.JADE_IAP_WORKER_BASE_URL == "https://jade-ascendant-iap-staging.jade-ascendant-studio.workers.dev"
+    private val transportPolicy get() = IapTransportPolicy.compiled()
+    private fun sandboxCreditEnabled(): Boolean = transportPolicy.staging
+    private fun walletTransportEnabled(): Boolean = transportPolicy.wallet
+
+    @UsedByGodot
+    fun isProductionIapCandidateEnabled(): Boolean = transportPolicy.production
 
     @UsedByGodot
     fun isSandboxIapCreditEnabled(): Boolean = sandboxCreditEnabled()
 
     @UsedByGodot
     fun isPaidWalletPurchaseV2TransportConfigured(): Boolean =
-        appCheckReady() && (PAID_PURCHASE_V2_TRANSPORT_APPROVED || sandboxCreditEnabled())
+        appCheckReady() && (PAID_PURCHASE_V2_TRANSPORT_APPROVED || walletTransportEnabled())
 
     @UsedByGodot
     fun getPendingPaidPurchaseProductV2(): String = try {
@@ -230,7 +230,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
     }
 
     private fun authorizeWalletPurchase(product: String, purchaseTokenValue: String) {
-        if (!PAID_PURCHASE_V2_TRANSPORT_APPROVED && !sandboxCreditEnabled()) {
+        if (!PAID_PURCHASE_V2_TRANSPORT_APPROVED && !walletTransportEnabled()) {
             emitPaidPurchaseResult(false, "PAID_PURCHASE_V2_LOCKED", ""); return
         }
         if (!busy.compareAndSet(false, true)) { emitPaidPurchaseResult(false, "BUSY", ""); return }
@@ -638,7 +638,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
     fun getPaidRunContractVersionV2(): Int = 1
 
     @UsedByGodot
-    fun isPaidGameplayV2Configured(): Boolean = appCheckReady() && sandboxCreditEnabled() && BuildConfig.JADE_IAP_GAMEPLAY_V2_ENABLED
+    fun isPaidGameplayV2Configured(): Boolean = appCheckReady() && walletTransportEnabled() && BuildConfig.JADE_IAP_GAMEPLAY_V2_ENABLED
 
     @UsedByGodot
     fun requestPaidGameplayV2(requestId: String, commandJson: String) {
@@ -814,9 +814,9 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
         }
     }
 
-    /** Tester-only correlated reads/repair. Release cannot enable this path. */
+    /** Correlated reads/repair: staging debug or explicit production candidate only. */
     @UsedByGodot
-    fun isPaidWalletRecoveryReadConfigured(): Boolean = appCheckReady() && sandboxCreditEnabled()
+    fun isPaidWalletRecoveryReadConfigured(): Boolean = appCheckReady() && walletTransportEnabled()
 
     @UsedByGodot
     fun refreshPaidWalletSnapshotV2(requestId: String) {
@@ -866,8 +866,8 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
     }
 
     private fun isAllowedPurchaseUser(user: FirebaseUser): Boolean {
-        if (user.isAnonymous) return true
-        return user.providerData.any { it.providerId == GoogleAuthProvider.PROVIDER_ID }
+        return transportPolicy.allowsUser(user.isAnonymous,
+            user.providerData.any { it.providerId == GoogleAuthProvider.PROVIDER_ID })
     }
 
     private fun finishPaidPurchase(success: Boolean, status: String, receiptJson: String) {

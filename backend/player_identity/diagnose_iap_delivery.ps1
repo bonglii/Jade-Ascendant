@@ -34,11 +34,11 @@ try {
         foreach ($row in $reply.results) { $rows += $row }
     }
     if ($rows.Count -eq 0) { Write-Host 'STAGING_ACCOUNT_ROWS=0; this is not proof that Play checkout did not happen.' }
-    else { $rows | Format-Table account_ref,server_balance,verified_purchases,credited_purchases,verified_not_credited,voided_purchases,account_held,refund_monitor -AutoSize }
+    else { $rows | Format-List account_ref,server_balance,verified_purchases,credited_purchases,verified_not_credited,voided_purchases,account_held,refund_monitor }
     $reportDirectory = Join-Path $repo '.local\iap_delivery'
     New-Item -ItemType Directory -Force -Path $reportDirectory | Out-Null
     $report = Join-Path $reportDirectory 'diagnosis-latest.json'
-    $result = @{ mode='read_only_staging'; scope='all_staging_accounts'; utc=[DateTime]::UtcNow.ToString('o'); account_rows=@($rows); purchased_gameplay_ready=$false }
+    $result = @{ mode='read_only_staging'; scope='all_staging_accounts'; utc=[DateTime]::UtcNow.ToString('o'); account_rows=@($rows); purchased_gameplay_readiness='requires_in_game_support' }
     [IO.File]::WriteAllText($report,($result | ConvertTo-Json -Depth 5),(New-Object Text.UTF8Encoding($false)))
     Write-Host ('REPORT=' + $report)
 } catch { Write-Error $_ -ErrorAction Continue; exit 1 } finally { Pop-Location }

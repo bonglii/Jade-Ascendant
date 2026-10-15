@@ -25,3 +25,20 @@ test('missing tester secret fails closed and unverified identity rejected',async
  assert.equal((await guard(request(),env,{})).status,503);
  env.JADE_STAGING_TESTER_UID_SHA256=await digest('right-owner');assert.equal((await guard(request(),env,{})).status,401);
 });
+test('optional second tester preserves first tester, excludes everyone else and rejects malformed configuration',async()=>{
+ let uid='first-google-player';let calls=0;
+ const guard=createStagingTesterGuardR1({verifyIdentity:async()=>({auth:{uid}}),baseFetch:async()=>{calls++;return new Response('ok');}});
+ const env={DB:{},JADE_STAGING_ACCOUNT_GUARD:'true',JADE_PAID_GAMEPLAY_V2_ENABLED:'true',
+  JADE_STAGING_TESTER_UID_SHA256:await digest(uid)};
+ assert.equal((await guard(request(),env,{})).status,200);
+ uid='second-google-player';assert.equal((await guard(request(),env,{})).status,403);
+ env.JADE_STAGING_SECOND_TESTER_UID_SHA256=await digest(uid);
+ assert.equal((await guard(request(),env,{})).status,200);
+ uid='first-google-player';assert.equal((await guard(request(),env,{})).status,200);
+ uid='outsider-google-player';assert.equal((await guard(request(),env,{})).status,403);
+ for(const bad of ['',null,'*','short','A'.repeat(64),['x']]) {
+  env.JADE_STAGING_SECOND_TESTER_UID_SHA256=bad;
+  assert.equal((await guard(request(),env,{})).status,503);
+ }
+ assert.equal(calls,3);
+});

@@ -52,14 +52,13 @@ internal class TrustedIapHttps(private val host: String,
     }
     companion object {
         const val MAX_REPLY = 16384
-        private const val STAGING_HOST = "jade-ascendant-iap-staging.jade-ascendant-studio.workers.dev"
         val dnsRoute = AtomicReference("not_attempted")
         private fun baseClient(): OkHttpClient = OkHttpClient.Builder()
             .followRedirects(false).followSslRedirects(false).retryOnConnectionFailure(false)
             .connectTimeout(6, TimeUnit.SECONDS).readTimeout(10, TimeUnit.SECONDS)
             .callTimeout(25, TimeUnit.SECONDS).build()
         private fun productionClient(host: String): OkHttpClient {
-            require(host == STAGING_HOST) { "unapproved_iap_host" }
+            require(IapTransportPolicy.compiled().allowsHost(host)) { "unapproved_iap_host" }
             val bootstrap = baseClient().newBuilder().callTimeout(5, TimeUnit.SECONDS).build()
             fun doh(url: String, ip: ByteArray): Dns = DnsOverHttps.Builder().client(bootstrap)
                 .url(url.toHttpUrl()).includeIPv6(false)

@@ -25,6 +25,8 @@ export function createStagingTesterGuardR1({baseFetch, verifyIdentity}) {
     if (!url.pathname.startsWith('/v1/') || !paidActive(env)) return baseFetch(request, env, ctx);
     if (env?.JADE_STAGING_ACCOUNT_GUARD !== 'true'
         || !isSha256(env?.JADE_STAGING_TESTER_UID_SHA256)
+        || (env?.JADE_STAGING_SECOND_TESTER_UID_SHA256 !== undefined
+          && !isSha256(env.JADE_STAGING_SECOND_TESTER_UID_SHA256))
         || !env?.DB) return error('staging_tester_guard_unconfigured', 503);
     // No client-supplied UID or email. Verify signed Firebase Auth AND App Check.
     let identity;
@@ -35,7 +37,8 @@ export function createStagingTesterGuardR1({baseFetch, verifyIdentity}) {
       return error('unauthenticated', 401);
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(uid));
     const hex = [...new Uint8Array(digest)].map(x => x.toString(16).padStart(2, '0')).join('');
-    if (hex !== env.JADE_STAGING_TESTER_UID_SHA256)
+    if (hex !== env.JADE_STAGING_TESTER_UID_SHA256
+        && hex !== env.JADE_STAGING_SECOND_TESTER_UID_SHA256)
       return error('staging_tester_not_allowed', 403);
     return baseFetch(request, env, ctx);
   };

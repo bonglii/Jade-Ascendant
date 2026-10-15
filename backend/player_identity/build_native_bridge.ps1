@@ -16,6 +16,7 @@ $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $oldTarget = $env:JADE_IAP_TARGET
 $oldCredit = $env:JADE_IAP_SANDBOX_CREDIT
 $oldGameplay = $env:JADE_IAP_GAMEPLAY_V2
+$oldCandidate = $env:JADE_IAP_PRODUCTION_CANDIDATE
 $oldSdk = $env:ANDROID_HOME
 $oldSdkRoot = $env:ANDROID_SDK_ROOT
 $work = $null
@@ -51,6 +52,7 @@ try {
     if (-not (Test-Path -LiteralPath $GradlePath)) { throw 'Gradle launcher was not found.' }
     $env:ANDROID_HOME = $SdkRoot
     $env:ANDROID_SDK_ROOT = $SdkRoot
+    $env:JADE_IAP_PRODUCTION_CANDIDATE = 'off'
     $env:JADE_IAP_GAMEPLAY_V2 = 'off'
     if ($GameplayV2) { $env:JADE_IAP_GAMEPLAY_V2 = 'on' }
     $env:JADE_IAP_TARGET = $Target
@@ -140,6 +142,7 @@ try {
     $env:JADE_IAP_TARGET = $oldTarget
     $env:JADE_IAP_SANDBOX_CREDIT = $oldCredit
     $env:JADE_IAP_GAMEPLAY_V2 = $oldGameplay
+    $env:JADE_IAP_PRODUCTION_CANDIDATE = $oldCandidate
     $env:ANDROID_HOME = $oldSdk
     $env:ANDROID_SDK_ROOT = $oldSdkRoot
     if (-not $keepWork -and $work -and (Test-Path -LiteralPath $work)) { Remove-Item -LiteralPath $work -Recurse -Force }

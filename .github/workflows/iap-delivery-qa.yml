@@ -15,6 +15,10 @@ jobs:
         with:
           node-version: '24'
       - run: node --test backend/monetization/cloudflare/tests/*.test.mjs
+      - name: Bundle locked production candidate without deployment
+        env:
+          CLOUDFLARE_SEND_METRICS: 'false'
+        run: npx --yes wrangler@4.151.0 deploy --dry-run --config backend/monetization/cloudflare/wrangler.production-candidate.toml --outdir /tmp/jade-iap-production-candidate
   windows-powershell:
     runs-on: windows-latest
     defaults:
@@ -42,9 +46,36 @@ jobs:
             addons/JadeMonetizationNativeBridge/bin/**/*.aar
             .local/native_bridge_receipts/*.json
             backend/monetization/android_bridge/bridge/build/test-results/**/*.xml
+      - run: ./tests/iap_production_candidate_smoke.ps1
       - run: ./tests/publish_json_compatibility_smoke.ps1
       - run: ./tests/publish_delivery_staging_smoke.ps1
       - run: ./tests/native_provenance_smoke.ps1
+  production-native-candidate:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - run: ./backend/player_identity/build_iap_production_candidate.ps1 -SdkRoot $env:ANDROID_HOME -GradlePath (Get-Command gradle.bat).Source
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iap-production-native-candidate
+          include-hidden-files: true
+          path: |
+            .local/production_native_candidate/**
+            backend/monetization/android_bridge/bridge/build/test-results/**/*.xml
   godot-paid-client:
     runs-on: ubuntu-latest
     steps:
