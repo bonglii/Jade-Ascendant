@@ -50,7 +50,7 @@ try {
             } catch { $proven = $false }
         }
         # Portable build provenance can prove a shipped AAR even without a local Windows build.
-        foreach ($receiptName in @('IAP_DELIVERY_NATIVE.json','DELIVERY_MOTION_NATIVE.json')) {
+        foreach ($receiptName in @('IAP_CLIENT_V2_NATIVE.json','IAP_DELIVERY_NATIVE.json','DELIVERY_MOTION_NATIVE.json')) {
             $portableReceipt = Join-Path $repo ('docs/checkpoints/' + $receiptName)
             if (-not $proven -and (Test-Path -LiteralPath $portableReceipt)) {
                 try {

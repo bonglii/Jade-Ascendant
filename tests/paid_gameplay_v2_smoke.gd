@@ -20,6 +20,10 @@ func reply(manager: Node, bridge: Bridge, snapshot: Dictionary, op: Variant=null
 func run() -> void:
  if not OS.get_user_data_dir().contains("jade_paid_v2_qa"): quit(2);return
  await process_frame
+ var pavilion: Node=root.get_node("PavilionManager")
+ var equipment: Node=root.get_node("EquipmentManager")
+ var inventory: Node=root.get_node("InventoryManager")
+ var saver: Node=root.get_node("SaveManager")
  check(Paid.local_catalog_hash()==Paid.HASH,"shipping catalog pin")
  var good: Dictionary=state()
  check(Paid.valid_snapshot(good,"a".repeat(64)),"known valid contract")
@@ -67,7 +71,7 @@ func run() -> void:
  reply(manager,bridge,updated,{"request_id":cmd.request_id,"kind":"refine","outcome":null})
  check(not FileAccess.file_exists(journal),"only matching server receipt retires pending command")
  check(int(manager.call("item_star","cloudstep_boots"))==3,"confirmed stars")
- var original: Node=PavilionManager.paid_gameplay;PavilionManager.paid_gameplay=manager
+ var original: Node=pavilion.paid_gameplay;pavilion.paid_gameplay=manager
  var host:=Control.new();root.add_child(host)
  for dimensions: Vector2 in [Vector2(320,568),Vector2(390,844),Vector2(648,1152),Vector2(860,405)]:
   host.size=dimensions
@@ -82,30 +86,30 @@ func run() -> void:
   check(scroller.vertical_scroll_mode==ScrollContainer.SCROLL_MODE_SHOW_NEVER and scroller.horizontal_scroll_mode==ScrollContainer.SCROLL_MODE_DISABLED,"armory scrollbar policy")
   panel.call("_close");await process_frame
  host.free()
- var local_jade: int=PavilionManager.get_local_celestial_jade()
- check(PavilionManager.get_celestial_jade()==local_jade+1500,"combined display")
- check(PavilionManager._save_state(),"isolated local save writes")
- var saved: Dictionary=SaveManager.read_save_data("pavilion")
+ var local_jade: int=pavilion.get_local_celestial_jade()
+ check(pavilion.get_celestial_jade()==local_jade+1500,"combined display")
+ check(pavilion._save_state(),"isolated local save writes")
+ var saved: Dictionary=saver.read_save_data("pavilion")
  check(saved.get("data",{}).get("celestial_jade",-1)==local_jade,"paid wallet excluded from local save")
- var local: Dictionary=EquipmentManager.equipped_item_ids.duplicate(true)
- var stars: Dictionary=EquipmentManager.ascension_stars.duplicate(true)
- var frozen: Dictionary=EquipmentManager.active_run_loadout_snapshot.duplicate(true)
- EquipmentManager.equipped_item_ids.boots="";EquipmentManager.active_run_loadout_snapshot={}
- check(EquipmentManager.get_loadout_equipped_item_id("boots")=="cloudstep_boots","actual equipment overlay")
- check(EquipmentManager.get_loadout_item_star("cloudstep_boots")==3,"actual equipment star overlay")
- var previous_count: int=InventoryManager.get_item_count("cloudstep_boots")
- InventoryManager._migrate_equipped_items_to_inventory()
- check(InventoryManager.get_item_count("cloudstep_boots")==previous_count,"legacy inventory migration cannot mint paid equipment")
- var snapshot: Dictionary=EquipmentManager.build_active_run_loadout_snapshot()
+ var local: Dictionary=equipment.equipped_item_ids.duplicate(true)
+ var stars: Dictionary=equipment.ascension_stars.duplicate(true)
+ var frozen: Dictionary=equipment.active_run_loadout_snapshot.duplicate(true)
+ equipment.equipped_item_ids.boots="";equipment.active_run_loadout_snapshot={}
+ check(equipment.get_loadout_equipped_item_id("boots")=="cloudstep_boots","actual equipment overlay")
+ check(equipment.get_loadout_item_star("cloudstep_boots")==3,"actual equipment star overlay")
+ var previous_count: int=inventory.get_item_count("cloudstep_boots")
+ inventory._migrate_equipped_items_to_inventory()
+ check(inventory.get_item_count("cloudstep_boots")==previous_count,"legacy inventory migration cannot mint paid equipment")
+ var snapshot: Dictionary=equipment.build_active_run_loadout_snapshot()
  check(snapshot.equipped_item_ids.boots=="" and not snapshot.ascension_stars.has("cloudstep_boots"),"paid ownership excluded from offline run save")
  var player:=Node2D.new();root.add_child(player);player.add_to_group("player")
- check(EquipmentManager.get_runtime_equipped_item_id("boots")=="cloudstep_boots","combat reads paid loadout")
+ check(equipment.get_runtime_equipped_item_id("boots")=="cloudstep_boots","combat reads paid loadout")
  manager.snapshot.slots.boots=""
- check(EquipmentManager.get_runtime_equipped_item_id("boots")=="cloudstep_boots","run selection frozen across remote changes")
+ check(equipment.get_runtime_equipped_item_id("boots")=="cloudstep_boots","run selection frozen across remote changes")
  manager.set("_expires",0)
- check(EquipmentManager.get_runtime_equipped_item_id("boots")=="","expired lease removes paid overlay")
- player.free();PavilionManager.paid_gameplay=original
- EquipmentManager.equipped_item_ids=local;EquipmentManager.ascension_stars=stars;EquipmentManager.active_run_loadout_snapshot=frozen
+ check(equipment.get_runtime_equipped_item_id("boots")=="","expired lease removes paid overlay")
+ player.free();pavilion.paid_gameplay=original
+ equipment.equipped_item_ids=local;equipment.ascension_stars=stars;equipment.active_run_loadout_snapshot=frozen
  manager.set("test_binding","b".repeat(64));manager.set("_binding","b".repeat(64))
  check(manager.call("_read_pending").is_empty(),"another account has its own journal")
  manager.free();bridge.free()

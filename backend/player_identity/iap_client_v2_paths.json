@@ -1,15 +1,20 @@
 [
   ".github/workflows/iap-delivery-qa.yml",
+  "addons/JadeMonetizationNativeBridge/bin/debug/JadeMonetizationNativeBridge-debug.aar",
+  "addons/JadeMonetizationNativeBridge/bin/release/JadeMonetizationNativeBridge-release.aar",
   "backend/monetization/android_bridge/bridge/build.gradle.kts",
   "backend/monetization/android_bridge/bridge/src/main/java/com/yungdevstudio/jadeascendant/monetizationbridge/JadeMonetizationNativeBridge.kt",
   "backend/monetization/android_bridge/bridge/src/main/java/com/yungdevstudio/jadeascendant/monetizationbridge/PaidGameplayContractV2.kt",
   "backend/monetization/android_bridge/bridge/src/test/java/com/yungdevstudio/jadeascendant/monetizationbridge/PaidGameplayContractV2Test.kt",
   "backend/player_identity/build_native_bridge.ps1",
+  "backend/player_identity/check_account_iap.ps1",
   "backend/player_identity/deploy_iap_gameplay_staging.cmd",
   "backend/player_identity/deploy_iap_gameplay_staging.ps1",
   "backend/player_identity/iap_client_v2_paths.json",
   "backend/player_identity/publish_iap_client_v2.cmd",
   "backend/player_identity/publish_iap_client_v2.ps1",
+  "docs/checkpoints/IAP_CLIENT_V2_CI_REPAIR.md",
+  "docs/checkpoints/IAP_CLIENT_V2_NATIVE.json",
   "docs/checkpoints/IAP_CLIENT_V2_STATUS.md",
   "docs/checkpoints/LESSONS.md",
   "scripts/managers/inventory_manager.gd",
@@ -25,5 +30,6 @@
   "scripts/weapon/weapon_manager.gd",
   "tests/fixtures/paid_gameplay_manager_v2.gd",
   "tests/hero_equipment_progression_smoke.gd",
-  "tests/paid_gameplay_v2_smoke.gd"
+  "tests/paid_gameplay_v2_smoke.gd",
+  "tests/publish_delivery_staging_smoke.ps1"
 ]

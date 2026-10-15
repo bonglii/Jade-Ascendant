@@ -50,3 +50,7 @@ try {
     Pop-Location
     Remove-Item -LiteralPath $fixture -Recurse -Force
 }
+
+# Intentional negative Git tests leave LASTEXITCODE=1. The assertions above
+# decide success; GitHub must not inherit that expected failure as job failure.
+exit 0
