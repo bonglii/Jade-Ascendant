@@ -77,14 +77,25 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for spec in 'paid_gameplay_v2_smoke:jade_paid_v2_qa' 'iap_delivery_boundary_smoke:jade_iap_boundary_qa' 'server_jade_delivery_smoke:jade_server_delivery_qa' 'hero_equipment_progression_smoke:jade_hero_qa' 'hero_upgrade_burst_smoke:jade_hero_qa_burst' 'pavilion_sanctum_smoke:jade_gacha_qa'; do
-            test_name="${spec%%:*}"
-            qa_home="${spec#*:}"
-            XDG_DATA_HOME="/tmp/$qa_home" timeout 120 /tmp/jade-qa/Godot_v4.7.2-stable_linux.x86_64 --headless --audio-driver Dummy --path /tmp/jade-qa/project --script "res://tests/$test_name.gd" 2>&1 | tee "/tmp/$test_name.log"
-            ! rg 'ERROR:|SCRIPT ERROR:' "/tmp/$test_name.log"
+          qa_failed=0
+          for spec in 'paid_gameplay_v2_smoke:jade_paid_v2_qa:' 'iap_delivery_boundary_smoke:jade_iap_boundary_qa:' 'server_jade_delivery_smoke:jade_server_delivery_qa:' 'hero_equipment_progression_smoke:jade_hero_qa:' 'hero_equipment_progression_smoke:jade_hero_qa:resume' 'hero_upgrade_burst_smoke:jade_hero_qa_burst:' 'pavilion_sanctum_smoke:jade_gacha_qa:' 'pavilion_sanctum_smoke:jade_gacha_qa:restart'; do
+            IFS=: read -r test_name qa_home mode <<< "$spec"
+            args=()
+            if [[ -n "$mode" ]]; then args=(-- "--$mode"); fi
+            log="/tmp/${test_name}${mode:+_$mode}.log"
+            if XDG_DATA_HOME="/tmp/$qa_home" timeout 120 /tmp/jade-qa/Godot_v4.7.2-stable_linux.x86_64 --headless --audio-driver Dummy --path /tmp/jade-qa/project --script "res://tests/$test_name.gd" "${args[@]}" 2>&1 | tee "$log"; then
+              if rg 'ERROR:|SCRIPT ERROR:' "$log"; then qa_failed=1; fi
+              if ! rg -q '(CHECKS|checks)=[1-9][0-9]*' "$log"; then
+                echo "Missing QA completion marker: $test_name $mode"
+                qa_failed=1
+              fi
+            else
+              qa_failed=1
+            fi
           done
+          exit "$qa_failed"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: iap-paid-client-checks
-          path: /tmp/*smoke.log
+          path: /tmp/*smoke*.log

@@ -65,10 +65,17 @@ func run() -> void:
  check(not Paid.valid_command(wrong),"client balance is forbidden in commands")
  wrong=cmd.duplicate();wrong.item_id="fake_item"
  check(not Paid.valid_command(wrong),"unknown command item")
+ var immediate: Dictionary={"request_id":"22222222-2222-4222-8222-222222222222","expected_revision":0,"kind":"wish","item_id":""}
+ check(manager.call("_persist",immediate),"persist initial command")
+ check(manager.call("_read_pending")==immediate,"journal restores canonical integer fields")
+ check(manager.call("_dispatch",immediate),"initial command dispatch")
+ reply(manager,bridge,good,{"request_id":immediate.request_id,"kind":"wish","outcome":null})
+ check(not FileAccess.file_exists(journal) and manager.call("checkout_ready"),"initial integer command receipt retires journal")
+ check(Paid.canonical_command(JSON.parse_string(JSON.stringify(cmd)))==cmd,"JSON command numbers canonicalized")
  check(manager.call("_persist",cmd),"durable command journal")
  check(not manager.call("_persist",cmd),"second pending command refused")
  check(manager.call("refresh"),"pending resumes identical request")
- check(bridge.id==cmd.request_id and JSON.parse_string(bridge.body)==cmd,"replay identity preserved")
+ check(bridge.id==cmd.request_id and bridge.body==JSON.stringify(cmd),"replay identity preserved")
  manager.set("_next_read",Time.get_ticks_msec()+60000);manager.set("_deadline",0);manager.call("_process",1.0)
  check(not bool(manager.get("busy")),"timeout releases UI")
  check(FileAccess.file_exists(journal),"timeout retains retry evidence")

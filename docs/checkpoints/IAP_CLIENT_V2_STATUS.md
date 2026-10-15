@@ -1,5 +1,11 @@
 # Paid client V2 candidate — 2026-10-15
 
+Current validation: see `IAP_CLIENT_V2_VALIDATION.md`. Published backend and native
+CI pass; the latest journal correction passes 1,686 local Godot checks using the
+actual retained CI engine. The historical evidence below describes the initial
+candidate and does not override that newer validation record.
+
+
 Base: a5fff4decc2d29ef24151dc4318cc1f0dba9a47f.
 The actual pushed base matches the reconstructed server tree. Its GitHub backend
 job passed. Native CI failed before compilation because setup-android defaulted

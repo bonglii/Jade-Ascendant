@@ -24,3 +24,14 @@
 - Paid snapshot has 15 explicit protocol keys. A manually counted 16-field guard rejected even valid authenticated snapshots. Derive the count from the named field list, compare it with native/fixture keys, and retain a positive real-JSON contract case before relying on negative cases.
 - `Skin` is a native Godot class; do not reuse it for a UI script constant. Use feature-specific names such as ArmoryFrame, and load the actual panel in QA. A run-time script error in a coroutine must not waste the entire external timeout: the paid QA harness now has its own short watchdog.
 - When local tool downloads are blocked, retain the exact CI Godot engine as an artifact before test execution. It enables matching local reproduction after the next successful tool download and reduces repeated user publish cycles; until then, label source corrections as awaiting execution.
+
+### Canonical numeric fields in durable paid commands — 2026-10-15
+- Godot JSON parses numbers as floats. Dictionary equality distinguishes nested
+  float/int values even when scalar numeric comparisons agree. A first-response
+  receipt could fail the journal equality check after the original int command.
+- Validate the exact command schema first; canonicalize only bounded numeric
+  fields (revision and pull count) on read, persistence and dispatch. Never coerce
+  unvalidated strings/bools. Exercise initial-response retirement as well as replay.
+- Reproduce with the exact CI engine artifact before delivering another patch.
+  Run every affected client check, including existing separate-process modes;
+  collect all failures in CI rather than stopping before later checks execute.

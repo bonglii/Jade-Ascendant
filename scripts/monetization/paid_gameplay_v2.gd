@@ -139,6 +139,12 @@ static func valid_command(cmd: Dictionary) -> bool:
 		if kind=="wish" and id!="" and str(Catalog.ITEMS[id].rarity)!="legendary": return false
 		if kind=="equip" and (cmd.get("slot") not in SLOTS or (id!="" and str(Catalog.ITEMS[id].slot)!=cmd.slot)): return false
 	return true
+static func canonical_command(cmd: Dictionary) -> Dictionary:
+	if not valid_command(cmd): return {}
+	var canonical: Dictionary = cmd.duplicate(true)
+	canonical.expected_revision = int(canonical.expected_revision)
+	if canonical.has("pull_count"): canonical.pull_count = int(canonical.pull_count)
+	return canonical
 func _journal_path() -> String:
 	return "user://jade_paid_commands_v2_" + _binding + ".json" if _hex(_binding) else ""
 func _read_pending() -> Dictionary:
@@ -150,13 +156,13 @@ func _read_pending() -> Dictionary:
 	if not value is Dictionary or value.size() != 3 or value.get("version") != 2 or value.get("binding") != _binding or not value.get("command") is Dictionary: return {"error": "invalid_journal"}
 	var cmd: Dictionary = value.command
 	if not valid_command(cmd) or JSON.stringify(cmd).length() > 1024: return {"error": "invalid_journal"}
-	return cmd
+	return canonical_command(cmd)
 func _persist(cmd: Dictionary) -> bool:
 	var path: String = _journal_path()
 	if path.is_empty() or not valid_command(cmd) or not _read_pending().is_empty(): return false
 	var file := FileAccess.open(path + ".tmp", FileAccess.WRITE)
 	if file == null: return false
-	file.store_string(JSON.stringify({"version": 2, "binding": _binding, "command": cmd})); file.flush()
+	file.store_string(JSON.stringify({"version": 2, "binding": _binding, "command": canonical_command(cmd)})); file.flush()
 	var error: Error = file.get_error(); file.close()
 	return error == OK and DirAccess.rename_absolute(path + ".tmp", path) == OK
 func refresh() -> bool:
@@ -187,11 +193,11 @@ func submit(kind: String, extra: Dictionary = {}) -> bool:
 func _dispatch(cmd: Dictionary) -> bool:
 	var native: Object = _bridge()
 	if native == null: _invalidate("transport_unavailable"); return false
-	_owner = _binding; _command = cmd.duplicate(true)
+	_owner = _binding; _command = canonical_command(cmd) if not cmd.is_empty() else {}
 	_request_id = str(cmd.get("request_id", _new_id()))
 	busy = true; _deadline = Time.get_ticks_msec() + 48000; status = "loading"
 	changed.emit()
-	native.call("requestPaidGameplayV2", _request_id, "" if cmd.is_empty() else JSON.stringify(cmd))
+	native.call("requestPaidGameplayV2", _request_id, "" if _command.is_empty() else JSON.stringify(_command))
 	return true
 static func _parse_json(text: String) -> Variant:
 	var parser := JSON.new()
