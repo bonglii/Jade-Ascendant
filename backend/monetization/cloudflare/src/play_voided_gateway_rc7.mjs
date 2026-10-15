@@ -33,13 +33,25 @@ export async function requestVoidedPlayPageRC7({
     fail('play_oauth_unavailable');
   let response;
   try {
-    response=await fetcher(`${API}?${params}`,{
-      method:'GET',redirect:'error',
+    response=await fetcher.call(globalThis,`${API}?${params}`,{
+      method:'GET',redirect:'manual',
       headers:{Authorization:`Bearer ${access}`,Accept:'application/json'},
       signal:AbortSignal.timeout(15000),
     });
-  }catch{fail('play_fetch_unavailable');}
-  if(!response?.ok) fail('play_fetch_unavailable');
+  }catch(error){
+    if(error?.name==='TimeoutError'||error?.name==='AbortError')fail('play_fetch_timeout');
+    if(/illegal invocation/i.test(String(error?.message||'')))fail('play_fetch_receiver');
+    if(/redirect/i.test(String(error?.message||'')))fail('play_fetch_redirect_mode');
+    fail('play_fetch_unavailable');
+  }
+  // Safe fixed labels only: never include Google body, OAuth token or URL query.
+  if(!response?.ok){
+    const status=response?.status;
+    if(status>=300&&status<400)fail('play_redirect_denied');
+    if([401,403,404,429].includes(status))fail('play_http_'+status);
+    if(status>=500&&status<=599)fail('play_http_5xx');
+    fail('play_http_other');
+  }
   if(!/^application\/json(?:\s*;|$)/i.test(response.headers?.get('content-type')||''))
     fail('invalid_play_content_type');
   const advertised=response.headers.get('content-length');

@@ -13,7 +13,7 @@ test('Google API URL fixed, in-app only, includes full and partial refund, Beare
    assert.equal(u.searchParams.get('startTime'),'10000000');
    assert.equal(u.searchParams.get('endTime'),'20000000');
    assert.equal(u.search.includes('OAuthToken'),false);
-   assert.equal(init.redirect,'error');assert.match(init.headers.Authorization,/^Bearer /);
+   assert.equal(init.redirect,'manual');assert.match(init.headers.Authorization,/^Bearer /);
    return new Response(JSON.stringify({voidedPurchases:[]}),{headers:{'Content-Type':'application/json'}});
  }});
  assert.equal(called,1);assert.deepEqual(output,{voidedPurchases:[]});

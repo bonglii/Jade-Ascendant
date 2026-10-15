@@ -33,7 +33,7 @@ async function oauthToken(secret, fetcher) {
   const signingInput = `${jwtHeader}.${jwtPayload}`;
   const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5',privateKey,encoder.encode(signingInput));
   const form = new URLSearchParams({grant_type:'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion:`${signingInput}.${b64u(new Uint8Array(signature))}`});
-  const resp = await fetcher(TOKEN_ENDPOINT, {method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:form,signal:AbortSignal.timeout(10000)});
+  const resp = await fetcher.call(globalThis,TOKEN_ENDPOINT, {method:'POST',redirect:'manual',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:form,signal:AbortSignal.timeout(10000)});
   if (!resp.ok) throw new Error('Google OAuth service unavailable');
   const data = await resp.json();
   if (typeof data.access_token !== 'string' || !Number.isFinite(data.expires_in)) throw new Error('Invalid Google OAuth reply');
@@ -42,7 +42,7 @@ async function oauthToken(secret, fetcher) {
 }
 async function callPlay(secret,path,method,fetcher){
   const token=await oauthToken(secret,fetcher);
-  const resp=await fetcher(`${BASE}${path}`,{method,headers:{Authorization:`Bearer ${token}`},signal:AbortSignal.timeout(15000)});
+  const resp=await fetcher.call(globalThis,`${BASE}${path}`,{method,redirect:'manual',headers:{Authorization:`Bearer ${token}`},signal:AbortSignal.timeout(15000)});
   if(!resp.ok)throw new Error('Google Play verification/consumption unavailable');
   if(method==='GET')return resp.json();
 }

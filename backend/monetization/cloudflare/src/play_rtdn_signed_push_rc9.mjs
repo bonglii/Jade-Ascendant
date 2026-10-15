@@ -56,7 +56,7 @@ export async function verifyGooglePushJwtRC9(token, {
   if (!Array.isArray(keys) || !Number.isSafeInteger(jwksCache.expiresMs) || jwksCache.expiresMs <= nowMs ||
       !keys.some(k => k?.kid === header.kid)) {
     let response;
-    try { response=await fetcher(GOOGLE_JWKS, {redirect:'error',signal:AbortSignal.timeout(5000)}); }
+    try { response=await fetcher.call(globalThis,GOOGLE_JWKS, {redirect:'manual',signal:AbortSignal.timeout(5000)}); }
     catch { reject('jwks_unavailable'); }
     if (!response?.ok) reject('jwks_unavailable');
     const rawLength=response.headers?.get('content-length');
