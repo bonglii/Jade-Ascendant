@@ -1,0 +1,13 @@
+[
+  "addons/JadeMonetizationNativeBridge/bin/debug/JadeMonetizationNativeBridge-debug.aar",
+  "addons/JadeMonetizationNativeBridge/bin/release/JadeMonetizationNativeBridge-release.aar",
+  "backend/player_identity/iap_native_handoff_paths.json",
+  "backend/player_identity/publish_iap_native_handoff.ps1",
+  "backend/player_identity/verify_installed_iap_native.cmd",
+  "backend/player_identity/verify_installed_iap_native.ps1",
+  "docs/checkpoints/IAP_CLIENT_V2_NATIVE.json",
+  "docs/checkpoints/IAP_PRODUCTION_NATIVE_CANDIDATE.json",
+  "docs/checkpoints/IAP_VERIFIED_NATIVE_HANDOFF_20261016.md",
+  "docs/checkpoints/LESSONS.md",
+  "tests/iap_production_candidate_smoke.ps1"
+]
