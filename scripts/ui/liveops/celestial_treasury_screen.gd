@@ -800,7 +800,7 @@ func _back() -> void:
 
 func _connect_runtime_signals() -> void:
 	PavilionManager.server_jade_recovery_changed.connect(_on_server_jade_changed)
-	PavilionManager.paid_verified_purchase_repair_changed.connect(_on_server_jade_changed)
+	PavilionManager.paid_verified_purchase_repair_changed.connect(_on_server_repair_changed)
 	if not PavilionManager.store_products_updated.is_connected(_on_store_products_updated):
 		PavilionManager.store_products_updated.connect(_on_store_products_updated)
 	if not PavilionManager.billing_purchase_state_changed.is_connected(_on_purchase_state_changed):
@@ -920,7 +920,8 @@ func _update_details() -> void:
 	# price-sort implementation details. Keep real transaction messages for
 	# pending purchases, failure, cancellation and save recovery.
 	var body: String = str(OFFER_COPY.get(_selected_id, ""))
-	if not _billing_ready:body+="\nPurchases are unavailable in this build."
+	if not bool(PavilionManager.get_paid_delivery_readiness().ready):body+="\nPurchased Jade fulfillment is being updated. Checkout is paused; recover existing purchases below."
+	elif not _billing_ready:body+="\nPurchases are unavailable in this build."
 	elif PavilionManager.is_iap_tester_credit_only():body+="\nTEST PURCHASE: server test wallet only. Paid spending is not enabled. Use a Play test payment method."
 
 	if (
@@ -943,6 +944,8 @@ func _update_details() -> void:
 		_details_purchase.text = "PROCESSING PURCHASE..."
 	elif _selected_id in _pending_products:
 		_details_purchase.text = "PENDING PLAY APPROVAL"
+	elif not bool(PavilionManager.get_paid_delivery_readiness().ready):
+		_details_purchase.text="CHECKOUT PAUSED"
 	elif can_purchase:
 		_details_purchase.text = ("TEST PURCHASE  ·  " if PavilionManager.is_iap_tester_credit_only() else "BUY NOW  ·  ") + shown_price
 	else:
@@ -972,7 +975,7 @@ func _request_purchase() -> void:
 func _restore_purchases() -> void:
 	if _purchase_busy:
 		return
-	_billing_message = "Checking Google Play for recoverable purchases..."
+	_billing_message = "Checking server ledger and Google Play for recoverable purchases..."
 	_message_product_id = ""
 	_update_details()
 	PavilionManager.restore_iap_purchases()
@@ -1016,6 +1019,7 @@ func _on_purchase_state_changed(product_id: String, status: String, message: Str
 		"account_changed",
 		"recovery_timeout",
 		"recovery_unavailable",
+		"delivery_not_ready",
 	]:
 		_purchase_busy = false
 		_active_purchase_id = ""
@@ -1048,4 +1052,15 @@ func _on_pavilion_changed() -> void:
 	_refresh_storefront()
 
 func _on_server_jade_changed(_view: Dictionary) -> void:
+	_refresh_storefront()
+
+func _on_server_repair_changed(view: Dictionary) -> void:
+	if view.get("status")=="reconciled":
+		_billing_message="SERVER LEDGER CHECKED · %d verified · %d credits recovered"%[int(view.get("verified_purchases",0)),int(view.get("new_wallet_credits",0))]
+	elif view.get("status")=="timeout":
+		_billing_message="Server recovery timed out. Retry recovery; do not purchase again."
+	else:
+		var stage: String=str(PavilionManager.get_server_jade_view().get("repair_stage","unavailable"))
+		_billing_message="Server recovery unavailable · "+stage
+	_message_product_id=""
 	_refresh_storefront()

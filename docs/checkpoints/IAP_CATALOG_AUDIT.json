@@ -1,0 +1,26 @@
+{
+  "active_game_count": 56,
+  "pinned_paid_count": 40,
+  "missing_from_paid": [
+    "celestial_aegis_boots",
+    "celestial_aegis_bracer",
+    "celestial_aegis_pendant",
+    "celestial_aegis_robe",
+    "celestial_returning_glaive",
+    "frost_lotus_boots",
+    "frost_lotus_bracer",
+    "frost_lotus_pendant",
+    "frost_lotus_robe",
+    "jade_binding_chain",
+    "phoenix_war_fan",
+    "vermilion_verdict_boots",
+    "vermilion_verdict_bracer",
+    "vermilion_verdict_pendant",
+    "vermilion_verdict_robe",
+    "void_piercer_spear"
+  ],
+  "paid_missing_or_retired_in_game": [],
+  "paid_duplicate_policy": "one owned copy then rarity fragment conversion",
+  "game_duplicate_policy": "identical copies for ascension, no refinement fragments",
+  "paid_runtime_enabled": false
+}

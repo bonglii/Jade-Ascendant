@@ -4,6 +4,26 @@ $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $report = New-Object 'System.Collections.Generic.List[string]'
 function Record([string]$Line) { $report.Add($Line); Write-Host $Line }
 $curl = Join-Path $env:SystemRoot 'System32\curl.exe'
+function Get-JadeNativeTextHash([string]$Path) {
+    $bytes = [Text.Encoding]::UTF8.GetBytes(([IO.File]::ReadAllText($Path)).Replace("`r`n", "`n"))
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try { return ([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-','').ToLowerInvariant() } finally { $sha.Dispose() }
+}
+function Test-JadeNativeInputs($Metadata) {
+    if ($null -eq $Metadata.inputs) { return $false }
+    $inputRoot = Join-Path $repo 'backend/monetization/android_bridge'
+    $files = @()
+    foreach ($variant in @('main','debug','release')) { $files += @(Get-ChildItem -LiteralPath (Join-Path $inputRoot ('bridge/src/' + $variant)) -Filter '*.kt' -Recurse -File) }
+    $files += @(Get-Item -LiteralPath (Join-Path $inputRoot 'build.gradle.kts'),(Join-Path $inputRoot 'settings.gradle.kts'),(Join-Path $inputRoot 'bridge/build.gradle.kts'),(Join-Path $repo 'addons/JadeMonetizationNativeBridge/export_plugin.gd'))
+    $properties = @($Metadata.inputs.PSObject.Properties)
+    if ($properties.Count -ne $files.Count) { return $false }
+    foreach ($file in $files) {
+        $relative = $file.FullName.Substring($repo.Length + 1).Replace('\','/')
+        $expected = $Metadata.inputs.PSObject.Properties[$relative]
+        if ($null -eq $expected -or $expected.Value -ne (Get-JadeNativeTextHash $file.FullName)) { return $false }
+    }
+    return $true
+}
 $work = Join-Path ([IO.Path]::GetTempPath()) ('jade-readiness-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $work | Out-Null
 try {
@@ -14,7 +34,7 @@ try {
     Record ('SOURCE_PRODUCTION_PURCHASE_LOCK=' + ($pavilion -match 'const SECURE_PURCHASE_ACTIVATION_APPROVED: bool = false'))
     Record ('SOURCE_PAID_SUMMON_LOCK=' + ($pavilion -match 'const HYBRID_PAID_SUMMON_WRITE_APPROVED: bool = false'))
     $nativeSource = Join-Path $repo 'backend\monetization\android_bridge\bridge\src\main\java\com\yungdevstudio\jadeascendant\monetizationbridge\JadeMonetizationNativeBridge.kt'
-    $nativeHash = (Get-FileHash -LiteralPath $nativeSource -Algorithm SHA256).Hash.ToLowerInvariant()
+    $nativeHash = (Get-JadeNativeTextHash $nativeSource)
     foreach ($variant in @('debug','release')) {
         $aar = Join-Path $repo ('addons\JadeMonetizationNativeBridge\bin\' + $variant + '\JadeMonetizationNativeBridge-' + $variant + '.aar')
         if (-not (Test-Path -LiteralPath $aar)) { Record ('NATIVE_' + $variant.ToUpperInvariant() + '=MISSING'); continue }
@@ -26,17 +46,19 @@ try {
         if (Test-Path -LiteralPath $receipt) {
             try {
                 $meta = Get-Content -Raw -LiteralPath $receipt | ConvertFrom-Json
-                $proven = $meta.aar_sha256 -eq $hash -and $meta.bridge_source_sha256 -eq $nativeHash
+                $proven = $meta.aar_sha256 -eq $hash -and $meta.bridge_source_sha256 -eq $nativeHash -and (Test-JadeNativeInputs $meta)
             } catch { $proven = $false }
         }
         # Portable build provenance can prove a shipped AAR even without a local Windows build.
-        $portableReceipt = Join-Path $repo 'docs\checkpoints\DELIVERY_MOTION_NATIVE.json'
-        if (-not $proven -and (Test-Path -LiteralPath $portableReceipt)) {
-            try {
-                $portable = Get-Content -Raw -LiteralPath $portableReceipt | ConvertFrom-Json
-                $entries = @($portable.artifacts | Where-Object { $_.variant -eq $variant })
-                $proven = $portable.native_contract -eq 'PASS' -and $portable.bridge_source_sha256 -eq $nativeHash -and $entries.Count -eq 1 -and $entries[0].sha256 -eq $hash
-            } catch { $proven = $false }
+        foreach ($receiptName in @('IAP_DELIVERY_NATIVE.json','DELIVERY_MOTION_NATIVE.json')) {
+            $portableReceipt = Join-Path $repo ('docs/checkpoints/' + $receiptName)
+            if (-not $proven -and (Test-Path -LiteralPath $portableReceipt)) {
+                try {
+                    $portable = Get-Content -Raw -LiteralPath $portableReceipt | ConvertFrom-Json
+                    $entries = @($portable.artifacts | Where-Object { $_.variant -eq $variant })
+                    $proven = $portable.native_contract -eq 'PASS' -and $portable.bridge_source_sha256 -eq $nativeHash -and $entries.Count -eq 1 -and $entries[0].sha256 -eq $hash -and (Test-JadeNativeInputs $portable)
+                } catch { $proven = $false }
+            }
         }
         Record ('NATIVE_' + $variant.ToUpperInvariant() + '_BRIDGE_SOURCE_MATCH=' + $proven)
     }

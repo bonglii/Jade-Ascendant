@@ -5,6 +5,12 @@ param(
     [string]$GradlePath = ''
 )
 $ErrorActionPreference = 'Stop'
+function Get-JadeNativeTextHash([string]$Path) {
+    $bytes = [Text.Encoding]::UTF8.GetBytes(([IO.File]::ReadAllText($Path)).Replace("`r`n", "`n"))
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try { return ([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-','').ToLowerInvariant() } finally { $sha.Dispose() }
+}
+
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $oldTarget = $env:JADE_IAP_TARGET
 $oldCredit = $env:JADE_IAP_SANDBOX_CREDIT
@@ -85,15 +91,26 @@ try {
         $written += $artifact.Destination
         Copy-Item -LiteralPath $artifact.Source -Destination $artifact.Destination -Force
         if ((Get-FileHash -LiteralPath $artifact.Source).Hash -ne (Get-FileHash -LiteralPath $artifact.Destination).Hash) { throw 'AAR copy verification failed.' }
+        $inputHashes = @{}
+        foreach ($sourceSet in @('main','debug','release')) {
+            foreach ($inputFile in Get-ChildItem -LiteralPath (Join-Path $build ('bridge/src/' + $sourceSet)) -Filter '*.kt' -Recurse -File) {
+                $relative = $inputFile.FullName.Substring($repo.Length + 1).Replace('\','/')
+                $inputHashes[$relative] = (Get-JadeNativeTextHash $inputFile.FullName)
+            }
+        }
+        foreach ($inputPath in @('backend/monetization/android_bridge/build.gradle.kts','backend/monetization/android_bridge/settings.gradle.kts','backend/monetization/android_bridge/bridge/build.gradle.kts','addons/JadeMonetizationNativeBridge/export_plugin.gd')) {
+            $inputHashes[$inputPath] = (Get-JadeNativeTextHash (Join-Path $repo $inputPath))
+        }
         $receipt = @{
-            version = 1
+            version = 2
+            inputs = $inputHashes
             variant = $artifact.Variant
             aar_sha256 = (Get-FileHash -LiteralPath $artifact.Destination -Algorithm SHA256).Hash.ToLowerInvariant()
-            bridge_source_sha256 = (Get-FileHash -LiteralPath (Join-Path $build 'bridge\src\main\java\com\yungdevstudio\jadeascendant\monetizationbridge\JadeMonetizationNativeBridge.kt') -Algorithm SHA256).Hash.ToLowerInvariant()
+            bridge_source_sha256 = (Get-JadeNativeTextHash (Join-Path $build 'bridge\src\main\java\com\yungdevstudio\jadeascendant\monetizationbridge\JadeMonetizationNativeBridge.kt'))
             target = $(if ($artifact.Variant -eq 'release') { 'locked' } else { $Target })
             compiled_utc = [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')
             evidence = 'COMPILE_JVM_JNI_ONLY_NOT_LIVE_PLAY'
-        } | ConvertTo-Json
+        } | ConvertTo-Json -Depth 4
         $receiptDir = Join-Path $repo '.local\native_bridge_receipts'
         New-Item -ItemType Directory -Force -Path $receiptDir | Out-Null
         [IO.File]::WriteAllText((Join-Path $receiptDir ($artifact.Variant + '.json')),$receipt,(New-Object Text.UTF8Encoding($false)))

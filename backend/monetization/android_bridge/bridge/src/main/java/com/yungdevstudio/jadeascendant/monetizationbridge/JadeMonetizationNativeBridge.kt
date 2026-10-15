@@ -60,6 +60,11 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
         private val purchaseToken = Regex("^[\\x21-\\x7E]{16,4096}$")
     }
 
+    private val iapHttps by lazy { TrustedIapHttps(URL(BuildConfig.JADE_IAP_WORKER_BASE_URL).host) }
+
+    @UsedByGodot
+    fun getIapNetworkRoute(): String = TrustedIapHttps.dnsRoute.get()
+
     private val busy = AtomicBoolean(false)
     private val paidWalletBusy = AtomicBoolean(false)
     private val recoveryBusy = AtomicBoolean(false)
@@ -195,62 +200,55 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
     @UsedByGodot
     fun authorizePaidWalletPurchaseV2(purchaseTokenValue: String) {
         if (!PAID_PURCHASE_V2_TRANSPORT_APPROVED && !sandboxCreditEnabled()) {
-            emitPaidPurchaseResult(false, "PAID_PURCHASE_V2_LOCKED", "")
-            return
+            emitPaidPurchaseResult(false, "PAID_PURCHASE_V2_LOCKED", ""); return
         }
-        if (!busy.compareAndSet(false, true)) {
-            emitPaidPurchaseResult(false, "BUSY", "")
-            return
+        if (!busy.compareAndSet(false, true)) { emitPaidPurchaseResult(false, "BUSY", ""); return }
+        val finished = AtomicBoolean(false)
+        val handler = android.os.Handler(android.os.Looper.getMainLooper())
+        var deadline: Runnable? = null
+        fun finish(ok: Boolean, status: String, payload: String = "") {
+            if (!finished.compareAndSet(false, true)) return
+            deadline?.let { handler.removeCallbacks(it) }
+            finishPaidPurchase(ok, status, payload)
         }
-        if (!appCheckReady()) {
-            finishPaidPurchase(false, "APP_CHECK_NOT_READY", "")
-            return
-        }
-        if (!purchaseToken.matches(purchaseTokenValue)) {
-            finishPaidPurchase(false, "INVALID_PURCHASE_TOKEN", "")
-            return
-        }
+        deadline = Runnable { finish(false, "REQUEST_TIMEOUT") }
+        handler.postDelayed(deadline!!, 45_000L)
+        if (!appCheckReady()) { finish(false, "APP_CHECK_NOT_READY"); return }
+        if (!purchaseToken.matches(purchaseTokenValue)) { finish(false, "INVALID_PURCHASE_TOKEN"); return }
         try {
             val user = FirebaseAuth.getInstance().currentUser
-            if (user == null || !isAllowedPurchaseUser(user)) {
-                finishPaidPurchase(false, "AUTH_REQUIRED", "")
-                return
-            }
-            val requestUid = user.uid
-            user.getIdToken(false).addOnCompleteListener authListener@{ task ->
-                try {
-                    val token = if (task.isSuccessful) task.result?.token else null
-                    if (token.isNullOrBlank() || !isSameUser(requestUid)) {
-                        finishPaidPurchase(false, "AUTH_TOKEN_UNAVAILABLE", "")
-                        return@authListener
-                    }
-                    FirebaseAppCheck.getInstance().getLimitedUseAppCheckToken()
-                        .addOnCompleteListener appListener@{ app ->
+            if (user == null || !isAllowedPurchaseUser(user)) { finish(false, "AUTH_REQUIRED"); return }
+            val uid = user.uid
+            fun authorize(forceRefresh: Boolean) {
+                if (finished.get()) return
+                if (!isSameUser(uid)) { finish(false, "ACCOUNT_CHANGED"); return }
+                user.getIdToken(forceRefresh).addOnCompleteListener authListener@{ task ->
+                    if (finished.get()) return@authListener
+                    try {
+                        if (!isSameUser(uid)) { finish(false, "ACCOUNT_CHANGED"); return@authListener }
+                        val authToken = if (task.isSuccessful) task.result?.token else null
+                        if (authToken.isNullOrBlank()) { finish(false, "AUTH_TOKEN_UNAVAILABLE"); return@authListener }
+                        FirebaseAppCheck.getInstance().getLimitedUseAppCheckToken().addOnCompleteListener appListener@{ check ->
+                            if (finished.get()) return@appListener
                             try {
-                                val appToken = if (app.isSuccessful) app.result?.token else null
-                                if (appToken.isNullOrBlank() || !isSameUser(requestUid)) {
-                                    finishPaidPurchase(false, "APP_CHECK_TOKEN_UNAVAILABLE", "")
-                                    return@appListener
+                                if (!isSameUser(uid)) { finish(false, "ACCOUNT_CHANGED"); return@appListener }
+                                val appToken = if (check.isSuccessful) check.result?.token else null
+                                if (appToken.isNullOrBlank()) { finish(false, "APP_CHECK_TOKEN_UNAVAILABLE"); return@appListener }
+                                ioExecutor.execute ioTask@{
+                                    if (finished.get()) return@ioTask
+                                    val result = paidPurchaseV2OverHttps(purchaseTokenValue, authToken, appToken)
+                                    if (!isSameUser(uid)) finish(false, "ACCOUNT_CHANGED")
+                                    else if (!result.success && result.status == "WALLET_PURCHASE_UNAUTHENTICATED" && !forceRefresh)
+                                        authorize(true) // one fresh Auth + App Check retry, same purchase token
+                                    else finish(result.success, result.status, result.grantJson)
                                 }
-                                ioExecutor.execute {
-                                    val outcome = paidPurchaseV2OverHttps(purchaseTokenValue, token, appToken)
-                                    if (!isSameUser(requestUid)) {
-                                        finishPaidPurchase(false, "ACCOUNT_CHANGED", "")
-                                    } else {
-                                        finishPaidPurchase(outcome.success, outcome.status, outcome.grantJson)
-                                    }
-                                }
-                            } catch (_: Exception) {
-                                finishPaidPurchase(false, "APP_CHECK_UNAVAILABLE", "")
-                            }
+                            } catch (_: Exception) { finish(false, "APP_CHECK_UNAVAILABLE") }
                         }
-                } catch (_: Exception) {
-                    finishPaidPurchase(false, "FIREBASE_AUTH_UNAVAILABLE", "")
+                    } catch (_: Exception) { finish(false, "FIREBASE_AUTH_UNAVAILABLE") }
                 }
             }
-        } catch (_: Exception) {
-            finishPaidPurchase(false, "NATIVE_UNAVAILABLE", "")
-        }
+            authorize(false)
+        } catch (_: Exception) { finish(false, "NATIVE_UNAVAILABLE") }
     }
 
     /**
@@ -361,34 +359,24 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
     }
 
     private fun paidEntitlementsOverHttps(idToken: String, appToken: String): Outcome {
-        var connection: HttpsURLConnection? = null
         return try {
-            connection = URL(PAID_ENTITLEMENTS_ENDPOINT).openConnection() as HttpsURLConnection
-            connection.instanceFollowRedirects = false
-            connection.requestMethod = "GET"
-            connection.connectTimeout = CONNECT_TIMEOUT_MS
-            connection.readTimeout = READ_TIMEOUT_MS
-            connection.useCaches = false
-            connection.setRequestProperty("Accept", "application/json")
-            connection.setRequestProperty("Authorization", "Bearer $idToken")
-            connection.setRequestProperty("X-Firebase-AppCheck", appToken)
-            val code = connection.responseCode
+            val response = iapHttps.execute(PAID_ENTITLEMENTS_ENDPOINT, "GET", null, idToken, appToken)
+            val code = response.code
             if (code != 200) Outcome(false, when (code) {
                 401 -> "ENTITLEMENTS_UNAUTHENTICATED"
                 409 -> "ENTITLEMENTS_NOT_PROVISIONED"
                 429 -> "ENTITLEMENTS_RATE_LIMITED"
                 503 -> "ENTITLEMENTS_NOT_READY"
                 else -> "ENTITLEMENTS_HTTP_FAILURE"
-            }) else if (!connection.contentType.orEmpty().startsWith("application/json", ignoreCase = true)) {
+            }) else if (!response.contentType.startsWith("application/json", ignoreCase = true)) {
                 Outcome(false, "INVALID_ENTITLEMENTS_RESPONSE")
             } else {
-                val json = JSONObject(String(connection.inputStream.use { readLimited(it) }, Charsets.UTF_8))
+                val json = JSONObject(String(response.bytes, Charsets.UTF_8))
                 val canonical = PaidEntitlementsContractRC.canonicalOrNull(json)
                 if (canonical == null) Outcome(false, "INVALID_ENTITLEMENTS_RESPONSE")
                 else Outcome(true, "PAID_ENTITLEMENTS_READ_ONLY", canonical)
             }
         } catch (_: Exception) { Outcome(false, "ENTITLEMENTS_NETWORK_UNAVAILABLE") }
-        finally { connection?.disconnect() }
     }
 
     private fun finishEntitlements(success: Boolean, status: String, json: String) {
@@ -503,24 +491,11 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
     }
 
     private fun paidSummonOverHttps(requestId: String, pullCount: Int, uid: String, idToken: String, appToken: String): Outcome {
-        var connection: HttpsURLConnection? = null
         return try {
-            connection = URL(PAID_SUMMON_ENDPOINT).openConnection() as HttpsURLConnection
-            connection.instanceFollowRedirects = false
-            connection.requestMethod = "POST"
-            connection.doOutput = true
-            connection.connectTimeout = CONNECT_TIMEOUT_MS
-            connection.readTimeout = READ_TIMEOUT_MS
-            connection.useCaches = false
-            connection.setRequestProperty("Accept", "application/json")
-            connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
-            connection.setRequestProperty("Authorization", "Bearer $idToken")
-            connection.setRequestProperty("X-Firebase-AppCheck", appToken)
             val body = JSONObject().put("request_id", requestId.lowercase(java.util.Locale.ROOT))
                 .put("pull_count", pullCount).toString().toByteArray(Charsets.UTF_8)
-            connection.setFixedLengthStreamingMode(body.size)
-            connection.outputStream.use { it.write(body) }
-            val status = connection.responseCode
+            val response = iapHttps.execute(PAID_SUMMON_ENDPOINT, "POST", body, idToken, appToken)
+            val status = response.code
             if (status != 200) Outcome(false, when(status) {
                 400 -> "SUMMON_INVALID_ARGUMENT"
                 401 -> "SUMMON_UNAUTHENTICATED"
@@ -528,32 +503,21 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
                 429 -> "SUMMON_RATE_LIMITED"
                 503 -> "SUMMON_SERVER_NOT_READY"
                 else -> "SUMMON_HTTP_FAILURE"
-            }) else if (!connection.contentType.orEmpty().startsWith("application/json", ignoreCase = true)) {
+            }) else if (!response.contentType.startsWith("application/json", ignoreCase = true)) {
                 Outcome(false, "INVALID_SUMMON_RESPONSE")
             } else {
-                val json = JSONObject(String(connection.inputStream.use { readLimited(it) }, Charsets.UTF_8))
+                val json = JSONObject(String(response.bytes, Charsets.UTF_8))
                 val safe = PaidSummonCommitContractRC4.canonicalOrNull(json, requestId, uid, pullCount)
                 if (safe == null) Outcome(false, "INVALID_SUMMON_RESPONSE")
                 else Outcome(true, "PAID_SUMMON_SERVER_COMMITTED", safe)
             }
         } catch (_: Exception) { Outcome(false, "SUMMON_NETWORK_UNAVAILABLE") }
-        finally { connection?.disconnect() }
     }
 
     private fun recoveryOverHttps(requestId: String, uid: String, idToken: String, appToken: String): Outcome {
-        var connection: HttpsURLConnection? = null
         return try {
-            connection = URL(PAID_SUMMON_RECOVERY_PREFIX + requestId.lowercase(java.util.Locale.ROOT))
-                .openConnection() as HttpsURLConnection
-            connection.instanceFollowRedirects = false
-            connection.requestMethod = "GET"
-            connection.connectTimeout = CONNECT_TIMEOUT_MS
-            connection.readTimeout = READ_TIMEOUT_MS
-            connection.useCaches = false
-            connection.setRequestProperty("Accept", "application/json")
-            connection.setRequestProperty("Authorization", "Bearer $idToken")
-            connection.setRequestProperty("X-Firebase-AppCheck", appToken)
-            val status = connection.responseCode
+            val response = iapHttps.execute(PAID_SUMMON_RECOVERY_PREFIX + requestId.lowercase(java.util.Locale.ROOT), "GET", null, idToken, appToken)
+            val status = response.code
             if (status != 200) {
                 Outcome(false, when (status) {
                     401 -> "RECOVERY_UNAUTHENTICATED"
@@ -563,34 +527,23 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
                     503 -> "RECOVERY_NOT_READY"
                     else -> "RECOVERY_HTTP_FAILURE"
                 })
-            } else if (!connection.contentType.orEmpty().startsWith("application/json", ignoreCase = true)) {
+            } else if (!response.contentType.startsWith("application/json", ignoreCase = true)) {
                 Outcome(false, "INVALID_RECOVERY_RESPONSE")
             } else {
-                val json = JSONObject(String(connection.inputStream.use { readLimited(it) }, Charsets.UTF_8))
+                val json = JSONObject(String(response.bytes, Charsets.UTF_8))
                 val canonical = PaidSummonRecoveryContractM12.canonicalOrNull(json, requestId, uid)
                 if (canonical == null) Outcome(false, "INVALID_RECOVERY_RESPONSE")
                 else Outcome(true, "PAID_SUMMON_RECOVERY_READ_ONLY", canonical)
             }
         } catch (_: Exception) {
             Outcome(false, "RECOVERY_NETWORK_UNAVAILABLE")
-        } finally {
-            connection?.disconnect()
         }
     }
 
     private fun paidWalletOverHttps(idToken: String, appToken: String): Outcome {
-        var connection: HttpsURLConnection? = null
         return try {
-            connection = URL(PAID_WALLET_ENDPOINT).openConnection() as HttpsURLConnection
-            connection.instanceFollowRedirects = false
-            connection.requestMethod = "GET"
-            connection.connectTimeout = CONNECT_TIMEOUT_MS
-            connection.readTimeout = READ_TIMEOUT_MS
-            connection.useCaches = false
-            connection.setRequestProperty("Accept", "application/json")
-            connection.setRequestProperty("Authorization", "Bearer $idToken")
-            connection.setRequestProperty("X-Firebase-AppCheck", appToken)
-            val status = connection.responseCode
+            val response = iapHttps.execute(PAID_WALLET_ENDPOINT, "GET", null, idToken, appToken)
+            val status = response.code
             if (status != 200) {
                 Outcome(false, when (status) {
                     401 -> "WALLET_UNAUTHENTICATED"
@@ -599,41 +552,26 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
                     503 -> "WALLET_NOT_READY"
                     else -> "WALLET_HTTP_FAILURE"
                 })
-            } else if (!connection.contentType.orEmpty().startsWith("application/json", ignoreCase = true)) {
+            } else if (!response.contentType.startsWith("application/json", ignoreCase = true)) {
                 Outcome(false, "INVALID_WALLET_RESPONSE")
             } else {
-                val parsed = JSONObject(String(connection.inputStream.use { readLimited(it) }, Charsets.UTF_8))
+                val parsed = JSONObject(String(response.bytes, Charsets.UTF_8))
                 val canonical = PaidWalletViewContractM8.canonicalOrNull(parsed)
                 if (canonical == null) Outcome(false, "INVALID_WALLET_RESPONSE")
                 else Outcome(true, "WALLET_SNAPSHOT_READ_ONLY", canonical)
             }
         } catch (_: Exception) {
             Outcome(false, "WALLET_NETWORK_UNAVAILABLE")
-        } finally {
-            connection?.disconnect()
         }
     }
 
     private data class Outcome(val success: Boolean, val status: String, val grantJson: String = "")
 
     private fun paidPurchaseV2OverHttps(token: String, idToken: String, appToken: String): Outcome {
-        var connection: HttpsURLConnection? = null
         return try {
-            connection = URL(PAID_PURCHASE_V2_ENDPOINT).openConnection() as HttpsURLConnection
-            connection.instanceFollowRedirects = false
-            connection.requestMethod = "POST"
-            connection.connectTimeout = CONNECT_TIMEOUT_MS
-            connection.readTimeout = READ_TIMEOUT_MS
-            connection.useCaches = false
-            connection.doOutput = true
-            connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
-            connection.setRequestProperty("Accept", "application/json")
-            connection.setRequestProperty("Authorization", "Bearer $idToken")
-            connection.setRequestProperty("X-Firebase-AppCheck", appToken)
             val bytes = JSONObject().put("purchase_token", token).toString().toByteArray(Charsets.UTF_8)
-            connection.setFixedLengthStreamingMode(bytes.size)
-            connection.outputStream.use { it.write(bytes) }
-            val status = connection.responseCode
+            val response = iapHttps.execute(PAID_PURCHASE_V2_ENDPOINT, "POST", bytes, idToken, appToken)
+            val status = response.code
             if (status != 200) {
                 Outcome(false, when (status) {
                     401 -> "WALLET_PURCHASE_UNAUTHENTICATED"
@@ -643,18 +581,16 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
                     503 -> "WALLET_PURCHASE_BACKEND_LOCKED"
                     else -> "WALLET_PURCHASE_HTTP_FAILURE"
                 })
-            } else if (!connection.contentType.orEmpty().startsWith("application/json", ignoreCase = true)) {
+            } else if (!response.contentType.startsWith("application/json", ignoreCase = true)) {
                 Outcome(false, "INVALID_WALLET_PURCHASE_RESPONSE")
             } else {
-                val json = JSONObject(String(connection.inputStream.use { readLimited(it) }, Charsets.UTF_8))
+                val json = JSONObject(String(response.bytes, Charsets.UTF_8))
                 val canonical = PaidPurchaseReceiptContractM14.canonicalOrNull(json)
                 if (canonical == null) Outcome(false, "INVALID_WALLET_PURCHASE_RESPONSE")
                 else Outcome(true, "PAID_WALLET_SERVER_CREDITED", canonical)
             }
         } catch (_: Exception) {
             Outcome(false, "WALLET_PURCHASE_NETWORK_UNAVAILABLE")
-        } finally {
-            connection?.disconnect()
         }
     }
 
@@ -729,84 +665,71 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
             flag.set(false)
             emit(ok, status, payload)
         }
-        if (requestId != null) {
-            timeout = Runnable { finish(false, "REQUEST_TIMEOUT") }
-            timeoutHandler.postDelayed(timeout!!, 45_000L)
-        }
+        timeout = Runnable { finish(false, "REQUEST_TIMEOUT") }
+        timeoutHandler.postDelayed(timeout!!, 45_000L)
         if (!appCheckReady()) { finish(false, "APP_CHECK_NOT_READY"); return }
         try {
             val user = FirebaseAuth.getInstance().currentUser
             if (user == null || !isAllowedPurchaseUser(user)) { finish(false, "AUTH_REQUIRED"); return }
             val uid = user.uid
-            user.getIdToken(false).addOnCompleteListener authListener@{ authTask ->
-                if (finished.get()) return@authListener
-                try {
-                    val idToken = if (authTask.isSuccessful) authTask.result?.token else null
-                    if (idToken.isNullOrBlank() || !isSameUser(uid)) {
-                        finish(false, "AUTH_UNAVAILABLE"); return@authListener
-                    }
-                    FirebaseAppCheck.getInstance().getLimitedUseAppCheckToken()
-                        .addOnCompleteListener checkListener@{ appTask ->
-                            if (finished.get()) return@checkListener
-                            try {
-                                val appToken = if (appTask.isSuccessful) appTask.result?.token else null
-                                if (appToken.isNullOrBlank() || !isSameUser(uid)) {
-                                    finish(false, "APP_CHECK_UNAVAILABLE"); return@checkListener
-                                }
-                                ioExecutor.execute ioTask@{
-                                    if (finished.get()) return@ioTask
-                                    val result = requestOverHttpsRC6(endpoint, method, body, idToken, appToken, canonical)
-                                    if (!isSameUser(uid)) finish(false, "ACCOUNT_CHANGED")
-                                    else finish(result.success, if (result.success) completedStatus else result.status, result.grantJson)
-                                }
-                            } catch (_: Exception) { finish(false, "APP_CHECK_UNAVAILABLE") }
-                        }
-                } catch (_: Exception) { finish(false, "AUTH_UNAVAILABLE") }
+            fun authorize(forceRefresh: Boolean) {
+                if (finished.get()) return
+                if (!isSameUser(uid)) { finish(false, "ACCOUNT_CHANGED"); return }
+                user.getIdToken(forceRefresh).addOnCompleteListener authListener@{ authTask ->
+                    if (finished.get()) return@authListener
+                    try {
+                        val idToken = if (authTask.isSuccessful) authTask.result?.token else null
+                        if (!isSameUser(uid)) { finish(false, "ACCOUNT_CHANGED"); return@authListener }
+                        if (idToken.isNullOrBlank()) { finish(false, "AUTH_UNAVAILABLE"); return@authListener }
+                        FirebaseAppCheck.getInstance().getLimitedUseAppCheckToken()
+                            .addOnCompleteListener checkListener@{ appTask ->
+                                if (finished.get()) return@checkListener
+                                try {
+                                    val appToken = if (appTask.isSuccessful) appTask.result?.token else null
+                                    if (!isSameUser(uid)) { finish(false, "ACCOUNT_CHANGED"); return@checkListener }
+                                    if (appToken.isNullOrBlank()) { finish(false, "APP_CHECK_UNAVAILABLE"); return@checkListener }
+                                    ioExecutor.execute ioTask@{
+                                        if (finished.get()) return@ioTask
+                                        val result = requestOverHttpsRC6(endpoint, method, body, idToken, appToken, canonical)
+                                        if (!isSameUser(uid)) finish(false, "ACCOUNT_CHANGED")
+                                        else if (!result.success && result.status == "UNAUTHENTICATED" && !forceRefresh) authorize(true)
+                                        else finish(result.success, if (result.success) completedStatus else result.status, result.grantJson)
+                                    }
+                                } catch (_: Exception) { finish(false, "APP_CHECK_UNAVAILABLE") }
+                            }
+                    } catch (_: Exception) { finish(false, "AUTH_UNAVAILABLE") }
+                }
             }
+            authorize(false)
         } catch (_: Exception) { finish(false, "AUTH_UNAVAILABLE") }
     }
 
+
     private fun requestOverHttpsRC6(endpoint: String, method: String, body: String?,
         idToken: String, appToken: String, canonical: (JSONObject) -> String?): Outcome {
-        var connection: HttpsURLConnection? = null
         return try {
-            connection = URL(endpoint).openConnection() as HttpsURLConnection
-            connection.instanceFollowRedirects = false
-            connection.connectTimeout = CONNECT_TIMEOUT_MS
-            connection.readTimeout = READ_TIMEOUT_MS
-            connection.useCaches = false
-            connection.requestMethod = method
-            connection.setRequestProperty("Accept", "application/json")
-            connection.setRequestProperty("Authorization", "Bearer $idToken")
-            connection.setRequestProperty("X-Firebase-AppCheck", appToken)
-            if (body != null) {
-                val bytes = body.toByteArray(Charsets.UTF_8)
-                if (bytes.size > 1024) return Outcome(false, "INVALID_REQUEST_SIZE")
-                connection.doOutput = true
-                connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
-                connection.setFixedLengthStreamingMode(bytes.size)
-                connection.outputStream.use { it.write(bytes) }
-            }
-            val status = connection.responseCode
+            if (body != null && body.toByteArray(Charsets.UTF_8).size > 1024) return Outcome(false, "INVALID_REQUEST_SIZE")
+            val response = iapHttps.execute(endpoint, method, body?.toByteArray(Charsets.UTF_8), idToken, appToken)
+            val status = response.code
             if (status != 200) Outcome(false, when (status) {
                 400 -> "INVALID_REQUEST"
                 401 -> "UNAUTHENTICATED"
+                403 -> "FORBIDDEN"
                 409 -> "REVISION_OR_OWNERSHIP_CONFLICT"
                 423 -> "ACCOUNT_HELD"
                 429 -> "RATE_LIMITED"
                 503 -> "BACKEND_NOT_READY"
                 else -> "HTTP_UNAVAILABLE"
             })
-            else if (!connection.contentType.orEmpty().startsWith("application/json", ignoreCase = true))
+            else if (!response.contentType.startsWith("application/json", ignoreCase = true))
                 Outcome(false, "INVALID_CONTENT_TYPE")
             else {
-                val value = JSONObject(String(connection.inputStream.use { readLimited(it) }, Charsets.UTF_8))
+                val value = JSONObject(String(response.bytes, Charsets.UTF_8))
                 val verified = canonical(value)
                 if (verified == null) Outcome(false, "INVALID_SERVER_RESPONSE")
                 else Outcome(true, "SERVER_VERIFIED", verified)
             }
         } catch (_: Exception) { Outcome(false, "NETWORK_UNAVAILABLE") }
-        finally { connection?.disconnect() }
     }
     private fun emitRC6(signal: String, success: Boolean, status: String, payload: String) {
         runOnHostThread { emitSignal(signal, success, status, payload) }

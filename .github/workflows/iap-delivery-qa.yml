@@ -1,0 +1,27 @@
+name: IAP delivery boundaries
+on:
+  push:
+    branches: ['checkpoint/iap-fasttrack-20261010']
+    paths: ['scripts/managers/pavilion_manager.gd', 'backend/**', 'addons/JadeMonetizationNativeBridge/**', 'tests/*publish*.ps1', 'tests/native_provenance_smoke.ps1', 'docs/checkpoints/IAP_DELIVERY_NATIVE.json', '.github/workflows/iap-delivery-qa.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test backend/monetization/cloudflare/tests/verified_purchase_repair.test.mjs backend/monetization/cloudflare/tests/paid_purchase_credit_route_m13.test.mjs backend/monetization/cloudflare/tests/d1_wallet_refund_integration_rc8.test.mjs backend/monetization/cloudflare/tests/staging_tester_guard_r1.test.mjs backend/monetization/cloudflare/tests/delivery_diagnosis.test.mjs
+  windows-powershell:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./tests/publish_json_compatibility_smoke.ps1
+      - run: ./tests/publish_delivery_staging_smoke.ps1
+      - run: ./tests/native_provenance_smoke.ps1
