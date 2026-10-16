@@ -4,14 +4,15 @@ extends Node
 ## Mengontrol output debug development berdasarkan kategori.
 ## Kategori existing dipertahankan; diagnostics hanya aktif di debug build.
 
-const BUILD_ID: String = "JA-RELEASE-CANDIDATE-20260909"
+const BuildMetadata = preload("res://scripts/debug/build_metadata.gd")
 
 var combat_enabled: bool = false
 var spawn_enabled: bool = false
 var progression_enabled: bool = false
 
 func _ready() -> void:
-	system("Build %s | Godot %s" % [BUILD_ID, Engine.get_version_info()["string"]])
+	var build: Dictionary = BuildMetadata.read()
+	system("Build %s (%d) | Source %s | Godot %s" % [str(build.version_name), int(build.version_code), str(build.source_revision), Engine.get_version_info()["string"]])
 
 func system(message: String) -> void:
 	if OS.is_debug_build():

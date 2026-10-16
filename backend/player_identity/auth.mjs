@@ -35,6 +35,7 @@ export async function verifyAuth(request,env,options={}) {
   if(typeof claims.sub!=='string'||!claims.sub||claims.sub.length>128) reject('token_subject');
   if(!Number.isSafeInteger(claims.auth_time)||claims.auth_time>time+30) reject('token_auth_time');
   if(!['anonymous','google.com'].includes(claims.firebase?.sign_in_provider)) reject('token_provider');
+  if(options.requireGoogle===true&&claims.firebase?.sign_in_provider!=='google.com')reject('google_required');
   let lookupStage='',lookupUnavailable=false;
   const fetcher=async(...args)=>{
     let response;

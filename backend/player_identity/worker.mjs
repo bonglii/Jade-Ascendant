@@ -4,6 +4,7 @@ export {verifyAuth} from './auth.mjs';
 import {createMailHandler,MailError,processScheduled} from './mail.mjs';
 
 import {currentDocument,publicSnapshot} from './pavilion.mjs';
+import {createProgressBackupHandler} from './progress_backup.mjs';
 
 const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 const UID = /^JA[0-9A-HJKMNP-TV-Z]{10}$/;
@@ -43,8 +44,10 @@ export async function registerIdentity(db,owner,{generate=generateUid,now=Date.n
 
 export function createHandler({verify=verifyAuth,register=registerIdentity}={}) {
   const handleMail=createMailHandler({verify});
+  const handleProgressBackup=createProgressBackupHandler({verify});
   return async(request,env)=>{
     const url = new URL(request.url);
+    if(url.pathname==='/v1/player/progress-backup')return handleProgressBackup(request,env);
     if(url.pathname==='/v1/pavilion/banner') {
       if(request.method!=='GET')return reply(405,{error:'method_not_allowed'});
       if(!env.PROFILE_DB)return reply(503,{error:'service_unavailable'});

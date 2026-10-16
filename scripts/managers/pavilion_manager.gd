@@ -1205,6 +1205,11 @@ func get_native_iap_network_route() -> String:
 	var route: String=str(bridge.call("getIapNetworkRoute"))
 	return route if route in ["not_attempted","doh_primary","doh_secondary","system","unavailable"] else "unavailable"
 
+func get_native_iap_target() -> String:
+	if _production_iap_candidate_approved(): return "production"
+	if _staging_sandbox_credit_approved(): return "staging"
+	return "locked_or_unavailable"
+
 func get_paid_delivery_readiness() -> Dictionary:
 	var usable: bool = is_instance_valid(paid_gameplay) and bool(paid_gameplay.call("checkout_ready"))
 	return {"ready":usable,"reason":"ready" if usable else "server_connection_required","recovery_available":_server_recovery_bridge()!=null}

@@ -116,3 +116,16 @@
 - Keep production candidate binaries separate from the installed staging/locked pair. A passing build does not prove Play Integrity on an installed release or authorize enabling payment gates.
 - Binary payloads require byte hashes; text payloads use UTF-8 LF normalization. Validate every entry before writing, retain scoped backups, and verify source inventory before replacement.
 - Do not embed single-quoted Python code in a single-quoted shell -c argument. Write the helper script and pass structured JSON through stdin; keep signed artifact download URLs out of output.
+
+
+## 2026-10-16 — Production release and progress recovery
+
+- A successful profile UID and server wallet do not prove that all gameplay progress is cloud-backed. Audit the current permanent registry: mastery increased it to nine domains, while historical closed Firebase contracts still describe eight. Use the explicit current protocol; do not reactivate archived gates or claim lost local-only progress can be recreated.
+- Keep accepted real-payment/restart evidence separate from Test card, simulation, refund polling and real-order refund evidence. Do not repeat passed purchases on unrelated code changes.
+- Store the reviewed live IAP gates in a named production config and always deploy through the checked release entry point. CLI-only overrides and an ordinary locked release export are not a reproducible release process.
+- Bundle diagnostic helpers, check their paths, use the absolute Windows PowerShell executable, and retain verified AAR backup/recovery state before substitution. Text provenance must normalize CRLF on Windows; binary hashes must not. Never delete Git locks automatically.
+- Backups are account-bound offline snapshots, never paid currency/equipment authority. Read before writing, compare server revisions, fence account changes and late callbacks, require explicit restore, retain a verified before-image, and replay exact multi-domain journal targets after interruption. A fresh install must not overwrite an existing remote save with defaults.
+- Derive release version/code from the selected export preset. Embed them into the exported package and use the same metadata for support and LiveOps headers; a blank application/config/version must not turn into an empty version or a fictitious 1.0.6.
+- Log bounded source locations and error kinds only. Never persist raw Firebase/Play tokens, error payloads, captured variables or private identities. An incomplete previous session is not conclusive crash evidence.
+- UI fixtures must measure controls in their logical stretched canvas, not compare logical widths to physical window pixels. Check complete label width and touch-release behavior in both languages.
+- Windows PowerShell 5 may emit a JSON array as one pipeline object. Never use @(ConvertFrom-Json ...) to count manifest entries; assign the decoded value and explicitly enumerate it. Exercise both enumerating and non-enumerating output before delivery. PowerShell 7 alone is not Windows PowerShell 5 evidence.

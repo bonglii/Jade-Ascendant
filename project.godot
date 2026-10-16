@@ -24,6 +24,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 DebugLogger="*res://scripts/debug/DebugLogger.gd"
+ReleaseDiagnostics="*res://scripts/debug/release_diagnostics.gd"
 Localizer="*res://scripts/managers/localization_manager.gd"
 GameSession="*res://scripts/managers/GameSession.gd"
 SaveManager="*res://scripts/managers/save_manager.gd"
@@ -46,6 +47,7 @@ PlayerIdentityManager="*res://scripts/managers/player_identity_manager.gd"
 PlayerIdentityServerClient="*res://scripts/managers/player_identity_server_client.gd"
 ServerMailManager="*res://scripts/managers/server_mail_manager.gd"
 Firebase="*uid://bfps2e72dlnwq"
+ProgressBackupManager="*res://scripts/managers/progress_backup_manager.gd"
 
 [display]
 
@@ -59,7 +61,7 @@ window/handheld/orientation=1
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/GodotFirebaseAndroid/plugin.cfg", "res://addons/GodotGooglePlayBilling/plugin.cfg", "res://addons/admob/plugin.cfg", "res://addons/JadeMonetizationNativeBridge/plugin.cfg")
+enabled=PackedStringArray("res://addons/GodotFirebaseAndroid/plugin.cfg", "res://addons/GodotGooglePlayBilling/plugin.cfg", "res://addons/admob/plugin.cfg", "res://addons/JadeMonetizationNativeBridge/plugin.cfg", "res://addons/JadeReleaseMetadata/plugin.cfg")
 
 [global_group]
 

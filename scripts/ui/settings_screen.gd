@@ -28,6 +28,9 @@ var presentation_toggle_labels: Dictionary = {}
 var quality_choice: OptionButton
 var connection_status: Label
 var connection_retry: Button
+var _backup_status: Label
+var _backup_save: Button
+var _backup_restore: Button
 var _connection_tick: float = 0.0
 var fps_choice: OptionButton = null
 var language_choice: OptionButton = null
@@ -1118,12 +1121,76 @@ func _build_connection_support(parent_box: VBoxContainer, source: PanelContainer
 	box.add_child(copy)
 	copy.pressed.connect(func():
 		if not bool(copy.get_meta("jade_scroll_cancelled", false)): DisplayServer.clipboard_set(get_support_summary()))
+	_build_progress_backup(parent_box, source)
+
+func _build_progress_backup(parent_box: VBoxContainer, source: PanelContainer) -> void:
+	var card: PanelContainer = _create_settings_card(parent_box, source, _local("PROGRESS", "PROGRESS"), _local("Cloud backup", "Backup cloud"), _local("Save progress to this Google account. After your first backup, updates run every five minutes while in menus. Purchased items stay on the purchase server.", "Simpan progress ke akun Google ini. Setelah backup pertama, pembaruan otomatis tiap lima menit saat di menu. Pembelian tetap di server."))
+	card.name = "ProgressBackupCard"
+	var box: VBoxContainer = card.get_child(0)
+	_backup_status = Label.new(); _backup_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; _backup_status.add_theme_color_override("font_color", JADE); box.add_child(_backup_status)
+	var actions := VBoxContainer.new(); actions.add_theme_constant_override("separation", 10); box.add_child(actions)
+	_backup_save = Button.new(); _backup_save.text = _local("SAVE BACKUP", "SIMPAN BACKUP"); _backup_save.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _backup_save.custom_minimum_size.y = 52; actions.add_child(_backup_save)
+	_backup_restore = Button.new(); _backup_restore.text = _local("RESTORE", "PULIHKAN"); _backup_restore.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _backup_restore.custom_minimum_size.y = 52; actions.add_child(_backup_restore)
+	_backup_save.pressed.connect(func():
+		if not _scroll_gesture_active and not bool(_backup_save.get_meta("jade_scroll_cancelled", false)): _confirm_progress_backup(false))
+	_backup_restore.pressed.connect(func():
+		if not _scroll_gesture_active and not bool(_backup_restore.get_meta("jade_scroll_cancelled", false)): _confirm_progress_backup(true))
+	var refresh := Button.new(); refresh.text = _local("CHECK CLOUD BACKUP", "CEK BACKUP CLOUD"); refresh.custom_minimum_size.y = 48; box.add_child(refresh)
+	refresh.pressed.connect(func():
+		if not _scroll_gesture_active and not bool(refresh.get_meta("jade_scroll_cancelled", false)): ProgressBackupManager.refresh())
+	_refresh_progress_backup()
+	ProgressBackupManager.refresh()
+
+func _confirm_progress_backup(restore: bool) -> void:
+	if restore and not ProgressBackupManager.can_restore(): return
+	if not restore and not ProgressBackupManager.can_backup(): return
+	var owner: String = GoogleAccountManager.get_monetization_account_binding()
+	var revision: int = ProgressBackupManager.revision
+	var dialog := ConfirmationDialog.new(); dialog.title = _local("Restore progress" if restore else "Save progress", "Pulihkan progress" if restore else "Simpan progress"); dialog.dialog_autowrap = true
+	dialog.dialog_text = _local("Replace local progress with this account's backup. The game will close after restoring; reopen it to play." if restore else "Save this device's progress to this Google account and enable automatic menu backups. An existing cloud backup will be replaced.", "Ganti progress lokal dengan backup akun ini. Game ditutup setelah pemulihan; buka kembali untuk bermain." if restore else "Simpan progress perangkat ini ke akun Google dan aktifkan backup otomatis saat di menu. Backup cloud sebelumnya akan diganti.")
+	dialog.ok_button_text = _local("RESTORE & CLOSE" if restore else "SAVE", "PULIHKAN & TUTUP" if restore else "SIMPAN")
+	add_child(dialog)
+	dialog.confirmed.connect(func():
+		if owner == GoogleAccountManager.get_monetization_account_binding() and revision == ProgressBackupManager.revision:
+			if restore: ProgressBackupManager.restore_and_close()
+			else: ProgressBackupManager.backup_now()
+		dialog.queue_free())
+	dialog.canceled.connect(dialog.queue_free)
+	dialog.popup_centered(Vector2i(int(minf(480.0, get_viewport_rect().size.x - 40.0)), 240))
+
+func _refresh_progress_backup() -> void:
+	if _backup_status == null: return
+	var view: Dictionary = ProgressBackupManager.get_status()
+	var stage: String = str(view.stage)
+	var messages: Dictionary = {
+		"sign_in_required": _local("Sign in with Google to protect your progress.", "Login Google untuk melindungi progress."),
+		"checking": _local("Checking your account backup...", "Memeriksa backup akun..."),
+		"syncing": _local("Syncing backup...", "Menyinkronkan backup..."),
+		"no_backup": _local("No cloud backup yet. Save once to enable automatic backups.", "Belum ada backup cloud. Simpan sekali untuk mengaktifkan backup otomatis."),
+		"backup_available": _local("Cloud backup available. Choose restore or save this device's progress.", "Backup cloud tersedia. Pilih pulihkan atau simpan progress perangkat ini."),
+		"backed_up": _local("Progress backed up. Automatic backups enabled.", "Progress sudah dibackup. Backup otomatis aktif."),
+		"backup_conflict": _local("Another device updated this backup. Check cloud backup before choosing again.", "Perangkat lain memperbarui backup. Cek backup cloud sebelum memilih lagi."),
+		"backup_cooldown": _local("Please wait a minute before saving another backup.", "Tunggu satu menit sebelum menyimpan backup lagi."),
+		"backup_service_unavailable": _local("Cloud backup is unavailable. Your local progress stays safe.", "Backup cloud belum tersedia. Progress lokal tetap tersimpan."),
+		"android_required": _local("Cloud backup is available in the Android build.", "Backup cloud tersedia pada build Android."),
+		"incompatible_backup": _local("This backup needs a compatible game update. Local progress was not replaced.", "Backup memerlukan versi game yang sesuai. Progress lokal belum diganti."),
+		"local_save_unavailable": _local("Local progress cannot be backed up safely. Contact support; existing saves are preserved.", "Progress lokal belum bisa dibackup dengan aman. Hubungi bantuan; save lama tetap disimpan."),
+		"backup_storage_unavailable": _local("Not enough local storage for a safe restore backup. Free space and retry.", "Penyimpanan lokal belum siap untuk backup pemulihan. Kosongkan ruang lalu coba lagi."),
+		"network_unavailable": _local("Cloud connection unavailable. Local progress is still saved; retry later.", "Koneksi cloud belum tersedia. Progress lokal tetap tersimpan; coba lagi nanti."),
+		"account_changed": _local("Google account changed. Check the backup for this account.", "Akun Google berubah. Cek backup akun ini."),
+		"local_account_mismatch": _local("This device's progress belongs to another Google account. Sign back in to that account, or restore this account's cloud backup.", "Progress perangkat ini milik akun Google lain. Login kembali ke akun tersebut, atau pulihkan backup cloud akun ini."),
+	}
+	_backup_status.text = str(messages.get(stage, _local("Backup unavailable. Check your connection and retry.", "Backup belum tersedia. Periksa koneksi lalu coba lagi.")))
+	if int(view.updated_at) > 0: _backup_status.text += "\n" + _local("Last saved: ", "Terakhir disimpan: ") + Time.get_datetime_string_from_unix_time(int(view.updated_at)).replace("T", " ") + " UTC"
+	if not ProgressBackupManager._idle_safe() and not bool(view.busy): _backup_status.text += "\n" + _local("Finish or leave the current run before saving/restoring.", "Selesaikan atau akhiri run aktif sebelum menyimpan/memulihkan.")
+	_backup_save.disabled = not ProgressBackupManager.can_backup(); _backup_restore.disabled = not ProgressBackupManager.can_restore()
 
 func _process(delta: float) -> void:
 	_connection_tick += delta
 	if _connection_tick < 1.0: return
 	_connection_tick = 0.0
 	_refresh_connection_support()
+	_refresh_progress_backup()
 
 func _refresh_connection_support() -> void:
 	if connection_status == null: return
@@ -1138,7 +1205,8 @@ func get_support_summary() -> String:
 	var route: Dictionary = PlayerIdentityServerClient.get_connection_snapshot()
 	var account: Dictionary = GoogleAccountManager.get_account_snapshot()
 	var billing: Dictionary = PavilionManager.get_billing_runtime_status()
-	var summary: String = "JADE SUPPORT\nVersion=%s\nOS=%s\nPublic UID=%s\nProfile=%s\nRoute=%s\nStage=%s\nFPS=%d\nReduced effects=%s" % [str(ProjectSettings.get_setting("application/config/version", "unreported")), OS.get_name(), str(profile.get("player_uid", "")), str(profile.get("server_status", "pending")), str(route.route), str(route.stage), SettingsManager.frame_limit, str(SettingsManager.reduced_effects)]
+	var build: Dictionary = preload("res://scripts/debug/build_metadata.gd").read()
+	var summary: String = "JADE SUPPORT\nVersion=%s\nVersion code=%d\nBuild source=%s\nBuild IAP target=%s\nOS=%s\nPublic UID=%s\nProfile=%s\nRoute=%s\nStage=%s\nFPS=%d\nReduced effects=%s" % [str(build.version_name), int(build.version_code), str(build.source_revision), str(build.iap_target), OS.get_name(), str(profile.get("player_uid", "")), str(profile.get("server_status", "pending")), str(route.route), str(route.stage), SettingsManager.frame_limit, str(SettingsManager.reduced_effects)]
 	summary += "\nGoogle native=%s\nGoogle signed in=%s\nGoogle busy=%s\nGoogle elapsed ms=%d\nPurchase identity ready=%s" % [str(bool(account.get("native_ready", false))), str(bool(account.get("signed_in", false))), str(bool(account.get("busy", false))), int(account.get("elapsed_msec", 0)), str(bool(account.get("monetization_identity_ready", false)))]
 	summary += "\nBilling state=%s\nPlay connected=%s\nProducts=%d\nPurchase authority ready=%s\nRecovery waiting=%s\nProfile retry seconds=%d" % [str(billing.get("state", "unknown")), str(bool(billing.get("billing_client_ready", false))), int(billing.get("product_count", 0)), str(bool(billing.get("secure_purchase_authority_ready", false))), str(bool(billing.get("restore_waiting_for_callback", false))), int(route.get("retry_in_seconds", 0))]
 	var jade: Dictionary=PavilionManager.get_server_jade_view()
@@ -1146,6 +1214,11 @@ func get_support_summary() -> String:
 	var gameplay: Node = PavilionManager.get("paid_gameplay") as Node
 	var gameplay_ready: bool = is_instance_valid(gameplay) and bool(gameplay.call("is_verified_ready"))
 	summary+="\nIAP account ref=%s\nWallet read stage=%s\nWallet repair stage=%s\nPurchased gameplay ready=%s\nNative IAP route=%s"%[str(jade.get("account_ref","")),str(jade.get("read_stage","not_attempted")),str(jade.get("repair_stage","not_attempted")),str(gameplay_ready),PavilionManager.get_native_iap_network_route()]
+	summary += "\nNative IAP target=" + PavilionManager.get_native_iap_target()
+	if is_instance_valid(gameplay): summary += "\nPaid checkout ready=%s\nPaid snapshot stage=%s\nPaid account state=%s" % [str(bool(gameplay.call("checkout_ready"))), str(gameplay.get("status")), str((gameplay.get("snapshot") as Dictionary).get("state", "unknown"))]
+	var backup: Dictionary = ProgressBackupManager.get_status()
+	summary += "\nProgress backup stage=%s\nProgress backup revision=%d\nProgress backup domains=%d\nProgress auto backup=%s\n" % [str(backup.stage), int(backup.revision), int(backup.domain_count), str(bool(backup.auto_enabled))]
+	summary += ReleaseDiagnostics.support_lines()
 	return summary
 
 
