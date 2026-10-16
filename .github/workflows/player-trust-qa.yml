@@ -1,0 +1,62 @@
+name: Player trust and ad privacy
+on:
+  push:
+    branches: ['checkpoint/iap-fasttrack-20261010']
+    paths: ['backend/player_identity/**','scripts/monetization/admob_provider.gd','scripts/ui/privacy_screen.gd','scripts/ui/settings_screen.gd','tests/player_trust*','tests/fixtures/admob_privacy*','release/player_trust*','docs/account-deletion.html','docs/privacy-policy.html','.github/workflows/player-trust-qa.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  trust-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node backend/player_identity/build_trust_pages.mjs
+      - run: git diff --exit-code -- docs/privacy-policy.html docs/account-deletion.html release/privacy-policy.html release/account-deletion.html release/privacy-policy.template.html backend/player_identity/public_trust_pages.mjs
+      - run: node --test backend/player_identity/*.test.mjs
+      - name: Bundle profile service without deploying
+        env:
+          CLOUDFLARE_SEND_METRICS: 'false'
+        run: |
+          node backend/player_identity/build_mail_assets.mjs
+          npx --yes wrangler@4.151.0 deploy --dry-run --config backend/player_identity/wrangler.toml --outdir /tmp/trust-profile-bundle
+  windows-launchers:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: |
+          foreach($name in @('process_account_erasure.ps1','deploy_player_trust.ps1','publish_player_trust.ps1','install_player_trust.ps1')){
+            $tokens=$null;$errors=$null
+            [void][Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD ('backend/player_identity/'+$name)),[ref]$tokens,[ref]$errors)
+            if($errors.Count){throw ($name+': '+$errors[0].Message)}
+          }
+          & tests/player_trust_installer_smoke.ps1
+          if($LASTEXITCODE -ne 0){throw 'Installer regression failed.'}
+      - run: backend/player_identity/export_production.ps1 -VerifyOnly
+  godot-trust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/jade-trust-qa
+          curl -fsSL https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip -o /tmp/jade-trust-qa/godot.zip
+          unzip -q /tmp/jade-trust-qa/godot.zip -d /tmp/jade-trust-qa
+          python3 tests/setup_public_readiness_qa.py /tmp/jade-trust-qa/project
+          godot=/tmp/jade-trust-qa/Godot_v4.7.2-stable_linux.x86_64
+          timeout 180 "$godot" --headless --audio-driver Dummy --path /tmp/jade-trust-qa/project --editor --import --quit >/tmp/trust-import.log 2>&1
+          for name in player_trust_smoke public_readiness_ui_smoke; do
+            timeout 60 "$godot" --headless --audio-driver Dummy --path /tmp/jade-trust-qa/project --script "res://tests/$name.gd" >"/tmp/$name.log" 2>&1
+            cat "/tmp/$name.log"
+            if rg -n 'SCRIPT ERROR|^ERROR:' "/tmp/$name.log"; then exit 1; fi
+          done

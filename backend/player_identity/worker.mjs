@@ -4,6 +4,7 @@ export {verifyAuth} from './auth.mjs';
 import {createMailHandler,MailError,processScheduled} from './mail.mjs';
 
 import {currentDocument,publicSnapshot} from './pavilion.mjs';
+import {trustPages} from './public_trust_pages.mjs';
 import {createProgressBackupHandler} from './progress_backup.mjs';
 
 const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
@@ -47,6 +48,10 @@ export function createHandler({verify=verifyAuth,register=registerIdentity}={}) 
   const handleProgressBackup=createProgressBackupHandler({verify});
   return async(request,env)=>{
     const url = new URL(request.url);
+    if(Object.hasOwn(trustPages,url.pathname)){
+      if(!['GET','HEAD'].includes(request.method))return reply(405,{error:'method_not_allowed'});
+      return new Response(request.method==='HEAD'?null:trustPages[url.pathname],{headers:{'content-type':'text/html; charset=utf-8','cache-control':'public,max-age=300','content-security-policy':"default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",'x-content-type-options':'nosniff','referrer-policy':'no-referrer','x-jade-trust-version':'1'}});
+    }
     if(url.pathname==='/v1/player/progress-backup')return handleProgressBackup(request,env);
     if(url.pathname==='/v1/pavilion/banner') {
       if(request.method!=='GET')return reply(405,{error:'method_not_allowed'});

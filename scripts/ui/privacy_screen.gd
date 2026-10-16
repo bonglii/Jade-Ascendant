@@ -7,6 +7,10 @@ const MonetizationLocalization = preload(
 
 var privacy_url: String = ""
 var support_email: String = ""
+const TRUST_POLICY_URL: String = "https://jade-ascendant-player.jade-ascendant-studio.workers.dev/privacy-policy.html"
+const ACCOUNT_DELETION_URL: String = "https://jade-ascendant-player.jade-ascendant-studio.workers.dev/account-deletion.html"
+var _ad_privacy_button: Button
+var _link_feedback: Label
 
 
 func _ready() -> void:
@@ -20,6 +24,7 @@ func _ready() -> void:
 	if config.load(PUBLISHER_INFO_PATH) == OK:
 		privacy_url = str(config.get_value("publisher", "privacy_url", ""))
 		support_email = str(config.get_value("publisher", "support_email", ""))
+	privacy_url = TRUST_POLICY_URL
 	var publisher: String = str(config.get_value("publisher", "name", ""))
 
 	var hero: VBoxContainer = _card(content, Color(0.32, 0.90, 0.78), true)
@@ -27,7 +32,7 @@ func _ready() -> void:
 	_label(hero, tr("Privacy & Support"), 27, Color(0.98, 0.83, 0.43))
 	_label(
 		hero,
-		tr("Your progress stays on your device."),
+		_local("Your data. Your account. Your choices.", "Data Anda. Akun Anda. Pilihan Anda."),
 		15,
 		Color(0.82, 0.90, 0.87)
 	)
@@ -39,26 +44,8 @@ func _ready() -> void:
 		Color(0.64, 0.75, 0.72)
 	)
 
-	_add_section(
-		content,
-		tr("LOCAL GAME SAVE"),
-		tr("What stays on device"),
-		tr(
-			"Progress, equipment, achievements, daily trials, run checkpoints, "
-			+ "and preferences are stored locally on this device. Google Login "
-			+ "does not back up this gameplay data. Cloud Save is not available."
-		)
-	)
-	_add_section(
-		content,
-		tr("OPTIONAL GOOGLE SIGN-IN"),
-		tr("Identity, not backup"),
-		tr(
-			"Guest mode is available. Google Login is optional and establishes "
-			+ "identity only. It does not back up or restore gameplay progress. "
-			+ "Cloud Save is not available."
-		)
-	)
+	_add_section(content, _local("PROGRESS & BACKUP", "PROGRESS & BACKUP"), _local("Local play, optional cloud backup", "Bermain lokal, backup cloud opsional"), _local("Progress is saved on this device. After Google sign-in, choose Save in Cloud backup to enable nine-domain server backups and automatic menu updates. Restore is always your choice; Google sign-in alone does not upload progress.", "Progress tersimpan di perangkat. Setelah login Google, pilih Simpan pada Cloud backup untuk mengaktifkan backup sembilan bagian progress ke server serta pembaruan otomatis saat di menu. Pemulihan selalu pilihan Anda; login saja tidak mengunggah progress."))
+	_add_section(content, _local("OPTIONAL GOOGLE SIGN-IN", "LOGIN GOOGLE OPSIONAL"), _local("Identity, profile and server mail", "Identitas, profil, dan surat server"), _local("Guest play is available. Google/Firebase identify your account. Our profile service stores an account binding, a separate public UID, mail/read/claim records and recent activity to provide your connected features. Signing out does not delete server data.", "Mode tamu tersedia. Google/Firebase memverifikasi akun Anda. Layanan profil menyimpan pengikat akun, UID publik terpisah, catatan surat/baca/klaim serta aktivitas terbaru untuk fitur online. Logout tidak menghapus data server."))
 	_add_section(
 		content,
 		tr("OPTIONAL REWARDED ADS"),
@@ -80,27 +67,8 @@ func _ready() -> void:
 			+ "after the ad confirms completion."
 		)
 	)
-	_add_section(
-		content,
-		tr("GOOGLE PLAY PURCHASES"),
-		tr("Billing on supported Android builds"),
-		tr(
-			"Optional Celestial Jade purchases use Google Play Billing. Google "
-			+ "Play processes the payment; purchase state and token information "
-			+ "are used for local delivery, recovery, and duplicate-grant protection."
-		)
-	)
-	_add_section(
-		content,
-		tr("DATA CONTROL"),
-		tr("Deleting your data"),
-		tr(
-			"Local progress can be removed from Android app storage or by "
-			+ "uninstalling the game. Advertising and consent data handled by "
-			+ "Google is governed separately by Google's services and your "
-			+ "applicable privacy choices."
-		)
-	)
+	_add_section(content, tr("GOOGLE PLAY PURCHASES"), _local("Verified by the purchase server", "Diverifikasi server pembelian"), _local("Google Play processes payments. Our server verifies purchase state, delivers paid Jade/items, prevents duplicate credits and reconciles refunds. Paid state reloads from that service, independently of offline progress backup. We do not receive full card details.", "Google Play memproses pembayaran. Server kami memverifikasi status, mengirim Jade/item berbayar, mencegah kredit ganda, dan merekonsiliasi refund. Status berbayar dimuat dari layanan itu, terpisah dari backup progress offline. Kami tidak menerima rincian lengkap kartu."))
+	_add_section(content, _local("ACCOUNT & DATA CONTROL", "KONTROL AKUN & DATA"), _local("Request account deletion", "Minta penghapusan akun"), _local("Use the request button below or our public deletion page, even after uninstalling. Support verifies ownership and aims to complete verified requests within 30 days. This is a request, not instant deletion. Profile, cloud backups, account mail and server gameplay are removed; limited financial/security evidence may be retained for fraud, disputes or legal obligations. Deletion does not delete your Google account or request a refund. Android app storage controls local files.", "Gunakan tombol permintaan di bawah atau halaman publik penghapusan, termasuk setelah game dicopot. Bantuan memverifikasi kepemilikan dan menargetkan penyelesaian dalam 30 hari. Ini permintaan, bukan penghapusan instan. Profil, backup cloud, surat akun, dan gameplay server dihapus; bukti keuangan/keamanan terbatas dapat dipertahankan untuk penipuan, sengketa, atau kewajiban hukum. Penghapusan tidak menghapus akun Google atau meminta refund. Penyimpanan aplikasi Android mengatur file lokal."))
 	_add_section(
 		content,
 		tr("OPTIONAL FEEDBACK"),
@@ -128,28 +96,27 @@ func _ready() -> void:
 	)
 	_label(actions, tr("SUPPORT"), 12, Color(0.96, 0.78, 0.34))
 
-	if MonetizationManager.privacy_options_required():
-		_label(
-			actions,
-			tr(
-				"Privacy choices are provided by Google UMP when required for "
-				+ "this device or region."
-			),
-			13,
-			Color(0.72, 0.84, 0.80)
-		)
-		_button(
-			actions,
-			tr("AD PRIVACY OPTIONS"),
-			_open_ad_privacy_options,
-			false
-		)
+	_button(actions, _local("REQUEST ACCOUNT DELETION", "MINTA PENGHAPUSAN AKUN"), _open_deletion_request, false)
+	_button(actions, _local("EMAIL A DELETION REQUEST", "EMAIL PERMINTAAN PENGHAPUSAN"), _email_deletion_request, false)
+	_button(actions, tr("AD PRIVACY OPTIONS"), _open_ad_privacy_options, false)
+	_ad_privacy_button = actions.get_child(actions.get_child_count() - 1) as Button
+	_refresh_privacy_access()
+	var privacy_timer := Timer.new()
+	privacy_timer.wait_time = 1.0
+	privacy_timer.timeout.connect(_refresh_privacy_access)
+	add_child(privacy_timer)
+	privacy_timer.start()
+	_link_feedback = Label.new()
+	_link_feedback.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_link_feedback.add_theme_font_size_override("font_size", 13)
+	_link_feedback.visible = false
+	actions.add_child(_link_feedback)
 
 	if privacy_url.begins_with("https://"):
 		_button(
 			actions,
 			tr("OPEN PRIVACY POLICY"),
-			func() -> void: OS.shell_open(privacy_url),
+			func() -> void: _open_external(privacy_url),
 			false
 		)
 	if support_email.contains("@") and not support_email.contains("\n"):
@@ -285,6 +252,7 @@ func _button(
 		if primary
 		else &"JadeSecondaryButton"
 	)
+	button.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
 	button.pressed.connect(callback)
 	parent_node.add_child(button)
 
@@ -322,3 +290,31 @@ func _back() -> void:
 			"PrivacyScreen: gagal kembali ke Settings. Error code: "
 			+ str(change_error)
 		)
+
+func _local(english: String, indonesian: String) -> String:
+	return indonesian if SettingsManager.language == "id" else english
+
+func _refresh_privacy_access() -> void:
+	if _ad_privacy_button != null:
+		_ad_privacy_button.visible = MonetizationManager.privacy_options_required()
+		_ad_privacy_button.disabled = MonetizationManager.active_request >= 0 or bool(MonetizationManager.get_provider_runtime_status().get("privacy_form_open", false))
+
+func _open_external(url: String) -> void:
+	if OS.shell_open(url) != OK and _link_feedback != null:
+		_link_feedback.text = _local("Unable to open an external app. Contact ", "Aplikasi eksternal belum bisa dibuka. Hubungi ") + support_email + " — " + ACCOUNT_DELETION_URL
+		_link_feedback.visible = true
+
+func _open_deletion_request() -> void:
+	_open_external(ACCOUNT_DELETION_URL)
+
+func deletion_request_email_url() -> String:
+	# User reviews/sends their own draft. Never append private UID, token or save data.
+	var subject: String = "Jade Ascendant - Account deletion request"
+	var body: String = "Please delete my Jade Ascendant game account and associated data.\n\nI am sending from the Google email used for the game.\nPublic UID (optional, if known):\n\nPlease explain any financial/security data that must be retained."
+	return "mailto:" + support_email + "?subject=" + subject.uri_encode() + "&body=" + body.uri_encode()
+
+func _email_deletion_request() -> void:
+	_open_external(deletion_request_email_url())
+	if _link_feedback != null:
+		_link_feedback.text = _local("Send the draft from your Google game email to ", "Kirim draf dari email Google game Anda ke ") + support_email + _local(". Nothing is submitted until you send it. Never send passwords or tokens.", ". Permintaan belum dikirim sampai Anda mengirimnya. Jangan kirim password atau token.")
+		_link_feedback.visible = true

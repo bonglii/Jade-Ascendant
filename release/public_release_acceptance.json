@@ -20,5 +20,10 @@
   "live_real_order_refund_observed": false,
   "progress_backup_phone_run_observed": false,
   "public_store_release_approved": false,
-  "notes": "Preserve passed IAP evidence. Do not relabel simulated checks as phone runs, refund polling as an observed real-order refund, or this batch as store publication approval. No order IDs, purchase tokens, credentials or private player identities belong here."
+  "notes": "Preserve passed IAP evidence. Do not relabel simulated checks as phone runs, refund polling as an observed real-order refund, or this batch as store publication approval. No order IDs, purchase tokens, credentials or private player identities belong here.",
+  "profile_backup_android_observation": {
+    "saved_at_utc": "2026-10-16T16:31:22Z",
+    "status": "Progress backed up. Automatic backups enabled.",
+    "cross_device_restore_observed": false
+  }
 }

@@ -1,0 +1,41 @@
+{
+  "format": 1,
+  "scope": [
+    "privacy_policy",
+    "request_based_account_deletion",
+    "data_safety_preparation",
+    "admob_consent_hardening"
+  ],
+  "baseline_commit": "0e3cb1e780a5a45c58fa7e5aa1e4d4715bc6cb08",
+  "evidence": {
+    "real_money_iap_delivery_and_restart": "accepted_user_report_previous_batch_do_not_repeat",
+    "first_cloud_backup_on_android": {
+      "observed": true,
+      "saved_at_utc": "2026-10-16T16:31:22Z",
+      "automatic_backups_enabled": true
+    },
+    "cross_device_restore_observed": false,
+    "actual_account_erased": false,
+    "native_ump_form_observed_this_batch": false,
+    "native_rewarded_ad_observed_this_batch": false,
+    "public_policy_http_after_deploy_observed": false
+  },
+  "deletion": {
+    "method": "verified_support_request",
+    "firebase_removal": "operator_attested",
+    "auth_token_expiry_wait_minutes": 65,
+    "response_target_days": 30,
+    "financial_evidence": "limited_legitimate_need_restrict_access_review_annually",
+    "d1_disaster_backup_max_days": 30
+  },
+  "owner_console_actions": [
+    "confirm_monitored_support_email",
+    "select_real_target_audience_and_countries",
+    "review_final_aab_sdk_inventory_and_submit_data_safety",
+    "publish_admob_privacy_messages",
+    "confirm_app_ad_unit_serving_and_app_ads_txt",
+    "observe_registered_test_device_ump_and_one_rewarded_ad"
+  ],
+  "automatic_console_submission": false,
+  "public_release_approved": false
+}

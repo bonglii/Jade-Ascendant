@@ -129,3 +129,12 @@
 - Log bounded source locations and error kinds only. Never persist raw Firebase/Play tokens, error payloads, captured variables or private identities. An incomplete previous session is not conclusive crash evidence.
 - UI fixtures must measure controls in their logical stretched canvas, not compare logical widths to physical window pixels. Check complete label width and touch-release behavior in both languages.
 - Windows PowerShell 5 may emit a JSON array as one pipeline object. Never use @(ConvertFrom-Json ...) to count manifest entries; assign the decoded value and explicitly enumerate it. Exercise both enumerating and non-enumerating output before delivery. PowerShell 7 alone is not Windows PowerShell 5 evidence.
+
+## 2026-10-16 — Player trust and ad privacy
+
+- Match disclosures to the live profile/backup and authoritative purchase services. Archived “local-only/no cloud save” wording cannot remain the player-facing policy after those features ship.
+- A support email/draft is a deletion request pathway, not completed erasure. Verify account ownership independently; never delete based only on a public UID. Remove Firebase Auth first and allow existing signed ID tokens to expire before purging, otherwise an old session may recreate data.
+- Distinguish limited financial/refund/security retention from playable inventory and backups. Remove both backup snapshots, targeted queued mail, loadouts and runs; keep other players/shared content and financial authority intact. Do not turn deployment or release tests into a live destructive deletion.
+- Opening ad privacy choices must immediately invalidate cached/pending ads. Fence delayed load callbacks by generation; a stale callback must not re-open advertising after consent changes. Do not claim SDK-earned callbacks are server-side SSV.
+- PowerShell 5 manifest counts require explicit enumeration of a decoded JSON variable. Test the repository-owned installer under Windows PowerShell and simulate non-enumerating JSON; PowerShell 7 alone is insufficient evidence.
+- Godot editor SDK mocks can allocate before SceneTree exists. Disposable QA must attach orphan mock Nodes to its tree so teardown is clean; do not confuse that fixture leak with a production Android SDK leak.

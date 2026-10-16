@@ -30,6 +30,8 @@ const REQUIRED_NATIVE_SINGLETONS: Array[String] = [
 ]
 
 var _state: String = "created"
+var _load_epoch: int = 0
+var _privacy_form_open: bool = false
 var _ad_unit_id: String = ""
 var _consent_gate_open: bool = false
 var _initialization_started: bool = false
@@ -99,6 +101,7 @@ func rewarded_available(_placement: String) -> bool:
 	return (
 		OS.get_name() == "Android"
 		and _consent_gate_open
+		and not _privacy_form_open
 		and _ads_initialized
 		and _rewarded_ad != null
 		and not _rewarded_loading
@@ -139,9 +142,13 @@ func privacy_options_required() -> bool:
 func show_privacy_options() -> bool:
 	if OS.get_name() != "Android" or not _native_plugins_available():
 		return false
-	if not privacy_options_required() or _active_request_id >= 0:
+	if not privacy_options_required() or _active_request_id >= 0 or _privacy_form_open or _state in ["consent_updating", "consent_form_loading", "consent_form_showing"]:
 		return false
 
+	_pause_ads_for_privacy()
+	_privacy_form_open = true
+	_state = "privacy_options_showing"
+	_trace_state()
 	UserMessagingPlatform.show_privacy_options_form(_on_privacy_options_dismissed)
 	return true
 
@@ -161,7 +168,9 @@ func get_runtime_status() -> Dictionary:
 		"ads_initialized": _ads_initialized,
 		"rewarded_loading": _rewarded_loading,
 		"rewarded_ready": _rewarded_ad != null,
-		"privacy_options_required": privacy_options_required()
+		"privacy_options_required": privacy_options_required(),
+		"privacy_form_open": _privacy_form_open,
+		"native_plugins_available": _native_plugins_available() if OS.get_name() == "Android" else false
 	}
 
 
@@ -249,6 +258,8 @@ func _native_plugins_available() -> bool:
 
 
 func _begin_consent_update() -> void:
+	if _privacy_form_open: return
+	_pause_ads_for_privacy()
 	_state = "consent_updating"
 	_trace_state()
 	_consent_gate_open = false
@@ -354,9 +365,12 @@ func _on_consent_form_dismissed(form_error) -> void:
 
 
 func _on_privacy_options_dismissed(form_error) -> void:
+	_privacy_form_open = false
 	if form_error != null:
+		_pause_ads_for_privacy()
 		_state = "privacy_options_failed"
 		_trace_state()
+		_schedule_consent_retry()
 		return
 
 	_destroy_rewarded_ad()
@@ -446,6 +460,7 @@ func _on_mobile_ads_initialized(_initialization_status) -> void:
 func _load_rewarded_ad() -> void:
 	if (
 		not _consent_gate_open
+		or _privacy_form_open
 		or not _ads_initialized
 		or _rewarded_loading
 		or _rewarded_ad != null
@@ -464,14 +479,18 @@ func _load_rewarded_ad() -> void:
 	request.extras = {}
 
 	var callback := RewardedAdLoadCallback.new()
-	callback.on_ad_loaded = _on_rewarded_loaded
-	callback.on_ad_failed_to_load = _on_rewarded_failed_to_load
+	var epoch: int = _load_epoch
+	callback.on_ad_loaded = _on_rewarded_loaded.bind(epoch)
+	callback.on_ad_failed_to_load = _on_rewarded_failed_to_load.bind(epoch)
 
 	var loader := RewardedAdLoader.new()
 	loader.load(_ad_unit_id, request, callback)
 
 
-func _on_rewarded_loaded(ad: RewardedAd) -> void:
+func _on_rewarded_loaded(ad: RewardedAd, epoch: int) -> void:
+	if epoch != _load_epoch or not _consent_gate_open or _privacy_form_open:
+		if ad != null: ad.destroy()
+		return
 	_last_load_error_code = -1
 	_rewarded_loading = false
 	_retry_delay_seconds = LOAD_RETRY_INITIAL_SECONDS
@@ -488,7 +507,8 @@ func _on_rewarded_loaded(ad: RewardedAd) -> void:
 	_trace_state()
 
 
-func _on_rewarded_failed_to_load(load_error) -> void:
+func _on_rewarded_failed_to_load(load_error, epoch: int) -> void:
+	if epoch != _load_epoch or not _consent_gate_open or _privacy_form_open: return
 	_last_load_error_code = int(load_error.code) if load_error != null else -1
 	if OS.get_name() == "Android":
 		print("JADE_ADS_QA load_error_code=", _last_load_error_code)
@@ -570,3 +590,12 @@ func _destroy_rewarded_ad() -> void:
 	if _rewarded_ad != null:
 		_rewarded_ad.destroy()
 		_rewarded_ad = null
+
+func _pause_ads_for_privacy() -> void:
+	# Fence a pending SDK load before consent/privacy changes, including late callbacks.
+	_consent_gate_open = false
+	_load_epoch += 1
+	_rewarded_loading = false
+	if _retry_timer != null: _retry_timer.stop()
+	if _consent_retry_timer != null: _consent_retry_timer.stop()
+	_destroy_rewarded_ad()
