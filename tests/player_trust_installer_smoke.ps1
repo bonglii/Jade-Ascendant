@@ -27,3 +27,6 @@ try{
  if($code -eq 0 -or ($failure -join "`n") -notmatch 'Payload differs'){throw 'Tampered payload was not rejected.'}
  Write-Host ('TRUST_INSTALLER_QA=PASS; PATHS='+$paths.Count+'; NORMAL_AND_NONENUMERATING_JSON=PASS; TAMPER_REJECTED=PASS; INSTALL=NONE')
 }finally{if(Test-Path -LiteralPath $qa){Remove-Item -LiteralPath $qa -Recurse -Force}}
+
+# The intentional tamper subprocess exits 1; a successful test must reset its status.
+exit 0
