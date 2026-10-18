@@ -547,9 +547,9 @@ func _add_activity_card(
 	if not preview.is_empty():
 		var current_value: int = int(preview.get("current", 0))
 		var total: int = int(preview.get("total", 0))
-		var ready: int = int(preview.get("ready", 0))
+		var ready_count: int = int(preview.get("ready", 0))
 		var complete: bool = bool(preview.get("complete", false))
-		reward_ready = ready > 0
+		reward_ready = ready_count > 0
 
 		var progress_text := _label(
 			tr("PROGRESS %d / %d") % [current_value, total],
@@ -575,7 +575,7 @@ func _add_activity_card(
 			state_ink = JADE
 			state_fill = Color(0.012, 0.105, 0.090, 0.98)
 		elif reward_ready:
-			state_text = tr("%d READY") % ready
+			state_text = tr("%d READY") % ready_count
 			state_ink = GOLD_LIGHT
 			state_fill = Color(0.25, 0.135, 0.035, 0.98)
 
@@ -1135,14 +1135,14 @@ func _refresh_activity_handles() -> void:
 		var h: Dictionary=_activity_handles[id]
 		var data: Dictionary=_activity_progress_preview(id)
 		if data.is_empty() or not h.has("status"): continue
-		var ready: bool=int(data.get("ready",0))>0
+		var claim_available: bool=int(data.get("ready",0))>0
 		var complete: bool=bool(data.get("complete",false))
 		h.progress.text=tr("PROGRESS %d / %d") % [int(data.get("current",0)),int(data.get("total",0))]
 		h.meter.max_value=maxi(1,int(data.get("total",0)))
 		h.meter.value=int(data.get("current",0))
-		h.status.text=tr("COMPLETED") if complete else (tr("%d READY") % int(data.ready) if ready else tr("IN PROGRESS"))
-		h.status.add_theme_color_override("font_color",JADE if complete else GOLD_LIGHT if ready else h.accent)
-		if h.art.claim_ready!=ready:
-			h.art.claim_ready=ready
+		h.status.text=tr("COMPLETED") if complete else (tr("%d READY") % int(data.ready) if claim_available else tr("IN PROGRESS"))
+		h.status.add_theme_color_override("font_color",JADE if complete else GOLD_LIGHT if claim_available else h.accent)
+		if h.art.claim_ready!=claim_available:
+			h.art.claim_ready=claim_available
 			h.art.queue_redraw()
-		_apply_material_button(h.cta,h.accent,ready)
+		_apply_material_button(h.cta,h.accent,claim_available)

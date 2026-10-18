@@ -221,9 +221,9 @@ func _refresh_liveops_badges() -> void:
  event_action.text=(tr("CLAIM REWARD") if feature_dot.visible else tr("VIEW EVENT"))+" ›"
  login_state.text=tr("DAY")+" %d / %d"%[live_ops.get_active_login_day_count(),live_ops.LOGIN_DAY_COUNT]
  var unlocked: bool=IdleCultivationManager.is_unlocked()
- var ready: bool=unlocked and IdleCultivationManager.get_claimable_units()>0
- meditation_state.text=tr("READY") if ready else (tr("ACCUMULATING") if unlocked else tr("CLEAR 1-1"))
- meditation_badge.visible=ready
+ var claim_available: bool=unlocked and IdleCultivationManager.get_claimable_units()>0
+ meditation_state.text=tr("READY") if claim_available else (tr("ACCUMULATING") if unlocked else tr("CLEAR 1-1"))
+ meditation_badge.visible=claim_available
  meditation_button.disabled=not unlocked
 
 func _refresh_all() -> void:

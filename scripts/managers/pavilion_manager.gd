@@ -468,14 +468,14 @@ func _new_server_read_id() -> String:
 
 func request_server_jade_snapshot() -> bool:
 	if not _server_read_id.is_empty():return false
-	var owner: String=_live_server_jade_owner()
-	if owner.is_empty():return false
+	var account_binding: String=_live_server_jade_owner()
+	if account_binding.is_empty():return false
 	var bridge: Object=_server_recovery_bridge()
 	if bridge==null:return false
-	_server_jade.bind_owner(owner)
+	_server_jade.bind_owner(account_binding)
 	_server_read_id=_new_server_read_id()
 	if _server_read_id.is_empty():return false
-	_server_read_owner=owner
+	_server_read_owner=account_binding
 	_server_read_stage="loading"
 	var request_id: String=_server_read_id
 	get_tree().create_timer(46.0).timeout.connect(_server_recovery_timeout.bind(request_id,false))
@@ -488,13 +488,13 @@ func _safe_recovery_stage(stage: String) -> String:
 func recover_server_jade() -> bool:
 	# Repairs ONLY already-verified server ledger records; never a local grant.
 	if not _server_repair_id.is_empty():return false
-	var owner: String=_live_server_jade_owner()
-	if owner.is_empty():return false
+	var account_binding: String=_live_server_jade_owner()
+	if account_binding.is_empty():return false
 	var bridge: Object=_server_recovery_bridge()
 	if bridge==null:return false
 	_server_repair_id=_new_server_read_id()
 	if _server_repair_id.is_empty():return false
-	_server_repair_owner=owner
+	_server_repair_owner=account_binding
 	_server_repair_stage="loading"
 	var request_id: String=_server_repair_id
 	get_tree().create_timer(46.0).timeout.connect(_server_recovery_timeout.bind(request_id,true))
@@ -517,21 +517,21 @@ func _server_recovery_timeout(request_id: String, repair: bool) -> void:
 
 func _on_server_wallet_v2(request_id: String, success: bool, status: String, payload: String) -> void:
 	if request_id.is_empty() or request_id!=_server_read_id:return
-	var owner: String=_server_read_owner
+	var account_binding: String=_server_read_owner
 	_server_read_id="";_server_read_owner=""
-	if owner.is_empty() or owner!=_live_server_jade_owner():return
+	if account_binding.is_empty() or account_binding!=_live_server_jade_owner():return
 	_server_read_stage=_safe_recovery_stage(status)
 	var view: Dictionary=HybridPaidWalletSnapshotM9.from_native_result(success,status,payload)
-	_server_jade.bind_owner(owner)
-	if not _server_jade.accept(owner,view,Time.get_ticks_msec()):
+	_server_jade.bind_owner(account_binding)
+	if not _server_jade.accept(account_binding,view,Time.get_ticks_msec()):
 		if view.get("status")!="ready":_server_jade.unavailable()
 	server_jade_recovery_changed.emit(get_server_jade_view())
 
 func _on_server_repair_v2(request_id: String, success: bool, status: String, payload: String) -> void:
 	if request_id.is_empty() or request_id!=_server_repair_id:return
-	var owner: String=_server_repair_owner
+	var account_binding: String=_server_repair_owner
 	_server_repair_id="";_server_repair_owner=""
-	if owner.is_empty() or owner!=_live_server_jade_owner():return
+	if account_binding.is_empty() or account_binding!=_live_server_jade_owner():return
 	_server_repair_stage=_safe_recovery_stage(status)
 	var result: Dictionary=ServerJadeView.parse_repair(payload) if success and status=="SERVER_LEDGER_RECONCILED" else {}
 	_purchase_repair_view={"status":"unavailable"} if result.is_empty() else result
@@ -1405,12 +1405,12 @@ func _connect_secure_purchase_identity() -> void:
 
 
 func _on_monetization_identity_changed(_identity_ready: bool) -> void:
-	var owner: String=_live_server_jade_owner()
-	if not owner.is_empty() and owner==_server_identity_owner:
+	var account_binding: String=_live_server_jade_owner()
+	if not account_binding.is_empty() and account_binding==_server_identity_owner:
 		_refresh_secure_purchase_context()
 		return
-	_server_identity_owner=owner;_last_purchase_stage="not_started"
-	_server_jade.bind_owner(owner)
+	_server_identity_owner=account_binding;_last_purchase_stage="not_started"
+	_server_jade.bind_owner(account_binding)
 	_server_read_stage="not_attempted";_server_repair_stage="not_attempted"
 	_server_read_id="";_server_read_owner="";_server_repair_id="";_server_repair_owner=""
 	server_jade_recovery_changed.emit(get_server_jade_view())

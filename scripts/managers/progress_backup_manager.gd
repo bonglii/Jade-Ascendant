@@ -47,14 +47,14 @@ func _live() -> String:
 	return GoogleAccountManager.get_monetization_account_binding()
 
 func _on_profile(_profile: Dictionary) -> void:
-	var owner: String = _live()
-	if owner != _owner:
+	var account_binding: String = _live()
+	if account_binding != _owner:
 		_nonce += 1
 		if is_instance_valid(_http): _http.cancel_request()
-		_owner = owner; busy = false; _waiting = false; _pending = {}; remote = {}; revision = 0; updated_at = 0; _loaded = false
-		status = "sign_in_required" if owner.is_empty() else "checking"
+		_owner = account_binding; busy = false; _waiting = false; _pending = {}; remote = {}; revision = 0; updated_at = 0; _loaded = false
+		status = "sign_in_required" if account_binding.is_empty() else "checking"
 		changed.emit()
-	if not owner.is_empty() and not _loaded and not busy and _auth != null and PlayerIdentityManager.get_profile_snapshot().get("server_status") == "connected": refresh()
+	if not account_binding.is_empty() and not _loaded and not busy and _auth != null and PlayerIdentityManager.get_profile_snapshot().get("server_status") == "connected": refresh()
 
 func get_status() -> Dictionary:
 	var stage: String = "local_account_mismatch" if not _owner.is_empty() and not busy and str(_local.get("owner", "")) not in ["", _owner] else status
@@ -107,9 +107,9 @@ func _token(token: String) -> void:
 	var error: Error = _http.request(PlayerIdentityServerClient._prepare_route(_http, PATH), headers, HTTPClient.METHOD_POST if write else HTTPClient.METHOD_GET, JSON.stringify(_pending.body) if write else "")
 	if error != OK: _fail("network_unavailable")
 
-func _response(result: int, code: int, _headers: PackedStringArray, body: PackedByteArray, nonce: int, owner: String) -> void:
+func _response(result: int, code: int, _headers: PackedStringArray, body: PackedByteArray, nonce: int, account_binding: String) -> void:
 	if nonce != _nonce or not busy: return
-	if owner != _owner or owner != _live(): _fail("account_changed"); return
+	if account_binding != _owner or account_binding != _live(): _fail("account_changed"); return
 	if result != HTTPRequest.RESULT_SUCCESS: _fail("network_unavailable"); return
 	if code == 401 and not _refreshed_token:
 		_refreshed_token = true; _waiting = true; _auth.get_id_token(true)
@@ -122,7 +122,7 @@ func _response(result: int, code: int, _headers: PackedStringArray, body: Packed
 	var parser := JSON.new()
 	if parser.parse(body.get_string_from_utf8()) != OK or not parser.data is Dictionary: _fail("invalid_response"); return
 	var data: Dictionary = Snapshot.integer_tree(parser.data)
-	if data.get("version") != 1 or data.get("owner_binding") != owner: _fail("invalid_response"); return
+	if data.get("version") != 1 or data.get("owner_binding") != account_binding: _fail("invalid_response"); return
 	if _pending.kind == "read":
 		var value: Variant = data.get("backup")
 		if value == null:
@@ -131,12 +131,12 @@ func _response(result: int, code: int, _headers: PackedStringArray, body: Packed
 			remote = value.snapshot.duplicate(true); revision = value.revision; updated_at = value.updated_at
 		else: _fail("incompatible_backup"); return
 		_loaded = true
-		if _local.get("owner") == owner and int(_local.get("revision", -1)) != revision: _local.approved = false; _save_local()
+		if _local.get("owner") == account_binding and int(_local.get("revision", -1)) != revision: _local.approved = false; _save_local()
 		status = "backup_available" if not remote.is_empty() else "no_backup"
 	else:
 		if data.get("revision") != int(_pending.body.expected_revision) + 1 or not data.get("updated_at") is int: _fail("invalid_response"); return
 		remote = _pending.body.snapshot.duplicate(true); revision = data.revision; updated_at = data.updated_at
-		_local = {"owner": owner, "revision": revision, "approved": true}; _save_local(); _loaded = true; status = "backed_up"
+		_local = {"owner": account_binding, "revision": revision, "approved": true}; _save_local(); _loaded = true; status = "backed_up"
 	busy = false; _pending = {}; _waiting = false; _next_auto = Time.get_ticks_msec() + 300000; changed.emit()
 
 func _save_local() -> void:
@@ -169,8 +169,8 @@ func restore_and_close() -> bool:
 	file.store_string(before); file.flush(); var error: Error = file.get_error(); file.close()
 	if error != OK or FileAccess.get_sha256(path) != before.sha256_text(): _fail("backup_storage_unavailable"); return false
 	var entries: Array[Dictionary] = []
-	for name: String in DirAccess.get_files_at(dir):
-		if name.ends_with(".json") and name.trim_suffix(".json").length() == 32 and name.trim_suffix(".json").is_valid_hex_number(false): entries.append({"path": dir + "/" + name, "time": FileAccess.get_modified_time(dir + "/" + name)})
+	for backup_filename: String in DirAccess.get_files_at(dir):
+		if backup_filename.ends_with(".json") and backup_filename.trim_suffix(".json").length() == 32 and backup_filename.trim_suffix(".json").is_valid_hex_number(false): entries.append({"path": dir + "/" + backup_filename, "time": FileAccess.get_modified_time(dir + "/" + backup_filename)})
 	entries.sort_custom(func(a: Dictionary, b: Dictionary): return int(a.time) > int(b.time))
 	for index: int in range(3, entries.size()):
 		if str(entries[index].path) != path: DirAccess.remove_absolute(str(entries[index].path))

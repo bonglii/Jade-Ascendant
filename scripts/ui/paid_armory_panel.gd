@@ -79,14 +79,14 @@ func _redraw() -> void:
 	_button(_body,"CLOSE",_close,JADE)
 	if not is_instance_valid(_paid): _text(_body,"Connect your account to view purchased equipment."); return
 	_text(_body,"PAID JADE  ·  %d"%int(_paid.call("paid_balance")),JADE,17)
-	var ready: bool=bool(_paid.call("is_verified_ready"))
+	var verification_ready: bool=bool(_paid.call("is_verified_ready"))
 	var busy: bool=bool(_paid.get("busy"))
-	_text(_body,"SERVER VERIFIED" if ready else "CONNECT TO VERIFY · "+str(_paid.get("status")),JADE if ready else GOLD)
+	_text(_body,"SERVER VERIFIED" if verification_ready else "CONNECT TO VERIFY · "+str(_paid.get("status")),JADE if verification_ready else GOLD)
 	_button(_body,"RECOVER / REFRESH",func() -> void: _paid.call("refresh"),JADE).disabled=busy
 	_text(_body,"Paid gear stays on your account. Keep a server connection during combat. Unequip its server slot here before replacing it with local gear.")
 	var state: Dictionary=_paid.get("snapshot")
 	var wish: String=str(state.get("wish",""))
-	_button(_body,"TARGET  ·  "+(_name(wish) if not wish.is_empty() else "CHOOSE LEGENDARY"),func() -> void: _target_picker=not _target_picker;_queue_draw()).disabled=busy or not ready
+	_button(_body,"TARGET  ·  "+(_name(wish) if not wish.is_empty() else "CHOOSE LEGENDARY"),func() -> void: _target_picker=not _target_picker;_queue_draw()).disabled=busy or not verification_ready
 	if _target_picker:
 		_button(_body,"CLEAR TARGET",func() -> void: _submit("wish",{"item_id":""})).disabled=busy
 		for id: String in EquipmentManager.get_item_ids():

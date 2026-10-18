@@ -648,8 +648,8 @@ func _polish_scrollbar(bar: VScrollBar) -> void:
 
 func _sync_refine_dot(card: Button, id: String) -> void:
  var dot: Panel = card.get_node_or_null("RefineReadyDot") as Panel
- var ready: bool = not id.is_empty() and (EquipmentManager.can_ascend_item(id) or EquipmentManager.can_level_weapon(id))
- if dot == null and not ready: return
+ var upgrade_available: bool = not id.is_empty() and (EquipmentManager.can_ascend_item(id) or EquipmentManager.can_level_weapon(id))
+ if dot == null and not upgrade_available: return
  if dot == null:
   dot = Panel.new();dot.name="RefineReadyDot";dot.mouse_filter=Control.MOUSE_FILTER_IGNORE;dot.z_index=90
   card.add_child(dot);dot.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
@@ -657,7 +657,7 @@ func _sync_refine_dot(card: Button, id: String) -> void:
   dot.offset_left=-side-5;dot.offset_right=-5;dot.offset_top=5;dot.offset_bottom=side+5
   var skin:=StyleBoxFlat.new();skin.bg_color=Color(.94,.13,.17);skin.border_color=Color(1,.81,.48);skin.set_border_width_all(1);skin.set_corner_radius_all(9)
   skin.shadow_color=Color(.55,.02,.07,.32);skin.shadow_size=3;dot.add_theme_stylebox_override("panel",skin)
- dot.visible=ready
+ dot.visible=upgrade_available
 
 func _layout_sections() -> void:
  if not is_instance_valid(fixed_deck):return

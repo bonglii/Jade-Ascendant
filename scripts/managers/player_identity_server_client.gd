@@ -381,8 +381,8 @@ func _query_trusted_dns() -> void:
 	var error: Error = _trusted_http.request("https://" + str(provider.ip) + str(provider.path) + "?name=" + _endpoint_host().uri_encode() + "&type=A", ["Accept: application/dns-json", "Host: " + str(provider.host)])
 	if error != OK: _on_trusted_dns(HTTPRequest.RESULT_CANT_CONNECT, 0, [], PackedByteArray(), _trusted_nonce, _owner, _trusted_provider)
 
-func _on_trusted_dns(result: int, code: int, _headers: PackedStringArray, body: PackedByteArray, nonce: int, owner: String, provider: int) -> void:
-	if nonce != _trusted_nonce or provider != _trusted_provider or owner != _owner or owner != _current_owner(): return
+func _on_trusted_dns(result: int, code: int, _headers: PackedStringArray, body: PackedByteArray, nonce: int, account_binding: String, provider: int) -> void:
+	if nonce != _trusted_nonce or provider != _trusted_provider or account_binding != _owner or account_binding != _current_owner(): return
 	var decoded: Dictionary = TrustedDNS.decode(body, _endpoint_host()) if result == HTTPRequest.RESULT_SUCCESS and code == 200 else {}
 	if decoded.is_empty():
 		if _trusted_provider + 1 < TrustedDNS.PROVIDERS.size():

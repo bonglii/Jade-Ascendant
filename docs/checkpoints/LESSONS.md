@@ -149,3 +149,11 @@
 - Branding installers must merge only logo/splash keys in project.godot and export_presets.cfg; preserve local Android version, signing and release settings. Verify all package/source hashes before writing and retain backups. Never delete a Git lock automatically.
 
 - Branding R2: Android export preset counts and indices differ after editor saves. Discover Android presets by platform, update only existing Android targets, and test single/reindexed presets plus mixed desktop targets. Never require preset.1.options from the build machine.
+
+## 2026-10-18 — Warning cleanup
+
+- Local names owner, name, ready and rotation can shadow Node/Node2D properties or signals. Use account_binding, backup_filename, reward_available and signature_angle; preserve wire-format dictionary keys and property access.
+- A float passed to a theme constant expecting int needs an explicit conversion. Keep the previous truncation behavior rather than silently changing rounding/layout.
+- Check-only mode does not initialize autoload singletons and can report misleading missing-identifier errors. Compile the full script set inside an isolated project with real autoloads and targeted warnings promoted to errors; never change production warning settings to hide warnings.
+
+- Warning cleanup R2: the supplied LiveOps diff (blob b1326b9) was already an equivalent fix using ready_count and claim_available. Preserve that exact verified variant; accept it as already installed rather than replacing correct local names or relaxing hash checks for unknown edits.

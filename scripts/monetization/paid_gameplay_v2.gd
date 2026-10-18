@@ -331,19 +331,19 @@ func _prepare_scene_run(continuing: bool) -> bool:
 	if continuing and not saved.has("paid_run_ref"):
 		_seal_run({},{}); return true
 	if continuing and (not valid_run_ref(ref) or ref.binding!=_live_binding()): return false
-	var owner: String=_live_binding()
+	var account_binding: String=_live_binding()
 	await _await_transport()
-	if owner!=_live_binding(): return false
+	if account_binding!=_live_binding(): return false
 	if not _read_pending().is_empty():
 		if not refresh(): return false
 		await _await_transport()
-		if owner!=_live_binding() or not _read_pending().is_empty(): return false
+		if account_binding!=_live_binding() or not _read_pending().is_empty(): return false
 	if not continuing and not is_verified_ready():
 		_seal_run({},{}); return true
 	if continuing:
 		if not refresh(): return false
 		await _await_transport()
-		if owner!=_live_binding() or not is_verified_ready(): return false
+		if account_binding!=_live_binding() or not is_verified_ready(): return false
 	var selected: Dictionary=snapshot.get("slots",{})
 	if not continuing and selected.values().all(func(id: Variant) -> bool: return id==""):
 		_seal_run({},{}); return true
@@ -355,9 +355,9 @@ func _prepare_scene_run(continuing: bool) -> bool:
 		extra.weapon_level=0 if arm=="" else clampi(int(equipment.get("weapon_levels").get(arm,1)),1,item_star(arm)*10)
 	if not submit("run_resume" if continuing else "run_start",extra): return false
 	await _await_transport()
-	if owner!=_live_binding() or not _last_result.get("success",false) or not _fresh(): return false
+	if account_binding!=_live_binding() or not _last_result.get("success",false) or not _fresh(): return false
 	var op: Dictionary=_last_result.get("operation",{})
 	var frozen: Variant=op.get("outcome")
 	if not valid_run_outcome(frozen,snapshot,run_id): return false
-	_seal_run({"version":1,"binding":owner,"run_id":run_id},frozen)
+	_seal_run({"version":1,"binding":account_binding,"run_id":run_id},frozen)
 	return true

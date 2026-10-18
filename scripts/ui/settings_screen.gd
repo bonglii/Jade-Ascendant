@@ -1144,14 +1144,14 @@ func _build_progress_backup(parent_box: VBoxContainer, source: PanelContainer) -
 func _confirm_progress_backup(restore: bool) -> void:
 	if restore and not ProgressBackupManager.can_restore(): return
 	if not restore and not ProgressBackupManager.can_backup(): return
-	var owner: String = GoogleAccountManager.get_monetization_account_binding()
+	var account_binding: String = GoogleAccountManager.get_monetization_account_binding()
 	var revision: int = ProgressBackupManager.revision
 	var dialog := ConfirmationDialog.new(); dialog.title = _local("Restore progress" if restore else "Save progress", "Pulihkan progress" if restore else "Simpan progress"); dialog.dialog_autowrap = true
 	dialog.dialog_text = _local("Replace local progress with this account's backup. The game will close after restoring; reopen it to play." if restore else "Save this device's progress to this Google account and enable automatic menu backups. An existing cloud backup will be replaced.", "Ganti progress lokal dengan backup akun ini. Game ditutup setelah pemulihan; buka kembali untuk bermain." if restore else "Simpan progress perangkat ini ke akun Google dan aktifkan backup otomatis saat di menu. Backup cloud sebelumnya akan diganti.")
 	dialog.ok_button_text = _local("RESTORE & CLOSE" if restore else "SAVE", "PULIHKAN & TUTUP" if restore else "SIMPAN")
 	add_child(dialog)
 	dialog.confirmed.connect(func():
-		if owner == GoogleAccountManager.get_monetization_account_binding() and revision == ProgressBackupManager.revision:
+		if account_binding == GoogleAccountManager.get_monetization_account_binding() and revision == ProgressBackupManager.revision:
 			if restore: ProgressBackupManager.restore_and_close()
 			else: ProgressBackupManager.backup_now()
 		dialog.queue_free())

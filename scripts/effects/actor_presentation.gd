@@ -137,8 +137,8 @@ func _update_player_hurt_tint() -> void:
 func _update_non_player_presentation() -> void:
 	if bool(get_parent().get_meta("frame_driven_boss",false)):
 		# Painted 2D frames own pose; generic gait/breath squash must never compete.
-		var flash: float = hurt_left / HURT_DURATION * (0.12 if SettingsManager.reduced_effects else 0.5)
-		sprite.self_modulate=Color(1.0,1.0-flash*.30,1.0-flash*.55,1.0)
+		var boss_hurt_flash: float = hurt_left / HURT_DURATION * (0.12 if SettingsManager.reduced_effects else 0.5)
+		sprite.self_modulate=Color(1.0,1.0-boss_hurt_flash*.30,1.0-boss_hurt_flash*.55,1.0)
 		return
 	var breath: float = sin(age * 3.2) * 0.012
 	var gait: float = sin(stride_phase) * travel_strength

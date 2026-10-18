@@ -144,7 +144,7 @@ func _layout_gate() -> void:
 	_brand.size.x=available.x-margin*2 if not landscape else panel_x-margin*2
 	var logo_height: float=clampf(available.y*.24,95,280) if not landscape else minf(available.y*.46,230)
 	_logo.custom_minimum_size=Vector2(0,logo_height)
-	_brand.add_theme_constant_override("separation",4*unit)
+	_brand.add_theme_constant_override("separation",int(4*unit))
 	_brand.size.y=logo_height+30*unit
 	if landscape:_brand.position.y=maxf(margin,(available.y-_brand.size.y)*.28)
 
