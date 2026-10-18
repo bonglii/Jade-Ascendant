@@ -17,7 +17,7 @@ try {
         if ($entries.Count -ne 1 -or $entries[0].Length -gt 16384) { throw 'Unique release metadata not found in AAB.' }
         $reader=New-Object IO.StreamReader($entries[0].Open())
         try { $meta=$reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }
-        if ($meta.debug -ne $false -or $meta.iap_target -ne 'production' -or $meta.odyssey_presentation -ne 2 -or $meta.native_sha256 -ne $proof.aar_sha256 -or $meta.source_revision -ne $receipt.source_revision) { throw 'AAB metadata does not match this verified Odyssey release candidate.' }
+        if ($meta.debug -ne $false -or $meta.iap_target -ne 'production' -or $meta.odyssey_presentation -ne 3 -or $meta.native_sha256 -ne $proof.aar_sha256 -or $meta.source_revision -ne $receipt.source_revision) { throw 'AAB metadata does not match this verified Odyssey release candidate.' }
         $found=$false
         foreach ($entry in @($zip.Entries | Where-Object { $_.FullName -match '(^|/)classes[0-9]*\.dex$' })) {
             if ($entry.Length -gt 134217728) { throw 'Unexpectedly large DEX entry.' }

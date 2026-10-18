@@ -92,25 +92,25 @@ func _ready() -> void:
 	for side: String in ["left","right"]: margin.add_theme_constant_override("margin_"+side,18)
 	margin.add_theme_constant_override("margin_top",12); margin.add_theme_constant_override("margin_bottom",16)
 	var scroll:=ScrollContainer.new(); scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_SHOW_NEVER; margin.add_child(scroll)
-	var body:=VBoxContainer.new(); body.size_flags_horizontal=Control.SIZE_EXPAND_FILL; body.size_flags_vertical=Control.SIZE_EXPAND_FILL; body.add_theme_constant_override("separation",8); scroll.add_child(body)
+	var body:=VBoxContainer.new(); body.size_flags_horizontal=Control.SIZE_EXPAND_FILL; body.size_flags_vertical=Control.SIZE_EXPAND_FILL; body.add_theme_constant_override("separation",6); scroll.add_child(body)
 	var top:=HBoxContainer.new(); top.add_theme_constant_override("separation",8); body.add_child(top); top.add_child(_navigation("back",_back,"Return to events"))
 	var heading:=VBoxContainer.new(); heading.size_flags_horizontal=Control.SIZE_EXPAND_FILL; heading.add_theme_constant_override("separation",1); top.add_child(heading)
 	var eyebrow: Label=label("CELESTIAL EXPEDITION",11); eyebrow.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; eyebrow.add_theme_color_override("font_color",Art.GOLD); heading.add_child(eyebrow)
 	var title: Label=label("Jade Dragon Odyssey",30); title.add_theme_font_override("font",FONT); title.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; heading.add_child(title)
 	countdown=label("CONNECTING TO THE ATLAS",12); countdown.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; heading.add_child(countdown); top.add_child(_navigation("info",_info,"Event rules"))
-	var summary:=_card(); body.add_child(summary); var row:=HBoxContainer.new(); row.add_theme_constant_override("separation",8); summary.add_child(row)
-	row.add_child(_icon(Art.DIE,96))
-	var purse:=VBoxContainer.new(); purse.size_flags_horizontal=Control.SIZE_EXPAND_FILL; purse.alignment=BoxContainer.ALIGNMENT_CENTER; row.add_child(purse); purse.add_child(label("TRAVEL DICE",11))
+	var summary:=_card(); summary.custom_minimum_size.y=112; body.add_child(summary); var row:=HBoxContainer.new(); row.add_theme_constant_override("separation",8); summary.add_child(row)
+	var dice_badge:=_icon(Art.DIE,52); dice_badge.name="TravelDiceBadge"; dice_badge.size_flags_vertical=Control.SIZE_SHRINK_CENTER; row.add_child(dice_badge)
+	var purse:=VBoxContainer.new(); purse.size_flags_horizontal=Control.SIZE_EXPAND_FILL; purse.alignment=BoxContainer.ALIGNMENT_CENTER; row.add_child(purse); purse.add_child(label("TRAVEL DICE",14))
 	tickets=label("—",34); tickets.add_theme_font_override("font",FONT); tickets.add_theme_color_override("font_color",Art.GOLD); purse.add_child(tickets)
 	var journey:=VBoxContainer.new(); journey.custom_minimum_size.x=140; journey.size_flags_horizontal=Control.SIZE_EXPAND_FILL; journey.alignment=BoxContainer.ALIGNMENT_CENTER; row.add_child(journey)
-	journey.add_child(label("GUARANTEED LEGENDARY",11)); progress=label("0 / 72 JOURNEYS",19); journey.add_child(progress)
+	journey.add_child(label("GUARANTEED LEGENDARY",13)); progress=label("0 / 72 JOURNEYS",22); journey.add_child(progress)
 	progress_bar=ProgressBar.new(); progress_bar.max_value=72; progress_bar.show_percentage=false; progress_bar.custom_minimum_size.y=8
 	var fill:=StyleBoxFlat.new(); fill.bg_color=Art.GOLD; fill.set_corner_radius_all(4); progress_bar.add_theme_stylebox_override("fill",fill)
 	var track:=StyleBoxFlat.new(); track.bg_color=Color("092c2a"); track.set_corner_radius_all(4); progress_bar.add_theme_stylebox_override("background",track); journey.add_child(progress_bar)
-	board=Board.new(); board.size_flags_horizontal=Control.SIZE_EXPAND_FILL; board.size_flags_vertical=Control.SIZE_EXPAND_FILL; board.custom_minimum_size.y=350; body.add_child(board); board.travel_finished.connect(_travel_finished)
+	board=Board.new(); board.size_flags_horizontal=Control.SIZE_EXPAND_FILL; board.size_flags_vertical=Control.SIZE_EXPAND_FILL; board.custom_minimum_size.y=480; body.add_child(board); board.travel_finished.connect(_travel_finished)
 	dice_view=Dice.new(); dice_view.set_anchors_and_offsets_preset(Control.PRESET_CENTER); dice_view.offset_left=-104; dice_view.offset_right=104; dice_view.offset_top=-104; dice_view.offset_bottom=104; dice_view.z_index=2; dice_view.visible=false; board.add_child(dice_view); dice_view.reveal_finished.connect(_dice_revealed)
-	notice=label("Every journey brings your legendary relic closer.",15); notice.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; notice.custom_minimum_size.y=30; body.add_child(notice)
-	var reward:=_card(); body.add_child(reward); var reward_row:=HBoxContainer.new(); reward_row.add_theme_constant_override("separation",10); reward.add_child(reward_row); reward_row.add_child(_icon(COMPASS,76))
+	notice=label("Every journey brings your legendary relic closer.",15); notice.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; notice.custom_minimum_size.y=24; body.add_child(notice)
+	var reward:=_card(); body.add_child(reward); var reward_row:=HBoxContainer.new(); reward_row.add_theme_constant_override("separation",10); reward.add_child(reward_row); reward_row.add_child(_icon(COMPASS,56))
 	var description:=VBoxContainer.new(); description.size_flags_horizontal=Control.SIZE_EXPAND_FILL; description.alignment=BoxContainer.ALIGNMENT_CENTER; description.add_theme_constant_override("separation",1); reward_row.add_child(description)
 	var stars: Label=label("★★★★★  EXCLUSIVE ARMAMENT",12); stars.add_theme_color_override("font_color",Art.GOLD); description.add_child(stars)
 	var relic: Label=label("Heavenweaver Compass",23); relic.add_theme_font_override("font",FONT); description.add_child(relic); description.add_child(label("Guaranteed at 72 journeys • Secured in Mail",12))
@@ -152,8 +152,8 @@ func _update_time() -> void:
 	if not event is Dictionary: countdown.text="EVENT NOT YET SCHEDULED"; return
 	var now: int=int(client.server_time()); var remaining: int=int(event.ends_at)-now
 	if not bool(event.enabled): countdown.text="EVENT PAUSED"; return
-	if now<int(event.starts_at): countdown.text="STARTS IN %dH %dM" % [int((int(event.starts_at)-now)/3600),int((int(event.starts_at)-now)%3600/60)]; return
-	countdown.text="%d DAYS %dH REMAINING" % [maxi(0,int(remaining/86400)),maxi(0,int(remaining%86400/3600))] if remaining>0 else "JOURNEY CLOSED · CLAIM MILESTONES"
+	if now<int(event.starts_at): countdown.text="STARTS IN %dH %dM" % [int(float(int(event.starts_at)-now)/3600.0),int(float((int(event.starts_at)-now)%3600)/60.0)]; return
+	countdown.text="%d DAYS %dH REMAINING" % [maxi(0,int(float(remaining)/86400.0)),maxi(0,int(float(remaining%86400)/3600.0))] if remaining>0 else "JOURNEY CLOSED · CLAIM MILESTONES"
 func _refresh() -> void:
 	if client == null: return
 	var state: Dictionary = client.snapshot.get("state", {})

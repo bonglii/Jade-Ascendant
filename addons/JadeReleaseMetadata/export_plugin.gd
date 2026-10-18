@@ -23,9 +23,11 @@ class MetadataExporter extends EditorExportPlugin:
 		var revision: String = OS.get_environment("JADE_BUILD_SOURCE_REVISION").strip_edges()
 		if revision.length() != 40 or not revision.is_valid_hex_number(false): revision = "unreported"
 		var metadata: Dictionary = {"format": 1, "version_name": version, "version_code": code, "debug": is_debug, "iap_target": target, "native_sha256": digest, "source_revision": revision, "built_at_utc": Time.get_datetime_string_from_system(true)}
-		metadata["odyssey_presentation"] = 2 if FileAccess.file_exists("res://scripts/ui/liveops/odyssey_art.gd") and FileAccess.get_file_as_string("res://scripts/monetization/odyssey_client.gd").contains("static func canonical_command") else 0
+		var has_premium: bool = FileAccess.file_exists("res://scripts/ui/liveops/odyssey_art.gd") and FileAccess.get_file_as_string("res://scripts/monetization/odyssey_client.gd").contains("static func canonical_command")
+		var has_mobile_board: bool = FileAccess.file_exists("res://assets/ui/liveops/odyssey/imperial_v2/tile_mobile.png") and FileAccess.get_file_as_string("res://scripts/ui/liveops/odyssey_board.gd").contains("const PRESENTATION_REVISION: int=3")
+		metadata["odyssey_presentation"] = 3 if has_premium and has_mobile_board else 2 if has_premium else 0
 		add_file("res://release/build_metadata.json", JSON.stringify(metadata).to_utf8_buffer(), false)
-		if features.has("android") and not is_debug and target == "production" and metadata.odyssey_presentation == 2:
+		if features.has("android") and not is_debug and target == "production" and metadata.odyssey_presentation >= 2:
 			var receipt_dir: String = ProjectSettings.globalize_path("res://.local/odyssey_export")
 			if DirAccess.make_dir_recursive_absolute(receipt_dir) == OK:
 				var receipt := FileAccess.open(receipt_dir.path_join("last.json"), FileAccess.WRITE)
