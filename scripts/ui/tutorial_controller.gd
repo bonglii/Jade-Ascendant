@@ -915,7 +915,6 @@ func _build_premium_tutorial() -> void:
 	tutorial_panel.anchor_bottom = 0.94
 	var content: VBoxContainer = tutorial_panel.get_node("Margin/Content")
 	content.add_theme_constant_override("separation",11)
-	var top: HBoxContainer = content.get_node("TopRow")
 	step_label.add_theme_font_size_override("font_size",13)
 	step_label.add_theme_color_override("font_color",GUIDANCE_JADE)
 	skip_button.custom_minimum_size = Vector2(82,42)

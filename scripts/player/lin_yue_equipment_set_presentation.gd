@@ -354,7 +354,7 @@ func _draw_full_resonance(primary: Color, secondary: Color) -> void:
 func _draw_new_identity(primary: Color,secondary: Color) -> void:
 	var full: bool=active_piece_count==4
 	var alpha: float=_full_opacity(.65) if full else .30
-	var clock: float=0 if reduced_effects else elapsed
+	var clock: float=0.0 if reduced_effects else elapsed
 	draw_arc(GROUND_CENTER,33,0,TAU,40,Color(primary,alpha*.7),1.5,true)
 	if active_set_id=="frost_lotus":
 		for index: int in range(6 if full else 3):

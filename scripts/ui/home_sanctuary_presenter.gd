@@ -296,9 +296,9 @@ func _layout_sanctuary() -> void:
  var text_start: float=map_w+8*u
  var action_w: float=width-24 if compact else width*.39
  var text_width: float=width-text_start-18*u if compact else width-text_start-action_w-22*u
- _rect(chapter_label,Vector2(text_start,16 if compact else 23*u),Vector2(text_width,20));_font(chapter_label,13,true)
- _rect(realm_title,Vector2(text_start,38 if compact else 46*u),Vector2(text_width,48));_font(realm_title,22,true)
- _rect(next_path_label,Vector2(text_start,83 if compact else 100*u),Vector2(text_width,20));_font(next_path_label,13)
+ _rect(chapter_label,Vector2(text_start,16.0 if compact else 23*u),Vector2(text_width,20));_font(chapter_label,13,true)
+ _rect(realm_title,Vector2(text_start,38.0 if compact else 46*u),Vector2(text_width,48));_font(realm_title,22,true)
+ _rect(next_path_label,Vector2(text_start,83.0 if compact else 100*u),Vector2(text_width,20));_font(next_path_label,13)
  var meter_y: float=109.0 if compact else card_h-24*u
  _rect(realm_progress,Vector2(text_start,meter_y),Vector2(maxf(30,text_width-43*u),7))
  _rect(progress_label,Vector2(text_start+maxf(30,text_width-40*u),meter_y-5),Vector2(42*u,20));_font(progress_label,12)

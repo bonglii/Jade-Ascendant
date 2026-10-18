@@ -274,16 +274,16 @@ func _inspect_candidate(dir_path: String) -> Dictionary:
 				return _no("MANIFEST_PATH_INVALID")
 			if not f.get("bytes") is int or int(f["bytes"]) <= 0:
 				return _no("MANIFEST_SIZE_INVALID")
-			var hash: String = str(f.get("sha256", ""))
-			if hash.length() != 64:
+			var expected_digest: String = str(f.get("sha256", ""))
+			if expected_digest.length() != 64:
 				return _no("MANIFEST_DIGEST_INVALID")
-			for character in hash:
+			for character in expected_digest:
 				if not "0123456789abcdef".contains(character):
 					return _no("MANIFEST_DIGEST_INVALID")
 			var saved: String = dir_path + "/" + want_name
 			if not FileAccess.file_exists(saved) or FileAccess.get_size(saved) != int(f["bytes"]):
 				return _no("BACKUP_MISSING_OR_TRUNCATED")
-			if FileAccess.get_sha256(saved) != hash:
+			if FileAccess.get_sha256(saved) != expected_digest:
 				return _no("BACKUP_TAMPERED")
 			bytes += int(f["bytes"])
 	if not manifest.get("total_bytes") is int or bytes != int(manifest["total_bytes"]) or bytes > MAX_ALL_BYTES:

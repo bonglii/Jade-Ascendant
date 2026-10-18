@@ -1982,7 +1982,6 @@ func _build_forge_tooltip(item_id: String) -> String:
 	if current_star >= EquipmentManager.MAX_ASCENSION_STAR:
 		return "Relik sudah mencapai 5★."
 
-	var cost: int = EquipmentManager.get_ascension_cost(item_id)
 	return "Tempa ke %d★ • 1 duplikat identik • Dimiliki %d" % [current_star + 1, InventoryManager.get_item_count(item_id)]
 
 

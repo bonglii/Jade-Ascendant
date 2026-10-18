@@ -84,6 +84,7 @@ function install(pkg, root) {
       if (!current) throw Error(`Missing config ${f.path}`);
       next = configMerge(current, f.config);
     } else if (f.append) {
+      if (typeof f.appendText !== 'string' || !Buffer.from(f.appendText).equals(payload)) throw Error('Invalid append section');
       if (!current) throw Error(`Missing notes ${f.path}`);
       next = normalize(current).includes(normalize(payload).trim()) ? current : Buffer.concat([current, Buffer.from('\n'), payload]);
     } else if (current && hash(current) !== f.sha256 && hash(current) !== f.before && !(f.text && hash(Buffer.from(normalize(current))) === f.beforeNormalized)) {
@@ -124,18 +125,17 @@ function publish(root, manifest) {
       let stagedContent;
       if (f.config) stagedContent = configMerge(original, f.config);
       else {
-        const marker = '\n## 2026-10-18 — Warning cleanup';
-        const text = payload.toString('utf8');
-        const offset = text.indexOf(marker);
-        if (offset < 0) throw Error('Warning lesson section missing');
-        stagedContent = original.toString('utf8').includes(marker.trim()) ? original : Buffer.concat([original, Buffer.from(text.slice(offset))]);
+        if (typeof f.appendText !== 'string' || hash(Buffer.from(f.appendText)) !== f.sha256) throw Error('Invalid append section');
+        const addition = Buffer.from(f.appendText);
+        if (!normalize(payload).includes(normalize(addition).trim())) throw Error('Installed lesson section missing');
+        stagedContent = normalize(original).includes(normalize(addition).trim()) ? original : Buffer.concat([original, Buffer.from('\n'), addition]);
       }
       const blob = runGit(root, ['hash-object', '-w', '--stdin'], stagedContent);
       runGit(root, ['update-index', '--add', '--cacheinfo', `100644,${blob},${f.path}`]);
     } else runGit(root, ['add', '--', `:(literal)${f.path}`]);
   }
   runGit(root, ['diff', '--cached', '--check']);
-  if (runGit(root, ['diff', '--cached', '--name-only'])) runGit(root, ['commit', '-m', 'fix(warnings): remove shadowed locals and explicit UI integer conversion']);
+  if (runGit(root, ['diff', '--cached', '--name-only'])) runGit(root, ['commit', '-m', 'fix(warnings): resolve ternary types and check all enabled categories']);
   runGit(root, ['push', 'origin', `HEAD:refs/heads/${branch}`]);
   const commit = runGit(root, ['rev-parse', 'HEAD']);
   console.log(`WARNING_CLEANUP_PUBLISHED=PASS\nhttps://github.com/bonglii/Jade-Ascendant/commit/${commit}`);

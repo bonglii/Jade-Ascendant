@@ -61,7 +61,7 @@ func _physics_process(delta: float) -> void:
  var lifetime: float=1.10 if mode=="phoenix_war_fan" else .78 if mode=="void_piercer_spear" else .20+(pulses-1)*.55+.65
  if age>=lifetime:queue_free();return
  queue_redraw()
-func reachable(enemy: Node2D,player: Node2D) -> bool:
+func reachable(enemy: Node2D,_player: Node2D) -> bool:
  return enemy.global_position.distance_squared_to(origin)<=pow(230 if enemy.is_in_group("boss") else 320,2)
 func _hit(player: Node2D,enemy: Node2D,multiplier: float,resonance: bool=false) -> void:
  if not living(enemy) or not reachable(enemy,player):return

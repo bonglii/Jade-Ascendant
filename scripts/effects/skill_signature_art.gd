@@ -41,7 +41,7 @@ static func draw_emblem(c: CanvasItem, id: String, center: Vector2, radius: floa
     c.draw_arc(Vector2.ZERO,radius*0.8,-PI*0.2,PI*1.2,24,ink,1.5,true)
   "yin_yang_blades", "yin_yang_reversal":
    for side: int in [-1,1]:
-    var angle: float = clock*0.8+(PI if side < 0 else 0)
+    var angle: float = clock*0.8+(PI if side < 0 else 0.0)
     c.draw_arc(Vector2.ZERO,radius*0.72,angle,angle+PI*0.75,22,ink if side==1 else Color(0.4,0.82,1,strength),2.4,true)
     c.draw_circle(Vector2.RIGHT.rotated(angle)*radius*0.7,3,ink)
   "heavenly_sword_rain":
