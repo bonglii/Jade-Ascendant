@@ -16,8 +16,19 @@ class MetadataExporter extends EditorExportPlugin:
 		var code: int = int(preset.get("version/code")) if preset != null and features.has("android") and preset.get("version/code") != null else 0
 		var native_path: String = "res://addons/JadeMonetizationNativeBridge/bin/%s/JadeMonetizationNativeBridge-%s.aar" % ["debug" if is_debug else "release", "debug" if is_debug else "release"]
 		var digest: String = FileAccess.get_sha256(native_path) if FileAccess.file_exists(native_path) else ""
-		var target: String = "production" if digest == "5a3679d44a9d756ba8649ea41f20df775eabf26c4260297dba68e3c0c50a071d" and not is_debug else "staging" if digest == "76de4e993a01180aafd2cbd8be0cbec160a5ddc63a980bc5eddd02ad981a8622" and is_debug else "locked_or_unverified"
+		var proof_path: String = "res://docs/checkpoints/IAP_PRODUCTION_NATIVE_CANDIDATE.json"
+		var proof: Variant = JSON.parse_string(FileAccess.get_file_as_string(proof_path)) if FileAccess.file_exists(proof_path) else null
+		var expected: String = str(proof.get("aar_sha256", "")) if proof is Dictionary and proof.get("target") == "production-candidate" else ""
+		var target: String = "production" if expected.length() == 64 and digest == expected and not is_debug else "staging" if digest == "76de4e993a01180aafd2cbd8be0cbec160a5ddc63a980bc5eddd02ad981a8622" and is_debug else "locked_or_unverified"
 		var revision: String = OS.get_environment("JADE_BUILD_SOURCE_REVISION").strip_edges()
 		if revision.length() != 40 or not revision.is_valid_hex_number(false): revision = "unreported"
 		var metadata: Dictionary = {"format": 1, "version_name": version, "version_code": code, "debug": is_debug, "iap_target": target, "native_sha256": digest, "source_revision": revision, "built_at_utc": Time.get_datetime_string_from_system(true)}
+		metadata["odyssey_presentation"] = 2 if FileAccess.file_exists("res://scripts/ui/liveops/odyssey_art.gd") and FileAccess.get_file_as_string("res://scripts/monetization/odyssey_client.gd").contains("static func canonical_command") else 0
 		add_file("res://release/build_metadata.json", JSON.stringify(metadata).to_utf8_buffer(), false)
+		if features.has("android") and not is_debug and target == "production" and metadata.odyssey_presentation == 2:
+			var receipt_dir: String = ProjectSettings.globalize_path("res://.local/odyssey_export")
+			if DirAccess.make_dir_recursive_absolute(receipt_dir) == OK:
+				var receipt := FileAccess.open(receipt_dir.path_join("last.json"), FileAccess.WRITE)
+				if receipt != null:
+					receipt.store_string(JSON.stringify({"path": ProjectSettings.globalize_path(_path), "started_ms": int(Time.get_unix_time_from_system()*1000), "source_revision": revision}))
+					receipt.close()

@@ -31,7 +31,9 @@ internal object OdysseyContractV1 {
   require(s.getString("notice").length<=160 && s.opt("last_reward") is JSONObject)
   for(k in listOf("missions","milestones")){val list=s.getJSONArray(k);require(list.length()<=3);for(i in 0 until list.length()) require(whole(list.opt(i)) && list.getInt(i) in (if(k=="missions") setOf(1,3,5) else setOf(24,48,72)))}
   if(!s.isNull("battle")){val battle=s.getJSONObject("battle");require(whole(battle.opt("attack"),0,2)&&whole(battle.opt("turn"),0,2)&&whole(battle.opt("hits"),0,3)&&whole(battle.opt("opens_at"),1,4_102_444_800)&&whole(battle.opt("deadline"),1,4_102_444_800))}
-  val limits=raw.getJSONObject("limits");for((key,value) in mapOf("free_daily" to 6,"ads_daily" to 2,"paid_daily" to 10,"paid_season" to 40,"max_rolls" to 152,"price_one" to 25,"price_five" to 100))require(whole(limits.opt(key),value.toLong(),value.toLong()))
+  val limits=raw.getJSONObject("limits");for((key,value) in mapOf("free_daily" to 6,"ads_daily" to 2,"paid_daily" to 10,"paid_season" to 40,"max_rolls" to 152))require(whole(limits.opt(key),value.toLong(),value.toLong()))
+  require(whole(limits.opt("price_one"),1,25)&&whole(limits.opt("price_five"),1,100))
+  require((limits.getInt("price_one")==25&&limits.getInt("price_five")==100)||(limits.getInt("price_one")==10&&limits.getInt("price_five")==40))
   if(!raw.isNull("event")){val e=raw.getJSONObject("event");require(Regex("^[a-z0-9_-]{3,48}$").matches(e.getString("id"))&&e.getLong("ends_at")==e.getLong("starts_at")+14*86400)}
   if(raw.has("ad_intent")&&!raw.isNull("ad_intent")){val ad=raw.getJSONObject("ad_intent");require(validId(ad.getString("nonce"))&&whole(ad.opt("expires_at"),1,4_102_444_800))}
   raw.toString()

@@ -5,6 +5,7 @@ export const integer=(v,min,max)=>Number.isSafeInteger(v)&&v>=min&&v<=max;
 export const exact=(v,keys)=>{if(!v||typeof v!=='object'||Array.isArray(v)||Object.keys(v).some(k=>!keys.includes(k)))reject('invalid_fields',400);};
 export const TILES=['sanctuary','stone','scroll','chest','stone','fork','jade','stone','sanctuary','chest','scroll','stone','fork','jade','stone','chest','sanctuary','scroll','stone','fork'];
 export const LIMITS=Object.freeze({free_daily:6,ads_daily:2,paid_daily:10,paid_season:40,max_rolls:152,price_one:25,price_five:100});
+export const PREMIUM_LIMITS=Object.freeze({...LIMITS,price_one:10,price_five:40});
 export const REWARDS=Object.freeze({tile_stone:20,tile_jade:2,safe_stone:30,challenge_stone:60,seal_24:2,seal_48:3,stone_48:500});
 export function definition(input){
  exact(input,['id','starts_at','ends_at','enabled','ads_enabled','purchases_enabled','rewards']);
@@ -16,7 +17,7 @@ export const initial=()=>({tickets:0,day:'',daily_rolls:0,missions:[],rolls:0,po
 export const utcDay=time=>new Date(time*1000).toISOString().slice(0,10);
 const add=(r,k,n)=>{if(n>0)r[k]=(r[k]||0)+n;};
 export const rewardPresent=r=>(r.spirit_stone||0)>0||(r.celestial_jade||0)>0||(r.pavilion_seal||0)>0||Object.keys(r.items||{}).length>0;
-export function transition(inputState,command,event,time,random=()=>crypto.getRandomValues(new Uint32Array(1))[0]){
+export function transition(inputState,command,event,time,random=()=>crypto.getRandomValues(new Uint32Array(1))[0],limits=LIMITS){
  exact(command,['kind','choice','mission','milestone','pack']);
  const s=structuredClone(inputState),reward={spirit_stone:0,items:{}},pick=n=>{const limit=4294967296-4294967296%n;let value;do{value=random();}while(value>=limit);return value%n;};
  const grace=['milestone','route','counter'].includes(command.kind)?3*86400:0;
@@ -43,7 +44,7 @@ export function transition(inputState,command,event,time,random=()=>crypto.getRa
  }else if(command.kind==='buy_dice'){
   if(!event.purchases_enabled)reject('purchases_disabled');if(![1,5].includes(command.pack))reject('invalid_pack',400);
   if(s.daily_bought+command.pack>LIMITS.paid_daily||s.season_bought+command.pack>LIMITS.paid_season)reject('purchase_limit');
-  cost=command.pack===1?LIMITS.price_one:LIMITS.price_five;s.tickets+=command.pack;s.daily_bought+=command.pack;s.season_bought+=command.pack;s.notice='Travel seals purchased';
+  cost=command.pack===1?limits.price_one:limits.price_five;s.tickets+=command.pack;s.daily_bought+=command.pack;s.season_bought+=command.pack;s.notice='Travel seals purchased';
  }else reject('unknown_action',400);
  s.last_reward=reward;return {state:s,reward,cost};
 }

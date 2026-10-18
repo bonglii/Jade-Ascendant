@@ -14,6 +14,13 @@ class OdysseyContractV1Test {
   val stream=javaClass.classLoader!!.getResourceAsStream("odyssey_snapshot_v1.json")!!
   val snapshot=JSONObject(stream.bufferedReader().use{it.readText()})
   assertNotNull(OdysseyContractV1.canonicalOrNull(snapshot,"alice"))
+  val premium=JSONObject(snapshot.toString())
+  premium.getJSONObject("limits").put("price_one",10).put("price_five",40)
+  assertNotNull(OdysseyContractV1.canonicalOrNull(premium,"alice"))
+  premium.getJSONObject("limits").put("price_five",100)
+  assertNull(OdysseyContractV1.canonicalOrNull(premium,"alice"))
+  premium.getJSONObject("limits").put("price_one",10.5).put("price_five",40)
+  assertNull(OdysseyContractV1.canonicalOrNull(premium,"alice"))
   assertNull(OdysseyContractV1.canonicalOrNull(snapshot,"bob"))
   assertNull(OdysseyContractV1.canonicalOrNull(JSONObject(snapshot.toString()).put("version",1.5),"alice"))
 assertNull(OdysseyContractV1.canonicalOrNull(JSONObject(),"alice"));assertNull(OdysseyContractV1.canonicalOrNull(JSONObject("""{"version":1,"owner_binding":"forged"}"""),"alice"))}

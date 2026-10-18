@@ -29,3 +29,36 @@ test('a failure after debit rolls back wallet, dice and spend record together',a
 test('Compass run authority follows milestone ownership across seasons',async()=>{const f=fixture();try{await publishEvent(f.db,event(),start);assert.equal((await f.api.read('alice')).compass_authorized,false);const state={...initial(),rolls:72,milestones:[72]};f.db.sql.prepare('INSERT INTO odyssey_players(event_id,owner,state) VALUES(?,?,?)').run(event().id,account('alice'),JSON.stringify(state));assert.equal((await f.api.read('alice')).compass_authorized,true);assert.equal((await f.api.read('bob')).compass_authorized,false);const later={...event(),id:'dragon-odyssey-2',starts_at:start+18*86400,ends_at:start+32*86400};f.time(later.starts_at);await publishEvent(f.db,later,later.starts_at);assert.equal((await f.api.read('alice')).compass_authorized,true);}finally{f.close();}});
 test('paid Compass cannot authorize another run while its account is refund-held',async()=>{const f=fixture();try{await publishEvent(f.db,event(),start);const owner='u1:'+account('alice');f.db.sql.prepare('INSERT INTO iap_wallet_accounts_v1 VALUES(?,?,0)').run(owner,500);f.db.sql.prepare("INSERT INTO iap_wallet_events_v1(event_key,owner_key,event_kind,item_key,delta) VALUES('credit',?,'play_credit','fixture',500)").run(owner);f.db.sql.prepare("INSERT INTO iap_play_void_cursor_v1(cursor_name,watermark_ms) VALUES('voided_inapp',?)").run(start*1000);f.db.sql.prepare('INSERT INTO odyssey_players(event_id,owner,state) VALUES(?,?,?)').run(event().id,account('alice'),JSON.stringify({...initial(),rolls:72,milestones:[72],season_bought:5}));assert.equal((await f.api.read('alice')).compass_authorized,true);f.db.sql.prepare("INSERT INTO iap_refund_account_holds_v1(owner_key,status,reason) VALUES(?,'held','play_voided_purchase')").run(owner);await assert.rejects(f.api.read('alice'),/paid_account_on_hold/);}finally{f.close();}});
 test('ordinary rewarded placements without an event nonce are acknowledged without granting',async()=>{const f=fixture();try{assert.deepEqual(await creditAd(f.db,'?custom_data=&anything=ignored',{}),{ignored:true});assert.equal(f.db.sql.prepare('SELECT COUNT(*) n FROM odyssey_ad_receipts').get().n,0);}finally{f.close();}});
+
+test('economy v2 lowers prices without changing legacy clients, caps or free cadence',async()=>{
+ const f=fixture();try{
+  await publishEvent(f.db,event(),start);
+  const premium=service(f.db,{now:()=>start,economy:2,rng:()=>0});
+  assert.equal((await f.api.read('alice')).limits.price_one,25);
+  assert.equal((await f.api.read('alice')).limits.price_five,100);
+  const latest=await premium.read('alice');assert.equal(latest.limits.price_one,10);assert.equal(latest.limits.price_five,40);
+  for(const key of ['free_daily','ads_daily','paid_daily','paid_season','max_rolls'])assert.equal(latest.limits[key],LIMITS[key]);
+ }finally{f.close();}
+});
+test('premium dice debit the displayed 40/10 price exactly once and preserve cross-version receipts',async()=>{
+ const f=fixture();try{
+  await publishEvent(f.db,event(),start);const owner='u1:'+account('alice');
+  f.db.sql.prepare('INSERT INTO iap_wallet_accounts_v1 VALUES(?,?,0)').run(owner,200);
+  f.db.sql.prepare("INSERT INTO iap_wallet_events_v1(event_key,owner_key,event_kind,item_key,delta) VALUES('credit',?,'play_credit','verified',200)").run(owner);
+  f.db.sql.prepare("INSERT INTO iap_play_void_cursor_v1(cursor_name,watermark_ms) VALUES('voided_inapp',?)").run(start*1000);
+  const premium=service(f.db,{now:()=>start,economy:2,rng:()=>0});
+  const input=request(0,{kind:'buy_dice',pack:5});const out=await premium.execute('alice',input);assert.equal(out.jade_spent,40);assert.equal(out.state.tickets,8);
+  assert.deepEqual(await f.api.execute('alice',input),out);assert.equal(f.db.sql.prepare('SELECT balance FROM iap_wallet_accounts_v1').get().balance,160);
+  const single=await premium.execute('alice',request(1,{kind:'buy_dice',pack:1}));assert.equal(single.jade_spent,10);assert.equal(f.db.sql.prepare('SELECT balance FROM iap_wallet_accounts_v1').get().balance,150);
+  assert.equal((await premium.read('alice')).state.season_bought,6);
+  const legacyInput=request(2,{kind:'buy_dice',pack:1});const legacy=await f.api.execute('alice',legacyInput);assert.equal(legacy.jade_spent,25);assert.deepEqual(await premium.execute('alice',legacyInput),legacy);assert.equal(f.db.sql.prepare('SELECT balance FROM iap_wallet_accounts_v1').get().balance,125);
+ }finally{f.close();}
+});
+test('versioned HTTP route selects matching prices and remains authenticated',async()=>{
+ const {odysseyRoute}=await import('./src/odyssey_http.mjs');const f=fixture();try{
+  const env={DB:f.db},ctx={waitUntil(){}};
+  assert.equal((await odysseyRoute(new Request('https://iap.test/v2/odyssey'),env,ctx)).status,401);
+  const v1=await odysseyRoute(new Request('https://iap.test/v1/odyssey'),env,ctx,'alice');assert.equal((await v1.json()).limits.price_five,100);
+  const v2=await odysseyRoute(new Request('https://iap.test/v2/odyssey'),env,ctx,'alice');assert.equal((await v2.json()).limits.price_five,40);
+ }finally{f.close();}
+});

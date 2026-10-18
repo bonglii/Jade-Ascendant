@@ -1,0 +1,16 @@
+{
+  "method": "built-in imagegen",
+  "usage": "Project-integrated hand-painted xianxia UI assets; atlas sliced at runtime with transparent gutters. Dice pips are drawn by code, not generated.",
+  "assets": [
+    {
+      "file": "dice.png",
+      "sha256": "acd2037131ae91c23875a55c91989eb022fc7a3ea21a256ec3acc62187f60773",
+      "prompt": "Isolated luxurious ivory nephrite and gold six-sided die, nearly frontal blank face for exact code-drawn pips, emerald corner inlays, transparent padding, no text or numbers."
+    },
+    {
+      "file": "ui_atlas.png",
+      "sha256": "478a71d9102306fd9cbc93eb46074bdcaf2d8639520893bd03c8f28331ea3de2",
+      "prompt": "Transparent three-row jade/gold UI atlas: sculpted primary button, ornate reward panel and blank circular navigation medallion. Blank text areas, generous separation, no glyphs or words."
+    }
+  ]
+}

@@ -5,7 +5,7 @@ param(
     [switch]$VerifyOnly
 )
 $ErrorActionPreference = 'Stop'
-$candidateHash = '6cf0200bfebf4ad9362c913d3f67473aebdc1a4d8df6502f2aea853b86c7ce23'
+$candidateHash = '627aa1a6a2b6b249a900f840fb7c9947676c19c4175d79900c0d85635213d751'
 $lockedHash = '8f466fb8738413f95813b1aa0bd11d102716cf26a84298ea7d12af8a4adb60b8'
 $lockStream = $null
 $markerWritten = $false
@@ -58,7 +58,7 @@ try {
     } else {
         if (Test-Path -LiteralPath $marker) { throw 'An interrupted export session exists. Run recover_production_export.cmd first.' }
         $proofPath = Join-Path $repo 'docs/checkpoints/IAP_PRODUCTION_NATIVE_CANDIDATE.json'
-        if ((TextHash $proofPath) -ne '8a8c3e970ae7ae5149d9875cbaeccd81ef0b9a3892acf8c662518d6f90324dd0') { throw 'Candidate provenance changed.' }
+        if ((TextHash $proofPath) -ne '923526b74244bf54197a9fd8bf6c1516ede67a3066e19665df898ee7433f29b3') { throw 'Candidate provenance changed.' }
         $proof = [IO.File]::ReadAllText($proofPath) | ConvertFrom-Json
         $candidate = Join-Path $repo 'release/native/JadeMonetizationNativeBridge-production-candidate.aar'
         if ($proof.target -ne 'production-candidate' -or $proof.aar_sha256 -ne $candidateHash -or (HashFile $candidate) -ne $candidateHash) { throw 'Candidate AAR hash/target mismatch.' }

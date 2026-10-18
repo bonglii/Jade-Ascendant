@@ -1,5 +1,5 @@
 import {createHash} from 'node:crypto';
-import {initial,transition,definition,LIMITS,integer,reject,rewardPresent,exact} from './odyssey_rules.mjs';
+import {initial,transition,definition,LIMITS,PREMIUM_LIMITS,integer,reject,rewardPresent,exact} from './odyssey_rules.mjs';
 import {assertNoRefundHoldRC5} from './refund_account_guard_rc5.mjs';
 import {assertVerifiedPlayCreditRC14} from './verified_purchase_unlock_rc14.mjs';
 import {createGoogleKeySource} from '../../ssv/m7e4d_google_keys.mjs';
@@ -12,9 +12,10 @@ export async function currentEvent(db){const r=await primary(db).prepare('SELECT
 export async function publishEvent(db,input,time){const e=definition(input),old=await db.prepare('SELECT document FROM odyssey_events WHERE id=?').bind(e.id).first();if(old){const original=JSON.parse(old.document);if(JSON.stringify({...original,enabled:e.enabled,ads_enabled:e.ads_enabled,purchases_enabled:e.purchases_enabled})!==JSON.stringify(e))reject('published_event_immutable');await db.prepare('UPDATE odyssey_events SET document=? WHERE id=?').bind(JSON.stringify(e),e.id).run();}else{if(e.starts_at<time-60||e.starts_at>time+90*86400)reject('invalid_schedule',400);const previous=await currentEvent(db);if(previous&&previous.ends_at+3*86400>time)reject('previous_season_not_finished');await db.prepare("INSERT INTO odyssey_events SELECT ?,?,? WHERE NOT EXISTS(SELECT 1 FROM odyssey_events WHERE json_extract(document,'$.ends_at')+259200>?)").bind(e.id,JSON.stringify(e),time,time).run();const created=await db.prepare('SELECT document FROM odyssey_events WHERE id=?').bind(e.id).first();if(!created)reject('previous_season_not_finished');}return e;}
 async function paidEligible(db,owner,time){const key='u1:'+owner;await assertNoRefundHoldRC5({db,owner:key});await assertVerifiedPlayCreditRC14(db,key);const c=await primary(db).prepare("SELECT watermark_ms FROM iap_play_void_cursor_v1 WHERE cursor_name='voided_inapp'").first();if(!integer(c?.watermark_ms,time*1000-7200000,time*1000+60000))reject('refund_monitor_stale',503);}
 const paidGuard="NOT EXISTS(SELECT 1 FROM iap_refund_account_holds_v1 WHERE owner_key=? AND status='held') AND EXISTS(SELECT 1 FROM iap_play_void_cursor_v1 WHERE cursor_name='voided_inapp' AND watermark_ms BETWEEN ? AND ?) AND EXISTS(SELECT 1 FROM iap_wallet_events_v1 WHERE owner_key=? AND event_kind='play_credit')";
-export function service(db,{now=()=>Math.floor(Date.now()/1000),rng}={}){
+export function service(db,{now=()=>Math.floor(Date.now()/1000),rng,economy=1}={}){
  db=primary(db);
- async function read(uid){const owner=account(uid),event=await currentEvent(db),r=event?await db.prepare('SELECT state,revision FROM odyssey_players WHERE event_id=? AND owner=?').bind(event.id,owner).first():null;const state=r?JSON.parse(r.state):initial();if(state.season_bought>0)await paidEligible(db,owner,now());const grants=(await db.prepare("SELECT state FROM odyssey_players p WHERE owner=? AND EXISTS(SELECT 1 FROM json_each(p.state,'$.milestones') WHERE value=72) LIMIT 100").bind(owner).all()).results.map(row=>JSON.parse(row.state));if(grants.length&&grants.every(s=>s.season_bought>0)&&state.season_bought===0)await paidEligible(db,owner,now());return {version:1,owner_binding:owner,event,state,revision:r?.revision||0,server_time:now(),limits:LIMITS,compass_authorized:grants.length>0,lease_seconds:60};}
+ const prices=economy===2?PREMIUM_LIMITS:LIMITS;
+ async function read(uid){const owner=account(uid),event=await currentEvent(db),r=event?await db.prepare('SELECT state,revision FROM odyssey_players WHERE event_id=? AND owner=?').bind(event.id,owner).first():null;const state=r?JSON.parse(r.state):initial();if(state.season_bought>0)await paidEligible(db,owner,now());const grants=(await db.prepare("SELECT state FROM odyssey_players p WHERE owner=? AND EXISTS(SELECT 1 FROM json_each(p.state,'$.milestones') WHERE value=72) LIMIT 100").bind(owner).all()).results.map(row=>JSON.parse(row.state));if(grants.length&&grants.every(s=>s.season_bought>0)&&state.season_bought===0)await paidEligible(db,owner,now());return {version:1,owner_binding:owner,event,state,revision:r?.revision||0,server_time:now(),limits:prices,compass_authorized:grants.length>0,lease_seconds:60};}
  async function execute(uid,input){
   exact(input,['event_id','request_id','revision','action']);if(!/^[a-z0-9_-]{3,48}$/.test(input.event_id||'')||!/^[a-f0-9]{32}$/.test(input.request_id||'')||!integer(input.revision,0,10000))reject('invalid_request',400);
   const owner=account(uid),stamp=now(),fingerprint=sha(JSON.stringify(input));
@@ -24,11 +25,11 @@ export function service(db,{now=()=>Math.floor(Date.now()/1000),rng}={}){
   await db.prepare('INSERT OR IGNORE INTO odyssey_players(event_id,owner,state) VALUES(?,?,?)').bind(event.id,owner,JSON.stringify(initial())).run();
   const player=await db.prepare('SELECT * FROM odyssey_players WHERE event_id=? AND owner=?').bind(event.id,owner).first();if(player.revision!==input.revision)reject('revision_changed');
   const state=JSON.parse(player.state),adIntent=input.action?.kind==='ad_intent';
-  const out=transition(state,adIntent?{kind:'sync'}:input.action,event,stamp,rng);
+  const out=transition(state,adIntent?{kind:'sync'}:input.action,event,stamp,rng,prices);
   if(out.cost>0||state.season_bought>0)await paidEligible(db,owner,stamp);
   let ad=null;
   if(adIntent){exact(input.action,['kind']);if(!event.ads_enabled||out.state.daily_ads>=LIMITS.ads_daily)reject('ad_limit');const outstanding=await db.prepare('SELECT COUNT(*) AS n FROM odyssey_ad_intents WHERE event_id=? AND owner=? AND consumed_at=0 AND expires_at>?').bind(event.id,owner,stamp).first();if(outstanding.n>=4)reject('ad_already_pending');ad={nonce:id(),expires_at:Math.min(stamp+1200,event.ends_at)};}
-  const response={version:1,owner_binding:owner,event,state:out.state,revision:input.revision+1,server_time:stamp,limits:LIMITS,ad_intent:ad,jade_spent:out.cost};
+  const response={version:1,owner_binding:owner,event,state:out.state,revision:input.revision+1,server_time:stamp,limits:prices,ad_intent:ad,jade_spent:out.cost};
   const guarded=out.cost>0||state.season_bought>0;
   const guardArgs=guarded?['u1:'+owner,stamp*1000-7200000,stamp*1000+60000,'u1:'+owner]:[];
   const steps=[db.prepare('UPDATE odyssey_players SET revision=CASE WHEN revision=?'+(guarded?' AND '+paidGuard:'')+' THEN revision+1 ELSE -1 END,state=?,last_request=? WHERE event_id=? AND owner=?').bind(input.revision,...guardArgs,JSON.stringify(out.state),input.request_id,event.id,owner)];

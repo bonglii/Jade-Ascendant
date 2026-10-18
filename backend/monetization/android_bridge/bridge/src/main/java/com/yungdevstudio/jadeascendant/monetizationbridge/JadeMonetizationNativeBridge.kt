@@ -667,7 +667,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
         if (commandJson.isNotEmpty() && body == null) { deny("INVALID_COMMAND"); return }
         val uid = try { FirebaseAuth.getInstance().currentUser?.uid } catch (_: Exception) { null }
         if (uid == null) { deny("AUTH_REQUIRED"); return }
-        requestSignedRC6("${BuildConfig.JADE_IAP_WORKER_BASE_URL}/v1/odyssey",
+        requestSignedRC6("${BuildConfig.JADE_IAP_WORKER_BASE_URL}/v2/odyssey",
             if (body == null) "GET" else "POST", body, odysseyBusy,
             "odysseyResultV1", "ODYSSEY_VERIFIED", requestId) { json -> OdysseyContractV1.canonicalOrNull(json, uid) }
     }
