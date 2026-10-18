@@ -1,62 +1,64 @@
 extends Control
 
+## One startup presentation; GoogleAccountManager retains ownership of auth.
+## No network wait or currency/save mutation. Resources load while the seal animates.
 const MAIN_MENU_SCENE: String = "res://scenes/ui/main_menu.tscn"
 const ACCOUNT_ENTRY_SCENE: String = "res://scenes/ui/google_account_entry.tscn"
-
+const MINIMUM_BRAND_SECONDS: float = 0.65
+var _started_ms: int = 0
+var _routing: bool = false
+var _next_scene: String = ""
 
 func _ready() -> void:
-	call_deferred("_route_first_entry")
-
+	_started_ms = Time.get_ticks_msec()
+	$Presentation/Retry.pressed.connect(_retry)
+	_route_first_entry.call_deferred()
 
 func _route_first_entry() -> void:
-	# The existing Firebase autoload and GoogleAccountManager are already ready
-	# before Boot. Refresh once to avoid showing a login screen for a session
-	# restored by the native Firebase SDK.
+	if _routing:
+		return
+	_routing = true
 	GoogleAccountManager.refresh_provider()
 	var account: Dictionary = GoogleAccountManager.get_account_snapshot()
-	if bool(account.get("signed_in", false)):
-		# Only an active Google session bypasses the identity choice. The old
-		# "entry completed" flag also covered Guest and survived sign-out, so
-		# it must NOT control this startup route.
-		_open_main_menu()
+	_next_scene = MAIN_MENU_SCENE if bool(account.get("signed_in", false)) else ACCOUNT_ENTRY_SCENE
+	if not ResourceLoader.exists(_next_scene, "PackedScene"):
+		_next_scene = MAIN_MENU_SCENE
+	var request_error: Error = ResourceLoader.load_threaded_request(_next_scene, "PackedScene", false, ResourceLoader.CACHE_MODE_REUSE)
+	if request_error != OK:
+		_show_failure()
 		return
-
-	# Signed-out and Guest players must be able to choose Google again on
-	# every fresh app launch; the previous choice is deliberately ignored.
-	# This changes presentation only: local gameplay saves are untouched.
-
-	# New/unsigned-in device: offer Google AND Guest, never force authentication.
-	# Use a direct scene change here to avoid playing the heavy Celestial Gate
-	# twice on the first launch. The entry screen uses the light menu transition.
-	if ResourceLoader.exists(ACCOUNT_ENTRY_SCENE, "PackedScene"):
-		var change_error: Error = get_tree().change_scene_to_file(ACCOUNT_ENTRY_SCENE)
-		if change_error == OK:
+	var packed: PackedScene = null
+	while is_inside_tree():
+		var status: int = ResourceLoader.load_threaded_get_status(_next_scene)
+		if status == ResourceLoader.THREAD_LOAD_LOADED:
+			# Always consume a successful request, including error/retry routes.
+			packed = ResourceLoader.load_threaded_get(_next_scene) as PackedScene
+			break
+		if status != ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+			_show_failure()
 			return
-		push_warning(
-			"Boot: account entry unavailable (error %d); continuing as Guest."
-			% int(change_error)
-		)
-	else:
-		push_warning("Boot: account entry scene missing; using existing Home flow.")
-	_open_main_menu()
+		await get_tree().process_frame
+	if packed == null:
+		_show_failure()
+		return
+	var minimum: float = 0.15 if SettingsManager.reduced_effects else MINIMUM_BRAND_SECONDS
+	var remaining: float = minimum - float(Time.get_ticks_msec() - _started_ms) / 1000.0
+	if remaining > 0.0:
+		await get_tree().create_timer(remaining).timeout
+	if not is_inside_tree():
+		return
+	# The branded Boot already covers loading. Do not stack a second Gate intro.
+	var change_error: Error = get_tree().change_scene_to_packed(packed)
+	if change_error != OK:
+		_show_failure()
 
+func _show_failure() -> void:
+	_routing = false
+	$Presentation.show_failure()
+	push_warning("Boot: local scene unavailable; retry is available without signing out.")
 
-func _open_main_menu() -> void:
-	# Retain the production startup transition for all returning players.
-	var transition_error: Error = SceneTransitionManager.transition_to(
-		MAIN_MENU_SCENE,
-		{
-			"title": "Jade Ascendant",
-			"subtitle": "Awakening the immortal path",
-			"tip": (
-				"Every ascendant begins with a single breath of Qi."
-			),
-			"minimum_display_time": 0.8
-		}
-	)
-	if transition_error != OK:
-		push_error(
-			"Boot: Celestial Gate gagal dimulai. Error code: "
-			+ str(transition_error)
-		)
-		get_tree().change_scene_to_file(MAIN_MENU_SCENE)
+func _retry() -> void:
+	if _routing:
+		return
+	$Presentation.clear_failure()
+	_route_first_entry()

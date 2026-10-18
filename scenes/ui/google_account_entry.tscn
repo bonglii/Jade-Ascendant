@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://scripts/ui/mobile_safe_area.gd" id="2_safe"]
 [ext_resource type="Theme" path="res://assets/ui/jade_ui_theme.tres" id="3_theme"]
 [ext_resource type="Texture2D" path="res://assets/ui/account_gate/imperial_v1/realm_background.png" id="4_art"]
-[ext_resource type="Texture2D" path="res://assets/ui/account_gate/imperial_v1/jade_wordmark.png" id="5_logo"]
+[ext_resource type="Texture2D" path="res://assets/branding/title_lockup.png" id="5_logo"]
 
 [node name="GoogleAccountEntry" type="Control"]
 layout_mode = 3

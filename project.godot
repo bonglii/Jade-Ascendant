@@ -19,8 +19,12 @@ config/name="jade-ascendant"
 run/main_scene="res://scenes/system/boot.tscn"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.7", "Mobile")
-config/icon="res://icon.svg"
+config/icon="res://assets/branding/launcher_192.png"
 
+boot_splash/image="res://assets/branding/boot_seal.png"
+boot_splash/bg_color=Color(0.0235294, 0.105882, 0.113725, 1)
+boot_splash/fullsize=false
+boot_splash/use_filter=true
 [autoload]
 
 DebugLogger="*res://scripts/debug/DebugLogger.gd"

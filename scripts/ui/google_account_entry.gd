@@ -72,7 +72,7 @@ func _apply_copy() -> void:
 	panel_title.text = _local("Your journey begins", "Perjalananmu dimulai")
 	panel_description.text = _local("Enter the realm and begin your cultivation.", "Masuki dunia dan awali kultivasimu.")
 	privacy_note.text = _local("Progress is saved on this device.", "Progres tersimpan di perangkat ini.")
-	privacy_note.tooltip_text = _local("Google login links your identity. Cloud Save is not available yet.", "Login Google menghubungkan identitas. Cloud Save belum tersedia.")
+	privacy_note.tooltip_text = _local("Google login links your identity. Enable Cloud backup in Settings to upload supported progress.", "Login Google menghubungkan identitas. Aktifkan Cloud backup di Pengaturan untuk mengunggah progres yang didukung.")
 
 func _skin(file: String, panel: bool=false) -> StyleBoxTexture:
 	var style:=StyleBoxTexture.new()
