@@ -174,3 +174,10 @@
 - Validate actual native renders as well as dimensions. Use isolated save scopes, real renderer snapshots and a small interaction suite for the affected menus. Stop audio before fixture teardown so pending UI sound callbacks do not create false leak reports.
 
 - Distinguish parser-warning cleanup from runtime shutdown diagnostics. The older Home regression emits six RefCounted exit warnings on both the exact baseline and this patch; record that comparison instead of mislabelling them SDK mock leaks or claiming all runtime warnings are fixed.
+
+
+## 2026-10-18 — Ascendant Trials
+- Test layouts against the smallest supported viewport and actual minimum widths, not only the large approved mockup. On narrow screens reflow reward/actions under the description; compact headers and wrap filters before the scroll area becomes unusable.
+- UI reparenting exits/re-enters the tree. A touch tracker may forget the node while its signal connections survive. Check existing connections before reconnecting; install OptionButton cancellation once.
+- Concrete sibling types (StyleBoxTexture vs StyleBoxFlat, VBoxContainer vs HBoxContainer) still trigger incompatible_ternary even with an ancestor-typed destination. Use explicit branches; validate with all 41 enabled warning categories as errors before packaging.
+- Reward fixtures must use the manager's completion API: assigning progress alone does not update completed/unlocked IDs. Keep test setup isolated and verify the real claim authority.

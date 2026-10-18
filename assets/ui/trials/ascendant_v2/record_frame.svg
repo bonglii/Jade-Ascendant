@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="168" viewBox="0 0 320 168">
+<defs><linearGradient id="jade" x2="0" y2="1"><stop stop-color="#173f35"/><stop offset=".3" stop-color="#0c2623"/><stop offset="1" stop-color="#061816"/></linearGradient><linearGradient id="gold" x2="0" y2="1"><stop stop-color="#e1cd89"/><stop offset=".45" stop-color="#645632"/><stop offset="1" stop-color="#a38d52"/></linearGradient></defs>
+<rect x="2" y="2" width="316" height="164" rx="12" fill="url(#jade)" stroke="url(#gold)" stroke-width="2"/>
+<rect x="7" y="7" width="306" height="154" rx="8" fill="none" stroke="#73927a" stroke-opacity=".3"/>
+<path d="M11 33V16Q11 11 16 11H37M283 11H304Q309 11 309 16V33M11 135V152Q11 157 16 157H37M283 157H304Q309 157 309 152V135" fill="none" stroke="#d6ba73" stroke-width="2"/>
+<path d="M4 24L12 16L20 8M300 8L308 16L316 24M4 144L12 152L20 160M300 160L308 152L316 144" fill="none" stroke="#8f7946"/>
+<path d="M26 4H294M26 164H294" stroke="#f4e4a7" stroke-opacity=".18"/>
+</svg>

@@ -8,7 +8,7 @@ class_name TrialsHallOverlay
 ## for the approved Trials presentation. The LAB scene intentionally does not.
 
 const TrialsProductionPresenterScript = preload(
-	"res://scripts/ui/trials_production_presenter_unified_reward.gd"
+	"res://scripts/ui/trials_ascendant_presenter.gd"
 )
 
 const DAILY_SCENE: String = "res://scenes/ui/daily_quest_screen.tscn"

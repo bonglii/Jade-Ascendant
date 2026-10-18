@@ -47,10 +47,13 @@ func _track(button: Button) -> void:
  var id: int=button.get_instance_id()
  if not _tracked.has(id):
   _tracked[id]=weakref(button)
-  button.theme_changed.connect(_queue_apply.bind(button))
-  button.button_down.connect(_capture.bind(button))
+  if not button.theme_changed.is_connected(_queue_apply.bind(button)):
+   button.theme_changed.connect(_queue_apply.bind(button))
+  if not button.button_down.is_connected(_capture.bind(button)):
+   button.button_down.connect(_capture.bind(button))
   button.tree_exiting.connect(func():_tracked.erase(id),CONNECT_ONE_SHOT)
-  if button is OptionButton:
+  if button is OptionButton and not button.has_meta("jade_touch_option_cancel_connected"):
+   button.set_meta("jade_touch_option_cancel_connected",true)
    button.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE
    button.pressed.connect(func():
     if bool(button.get_meta("jade_scroll_cancelled",false)):button.get_popup().hide.call_deferred())

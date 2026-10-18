@@ -1,0 +1,18 @@
+{
+  "generator": "Built-in image generation",
+  "date": "2026-10-18",
+  "style_reference": "Approved Trials concept exec-ae73bb47-890c-4b35-a588-ad0c6e792a14.png",
+  "assets": [
+    {
+      "path": "daily_header.png",
+      "source": "exec-b1a9b789-175a-4c30-9726-3f20bbbc7968.png",
+      "prompt": "Use case: stylized-concept. Asset type: production background artwork for the DAILY DISCIPLINES header of the xianxia / wuxia mobile game Jade Ascendant. Input image 1 is ONLY the approved UI art direction reference, NOT an image to retain or a UI to recreate. Generate a single wide landscape panoramic hand-painted 2D game environment with NO UI, NO letters, NO writing, NO numbers, NO interface, NO currencies and NO borders. A magnificent translucent emerald jade dragon seal stands inside a circular carved gold celestial astrolabe, integrated into an ancient mountain cultivation observatory, right two-thirds of the picture. Beautiful pale teal mist waterfalls, distant mountain temple walkways, finely drawn stone and antique gold, soft jade light reflecting on the surrounding architecture. Match the approved left screenshot header's craft and palette; intricate but tasteful, no photorealistic plastic, no generic neon cyberpunk. Important composition: dragon monument entirely within the middle-right safe area, approximately x=65%, with padding above/below so it survives a wide header crop. The left third is atmospheric very dark emerald temple shadow with quiet mist, reserved for live text composited by the game. Bottom fades naturally into dark jade, top provides atmospheric depth. Strong readable silhouette, painterly exquisite 2D premium cultivation fantasy, restrained glow, no excessive particles, no characters, no swords blocking the text space. Landscape 16:9 artwork."
+    },
+    {
+      "path": "records_header.png",
+      "source": "exec-75b498d2-71fb-466e-a54d-7f00d68390c8.png",
+      "prompt": "Use case: stylized-concept. Asset type: production background artwork for the ETERNAL RECORDS / ACHIEVEMENTS header of the xianxia / wuxia mobile game Jade Ascendant. Input image 1 is ONLY the approved UI art direction reference, NOT an image to retain or a UI to recreate. Generate one single wide landscape panoramic hand-painted 2D game environment with NO UI, NO letters, NO writing, NO numbers, NO interface, NO currencies, NO borders. An immense ceremonial warm-gold circular dragon medallion is built into an ancient stepped jade-and-gold archive shrine at the right two-thirds of the image. Match the approved right screenshot header's art direction: elegant celestial Chinese temple architecture, mountain waterfalls and distant peaks, narrow stairs climbing to the engraved gold seal, emerald jade insets, softly luminous gold, beautifully designed balanced architecture. Lavish refined 2D game illustration rather than synthetic 3D, no neon science fiction. Entire medallion and its main supporting shrine safely inside middle-right crop, centered around x=66%, enough padding above/below for a wide game header. The left third is quiet deep emerald shadow and atmospheric blue-green mist reserved for live text added by the game. Bottom naturally fades to dark jade. Rich silhouette and painterly surface detail; warm gold distinguishes this achievement archive from the luminous emerald daily observatory. No characters or readable symbols, no excessive effects. Landscape 16:9 artwork."
+    }
+  ],
+  "native_art": "record_frame.svg and claim_button.svg authored as scalable UI frames; existing category seal extended with engraved medallion; existing archive_serif.ttf retained."
+}
