@@ -10,7 +10,8 @@ func _ready() -> void:
  layer=92
  if OS.get_name()!="Android" or not Engine.has_singleton("JadeMonetizationNativeBridge"): set_process(false); return
  native=Engine.get_singleton("JadeMonetizationNativeBridge")
- if not native.has_method("getUpdateNotificationStatus"): native=null; set_process(false)
+ # Android JNI methods are callable but Object.has_method() is not a capability probe.
+ # The release exporter verifies the notification-enabled native candidate.
 func status() -> Dictionary:
  if native==null: return {"supported":false,"stage":"unavailable"}
  var result: Variant=JSON.parse_string(str(native.call("getUpdateNotificationStatus")))
