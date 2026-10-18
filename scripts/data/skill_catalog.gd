@@ -30,6 +30,7 @@ const RESONANCE_UPGRADE_IDS: Array[String] = [
 ]
 
 const ICON_PATHS: Dictionary = {
+	"heavenweaver_compass":"res://assets/ui/liveops/odyssey/compass.png",
 	"spirit_sword": "res://assets/ui/level_up/skill_art/spirit_sword.png",
 	"fire_orb": "res://assets/ui/level_up/skill_art/fire_orb.png",
 	"thunder_talisman": "res://assets/ui/level_up/skill_art/thunder_talisman.png",
@@ -72,6 +73,7 @@ const UPGRADE_IDS: Array[String] = [
 ]
 
 static func get_upgrade_display_name(upgrade_id: String) -> String:
+	if upgrade_id == "heavenweaver_compass": return "Heavenweaver Compass"
 	match upgrade_id:
 		"spirit_sword":
 			return "Spirit Sword"

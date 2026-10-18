@@ -181,3 +181,23 @@
 - UI reparenting exits/re-enters the tree. A touch tracker may forget the node while its signal connections survive. Check existing connections before reconnecting; install OptionButton cancellation once.
 - Concrete sibling types (StyleBoxTexture vs StyleBoxFlat, VBoxContainer vs HBoxContainer) still trigger incompatible_ternary even with an ancestor-typed destination. Use explicit branches; validate with all 41 enabled warning categories as errors before packaging.
 - Reward fixtures must use the manager's completion API: assigning progress alone does not update completed/unlocked IDs. Keep test setup isolated and verify the real claim authority.
+
+
+## 2026-10-18 — Jade Dragon Odyssey
+- Save a durable source checkpoint before a long feature crosses an environment/session boundary. Generated art survived, but an earlier uncommitted draft did not; recovered source must be tested again rather than inheriting its old pass claims.
+- Keep paid dice, wallet debit, revision CAS and operation receipt in the same D1 batch. Retrying one request ID must return the committed result; a stale revision or later write failure must not spend Jade.
+- A rewarded SDK callback is not a server grant. Verify Google's exact signed query bytes (including the required leading question mark), consume one nonce and receipt atomically, and enforce server daily caps.
+- New event-only equipment must be excluded from both normal summon pools and the pinned paid catalog hash. Update Library/acquisition copy, result damage source and ownership checks together.
+- Single-line counters inside an HBox need a natural width. A wrapped progress label with a 1px minimum caused vertical text and pushed monetization controls offscreen; verify native portrait layouts before delivery.
+- Defer autoload cross-service signal setup until all autoloads exist. Otherwise the first autoload can miss the ad service and never poll its signed reward.
+- Avoid Node signal/property names such as ready/owner in new locals. Run all 41 enabled warnings as errors; a test's own pass line is insufficient if SCRIPT ERROR appears earlier.
+- Retain durable operation journals on uncertain transport failures. Clear them only after a verified commit or an explicit non-commit response; account switches must discard in-memory authority before any refresh.
+
+## 2026-10-18 — Gradle bootstrap checksum handling
+- Gradle publishes the .sha256 endpoint as application/octet-stream. Casting an Invoke-WebRequest byte-array Content directly to string can produce decimal bytes instead of the hash, falsely rejecting a valid archive. Pin the independently verified 8.13 SHA-256 and hash the actual ZIP before extraction.
+- Reuse verified ZIP and existing 8.13 caches, including wrapper caches, before downloading. Download to unique temporary paths and validate each route before extracting. Keep a damaged prior cache for diagnosis.
+- Test PowerShell helpers by executing them with a real official archive, paths with spaces, repeated installs and simulated HTML/download failures. Parser-only tests do not detect read-only automatic variable names such as HOME; avoid those names completely.
+- When fixing a delivered installer, update its payload and manifest along with the installed source, so its next run accepts the correction and its scoped publisher includes every helper.
+
+## 2026-10-18 — Portable Odyssey continuation
+- Resume a source batch from its installed project and a durable scoped manifest. Do not require the original extracted download folder to still exist. Support moved/nested packages and a completely missing package; test all three before delivery.

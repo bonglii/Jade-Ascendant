@@ -24,6 +24,7 @@ const DEFAULT_PROFILE: Dictionary = {
 }
 
 const PROFILES: Dictionary = {
+	"heavenweaver_compass":{"style_id":"heavenweaver_compass","combat_display_name":"Heavenweaver Compass","motif":"dragon_thread"},
 	"phoenix_war_fan":{"style_id":"phoenix_war_fan","combat_display_name":"Phoenix War Fan","motif":"phoenix_war_fan"},
 	"void_piercer_spear":{"style_id":"void_piercer_spear","combat_display_name":"Void Piercer Spear","motif":"void_piercer_spear"},
 	"astral_resonance_bell":{"style_id":"astral_resonance_bell","combat_display_name":"Astral Resonance Bell","motif":"astral_resonance_bell"},

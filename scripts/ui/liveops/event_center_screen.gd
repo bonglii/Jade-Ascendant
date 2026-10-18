@@ -455,6 +455,7 @@ func _build_secondary(parent: VBoxContainer) -> void:
 			"OPEN FIVE ELEMENTS  ›",
 			"five_elements"
 		)
+	_add_activity_card("Jade Dragon Odyssey", "14-DAY CELESTIAL EXPEDITION", "Walk the celestial board. Earn the exclusive Heavenweaver Compass at 72 journeys.", DAILY_ICON, GOLD_LIGHT, "EXPLORE ODYSSEY  ›", "odyssey")
 	_add_activity_card(
 		"Daily Trials", "DAILY CULTIVATION", "Complete daily disciplines and collect available rewards.",
 		DAILY_ICON, JADE, "OPEN DAILY  ›", "daily"
@@ -799,6 +800,8 @@ func _open_destination(id: String) -> void:
 			event_id = TREASURE_HUNT_EVENT_ID
 		"five_elements":
 			event_id = FIVE_ELEMENTS_EVENT_ID
+		"odyssey":
+			scene_path = "res://scenes/ui/odyssey_screen.tscn"
 		"daily":
 			scene_path = DAILY_SCENE
 		"pavilion":

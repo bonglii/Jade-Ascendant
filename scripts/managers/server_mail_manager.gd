@@ -267,7 +267,7 @@ func _on_token(token: String) -> void:
 	var kind: String = str(_pending.kind)
 	var path: String = "/v1/mail/"+kind
 	if kind == "list": path += "?installation_id="+str(_state.installation_id)+"&after="+str(_pending.cursor)
-	var headers := PackedStringArray(["Content-Type: application/json","Accept: application/json","User-Agent: GodotEngine/4.7.2","Host: "+PlayerIdentityServerClient._endpoint_host(),"X-Jade-Owner-Binding: "+_owner,"X-Jade-Mail-Features: gifts-v2","X-Jade-Announcements: v1","X-Jade-Equipment-Catalog: jade-chain-v1","X-Jade-Returning-Glaive: v1","X-Jade-Ascendant-Arsenal: v1","X-Jade-Client-Version: "+str(preload("res://scripts/debug/build_metadata.gd").read().version_name),"Authorization: Bearer "+token])
+	var headers := PackedStringArray(["Content-Type: application/json","Accept: application/json","User-Agent: GodotEngine/4.7.2","Host: "+PlayerIdentityServerClient._endpoint_host(),"X-Jade-Owner-Binding: "+_owner,"X-Jade-Mail-Features: gifts-v2","X-Jade-Odyssey: v1","X-Jade-Announcements: v1","X-Jade-Equipment-Catalog: jade-chain-v1","X-Jade-Returning-Glaive: v1","X-Jade-Ascendant-Arsenal: v1","X-Jade-Client-Version: "+str(preload("res://scripts/debug/build_metadata.gd").read().version_name),"Authorization: Bearer "+token])
 	var error: Error = _http.request(PlayerIdentityServerClient._prepare_route(_http,path),headers,HTTPClient.METHOD_GET if kind == "list" else HTTPClient.METHOD_POST,"" if kind == "list" else JSON.stringify(_pending.payload))
 	if error != OK: _fail("Server request could not start")
 

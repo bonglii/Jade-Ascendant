@@ -142,9 +142,12 @@ func _open_equipment_detail(id: String) -> void:
 		for tier: int in [2,3,4]:c.add_child(_label("%d PIECES: %s"%[tier,Sets.get_tier_description(set_id,tier)],15,Color(.68,.90,.80)))
 	else:c.add_child(_label("Independent weapon • does not count toward a set. Permanent level cap: 10 / 20 / 30 / 40 / 50 at 1–5 stars. Run refinement is separate.",15,Color(.68,.90,.80)))
 	c.add_child(_label("Star ascension requires identical duplicates. Manage your loadout and upgrades in HERO.",14,Color(.73,.83,.79)))
-	var chapter: int=int(d.get("requires_chapter",0));var stage: int=int(d.get("requires_stage",0))
-	c.add_child(_label("SHOP / FORGE UNLOCK: Clear %d-%d"%[chapter,stage] if chapter>0 else "ACQUISITION: Available from the beginning",14,Color(.99,.83,.45)))
-	c.add_child(_label("GACHA COLLECTION: Opens after clear 1-5. Shop/forge requirements are separate.",14,Color(.68,.90,.80)))
+	if bool(d.get("event_only",false)):
+		c.add_child(_label("EVENT EXCLUSIVE • Jade Dragon Odyssey: complete 72 journeys, claim the milestone, then collect the Compass in Mail. Not in normal gacha or forging.",14,Color(.99,.83,.45)))
+	else:
+		var chapter: int=int(d.get("requires_chapter",0));var stage: int=int(d.get("requires_stage",0))
+		c.add_child(_label("SHOP / FORGE UNLOCK: Clear %d-%d"%[chapter,stage] if chapter>0 else "ACQUISITION: Available from the beginning",14,Color(.99,.83,.45)))
+		c.add_child(_label("GACHA COLLECTION: Opens after clear 1-5. Shop/forge requirements are separate.",14,Color(.68,.90,.80)))
 	_open_popup(str(d.display_name),c)
 func _open_popup(title: String,content: Control) -> void:
 	_close_popup();_popup=Control.new();_popup.name="LibraryDetail";add_child(_popup);_popup.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

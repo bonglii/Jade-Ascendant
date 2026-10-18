@@ -3,6 +3,7 @@ extends RefCounted
 ## Presentation-only icon/crop metadata. Classic swords apply this to their
 ## original projectile. Custom armaments keep their own bounded cast mechanics.
 const ENTRIES: Dictionary = {
+	"heavenweaver_compass":{"path":"res://assets/ui/liveops/odyssey/compass.png","bounds":Rect2(0,0,1,1)},
 	"phoenix_war_fan": {"path":"res://assets/ui/equipment/expansion_20261014/phoenix_war_fan.png", "bounds":Rect2(0,0,1,1)},
 	"void_piercer_spear": {"path":"res://assets/ui/equipment/expansion_20261014/void_piercer_spear.png", "bounds":Rect2(0,0,1,1)},
 	"astral_resonance_bell": {"path":"res://assets/ui/equipment/expansion_20261014/astral_resonance_bell.png", "bounds":Rect2(0,0,1,1)},

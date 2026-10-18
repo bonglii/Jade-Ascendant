@@ -111,7 +111,7 @@ static func local_catalog_hash() -> String:
 	var items: Array = []
 	for id: String in ids:
 		var item: Dictionary = Catalog.ITEMS[id]
-		if not bool(item.get("retired", false)):
+		if not bool(item.get("retired", false)) and not bool(item.get("event_only", false)):
 			items.append({"id": id, "rarity": item.rarity, "slot": item.slot})
 	return JSON.stringify(items).sha256_text()
 func _bridge() -> Object:

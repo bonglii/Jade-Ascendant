@@ -43,3 +43,7 @@ migrations_dir = "migrations"
 # Refund polling remains required for production checkout.
 [triggers]
 crons = ["*/15 * * * *"]
+
+[[services]]
+binding = "ODYSSEY_PROFILE"
+service = "jade-ascendant-player"

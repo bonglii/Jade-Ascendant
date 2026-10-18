@@ -1,7 +1,7 @@
 extends Node
 ## Local run report only; never currency/reward authority.
 const Catalog=preload("res://scripts/data/skill_catalog.gd")
-const SOURCES: Array[String]=["phoenix_war_fan","void_piercer_spear","astral_resonance_bell","spirit_sword","jade_binding_chain","celestial_returning_glaive","fire_orb","thunder_talisman","yin_yang_blades","heavenly_sword_rain","eight_trigrams_formation","heavenly_tribulation","set_bleed","set_poison","set_burn"]
+const SOURCES: Array[String]=["heavenweaver_compass","phoenix_war_fan","void_piercer_spear","astral_resonance_bell","spirit_sword","jade_binding_chain","celestial_returning_glaive","fire_orb","thunder_talisman","yin_yang_blades","heavenly_sword_rain","eight_trigrams_formation","heavenly_tribulation","set_bleed","set_poison","set_burn"]
 var totals: Dictionary={}
 var partial: bool=false
 var frozen: bool=false
@@ -76,7 +76,7 @@ func damage_rows() -> Array[Dictionary]:
   if id=="spirit_sword":
    var weapon: Weapon=get_parent().get_weapon_by_name("Spirit Sword")
    var armament: String=str(weapon.get("armament_id"))
-   if armament in ["jade_binding_chain","celestial_returning_glaive","phoenix_war_fan","void_piercer_spear","astral_resonance_bell"]:id=armament
+   if armament in ["heavenweaver_compass","jade_binding_chain","celestial_returning_glaive","phoenix_war_fan","void_piercer_spear","astral_resonance_bell"]:id=armament
   if id in SOURCES:owned[id]=str(skill.name)
  for id: String in totals:
   if not owned.has(id):owned[id]=Catalog.get_upgrade_display_name(id) if not id.begins_with("set_") else ("Efek Set" if get_tree().root.get_node("SettingsManager").language=="id" else "Set Effect")+" · "+id.trim_prefix("set_").capitalize()

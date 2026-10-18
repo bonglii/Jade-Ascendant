@@ -3,7 +3,9 @@ import {fileURLToPath} from 'node:url';
 export const LIVE_GATES=Object.freeze(['JADE_REAL_MONEY_RELEASE_ENABLED','JADE_IAP_BACKEND_ENABLED','JADE_PAID_WALLET_CREDIT_V2_ENABLED','JADE_CANONICAL_ONBOARDING_RC12_ENABLED','JADE_PAID_GAMEPLAY_V2_ENABLED','JADE_PAID_WALLET_READ_ENABLED','JADE_REFUND_RECONCILIATION_READY','JADE_REFUND_CRON_JOB_RC7_ENABLED','JADE_VERIFIED_PURCHASE_REPAIR_ENABLED']);
 export const TABLES=Object.freeze(['iap_purchase_ledger_v1','iap_wallet_accounts_v1','iap_wallet_events_v1','iap_summon_outcomes_v1','iap_summon_canonical_v1','iap_paid_loadouts_v1','iap_paid_loadout_ops_v1','iap_trusted_stage_evidence_v1','iap_summon_request_index_v1','iap_refund_account_holds_v1','iap_play_void_events_v1','iap_play_void_cursor_v1','iap_paid_gameplay_v2','iap_paid_commands_v2','iap_paid_runs_v2']);
 export function assertConfig(text){
- const get=key=>{const matches=[...text.matchAll(new RegExp('^'+key+'\\s*=\\s*"([^"\\r\\n]*)"\\s*$','gm'))];if(matches.length!==1)throw Error('ambiguous_config_'+key);return matches[0][1];};
+ const databases=[...text.matchAll(/^\[\[d1_databases\]\]\s*$([\s\S]*?)(?=^\[|$(?![\s\S]))/gm)];
+ if(databases.length!==1)throw Error('ambiguous_production_database');
+ const get=key=>{const scope=['binding','database_name','database_id'].includes(key)?databases[0][1]:text;const matches=[...scope.matchAll(new RegExp('^'+key+'\\s*=\\s*"([^"\\r\\n]*)"\\s*$','gm'))];if(matches.length!==1)throw Error('ambiguous_config_'+key);return matches[0][1];};
  for(const [key,value] of Object.entries({name:'jade-ascendant-iap',main:'src/worker_paid_production_v2.mjs',binding:'DB',database_name:'jade-iap-ledger',database_id:'f0e59ec4-effb-4002-b9a5-d246965b5b83',FIREBASE_PROJECT_ID:'jade-ascendant',FIREBASE_PROJECT_NUMBER:'350718070767',JADE_ANDROID_FIREBASE_APP_ID:'1:350718070767:android:e5520012a501d2856cf01a',JADE_STAGING_ACCOUNT_GUARD:'false'}))if(get(key)!==value)throw Error('wrong_production_'+key);
  for(const gate of LIVE_GATES)if(get(gate)!=='true')throw Error('production_gate_locked_'+gate);
  for(const [,key,value] of text.matchAll(/^(JADE_[A-Z0-9_]+)\s*=\s*"([^"\r\n]*)"\s*$/gm)){

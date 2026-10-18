@@ -2046,6 +2046,8 @@ func _create_equipment_card(item_id: String, data: Dictionary) -> PanelContainer
 
 	if owned_item:
 		_state_badge(box, tr("OWNED • EQUIP FROM HERO"), JADE)
+	elif bool(data.get("event_only", false)):
+		_state_badge(box, tr("EVENT EXCLUSIVE • ODYSSEY"), Color("d7bd7d"))
 	elif not unlocked_item:
 		var requirement := PavilionManager.get_item_unlock_requirement(item_id)
 		_state_badge(box, tr("LOCKED • CLEAR %d-%d") % [int(requirement.get("chapter_id", 0)), int(requirement.get("stage_id", 0))], Color(0.55, 0.62, 0.61, 1.0))

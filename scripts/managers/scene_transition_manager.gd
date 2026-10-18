@@ -310,6 +310,14 @@ func _finish_transition() -> void:
 		return
 
 	if completed_path.begins_with("res://scenes/levels/"):
+		var odyssey: Node=get_node_or_null("/root/OdysseyClient")
+		var game_session: Node=get_node_or_null("/root/GameSession")
+		if odyssey != null:
+			var event_allowed: bool = await odyssey.call("prepare_scene_run", bool(game_session.get("continue_game")) if game_session != null else false)
+			if not event_allowed:
+				_fail_transition(ERR_UNAUTHORIZED,true)
+				_show_paid_run_notice()
+				return
 		var pavilion: Node=get_node_or_null("/root/PavilionManager")
 		var session: Node=get_node_or_null("/root/GameSession")
 		var paid: Node=pavilion.get("paid_gameplay") if pavilion!=null else null

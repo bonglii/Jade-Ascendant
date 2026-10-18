@@ -53,6 +53,7 @@ ServerMailManager="*res://scripts/managers/server_mail_manager.gd"
 Firebase="*uid://bfps2e72dlnwq"
 ProgressBackupManager="*res://scripts/managers/progress_backup_manager.gd"
 
+OdysseyClient="*res://scripts/monetization/odyssey_client.gd"
 [display]
 
 window/size/viewport_width=648

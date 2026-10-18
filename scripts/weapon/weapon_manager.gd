@@ -23,6 +23,7 @@ const EquipmentSetRuntime = preload("res://scripts/data/equipment_set_runtime.gd
 const TARGET_REFRESH_INTERVAL: float = 0.12
 const DEBUG_SAMPLE_INTERVAL: float = 12.0
 const CAST_COOLDOWN_FLOORS: Dictionary = {
+	"heavenweaver_compass": 1.5,
 	"jade_binding_chain": 1.25,
 	"celestial_returning_glaive": 1.75,
 	"phoenix_war_fan": .9,
@@ -63,7 +64,10 @@ func initialize_weapons() -> void:
 	if EquipmentManager._paid_selected_v2(EquipmentManager.SLOT_ARMAMENT, true) == runtime_armament_id:
 		_paid_starter_id = runtime_armament_id
 	var spirit_sword: SpiritSwordWeapon = SpiritSwordWeapon.new()
-	if runtime_armament_id == "jade_binding_chain":
+	if runtime_armament_id == "heavenweaver_compass":
+		spirit_sword.free()
+		spirit_sword = preload("res://scripts/weapon/heavenweaver_compass_weapon.gd").new()
+	elif runtime_armament_id == "jade_binding_chain":
 		spirit_sword.free()
 		spirit_sword = preload("res://scripts/weapon/jade_binding_chain_weapon.gd").new()
 	elif runtime_armament_id == "celestial_returning_glaive":

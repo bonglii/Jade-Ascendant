@@ -1,3 +1,4 @@
+import {receiveOdysseyMail} from './odyssey.mjs';
 import {InvalidIdentity} from '../monetization/cloudflare/src/jwt_verify.mjs';
 import {verifyAuth, ProfileAuthRejected, ProfileAuthUnavailable} from './auth.mjs';
 export {verifyAuth} from './auth.mjs';
@@ -48,6 +49,7 @@ export function createHandler({verify=verifyAuth,register=registerIdentity}={}) 
   const handleProgressBackup=createProgressBackupHandler({verify});
   return async(request,env)=>{
     const url = new URL(request.url);
+    if(url.pathname==='/internal/odyssey/mail')return receiveOdysseyMail(request,env);
     if(Object.hasOwn(trustPages,url.pathname)){
       if(!['GET','HEAD'].includes(request.method))return reply(405,{error:'method_not_allowed'});
       return new Response(request.method==='HEAD'?null:trustPages[url.pathname],{headers:{'content-type':'text/html; charset=utf-8','cache-control':'public,max-age=300','content-security-policy':"default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",'x-content-type-options':'nosniff','referrer-policy':'no-referrer','x-jade-trust-version':'1'}});

@@ -40,6 +40,7 @@ var _rewarded_loading: bool = false
 var _rewarded_ad: RewardedAd
 var _consent_form: ConsentForm
 
+var _odyssey_ssv_nonce: String = ""
 var _active_request_id: int = -1
 var _reward_earned_for_request: bool = false
 var _request_finishing: bool = false
@@ -109,11 +110,22 @@ func rewarded_available(_placement: String) -> bool:
 	)
 
 
+func prepare_odyssey_ssv(nonce: String) -> void:
+	_odyssey_ssv_nonce = nonce if nonce.length() == 32 and nonce.is_valid_hex_number(false) else ""
+
 func show_rewarded(request_id: int, placement: String) -> void:
 	if request_id < 0 or not rewarded_available(placement):
 		request_finished.emit(request_id, "unavailable")
 		return
 
+	if placement == "odyssey_roll" and _odyssey_ssv_nonce.is_empty():
+		request_finished.emit(request_id, "unavailable")
+		return
+	var verification := ServerSideVerificationOptions.new()
+	verification.custom_data = _odyssey_ssv_nonce if placement == "odyssey_roll" else ""
+	verification.user_id = ""
+	_rewarded_ad.set_server_side_verification_options(verification)
+	_odyssey_ssv_nonce = ""
 	_active_request_id = request_id
 	_reward_earned_for_request = false
 	_request_finishing = false

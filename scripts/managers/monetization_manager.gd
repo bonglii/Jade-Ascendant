@@ -98,6 +98,7 @@ func use_test_provider(test_provider: Node) -> bool:
 
 
 func get_rewarded_daily_limit(placement: String) -> int:
+	if placement == "odyssey_roll": return 2
 	if placement == GAME_OVER_REVIVE_PLACEMENT:
 		return GAME_OVER_REVIVE_DAILY_LIMIT
 	return DAILY_PLACEMENT_LIMIT

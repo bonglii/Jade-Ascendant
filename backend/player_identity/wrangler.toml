@@ -19,3 +19,7 @@ crons = ["* * * * *"]
 directory = "./web_assets"
 binding = "ASSETS"
 run_worker_first = true
+
+[[services]]
+binding = "ODYSSEY_IAP"
+service = "jade-ascendant-iap"

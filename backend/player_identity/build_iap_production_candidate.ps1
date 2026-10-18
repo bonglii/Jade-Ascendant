@@ -62,6 +62,12 @@ try {
         $policyReport = [xml][IO.File]::ReadAllText($policy)
         if ([int]$policyReport.testsuite.tests -lt 4 -or [int]$policyReport.testsuite.skipped -ne 0) { throw ('Incomplete policy execution: ' + $variant) }
     }
+    foreach ($variant in @('Debug','Release')) {
+        $eventTests = Join-Path $build ('bridge/build/test-results/test' + $variant + 'UnitTest/TEST-com.yungdevstudio.jadeascendant.monetizationbridge.OdysseyContractV1Test.xml')
+        if (-not (Test-Path -LiteralPath $eventTests)) { throw ('Missing Odyssey contract tests for ' + $variant) }
+        $eventReport = [xml][IO.File]::ReadAllText($eventTests)
+        if ([int]$eventReport.testsuite.tests -ne 3 -or [int]$eventReport.testsuite.skipped -ne 0) { throw 'Incomplete Odyssey JVM execution.' }
+    }
     foreach ($file in $xml) {
         $report = [xml][IO.File]::ReadAllText($file.FullName)
         if ([int]$report.testsuite.failures -ne 0 -or [int]$report.testsuite.errors -ne 0) { throw 'JVM failure in candidate receipts.' }
@@ -69,7 +75,7 @@ try {
     }
     $inputs = @{}
     $inputFiles = @(Get-ChildItem -LiteralPath (Join-Path $build 'bridge/src') -Recurse -Filter '*.kt' -File)
-    foreach ($path in @('backend/monetization/android_bridge/build.gradle.kts','backend/monetization/android_bridge/settings.gradle.kts','backend/monetization/android_bridge/bridge/build.gradle.kts','addons/JadeMonetizationNativeBridge/export_plugin.gd')) { $inputFiles += Get-Item -LiteralPath (Join-Path $repo $path) }
+    foreach ($path in @('backend/monetization/android_bridge/build.gradle.kts','backend/monetization/android_bridge/settings.gradle.kts','backend/monetization/android_bridge/bridge/build.gradle.kts','addons/JadeMonetizationNativeBridge/export_plugin.gd','backend/monetization/android_bridge/bridge/src/test/resources/odyssey_snapshot_v1.json')) { $inputFiles += Get-Item -LiteralPath (Join-Path $repo $path) }
     foreach ($file in $inputFiles) {
         $sha = [Security.Cryptography.SHA256]::Create()
         try { $hash = ([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes([IO.File]::ReadAllText($file.FullName).Replace("`r`n","`n"))))).Replace('-','').ToLowerInvariant() } finally { $sha.Dispose() }

@@ -4,7 +4,7 @@ import {REWARD_CATALOG} from './mail_rewards.mjs';
 const ID=/^[a-f0-9]{32}$/;
 export const ARTWORKS=[{id:'sanctum',name:'Jade Sanctum'},{id:'celestial_gate',name:'Celestial Gate'}];
 export const BASE_RATES={common:6000,rare:2900,epic:900,legendary:200};
-export const FEATURED_CATALOG=Object.values(REWARD_CATALOG).filter(x=>x.rarity==='legendary');
+export const FEATURED_CATALOG=Object.values(REWARD_CATALOG).filter(x=>x.rarity==='legendary'&&!x.event_only);
 const itemIds=new Set(FEATURED_CATALOG.map(x=>x.id));
 const number=(value,min,max)=>{if(!Number.isSafeInteger(value)||value<min||value>max)fail(400,'invalid_banner_value');return value;};
 const text=(value,max)=>{if(typeof value!=='string'||!value.trim()||value.length>max||/[\x00-\x1f<>]/.test(value))fail(400,'invalid_banner_text');return value.trim();};

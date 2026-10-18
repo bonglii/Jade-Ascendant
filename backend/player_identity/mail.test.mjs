@@ -205,7 +205,7 @@ test('owner reset changes only admin credentials, hides plaintext and revokes se
 });
 
 test('gift catalog matches authored equipment and extended rewards freeze exact receipts',async()=>{
- const {CATALOG}=await import('./mail_rewards.mjs');assert.equal(CATALOG.equipment.length,56);const f=await fixture();await f.login();
+ const {CATALOG}=await import('./mail_rewards.mjs');assert.equal(CATALOG.equipment.filter(x=>!x.event_only).length,56);assert.equal(CATALOG.equipment.filter(x=>x.event_only).length,1);const f=await fixture();await f.login();
  const reward={spirit_stone:60,celestial_jade:500,pavilion_seal:3,items:{nine_heavens_star_sword:1}};const {mail}=await f.publish({reward});assert.deepEqual(mail.reward,reward);
  assert.equal((await f.api('/v1/mail/claim',{mail_id:mail.id,installation_id:installation})).data.error,'client_upgrade_required');
  assert.equal((await f.api('/v1/mail/list?installation_id='+installation)).data.entries.length,0);

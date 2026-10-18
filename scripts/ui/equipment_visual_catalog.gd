@@ -4,6 +4,7 @@ extends RefCounted
 ## Gameplay authority remains in EquipmentManager / InventoryManager.
 
 const ITEM_ICON_PATHS: Dictionary = {
+	"heavenweaver_compass":"res://assets/ui/liveops/odyssey/compass.png",
 	"frost_lotus_robe":"res://assets/ui/equipment/expansion_20261014/frost_lotus_robe.png",
 	"frost_lotus_bracer":"res://assets/ui/equipment/expansion_20261014/frost_lotus_bracer.png",
 	"frost_lotus_boots":"res://assets/ui/equipment/expansion_20261014/frost_lotus_boots.png",

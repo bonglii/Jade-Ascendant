@@ -448,6 +448,15 @@
       "name": "Ward Keeper Robe",
       "rarity": "epic",
       "slot": "robe"
+    },
+    {
+      "id": "heavenweaver_compass",
+      "name": "Heavenweaver Compass",
+      "rarity": "legendary",
+      "slot": "armament",
+      "max": 1,
+      "event_only": true,
+      "icon_source": "res://assets/ui/liveops/odyssey/compass.png"
     }
   ],
   "currencies": [

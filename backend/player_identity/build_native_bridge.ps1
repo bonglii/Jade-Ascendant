@@ -35,21 +35,10 @@ try {
     }
     $javap = Join-Path $jdk 'bin\javap.exe'
     if (-not (Test-Path -LiteralPath $javap)) { throw 'A complete JDK 17 or 21 is required (javap missing).' }
-    $cache = Join-Path $env:LOCALAPPDATA 'JadeAscendant\BuildTools'
+    . (Join-Path $PSScriptRoot 'gradle813_bootstrap.ps1')
+    $GradlePath = Get-JadeGradle813 -GradlePath $GradlePath
+    $cache = Join-Path $env:LOCALAPPDATA 'JadeAscendant/BuildTools'
     New-Item -ItemType Directory -Force -Path $cache | Out-Null
-    if (-not $GradlePath) {
-        $GradlePath = Join-Path $cache 'gradle-8.13\bin\gradle.bat'
-        if (-not (Test-Path -LiteralPath $GradlePath)) {
-            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-            $zip = Join-Path $cache 'gradle-8.13-bin.zip'
-            $expected = ([string](Invoke-WebRequest -UseBasicParsing -Uri 'https://services.gradle.org/distributions/gradle-8.13-bin.zip.sha256').Content).Trim()
-            if ($expected -notmatch '^[a-fA-F0-9]{64}$') { throw 'Invalid official Gradle checksum.' }
-            Invoke-WebRequest -UseBasicParsing -Uri 'https://services.gradle.org/distributions/gradle-8.13-bin.zip' -OutFile $zip
-            if ((Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash -ne $expected) { throw 'Gradle checksum mismatch. Nothing installed.' }
-            Expand-Archive -LiteralPath $zip -DestinationPath $cache -Force
-        }
-    }
-    if (-not (Test-Path -LiteralPath $GradlePath)) { throw 'Gradle launcher was not found.' }
     $env:ANDROID_HOME = $SdkRoot
     $env:ANDROID_SDK_ROOT = $SdkRoot
     $env:JADE_IAP_PRODUCTION_CANDIDATE = 'off'

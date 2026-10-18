@@ -74,6 +74,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
     private val purchaseRepairBusy = AtomicBoolean(false)
     private val paidSummonBusy = AtomicBoolean(false)
     private val paidGameplayBusy = AtomicBoolean(false)
+    private val odysseyBusy = AtomicBoolean(false)
     private val ioExecutor = Executors.newSingleThreadExecutor { job ->
         Thread(job, "jade-iap-cloudflare-transport").apply { isDaemon = true }
     }
@@ -83,6 +84,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
     override fun getPluginName() = BuildConfig.GODOT_PLUGIN_NAME
 
     override fun getPluginSignals(): MutableSet<SignalInfo> = mutableSetOf(
+        SignalInfo("odysseyResultV1", String::class.java, Boolean::class.javaObjectType, String::class.java, String::class.java),
         SignalInfo("paidGameplayResultV2", String::class.java, Boolean::class.javaObjectType, String::class.java, String::class.java),
         SignalInfo("paidWalletSnapshotResultV2", String::class.java, Boolean::class.javaObjectType, String::class.java, String::class.java),
         SignalInfo("paidVerifiedPurchaseRepairResultV2", String::class.java, Boolean::class.javaObjectType, String::class.java, String::class.java),
@@ -654,6 +656,20 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
             "paidGameplayResultV2", "PAID_GAMEPLAY_VERIFIED", requestId) { json ->
             PaidGameplayContractV2.canonicalOrNull(json, uid, requestId, body)
         }
+    }
+
+    @UsedByGodot
+    fun requestOdysseyV1(requestId: String, commandJson: String) {
+        fun deny(status: String) = runOnHostThread { emitSignal("odysseyResultV1", requestId, false, status, "") }
+        if (!OdysseyContractV1.validId(requestId)) { deny("INVALID_REQUEST_ID"); return }
+        if (!isPaidGameplayV2Configured()) { deny("EVENT_TRANSPORT_UNAVAILABLE"); return }
+        val body = if (commandJson.isEmpty()) null else OdysseyContractV1.commandOrNull(requestId, commandJson)
+        if (commandJson.isNotEmpty() && body == null) { deny("INVALID_COMMAND"); return }
+        val uid = try { FirebaseAuth.getInstance().currentUser?.uid } catch (_: Exception) { null }
+        if (uid == null) { deny("AUTH_REQUIRED"); return }
+        requestSignedRC6("${BuildConfig.JADE_IAP_WORKER_BASE_URL}/v1/odyssey",
+            if (body == null) "GET" else "POST", body, odysseyBusy,
+            "odysseyResultV1", "ODYSSEY_VERIFIED", requestId) { json -> OdysseyContractV1.canonicalOrNull(json, uid) }
     }
 
     /** RC6 only. Backend + native + Godot approval are all independently OFF. */
