@@ -13,6 +13,7 @@ const SNAPSHOT_FIELDS: Array[String] = [
 ]
 var snapshot: Dictionary = {}
 var status: String = "not_connected"
+var last_transport_stage: String = "not_started"
 var busy: bool = false
 var _request_id: String = ""
 var _owner: String = ""
@@ -56,6 +57,7 @@ func _identity_changed(_ready_identity: bool) -> void:
 		_run_slots = {}; _run_stars = {}; _run_started = get_tree().get_first_node_in_group("player") != null
 		if not _run_started: _reset_run()
 		_last_result = {}
+		last_transport_stage = "not_started"
 		_invalidate("account_changed")
 		finished.emit({"success": false, "error": "Account changed."})
 	_next_read = 0
@@ -75,6 +77,7 @@ func _process(delta: float) -> void:
 		_reset_run()
 	if busy and now >= _deadline:
 		busy = false; _request_id = ""; _command = {}
+		last_transport_stage = "REQUEST_TIMEOUT"
 		_invalidate("request_timeout")
 		finished.emit({"success": false, "error": "Connection interrupted. Recover the same request."})
 	if not snapshot.is_empty() and now >= _expires: _invalidate("connection_required")
@@ -212,6 +215,7 @@ func _dispatch(cmd: Dictionary) -> bool:
 	_request_id = str(cmd.get("request_id", _new_id()))
 	_last_result = {}
 	busy = true; _deadline = Time.get_ticks_msec() + 48000; status = "loading"
+	last_transport_stage = "request_in_flight"
 	changed.emit()
 	native.call("requestPaidGameplayV2", _request_id, "" if _command.is_empty() else JSON.stringify(_command))
 	return true
@@ -254,7 +258,15 @@ func _on_result(request_id: String, success: bool, result_status: String, payloa
 	var result: Dictionary = {"success": false, "error": "Verification unavailable. Retry recovery."}
 	if _owner != _live_binding() or _owner != _binding:
 		_invalidate("account_changed"); finished.emit(result); return
-	var parsed: Variant = _parse_json(payload) if success and result_status == "PAID_GAMEPLAY_VERIFIED" and payload.length() <= 32768 else null
+	# Preserve the native error category; never expose tokens or server payloads.
+	var safe_stages: Array[String] = ["ACCOUNT_HELD", "BACKEND_NOT_READY", "UNAUTHENTICATED", "FORBIDDEN", "NETWORK_UNAVAILABLE", "REQUEST_TIMEOUT", "BUSY", "APP_CHECK_UNAVAILABLE", "APP_CHECK_NOT_READY", "AUTH_REQUIRED", "AUTH_UNAVAILABLE", "ACCOUNT_CHANGED", "REVISION_OR_OWNERSHIP_CONFLICT", "RATE_LIMITED", "HTTP_UNAVAILABLE", "INVALID_CONTRACT", "INVALID_RESPONSE", "PAID_GAMEPLAY_LOCKED"]
+	last_transport_stage = result_status if result_status in safe_stages or result_status == "PAID_GAMEPLAY_VERIFIED" else "UNRECOGNIZED_RESPONSE"
+	if not success:
+		_next_read = Time.get_ticks_msec() + (60000 if result_status == "ACCOUNT_HELD" else 15000)
+		_invalidate("account_held" if result_status == "ACCOUNT_HELD" else "verification_unavailable")
+		result.error = "A refunded purchase requires account review." if result_status == "ACCOUNT_HELD" else "Wallet verification failed. Retry connection."
+		finished.emit(result); return
+	var parsed: Variant = _parse_json(payload) if result_status == "PAID_GAMEPLAY_VERIFIED" and payload.length() <= 32768 else null
 	if not parsed is Dictionary or parsed.size() != 2 or not parsed.get("snapshot") is Dictionary or not valid_snapshot(parsed.snapshot, _binding):
 		_invalidate("verification_unavailable"); finished.emit(result); return
 	var next: Dictionary = parsed.snapshot

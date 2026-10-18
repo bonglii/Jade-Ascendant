@@ -1216,7 +1216,7 @@ func get_support_summary() -> String:
 	var gameplay_ready: bool = is_instance_valid(gameplay) and bool(gameplay.call("is_verified_ready"))
 	summary+="\nIAP account ref=%s\nWallet read stage=%s\nWallet repair stage=%s\nPurchased gameplay ready=%s\nNative IAP route=%s"%[str(jade.get("account_ref","")),str(jade.get("read_stage","not_attempted")),str(jade.get("repair_stage","not_attempted")),str(gameplay_ready),PavilionManager.get_native_iap_network_route()]
 	summary += "\nNative IAP target=" + PavilionManager.get_native_iap_target()
-	if is_instance_valid(gameplay): summary += "\nPaid checkout ready=%s\nPaid snapshot stage=%s\nPaid account state=%s" % [str(bool(gameplay.call("checkout_ready"))), str(gameplay.get("status")), str((gameplay.get("snapshot") as Dictionary).get("state", "unknown"))]
+	if is_instance_valid(gameplay): summary += "\nPaid checkout ready=%s\nPaid snapshot stage=%s\nPaid account state=%s\nPaid transport stage=%s" % [str(bool(gameplay.call("checkout_ready"))), str(gameplay.get("status")), str((gameplay.get("snapshot") as Dictionary).get("state", "unknown")), str(gameplay.get("last_transport_stage"))]
 	var backup: Dictionary = ProgressBackupManager.get_status()
 	summary += "\nProgress backup stage=%s\nProgress backup revision=%d\nProgress backup domains=%d\nProgress auto backup=%s\n" % [str(backup.stage), int(backup.revision), int(backup.domain_count), str(bool(backup.auto_enabled))]
 	var ads: Dictionary = MonetizationManager.get_provider_runtime_status()

@@ -920,7 +920,11 @@ func _update_details() -> void:
 	# price-sort implementation details. Keep real transaction messages for
 	# pending purchases, failure, cancellation and save recovery.
 	var body: String = str(OFFER_COPY.get(_selected_id, ""))
-	if not bool(PavilionManager.get_paid_delivery_readiness().ready):body+="\nConnect to verify your server wallet before checkout. Recover any pending purchase below."
+	var delivery: Dictionary = PavilionManager.get_paid_delivery_readiness()
+	if not bool(delivery.ready):
+		if str(delivery.get("reason", "")) == "account_held": body += "\nA refunded or reversed purchase requires account review. Purchases are unavailable until the refund is reconciled. Contact support with your public UID."
+		elif str(delivery.get("reason", "")) == "loading": body += "\nVerifying your server wallet. Please wait for verification to finish."
+		else: body += "\nWallet verification is unavailable. Retry connection in Settings or recover a pending purchase below."
 	elif not _billing_ready:body+="\nPurchases are unavailable in this build."
 	elif PavilionManager.is_iap_tester_credit_only():body+="\nTEST PURCHASE: uses the staging server wallet. Choose a Play test payment method."
 
@@ -945,7 +949,8 @@ func _update_details() -> void:
 	elif _selected_id in _pending_products:
 		_details_purchase.text = "PENDING PLAY APPROVAL"
 	elif not bool(PavilionManager.get_paid_delivery_readiness().ready):
-		_details_purchase.text="CHECKOUT PAUSED"
+		var reason: String = str(PavilionManager.get_paid_delivery_readiness().get("reason", ""))
+		_details_purchase.text = "REFUND REVIEW" if reason == "account_held" else ("VERIFYING WALLET" if reason == "loading" else "CONNECT TO BUY")
 	elif can_purchase:
 		_details_purchase.text = ("TEST PURCHASE  ·  " if PavilionManager.is_iap_tester_credit_only() else "BUY NOW  ·  ") + shown_price
 	else:

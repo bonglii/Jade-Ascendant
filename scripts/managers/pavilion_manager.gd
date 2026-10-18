@@ -1212,7 +1212,8 @@ func get_native_iap_target() -> String:
 
 func get_paid_delivery_readiness() -> Dictionary:
 	var usable: bool = is_instance_valid(paid_gameplay) and bool(paid_gameplay.call("checkout_ready"))
-	return {"ready":usable,"reason":"ready" if usable else "server_connection_required","recovery_available":_server_recovery_bridge()!=null}
+	var reason: String = "ready" if usable else (str(paid_gameplay.get("status")) if is_instance_valid(paid_gameplay) else "not_connected")
+	return {"ready":usable,"reason":reason,"recovery_available":_server_recovery_bridge()!=null}
 
 func is_iap_purchase_supported(product_id: String) -> bool:
 	return (
