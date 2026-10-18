@@ -39,18 +39,58 @@ static func _fit_frame(node: NinePatchRect, parent: Control) -> void:
  node.position=Vector2.ZERO
  node.size=parent.size/factor
 
-static func fill(parent: Control, color: Color = Color(.008,.045,.048,.92)) -> Panel:
+static func fill(parent: Control, color: Color = Color(.008,.045,.048,.92), compact: bool = true) -> Panel:
  var node := Panel.new()
  node.name = "SanctuaryGlass"
  node.show_behind_parent = parent is BaseButton
  node.mouse_filter = Control.MOUSE_FILTER_IGNORE
  var style := StyleBoxFlat.new()
  style.bg_color = color
- style.set_corner_radius_all(12)
  style.shadow_color = Color(.0,.015,.02,.24)
- style.shadow_size = 6
+ style.shadow_size = 0
  node.add_theme_stylebox_override("panel", style)
  parent.add_child(node)
  node.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
- node.offset_left=4;node.offset_top=4;node.offset_right=-4;node.offset_bottom=-4
+ parent.resized.connect(func():_fit_fill(node,parent,compact))
+ _fit_fill(node,parent,compact)
  return node
+
+static func _fit_fill(node: Panel, parent: Control, compact: bool) -> void:
+ var unit: float=clampf(parent.get_viewport_rect().size.x/648.0,.49,1.8)
+ var inset: float=maxf(4,(8.0 if compact else 14.0)*unit)
+ node.offset_left=inset;node.offset_top=inset;node.offset_right=-inset;node.offset_bottom=-inset
+ var style: StyleBoxFlat=node.get_theme_stylebox("panel") as StyleBoxFlat
+ style.set_corner_radius_all(roundi((10.0 if compact else 20.0)*unit))
+
+## The painted frame owns its perimeter; artwork is masked inside its aperture.
+static func art_window(parent: Control, window_name: String) -> Panel:
+ var panel := Panel.new()
+ panel.name = window_name
+ panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+ panel.clip_children = CanvasItem.CLIP_CHILDREN_ONLY
+ panel.clip_contents = true
+ var mask := StyleBoxFlat.new()
+ mask.bg_color = Color.WHITE
+ mask.set_corner_radius_all(12)
+ panel.add_theme_stylebox_override("panel", mask)
+ parent.add_child(panel)
+ panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+ return panel
+
+static func inset_art(panel: Control, inset: float) -> void:
+ panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+ panel.offset_left=inset;panel.offset_top=inset
+ panel.offset_right=-inset;panel.offset_bottom=-inset
+
+static func fade(parent: Control, colors: PackedColorArray, stops: PackedFloat32Array) -> TextureRect:
+ var gradient := Gradient.new()
+ gradient.colors=colors;gradient.offsets=stops
+ var texture := GradientTexture2D.new()
+ texture.gradient=gradient;texture.width=256;texture.height=1
+ var overlay := TextureRect.new()
+ overlay.name="ArtworkFade";overlay.mouse_filter=Control.MOUSE_FILTER_IGNORE
+ overlay.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
+ overlay.stretch_mode=TextureRect.STRETCH_SCALE;overlay.texture=texture
+ parent.add_child(overlay)
+ overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+ return overlay

@@ -128,10 +128,6 @@ func _refresh_loadout() -> void:
   var card: Button=card_buttons[id]
   var rank: Label=card.get_node_or_null("ItemRank")
   if rank!=null:rank.text=_stars(EquipmentManager.get_loadout_item_star(id)) if EquipmentManager.has_item_definition(id) else "×%d"%InventoryManager.get_item_count(id)
-  var copies: Label=card.get_node_or_null("DuplicateCount")
-  if copies!=null:
-   var count: int=InventoryManager.get_item_count(id)
-   copies.text="×%d"%count if count<=99 else "×99+";copies.visible=count>1
  var state: Dictionary=Sets.get_dominant_set_state(ids)
  var summary: Label=content.find_child("SetName",true,false) as Label
  if summary!=null:summary.text=(str(state.display_name) if int(state.piece_count)>0 else "BELUM ADA SET")+"  •  %d/4"%int(state.piece_count)
@@ -389,8 +385,6 @@ func _rebuild_grid() -> void:
   label.add_theme_font_size_override("font_size",maxi(11,int(16*unit)));label.add_theme_constant_override("outline_size",1)
   card.add_child(label);label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE);label.offset_top=-maxf(22,28*unit);label.offset_bottom=-2;label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
   if is_equipment:
-   var count: int=InventoryManager.get_item_count(id)
-   var copies:=_label("×%d"%count if count<=99 else "×99+",11,TEXT);copies.name="DuplicateCount";card.add_child(copies);copies.position=Vector2(maxf(4,side-42),24*unit);copies.visible=count>1
    _build_equipped_mark(card,side)
   _sync_refine_dot(card,id)
   card.button_down.connect(func():drag_start=get_global_mouse_position())
@@ -651,7 +645,7 @@ func _sync_refine_dot(card: Button, id: String) -> void:
  var upgrade_available: bool = not id.is_empty() and (EquipmentManager.can_ascend_item(id) or EquipmentManager.can_level_weapon(id))
  if dot == null and not upgrade_available: return
  if dot == null:
-  dot = Panel.new();dot.name="RefineReadyDot";dot.mouse_filter=Control.MOUSE_FILTER_IGNORE;dot.z_index=90
+  dot = Panel.new();dot.name="RefineReadyDot";dot.mouse_filter=Control.MOUSE_FILTER_IGNORE;dot.z_index=3
   card.add_child(dot);dot.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
   var side: float=clampf(13*unit,10,17)
   dot.offset_left=-side-5;dot.offset_right=-5;dot.offset_top=5;dot.offset_bottom=side+5

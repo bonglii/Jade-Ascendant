@@ -164,3 +164,13 @@
 - Checking only three categories missed five incompatible-ternary warnings. Discover the running engine's default enabled warning categories, promote all of them in an isolated QA configuration, and load all production scripts. Do not disable warnings in the game to obtain a clean result.
 - Conditional visual expressions must use consistent numeric types in both branches (0.0/PI and float pixel offsets). Keep the numeric values and visual behavior unchanged.
 - Generic lesson publishing must stage the verified append payload rather than searching for a hardcoded section heading from an earlier package. Preserve unrelated local notes in the working tree.
+
+
+## 2026-10-18 — Home and Hero visual cohesion
+
+- Control.clip_contents clips only the outer rectangle, not the transparent carved frame aperture. Put painted art/fades in an inset rounded clipping panel and render the frame above it; keep opaque fills inside the frame as well.
+- A card child at z_index 90 can render above a sibling modal at 80. Refine notifications belong to the card layer (3); modal overlays stay above the entire card subtree. Check rendered modal stacking, not just node order.
+- Selected realm art must use the existing JourneyArtCatalog metadata, cached on chapter change, instead of a constant crop of the Home illustration. Presentation must not change chapter selection or progression.
+- Validate actual native renders as well as dimensions. Use isolated save scopes, real renderer snapshots and a small interaction suite for the affected menus. Stop audio before fixture teardown so pending UI sound callbacks do not create false leak reports.
+
+- Distinguish parser-warning cleanup from runtime shutdown diagnostics. The older Home regression emits six RefCounted exit warnings on both the exact baseline and this patch; record that comparison instead of mislabelling them SDK mock leaks or claiming all runtime warnings are fixed.

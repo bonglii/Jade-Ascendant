@@ -2,6 +2,7 @@ extends "res://scripts/ui/home_production_presenter.gd"
 
 ## Approved Sanctuary layout. All balances, rewards, run/checkpoint decisions,
 ## account state and popup ownership remain in the existing authorities.
+const RealmArt = preload("res://scripts/ui/journey_art_catalog.gd")
 const Art = preload("res://scripts/ui/home_sanctuary_art.gd")
 const BOSS_SCENE: String = "res://scenes/ui/celestial_boss_hunt_screen.tscn"
 const LIBRARY_SCENE: String = "res://scenes/ui/skill_book_screen.tscn"
@@ -31,6 +32,10 @@ var all_events_button: Button
 var hero_title: Control
 var checkpoint_available: bool = false
 var layout_queued: bool = false
+var realm_window: Panel
+var event_window: Panel
+var realm_vista: TextureRect
+var presented_chapter: int = -1
 
 func _ready() -> void:
  var root: Node = get_parent().get_parent()
@@ -75,6 +80,7 @@ func _main_menu() -> Node:
 func _build_header() -> void:
  profile_shortcut=_button("ProfileShortcut",Callable(self,"_open_profile"))
  profile_shortcut.tooltip_text=tr("Profile")
+ profile_shortcut.clip_contents=true
  _plate(profile_shortcut)
  profile_seal_view=_icon(profile_shortcut,PROFILE_MEDALLION)
  profile_name=_copy(profile_shortcut,"",19,GOLD_BRIGHT,true)
@@ -116,7 +122,8 @@ func _build_body() -> void:
  var caption:=_copy(heading,tr("CELESTIAL EVENTS"),19,GOLD_BRIGHT,true);caption.name="EventsCaption"
  all_events_button=_button("AllEvents",_open_live_popup.bind(EVENT_CENTER_SCENE),heading)
  all_events_button.text=tr("ALL EVENTS")+" ›"
- _font_button(all_events_button,12)
+ _plate(all_events_button,true,Color(.018,.15,.14,.99))
+ _font_button(all_events_button,20)
  _build_featured_event()
  shortcuts=HBoxContainer.new();shortcuts.name="SanctuaryShortcuts";shortcuts.add_theme_constant_override("separation",7)
  lower_stack.add_child(shortcuts)
@@ -133,9 +140,13 @@ func _build_journey_card() -> void:
  journey_card=Control.new();journey_card.name="PremiumJourneyDeck";lower_stack.add_child(journey_card)
  journey_deck_shell=journey_card
  _plate(journey_card,false)
- var map_view:=_icon(journey_card,Art.BACKGROUND);map_view.name="RealmVignette"
- var atlas:=AtlasTexture.new();atlas.atlas=Art.BACKGROUND;atlas.region=Rect2(540,150,350,520);map_view.texture=atlas
- map_view.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_COVERED;map_view.clip_contents=true
+ realm_window=Art.art_window(journey_card,"RealmArtWindow")
+ realm_vista=_icon(realm_window,null);realm_vista.name="RealmVignette"
+ realm_vista.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_COVERED
+ realm_vista.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+ Art.fade(realm_window,PackedColorArray([Color(.008,.045,.048,.08),Color(.008,.045,.048,.48),Color(.008,.045,.048,.99),Color(.008,.045,.048,1)]),PackedFloat32Array([0,.18,.42,1]))
+ # Border is above both art and fade; the realm reads as one inset scene.
+ journey_card.move_child(journey_card.get_node("SanctuaryFrame"),-1)
  chapter_label=_copy(journey_card,"",12,GOLD_BRIGHT,true)
  realm_title=_copy(journey_card,"",21,TEXT,true);realm_title.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;realm_title.max_lines_visible=2
  next_path_label=_copy(journey_card,"",12,Color(.77,.9,.86))
@@ -152,12 +163,12 @@ func _build_journey_card() -> void:
  _plate(continue_button,true,Color(.01,.12,.14,.99));_font_button(continue_button,16)
 
 func _build_featured_event() -> void:
- event_card=Control.new();event_card.name="SanctuaryFeaturedEvent";event_card.clip_contents=true;lower_stack.add_child(event_card)
- var art:=_icon(event_card,BOSS_ART);art.name="EventArt";art.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_COVERED
- art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);art.anchor_left=.38
- var gradient:=Gradient.new();gradient.colors=PackedColorArray([Color(.015,.014,.018,.97),Color(.024,.012,.012,.87),Color(.02,.01,.01,.0)])
- gradient.offsets=PackedFloat32Array([0,.48,1]);var tex:=GradientTexture2D.new();tex.gradient=gradient;tex.width=256;tex.height=8
- var shade:=_icon(event_card,tex);shade.stretch_mode=TextureRect.STRETCH_SCALE;shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+ event_card=Control.new();event_card.name="SanctuaryFeaturedEvent";lower_stack.add_child(event_card)
+ Art.fill(event_card,Color(.008,.045,.048,.92),false)
+ event_window=Art.art_window(event_card,"EventArtWindow")
+ var art:=_icon(event_window,BOSS_ART);art.name="EventArt";art.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_COVERED
+ art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+ Art.fade(event_window,PackedColorArray([Color(.012,.022,.024,.98),Color(.018,.022,.025,.88),Color(.018,.02,.025,.20)]),PackedFloat32Array([0,.45,1]))
  Art.frame(event_card,false)
  var tag:=_copy(event_card,tr("REALM CHALLENGE"),11,GOLD_BRIGHT);tag.name="EventKind"
  var title:=_copy(event_card,tr("CELESTIAL BOSS HUNT"),25,Color(1,.9,.65),true);title.name="FeaturedTitle"
@@ -182,6 +193,10 @@ func _shortcut(name_value: String,texture: Texture2D,title: String,action: Calla
 func _refresh_journey() -> void:
  if journey_card==null:return
  var chapter_id: int=JourneyManager.selected_chapter_id
+ if presented_chapter!=chapter_id:
+  presented_chapter=chapter_id
+  var path: String=RealmArt.get_realm_vista_path(chapter_id)
+  realm_vista.texture=load(path) as Texture2D if not path.is_empty() else Art.BACKGROUND
  var chapter: Dictionary=JourneyManager.get_chapter_data(chapter_id)
  var progress: Dictionary=JourneyManager.get_chapter_progress(chapter_id)
  var total: int=maxi(int(progress.get("total_stages",1)),1)
@@ -253,31 +268,40 @@ func _layout_sanctuary() -> void:
   nav.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
   nav.offset_left=side;nav.offset_right=-side;nav.offset_top=-nav_height-8;nav.offset_bottom=-8
  var header_y: float=78.0
- var header_h: float=maxf(76,88*u)
- var icon_side: float=maxf(48,54*u)
+ var header_h: float=maxf(94,108*u)
+ var icon_side: float=clampf(84*u,56,112)
+ var icon_gap: float=maxf(8,10*u)
  _rect(settings_shortcut,Vector2(size.x-side-icon_side,header_y+4),Vector2(icon_side,icon_side))
- _rect(mailbox_button,Vector2(settings_shortcut.position.x-icon_side-7*u,header_y+4),Vector2(icon_side,icon_side))
- var profile_w: float=minf(330*u,mailbox_button.position.x-side-10)
+ _rect(mailbox_button,Vector2(settings_shortcut.position.x-icon_side-icon_gap,header_y+4),Vector2(icon_side,icon_side))
+ var profile_w: float=mailbox_button.position.x-side-icon_gap
  _rect(profile_shortcut,Vector2(side,header_y),Vector2(profile_w,header_h))
- _rect(profile_seal_view,Vector2(9,8)*u,Vector2(48,48)*u)
- var text_x: float=60*u;var text_w: float=maxf(48,profile_w-text_x-18)
- var name_y: float=maxf(10,10*u);var rank_y: float=name_y+maxf(18,23*u)
- var exp_y: float=rank_y+maxf(15,17*u)
- _rect(profile_name,Vector2(text_x,name_y),Vector2(text_w,24*u));_font(profile_name,19,true)
- _rect(profile_rank,Vector2(text_x,rank_y),Vector2(text_w,16*u));_font(profile_rank,12)
- _rect(profile_exp,Vector2(text_x,exp_y),Vector2(text_w,4*u))
- _rect(profile_status,Vector2(text_x,exp_y+6),Vector2(text_w,14*u));_font(profile_status,11)
- _rect(profile_connection,Vector2(43,49)*u,Vector2(7,7)*u)
- _rect(profile_chevron,Vector2(profile_w-15*u,31*u),Vector2(10,20)*u)
- _fit_icon(settings_shortcut,10*u);_fit_icon(mailbox_button,9*u)
+ var avatar_side: float=maxf(40,54*u)
+ var inset: float=maxf(10,16*u)
+ var avatar_y: float=(header_h-avatar_side)*.5
+ _rect(profile_seal_view,Vector2(inset,avatar_y),Vector2(avatar_side,avatar_side))
+ var text_x: float=inset+avatar_side+maxf(8,10*u)
+ var text_w: float=maxf(40,profile_w-text_x-maxf(18,24*u))
+ var name_y: float=maxf(10,14*u)
+ var name_h: float=maxf(20,26*u)
+ var rank_y: float=name_y+name_h+2*u
+ var rank_h: float=maxf(16,18*u)
+ var exp_y: float=rank_y+rank_h+5*u
+ _rect(profile_name,Vector2(text_x,name_y),Vector2(text_w,name_h));_font(profile_name,24,true)
+ _rect(profile_rank,Vector2(text_x,rank_y),Vector2(text_w,rank_h));_font(profile_rank,14)
+ _rect(profile_exp,Vector2(text_x,exp_y),Vector2(text_w,maxf(3,4*u)))
+ _rect(profile_status,Vector2(text_x,exp_y+maxf(7,9*u)),Vector2(text_w,maxf(14,15*u)));_font(profile_status,12)
+ var dot_side: float=maxf(7,9*u)
+ _rect(profile_connection,Vector2(inset+avatar_side-dot_side,avatar_y+avatar_side-dot_side),Vector2.ONE*dot_side)
+ _rect(profile_chevron,Vector2(profile_w-maxf(16,20*u),(header_h-24*u)*.5),Vector2(12,24)*u)
+ _fit_icon(settings_shortcut,maxf(10,16*u));_fit_icon(mailbox_button,maxf(8,12*u))
  _rect(hero_title,Vector2(side+8*u,maxf(header_y+header_h+14, size.y*.19)),Vector2(size.x*.42,65*u))
  _rect(title_name,Vector2.ZERO,Vector2(hero_title.size.x,42*u));_font(title_name,35,true)
  _rect(title_role,Vector2(0,43*u),Vector2(hero_title.size.x,17*u));_font(title_role,12)
  var compact: bool=size.x<560
- var card_h: float=184.0 if compact else maxf(152,158*u)
- var event_h: float=maxf(142,174*u)
+ var card_h: float=206.0 if compact else maxf(152,158*u)
+ var event_h: float=maxf(166,190*u)
  var shortcut_h: float=90.0 if size.x<420 else maxf(65,80*u)
- var heading_h: float=maxf(44,36*u)
+ var heading_h: float=maxf(60,66*u)
  var gap: float=maxf(6,9*u)
  var panel_h: float=card_h+event_h+shortcut_h+heading_h+gap*3
  var bottom: float=size.y-nav_height-20
@@ -285,21 +309,21 @@ func _layout_sanctuary() -> void:
  var available: float=maxf(70,bottom-upper)
  lower_stack.custom_minimum_size.x=size.x-2*side
  _rect(lower_scroll,Vector2(side,upper),Vector2(size.x-2*side,available))
+ hero_title.visible=hero_title.position.y+hero_title.size.y+8<upper
  lower_stack.custom_minimum_size.x=lower_scroll.size.x
  lower_stack.add_theme_constant_override("separation",int(gap))
  journey_card.custom_minimum_size.y=card_h;event_card.custom_minimum_size.y=event_h;shortcuts.custom_minimum_size.y=shortcut_h
  var width: float=lower_scroll.size.x
  var map_w: float=width*(.20 if compact else .22)
- var thumb: Control=journey_card.get_node("RealmVignette")
- var summary_h: float=100.0 if compact else card_h-24*u
- _rect(thumb,Vector2(12*u,12*u),Vector2(map_w-17*u,summary_h))
+ Art.inset_art(realm_window,maxf(10,20*u))
+ Art.inset_art(event_window,maxf(10,20*u))
  var text_start: float=map_w+8*u
  var action_w: float=width-24 if compact else width*.39
  var text_width: float=width-text_start-18*u if compact else width-text_start-action_w-22*u
  _rect(chapter_label,Vector2(text_start,16.0 if compact else 23*u),Vector2(text_width,20));_font(chapter_label,13,true)
  _rect(realm_title,Vector2(text_start,38.0 if compact else 46*u),Vector2(text_width,48));_font(realm_title,22,true)
  _rect(next_path_label,Vector2(text_start,83.0 if compact else 100*u),Vector2(text_width,20));_font(next_path_label,13)
- var meter_y: float=109.0 if compact else card_h-24*u
+ var meter_y: float=112.0 if compact else card_h-38*u
  _rect(realm_progress,Vector2(text_start,meter_y),Vector2(maxf(30,text_width-43*u),7))
  _rect(progress_label,Vector2(text_start+maxf(30,text_width-40*u),meter_y-5),Vector2(42*u,20));_font(progress_label,12)
  journey_button.text=tr("ENTER JOURNEY")+" ›"
@@ -307,7 +331,7 @@ func _layout_sanctuary() -> void:
  var button_h: float=50.0 if compact else maxf(52,64*u)
  var action_x: float=12.0 if compact else width-action_w-12*u
  if compact:
-  var button_y: float=card_h-button_h-12
+  var button_y: float=card_h-button_h-16
   if continue_button.visible:
    _rect(journey_button,Vector2(action_x,button_y),Vector2((action_w-8)*.59,button_h))
    _rect(continue_button,Vector2(action_x+(action_w-8)*.59+8,button_y),Vector2((action_w-8)*.41,button_h))
@@ -318,11 +342,12 @@ func _layout_sanctuary() -> void:
  else:_rect(journey_button,Vector2(action_x,(card_h-button_h)*.5),Vector2(action_w,button_h))
  _font_button(journey_button,20);_font_button(continue_button,17)
  var heading: Control=lower_stack.get_node("EventsHeading");heading.custom_minimum_size.y=heading_h
- var caption: Label=heading.get_node("EventsCaption");_rect(caption,Vector2(3*u,0),Vector2(width*.66,heading_h));_font(caption,18,true)
- all_events_button.text=tr("EVENTS")+" ›" if compact else tr("ALL EVENTS")+" ›"
- _rect(all_events_button,Vector2(width*.66,0),Vector2(width*.34,heading_h));_font_button(all_events_button,15)
- _rect(event_card.get_node("EventKind"),Vector2(25,20)*u,Vector2(width*.57,16*u));_font(event_card.get_node("EventKind"),11)
- _rect(event_card.get_node("FeaturedTitle"),Vector2(25,44)*u,Vector2(width*.56,maxf(42,61*u)));_font(event_card.get_node("FeaturedTitle"),25,true)
+ var all_width: float=minf(width*.48,maxf(130,176*u))
+ var caption: Label=heading.get_node("EventsCaption");_rect(caption,Vector2(3*u,0),Vector2(width-all_width-10*u,heading_h));_font(caption,20,true)
+ all_events_button.text=tr("ALL EVENTS")+" ›"
+ _rect(all_events_button,Vector2(width-all_width,0),Vector2(all_width,heading_h));_font_button(all_events_button,20)
+ _rect(event_card.get_node("EventKind"),Vector2(34,29)*u,Vector2(width*.57,16*u));_font(event_card.get_node("EventKind"),11)
+ _rect(event_card.get_node("FeaturedTitle"),Vector2(34,53)*u,Vector2(width*.56,maxf(42,56*u)));_font(event_card.get_node("FeaturedTitle"),25,true)
  _rect(boss_progress,Vector2(25*u,event_h-maxf(51,62*u)),Vector2(width*.6,18*u));_font(boss_progress,13)
  _rect(event_card.get_node("UpcomingRewardIcon"),Vector2(25*u,event_h-maxf(32,42*u)),Vector2(24,24)*u)
  _rect(boss_reward,Vector2(55*u,event_h-maxf(31,41*u)),Vector2(width*.5,22*u));_font(boss_reward,12)
@@ -378,7 +403,7 @@ func _activate(action: Callable,button: Button) -> void:
  if action.is_valid():action.call()
 
 func _plate(parent: Control,compact: bool=true,color: Color=Color(.008,.045,.048,.92)) -> void:
- Art.fill(parent,color);Art.frame(parent,compact)
+ Art.fill(parent,color,compact);Art.frame(parent,compact)
 
 func _icon(parent: Node,texture: Texture2D) -> TextureRect:
  var icon:=TextureRect.new();icon.mouse_filter=Control.MOUSE_FILTER_IGNORE;icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
