@@ -25,7 +25,7 @@ try {
     $dependencies = @(& $GradlePath -p $build --no-daemon :bridge:dependencies --configuration releaseRuntimeClasspath)
     if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect release dependencies.' }
     $dependencyText = $dependencies -join "`n"
-    if ($dependencyText -match 'firebase-appcheck-debug' -or $dependencyText -notmatch 'firebase-appcheck-playintegrity') { throw 'Release App Check dependencies invalid.' }
+    if ($dependencyText -match 'firebase-appcheck-debug' -or $dependencyText -notmatch 'firebase-appcheck-playintegrity' -or $dependencyText -notmatch 'firebase-messaging:25.1.3') { throw 'Release App Check dependencies invalid.' }
     [IO.File]::WriteAllText((Join-Path $work 'release-dependencies.txt'),$dependencyText)
     $outputs = @(Get-ChildItem -LiteralPath (Join-Path $build 'bridge/build/outputs/aar') -Filter '*-release.aar')
     if ($outputs.Count -ne 1) { throw 'Ambiguous release candidate output.' }
@@ -73,8 +73,17 @@ try {
         if ([int]$report.testsuite.failures -ne 0 -or [int]$report.testsuite.errors -ne 0) { throw 'JVM failure in candidate receipts.' }
         $tests += [int]$report.testsuite.tests
     }
+    foreach ($variant in @('Debug','Release')) {
+        $pushTests=Join-Path $build ('bridge/build/test-results/test'+$variant+'UnitTest/TEST-com.yungdevstudio.jadeascendant.monetizationbridge.UpdateMessageContractV1Test.xml')
+        if (-not (Test-Path -LiteralPath $pushTests)) { throw 'Missing update notification contract tests.' }
+        $pushReport=[xml][IO.File]::ReadAllText($pushTests)
+        if ([int]$pushReport.testsuite.tests -ne 7 -or [int]$pushReport.testsuite.skipped -ne 0) { throw 'Incomplete update notification contract tests.' }
+    }
+    $pushClass=@(& $javap -classpath $jar -public ($ns+'JadeUpdateMessagingService')) -join "`n"
+    if ($LASTEXITCODE -ne 0 -or $pushClass -notmatch 'onMessageReceived') { throw 'Update messaging service not compiled.' }
     $inputs = @{}
     $inputFiles = @(Get-ChildItem -LiteralPath (Join-Path $build 'bridge/src') -Recurse -Filter '*.kt' -File)
+    $inputFiles += @(Get-ChildItem -LiteralPath (Join-Path $build 'bridge/src/main') -Recurse -Filter '*.xml' -File)
     foreach ($path in @('backend/monetization/android_bridge/build.gradle.kts','backend/monetization/android_bridge/settings.gradle.kts','backend/monetization/android_bridge/bridge/build.gradle.kts','addons/JadeMonetizationNativeBridge/export_plugin.gd','backend/monetization/android_bridge/bridge/src/test/resources/odyssey_snapshot_v1.json')) { $inputFiles += Get-Item -LiteralPath (Join-Path $repo $path) }
     foreach ($file in $inputFiles) {
         $sha = [Security.Cryptography.SHA256]::Create()
@@ -85,7 +94,7 @@ try {
     Copy-Item -LiteralPath $outputs[0].FullName -Destination $destination
     $receipt = @{version=1; target='production-candidate'; installed=$false; deployed=$false; inputs=$inputs;
         aar_sha256=(Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant();
-        compiled_utc=[DateTime]::UtcNow.ToString('o'); jvm_test_executions=$tests;
+        compiled_utc=[DateTime]::UtcNow.ToString('o'); jvm_test_executions=$tests; update_notifications=1;
         evidence='COMPILE_JVM_JNI_PLAY_INTEGRITY_PROVIDER_ONLY_NOT_LIVE_PLAY'}
     [IO.File]::WriteAllText((Join-Path $work 'receipt.json'),($receipt | ConvertTo-Json -Depth 5),(New-Object Text.UTF8Encoding($false)))
     [IO.File]::WriteAllText((Join-Path $work 'compiled-flags.txt'),$flags)

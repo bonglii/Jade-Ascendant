@@ -13,17 +13,23 @@ try {
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $zip=[IO.Compression.ZipFile]::OpenRead($aab)
     try {
+        $manifestEntry=$zip.GetEntry('base/manifest/AndroidManifest.xml')
+        if ($null -eq $manifestEntry -or $manifestEntry.Length -gt 4194304) { throw 'Base Android manifest missing or unexpectedly large.' }
+        $manifestStream=$manifestEntry.Open(); $manifestMemory=New-Object IO.MemoryStream
+        try { $manifestStream.CopyTo($manifestMemory); $manifestText=[Text.Encoding]::UTF8.GetString($manifestMemory.ToArray()) } finally { $manifestMemory.Dispose(); $manifestStream.Dispose() }
+        foreach ($marker in @('POST_NOTIFICATIONS','JadeUpdateMessagingService','JadeNotificationPermissionActivity')) { if (-not $manifestText.Contains($marker)) { throw ('AAB manifest lacks update notification component: '+$marker) } }
         $entries=@($zip.Entries | Where-Object { $_.FullName -match '(^|/)release/build_metadata\.json$' })
         if ($entries.Count -ne 1 -or $entries[0].Length -gt 16384) { throw 'Unique release metadata not found in AAB.' }
         $reader=New-Object IO.StreamReader($entries[0].Open())
         try { $meta=$reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }
-        if ($meta.debug -ne $false -or $meta.iap_target -ne 'production' -or $meta.odyssey_presentation -ne 3 -or $meta.native_sha256 -ne $proof.aar_sha256 -or $meta.source_revision -ne $receipt.source_revision) { throw 'AAB metadata does not match this verified Odyssey release candidate.' }
-        $found=$false
+        if ($meta.debug -ne $false -or $meta.iap_target -ne 'production' -or $meta.odyssey_presentation -ne 3 -or $meta.update_notifications -ne 1 -or $meta.native_sha256 -ne $proof.aar_sha256 -or $meta.source_revision -ne $receipt.source_revision) { throw 'AAB metadata does not match this verified Odyssey release candidate.' }
+        $found=$false; $pushService=$false; $pushTopic=$false
         foreach ($entry in @($zip.Entries | Where-Object { $_.FullName -match '(^|/)classes[0-9]*\.dex$' })) {
             if ($entry.Length -gt 134217728) { throw 'Unexpectedly large DEX entry.' }
             $stream=$entry.Open(); $memory=New-Object IO.MemoryStream
-            try { $stream.CopyTo($memory); $text=[Text.Encoding]::UTF8.GetString($memory.ToArray()); if ($text.Contains('/v2/odyssey') -and $text.Contains('requestOdysseyV1')) { $found=$true } } finally { $memory.Dispose(); $stream.Dispose() }
+            try { $stream.CopyTo($memory); $text=[Text.Encoding]::UTF8.GetString($memory.ToArray()); if ($text.Contains('JadeUpdateMessagingService')) { $pushService=$true }; if ($text.Contains('jade_release_updates_v1')) { $pushTopic=$true }; if ($text.Contains('/v2/odyssey') -and $text.Contains('requestOdysseyV1')) { $found=$true } } finally { $memory.Dispose(); $stream.Dispose() }
         }
+        if (-not $pushService -or -not $pushTopic) { throw 'AAB lacks the compiled update notification service/topic.' }
         if (-not $found) { throw 'AAB DEX lacks the expected Odyssey native method/economy route. Do not upload this artifact.' }
     } finally { $zip.Dispose() }
     $hash=(Get-FileHash -LiteralPath $aab -Algorithm SHA256).Hash.ToLowerInvariant()

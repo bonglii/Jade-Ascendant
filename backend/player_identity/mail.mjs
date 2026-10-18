@@ -1,3 +1,4 @@
+import {updatePushAdminRoute} from './update_push.mjs';
 import {odysseyAdmin,odysseyDashboard} from './odyssey.mjs';
 import {MailError,fail,json,readBody,exact,digest,mac,checkProof,session,login,sameOrigin,randomId,nowSeconds} from './mail_admin.mjs';
 import {ownerBinding} from './worker.mjs';
@@ -104,6 +105,7 @@ export function createMailHandler({verify}={}){
   if(path.startsWith('/admin/api/')){
    const auth=await session(request,env,request.method!=='GET');
    if(path==='/admin/api/odyssey')return odysseyAdmin(request,env);
+   const update=await updatePushAdminRoute(db,env,request,url);if(update)return update;
    const announcement=await announcementAdminRoute(db,env,request,url);if(announcement)return announcement;
    if(path==='/admin/api/session'&&request.method==='GET')return json(200,{...auth,reward_catalog:REWARD_CATALOG});
    const bannerResponse=await pavilionRoute(db,request,url);if(bannerResponse)return bannerResponse;

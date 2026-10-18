@@ -22,6 +22,7 @@ class AndroidExportPlugin extends EditorExportPlugin:
         "com.squareup.okhttp3:okhttp:4.12.0",
         "com.squareup.okhttp3:okhttp-dnsoverhttps:4.12.0",
         "com.google.firebase:firebase-auth:24.2.0",
+        "com.google.firebase:firebase-messaging:25.1.3",
         "com.google.firebase:firebase-appcheck-playintegrity:19.4.1",
     ]
 

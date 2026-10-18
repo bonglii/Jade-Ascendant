@@ -1,3 +1,4 @@
+import {updateHTML,updateJS} from './update_push_dashboard.mjs';
 import {announcementCSS,announcementHTML,announcementJS} from './announcement_dashboard.mjs';
 import {pavilionCSS,pavilionHTML,pavilionJS} from './pavilion_dashboard.mjs';
 export default String.raw`<!doctype html>
@@ -14,7 +15,7 @@ ${announcementCSS}</style></head><body><div class="wrap">
 <main id="studio" hidden><nav class="studio-nav" aria-label="Navigasi dashboard"><button type="button" data-nav="compose" class="active">✦ Kirim mail</button><button type="button" data-nav="announcements">Pengumuman</button><button type="button" data-nav="pavilion">✦ Banner gacha</button><a href="/admin/odyssey">✦ Dragon Odyssey</a><button type="button" data-nav="players">Player</button><button type="button" data-nav="drafts">Draft & jadwal</button><button type="button" data-nav="history">Riwayat</button><button type="button" data-nav="account">Akses admin</button><button type="button" data-nav="audit">Audit</button></nav><div class="row between"><div><div class="eyebrow">Celestial Courier</div><h2 id="view-title">Hadiah yang tepat untuk perjalanan mereka.</h2><p id="view-subtitle" class="section-subtitle">Susun surat, pilih lampiran, lalu periksa penerima sebelum kirim.</p></div><button id="refresh">↻ Refresh riwayat</button></div>
 <div class="metrics"><div class="metric"><b id="metric-mails">—</b><span>Mail di halaman ini</span></div><div class="metric"><b id="metric-recipients">—</b><span>Total penerima di halaman ini</span></div><div class="metric"><b id="metric-claimed">—</b><span>Klaim selesai di halaman ini</span></div></div>
 ${pavilionHTML}
-${announcementHTML}<div class="grid" data-view="compose"><section class="card"><div class="card-head"><div class="row between"><h2>Compose mail</h2><span class="chip">DRAFT</span></div><p class="small muted">Kirim ke satu UID atau seluruh player yang sudah terdaftar saat dikirim.</p></div>
+${announcementHTML.replace(/<\/div>\s*$/,updateHTML+"</div>")}<div class="grid" data-view="compose"><section class="card"><div class="card-head"><div class="row between"><h2>Compose mail</h2><span class="chip">DRAFT</span></div><p class="small muted">Kirim ke satu UID atau seluruh player yang sudah terdaftar saat dikirim.</p></div>
 <div class="row"><span class="small muted">Template</span><button class="template" data-template="maintenance">Maintenance</button><button class="template" data-template="event">Hadiah event</button><button class="template" data-template="support">Bantuan player</button></div>
 <form id="compose"><div class="fields"><div><label for="audience">Penerima</label><select id="audience"><option value="uid">Satu player · UID</option><option value="all">Semua player terdaftar</option><option value="segment">Segmen player</option></select></div><div><label for="target">UID server</label><input id="target" placeholder="JA0123456789" maxlength="12" autocomplete="off" spellcheck="false"></div></div>
 <div id="segment-fields" class="fields" hidden><div><label for="segment-kind">Segmen</label><select id="segment-kind"><option value="active7">Aktif dalam 7 hari</option><option value="active30">Aktif dalam 30 hari</option><option value="inactive30">Tidak aktif 30 hari</option><option value="registered7">Daftar dalam 7 hari</option><option value="version">Versi game</option></select></div><div><label for="segment-version">Versi game</label><input id="segment-version" maxlength="40" placeholder="1.0.6" disabled></div></div><label for="title">Judul</label><input id="title" maxlength="100" placeholder="A gift from the Jade Sanctuary" required>
@@ -89,5 +90,6 @@ for(const id of ['gear-search','gear-rarity','gear-slot'])$(id).addEventListener
 
 ${pavilionJS}
 ${announcementJS}
+${updateJS}
 previewLocal();api('session').then(showStudio).catch(e=>{showLogin();if(!e.message.includes('Sesi berakhir'))message(e.message,true);});
 </script></body></html>`;

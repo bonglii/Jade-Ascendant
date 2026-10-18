@@ -436,6 +436,7 @@ func _build_presentation_options() -> void:
 	privacy.pressed.connect(_open_privacy)
 	system_box.add_child(privacy)
 
+	_build_update_notifications(parent_box, source_card)
 	_build_connection_support(parent_box, source_card)
 	_build_monetization_qa(parent_box, source_card)
 
@@ -1237,3 +1238,12 @@ func _finish_neo_settings() -> void:
 		label.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 		if label.get_parent() is HBoxContainer: label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_refresh_connection_support()
+
+
+func _build_update_notifications(parent_box: VBoxContainer, source: PanelContainer) -> void:
+	var updates: Node=get_node_or_null("/root/SettingsManager/UpdateNotifications")
+	if updates==null: return
+	var card: PanelContainer=_create_settings_card(parent_box,source,_local("SANCTUARY NEWS","KABAR SANCTUARY"),_local("Update alerts","Notifikasi update"),_local("Optional alerts for new game versions. Tap a notification to open Play Store.","Kabar opsional saat versi baru tersedia. Ketuk notifikasi untuk membuka Play Store."))
+	var content: VBoxContainer=preload("res://scripts/ui/update_notification_settings.gd").new()
+	content.updates=updates; content.language=SettingsManager.language
+	(card.get_child(0) as VBoxContainer).add_child(content)

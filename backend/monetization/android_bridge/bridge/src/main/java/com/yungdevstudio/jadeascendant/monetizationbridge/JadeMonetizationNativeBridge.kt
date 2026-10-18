@@ -79,6 +79,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
         Thread(job, "jade-iap-cloudflare-transport").apply { isDaemon = true }
     }
     private val pendingPaid by lazy { PendingPaidPurchaseStore(FirebaseApp.getInstance().applicationContext) }
+    private var updateActivity: java.lang.ref.WeakReference<Activity>? = null
     @Volatile private var appCheckInitialized: Boolean = false
 
     override fun getPluginName() = BuildConfig.GODOT_PLUGIN_NAME
@@ -157,6 +158,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
     }
 
     override fun onMainCreate(activity: Activity?): View? {
+        updateActivity = activity?.let { java.lang.ref.WeakReference(it) }
         if (activity != null) {
             try {
                 val app = try {
@@ -172,7 +174,27 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
                 appCheckInitialized = false
             }
         }
+        if (activity != null) UpdateNotificationsV1.sync(activity)
         return super.onMainCreate(activity)
+    }
+
+    @UsedByGodot
+    fun getUpdateNotificationStatus(): String = UpdateNotificationsV1.status(updateActivity?.get())
+
+    @UsedByGodot
+    fun setUpdateNotificationsEnabled(enabled: Boolean): Boolean {
+        val activity = updateActivity?.get() ?: return false
+        activity.runOnUiThread { UpdateNotificationsV1.choose(activity, enabled) }
+        return true
+    }
+
+    @UsedByGodot
+    fun deferUpdateNotifications() { updateActivity?.get()?.let { UpdateNotificationsV1.markEducation(it) } }
+
+    @UsedByGodot
+    fun openUpdateNotificationSettings() {
+        val activity = updateActivity?.get() ?: return
+        activity.runOnUiThread { UpdateNotificationsV1.openSettings(activity) }
     }
 
     @UsedByGodot

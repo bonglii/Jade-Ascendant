@@ -31,6 +31,9 @@ var frame_limit: int = 60
 var language: String = "en"
 
 func _ready() -> void:
+	var updates: Node=preload("res://scripts/managers/update_notifications.gd").new()
+	updates.name="UpdateNotifications"
+	add_child(updates)
 	UiLocalization.install()
 	_ensure_audio_routing()
 	_load_settings()
