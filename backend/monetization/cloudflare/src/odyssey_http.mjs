@@ -1,3 +1,4 @@
+import {odysseyWire} from './odyssey_wire.mjs';
 import {timingSafeEqual} from 'node:crypto';
 import {service,publishEvent,currentEvent,creditAd,flushOutbox,prepareAdVerification} from './odyssey_service.mjs';
 export const json=(status,data)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'private, no-store','x-content-type-options':'nosniff'}});
@@ -20,6 +21,7 @@ export async function odysseyRoute(request,env,ctx,uid){const url=new URL(reques
  if(request.method==='GET')data=await api.read(uid);
  else if(request.method==='POST'){const input=await boundedBody(request);if(input.action?.kind==='ad_intent'){if(!adsConfigured(env))return json(503,{error:'ads_not_configured'});await prepareAdVerification();}data=await api.execute(uid,input);}
  else return json(405,{error:'method_not_allowed'});
- if(url.pathname==='/v4/odyssey'&&data.ad_delivery){data.ad_delivery.expected_unit=env.ODYSSEY_AD_UNIT||'';data.ad_delivery.expected_reward_item=env.ODYSSEY_AD_REWARD_ITEM||'';}
+ // Also normalizes an old action journal replay; never rewrite its stored receipt.
+ if(url.pathname==='/v4/odyssey')data=odysseyWire(data,env);
  ctx?.waitUntil?.(flushOutbox(env));return json(200,data);
  }catch(error){if(url.pathname==='/v1/odyssey/ssv'){const stage=String(error.code||error.message||'unknown').replace(/[^A-Za-z0-9_]/g,'').slice(0,64);console.warn('JADE_ODYSSEY_AD stage='+stage);if(error.name==='SsvRejection')return json(400,{error:error.code});}const known=['paid_account_on_hold','no_verified_play_credit','refund_monitor_stale'];if(error.status||known.includes(error.code))return json(error.status||409,{error:error.code});console.warn('JADE_ODYSSEY stage=request_unavailable');return json(503,{error:'odyssey_unavailable'});}}

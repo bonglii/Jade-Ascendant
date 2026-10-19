@@ -176,8 +176,8 @@ func _on_result(request_id: String, success: bool, result_status: String, payloa
 func watch_ad() -> bool:
 	var ads: Node = get_node_or_null("/root/MonetizationManager")
 	if ad_waiting(): return false
-	if snapshot.get("ad_delivery",{}).get("configured",true)==false: ad_delivery_state="configuration_required";changed.emit();return false
-	var expected: String=str(snapshot.get("ad_delivery",{}).get("expected_unit",""))
+	if snapshot.get("state",{}).get("ad_delivery",snapshot.get("ad_delivery",{})).get("configured",true)==false: ad_delivery_state="configuration_required";changed.emit();return false
+	var expected: String=str(snapshot.get("state",{}).get("ad_delivery",snapshot.get("ad_delivery",{})).get("expected_unit",""))
 	var unit: String=str(ProjectSettings.get_setting("monetization/admob/rewarded_ad_unit_id",""))
 	if not expected.is_empty() and not unit.is_empty() and expected!=unit: ad_delivery_state="configuration_mismatch";changed.emit();return false
 	if int(snapshot.get("state",{}).get("daily_ads",0))>=2: return false
@@ -233,7 +233,7 @@ func _clear_ad_wait() -> void:
 	if not _ad_path().is_empty() and FileAccess.file_exists(_ad_path()): DirAccess.remove_absolute(_ad_path())
 	_ad_nonce="";_ad_before=-1;_poll_until=0;_ad_expires_at=0
 func _observe_ad_delivery(data: Dictionary) -> void:
-	var receipt: Dictionary=data.get("ad_delivery",{})
+	var receipt: Dictionary=data.get("state",{}).get("ad_delivery",data.get("ad_delivery",{}))
 	if receipt.get("configured",true)==false and _ad_nonce.is_empty(): ad_delivery_state="configuration_required"
 	if _ad_nonce.is_empty(): return
 	var same: bool=str(receipt.get("nonce",""))==_ad_nonce

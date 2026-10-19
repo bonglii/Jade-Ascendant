@@ -10,7 +10,10 @@ func _initialize()->void: call_deferred("run")
 func check(value: bool,reason: String)->void:
  if not value: push_error(reason);quit(1)
 func data(owner: String,nonce: String,stage: String,tickets: int=3)->Dictionary:
- return {"owner_binding":owner,"server_time":1800000000,"event":{"id":"dragon-test","enabled":true,"purchases_enabled":true,"starts_at":1799999900,"ends_at":1801000000},"state":{"tickets":tickets,"daily_ads":1 if stage=="credited" else 0,"day":"2027-01-15","missions":[],"milestones":[]},"ad_delivery":{"configured":true,"nonce":nonce,"stage":stage,"expires_at":1800001200},"purchase_bonus":{"active":true}}
+ var out: Dictionary={"owner_binding":owner,"server_time":1800000000,"event":{"id":"dragon-test","enabled":true,"purchases_enabled":true,"starts_at":1799999900,"ends_at":1801000000},"state":{"tickets":tickets,"daily_ads":1 if stage=="credited" else 0,"day":"2027-01-15","missions":[],"milestones":[]},"ad_delivery":{"configured":true,"nonce":nonce,"stage":stage,"expires_at":1800001200},"purchase_bonus":{"active":true}}
+ out.state.ad_delivery=out.ad_delivery
+ out.erase("ad_delivery")
+ return out
 func run()->void:
  var manager_script: GDScript=load("res://scripts/managers/monetization_manager.gd")
  var manager: Node=manager_script.new();var provider:=Provider.new();manager.provider=provider;manager.policy_store=Store.new();manager.placement_counts={"odyssey_roll":2,"pavilion":1}
@@ -23,6 +26,9 @@ func run()->void:
  var client: Node=script.new();client.native=Native.new();root.add_child(client);client.set_process(false);client._binding=client.test_binding
  var nonce: String="d".repeat(32);client.snapshot=data(client._binding,nonce,"pending");client.status="connected";client._received_msec=Time.get_ticks_msec()
  check(not client.watch_ad() and client.status=="connected","Unavailable SDK ads must not disconnect the event UI")
+ client.snapshot.state.ad_delivery.configured=false
+ check(not client.watch_ad() and client.ad_delivery_state=="configuration_required" and client.status=="connected","Nested server config must gate only ads, not the connection")
+ client.snapshot.state.ad_delivery.configured=true
  client._ad_nonce=nonce;client._ad_before=0;client._ad_day="2027-01-15";client._ad_expires_at=1800001200
  check(client._save_ad_wait(),"Ad intent must be durable before playback")
  client._ad_finished("odyssey_roll","completed")
@@ -38,6 +44,10 @@ func run()->void:
  restored.snapshot=data(restored._binding,nonce,"pending");restored._received_msec=Time.get_ticks_msec();restored.refresh()
  restored._on_result(restored._request_id,true,"ok",JSON.stringify(data(restored._binding,nonce,"credited",4)))
  check(int(restored.snapshot.state.tickets)==4 and not restored.ad_waiting() and restored.ad_delivery_state=="credited","Only the authoritative credited snapshot settles the die")
+ var legacy: Dictionary=data(restored._binding,nonce,"credited",4)
+ legacy.ad_delivery=legacy.state.ad_delivery;legacy.state.erase("ad_delivery")
+ restored._ad_nonce=nonce;restored._observe_ad_delivery(legacy)
+ check(not restored.ad_waiting(),"Client retains compatibility with older root receipt metadata")
  check(not FileAccess.file_exists(restored._ad_path()),"Confirmed receipt removes only its pending-ad journal")
  restored.status="refreshing";check(restored.purchase_bonus_active(),"Read-only polling must not hide top-up offers")
  restored._ad_nonce=nonce;restored._ad_expires_at=1800001200;restored._save_ad_wait();restored.test_binding="f".repeat(64);restored._process(0)
