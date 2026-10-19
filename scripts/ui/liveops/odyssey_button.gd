@@ -33,7 +33,7 @@ func _press(down: bool) -> void:
 func _draw() -> void:
 	var skin: Texture2D=Art.texture("medallion" if not glyph.is_empty() else "button")
 	draw_texture_rect(skin,Rect2(Vector2(0,3),size),false,Color(0,0.02,0.02,0.6))
-	draw_texture_rect(skin,Rect2(Vector2.ZERO,size),false,Color(0.45,0.53,0.48,0.90) if disabled else Color.WHITE)
+	draw_texture_rect(skin,Rect2(Vector2.ZERO,size),false,Color(0.82,0.87,0.82,1.0) if disabled else Color.WHITE)
 	if glyph.is_empty(): return
 	var center: Vector2=size*0.5; var r: float=size.x*0.13; var ink:=Color("f4e4b5")
 	match glyph:

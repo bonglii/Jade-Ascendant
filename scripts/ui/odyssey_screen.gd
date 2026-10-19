@@ -42,6 +42,11 @@ var _arena: Control
 var _arena_submit_pending: Dictionary={}
 var _retry_at: int=0
 var _retry_count: int=0
+var _queued_action: Dictionary={}
+var _queued_ad: bool=false
+var _active_action: Dictionary={}
+var _modal_motion: Tween
+var _card_sequence: int=0
 var _battle_buttons: Array[Button] = []
 var _battle_timer: Label
 var _pending_milestone: int = 0
@@ -57,7 +62,9 @@ func _navigation(glyph: String, callback: Callable, hint: String) -> Button:
 func _card() -> PanelContainer:
 	return PremiumPanel.new()
 func _icon(texture: Texture2D, side: float) -> TextureRect:
-	var icon:=TextureRect.new(); icon.texture=texture; icon.custom_minimum_size=Vector2.ONE*side; icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE; icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED; icon.mouse_filter=Control.MOUSE_FILTER_IGNORE; return icon
+	var icon:=TextureRect.new();
+	if texture==Art.DIE: icon.set_script(preload("res://scripts/ui/liveops/odyssey_die_badge.gd"))
+	icon.texture=texture; icon.custom_minimum_size=Vector2.ONE*side; icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE; icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED; icon.mouse_filter=Control.MOUSE_FILTER_IGNORE; return icon
 func _presenting() -> bool: return _reveal_pending or not _presentation_pending.is_empty() or (board!=null and board.is_travelling())
 func _roll_pressed() -> void:
 	if client==null or client.busy or _presenting(): return
@@ -66,7 +73,11 @@ func _roll_pressed() -> void:
 	elif state.get("pending","")=="route": _routes()
 	else: _submit({"kind":"roll"})
 func _watch_ad() -> void:
-	if client!=null and not client.busy and not _presenting(): client.watch_ad()
+	if client==null or _presenting() or _ad_pending(): return
+	if client.busy:
+		if client.status=="refreshing": _queued_ad=true
+		return
+	client.watch_ad()
 func _dice_revealed() -> void:
 	var binding: String=_presentation_binding
 	await get_tree().create_timer(0.52 if not Art.reduced(self) else 0.12).timeout
@@ -139,14 +150,29 @@ func _ready() -> void:
 	if client!=null: client.changed.connect(_refresh); client.finished.connect(_finished); client.refresh()
 	_refresh()
 	if not Art.reduced(self): body.modulate.a=0.0; create_tween().tween_property(body,"modulate:a",1.0,0.24)
+func _mutating() -> bool:
+	return client!=null and client.busy and client.status!="refreshing"
+func _confirmed_view() -> bool:
+	return client!=null and not client.snapshot.is_empty() and client.status in ["connected","refreshing","sending_action","waiting_for_ad_verification"]
+func _ad_pending() -> bool: return client!=null and client.has_method("ad_waiting") and bool(client.call("ad_waiting"))
 func _submit(action: Dictionary) -> void:
-	if client==null or client.busy or _presenting(): return
+	if client==null or _presenting(): return
+	if client.busy:
+		if client.status=="refreshing" and _queued_action.is_empty(): _queued_action=action.duplicate(true)
+		return
 	if action.get("kind")=="roll": dice_view.start()
+	_active_action=action.duplicate(true)
 	if client.submit(action):
 		if action.get("kind") == "milestone": _pending_milestone = int(action.get("milestone",0))
 		if not ((_modal_kind=="missions" and action.get("kind") in ["mission","task","missions_all"]) or (_modal_kind=="battle" and action.get("kind")=="arena_finish")): _close_modal()
-	elif action.get("kind")=="roll": dice_view.cancel()
+	else:
+		_active_action={}
+		if action.get("kind")=="roll": dice_view.cancel()
 func _process(delta: float) -> void:
+	if client!=null and not client.busy and not _presenting():
+		if not _queued_action.is_empty():
+			var queued: Dictionary=_queued_action;_queued_action={};_submit(queued)
+		elif _queued_ad: _queued_ad=false;_watch_ad()
 	if not _arena_submit_pending.is_empty() and client!=null and not client.busy:
 		var action: Dictionary=_arena_submit_pending;_arena_submit_pending={};_submit(action)
 	if client!=null and not client.busy and client.status in ["NETWORK_UNAVAILABLE","REQUEST_TIMEOUT","connection_timeout","BACKEND_NOT_READY","BUSY"] and _retry_count<3 and Time.get_ticks_msec()>=_retry_at:
@@ -185,7 +211,7 @@ func _refresh() -> void:
 	var active: bool = bool(event.get("enabled",false)) and int(client.server_time()) >= int(event.get("starts_at",0)) and int(client.server_time()) < int(event.get("ends_at",0))
 	var binding: String=str(client.snapshot.get("owner_binding",""))+":"+str(event.get("id",""))
 	if binding!=_presentation_binding:
-		_presentation_binding=binding; _reveal_pending=false; _presentation_pending={}; observed_rolls=-1; _reward_identity=""; _pending_milestone=0
+		_presentation_binding=binding; _queued_action={};_queued_ad=false; _reveal_pending=false; _presentation_pending={}; observed_rolls=-1; _reward_identity=""; _pending_milestone=0
 		dice_view.cancel(); board.show_position(int(state.get("position",0))); _close_modal()
 	var count: int = int(state.get("rolls",0)); tickets.text = str(int(state.get("tickets",0))); progress.text = "%d / 72 JOURNEYS" % count; progress_bar.value=mini(count,72)
 	var dice: int = int(state.get("last_die",0)); var steps: int = dice if observed_rolls >= 0 and count == observed_rolls + 1 else 0
@@ -199,20 +225,22 @@ func _refresh() -> void:
 	var travelling: bool = _presenting()
 	var resolving: bool=state.get("battle") is Dictionary or state.get("pending","")=="route"
 	var claim_open: bool=bool(event.get("enabled",false)) and client.server_time()>=int(event.get("starts_at",0)) and client.server_time()<int(event.get("ends_at",0))+3*86400
-	roll.disabled=client.busy or travelling or (not active and not (resolving and claim_open)) or (int(state.get("tickets",0))<1 and not resolving)
-	ad.disabled = client.busy or travelling or not active or not bool(event.get("ads_enabled",false)) or int(state.get("daily_ads",0)) >= 2
-	ad.text = "+1 DIE · AD %d/2" % int(state.get("daily_ads",0))
+	roll.disabled=_mutating() or not _confirmed_view() or travelling or (not active and not (resolving and claim_open)) or (int(state.get("tickets",0))<1 and not resolving)
+	ad.disabled = _mutating() or _ad_pending() or client.snapshot.get("ad_delivery",{}).get("configured",true)==false or not _confirmed_view() or travelling or not active or not bool(event.get("ads_enabled",false)) or int(state.get("daily_ads",0)) >= 2
+	ad.text = "VERIFIKASI HADIAH…" if _ad_pending() else "+1 DIE · AD %d/2" % int(state.get("daily_ads",0))
 	buy.disabled = travelling
 	for i: int in range(milestones.size()):
 		var n: int = [24,48,72][i]; var claimed: bool = n in state.get("milestones",[])
 		milestones[i].text = "%d · %s" % [n, "CLAIMED" if claimed else "CLAIM" if count>=n else "2 SEALS" if n==24 else "3 SEALS" if n==48 else "COMPASS"]
-		milestones[i].disabled = client.busy or travelling
+		milestones[i].disabled = travelling
 	notice.text = str(state.get("notice","Connect Google to begin your journey.")) if client.status in ["connected","sending_action","refreshing"] else {"NETWORK_UNAVAILABLE":"Connection failed. Tap Reconnect; your progress is saved.","ENDPOINT_POLICY_REJECTED":"App update required. Install the latest Play build.","native_update_required":"App update required. Install the latest Play build.","ACCOUNT_HELD":"A refunded purchase requires review. Contact support.","BACKEND_NOT_READY":"Server is preparing the event. Please retry shortly."}.get(str(client.status),str(client.status).replace("_"," ").capitalize())
 	if client.busy and client.status=="sending_action": notice.text="MENGIRIM AKSI…"
+	elif client.has_method("ad_feedback") and not str(client.call("ad_feedback")).is_empty(): notice.text=str(client.call("ad_feedback"))
+	if not _queued_action.is_empty() or _queued_ad: notice.text="Aksi diantrekan · menyelesaikan sinkronisasi"
 	if travelling: notice.text="THE DIE IS REVEALING…" if _reveal_pending else "ROLLED %d · LIN YUE IS TRAVELLING" % dice
 	roll.text="ROLLING…" if client.busy and dice_view.rolling else "TRAVELLING…" if travelling else "CONTINUE THE GATE" if state.get("battle") is Dictionary else "CHOOSE YOUR PATH" if state.get("pending","")=="route" else "ROLL DICE · 1 DIE"
 	buy.text="TRAVEL SHOP"
-	missions_button.disabled=client.busy or travelling or not active
+	missions_button.disabled=travelling or not active
 	var mission_ready: bool=false
 	for n: int in [1,3,5]:
 		if int(state.get("daily_rolls",0))>=n and n not in state.get("missions",[]): mission_ready=true
@@ -225,6 +253,7 @@ func _refresh() -> void:
 		elif state.get("pending", "") == "route": _routes()
 
 func _finished(action: String, success: bool) -> void:
+	_active_action={}
 	if not success and action=="roll": dice_view.cancel()
 	if success and action in ["mission","task","missions_all","buy_dice","route","counter","arena_finish"]: _show_reward()
 	if action == "milestone":
@@ -233,29 +262,33 @@ func _finished(action: String, success: bool) -> void:
 		_pending_milestone = 0
 func _close_modal() -> void:
 	if is_instance_valid(modal): modal.queue_free()
-	modal = null; _modal_kind = ""; _battle_buttons.clear(); _battle_timer = null; _mission_handles.clear(); _mission_all=null; _modal_panel=null; _modal_header=null; _modal_footer=null; _arena=null
+	modal = null; _modal_kind = ""; _card_sequence=0; _battle_buttons.clear(); _battle_timer = null; _mission_handles.clear(); _mission_all=null; _modal_panel=null; _modal_header=null; _modal_footer=null; _arena=null
 func _fit_popup() -> void:
 	if not is_instance_valid(_modal_panel): return
 	var span: Vector2=safe.size
-	_modal_panel.size=Vector2(minf(span.x-24,600),minf(span.y-32,980));_modal_panel.position=(span-_modal_panel.size)*0.5
-	if is_instance_valid(_modal_header): _modal_header.custom_minimum_size.y=clampf(span.y*0.20,96,190)
+	_modal_panel.size=Vector2(minf(span.x-32,600),minf(span.y-48,1020));_modal_panel.position=(span-_modal_panel.size)*0.5
+	if is_instance_valid(_modal_header): _modal_header.custom_minimum_size.y=clampf(span.y*0.16,90,156)
 func _popup(title: String, kind: String) -> VBoxContainer:
 	_close_modal(); _modal_kind=kind
 	modal=Control.new();modal.z_index=20;safe.add_child(modal);modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var dim:=ColorRect.new();dim.color=Color(0.002,0.01,0.02,0.88);modal.add_child(dim);dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_modal_panel=Panel.new();_modal_panel.name="OdysseyFlowPanel";_modal_panel.clip_contents=true;_modal_panel.add_theme_stylebox_override("panel",Flow.style(4));modal.add_child(_modal_panel)
 	var inset:=MarginContainer.new();_modal_panel.add_child(inset);inset.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	for side: String in ["left","right","top","bottom"]: inset.add_theme_constant_override("margin_"+side,18)
-	var column:=VBoxContainer.new();column.add_theme_constant_override("separation",8);inset.add_child(column)
+	for side: String in ["left","right"]: inset.add_theme_constant_override("margin_"+side,24)
+	for side: String in ["top","bottom"]: inset.add_theme_constant_override("margin_"+side,28)
+	var column:=VBoxContainer.new();column.add_theme_constant_override("separation",12);inset.add_child(column)
 	_modal_header=Control.new();_modal_header.clip_contents=true;column.add_child(_modal_header)
 	var banner:=TextureRect.new();banner.texture=Flow.texture(0 if kind=="missions" else 1 if kind in ["shop","confirm_pack"] else 2);banner.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;banner.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_COVERED;_modal_header.add_child(banner);banner.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var shade:=ColorRect.new();shade.color=Color(0.006,0.05,0.045,0.78);_modal_header.add_child(shade);shade.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE);shade.offset_top=-62
 	var heading: Label=label(title,27);heading.add_theme_font_override("font",FONT);heading.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;shade.add_child(heading);heading.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);heading.offset_left=12;heading.offset_right=-12
 	var close: Button=_navigation("close",_close_modal,"Close");close.custom_minimum_size=Vector2(52,52);_modal_header.add_child(close);close.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT);close.offset_left=-56;close.offset_right=-4;close.offset_top=4;close.offset_bottom=56
 	var scroll:=ScrollContainer.new();scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL;scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_SHOW_NEVER;scroll.scroll_deadzone=12;column.add_child(scroll)
-	var body:=VBoxContainer.new();body.size_flags_horizontal=Control.SIZE_EXPAND_FILL;body.add_theme_constant_override("separation",10);scroll.add_child(body)
+	var body:=VBoxContainer.new();body.size_flags_horizontal=Control.SIZE_EXPAND_FILL;body.add_theme_constant_override("separation",14);scroll.add_child(body)
 	_modal_footer=VBoxContainer.new();column.add_child(_modal_footer)
 	_fit_popup();_fit_popup.call_deferred()
+	if not Art.reduced(self):
+		_modal_panel.modulate.a=0.0
+		_modal_motion=create_tween();_modal_motion.tween_property(_modal_panel,"modulate:a",1.0,0.18)
 	if not safe.resized.is_connected(_fit_popup): safe.resized.connect(_fit_popup)
 	return body
 func _info() -> void:
@@ -267,14 +300,14 @@ func _info() -> void:
 	body.add_child(label("GUARANTEED MILESTONES",19)); body.add_child(label("24 journeys: 2 Pavilion Seals.\n48: 3 Pavilion Seals + 500 Spirit Stones.\n72: one Heavenweaver Compass, secured in Mail.\nYou have 3 days after the season to claim reached milestones. Unused dice expire.",16))
 func _mission_row(body: VBoxContainer, caption: String, target: int, kind: String, key: Variant, reward: String, icon: Texture2D) -> void:
 	var card:=Flow.card();body.add_child(card);var content:=VBoxContainer.new();content.add_theme_constant_override("separation",6);card.add_child(content)
-	var heading: Label=Flow.text(caption,18);content.add_child(heading)
-	var meter:=ProgressBar.new();meter.max_value=target;meter.show_percentage=false;meter.custom_minimum_size.y=8;content.add_child(meter)
-	var row:=HBoxContainer.new();row.add_theme_constant_override("separation",8);content.add_child(row);row.add_child(_icon(icon,34))
-	var count: Label=Flow.text(reward,16);row.add_child(count)
+	var heading: Label=Flow.text(caption,22);content.add_child(heading)
+	var meter:=ProgressBar.new();meter.max_value=target;meter.show_percentage=false;meter.custom_minimum_size.y=8;Flow.progress(meter);content.add_child(meter)
+	var row:=HBoxContainer.new();row.add_theme_constant_override("separation",10);content.add_child(row);row.add_child(_icon(icon,40))
+	var count: Label=Flow.text(reward,20);row.add_child(count)
 	var claim: Button=Flow.button("",func() -> void:
 		if kind=="login": return
 		_submit({"kind":"mission","mission":int(key)} if kind=="roll" else {"kind":"task","task":str(key)}))
-	claim.custom_minimum_size.x=148;claim.size_flags_horizontal=Control.SIZE_SHRINK_END;row.add_child(claim)
+	content.add_child(claim)
 	_mission_handles.append({"kind":kind,"key":key,"target":target,"meter":meter,"button":claim,"heading":heading,"caption":caption})
 func _update_mission_handles() -> void:
 	if client==null: return
@@ -284,10 +317,11 @@ func _update_mission_handles() -> void:
 		var claimed: bool=int(handle.key) in state.get("missions",[]) if handle.kind=="roll" else str(handle.key) in state.get("task_claims",[]) if handle.kind=="task" else progress_value==1
 		var ready: bool=progress_value>=int(handle.target) and not claimed
 		handle.meter.value=mini(progress_value,int(handle.target));handle.heading.text="%s  ·  %d/%d" % [handle.caption,mini(progress_value,int(handle.target)),int(handle.target)]
-		handle.button.text="DITERIMA" if claimed and handle.kind=="login" else "DIKLAIM" if claimed else "MENGIRIM…" if client.busy else "KLAIM" if ready else "LANJUTKAN"
-		handle.button.disabled=client.busy or claimed or not ready or client.status!="connected"
+		handle.button.text="DITERIMA" if claimed and handle.kind=="login" else "DIKLAIM" if claimed else "MENGIRIM…" if _mutating() and _active_action.get("kind")==("mission" if handle.kind=="roll" else "task") and _active_action.get("mission" if handle.kind=="roll" else "task")==handle.key else "KLAIM" if ready else "LANJUTKAN"
+		handle.button.disabled=_mutating() or claimed or not ready or not _confirmed_view()
+		handle.button.add_theme_stylebox_override("disabled",Flow.style(5 if claimed else 4,true))
 		any_ready=any_ready or ready
-	if is_instance_valid(_mission_all): _mission_all.disabled=not any_ready or client.busy or client.status!="connected";_mission_all.text="MENGIRIM…" if client.busy else "KLAIM TERSEDIA"
+	if is_instance_valid(_mission_all): _mission_all.disabled=not any_ready or _mutating() or not _confirmed_view();_mission_all.text="MENGIRIM…" if _mutating() and _active_action.get("kind")=="missions_all" else "KLAIM TERSEDIA"
 func _missions() -> void:
 	var body: VBoxContainer=_popup("DAILY MISSIONS","missions")
 	var hint: Label=label("RESET 07.00 WIB · Hadiah tambahan masuk Mailbox",14);hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;body.add_child(hint)
@@ -302,7 +336,7 @@ func _shop() -> void:
 	var body: VBoxContainer=_popup("TRAVEL SHOP","shop")
 	var bonus: Dictionary=client.snapshot.get("purchase_bonus",{})
 	var hint: Label=label("Jade + bonus dadu · Sekali per paket per season",15);hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;body.add_child(hint)
-	if client.purchase_bonus_active():
+	if not bonus.get("offers",[]).is_empty():
 		for offer: Dictionary in bonus.get("offers",[]):
 			var card:=Flow.card();body.add_child(card);var content:=VBoxContainer.new();content.add_theme_constant_override("separation",6);card.add_child(content)
 			content.add_child(Flow.text("%d Jade + %d Dadu" % [int(offer.jade),int(offer.dice)],21,true))
@@ -317,7 +351,7 @@ func _shop() -> void:
 	var paid: Node=get_node_or_null("/root/PavilionManager/PaidGameplayV2");var balance: int=int(paid.call("paid_balance")) if paid!=null else 0
 	box.add_child(Flow.text("Saldo: %d · Hari ini %d/10 · Season %d/40" % [balance,int(state.get("daily_bought",0)),int(state.get("season_bought",0))],15))
 	var limits: Dictionary=client.snapshot.get("limits",{})
-	var exchange_ready: bool=not client.busy and client.status=="connected" and bool(event.get("enabled",false)) and bool(event.get("purchases_enabled",false)) and client.server_time()>=int(event.get("starts_at",0)) and client.server_time()<int(event.get("ends_at",0)) and int(state.get("rolls",0))<152
+	var exchange_ready: bool=not _mutating() and _confirmed_view() and bool(event.get("enabled",false)) and bool(event.get("purchases_enabled",false)) and client.server_time()>=int(event.get("starts_at",0)) and client.server_time()<int(event.get("ends_at",0)) and int(state.get("rolls",0))<152
 	for pack: int in [1,5]:
 		var price: int=int(limits.get("price_one" if pack==1 else "price_five",10 if pack==1 else 40))
 		var action: Button=Flow.button("%d Dadu · %d Jade" % [pack,price],_confirm_pack.bind(pack,price));action.disabled=not exchange_ready or balance<price or int(state.get("daily_bought",0))+pack>10 or int(state.get("season_bought",0))+pack>40;box.add_child(action)
@@ -345,7 +379,7 @@ func _journey_rewards() -> void:
 		var claimed: bool=n in state.get("milestones",[])
 		var event: Dictionary=client.snapshot.get("event",{}) if client.snapshot.get("event") is Dictionary else {}
 		var claim_open: bool=bool(event.get("enabled",false)) and client.server_time()>=int(event.get("starts_at",0)) and client.server_time()<int(event.get("ends_at",0))+3*86400
-		var claim: Button=Flow.button("DIKLAIM" if claimed else "KLAIM" if count>=n else "BELUM TERCAPAI",func() -> void: _submit({"kind":"milestone","milestone":n}));claim.disabled=claimed or count<n or client.busy or client.status!="connected" or not claim_open;content.add_child(claim)
+		var claim: Button=Flow.button("DIKLAIM" if claimed else "KLAIM" if count>=n else "BELUM TERCAPAI",func() -> void: _submit({"kind":"milestone","milestone":n}));claim.disabled=claimed or count<n or _mutating() or not _confirmed_view() or not claim_open;content.add_child(claim)
 	var footer: Label=label("Hadiah dikirim ke Mailbox · Masa klaim 3 hari setelah season",14);footer.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;body.add_child(footer)
 func _routes() -> void:
 	if not ResourceLoader.has_cached(ARENA_PATH): ResourceLoader.load_threaded_request(ARENA_PATH)

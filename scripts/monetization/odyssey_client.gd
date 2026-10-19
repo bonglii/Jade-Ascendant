@@ -15,6 +15,10 @@ var _poll_until: int = 0
 var _ad_nonce: String = ""
 var _ad_before: int=-1
 var _ad_day: String=""
+var ad_delivery_state: String="idle"
+var _ad_expires_at: int=0
+var _ad_attempts: int=0
+var _ad_cancelled: bool=false
 var _received_msec: int = 0
 var run_authorized: bool = false
 var _preparing_run: bool = false
@@ -25,7 +29,7 @@ func server_time() -> int:
 
 func purchase_bonus_active() -> bool:
 	var event: Variant=snapshot.get("event")
-	return status=="connected" and event is Dictionary and bool(event.get("enabled",false)) and bool(event.get("purchases_enabled",false)) and server_time()>=int(event.get("starts_at",0)) and server_time()<int(event.get("ends_at",0)) and bool(snapshot.get("purchase_bonus",{}).get("active",false))
+	return not snapshot.is_empty() and event is Dictionary and bool(event.get("enabled",false)) and bool(event.get("purchases_enabled",false)) and server_time()>=int(event.get("starts_at",0)) and server_time()<int(event.get("ends_at",0)) and bool(snapshot.get("purchase_bonus",{}).get("active",false))
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -92,17 +96,22 @@ func _bridge() -> Object:
 func _process(_delta: float) -> void:
 	var live: String = _live_binding()
 	if live != _binding:
-		_binding = live; snapshot = {}; busy = false; run_authorized = false; _request_id = ""; _command = {}; _ad_nonce = ""; _poll_until = 0;_ad_before=-1;_ad_day=""
+		_binding = live; snapshot = {}; busy = false; run_authorized = false; _request_id = ""; _command = {}; _ad_nonce = ""; _poll_until = 0;_ad_before=-1;_ad_day="";ad_delivery_state="idle";_ad_expires_at=0;_ad_attempts=0
+		_load_ad_wait()
 		status = "account_changed"; changed.emit()
 	if busy and Time.get_ticks_msec() > _deadline:
 		busy = false; status = "connection_timeout"; changed.emit()
+	if not _ad_nonce.is_empty() and _ad_expires_at>0 and _ad_now()>_ad_expires_at:
+		ad_delivery_state="expired";_clear_ad_wait();changed.emit()
 	if _poll_until > Time.get_ticks_msec() and not busy and Time.get_ticks_msec() > _read_at:
+		_ad_attempts+=1
 		refresh()
 func refresh() -> bool:
 	if busy: return false
 	var live: String = _live_binding()
 	if live != _binding:
-		_binding = live; snapshot = {}; run_authorized = false; _request_id = ""; _command = {}; _ad_nonce = ""; _poll_until = 0;_ad_before=-1;_ad_day=""
+		_binding = live; snapshot = {}; run_authorized = false; _request_id = ""; _command = {}; _ad_nonce = ""; _poll_until = 0;_ad_before=-1;_ad_day="";ad_delivery_state="idle";_ad_expires_at=0;_ad_attempts=0
+		_load_ad_wait()
 	if _binding.length() != 64: status = "google_sign_in_required"; changed.emit(); return false
 	var pending: Dictionary = _pending()
 	if pending.has("error"): status = "recovery_required"; changed.emit(); return false
@@ -125,7 +134,7 @@ func _dispatch(command: Dictionary) -> bool:
 	var native: Object = _bridge()
 	if native == null: status = "native_update_required"; changed.emit(); return false
 	_command = command; _request_id = str(command.get("request_id", Crypto.new().generate_random_bytes(16).hex_encode()))
-	busy = true; status = "sending_action" if not command.is_empty() and not snapshot.is_empty() else "refreshing" if not snapshot.is_empty() else "connecting"; _deadline = Time.get_ticks_msec() + 46000; _read_at = Time.get_ticks_msec() + 4000
+	busy = true; status = "sending_action" if not command.is_empty() and not snapshot.is_empty() else "refreshing" if not snapshot.is_empty() else "connecting"; _deadline = Time.get_ticks_msec() + 46000; _read_at = Time.get_ticks_msec() + ([4000,8000,15000,30000,60000][mini(_ad_attempts,4)] if not _ad_nonce.is_empty() else 4000)
 	changed.emit(); native.call("requestOdysseyV1", _request_id, "" if command.is_empty() else JSON.stringify(command)); return true
 func _on_result(request_id: String, success: bool, result_status: String, payload: String) -> void:
 	if request_id != _request_id or _binding != _live_binding(): return
@@ -144,15 +153,15 @@ func _on_result(request_id: String, success: bool, result_status: String, payloa
 		if action == "arena_finish":
 			var arena_path: String="user://odyssey_arena_"+_binding+".json"
 			if FileAccess.file_exists(arena_path): DirAccess.remove_absolute(arena_path)
-		if _ad_before>=0 and (int(data.state.get("daily_ads",0))>_ad_before or (str(data.state.get("day",""))!=_ad_day and int(data.state.get("daily_ads",0))>0)):
-			_poll_until=0;_ad_before=-1;_ad_nonce=""
+		_observe_ad_delivery(data)
 		if action == "buy_dice":
 			var paid: Node = get_node_or_null("/root/PavilionManager/PaidGameplayV2")
 			if paid != null: paid.call("refresh")
 		if action == "ad_intent" and data.get("ad_intent") is Dictionary:
 			_ad_before=int(data.state.get("daily_ads",0));_ad_day=str(data.state.get("day",""))
-			_ad_nonce = str(data.ad_intent.nonce)
-			_show_ad()
+			_ad_nonce = str(data.ad_intent.nonce);_ad_expires_at=int(data.ad_intent.expires_at);_ad_attempts=0;_ad_cancelled=false;ad_delivery_state="watching"
+			if _save_ad_wait(): _show_ad()
+			else: ad_delivery_state="journal_failed";_ad_nonce=""
 		var mail: Node = get_node_or_null("/root/ServerMailManager")
 		if mail != null and action in ["roll", "route", "counter", "milestone", "task", "missions_all", "arena_finish"]:
 			if mail.has_method("hint_pending_delivery"): mail.call("hint_pending_delivery")
@@ -162,24 +171,78 @@ func _on_result(request_id: String, success: bool, result_status: String, payloa
 		# transport failures keep the exact durable request for recovery.
 		if DirAccess.remove_absolute(_path()) == OK:
 			_command = {}; call_deferred("refresh")
+	if not success and action=="ad_intent": ad_delivery_state="verification_unavailable"
 	finished.emit(action, success); changed.emit()
 func watch_ad() -> bool:
 	var ads: Node = get_node_or_null("/root/MonetizationManager")
+	if ad_waiting(): return false
+	if snapshot.get("ad_delivery",{}).get("configured",true)==false: ad_delivery_state="configuration_required";changed.emit();return false
+	var expected: String=str(snapshot.get("ad_delivery",{}).get("expected_unit",""))
+	var unit: String=str(ProjectSettings.get_setting("monetization/admob/rewarded_ad_unit_id",""))
+	if not expected.is_empty() and not unit.is_empty() and expected!=unit: ad_delivery_state="configuration_mismatch";changed.emit();return false
+	if int(snapshot.get("state",{}).get("daily_ads",0))>=2: return false
 	if ads == null or not bool(ads.call("rewarded_available", "odyssey_roll")):
-		status = "ad_not_available"; changed.emit(); return false
+		ad_delivery_state = "unavailable"; changed.emit(); return false
 	return submit({"kind": "ad_intent"})
 func _show_ad() -> void:
 	var ads: Node = get_node_or_null("/root/MonetizationManager")
 	if ads == null: return
 	var provider: Node = ads.get("provider")
-	if provider == null or not provider.has_method("prepare_odyssey_ssv"): status = "ad_not_available"; return
+	if provider == null or not provider.has_method("prepare_odyssey_ssv"): ad_delivery_state="unavailable";_clear_ad_wait();return
 	provider.call("prepare_odyssey_ssv", _ad_nonce)
-	if not bool(ads.call("show_rewarded", "odyssey_roll")): status = "ad_not_available"
-func _ad_finished(placement: String, _result: String) -> void:
-	if placement != "odyssey_roll": return
-	# Closing/watching is not proof. Poll for Google's signed server receipt.
-	_poll_until = Time.get_ticks_msec() + 120000; _read_at = 0
-	status = "waiting_for_ad_verification"; changed.emit()
+	if not bool(ads.call("show_rewarded", "odyssey_roll")): ad_delivery_state="unavailable";_clear_ad_wait()
+func _ad_finished(placement: String, result: String) -> void:
+	if placement != "odyssey_roll" or _ad_nonce.is_empty(): return
+	# SDK completion is presentation evidence, never a currency grant.
+	_ad_cancelled=result in ["cancelled","unavailable"]
+	ad_delivery_state="verifying" if result=="completed" else "checking"
+	_save_ad_wait()
+	_poll_until=Time.get_ticks_msec()+maxi(0,_ad_expires_at-_ad_now())*1000;_read_at=0;_ad_attempts=0;changed.emit()
+func ad_waiting() -> bool: return not _ad_nonce.is_empty()
+func ad_feedback() -> String:
+	match ad_delivery_state:
+		"watching": return "Iklan sedang ditampilkan"
+		"verifying","checking": return "Memverifikasi hadiah iklan…" if _ad_attempts<3 else "Hadiah tertunda · pengecekan otomatis tetap berjalan"
+		"credited": return "+1 Dadu iklan terkonfirmasi server"
+		"configuration_required": return "Hadiah iklan belum siap di server"
+		"configuration_mismatch": return "Unit iklan tidak sesuai server · iklan tidak dibuka"
+		"verification_unavailable": return "Verifikasi iklan belum siap · video belum dibuka"
+		"expired": return "Konfirmasi iklan belum diterima · sinkronkan kembali"
+		"journal_failed": return "Penyimpanan belum siap · iklan tidak dibuka"
+		"unavailable": return "Iklan belum tersedia. Coba lagi nanti."
+		"cancelled": return "Iklan dibatalkan · dadu tidak dipotong"
+	return ""
+func _ad_now() -> int: return server_time() if not snapshot.is_empty() else int(Time.get_unix_time_from_system())
+func _ad_path() -> String: return "user://odyssey_ad_"+_binding+".json" if _binding.length()==64 else ""
+func _save_ad_wait() -> bool:
+	if _ad_path().is_empty(): return false
+	var file:=FileAccess.open(_ad_path()+".tmp",FileAccess.WRITE)
+	if file==null: return false
+	file.store_string(JSON.stringify({"owner":_binding,"nonce":_ad_nonce,"event_id":snapshot.get("event",{}).get("id",""),"expires_at":_ad_expires_at,"baseline":_ad_before,"day":_ad_day,"cancelled":_ad_cancelled}));file.flush();var error: Error=file.get_error();file.close()
+	return error==OK and DirAccess.rename_absolute(_ad_path()+".tmp",_ad_path())==OK
+func _load_ad_wait() -> void:
+	if _ad_path().is_empty() or not FileAccess.file_exists(_ad_path()): return
+	var file:=FileAccess.open(_ad_path(),FileAccess.READ)
+	if file==null or file.get_length()>2048: return
+	var value: Variant=JSON.parse_string(file.get_as_text())
+	if not value is Dictionary or value.get("owner")!=_binding or not _matches(value.get("nonce"),"^[a-f0-9]{32}$") or not _whole(value.get("expires_at"),1,4102444800): return
+	if int(value.expires_at)<=_ad_now(): ad_delivery_state="expired";DirAccess.remove_absolute(_ad_path());return
+	_ad_cancelled=bool(value.get("cancelled",false));_ad_nonce=str(value.nonce);_ad_expires_at=int(value.expires_at);_ad_before=int(value.get("baseline",-1));_ad_day=str(value.get("day",""));ad_delivery_state="verifying";_ad_attempts=0
+	_poll_until=Time.get_ticks_msec()+(_ad_expires_at-_ad_now())*1000;_read_at=0
+func _clear_ad_wait() -> void:
+	if not _ad_path().is_empty() and FileAccess.file_exists(_ad_path()): DirAccess.remove_absolute(_ad_path())
+	_ad_nonce="";_ad_before=-1;_poll_until=0;_ad_expires_at=0
+func _observe_ad_delivery(data: Dictionary) -> void:
+	var receipt: Dictionary=data.get("ad_delivery",{})
+	if receipt.get("configured",true)==false and _ad_nonce.is_empty(): ad_delivery_state="configuration_required"
+	if _ad_nonce.is_empty(): return
+	var same: bool=str(receipt.get("nonce",""))==_ad_nonce
+	var confirmed: bool=same and receipt.get("stage")=="credited"
+	# Older deployed workers expose authoritative daily counts but no receipt metadata.
+	if receipt.is_empty(): confirmed=_ad_before>=0 and (int(data.state.get("daily_ads",0))>_ad_before or (str(data.state.get("day",""))!=_ad_day and int(data.state.get("daily_ads",0))>0))
+	if confirmed: ad_delivery_state="credited";_clear_ad_wait()
+	elif same and receipt.get("stage")=="expired": ad_delivery_state="expired";_clear_ad_wait()
+	elif _ad_cancelled and _ad_attempts>=2: ad_delivery_state="cancelled";_clear_ad_wait()
 
 func prepare_scene_run(continuing: bool) -> bool:
 	if _preparing_run: return false

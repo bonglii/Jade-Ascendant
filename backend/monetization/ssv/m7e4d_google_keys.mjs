@@ -23,8 +23,10 @@ export function createGoogleKeySource({ fetchImpl = globalThis.fetch, now = Date
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 5000);
       try {
-        const response = await fetchImpl(GOOGLE_ADMOB_VERIFIER_URL, {
-          method: 'GET', redirect: 'error', signal: controller.signal,
+        // Workerd native fetch needs its global receiver. Match the working
+        // Firebase/Play adapters; manual redirects are explicitly rejected below.
+        const response = await fetchImpl.call(globalThis, GOOGLE_ADMOB_VERIFIER_URL, {
+          method: 'GET', redirect: 'manual', signal: controller.signal,
           headers: { accept: 'application/json' },
         });
         if (!response || !response.ok || response.status !== 200) throw new Error('GOOGLE_KEYS_HTTP_FAILURE');

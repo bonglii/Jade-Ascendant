@@ -126,7 +126,7 @@ func rewarded_available(placement: String) -> bool:
 	)
 	return (
 		active_request < 0
-		and int(placement_counts.get(placement, 0)) < daily_limit
+		and (placement=="odyssey_roll" or int(placement_counts.get(placement, 0)) < daily_limit)
 		and Time.get_ticks_msec() - last_reward_at >= cooldown_msec
 		and persistent_cooldown_ready
 		and bool(provider.call("rewarded_available", placement))
@@ -143,7 +143,7 @@ func is_rewarded_request_active(placement: String) -> bool:
 func get_rewarded_policy_status(placement: String) -> Dictionary:
 	_sync_policy_day()
 	var now_unix: int = _get_unix_time()
-	var placement_claims: int = int(placement_counts.get(placement, 0))
+	var placement_claims: int = 0 if placement=="odyssey_roll" else int(placement_counts.get(placement, 0))
 	var daily_limit: int = get_rewarded_daily_limit(placement)
 	var cooldown_seconds: int = get_rewarded_cooldown_seconds(placement)
 	var cooldown_remaining: int = 0
@@ -238,7 +238,8 @@ func _on_reward_confirmed(request_id: int) -> void:
 	last_reward_at = Time.get_ticks_msec()
 	last_reward_unix = _get_unix_time()
 	_sync_policy_day(false)
-	placement_counts[active_placement] = int(placement_counts.get(active_placement, 0)) + 1
+	# Odyssey quota belongs to its signed server receipt, not SDK playback.
+	if active_placement!="odyssey_roll": placement_counts[active_placement] = int(placement_counts.get(active_placement, 0)) + 1
 
 	if not _save_policy_state():
 		push_error("MonetizationManager: persistent reward policy gagal disimpan.")

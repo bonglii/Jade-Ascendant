@@ -32,9 +32,16 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	var side: float=minf(size.x,size.y); var center: Vector2=size*0.5
 	var damping: float=1.0-clampf((age-_resolve_started)/maxf(0.01,_reveal_at-_resolve_started),0,1) if _resolved>0 else 1.0
-	var bounce: float=sin(age*22)*side*0.035*damping if rolling and not Art.reduced(self) else 0.0
-	var angle: float=sin(age*18)*0.14*damping if rolling and not Art.reduced(self) else 0.0
-	draw_set_transform(center+Vector2(0,-bounce),angle,Vector2.ONE*(1.0+_shine*0.045))
+	var bounce: float=sin(age*11)*side*0.11*damping if rolling and not Art.reduced(self) else 0.0
+	var angle: float=sin(age*8)*0.48*damping + sin(age*19)*0.08*damping if rolling and not Art.reduced(self) else 0.0
+	# Separate grounded shadow, tumbling body and a brief engraved-seal reveal.
+	var shadow: Texture2D=Art.texture("medallion")
+	draw_texture_rect(shadow,Rect2(center-Vector2(side*0.48,side*0.13)+Vector2(0,side*0.36),Vector2(side*0.96,side*0.26)),false,Color(0.015,0.04,0.03,0.38))
+	if _shine>0:
+		var halo: float=side*(1.10+(1.0-_shine)*0.20)
+		draw_texture_rect(shadow,Rect2(center-Vector2.ONE*halo*0.5,Vector2.ONE*halo),false,Color(1.0,0.84,0.43,_shine*0.65))
+	var squash: float=1.0+sin(age*16)*0.06*damping if rolling and not Art.reduced(self) else 1.0
+	draw_set_transform(center+Vector2(0,-bounce),angle,Vector2(squash,1.0/squash)*(1.0+_shine*0.06))
 	var origin:=Vector2.ONE*(-side*0.5)
 	draw_texture_rect(Art.DIE,Rect2(origin,Vector2.ONE*side),false)
 	var pips: Array[Vector2]=[]

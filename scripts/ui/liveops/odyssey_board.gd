@@ -64,8 +64,8 @@ func _process(delta: float) -> void:
 			var grid: Vector2i=coordinates[posmod(_from+step+1,20)]-coordinates[posmod(_from+step,20)]
 			var direction: String="right" if grid.x>0 else "left" if grid.x<0 else "down" if grid.y>0 else "up"
 			token.play("walk_"+direction); _last_step=step
-		var lift: float=sin(t*PI)*8.0 if not Art.reduced(self) else 0.0
-		token.position=start.lerp(finish,t*t*(3.0-2.0*t))-Vector2(0,token.scale.x*96*0.25+lift)
+		var lift: float=sin(_age*10.0)*2.0 if not Art.reduced(self) else 0.0
+		token.position=start.lerp(finish,t)-Vector2(0,token.scale.x*96*0.25+lift)
 		if _travel>=float(_steps)*duration: _steps=0; _landing=0.65; token.play("idle_down"); _layout(); travel_finished.emit()
 		queue_redraw()
 	else:
