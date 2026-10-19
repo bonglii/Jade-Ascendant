@@ -20,7 +20,7 @@ internal class TrustedIapHttps(private val host: String,
     fun execute(endpoint: String, method: String, bytes: ByteArray?, auth: String, appCheck: String): Reply {
         val url = endpoint.toHttpUrl()
         require(url.isHttps && url.host == host && url.port == port && url.username.isEmpty() && url.password.isEmpty()
-            && url.fragment == null && url.query == null && url.encodedPath.startsWith("/v1/"))
+            && url.fragment == null && url.query == null && (url.encodedPath.startsWith("/v1/") || url.encodedPath == "/v2/odyssey" || url.encodedPath == "/v3/odyssey"))
         require(method in setOf("GET", "POST") && (method != "GET" || bytes == null))
         require(bytes == null || bytes.size <= 8192)
         val body = if (method == "POST") {

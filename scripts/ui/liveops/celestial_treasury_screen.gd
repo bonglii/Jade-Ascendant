@@ -28,8 +28,8 @@ const NIGHT: Color = Color(0.003, 0.025, 0.036, 0.96)
 const CARD_DARK: Color = Color(0.002, 0.042, 0.050, 0.97)
 const SWIPE_DEADZONE: int = 7
 
-# No first-top-up bonus, daily gift, starter bundle, or monthly blessing:
-# this production storefront is a straight consumable Celestial Jade top-up.
+# Six existing Jade SKUs; an active Odyssey season may add a server-verified
+# one-time-per-pack dice bonus. Play prices and Jade quantities remain authoritative.
 # Ascending tier quantities mirror the EconomyCatalog; actual localized prices
 # can only be confirmed by Google Play Billing in production.
 const OFFER_IDS: Array[String] = [
@@ -125,6 +125,10 @@ func _ready() -> void:
 	PavilionManager.refresh_iap_store_products()
 	PavilionManager.request_server_jade_snapshot()
 	_refresh_storefront()
+	var odyssey: Node=get_node_or_null("/root/OdysseyClient")
+	if odyssey!=null: odyssey.changed.connect(_refresh_storefront)
+	var requested: String=str(get_tree().get_meta("odyssey_treasury_product",""))
+	if _catalog.has(requested): call_deferred("_show_details",requested)
 	# LiveOpsManager installs a generic close handler after add_child().
 	# Defer to restore the details-aware handler once the popup is installed.
 	call_deferred("_install_back_handler")
@@ -793,6 +797,11 @@ func _back() -> void:
 	if is_instance_valid(_details_layer) and _details_layer.visible:
 		_hide_details()
 		return
+	if get_tree().has_meta("odyssey_treasury_return"):
+		get_tree().remove_meta("odyssey_treasury_return")
+		get_tree().remove_meta("odyssey_treasury_product")
+		SceneTransitionManager.transition_menu_to("res://scenes/ui/odyssey_screen.tscn",-1)
+		return
 	LiveOpsUi.return_home(self)
 
 
@@ -817,10 +826,19 @@ func _update_balance_subtitle() -> void:
 	var jade_view: Dictionary=PavilionManager.get_server_jade_view()
 	var paid: String=_thousands(int(jade_view.balance)) if bool(jade_view.confirmed) else ("LAST " + _thousands(int(jade_view.balance)) if int(jade_view.balance)>=0 else "UNCONFIRMED")
 	_subtitle.text="AVAILABLE %s  ·  PURCHASED %s"%[_thousands(PavilionManager.get_celestial_jade()),paid]
-	_subtitle.tooltip_text="Available Jade is usable locally. Purchased Jade is held by the test server; paid spending remains unavailable."
+	_subtitle.tooltip_text="Purchased Jade is verified by the server. Google Play handles checkout; seasonal dice bonuses appear only when the Odyssey promotion is connected and active."
 
 
 func _refresh_storefront() -> void:
+	for product_id: String in _cards_by_id:
+		var entry: Dictionary=_cards_by_id[product_id]
+		entry.badge.text="LARGEST PACK" if product_id=="jade_ascendant_14000" else "CELESTIAL JADE"
+	var odyssey: Node=get_node_or_null("/root/OdysseyClient")
+	if odyssey!=null:
+		var bonus: Dictionary=odyssey.snapshot.get("purchase_bonus",{})
+		for offer: Dictionary in bonus.get("offers",[]):
+			var entry: Dictionary=_cards_by_id.get(str(offer.product_id),{})
+			if not entry.is_empty(): entry.badge.text=("+%d BONUS DICE" % int(offer.dice)) if odyssey.purchase_bonus_active() and not bool(offer.claimed) else "CELESTIAL JADE"
 	# Monetary prices are NEVER inferred from the art or the tier quantity.
 	var runtime: Dictionary = PavilionManager.get_billing_runtime_status()
 	_billing_ready = bool(runtime.get("ready", false))
@@ -920,6 +938,14 @@ func _update_details() -> void:
 	# price-sort implementation details. Keep real transaction messages for
 	# pending purchases, failure, cancellation and save recovery.
 	var body: String = str(OFFER_COPY.get(_selected_id, ""))
+	var odyssey: Node=get_node_or_null("/root/OdysseyClient")
+	if odyssey!=null:
+		var bonus: Dictionary=odyssey.snapshot.get("purchase_bonus",{})
+		if odyssey.purchase_bonus_active():
+			for offer: Dictionary in bonus.get("offers",[]):
+				if str(offer.product_id)==_selected_id:
+					body="%d Celestial Jade + %d bonus travel dice. Once per pack per season. Bonus follows server verification; reopen the Odyssey to collect. Max 152 journeys; unused dice expire." % [jade_count,int(offer.dice)] if not bool(offer.claimed) else "%d Celestial Jade. This pack's seasonal dice bonus has already been claimed." % jade_count
+					break
 	var delivery: Dictionary = PavilionManager.get_paid_delivery_readiness()
 	if not bool(delivery.ready):
 		if str(delivery.get("reason", "")) == "account_held": body += "\nA refunded or reversed purchase requires account review. Purchases are unavailable until the refund is reconciled. Contact support with your public UID."
@@ -991,6 +1017,9 @@ func _on_store_products_updated(_products: Dictionary) -> void:
 
 
 func _on_purchase_state_changed(product_id: String, status: String, message: String) -> void:
+	if status in ["delivered","wallet_credited"]:
+		var odyssey: Node=get_node_or_null("/root/OdysseyClient")
+		if odyssey!=null and not odyssey.busy: odyssey.refresh()
 	if status=="pending":
 		if not product_id.is_empty() and product_id not in _pending_products:_pending_products.append(product_id)
 		_purchase_busy=false;_active_purchase_id=""

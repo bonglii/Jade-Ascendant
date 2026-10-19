@@ -23,9 +23,23 @@ internal object OdysseyContractV1 {
   val owner=MessageDigest.getInstance("SHA-256").digest(uid.toByteArray()).joinToString(""){"%02x".format(it)}
   require(whole(raw.opt("version"),1,1)&&raw.getString("owner_binding")==owner)
   require(whole(raw.opt("revision"),0,10000)&&whole(raw.opt("server_time"),1,4_102_444_800))
-  require(keys(raw).all{it in setOf("version","owner_binding","event","state","revision","server_time","limits","ad_intent","jade_spent","compass_authorized","lease_seconds")})
+  require(keys(raw).all{it in setOf("version","owner_binding","event","state","revision","server_time","limits","ad_intent","jade_spent","compass_authorized","lease_seconds","purchase_bonus")})
   if(raw.has("compass_authorized"))require(raw.opt("compass_authorized") is Boolean && whole(raw.opt("lease_seconds"),60,60))
-  val s=raw.getJSONObject("state");require(whole(s.opt("tickets"),0,1000)&&whole(s.opt("rolls"),0,152)&&whole(s.opt("position"),0,19))
+  if(raw.has("purchase_bonus")){
+   val b=raw.getJSONObject("purchase_bonus")
+   require(keys(b)==setOf("version","active","once_per_pack","eligible_from","claimed_total","offers"))
+   require(whole(b.opt("version"),1,1)&&b.opt("active") is Boolean&&b.opt("once_per_pack")==true&&whole(b.opt("eligible_from"),0,4_102_444_800)&&whole(b.opt("claimed_total"),0,45))
+   val tiers=mapOf("jade_pouch_100" to (100 to 1),"jade_satchel_550" to (550 to 3),"jade_casket_1200" to (1200 to 5),"jade_vault_2500" to (2500 to 8),"jade_treasury_6500" to (6500 to 12),"jade_ascendant_14000" to (14000 to 16))
+   val offers=b.getJSONArray("offers");require(offers.length()==6);val seen=mutableSetOf<String>();var claimed=0
+   for(i in 0 until offers.length()){
+    val offer=offers.getJSONObject(i);require(keys(offer)==setOf("product_id","jade","dice","claimed"))
+    val product=offer.getString("product_id");val tier=tiers[product]?:error("product")
+    require(seen.add(product)&&whole(offer.opt("jade"),tier.first.toLong(),tier.first.toLong())&&whole(offer.opt("dice"),tier.second.toLong(),tier.second.toLong())&&offer.opt("claimed") is Boolean)
+    if(offer.getBoolean("claimed"))claimed+=tier.second
+   }
+   require(claimed==b.getInt("claimed_total"))
+  }
+  val s=raw.getJSONObject("state");if(s.has("bonus_dice"))require(whole(s.opt("bonus_dice"),0,45));require(whole(s.opt("tickets"),0,1000)&&whole(s.opt("rolls"),0,152)&&whole(s.opt("position"),0,19))
   for(k in listOf("daily_ads","daily_bought","season_bought","daily_rolls","laps","last_die"))require(whole(s.opt(k),0,1000))
   require(s.getString("pending") in setOf("","route"))
   require(s.getString("notice").length<=160 && s.opt("last_reward") is JSONObject)

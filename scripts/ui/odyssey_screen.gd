@@ -119,7 +119,7 @@ func _ready() -> void:
 		var claim: Button=button(str(n),func() -> void: _submit({"kind":"milestone","milestone":n})); claim.custom_minimum_size.y=60; claims.add_child(claim); milestones.append(claim)
 	roll=button("ROLL DICE · 1 DIE",_roll_pressed,true); body.add_child(roll)
 	var optional:=HBoxContainer.new(); optional.add_theme_constant_override("separation",6); body.add_child(optional)
-	ad=button("+1 DIE · AD 0/2",_watch_ad); optional.add_child(ad); buy=button("DICE · 10 JADE",_shop); optional.add_child(buy)
+	ad=button("+1 DIE · AD 0/2",_watch_ad); optional.add_child(ad); buy=button("TRAVEL SHOP",_shop); optional.add_child(buy)
 	var footer:=HBoxContainer.new(); footer.add_theme_constant_override("separation",8); body.add_child(footer)
 	missions_button=button("DAILY MISSIONS",_missions); missions_button.custom_minimum_size.y=58; footer.add_child(missions_button)
 	var retry: Button=button("RECONNECT",func() -> void:
@@ -149,7 +149,9 @@ func _process(delta: float) -> void:
 func _update_time() -> void:
 	if client==null: return
 	var event: Variant=client.snapshot.get("event")
-	if not event is Dictionary: countdown.text="EVENT NOT YET SCHEDULED"; return
+	if not event is Dictionary:
+		countdown.text="CONNECTING TO THE ATLAS" if client.busy else "EVENT NOT YET SCHEDULED" if client.status=="connected" else "CONNECTION REQUIRED · TAP RECONNECT"
+		return
 	var now: int=int(client.server_time()); var remaining: int=int(event.ends_at)-now
 	if not bool(event.enabled): countdown.text="EVENT PAUSED"; return
 	if now<int(event.starts_at): countdown.text="STARTS IN %dH %dM" % [int(float(int(event.starts_at)-now)/3600.0),int(float((int(event.starts_at)-now)%3600)/60.0)]; return
@@ -178,15 +180,15 @@ func _refresh() -> void:
 	roll.disabled=client.busy or travelling or (not active and not (resolving and claim_open)) or (int(state.get("tickets",0))<1 and not resolving)
 	ad.disabled = client.busy or travelling or not active or not bool(event.get("ads_enabled",false)) or int(state.get("daily_ads",0)) >= 2
 	ad.text = "+1 DIE · AD %d/2" % int(state.get("daily_ads",0))
-	buy.disabled = client.busy or travelling or not active or not bool(event.get("purchases_enabled",false)) or int(state.get("season_bought",0)) >= 40
+	buy.disabled = travelling
 	for i: int in range(milestones.size()):
 		var n: int = [24,48,72][i]; var claimed: bool = n in state.get("milestones",[])
 		milestones[i].text = "%d · %s" % [n, "CLAIMED" if claimed else "CLAIM" if count>=n else "2 SEALS" if n==24 else "3 SEALS" if n==48 else "COMPASS"]
 		milestones[i].disabled = client.busy or travelling or not claim_open or claimed or count < n
-	notice.text = str(state.get("notice","Connect Google to begin your journey.")) if client.status == "connected" else str(client.status).replace("_"," ").capitalize()
+	notice.text = str(state.get("notice","Connect Google to begin your journey.")) if client.status == "connected" else {"NETWORK_UNAVAILABLE":"Connection failed. Tap Reconnect; your progress is saved.","ENDPOINT_POLICY_REJECTED":"App update required. Install the latest Play build.","native_update_required":"App update required. Install the latest Play build.","ACCOUNT_HELD":"A refunded purchase requires review. Contact support.","BACKEND_NOT_READY":"Server is preparing the event. Please retry shortly."}.get(str(client.status),str(client.status).replace("_"," ").capitalize())
 	if travelling: notice.text="THE DIE IS REVEALING…" if _reveal_pending else "ROLLED %d · LIN YUE IS TRAVELLING" % dice
 	roll.text="ROLLING…" if client.busy and dice_view.rolling else "TRAVELLING…" if travelling else "CONTINUE THE GATE" if state.get("battle") is Dictionary else "CHOOSE YOUR PATH" if state.get("pending","")=="route" else "ROLL DICE · 1 DIE"
-	buy.text="DICE · %d JADE" % int(client.snapshot.get("limits",{}).get("price_one",10))
+	buy.text="TRAVEL SHOP"
 	missions_button.disabled=client.busy or travelling or not active
 	var mission_ready: bool=false
 	for n: int in [1,3,5]:
@@ -212,13 +214,13 @@ func _popup(title: String, kind: String) -> VBoxContainer:
 	_close_modal(); _modal_kind=kind
 	modal=Control.new(); modal.z_index=20; modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); safe.add_child(modal)
 	var dim:=ColorRect.new(); dim.color=Color(0.002,0.01,0.02,0.86); dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); modal.add_child(dim)
-	var center:=CenterContainer.new(); center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); modal.add_child(center)
-	var panel:=_card(); panel.custom_minimum_size=Vector2(minf(size.x-44,540),0)
-	var inset: StyleBox=panel.get_theme_stylebox("panel").duplicate(); inset.content_margin_left=48; inset.content_margin_right=48; inset.content_margin_top=40; inset.content_margin_bottom=40; panel.add_theme_stylebox_override("panel",inset); center.add_child(panel)
+	var center:=Control.new(); center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); modal.add_child(center)
+	var panel:=_card(); panel.clip_contents=true; panel.size=Vector2(minf(safe.size.x-32,540),minf(safe.size.y-32,760)); panel.position=(safe.size-panel.size)*0.5
+	var inset: StyleBox=panel.get_theme_stylebox("panel").duplicate(); inset.content_margin_left=64; inset.content_margin_right=64; inset.content_margin_top=56; inset.content_margin_bottom=56; panel.add_theme_stylebox_override("panel",inset); center.add_child(panel)
 	var shell:=VBoxContainer.new(); shell.add_theme_constant_override("separation",8); panel.add_child(shell)
 	var top:=HBoxContainer.new(); shell.add_child(top)
 	var heading: Label=label(title,22); heading.add_theme_font_override("font",FONT); heading.size_flags_horizontal=Control.SIZE_EXPAND_FILL; top.add_child(heading); top.add_child(_navigation("close",_close_modal,"Close"))
-	var scroll:=ScrollContainer.new(); scroll.custom_minimum_size.y=minf(size.y*0.64,570); scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_SHOW_NEVER; shell.add_child(scroll)
+	var scroll:=ScrollContainer.new(); scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL; scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_SHOW_NEVER; shell.add_child(scroll)
 	var body:=VBoxContainer.new(); body.size_flags_horizontal=Control.SIZE_EXPAND_FILL; body.add_theme_constant_override("separation",12); scroll.add_child(body)
 	if not Art.reduced(self): panel.modulate.a=0.0; create_tween().tween_property(panel,"modulate:a",1.0,0.18)
 	return body
@@ -239,9 +241,25 @@ func _missions() -> void:
 		var description: Label=label("ROLL %d TIMES\n%d / %d complete" % [n,mini(int(state.get("daily_rolls",0)),n),n],16); description.size_flags_horizontal=Control.SIZE_EXPAND_FILL; row.add_child(description)
 		var claim: Button=button("CLAIMED" if claimed else "+1 DIE",func() -> void: _submit({"kind":"mission","mission":n})); claim.custom_minimum_size.x=130; claim.size_flags_horizontal=Control.SIZE_SHRINK_END; claim.disabled=client.busy or claimed or int(state.get("daily_rolls",0))<n; row.add_child(claim)
 func _shop() -> void:
-	if client==null or client.busy or _presenting(): return
-	var body: VBoxContainer=_popup("JADE TRAVEL DICE","shop")
+	if client==null or _presenting(): return
+	var body: VBoxContainer=_popup("TRAVEL SHOP","shop")
+	var bonus: Dictionary=client.snapshot.get("purchase_bonus",{})
+	body.add_child(label("JADE + BONUS TRAVEL DICE",22))
+	body.add_child(label("Top up Celestial Jade in Google Play. During the active promotion, each Jade pack includes bonus dice once per season. Prices appear live in the Treasury.",16))
+	var offers: Array=bonus.get("offers",[])
+	if client.purchase_bonus_active():
+		for offer: Dictionary in offers:
+			var text: String="%d JADE + %d BONUS DICE" % [int(offer.jade),int(offer.dice)]
+			if bool(offer.claimed): text="%d JADE · BONUS CLAIMED" % int(offer.jade)
+			body.add_child(button(text,_open_treasury.bind(str(offer.product_id))))
+	else:
+		body.add_child(label("Dice bonuses require a connected, active season and a new verified purchase after this promotion begins. No bonus is promised while the event is unavailable.",15))
+	body.add_child(button("OPEN CELESTIAL TREASURY",_open_treasury.bind(""),true))
+	body.add_child(label("Maximum 152 journeys per season. Unused dice expire; extra dice do not grant extra Compass copies. Bonus dice arrive after server purchase verification, never from the payment animation.",15))
+	body.add_child(label("EXCHANGE PURCHASED JADE",20))
 	var state: Dictionary=client.snapshot.get("state",{})
+	var event: Dictionary=client.snapshot.get("event",{}) if client.snapshot.get("event") is Dictionary else {}
+	var exchange_ready: bool=client.status=="connected" and not client.busy and bool(event.get("enabled",false)) and bool(event.get("purchases_enabled",false)) and client.server_time()>=int(event.get("starts_at",0)) and client.server_time()<int(event.get("ends_at",0)) and int(state.get("rolls",0))<152
 	var paid: Node=get_node_or_null("/root/PavilionManager/PaidGameplayV2")
 	var balance: int=int(paid.call("paid_balance")) if paid!=null else 0
 	var limits: Dictionary=client.snapshot.get("limits",{})
@@ -251,7 +269,12 @@ func _shop() -> void:
 		var price: int=int(limits.get("price_one" if pack==1 else "price_five",10 if pack==1 else 40))
 		var card:=_card(); body.add_child(card); var content:=VBoxContainer.new(); card.add_child(content)
 		var row:=HBoxContainer.new(); row.add_child(_icon(Art.DIE,72)); var description: Label=label("%d TRAVEL %s\n%s" % [pack,"DIE" if pack==1 else "DICE","Single journey" if pack==1 else "20% bundle saving"],20); description.size_flags_horizontal=Control.SIZE_EXPAND_FILL; row.add_child(description); content.add_child(row)
-		var purchase: Button=button("%d JADE · REVIEW PACK" % price,_confirm_pack.bind(pack,price)); purchase.disabled=client.busy or balance<price or int(state.get("daily_bought",0))+pack>10 or int(state.get("season_bought",0))+pack>40; content.add_child(purchase)
+		var purchase: Button=button("%d JADE · REVIEW PACK" % price,_confirm_pack.bind(pack,price)); purchase.disabled=not exchange_ready or balance<price or int(state.get("daily_bought",0))+pack>10 or int(state.get("season_bought",0))+pack>40; content.add_child(purchase)
+func _open_treasury(product_id: String) -> void:
+	if SceneTransitionManager.is_transitioning: return
+	get_tree().set_meta("odyssey_treasury_return",true)
+	get_tree().set_meta("odyssey_treasury_product",product_id)
+	SceneTransitionManager.transition_menu_to("res://scenes/ui/celestial_treasury_screen.tscn",1)
 func _confirm_pack(pack: int, price: int) -> void:
 	var body: VBoxContainer=_popup("CONFIRM YOUR JOURNEY","confirm_pack")
 	body.add_child(_icon(Art.DIE,110)); body.add_child(label("%d travel %s for %d Purchased Jade." % [pack,"die" if pack==1 else "dice",price],22))

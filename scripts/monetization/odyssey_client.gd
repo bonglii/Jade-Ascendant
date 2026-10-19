@@ -21,6 +21,10 @@ func server_time() -> int:
 	return int(snapshot.get("server_time", 0)) + floori(float(maxi(0, Time.get_ticks_msec() - _received_msec)) / 1000.0)
 
 
+func purchase_bonus_active() -> bool:
+	var event: Variant=snapshot.get("event")
+	return status=="connected" and event is Dictionary and bool(event.get("enabled",false)) and bool(event.get("purchases_enabled",false)) and server_time()>=int(event.get("starts_at",0)) and server_time()<int(event.get("ends_at",0)) and bool(snapshot.get("purchase_bonus",{}).get("active",false))
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	call_deferred("_setup_ads")

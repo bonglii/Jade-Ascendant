@@ -689,7 +689,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
         if (commandJson.isNotEmpty() && body == null) { deny("INVALID_COMMAND"); return }
         val uid = try { FirebaseAuth.getInstance().currentUser?.uid } catch (_: Exception) { null }
         if (uid == null) { deny("AUTH_REQUIRED"); return }
-        requestSignedRC6("${BuildConfig.JADE_IAP_WORKER_BASE_URL}/v2/odyssey",
+        requestSignedRC6("${BuildConfig.JADE_IAP_WORKER_BASE_URL}/v3/odyssey",
             if (body == null) "GET" else "POST", body, odysseyBusy,
             "odysseyResultV1", "ODYSSEY_VERIFIED", requestId) { json -> OdysseyContractV1.canonicalOrNull(json, uid) }
     }
@@ -829,7 +829,8 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
                 if (verified == null) Outcome(false, "INVALID_SERVER_RESPONSE")
                 else Outcome(true, "SERVER_VERIFIED", verified)
             }
-        } catch (_: Exception) { Outcome(false, "NETWORK_UNAVAILABLE") }
+        } catch (_: IllegalArgumentException) { Outcome(false, "ENDPOINT_POLICY_REJECTED") }
+        catch (_: Exception) { Outcome(false, "NETWORK_UNAVAILABLE") }
     }
     private fun emitRC6(signal: String, success: Boolean, status: String, payload: String) {
         runOnHostThread { emitSignal(signal, success, status, payload) }

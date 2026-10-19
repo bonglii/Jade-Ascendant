@@ -68,6 +68,14 @@ try {
         $eventReport = [xml][IO.File]::ReadAllText($eventTests)
         if ([int]$eventReport.testsuite.tests -ne 3 -or [int]$eventReport.testsuite.skipped -ne 0) { throw 'Incomplete Odyssey JVM execution.' }
     }
+    foreach ($variant in @('Debug','Release')) {
+        foreach ($check in @(@('TrustedIapHttpsTest',13),@('OdysseyPurchaseBonusTest',2))) {
+            $result=Join-Path $build ('bridge/build/test-results/test'+$variant+'UnitTest/TEST-com.yungdevstudio.jadeascendant.monetizationbridge.'+$check[0]+'.xml')
+            if (-not (Test-Path -LiteralPath $result)) { throw ('Missing Odyssey route/bonus tests: '+$check[0]) }
+            $report=[xml][IO.File]::ReadAllText($result)
+            if ([int]$report.testsuite.tests -lt [int]$check[1] -or [int]$report.testsuite.skipped -ne 0) { throw 'Incomplete Odyssey route/bonus execution.' }
+        }
+    }
     foreach ($file in $xml) {
         $report = [xml][IO.File]::ReadAllText($file.FullName)
         if ([int]$report.testsuite.failures -ne 0 -or [int]$report.testsuite.errors -ne 0) { throw 'JVM failure in candidate receipts.' }
@@ -94,7 +102,7 @@ try {
     Copy-Item -LiteralPath $outputs[0].FullName -Destination $destination
     $receipt = @{version=1; target='production-candidate'; installed=$false; deployed=$false; inputs=$inputs;
         aar_sha256=(Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant();
-        compiled_utc=[DateTime]::UtcNow.ToString('o'); jvm_test_executions=$tests; update_notifications=1;
+        compiled_utc=[DateTime]::UtcNow.ToString('o'); jvm_test_executions=$tests; update_notifications=1; odyssey_shop_protocol=3;
         evidence='COMPILE_JVM_JNI_PLAY_INTEGRITY_PROVIDER_ONLY_NOT_LIVE_PLAY'}
     [IO.File]::WriteAllText((Join-Path $work 'receipt.json'),($receipt | ConvertTo-Json -Depth 5),(New-Object Text.UTF8Encoding($false)))
     [IO.File]::WriteAllText((Join-Path $work 'compiled-flags.txt'),$flags)

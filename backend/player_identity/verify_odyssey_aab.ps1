@@ -22,18 +22,18 @@ try {
         if ($entries.Count -ne 1 -or $entries[0].Length -gt 16384) { throw 'Unique release metadata not found in AAB.' }
         $reader=New-Object IO.StreamReader($entries[0].Open())
         try { $meta=$reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }
-        if ($meta.debug -ne $false -or $meta.iap_target -ne 'production' -or $meta.odyssey_presentation -ne 3 -or $meta.update_notifications -ne 1 -or $meta.native_sha256 -ne $proof.aar_sha256 -or $meta.source_revision -ne $receipt.source_revision) { throw 'AAB metadata does not match this verified Odyssey release candidate.' }
+        if ($meta.debug -ne $false -or $meta.iap_target -ne 'production' -or $meta.odyssey_presentation -ne 3 -or $meta.update_notifications -ne 1 -or $meta.odyssey_shop_protocol -ne 3 -or $meta.native_sha256 -ne $proof.aar_sha256 -or $meta.source_revision -ne $receipt.source_revision) { throw 'AAB metadata does not match this verified Odyssey release candidate.' }
         $found=$false; $pushService=$false; $pushTopic=$false
         foreach ($entry in @($zip.Entries | Where-Object { $_.FullName -match '(^|/)classes[0-9]*\.dex$' })) {
             if ($entry.Length -gt 134217728) { throw 'Unexpectedly large DEX entry.' }
             $stream=$entry.Open(); $memory=New-Object IO.MemoryStream
-            try { $stream.CopyTo($memory); $text=[Text.Encoding]::UTF8.GetString($memory.ToArray()); if ($text.Contains('JadeUpdateMessagingService')) { $pushService=$true }; if ($text.Contains('jade_release_updates_v1')) { $pushTopic=$true }; if ($text.Contains('/v2/odyssey') -and $text.Contains('requestOdysseyV1')) { $found=$true } } finally { $memory.Dispose(); $stream.Dispose() }
+            try { $stream.CopyTo($memory); $text=[Text.Encoding]::UTF8.GetString($memory.ToArray()); if ($text.Contains('JadeUpdateMessagingService')) { $pushService=$true }; if ($text.Contains('jade_release_updates_v1')) { $pushTopic=$true }; if ($text.Contains('/v3/odyssey') -and $text.Contains('requestOdysseyV1')) { $found=$true } } finally { $memory.Dispose(); $stream.Dispose() }
         }
         if (-not $pushService -or -not $pushTopic) { throw 'AAB lacks the compiled update notification service/topic.' }
         if (-not $found) { throw 'AAB DEX lacks the expected Odyssey native method/economy route. Do not upload this artifact.' }
     } finally { $zip.Dispose() }
     $hash=(Get-FileHash -LiteralPath $aab -Algorithm SHA256).Hash.ToLowerInvariant()
-    Write-Host ('ODYSSEY_FINAL_AAB=PASS; RELEASE_METADATA=VERIFIED; NATIVE_ECONOMY_V2=VERIFIED; SHA256='+$hash)
+    Write-Host ('ODYSSEY_FINAL_AAB=PASS; RELEASE_METADATA=VERIFIED; NATIVE_SHOP_PROTOCOL_V3=VERIFIED; SHA256='+$hash)
     Write-Host ('AAB='+$aab)
     Write-Host 'Upload this verified AAB to internal test using a new version code. Event/player records were not reset.'
 } catch { Write-Error $_ -ErrorAction Continue; exit 1 }

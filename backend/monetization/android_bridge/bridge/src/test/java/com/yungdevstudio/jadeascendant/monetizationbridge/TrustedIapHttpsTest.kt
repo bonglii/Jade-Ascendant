@@ -90,4 +90,26 @@ class TrustedIapHttpsTest {
         }
         assertEquals(0,server.requestCount)
     }
+    @Test fun odysseyV2AndV3GetUseTrustedTlsTransport() = withServer { server,api,url ->
+        for (path in listOf("/v2/odyssey", "/v3/odyssey")) {
+            server.enqueue(MockResponse().setHeader("Content-Type","application/json").setBody("{}"))
+            assertEquals(200,api.execute(url.replace("/v1/qa",path),"GET",null,"auth-fixture","app-fixture").code)
+            val request=server.takeRequest()
+            assertEquals(path,request.path)
+            assertEquals("Bearer auth-fixture",request.getHeader("Authorization"))
+        }
+    }
+    @Test fun odysseyCommandPostKeepsBodyAndRunsOnce() = withServer { server,api,url ->
+        server.enqueue(MockResponse().setHeader("Content-Type","application/json").setBody("{}"))
+        val payload="{\"action\":{\"kind\":\"roll\"}}"
+        assertEquals(200,api.execute(url.replace("/v1/qa","/v3/odyssey"),"POST",payload.toByteArray(),"a","b").code)
+        assertEquals(payload,server.takeRequest().body.readUtf8());assertEquals(1,server.requestCount)
+    }
+    @Test fun odysseyPathAllowanceDoesNotOpenOtherVersionsOrSubpaths() = withServer { server,api,url ->
+        for (path in listOf("/v2/wallet","/v3/wallet","/v3/odyssey/other","/v3/odyssey?uid=other","/v3/odyssey#fragment","/v3/%6fdyssey")) {
+            try { api.execute(url.replace("/v1/qa",path),"GET",null,"a","b");fail(path) } catch (_:IllegalArgumentException) {}
+        }
+        assertEquals(0,server.requestCount)
+    }
+
 }

@@ -15,7 +15,7 @@ export async function odysseyRoute(request,env,ctx,uid){const url=new URL(reques
   return json(200,await creditAd(env.DB,url.search,env));
  }
  if(!uid)return json(401,{error:'unauthenticated'});
- const api=service(env.DB,{economy:url.pathname==='/v2/odyssey'?2:1});let data;
+ const api=service(env.DB,{economy:url.pathname==='/v3/odyssey'?3:url.pathname==='/v2/odyssey'?2:1});let data;
  if(request.method==='GET')data=await api.read(uid);
  else if(request.method==='POST')data=await api.execute(uid,await boundedBody(request));
  else return json(405,{error:'method_not_allowed'});

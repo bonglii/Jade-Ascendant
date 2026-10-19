@@ -9,7 +9,7 @@ var _epoch_ticks: int = 0
 var _next_at: int = 0
 var _check_left: float = 0.0
 var _shade: ColorRect
-var _panel: PanelContainer
+var _panel: Panel
 var _title: Label
 var _body: Label
 var _kind: Label
@@ -140,8 +140,9 @@ func _build() -> void:
 	_shade.color = Color(0.005, 0.025, 0.025, 0.84)
 	_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(_shade)
-	_panel = PanelContainer.new()
+	_panel = Panel.new()
 	_panel.name = "SanctuaryAnnouncement"
+	_panel.clip_contents = true
 	_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	_shade.add_child(_panel)
 	var frame := TextureRect.new()
@@ -150,8 +151,10 @@ func _build() -> void:
 	frame.stretch_mode = TextureRect.STRETCH_SCALE
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel.add_child(frame)
+	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_margin = MarginContainer.new()
 	_panel.add_child(_margin)
+	_margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 14)
 	_margin.add_child(box)
@@ -162,6 +165,8 @@ func _build() -> void:
 	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_scroll.scroll_deadzone = 10
+	_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	_scroll.clip_contents = true
 	box.add_child(_scroll)
 	var reading := VBoxContainer.new()
 	reading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -187,6 +192,7 @@ func _label(font_size: int, color: Color) -> Label:
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return label
@@ -212,9 +218,9 @@ func _fit() -> void:
 		inset_top = maxf(16.0, float(safe.position.y) * area.size.y / float(window.y))
 		inset_bottom = maxf(16.0, float(maxi(0, window.y - safe.end.y)) * area.size.y / float(window.y))
 	var desired := Vector2(minf(460.0, area.size.x - 32.0), minf(620.0, area.size.y - inset_top - inset_bottom))
-	_margin.add_theme_constant_override("margin_left", 24)
-	_margin.add_theme_constant_override("margin_right", 24)
-	_margin.add_theme_constant_override("margin_top", 28)
-	_margin.add_theme_constant_override("margin_bottom", 24)
+	_margin.add_theme_constant_override("margin_left", 32)
+	_margin.add_theme_constant_override("margin_right", 32)
+	_margin.add_theme_constant_override("margin_top", 42)
+	_margin.add_theme_constant_override("margin_bottom", 38)
 	_panel.size = desired
 	_panel.position = Vector2((area.size.x - desired.x) * 0.5, inset_top + (area.size.y - inset_top - inset_bottom - desired.y) * 0.5)
