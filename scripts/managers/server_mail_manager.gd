@@ -437,3 +437,9 @@ func _emit_changed() -> void:
 	server_mail_changed.emit()
 	var authority: Node = get_node_or_null("/root/LiveOpsManager")
 	if authority != null: authority.live_ops_changed.emit()
+
+func hint_pending_delivery() -> void:
+	# An outbox write can complete after the event response. Respect the existing
+	# sync gap, but check soon rather than leaving new rewards until the 3-minute poll.
+	var due: int=maxi(Time.get_ticks_msec()+1200,_last_started_msec+MIN_SYNC_GAP_MSEC)
+	_next_refresh_msec=mini(_next_refresh_msec,due) if _next_refresh_msec>0 else due

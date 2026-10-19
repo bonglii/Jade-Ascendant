@@ -5,7 +5,7 @@ param(
     [switch]$VerifyOnly
 )
 $ErrorActionPreference = 'Stop'
-$candidateHash = 'efff853b2697062ca7dcef2cb2543226b014ab92de34255e1ed88c52bb57b9bb'
+$candidateHash = '914273bdffa6b9b94f81de4e7f0c44eddd95f9caa7463f258202f34c2586a4b4'
 $lockedHash = '8f466fb8738413f95813b1aa0bd11d102716cf26a84298ea7d12af8a4adb60b8'
 $lockStream = $null
 $markerWritten = $false
@@ -58,19 +58,19 @@ try {
     } else {
         if (Test-Path -LiteralPath $marker) { throw 'An interrupted export session exists. Run recover_production_export.cmd first.' }
         $proofPath = Join-Path $repo 'docs/checkpoints/IAP_PRODUCTION_NATIVE_CANDIDATE.json'
-        if ((TextHash $proofPath) -ne '7337d43ef48128ad1eb284a063cb5b4ea074750e1b0347f5b4c450e4189804f9') { throw 'Candidate provenance changed.' }
+        if ((TextHash $proofPath) -ne '1763a923f4225cc72aa2698a4d74d95878199eb91279e728279552298b1ac9cd') { throw 'Candidate provenance changed.' }
         $proof = [IO.File]::ReadAllText($proofPath) | ConvertFrom-Json
         $candidate = Join-Path $repo 'release/native/JadeMonetizationNativeBridge-production-candidate.aar'
         if ($proof.target -ne 'production-candidate' -or $proof.aar_sha256 -ne $candidateHash -or (HashFile $candidate) -ne $candidateHash) { throw 'Candidate AAR hash/target mismatch.' }
         $inputs = @($proof.inputs.PSObject.Properties)
-        if ($inputs.Count -ne 42) { throw 'Candidate source inventory incomplete.' }
+        if ($inputs.Count -ne 45) { throw 'Candidate source inventory incomplete.' }
         foreach ($inputFile in $inputs) {
             $sourcePath = Join-Path $repo $inputFile.Name
             if (-not (Test-Path -LiteralPath $sourcePath) -or (TextHash $sourcePath) -ne $inputFile.Value) { throw ('Candidate source differs: ' + $inputFile.Name + '. Nothing installed.') }
         }
         if ((HashFile $release) -ne $lockedHash) { throw 'Installed release is not the expected verified locked AAR. Nothing overwritten.' }
         if (-not [IO.File]::ReadAllText((Join-Path $repo 'project.godot')).Contains('res://addons/JadeReleaseMetadata/plugin.cfg')) { throw 'Release metadata export plugin is not enabled in project.godot.' }
-        Write-Host 'CANDIDATE_SOURCE_AND_BINARY=PASS; INPUTS=42; APP_CHECK=PLAY_INTEGRITY; TARGET=PRODUCTION'
+        Write-Host 'CANDIDATE_SOURCE_AND_BINARY=PASS; INPUTS=45; APP_CHECK=PLAY_INTEGRITY; TARGET=PRODUCTION'
         if ($VerifyOnly) {
             Write-Host 'PRODUCTION_EXPORT_PREFLIGHT=PASS; INSTALLED=NONE; NETWORK=NONE'
             $resultCode = 0

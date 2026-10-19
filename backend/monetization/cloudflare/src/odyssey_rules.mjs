@@ -36,7 +36,7 @@ export function transition(inputState,command,event,time,random=()=>crypto.getRa
   if(s.pending!=='route'||!['safe','challenge'].includes(command.choice))reject('route_unavailable');s.pending='';
   if(command.choice==='safe'){add(reward,'spirit_stone',event.rewards.safe_stone);s.notice='Quiet Grove · supplies secured';}else{s.battle={turn:0,hits:0,attack:pick(3),opens_at:time+1,deadline:time+15};s.notice='Read the guardian and counter';}
  }else if(command.kind==='counter'){
-  const b=s.battle;if(!b||!integer(command.choice,0,2))reject('battle_unavailable');if(time<b.opens_at)reject('guardian_windup');b.hits+=Number(time<=b.deadline&&command.choice===b.attack);b.turn++;
+  const b=s.battle;if(b?.mode==='arena')reject('event_update_required');if(!b||!integer(command.choice,0,2))reject('battle_unavailable');if(time<b.opens_at)reject('guardian_windup');b.hits+=Number(time<=b.deadline&&command.choice===b.attack);b.turn++;
   if(b.turn>=3||time>b.deadline){const win=b.hits>=2;add(reward,'spirit_stone',win?event.rewards.challenge_stone:event.rewards.tile_stone);s.battle=null;s.notice=win?'Guardian defeated':'Base supplies secured';}else{b.attack=pick(3);b.opens_at=time+1;b.deadline=time+15;}
  }else if(command.kind==='milestone'){
   const n=command.milestone;if(![24,48,72].includes(n)||s.rolls<n||s.milestones.includes(n))reject('milestone_unavailable');s.milestones.push(n);

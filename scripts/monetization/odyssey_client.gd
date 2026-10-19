@@ -13,6 +13,8 @@ var _deadline: int = 0
 var _read_at: int = 0
 var _poll_until: int = 0
 var _ad_nonce: String = ""
+var _ad_before: int=-1
+var _ad_day: String=""
 var _received_msec: int = 0
 var run_authorized: bool = false
 var _preparing_run: bool = false
@@ -52,11 +54,15 @@ static func canonical_command(value: Variant) -> Dictionary:
 	if not value.action is Dictionary or not value.action.get("kind") is String: return {}
 	var action: Dictionary = value.action
 	var kind: String = action.kind
-	var fields: Dictionary = {"sync": [], "roll": [], "ad_intent": [], "route": ["choice"], "counter": ["choice"], "mission": ["mission"], "milestone": ["milestone"], "buy_dice": ["pack"]}
+	var fields: Dictionary = {"sync": [], "missions_all": [], "task": ["task"], "arena_finish": ["trace", "abandon"], "roll": [], "ad_intent": [], "route": ["choice"], "counter": ["choice"], "mission": ["mission"], "milestone": ["milestone"], "buy_dice": ["pack"]}
 	if not fields.has(kind) or action.size() != 1 + fields[kind].size(): return {}
 	for field: String in fields[kind]:
 		if not action.has(field): return {}
 	match kind:
+		"task":
+			if action.task not in ["gifts","guardian"]: return {}
+		"arena_finish":
+			if not action.abandon is bool or not _matches(action.trace,"^[0-8]{0,600}$"): return {}
 		"route":
 			if action.choice not in ["safe", "challenge"]: return {}
 		"counter":
@@ -86,7 +92,7 @@ func _bridge() -> Object:
 func _process(_delta: float) -> void:
 	var live: String = _live_binding()
 	if live != _binding:
-		_binding = live; snapshot = {}; busy = false; run_authorized = false; _request_id = ""; _command = {}; _ad_nonce = ""; _poll_until = 0
+		_binding = live; snapshot = {}; busy = false; run_authorized = false; _request_id = ""; _command = {}; _ad_nonce = ""; _poll_until = 0;_ad_before=-1;_ad_day=""
 		status = "account_changed"; changed.emit()
 	if busy and Time.get_ticks_msec() > _deadline:
 		busy = false; status = "connection_timeout"; changed.emit()
@@ -96,7 +102,7 @@ func refresh() -> bool:
 	if busy: return false
 	var live: String = _live_binding()
 	if live != _binding:
-		_binding = live; snapshot = {}; run_authorized = false; _request_id = ""; _command = {}; _ad_nonce = ""; _poll_until = 0
+		_binding = live; snapshot = {}; run_authorized = false; _request_id = ""; _command = {}; _ad_nonce = ""; _poll_until = 0;_ad_before=-1;_ad_day=""
 	if _binding.length() != 64: status = "google_sign_in_required"; changed.emit(); return false
 	var pending: Dictionary = _pending()
 	if pending.has("error"): status = "recovery_required"; changed.emit(); return false
@@ -119,7 +125,7 @@ func _dispatch(command: Dictionary) -> bool:
 	var native: Object = _bridge()
 	if native == null: status = "native_update_required"; changed.emit(); return false
 	_command = command; _request_id = str(command.get("request_id", Crypto.new().generate_random_bytes(16).hex_encode()))
-	busy = true; status = "connecting"; _deadline = Time.get_ticks_msec() + 46000; _read_at = Time.get_ticks_msec() + 4000
+	busy = true; status = "sending_action" if not command.is_empty() and not snapshot.is_empty() else "refreshing" if not snapshot.is_empty() else "connecting"; _deadline = Time.get_ticks_msec() + 46000; _read_at = Time.get_ticks_msec() + 4000
 	changed.emit(); native.call("requestOdysseyV1", _request_id, "" if command.is_empty() else JSON.stringify(command)); return true
 func _on_result(request_id: String, success: bool, result_status: String, payload: String) -> void:
 	if request_id != _request_id or _binding != _live_binding(): return
@@ -130,20 +136,32 @@ func _on_result(request_id: String, success: bool, result_status: String, payloa
 		if not data is Dictionary or data.get("owner_binding") != _binding: status = "invalid_snapshot"; changed.emit(); return
 		if not _command.is_empty() and DirAccess.remove_absolute(_path()) != OK:
 			status = "journal_cleanup_required"; changed.emit(); return
+		for field: String in ["missions","milestones"]:
+			var normalized: Array[int]=[]
+			for value: Variant in data.get("state",{}).get(field,[]): normalized.append(int(value))
+			data.state[field]=normalized
 		snapshot = data; _received_msec = Time.get_ticks_msec(); _command = {}; status = "connected"
+		if action == "arena_finish":
+			var arena_path: String="user://odyssey_arena_"+_binding+".json"
+			if FileAccess.file_exists(arena_path): DirAccess.remove_absolute(arena_path)
+		if _ad_before>=0 and (int(data.state.get("daily_ads",0))>_ad_before or (str(data.state.get("day",""))!=_ad_day and int(data.state.get("daily_ads",0))>0)):
+			_poll_until=0;_ad_before=-1;_ad_nonce=""
 		if action == "buy_dice":
 			var paid: Node = get_node_or_null("/root/PavilionManager/PaidGameplayV2")
 			if paid != null: paid.call("refresh")
 		if action == "ad_intent" and data.get("ad_intent") is Dictionary:
+			_ad_before=int(data.state.get("daily_ads",0));_ad_day=str(data.state.get("day",""))
 			_ad_nonce = str(data.ad_intent.nonce)
 			_show_ad()
 		var mail: Node = get_node_or_null("/root/ServerMailManager")
-		if mail != null and action in ["roll", "route", "counter", "milestone"] and mail.has_method("refresh"): mail.call("refresh", true)
+		if mail != null and action in ["roll", "route", "counter", "milestone", "task", "missions_all", "arena_finish"]:
+			if mail.has_method("hint_pending_delivery"): mail.call("hint_pending_delivery")
+			elif mail.has_method("refresh"): mail.call("refresh", true)
 	elif result_status in ["REVISION_OR_OWNERSHIP_CONFLICT", "INVALID_REQUEST"] and not _command.is_empty():
 		# These HTTP responses confirm this id was not committed; uncertain
 		# transport failures keep the exact durable request for recovery.
 		if DirAccess.remove_absolute(_path()) == OK:
-			_command = {}; snapshot = {}; call_deferred("refresh")
+			_command = {}; call_deferred("refresh")
 	finished.emit(action, success); changed.emit()
 func watch_ad() -> bool:
 	var ads: Node = get_node_or_null("/root/MonetizationManager")

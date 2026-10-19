@@ -7,18 +7,22 @@ var age: float=0.0
 var _shine: float=0.0
 var _resolved: int=0
 var _reveal_at: float=0.0
+var _resolve_started: float=0.0
+var _frame_clock: float=0.0
 func _ready() -> void:
 	mouse_filter=Control.MOUSE_FILTER_IGNORE; custom_minimum_size=Vector2(90,90); set_process(false)
 func start() -> void:
-	visible=true; rolling=true; _resolved=0; age=0; _shine=0; set_process(true)
+	visible=true; rolling=true; _resolved=0; age=0; _shine=0; _frame_clock=0; set_process(true)
 func resolve(value: int) -> void:
-	_resolved=clampi(value,1,6); _reveal_at=maxf(age+0.28,0.7) if not Art.reduced(self) else age+0.08; set_process(true)
+	_resolved=clampi(value,1,6); _resolve_started=age; _reveal_at=maxf(age+0.55,1.3) if not Art.reduced(self) else age+0.08; set_process(true)
 func cancel() -> void:
 	visible=false; rolling=false; _resolved=0; _shine=0; set_process(false); queue_redraw()
 func _process(delta: float) -> void:
 	age+=delta
 	if rolling:
-		face=1+posmod(int(age*15),6)
+		var settle: float=clampf((age-_resolve_started)/maxf(0.01,_reveal_at-_resolve_started),0,1) if _resolved>0 else 0.0
+		_frame_clock+=delta
+		if _frame_clock>=lerpf(0.055,0.20,settle*settle): face=1+posmod(face,6); _frame_clock=0
 		if _resolved>0 and age>=_reveal_at:
 			face=_resolved; rolling=false; _shine=1.0; reveal_finished.emit()
 	else:
@@ -27,8 +31,9 @@ func _process(delta: float) -> void:
 	queue_redraw()
 func _draw() -> void:
 	var side: float=minf(size.x,size.y); var center: Vector2=size*0.5
-	var bounce: float=sin(age*22)*side*0.035 if rolling and not Art.reduced(self) else 0.0
-	var angle: float=sin(age*18)*0.14 if rolling and not Art.reduced(self) else 0.0
+	var damping: float=1.0-clampf((age-_resolve_started)/maxf(0.01,_reveal_at-_resolve_started),0,1) if _resolved>0 else 1.0
+	var bounce: float=sin(age*22)*side*0.035*damping if rolling and not Art.reduced(self) else 0.0
+	var angle: float=sin(age*18)*0.14*damping if rolling and not Art.reduced(self) else 0.0
 	draw_set_transform(center+Vector2(0,-bounce),angle,Vector2.ONE*(1.0+_shine*0.045))
 	var origin:=Vector2.ONE*(-side*0.5)
 	draw_texture_rect(Art.DIE,Rect2(origin,Vector2.ONE*side),false)

@@ -51,6 +51,9 @@ const WIDE_READER_THRESHOLD: float = 760.0
 
 var live_ops: Node = null
 var _claim_busy: bool = false
+var _claim_all_button: Button
+var _claim_batch: Node
+var _inbox_signature: String=""
 var _refreshing: bool = false
 var _delete_button: Button = null
 var _popup: Control = null
@@ -106,6 +109,10 @@ func _ready() -> void:
 	# Home supplies its real wallet/nav. No LAB mock UI in production.
 	if not bool(get_meta("liveops_popup", false)):
 		_full_texture(self, HOME_ART, TextureRect.STRETCH_KEEP_ASPECT_COVERED)
+	_claim_batch=live_ops.get_node_or_null("MailboxClaimBatch")
+	if _claim_batch==null:
+		_claim_batch=preload("res://scripts/ui/liveops/mailbox_claim_batch.gd").new();_claim_batch.name="MailboxClaimBatch";_claim_batch.authority=live_ops;live_ops.add_child(_claim_batch)
+	_claim_batch.changed.connect(_refresh_from_authority)
 	_build_home_scrim()
 	_build_popup()
 	_refresh_from_authority()
@@ -252,6 +259,7 @@ func _build_mail_toolbar(parent: VBoxContainer) -> void:
 	_compact_inbox_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_compact_inbox_button.pressed.connect(_toggle_compact_inbox)
 	row.add_child(_compact_inbox_button)
+	_claim_all_button=_button("CLAIM ALL",true);_claim_all_button.name="MailboxClaimAll";_claim_all_button.custom_minimum_size.y=48;_claim_all_button.size_flags_horizontal=Control.SIZE_EXPAND_FILL;_claim_all_button.add_theme_font_size_override("font_size",14);_claim_all_button.pressed.connect(func()->void: _claim_batch.start());row.add_child(_claim_all_button)
 	_server_status = _label(ServerMailManager.get_status(),12,MUTED)
 	_server_status.name = "MailboxServerStatus"
 	_server_status.add_theme_stylebox_override("normal",_style(Color(0.002,0.02,0.028,.95),Color(GOLD,.3),6,1))
@@ -682,6 +690,10 @@ func _refresh_from_authority() -> void:
 	if is_instance_valid(_server_status):
 		_server_status.text = tr(ServerMailManager.get_status())
 		_server_status.tooltip_text = _server_status.text
+	if is_instance_valid(_claim_all_button) and is_instance_valid(_claim_batch):
+		_claim_all_button.disabled=SaveManager.is_progress_read_only() or (_claim_batch.active and not _claim_batch.paused) or (not _claim_batch.active and int(_claim_batch.available())==0)
+		_claim_all_button.text="LANJUTKAN" if _claim_batch.paused else "%d/%d" % [int(_claim_batch.claimed),int(_claim_batch.total)] if _claim_batch.active else "CLAIM ALL"
+		if not str(_claim_batch.message).is_empty(): _server_status.text=str(_claim_batch.message);_server_status.tooltip_text=_server_status.text
 	var entries: Array[Dictionary] = _entries()
 	var selection_found: bool = false
 	for entry: Dictionary in entries:
@@ -692,7 +704,10 @@ func _refresh_from_authority() -> void:
 		_selected_id = str(entries[0].get("id", "")) if not entries.is_empty() else ""
 	if not _selected_id.is_empty():
 		live_ops.mark_mail_read(_selected_id)
-	_rebuild_inbox()
+	var signature_parts: Array=[]
+	for entry: Dictionary in entries: signature_parts.append([entry.get("id"),entry.get("read"),entry.get("claimed"),entry.get("can_claim"),entry.get("pending"),entry.get("expired"),entry.get("title"),entry.get("created_at")])
+	var next_signature: String=JSON.stringify([_selected_id,signature_parts])
+	if next_signature!=_inbox_signature: _inbox_signature=next_signature;_rebuild_inbox()
 	_refresh_letter()
 	_layout_body()
 	_refreshing = false
@@ -915,7 +930,7 @@ func _refresh_letter() -> void:
 	_no_claim_hint.text = tr("MESSAGE · NO REWARD")
 	var server_busy: bool = _selected_id.begins_with("server:") and ServerMailManager.is_busy_for(_selected_id)
 	var claim_allowed: bool = bool(entry.get("can_claim",true))
-	_claim_button.disabled = claimed or read_only or _claim_busy or server_busy or not claim_allowed
+	_claim_button.disabled = claimed or read_only or _claim_busy or server_busy or not claim_allowed or (is_instance_valid(_claim_batch) and _claim_batch.active)
 	_claim_button.text = (
 		tr("CLAIMED") if claimed
 		else tr("CONNECTING") if server_busy

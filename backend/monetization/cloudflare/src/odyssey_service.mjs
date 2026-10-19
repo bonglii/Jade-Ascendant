@@ -1,3 +1,5 @@
+import {flowTransition,flowState} from './odyssey_flow_rules.mjs';
+import {utcDay} from './odyssey_rules.mjs';
 import {reconcileTopupBonus,bonusSummary} from './odyssey_purchase_bonus.mjs';
 import {createHash} from 'node:crypto';
 import {initial,transition,definition,LIMITS,PREMIUM_LIMITS,integer,reject,rewardPresent,exact} from './odyssey_rules.mjs';
@@ -17,10 +19,23 @@ export function service(db,{now=()=>Math.floor(Date.now()/1000),rng,economy=1}={
  db=primary(db);
  const prices=economy>=2?PREMIUM_LIMITS:LIMITS;
  const withBonus=economy>=3;
+ const withFlow=economy>=4;
+ const resolve=withFlow?flowTransition:transition;
  const influenced=s=>(s.season_bought||0)>0||(s.bonus_dice||0)>0;
  async function read(uid){
   const owner=account(uid),event=await currentEvent(db);
   if(withBonus)await reconcileTopupBonus(db,event,owner,now(),()=>paidEligible(db,owner,now()));
+  if(withFlow&&event?.enabled&&now()>=event.starts_at&&now()<event.ends_at){
+   await db.prepare('INSERT OR IGNORE INTO odyssey_players(event_id,owner,state) VALUES(?,?,?)').bind(event.id,owner,JSON.stringify(initial())).run();
+   for(let attempt=0;attempt<2;attempt++){
+    const current=await db.prepare('SELECT state,revision FROM odyssey_players WHERE event_id=? AND owner=?').bind(event.id,owner).first(),s=JSON.parse(current.state),stamp=now();
+    if(s.day===utcDay(stamp)&&s.task_day===utcDay(stamp))break;
+    if(influenced(s))await paidEligible(db,owner,stamp);
+    const next=resolve(s,{kind:'sync'},event,stamp,rng,prices).state;
+    const protectedRead=influenced(s),guardArgs=protectedRead?['u1:'+owner,stamp*1000-7200000,stamp*1000+60000,'u1:'+owner]:[];
+    try{await db.batch([db.prepare('UPDATE odyssey_players SET revision=CASE WHEN revision=? AND EXISTS(SELECT 1 FROM odyssey_events WHERE id=? AND document=?)'+(protectedRead?' AND '+paidGuard:'')+' THEN revision+1 ELSE -1 END,state=? WHERE event_id=? AND owner=?').bind(current.revision,event.id,JSON.stringify(event),...guardArgs,JSON.stringify(next),event.id,owner)]);break;}catch(e){if(attempt===1)throw e;}
+   }
+  }
   const r=event?await db.prepare('SELECT state,revision FROM odyssey_players WHERE event_id=? AND owner=?').bind(event.id,owner).first():null;
   const state=r?JSON.parse(r.state):initial();if(influenced(state))await paidEligible(db,owner,now());
   const grants=(await db.prepare("SELECT state FROM odyssey_players p WHERE owner=? AND EXISTS(SELECT 1 FROM json_each(p.state,'$.milestones') WHERE value=72) LIMIT 100").bind(owner).all()).results.map(row=>JSON.parse(row.state));
@@ -37,7 +52,7 @@ export function service(db,{now=()=>Math.floor(Date.now()/1000),rng,economy=1}={
   await db.prepare('INSERT OR IGNORE INTO odyssey_players(event_id,owner,state) VALUES(?,?,?)').bind(event.id,owner,JSON.stringify(initial())).run();
   const player=await db.prepare('SELECT * FROM odyssey_players WHERE event_id=? AND owner=?').bind(event.id,owner).first();if(player.revision!==input.revision)reject('revision_changed');
   const state=JSON.parse(player.state),adIntent=input.action?.kind==='ad_intent';
-  const out=transition(state,adIntent?{kind:'sync'}:input.action,event,stamp,rng,prices);
+  const out=resolve(state,adIntent?{kind:'sync'}:input.action,event,stamp,rng,prices);
   if(out.cost>0||influenced(state))await paidEligible(db,owner,stamp);
   let ad=null;
   if(adIntent){exact(input.action,['kind']);if(!event.ads_enabled||out.state.daily_ads>=LIMITS.ads_daily)reject('ad_limit');const outstanding=await db.prepare('SELECT COUNT(*) AS n FROM odyssey_ad_intents WHERE event_id=? AND owner=? AND consumed_at=0 AND expires_at>?').bind(event.id,owner,stamp).first();if(outstanding.n>=4)reject('ad_already_pending');ad={nonce:id(),expires_at:Math.min(stamp+1200,event.ends_at)};}

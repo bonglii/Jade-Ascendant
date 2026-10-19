@@ -191,6 +191,8 @@ func _on_reward_granted(
 	_source_id: String,
 	reward_data: Dictionary
 ) -> void:
+	var mail_batch: Node=get_node_or_null("/root/LiveOpsManager/MailboxClaimBatch")
+	if mail_batch!=null and bool(mail_batch.call("owns_reward",_source_id)): return
 	var source := _capture_source()
 	var claim_all: bool = _source_is_claim_all(source)
 

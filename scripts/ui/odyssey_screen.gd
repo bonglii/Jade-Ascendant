@@ -1,4 +1,6 @@
 extends Control
+const Flow=preload("res://scripts/ui/liveops/odyssey_flow_skin.gd")
+const ARENA_PATH: String="res://scripts/ui/liveops/odyssey_arena.gd"
 const Art=preload("res://scripts/ui/liveops/odyssey_art.gd")
 const PremiumButton=preload("res://scripts/ui/liveops/odyssey_button.gd")
 const PremiumPanel=preload("res://scripts/ui/liveops/odyssey_panel.gd")
@@ -31,6 +33,15 @@ var safe: Control
 var observed_rolls: int = -1
 var _clock: float = 0.0
 var _modal_kind: String = ""
+var _modal_panel: Panel
+var _modal_header: Control
+var _modal_footer: VBoxContainer
+var _mission_handles: Array[Dictionary]=[]
+var _mission_all: Button
+var _arena: Control
+var _arena_submit_pending: Dictionary={}
+var _retry_at: int=0
+var _retry_count: int=0
 var _battle_buttons: Array[Button] = []
 var _battle_timer: Label
 var _pending_milestone: int = 0
@@ -58,7 +69,7 @@ func _watch_ad() -> void:
 	if client!=null and not client.busy and not _presenting(): client.watch_ad()
 func _dice_revealed() -> void:
 	var binding: String=_presentation_binding
-	await get_tree().create_timer(0.24 if not Art.reduced(self) else 0.05).timeout
+	await get_tree().create_timer(0.52 if not Art.reduced(self) else 0.12).timeout
 	if not is_inside_tree() or binding!=_presentation_binding: return
 	dice_view.visible=false; _reveal_pending=false
 	if _presentation_pending.is_empty(): return
@@ -116,7 +127,7 @@ func _ready() -> void:
 	var relic: Label=label("Heavenweaver Compass",23); relic.add_theme_font_override("font",FONT); description.add_child(relic); description.add_child(label("Guaranteed at 72 journeys • Secured in Mail",12))
 	var claims:=HBoxContainer.new(); claims.add_theme_constant_override("separation",6); body.add_child(claims)
 	for n: int in [24,48,72]:
-		var claim: Button=button(str(n),func() -> void: _submit({"kind":"milestone","milestone":n})); claim.custom_minimum_size.y=60; claims.add_child(claim); milestones.append(claim)
+		var claim: Button=button(str(n),_journey_rewards); claim.custom_minimum_size.y=60; claims.add_child(claim); milestones.append(claim)
 	roll=button("ROLL DICE · 1 DIE",_roll_pressed,true); body.add_child(roll)
 	var optional:=HBoxContainer.new(); optional.add_theme_constant_override("separation",6); body.add_child(optional)
 	ad=button("+1 DIE · AD 0/2",_watch_ad); optional.add_child(ad); buy=button("TRAVEL SHOP",_shop); optional.add_child(buy)
@@ -133,10 +144,14 @@ func _submit(action: Dictionary) -> void:
 	if action.get("kind")=="roll": dice_view.start()
 	if client.submit(action):
 		if action.get("kind") == "milestone": _pending_milestone = int(action.get("milestone",0))
-		_close_modal()
+		if not ((_modal_kind=="missions" and action.get("kind") in ["mission","task","missions_all"]) or (_modal_kind=="battle" and action.get("kind")=="arena_finish")): _close_modal()
 	elif action.get("kind")=="roll": dice_view.cancel()
 func _process(delta: float) -> void:
-	if _modal_kind == "battle" and is_instance_valid(_battle_timer):
+	if not _arena_submit_pending.is_empty() and client!=null and not client.busy:
+		var action: Dictionary=_arena_submit_pending;_arena_submit_pending={};_submit(action)
+	if client!=null and not client.busy and client.status in ["NETWORK_UNAVAILABLE","REQUEST_TIMEOUT","connection_timeout","BACKEND_NOT_READY","BUSY"] and _retry_count<3 and Time.get_ticks_msec()>=_retry_at:
+		_retry_count+=1; _retry_at=Time.get_ticks_msec()+4000*(1<<_retry_count); client.refresh()
+	if _modal_kind == "battle" and is_instance_valid(_battle_timer) and not is_instance_valid(_arena):
 		var battle: Dictionary = client.snapshot.get("state",{}).get("battle",{})
 		var now: int = int(client.server_time())
 		var counter_open: bool = now >= int(battle.get("opens_at",0))
@@ -145,7 +160,11 @@ func _process(delta: float) -> void:
 		for action: Button in _battle_buttons:
 			if is_instance_valid(action): action.disabled = client.busy or not counter_open
 	_clock += delta
-	if _clock >= 1.0: _clock = 0; _update_time()
+	if _clock >= 1.0:
+		_clock=0;_update_time()
+		if client!=null and not client.busy and client.status=="connected" and client.snapshot.get("event") is Dictionary:
+			var event: Dictionary=client.snapshot.event
+			if bool(event.get("enabled",false)) and client.server_time()>=int(event.starts_at) and client.server_time()<int(event.ends_at) and str(client.snapshot.get("state",{}).get("day",""))!=Time.get_datetime_string_from_unix_time(int(client.server_time())).substr(0,10): client.refresh()
 func _update_time() -> void:
 	if client==null: return
 	var event: Variant=client.snapshot.get("event")
@@ -158,7 +177,10 @@ func _update_time() -> void:
 	countdown.text="%d DAYS %dH REMAINING" % [maxi(0,int(float(remaining)/86400.0)),maxi(0,int(float(remaining%86400)/3600.0))] if remaining>0 else "JOURNEY CLOSED · CLAIM MILESTONES"
 func _refresh() -> void:
 	if client == null: return
+	if client.status=="connected": _retry_count=0; _retry_at=Time.get_ticks_msec()+4000
+	_update_mission_handles()
 	var state: Dictionary = client.snapshot.get("state", {})
+	if _modal_kind=="battle" and is_instance_valid(_arena) and not state.get("battle") is Dictionary: _close_modal()
 	var event: Dictionary = client.snapshot.get("event", {}) if client.snapshot.get("event") is Dictionary else {}
 	var active: bool = bool(event.get("enabled",false)) and int(client.server_time()) >= int(event.get("starts_at",0)) and int(client.server_time()) < int(event.get("ends_at",0))
 	var binding: String=str(client.snapshot.get("owner_binding",""))+":"+str(event.get("id",""))
@@ -176,7 +198,7 @@ func _refresh() -> void:
 	observed_rolls = count
 	var travelling: bool = _presenting()
 	var resolving: bool=state.get("battle") is Dictionary or state.get("pending","")=="route"
-	var claim_open: bool=bool(event.get("enabled",false)) and int(client.server_time())>=int(event.get("starts_at",0)) and int(client.server_time())<int(event.get("ends_at",0))+3*86400
+	var claim_open: bool=bool(event.get("enabled",false)) and client.server_time()>=int(event.get("starts_at",0)) and client.server_time()<int(event.get("ends_at",0))+3*86400
 	roll.disabled=client.busy or travelling or (not active and not (resolving and claim_open)) or (int(state.get("tickets",0))<1 and not resolving)
 	ad.disabled = client.busy or travelling or not active or not bool(event.get("ads_enabled",false)) or int(state.get("daily_ads",0)) >= 2
 	ad.text = "+1 DIE · AD %d/2" % int(state.get("daily_ads",0))
@@ -184,8 +206,9 @@ func _refresh() -> void:
 	for i: int in range(milestones.size()):
 		var n: int = [24,48,72][i]; var claimed: bool = n in state.get("milestones",[])
 		milestones[i].text = "%d · %s" % [n, "CLAIMED" if claimed else "CLAIM" if count>=n else "2 SEALS" if n==24 else "3 SEALS" if n==48 else "COMPASS"]
-		milestones[i].disabled = client.busy or travelling or not claim_open or claimed or count < n
-	notice.text = str(state.get("notice","Connect Google to begin your journey.")) if client.status == "connected" else {"NETWORK_UNAVAILABLE":"Connection failed. Tap Reconnect; your progress is saved.","ENDPOINT_POLICY_REJECTED":"App update required. Install the latest Play build.","native_update_required":"App update required. Install the latest Play build.","ACCOUNT_HELD":"A refunded purchase requires review. Contact support.","BACKEND_NOT_READY":"Server is preparing the event. Please retry shortly."}.get(str(client.status),str(client.status).replace("_"," ").capitalize())
+		milestones[i].disabled = client.busy or travelling
+	notice.text = str(state.get("notice","Connect Google to begin your journey.")) if client.status in ["connected","sending_action","refreshing"] else {"NETWORK_UNAVAILABLE":"Connection failed. Tap Reconnect; your progress is saved.","ENDPOINT_POLICY_REJECTED":"App update required. Install the latest Play build.","native_update_required":"App update required. Install the latest Play build.","ACCOUNT_HELD":"A refunded purchase requires review. Contact support.","BACKEND_NOT_READY":"Server is preparing the event. Please retry shortly."}.get(str(client.status),str(client.status).replace("_"," ").capitalize())
+	if client.busy and client.status=="sending_action": notice.text="MENGIRIM AKSI…"
 	if travelling: notice.text="THE DIE IS REVEALING…" if _reveal_pending else "ROLLED %d · LIN YUE IS TRAVELLING" % dice
 	roll.text="ROLLING…" if client.busy and dice_view.rolling else "TRAVELLING…" if travelling else "CONTINUE THE GATE" if state.get("battle") is Dictionary else "CHOOSE YOUR PATH" if state.get("pending","")=="route" else "ROLL DICE · 1 DIE"
 	buy.text="TRAVEL SHOP"
@@ -193,83 +216,112 @@ func _refresh() -> void:
 	var mission_ready: bool=false
 	for n: int in [1,3,5]:
 		if int(state.get("daily_rolls",0))>=n and n not in state.get("missions",[]): mission_ready=true
+	mission_ready=mission_ready or (int(state.get("daily_gifts",0))>=3 and "gifts" not in state.get("task_claims",[])) or (int(state.get("daily_guardians",0))>=1 and "guardian" not in state.get("task_claims",[]))
 	missions_button.text="MISSIONS · CLAIM" if mission_ready else "DAILY MISSIONS"
 	if not client.busy and not travelling and dice_view.rolling: dice_view.cancel()
 	_update_time()
 	if modal == null and not client.busy and not travelling:
 		if state.get("battle") is Dictionary: _battle()
 		elif state.get("pending", "") == "route": _routes()
-		elif active and state.get("day", "") != Time.get_datetime_string_from_unix_time(int(client.server_time())).substr(0,10): _submit({"kind":"sync"})
+
 func _finished(action: String, success: bool) -> void:
 	if not success and action=="roll": dice_view.cancel()
-	if success and action in ["mission","buy_dice","route","counter"]: _show_reward()
+	if success and action in ["mission","task","missions_all","buy_dice","route","counter","arena_finish"]: _show_reward()
 	if action == "milestone":
 		if success and _pending_milestone == 72: _ceremony()
 		elif success: _show_reward()
 		_pending_milestone = 0
 func _close_modal() -> void:
 	if is_instance_valid(modal): modal.queue_free()
-	modal = null; _modal_kind = ""; _battle_buttons.clear(); _battle_timer = null
+	modal = null; _modal_kind = ""; _battle_buttons.clear(); _battle_timer = null; _mission_handles.clear(); _mission_all=null; _modal_panel=null; _modal_header=null; _modal_footer=null; _arena=null
+func _fit_popup() -> void:
+	if not is_instance_valid(_modal_panel): return
+	var span: Vector2=safe.size
+	_modal_panel.size=Vector2(minf(span.x-24,600),minf(span.y-32,980));_modal_panel.position=(span-_modal_panel.size)*0.5
+	if is_instance_valid(_modal_header): _modal_header.custom_minimum_size.y=clampf(span.y*0.20,96,190)
 func _popup(title: String, kind: String) -> VBoxContainer:
 	_close_modal(); _modal_kind=kind
-	modal=Control.new(); modal.z_index=20; modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); safe.add_child(modal)
-	var dim:=ColorRect.new(); dim.color=Color(0.002,0.01,0.02,0.86); dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); modal.add_child(dim)
-	var center:=Control.new(); center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); modal.add_child(center)
-	var panel:=_card(); panel.clip_contents=true; panel.size=Vector2(minf(safe.size.x-32,540),minf(safe.size.y-32,760)); panel.position=(safe.size-panel.size)*0.5
-	var inset: StyleBox=panel.get_theme_stylebox("panel").duplicate(); inset.content_margin_left=64; inset.content_margin_right=64; inset.content_margin_top=56; inset.content_margin_bottom=56; panel.add_theme_stylebox_override("panel",inset); center.add_child(panel)
-	var shell:=VBoxContainer.new(); shell.add_theme_constant_override("separation",8); panel.add_child(shell)
-	var top:=HBoxContainer.new(); shell.add_child(top)
-	var heading: Label=label(title,22); heading.add_theme_font_override("font",FONT); heading.size_flags_horizontal=Control.SIZE_EXPAND_FILL; top.add_child(heading); top.add_child(_navigation("close",_close_modal,"Close"))
-	var scroll:=ScrollContainer.new(); scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL; scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_SHOW_NEVER; shell.add_child(scroll)
-	var body:=VBoxContainer.new(); body.size_flags_horizontal=Control.SIZE_EXPAND_FILL; body.add_theme_constant_override("separation",12); scroll.add_child(body)
-	if not Art.reduced(self): panel.modulate.a=0.0; create_tween().tween_property(panel,"modulate:a",1.0,0.18)
+	modal=Control.new();modal.z_index=20;safe.add_child(modal);modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var dim:=ColorRect.new();dim.color=Color(0.002,0.01,0.02,0.88);modal.add_child(dim);dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_modal_panel=Panel.new();_modal_panel.name="OdysseyFlowPanel";_modal_panel.clip_contents=true;_modal_panel.add_theme_stylebox_override("panel",Flow.style(4));modal.add_child(_modal_panel)
+	var inset:=MarginContainer.new();_modal_panel.add_child(inset);inset.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	for side: String in ["left","right","top","bottom"]: inset.add_theme_constant_override("margin_"+side,18)
+	var column:=VBoxContainer.new();column.add_theme_constant_override("separation",8);inset.add_child(column)
+	_modal_header=Control.new();_modal_header.clip_contents=true;column.add_child(_modal_header)
+	var banner:=TextureRect.new();banner.texture=Flow.texture(0 if kind=="missions" else 1 if kind in ["shop","confirm_pack"] else 2);banner.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;banner.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_COVERED;_modal_header.add_child(banner);banner.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var shade:=ColorRect.new();shade.color=Color(0.006,0.05,0.045,0.78);_modal_header.add_child(shade);shade.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE);shade.offset_top=-62
+	var heading: Label=label(title,27);heading.add_theme_font_override("font",FONT);heading.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;shade.add_child(heading);heading.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);heading.offset_left=12;heading.offset_right=-12
+	var close: Button=_navigation("close",_close_modal,"Close");close.custom_minimum_size=Vector2(52,52);_modal_header.add_child(close);close.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT);close.offset_left=-56;close.offset_right=-4;close.offset_top=4;close.offset_bottom=56
+	var scroll:=ScrollContainer.new();scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL;scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_SHOW_NEVER;scroll.scroll_deadzone=12;column.add_child(scroll)
+	var body:=VBoxContainer.new();body.size_flags_horizontal=Control.SIZE_EXPAND_FILL;body.add_theme_constant_override("separation",10);scroll.add_child(body)
+	_modal_footer=VBoxContainer.new();column.add_child(_modal_footer)
+	_fit_popup();_fit_popup.call_deferred()
+	if not safe.resized.is_connected(_fit_popup): safe.resized.connect(_fit_popup)
 	return body
 func _info() -> void:
 	var body: VBoxContainer=_popup("THE CELESTIAL ATLAS","info")
 	var limits: Dictionary=client.snapshot.get("limits",{}) if client!=null else {}
 	body.add_child(label("FREE DAILY JOURNEYS",19)); body.add_child(label("3 dice arrive on daily login. Roll 1, 3 and 5 times to claim 3 more from Missions. Reset: 00:00 UTC (07:00 WIB).",16))
 	body.add_child(label("OPTIONAL DICE",19)); body.add_child(label("2 verified ad dice per day. Purchased Jade: 1 die for %d or 5 dice for %d. Limit 10 bought per day and 40 per season. Every face has a 1 in 6 chance." % [int(limits.get("price_one",10)),int(limits.get("price_five",40))],16))
-	body.add_child(label("CHOOSE YOUR PATH",19)); body.add_child(label("Quiet Grove grants peaceful supplies. Dragon Gate opens 3 counter rounds: read the guardian's stance, wait for the opening, then match it. Land 2 counters to win.",16))
+	body.add_child(label("CHOOSE YOUR PATH",19)); body.add_child(label("Quiet Grove grants peaceful supplies. Dragon Gate opens a free-movement arena. Move with the joystick, avoid marked attacks and stay in range for automatic sword strikes. The server verifies the movement replay before granting rewards.",16))
 	body.add_child(label("GUARANTEED MILESTONES",19)); body.add_child(label("24 journeys: 2 Pavilion Seals.\n48: 3 Pavilion Seals + 500 Spirit Stones.\n72: one Heavenweaver Compass, secured in Mail.\nYou have 3 days after the season to claim reached milestones. Unused dice expire.",16))
+func _mission_row(body: VBoxContainer, caption: String, target: int, kind: String, key: Variant, reward: String, icon: Texture2D) -> void:
+	var card:=Flow.card();body.add_child(card);var content:=VBoxContainer.new();content.add_theme_constant_override("separation",6);card.add_child(content)
+	var heading: Label=Flow.text(caption,18);content.add_child(heading)
+	var meter:=ProgressBar.new();meter.max_value=target;meter.show_percentage=false;meter.custom_minimum_size.y=8;content.add_child(meter)
+	var row:=HBoxContainer.new();row.add_theme_constant_override("separation",8);content.add_child(row);row.add_child(_icon(icon,34))
+	var count: Label=Flow.text(reward,16);row.add_child(count)
+	var claim: Button=Flow.button("",func() -> void:
+		if kind=="login": return
+		_submit({"kind":"mission","mission":int(key)} if kind=="roll" else {"kind":"task","task":str(key)}))
+	claim.custom_minimum_size.x=148;claim.size_flags_horizontal=Control.SIZE_SHRINK_END;row.add_child(claim)
+	_mission_handles.append({"kind":kind,"key":key,"target":target,"meter":meter,"button":claim,"heading":heading,"caption":caption})
+func _update_mission_handles() -> void:
+	if client==null: return
+	var state: Dictionary=client.snapshot.get("state",{});var any_ready: bool=false
+	for handle: Dictionary in _mission_handles:
+		var progress_value: int=int(state.get("daily_rolls",0)) if handle.kind=="roll" else int(state.get("daily_gifts",0)) if handle.key=="gifts" else int(state.get("daily_guardians",0)) if handle.key=="guardian" else 1 if not str(state.get("day","")).is_empty() else 0
+		var claimed: bool=int(handle.key) in state.get("missions",[]) if handle.kind=="roll" else str(handle.key) in state.get("task_claims",[]) if handle.kind=="task" else progress_value==1
+		var ready: bool=progress_value>=int(handle.target) and not claimed
+		handle.meter.value=mini(progress_value,int(handle.target));handle.heading.text="%s  ·  %d/%d" % [handle.caption,mini(progress_value,int(handle.target)),int(handle.target)]
+		handle.button.text="DITERIMA" if claimed and handle.kind=="login" else "DIKLAIM" if claimed else "MENGIRIM…" if client.busy else "KLAIM" if ready else "LANJUTKAN"
+		handle.button.disabled=client.busy or claimed or not ready or client.status!="connected"
+		any_ready=any_ready or ready
+	if is_instance_valid(_mission_all): _mission_all.disabled=not any_ready or client.busy or client.status!="connected";_mission_all.text="MENGIRIM…" if client.busy else "KLAIM TERSEDIA"
 func _missions() -> void:
-	var body: VBoxContainer=_popup("DAILY DISCIPLINES","missions")
-	body.add_child(label("3 login dice arrive automatically. Complete these journeys to claim the remaining daily dice.",16))
-	var state: Dictionary=client.snapshot.get("state",{})
-	for n: int in [1,3,5]:
-		var claimed: bool=n in state.get("missions",[])
-		var card:=_card(); body.add_child(card); var row:=HBoxContainer.new(); card.add_child(row); row.add_child(_icon(Art.DIE,48))
-		var description: Label=label("ROLL %d TIMES\n%d / %d complete" % [n,mini(int(state.get("daily_rolls",0)),n),n],16); description.size_flags_horizontal=Control.SIZE_EXPAND_FILL; row.add_child(description)
-		var claim: Button=button("CLAIMED" if claimed else "+1 DIE",func() -> void: _submit({"kind":"mission","mission":n})); claim.custom_minimum_size.x=130; claim.size_flags_horizontal=Control.SIZE_SHRINK_END; claim.disabled=client.busy or claimed or int(state.get("daily_rolls",0))<n; row.add_child(claim)
+	var body: VBoxContainer=_popup("DAILY MISSIONS","missions")
+	var hint: Label=label("RESET 07.00 WIB · Hadiah tambahan masuk Mailbox",14);hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;body.add_child(hint)
+	_mission_row(body,"Masuk hari ini",1,"login","login","+3 Dadu",Art.DIE)
+	for n: int in [1,3,5]: _mission_row(body,"Lakukan %d perjalanan" % n,n,"roll",n,"+1 Dadu",Art.DIE)
+	var stone: Texture2D=preload("res://assets/ui/shared/resources/spirit_stone_premium.png")
+	_mission_row(body,"Kunjungi petak hadiah",3,"task","gifts","+30 Stones",stone)
+	_mission_row(body,"Selesaikan Gerbang Naga",1,"task","guardian","+60 Stones",stone)
+	_mission_all=Flow.button("KLAIM TERSEDIA",func() -> void: _submit({"kind":"missions_all"}));_modal_footer.add_child(_mission_all);_update_mission_handles()
 func _shop() -> void:
 	if client==null or _presenting(): return
 	var body: VBoxContainer=_popup("TRAVEL SHOP","shop")
 	var bonus: Dictionary=client.snapshot.get("purchase_bonus",{})
-	body.add_child(label("JADE + BONUS TRAVEL DICE",22))
-	body.add_child(label("Top up Celestial Jade in Google Play. During the active promotion, each Jade pack includes bonus dice once per season. Prices appear live in the Treasury.",16))
-	var offers: Array=bonus.get("offers",[])
+	var hint: Label=label("Jade + bonus dadu · Sekali per paket per season",15);hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;body.add_child(hint)
 	if client.purchase_bonus_active():
-		for offer: Dictionary in offers:
-			var text: String="%d JADE + %d BONUS DICE" % [int(offer.jade),int(offer.dice)]
-			if bool(offer.claimed): text="%d JADE · BONUS CLAIMED" % int(offer.jade)
-			body.add_child(button(text,_open_treasury.bind(str(offer.product_id))))
+		for offer: Dictionary in bonus.get("offers",[]):
+			var card:=Flow.card();body.add_child(card);var content:=VBoxContainer.new();content.add_theme_constant_override("separation",6);card.add_child(content)
+			content.add_child(Flow.text("%d Jade + %d Dadu" % [int(offer.jade),int(offer.dice)],21,true))
+			var row:=HBoxContainer.new();row.add_theme_constant_override("separation",8);content.add_child(row)
+			row.add_child(_icon(preload("res://assets/ui/shared/resources/celestial_jade_premium.png"),40));row.add_child(Flow.text(str(int(offer.jade)),18));row.add_child(_icon(Art.DIE,40));row.add_child(Flow.text("+%d" % int(offer.dice),18))
+			var buy_pack: Button=Flow.button("BONUS DIKLAIM · JADE SAJA" if bool(offer.claimed) else "LIHAT HARGA PLAY",_open_treasury.bind(str(offer.product_id)));content.add_child(buy_pack)
+			if bool(offer.claimed): content.add_child(Flow.text("Bonus season ini sudah diterima. Pembelian berikutnya hanya Jade.",14))
 	else:
-		body.add_child(label("Dice bonuses require a connected, active season and a new verified purchase after this promotion begins. No bonus is promised while the event is unavailable.",15))
-	body.add_child(button("OPEN CELESTIAL TREASURY",_open_treasury.bind(""),true))
-	body.add_child(label("Maximum 152 journeys per season. Unused dice expire; extra dice do not grant extra Compass copies. Bonus dice arrive after server purchase verification, never from the payment animation.",15))
-	body.add_child(label("EXCHANGE PURCHASED JADE",20))
-	var state: Dictionary=client.snapshot.get("state",{})
-	var event: Dictionary=client.snapshot.get("event",{}) if client.snapshot.get("event") is Dictionary else {}
-	var exchange_ready: bool=client.status=="connected" and not client.busy and bool(event.get("enabled",false)) and bool(event.get("purchases_enabled",false)) and client.server_time()>=int(event.get("starts_at",0)) and client.server_time()<int(event.get("ends_at",0)) and int(state.get("rolls",0))<152
-	var paid: Node=get_node_or_null("/root/PavilionManager/PaidGameplayV2")
-	var balance: int=int(paid.call("paid_balance")) if paid!=null else 0
+		var card:=Flow.card();body.add_child(card);card.add_child(Flow.text("Bonus dadu tersedia saat season aktif dan tersambung. Harga asli dan pembelian Jade ada di Treasury.",17));body.add_child(Flow.button("BUKA CELESTIAL TREASURY",_open_treasury.bind("")))
+	var exchange:=Flow.card();body.add_child(exchange);var box:=VBoxContainer.new();box.add_theme_constant_override("separation",8);exchange.add_child(box);box.add_child(Flow.text("TUKAR PURCHASED JADE",19,true))
+	var state: Dictionary=client.snapshot.get("state",{});var event: Dictionary=client.snapshot.get("event",{}) if client.snapshot.get("event") is Dictionary else {}
+	var paid: Node=get_node_or_null("/root/PavilionManager/PaidGameplayV2");var balance: int=int(paid.call("paid_balance")) if paid!=null else 0
+	box.add_child(Flow.text("Saldo: %d · Hari ini %d/10 · Season %d/40" % [balance,int(state.get("daily_bought",0)),int(state.get("season_bought",0))],15))
 	var limits: Dictionary=client.snapshot.get("limits",{})
-	body.add_child(label("Verified Purchased Jade: %d\nBought today: %d / 10 · Season: %d / 40" % [balance,int(state.get("daily_bought",0)),int(state.get("season_bought",0))],17))
-	body.add_child(label("Optional catch-up packs. Free daily dice can reach the guaranteed reward. Choose a pack, then confirm the cost.",16))
+	var exchange_ready: bool=not client.busy and client.status=="connected" and bool(event.get("enabled",false)) and bool(event.get("purchases_enabled",false)) and client.server_time()>=int(event.get("starts_at",0)) and client.server_time()<int(event.get("ends_at",0)) and int(state.get("rolls",0))<152
 	for pack: int in [1,5]:
 		var price: int=int(limits.get("price_one" if pack==1 else "price_five",10 if pack==1 else 40))
-		var card:=_card(); body.add_child(card); var content:=VBoxContainer.new(); card.add_child(content)
-		var row:=HBoxContainer.new(); row.add_child(_icon(Art.DIE,72)); var description: Label=label("%d TRAVEL %s\n%s" % [pack,"DIE" if pack==1 else "DICE","Single journey" if pack==1 else "20% bundle saving"],20); description.size_flags_horizontal=Control.SIZE_EXPAND_FILL; row.add_child(description); content.add_child(row)
-		var purchase: Button=button("%d JADE · REVIEW PACK" % price,_confirm_pack.bind(pack,price)); purchase.disabled=not exchange_ready or balance<price or int(state.get("daily_bought",0))+pack>10 or int(state.get("season_bought",0))+pack>40; content.add_child(purchase)
+		var action: Button=Flow.button("%d Dadu · %d Jade" % [pack,price],_confirm_pack.bind(pack,price));action.disabled=not exchange_ready or balance<price or int(state.get("daily_bought",0))+pack>10 or int(state.get("season_bought",0))+pack>40;box.add_child(action)
+	var footer: Label=label("Bonus setelah verifikasi server. Maksimal 152 perjalanan; dadu tidak terpakai kedaluwarsa. Satu Compass per season.",14);footer.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;body.add_child(footer)
 func _open_treasury(product_id: String) -> void:
 	if SceneTransitionManager.is_transitioning: return
 	get_tree().set_meta("odyssey_treasury_return",true)
@@ -280,15 +332,40 @@ func _confirm_pack(pack: int, price: int) -> void:
 	body.add_child(_icon(Art.DIE,110)); body.add_child(label("%d travel %s for %d Purchased Jade." % [pack,"die" if pack==1 else "dice",price],22))
 	body.add_child(label("The server charges once. Extra dice do not change die odds or grant extra Compass copies.",16))
 	body.add_child(button("CONFIRM · %d JADE" % price,func() -> void: _submit({"kind":"buy_dice","pack":pack}),true)); body.add_child(button("BACK TO PACKS",_shop))
+func _journey_rewards() -> void:
+	var body: VBoxContainer=_popup("JOURNEY REWARDS","journey")
+	var state: Dictionary=client.snapshot.get("state",{});var count: int=int(state.get("rolls",0))
+	var title: Label=label("%d / 72 PERJALANAN" % count,22);title.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;body.add_child(title)
+	var meter:=ProgressBar.new();meter.max_value=72;meter.value=mini(count,72);meter.custom_minimum_size.y=12;meter.show_percentage=false;body.add_child(meter)
+	for n: int in [24,48,72]:
+		var card:=Flow.card();body.add_child(card);var content:=VBoxContainer.new();content.add_theme_constant_override("separation",8);card.add_child(content)
+		content.add_child(Flow.text("%d PERJALANAN" % n,21,true))
+		var row:=HBoxContainer.new();row.add_theme_constant_override("separation",8);content.add_child(row);row.add_child(_icon(COMPASS if n==72 else preload("res://assets/ui/shared/resources/pavilion_seal_premium.png"),64));row.add_child(Flow.text("Heavenweaver Compass
+★★★★★" if n==72 else "2 Pavilion Seals" if n==24 else "3 Seals + 500 Stones",19))
+		var claimed: bool=n in state.get("milestones",[])
+		var event: Dictionary=client.snapshot.get("event",{}) if client.snapshot.get("event") is Dictionary else {}
+		var claim_open: bool=bool(event.get("enabled",false)) and client.server_time()>=int(event.get("starts_at",0)) and client.server_time()<int(event.get("ends_at",0))+3*86400
+		var claim: Button=Flow.button("DIKLAIM" if claimed else "KLAIM" if count>=n else "BELUM TERCAPAI",func() -> void: _submit({"kind":"milestone","milestone":n}));claim.disabled=claimed or count<n or client.busy or client.status!="connected" or not claim_open;content.add_child(claim)
+	var footer: Label=label("Hadiah dikirim ke Mailbox · Masa klaim 3 hari setelah season",14);footer.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;body.add_child(footer)
 func _routes() -> void:
+	if not ResourceLoader.has_cached(ARENA_PATH): ResourceLoader.load_threaded_request(ARENA_PATH)
 	var body: VBoxContainer = _popup("CHOOSE YOUR PATH","route")
-	body.add_child(label("QUIET GROVE · peaceful supplies\nSafe passage grants 30 Spirit Stones.\n\nDRAGON GATE · read and counter\nWin at least 2 of 3 counters for 60 Spirit Stones. A missed trial still grants base supplies."))
+	body.add_child(label("QUIET GROVE · peaceful supplies\nSafe passage grants 30 Spirit Stones.\n\nDRAGON GATE · free-movement arena\nMove with the joystick, avoid marked attacks and stay within sword range. Victory grants 60 Spirit Stones; retreat grants base supplies."))
 	var grove := TextureRect.new(); grove.texture = preload("res://assets/ui/liveops/event_identity/pilgrimage.png"); grove.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; grove.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED; grove.custom_minimum_size.y = 90; body.add_child(grove)
 	body.add_child(button("QUIET GROVE",func() -> void: _submit({"kind":"route","choice":"safe"})))
 	var gate := TextureRect.new(); gate.texture = preload("res://assets/ui/liveops/event_identity/boss_hunt.png"); gate.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; gate.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED; gate.custom_minimum_size.y = 90; body.add_child(gate)
 	body.add_child(button("DRAGON GATE",func() -> void: _submit({"kind":"route","choice":"challenge"})))
 func _battle() -> void:
 	var battle: Dictionary = client.snapshot.get("state",{}).get("battle",{})
+	if battle.get("mode","")=="arena":
+		_close_modal();_modal_kind="battle"
+		modal=Control.new();modal.z_index=20;safe.add_child(modal);modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		var arena_script: GDScript=load(ARENA_PATH);_arena=arena_script.new();_arena.client=client;_arena.battle=battle.duplicate(true);modal.add_child(_arena);_arena.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		_arena.completed.connect(func(trace: String,abandon: bool) -> void:
+			var action: Dictionary={"kind":"arena_finish","trace":trace,"abandon":abandon}
+			if client.busy: _arena_submit_pending=action
+			else: _submit(action))
+		return
 	var body: VBoxContainer = _popup("DRAGON GATE · %d / 3" % (int(battle.get("turn",0))+1),"battle")
 	var stance: int = int(battle.get("attack",0)); var names: Array[String] = ["HEAVEN","EARTH","HUMAN"]
 	body.add_child(label("The guardian reveals %s.\nCounter with the matching stance after the opening.\nLand 2 successful counters to win." % names[stance],21))

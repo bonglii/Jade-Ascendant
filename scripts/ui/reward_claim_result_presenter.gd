@@ -94,6 +94,8 @@ func _on_reward_granted(
 	source_id: String,
 	reward_data: Dictionary
 ) -> void:
+	var mail_batch: Node=get_node_or_null("/root/LiveOpsManager/MailboxClaimBatch")
+	if mail_batch!=null and bool(mail_batch.call("owns_reward",source_id)): return
 	if not _is_explicit_claim_source(
 		source_type,
 		source_id
@@ -332,11 +334,11 @@ func _merge_rewards(
 				)
 			)
 
-	return RewardManager.create_reward_data(
-		spirit_total,
-		merged_items,
-		hero_total
-	)
+	var merged: Dictionary=RewardManager.create_reward_data(spirit_total,merged_items,hero_total)
+	for key: String in ["celestial_jade","pavilion_seal"]:
+		var amount: int=maxi(0,int(current.get(key,0)))+maxi(0,int(addition.get(key,0)))
+		if amount>0: merged[key]=amount
+	return merged
 
 
 func _show_next_result() -> void:

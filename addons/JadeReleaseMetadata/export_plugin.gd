@@ -27,7 +27,8 @@ class MetadataExporter extends EditorExportPlugin:
 		var has_mobile_board: bool = FileAccess.file_exists("res://assets/ui/liveops/odyssey/imperial_v2/tile_mobile.png") and FileAccess.get_file_as_string("res://scripts/ui/liveops/odyssey_board.gd").contains("const PRESENTATION_REVISION: int=3")
 		metadata["odyssey_presentation"] = 3 if has_premium and has_mobile_board else 2 if has_premium else 0
 		metadata["update_notifications"] = 1 if proof is Dictionary and int(proof.get("update_notifications",0)) == 1 and FileAccess.file_exists("res://scripts/managers/update_notifications.gd") else 0
-		metadata["odyssey_shop_protocol"] = 3 if proof is Dictionary and int(proof.get("odyssey_shop_protocol",0)) == 3 and FileAccess.get_file_as_string("res://scripts/ui/odyssey_screen.gd").contains("JADE + BONUS TRAVEL DICE") else 0
+		metadata["odyssey_shop_protocol"] = 4 if proof is Dictionary and int(proof.get("odyssey_shop_protocol",0)) == 4 and FileAccess.get_file_as_string("res://scripts/ui/odyssey_screen.gd").contains("const Flow=preload") else 0
+		metadata["odyssey_flow_revision"] = 4 if metadata.odyssey_shop_protocol == 4 and FileAccess.file_exists("res://assets/ui/liveops/odyssey/flow/flow_atlas.png") and FileAccess.file_exists("res://scripts/ui/liveops/odyssey_arena_sim.gd") else 0
 		add_file("res://release/build_metadata.json", JSON.stringify(metadata).to_utf8_buffer(), false)
 		if features.has("android") and not is_debug and target == "production" and metadata.odyssey_presentation >= 2:
 			var receipt_dir: String = ProjectSettings.globalize_path("res://.local/odyssey_export")

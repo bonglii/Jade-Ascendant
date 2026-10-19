@@ -13,9 +13,9 @@ internal object OdysseyContractV1 {
   require(c.getString("request_id")==id&&Regex("^[a-z0-9_-]{3,48}$").matches(c.getString("event_id")))
   require(whole(c.opt("revision"),0,10000))
   val a=c.getJSONObject("action");val kind=a.getString("kind")
-  val extra=when(kind){"sync","roll","ad_intent"->emptySet();"route","counter"->setOf("choice");"mission"->setOf("mission");"milestone"->setOf("milestone");"buy_dice"->setOf("pack");else->error("kind")}
+  val extra=when(kind){"sync","roll","ad_intent","missions_all"->emptySet();"task"->setOf("task");"arena_finish"->setOf("trace","abandon");"route","counter"->setOf("choice");"mission"->setOf("mission");"milestone"->setOf("milestone");"buy_dice"->setOf("pack");else->error("kind")}
   require(keys(a)==setOf("kind")+extra)
-  when(kind){"route"->require(a.getString("choice") in setOf("safe","challenge"));"counter"->require(whole(a.opt("choice"),0,2));"mission"->require(whole(a.opt("mission"),1,5)&&a.getInt("mission") in setOf(1,3,5));"milestone"->require(whole(a.opt("milestone"),24,72)&&a.getInt("milestone") in setOf(24,48,72));"buy_dice"->require(whole(a.opt("pack"),1,5)&&a.getInt("pack") in setOf(1,5))}
+  when(kind){"task"->require(a.getString("task") in setOf("gifts","guardian"));"arena_finish"->require(a.opt("abandon") is Boolean&&Regex("^[0-8]{0,600}$").matches(a.getString("trace")));"route"->require(a.getString("choice") in setOf("safe","challenge"));"counter"->require(whole(a.opt("choice"),0,2));"mission"->require(whole(a.opt("mission"),1,5)&&a.getInt("mission") in setOf(1,3,5));"milestone"->require(whole(a.opt("milestone"),24,72)&&a.getInt("milestone") in setOf(24,48,72));"buy_dice"->require(whole(a.opt("pack"),1,5)&&a.getInt("pack") in setOf(1,5))}
   c.toString()
  }catch(_:Exception){null}
  fun canonicalOrNull(raw:JSONObject,uid:String):String?=try {
@@ -39,12 +39,15 @@ internal object OdysseyContractV1 {
    }
    require(claimed==b.getInt("claimed_total"))
   }
-  val s=raw.getJSONObject("state");if(s.has("bonus_dice"))require(whole(s.opt("bonus_dice"),0,45));require(whole(s.opt("tickets"),0,1000)&&whole(s.opt("rolls"),0,152)&&whole(s.opt("position"),0,19))
+  val s=raw.getJSONObject("state");
+  if(s.has("task_claims")){val claims=s.getJSONArray("task_claims");require(claims.length()<=2);val seen=mutableSetOf<String>();for(i in 0 until claims.length()){val id=claims.getString(i);require(id in setOf("gifts","guardian")&&seen.add(id))}}
+  for(k in listOf("daily_gifts","daily_guardians"))if(s.has(k))require(whole(s.opt(k),0,152))
+  if(s.has("bonus_dice"))require(whole(s.opt("bonus_dice"),0,45));require(whole(s.opt("tickets"),0,1000)&&whole(s.opt("rolls"),0,152)&&whole(s.opt("position"),0,19))
   for(k in listOf("daily_ads","daily_bought","season_bought","daily_rolls","laps","last_die"))require(whole(s.opt(k),0,1000))
   require(s.getString("pending") in setOf("","route"))
   require(s.getString("notice").length<=160 && s.opt("last_reward") is JSONObject)
   for(k in listOf("missions","milestones")){val list=s.getJSONArray(k);require(list.length()<=3);for(i in 0 until list.length()) require(whole(list.opt(i)) && list.getInt(i) in (if(k=="missions") setOf(1,3,5) else setOf(24,48,72)))}
-  if(!s.isNull("battle")){val battle=s.getJSONObject("battle");require(whole(battle.opt("attack"),0,2)&&whole(battle.opt("turn"),0,2)&&whole(battle.opt("hits"),0,3)&&whole(battle.opt("opens_at"),1,4_102_444_800)&&whole(battle.opt("deadline"),1,4_102_444_800))}
+  if(!s.isNull("battle")){val battle=s.getJSONObject("battle");if(battle.has("mode")){require(battle.getString("mode")=="arena"&&whole(battle.opt("seed"),0,2147483647)&&whole(battle.opt("started_at"),1,4_102_444_800));require(battle.getLong("deadline")==battle.getLong("started_at")+180)};require(whole(battle.opt("attack"),0,2)&&whole(battle.opt("turn"),0,2)&&whole(battle.opt("hits"),0,3)&&whole(battle.opt("opens_at"),1,4_102_444_800)&&whole(battle.opt("deadline"),1,4_102_444_800))}
   val limits=raw.getJSONObject("limits");for((key,value) in mapOf("free_daily" to 6,"ads_daily" to 2,"paid_daily" to 10,"paid_season" to 40,"max_rolls" to 152))require(whole(limits.opt(key),value.toLong(),value.toLong()))
   require(whole(limits.opt("price_one"),1,25)&&whole(limits.opt("price_five"),1,100))
   require((limits.getInt("price_one")==25&&limits.getInt("price_five")==100)||(limits.getInt("price_one")==10&&limits.getInt("price_five")==40))

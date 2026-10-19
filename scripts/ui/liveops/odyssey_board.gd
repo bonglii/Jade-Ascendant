@@ -55,7 +55,7 @@ func show_position(index: int, steps: int=0) -> void:
 func _process(delta: float) -> void:
 	_age+=delta; _landing=maxf(0,_landing-delta)
 	if is_travelling():
-		var duration: float=0.19 if not Art.reduced(self) else 0.06
+		var duration: float=0.10 if not Art.reduced(self) else 0.04
 		_travel+=delta
 		var step: int=mini(int(_travel/duration),_steps-1)
 		var t: float=clampf((_travel-float(step)*duration)/duration,0,1)
@@ -65,7 +65,7 @@ func _process(delta: float) -> void:
 			var direction: String="right" if grid.x>0 else "left" if grid.x<0 else "down" if grid.y>0 else "up"
 			token.play("walk_"+direction); _last_step=step
 		var lift: float=sin(t*PI)*8.0 if not Art.reduced(self) else 0.0
-		token.position=start.lerp(finish,t)-Vector2(0,token.scale.x*96*0.25+lift)
+		token.position=start.lerp(finish,t*t*(3.0-2.0*t))-Vector2(0,token.scale.x*96*0.25+lift)
 		if _travel>=float(_steps)*duration: _steps=0; _landing=0.65; token.play("idle_down"); _layout(); travel_finished.emit()
 		queue_redraw()
 	else:

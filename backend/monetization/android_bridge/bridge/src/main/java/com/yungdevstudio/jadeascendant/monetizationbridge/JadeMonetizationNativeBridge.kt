@@ -689,7 +689,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
         if (commandJson.isNotEmpty() && body == null) { deny("INVALID_COMMAND"); return }
         val uid = try { FirebaseAuth.getInstance().currentUser?.uid } catch (_: Exception) { null }
         if (uid == null) { deny("AUTH_REQUIRED"); return }
-        requestSignedRC6("${BuildConfig.JADE_IAP_WORKER_BASE_URL}/v3/odyssey",
+        requestSignedRC6("${BuildConfig.JADE_IAP_WORKER_BASE_URL}/v4/odyssey",
             if (body == null) "GET" else "POST", body, odysseyBusy,
             "odysseyResultV1", "ODYSSEY_VERIFIED", requestId) { json -> OdysseyContractV1.canonicalOrNull(json, uid) }
     }
@@ -744,7 +744,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
         }
     }
 
-    /** Shared Firebase Auth + limited-use AppCheck verifier for all RC6 requests.
+    /** Shared Firebase Auth + App Check. Only v4 event actions can use the SDK cache.
      * Remote JSON cannot mutate a local save; validated contract is emitted only
      * while the same UID is still signed in. No redirects or arbitrary URLs.
      */
@@ -756,6 +756,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
             else runOnHostThread { emitSignal(signal, requestId, ok, status, payload) }
         }
         if (!flag.compareAndSet(false, true)) { emit(false, "BUSY", ""); return }
+        val startedAt=android.os.SystemClock.elapsedRealtime()
         val finished = AtomicBoolean(false)
         val timeoutHandler = android.os.Handler(android.os.Looper.getMainLooper())
         var timeout: Runnable? = null
@@ -763,6 +764,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
             if (!finished.compareAndSet(false, true)) return
             timeout?.let { timeoutHandler.removeCallbacks(it) }
             flag.set(false)
+            if(endpoint==BuildConfig.JADE_IAP_WORKER_BASE_URL+"/v4/odyssey")android.util.Log.i("JadeOdyssey","total_ms=${android.os.SystemClock.elapsedRealtime()-startedAt}; cached_appcheck=${EventAppCheckPolicy.cached(endpoint,method,body,BuildConfig.JADE_IAP_WORKER_BASE_URL)}; stage=$status")
             emit(ok, status, payload)
         }
         timeout = Runnable { finish(false, "REQUEST_TIMEOUT") }
@@ -781,7 +783,9 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
                         val idToken = if (authTask.isSuccessful) authTask.result?.token else null
                         if (!isSameUser(uid)) { finish(false, "ACCOUNT_CHANGED"); return@authListener }
                         if (idToken.isNullOrBlank()) { finish(false, "AUTH_UNAVAILABLE"); return@authListener }
-                        FirebaseAppCheck.getInstance().getLimitedUseAppCheckToken()
+                        (if (EventAppCheckPolicy.cached(endpoint,method,body,BuildConfig.JADE_IAP_WORKER_BASE_URL))
+                            FirebaseAppCheck.getInstance().getAppCheckToken(forceRefresh)
+                         else FirebaseAppCheck.getInstance().getLimitedUseAppCheckToken())
                             .addOnCompleteListener checkListener@{ appTask ->
                                 if (finished.get()) return@checkListener
                                 try {

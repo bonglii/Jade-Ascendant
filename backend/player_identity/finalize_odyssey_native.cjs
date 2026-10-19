@@ -10,9 +10,9 @@ function finalize(output){
  if(!dir.startsWith(base))throw Error('Candidate must come from this project build directory.');
  const receiptFile=path.join(dir,'receipt.json'),proof=JSON.parse(fs.readFileSync(receiptFile,'utf8'));
  const artifact=path.join(dir,'JadeMonetizationNativeBridge-production-candidate.aar');
- if(proof.target!=='production-candidate'||proof.installed!==false||proof.deployed!==false||proof.jvm_test_executions<220||proof.odyssey_shop_protocol!==3||sha(fs.readFileSync(artifact))!==proof.aar_sha256)throw Error('Incomplete native build receipt.');
+ if(proof.target!=='production-candidate'||proof.installed!==false||proof.deployed!==false||proof.jvm_test_executions<230||proof.odyssey_shop_protocol!==4||proof.odyssey_flow_revision!==4||sha(fs.readFileSync(artifact))!==proof.aar_sha256)throw Error('Incomplete native build receipt.');
  const required='backend/monetization/android_bridge/bridge/src/main/java/com/yungdevstudio/jadeascendant/monetizationbridge/';
- for(const name of ['JadeMonetizationNativeBridge.kt','OdysseyContractV1.kt','TrustedIapHttps.kt'])if(!proof.inputs[required+name])throw Error('Missing Odyssey native input.');
+ for(const name of ['JadeMonetizationNativeBridge.kt','OdysseyContractV1.kt','TrustedIapHttps.kt','EventAppCheckPolicy.kt'])if(!proof.inputs[required+name])throw Error('Missing Odyssey native input.');
  for(const [relative,hash] of Object.entries(proof.inputs)){if(relative.includes('..')||path.isAbsolute(relative)||textHash(path.join(root,relative))!==hash)throw Error('Native source changed after compilation: '+relative);}
  const jni=fs.readFileSync(path.join(dir,'jni.txt'),'utf8');if(!jni.includes('requestOdysseyV1('))throw Error('Odyssey JNI method not compiled.');
  const exporter=path.join(root,'backend/player_identity/export_production.ps1');let source=fs.readFileSync(exporter,'utf8');
