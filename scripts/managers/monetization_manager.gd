@@ -46,6 +46,7 @@ var last_reward_at: int = -REWARD_COOLDOWN_MSEC
 var last_reward_unix: int = 0
 var policy_day_bucket: int = -1
 var timeout_left: float = 0.0
+var _active_elapsed: float=0.0
 var placement_counts: Dictionary = {}
 
 
@@ -185,6 +186,7 @@ func show_rewarded(placement: String) -> bool:
 	active_grant_id = grant_id
 	reward_consumed = false
 	timeout_left = 90.0
+	_active_elapsed=0.0
 	analytics_event.emit("reward_requested", {"placement": placement})
 	provider.call_deferred("show_rewarded", active_request, placement)
 	return true
@@ -294,6 +296,10 @@ func _on_entitlements_received(product_ids: Array[String]) -> void:
 
 func _process(delta: float) -> void:
 	if active_request < 0:
+		return
+	_active_elapsed+=delta
+	if _active_elapsed<600.0 and is_instance_valid(provider) and provider.has_method("is_rewarded_showing") and bool(provider.call("is_rewarded_showing",active_request)):
+		timeout_left=maxf(timeout_left,30.0)
 		return
 	timeout_left -= delta
 	if timeout_left <= 0.0:

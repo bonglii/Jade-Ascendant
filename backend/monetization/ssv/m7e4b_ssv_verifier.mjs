@@ -46,7 +46,7 @@ export function parseSignedCallback(rawQuery) {
     } catch { reject('PARAMETER_ENCODING_INVALID'); }
     if (!REQUIRED.includes(name) && !OPTIONAL.has(name)) reject('UNKNOWN_PARAMETER');
     if (Object.hasOwn(params, name)) reject('DUPLICATE_PARAMETER');
-    if (value.length === 0 || value.length > 1024) reject('PARAMETER_VALUE_INVALID');
+    if ((value.length === 0 && name !== 'user_id') || value.length > 1024) reject('PARAMETER_VALUE_INVALID');
     params[name] = value;
   }
   for (const name of REQUIRED) {

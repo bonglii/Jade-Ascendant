@@ -30,6 +30,7 @@ class MetadataExporter extends EditorExportPlugin:
 		metadata["odyssey_shop_protocol"] = 4 if proof is Dictionary and int(proof.get("odyssey_shop_protocol",0)) == 4 and FileAccess.get_file_as_string("res://scripts/ui/odyssey_screen.gd").contains("const Flow=preload") else 0
 		metadata["odyssey_flow_revision"] = 4 if metadata.odyssey_shop_protocol == 4 and FileAccess.file_exists("res://assets/ui/liveops/odyssey/flow/flow_atlas.png") and FileAccess.file_exists("res://scripts/ui/liveops/odyssey_arena_sim.gd") else 0
 		metadata["odyssey_reliability_revision"] = 1 if FileAccess.get_file_as_string("res://scripts/monetization/odyssey_client.gd").contains("func _save_ad_wait") and FileAccess.get_file_as_string("res://scripts/ui/odyssey_screen.gd").contains("func _mutating") else 0
+		metadata["odyssey_ad_feedback_revision"] = 1 if FileAccess.file_exists("res://scripts/ui/liveops/odyssey_ad_reward_notice.gd") and FileAccess.get_file_as_string("res://scripts/monetization/odyssey_client.gd").contains("func _ad_earned") else 0
 		add_file("res://release/build_metadata.json", JSON.stringify(metadata).to_utf8_buffer(), false)
 		if features.has("android") and not is_debug and target == "production" and metadata.odyssey_presentation >= 2:
 			var receipt_dir: String = ProjectSettings.globalize_path("res://.local/odyssey_export")

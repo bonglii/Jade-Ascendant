@@ -84,6 +84,8 @@ func run()->void:
   for poll: int in range(8):
    check(not handles[2].button.disabled and not screen.missions_button.disabled and not screen.roll.disabled,"Read-only polls must not flicker enabled controls")
    client.busy=false;client.status="connected";client.changed.emit();client.busy=true;client.status="refreshing";client.changed.emit()
+  screen.roll.pressed.emit();screen.roll.pressed.emit();check(screen._queued_action.get("kind")=="roll","The actual enabled Roll button queues exactly one action during a read")
+  screen._queued_action={}
   screen._submit({"kind":"mission","mission":3});check(screen._queued_action.get("mission")==3,"Tap during a read should queue once")
   screen._queued_action={};client.busy=false;client.status="connected";client.changed.emit()
   handles[2].button.pressed.emit();check(is_instance_valid(screen.modal),"Claim must preserve the open mission sheet")
@@ -95,6 +97,15 @@ func run()->void:
   screen._close_modal();screen._shop();await process_frame;await process_frame
   check(screen._modal_panel.size.x<=float(dimensions.x),"Shop width")
   screen._close_modal()
+  client.busy=true;client.status="refreshing";screen._routes();await process_frame
+  var route: Button=screen.modal.find_children("*","Button",true,false).filter(func(node: Node)->bool:return node.text=="QUIET GROVE")[0]
+  route.pressed.emit();route.pressed.emit();check(screen._queued_action.get("kind")=="route","Route tap during a read queues once instead of disappearing")
+  screen._queued_action={};screen._confirm_pack(1,10);await process_frame
+  var confirm: Button=screen.modal.find_children("*","Button",true,false).filter(func(node: Node)->bool:return node.text.begins_with("CONFIRM ·"))[0]
+  confirm.pressed.emit();confirm.pressed.emit();check(screen._queued_action.get("kind")=="buy_dice","Jade exchange queues the confirmed action once during a read")
+  client.busy=false;client.status="connected";screen._process(0.0)
+  check(client.last_action.get("kind")=="buy_dice" and screen._queued_action.is_empty(),"Queued exchange dispatches once after the read")
+  screen._queued_action={};client.busy=false;client.status="connected";screen._close_modal()
   var arena: Control=Arena.new();arena.client=client;arena.battle={"mode":"arena","seed":917,"started_at":1800000000,"deadline":1800000180};arena.size=Vector2(dimensions);view.add_child(arena);await process_frame
   arena.set_process(false);check(arena._pad().x+arena._radius()<arena._retreat.position.x,"Joystick must not overlap Retreat on a narrow phone")
   arena.queue_free()

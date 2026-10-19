@@ -50,6 +50,8 @@ var _card_sequence: int=0
 var _battle_buttons: Array[Button] = []
 var _battle_timer: Label
 var _pending_milestone: int = 0
+var _app_focused: bool=true
+var _ad_feedback_clock: float=0.0
 func label(text: String, font_size: int = 18) -> Label:
 	var node := Label.new(); node.text = text; node.add_theme_font_size_override("font_size",font_size)
 	node.add_theme_color_override("font_color", Color("eee6cb")); node.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -67,7 +69,7 @@ func _icon(texture: Texture2D, side: float) -> TextureRect:
 	icon.texture=texture; icon.custom_minimum_size=Vector2.ONE*side; icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE; icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED; icon.mouse_filter=Control.MOUSE_FILTER_IGNORE; return icon
 func _presenting() -> bool: return _reveal_pending or not _presentation_pending.is_empty() or (board!=null and board.is_travelling())
 func _roll_pressed() -> void:
-	if client==null or client.busy or _presenting(): return
+	if client==null or _mutating() or _presenting(): return
 	var state: Dictionary=client.snapshot.get("state",{})
 	if state.get("battle") is Dictionary: _battle()
 	elif state.get("pending","")=="route": _routes()
@@ -75,7 +77,7 @@ func _roll_pressed() -> void:
 func _watch_ad() -> void:
 	if client==null or _presenting() or _ad_pending(): return
 	if client.busy:
-		if client.status=="refreshing": _queued_ad=true
+		if client.status=="refreshing" and _queued_action.is_empty(): _queued_ad=true;_refresh()
 		return
 	client.watch_ad()
 func _dice_revealed() -> void:
@@ -158,7 +160,7 @@ func _ad_pending() -> bool: return client!=null and client.has_method("ad_waitin
 func _submit(action: Dictionary) -> void:
 	if client==null or _presenting(): return
 	if client.busy:
-		if client.status=="refreshing" and _queued_action.is_empty(): _queued_action=action.duplicate(true)
+		if client.status=="refreshing" and _queued_action.is_empty() and not _queued_ad: _queued_action=action.duplicate(true);_refresh()
 		return
 	if action.get("kind")=="roll": dice_view.start()
 	_active_action=action.duplicate(true)
@@ -184,7 +186,11 @@ func _process(delta: float) -> void:
 		var left: int = int(battle.get("deadline",0)) - now
 		_battle_timer.text = "GUARDIAN WINDUP…" if not counter_open else "COUNTER WINDOW · %ds" % maxi(0,left) if left >= 0 else "WINDOW MISSED · TAP A STANCE TO CONTINUE"
 		for action: Button in _battle_buttons:
-			if is_instance_valid(action): action.disabled = client.busy or not counter_open
+			if is_instance_valid(action): action.disabled = _mutating() or not counter_open
+	_ad_feedback_clock+=delta
+	if _ad_feedback_clock>=1.0:
+		_ad_feedback_clock=0.0;_refresh_ad_control()
+	_show_ad_reward_notice()
 	_clock += delta
 	if _clock >= 1.0:
 		_clock=0;_update_time()
@@ -226,8 +232,9 @@ func _refresh() -> void:
 	var resolving: bool=state.get("battle") is Dictionary or state.get("pending","")=="route"
 	var claim_open: bool=bool(event.get("enabled",false)) and client.server_time()>=int(event.get("starts_at",0)) and client.server_time()<int(event.get("ends_at",0))+3*86400
 	roll.disabled=_mutating() or not _confirmed_view() or travelling or (not active and not (resolving and claim_open)) or (int(state.get("tickets",0))<1 and not resolving)
-	ad.disabled = _mutating() or _ad_pending() or client.snapshot.get("ad_delivery",{}).get("configured",true)==false or not _confirmed_view() or travelling or not active or not bool(event.get("ads_enabled",false)) or int(state.get("daily_ads",0)) >= 2
+	ad.disabled = _mutating() or _ad_pending() or client.snapshot.get("state",{}).get("ad_delivery",client.snapshot.get("ad_delivery",{})).get("configured",true)==false or not _confirmed_view() or travelling or not active or not bool(event.get("ads_enabled",false)) or int(state.get("daily_ads",0)) >= 2
 	ad.text = "VERIFIKASI HADIAH…" if _ad_pending() else "+1 DIE · AD %d/2" % int(state.get("daily_ads",0))
+	_refresh_ad_control()
 	buy.disabled = travelling
 	for i: int in range(milestones.size()):
 		var n: int = [24,48,72][i]; var claimed: bool = n in state.get("milestones",[])
@@ -419,3 +426,25 @@ func _back() -> void:
 func _exit_tree() -> void:
 	if SceneTransitionManager.back_handler == Callable(self, "_back"):
 		SceneTransitionManager.set_back_handler(Callable())
+
+func _notification(what: int) -> void:
+	if what==NOTIFICATION_APPLICATION_FOCUS_OUT: _app_focused=false
+	elif what==NOTIFICATION_APPLICATION_FOCUS_IN: _app_focused=true
+func _refresh_ad_control() -> void:
+	if client==null or not is_instance_valid(ad) or not client.has_method("ad_control"): return
+	var control: Dictionary=client.call("ad_control")
+	ad.text=str(control.get("text","IKLAN DISIAPKAN…"))
+	var event: Dictionary=client.snapshot.get("event",{}) if client.snapshot.get("event") is Dictionary else {}
+	var active: bool=bool(event.get("enabled",false)) and client.server_time()>=int(event.get("starts_at",0)) and client.server_time()<int(event.get("ends_at",0))
+	ad.disabled=not bool(control.get("enabled",false)) or _mutating() or not _confirmed_view() or _presenting() or not active or not bool(event.get("ads_enabled",false))
+func _show_ad_reward_notice() -> void:
+	if not _app_focused or client==null or not client.has_method("get_ad_reward_notice"): return
+	var manager: Node=get_node_or_null("/root/MonetizationManager")
+	if manager!=null and manager.has_method("is_rewarded_request_active") and bool(manager.call("is_rewarded_request_active","odyssey_roll")): return
+	var data: Dictionary=client.call("get_ad_reward_notice")
+	if data.is_empty() or data.get("owner")!=client.snapshot.get("owner_binding") or data.get("event_id")!=client.snapshot.get("event",{}).get("id") or data.get("amount")!=1: return
+	var toast: Control=preload("res://scripts/ui/liveops/odyssey_ad_reward_notice.gd").new()
+	toast.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	var width: float=minf(480.0,maxf(240.0,safe.size.x-32.0));toast.offset_left=-width*0.5;toast.offset_right=width*0.5;toast.offset_top=110.0;toast.offset_bottom=260.0;toast.z_index=40
+	safe.add_child(toast)
+	client.call("acknowledge_ad_reward_notice",str(data.key))

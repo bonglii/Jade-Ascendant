@@ -37,6 +37,7 @@ var _consent_gate_open: bool = false
 var _initialization_started: bool = false
 var _ads_initialized: bool = false
 var _rewarded_loading: bool = false
+var _rewarded_loaded_at: int=-1
 var _rewarded_ad: RewardedAd
 var _consent_form: ConsentForm
 
@@ -99,6 +100,7 @@ func _exit_tree() -> void:
 
 
 func rewarded_available(_placement: String) -> bool:
+	if OS.get_name()=="Android": warm_rewarded_ad()
 	return (
 		OS.get_name() == "Android"
 		and _consent_gate_open
@@ -110,6 +112,14 @@ func rewarded_available(_placement: String) -> bool:
 	)
 
 
+func _ad_clock_ms() -> int: return Time.get_ticks_msec()
+func warm_rewarded_ad() -> void:
+	if _active_request_id>=0: return
+	if _rewarded_ad!=null and _rewarded_loaded_at>=0 and _ad_clock_ms()-_rewarded_loaded_at>=55*60*1000: _destroy_rewarded_ad()
+	if _retry_timer!=null and not _retry_timer.is_stopped(): return
+	_load_rewarded_ad()
+func is_rewarded_showing(request_id: int) -> bool:
+	return request_id>=0 and _active_request_id==request_id
 func prepare_odyssey_ssv(nonce: String) -> void:
 	_odyssey_ssv_nonce = nonce if nonce.length() == 32 and nonce.is_valid_hex_number(false) else ""
 
@@ -123,7 +133,7 @@ func show_rewarded(request_id: int, placement: String) -> void:
 		return
 	var verification := ServerSideVerificationOptions.new()
 	verification.custom_data = _odyssey_ssv_nonce if placement == "odyssey_roll" else ""
-	verification.user_id = ""
+	verification.user_id = _odyssey_ssv_nonce if placement == "odyssey_roll" else ""
 	_rewarded_ad.set_server_side_verification_options(verification)
 	_odyssey_ssv_nonce = ""
 	_active_request_id = request_id
@@ -515,6 +525,7 @@ func _on_rewarded_loaded(ad: RewardedAd, epoch: int) -> void:
 
 	_destroy_rewarded_ad()
 	_rewarded_ad = ad
+	_rewarded_loaded_at=_ad_clock_ms()
 	_state = "rewarded_ready"
 	_trace_state()
 
@@ -599,6 +610,7 @@ func _trace_state() -> void:
 
 
 func _destroy_rewarded_ad() -> void:
+	_rewarded_loaded_at=-1
 	if _rewarded_ad != null:
 		_rewarded_ad.destroy()
 		_rewarded_ad = null
