@@ -1,4 +1,5 @@
 extends Button
+const JadeMaterial=preload("res://scripts/ui/liveops/event_jade_material.gd")
 const Art=preload("res://scripts/ui/liveops/odyssey_art.gd")
 var glyph: String=""
 var primary: bool=false
@@ -6,8 +7,8 @@ var caption: Label
 var _state: String=""
 var _motion: Tween
 func _ready() -> void:
-	mouse_filter=Control.MOUSE_FILTER_PASS; focus_mode=Control.FOCUS_ALL
-	custom_minimum_size.y=maxf(custom_minimum_size.y,64)
+	mouse_filter=Control.MOUSE_FILTER_PASS; focus_mode=Control.FOCUS_NONE
+	custom_minimum_size.y=maxf(custom_minimum_size.y,44 if not glyph.is_empty() else 58)
 	for state: String in ["normal","hover","pressed","disabled","focus"]: add_theme_stylebox_override(state,StyleBoxEmpty.new())
 	for color: String in ["font_color","font_hover_color","font_pressed_color","font_disabled_color","font_focus_color","font_outline_color"]: add_theme_color_override(color,Color.TRANSPARENT)
 	add_theme_constant_override("outline_size",0)
@@ -31,9 +32,8 @@ func _press(down: bool) -> void:
 	_motion=create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_motion.tween_property(self,"scale",Vector2.ONE*(0.965 if down else 1.0),0.09)
 func _draw() -> void:
-	var skin: Texture2D=Art.texture("medallion" if not glyph.is_empty() else "button")
-	draw_texture_rect(skin,Rect2(Vector2(0,3),size),false,Color(0,0.02,0.02,0.6))
-	draw_texture_rect(skin,Rect2(Vector2.ZERO,size),false,Color(0.82,0.87,0.82,1.0) if disabled else Color.WHITE)
+	var skin: StyleBox = JadeMaterial.medallion(disabled,button_pressed) if not glyph.is_empty() else JadeMaterial.button(disabled,button_pressed)
+	draw_style_box(skin,Rect2(Vector2.ZERO,size))
 	if glyph.is_empty(): return
 	var center: Vector2=size*0.5; var r: float=size.x*0.13; var ink:=Color("f4e4b5")
 	match glyph:
@@ -44,3 +44,8 @@ func _draw() -> void:
 			draw_arc(center,r*1.35,0.4,5.8,24,ink,2.5,true); draw_line(center+Vector2(r*1.2,-r*0.8),center+Vector2(r*0.15,-r*1.2),ink,2.5,true)
 		"info":
 			draw_circle(center-Vector2(0,r),2,ink); draw_line(center,center+Vector2(0,r),ink,3,true)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_SCROLL_BEGIN:
+		if _motion != null: _motion.kill()
+		scale = Vector2.ONE

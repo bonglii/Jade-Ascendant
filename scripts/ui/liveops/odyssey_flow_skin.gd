@@ -1,5 +1,6 @@
 extends RefCounted
 ## One resident atlas; AtlasTexture regions avoid CPU image extraction per card.
+const JadeMaterial=preload("res://scripts/ui/liveops/event_jade_material.gd")
 const ATLAS=preload("res://assets/ui/liveops/odyssey/flow/flow_atlas.png")
 const FONT=preload("res://assets/ui/library/fonts/archive_serif.ttf")
 const INK=Color("263d32")
@@ -13,23 +14,10 @@ static func texture(index: int)->Texture2D:
  var tile:=AtlasTexture.new();tile.atlas=ATLAS;tile.filter_clip=true
  tile.region=Rect2(Vector2(float(index%3)*cell.x,floorf(float(index)/3.0)*cell.y)+Vector2(12,12),Vector2(cell.x-24,cell.y-56 if index==3 else cell.y-68 if index in [4,5] else cell.y-24))
  regions[index]=tile;return tile
-static func style(index: int=3,compact: bool=false)->StyleBox:
- if index in [4,5]:
-  var material=preload("res://scripts/ui/pavilion_imperial_style.gd").new()
-  material.tint=Color(0.85,1.0,0.91) if index==4 else Color(0.5,0.61,0.57)
-  material.corner=Vector2(18,18);material.content_margin_left=24;material.content_margin_right=24;material.content_margin_top=14;material.content_margin_bottom=14
-  return material
- # StyleBoxTexture nine-patch uses an independent image, never a nested atlas
- # region. Resolve each of the three frame textures once, not once per card.
- var key: String=str(index)+("_compact" if compact else "_panel")
- if not frames.has(key):
-  var image: Image=texture(index).get_image()
-  if compact: image.resize(roundi(float(image.get_width())*0.40),roundi(float(image.get_height())*0.40),Image.INTERPOLATE_LANCZOS)
-  frames[key]=ImageTexture.create_from_image(image)
- var box:=StyleBoxTexture.new();box.texture=frames[key]
- box.texture_margin_left=40 if compact else 48;box.texture_margin_right=40 if compact else 48;box.texture_margin_top=40;box.texture_margin_bottom=40
- box.content_margin_left=40 if index==3 else 24;box.content_margin_right=40 if index==3 else 24;box.content_margin_top=44 if index==3 else 14;box.content_margin_bottom=48 if index==3 else 14
- return box
+static func style(index: int=3,_compact: bool=false)->StyleBox:
+ if index in [4,5]: return JadeMaterial.button(index==5)
+ return JadeMaterial.panel(true)
+
 static func card()->PanelContainer:
  var panel:=PanelContainer.new();panel.size_flags_vertical=Control.SIZE_SHRINK_BEGIN;panel.add_theme_stylebox_override("panel",style(3));return panel
 static func button(title: String,callback: Callable)->Button:
@@ -37,7 +25,7 @@ static func button(title: String,callback: Callable)->Button:
  action.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;action.size_flags_horizontal=Control.SIZE_EXPAND_FILL
  action.add_theme_stylebox_override("normal",style(4,true));action.add_theme_stylebox_override("hover",style(4,true));action.add_theme_stylebox_override("pressed",style(4,true));action.add_theme_stylebox_override("disabled",style(4,true))
  action.add_theme_color_override("font_color",Color("fff0c4"));action.add_theme_color_override("font_hover_color",Color("ffffff"));action.add_theme_color_override("font_pressed_color",GOLD);action.add_theme_color_override("font_disabled_color",Color("c2c9b0"));action.add_theme_font_size_override("font_size",18)
- action.keep_pressed_outside=false;action.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE;action.pressed.connect(callback);return action
+ action.mouse_filter=Control.MOUSE_FILTER_PASS;action.focus_mode=Control.FOCUS_NONE;action.add_theme_stylebox_override("focus",StyleBoxEmpty.new());action.keep_pressed_outside=false;action.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE;action.pressed.connect(callback);return action
 static func text(copy: String,points: int=17,heading: bool=false)->Label:
  var node:=Label.new();node.text=copy;node.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;node.size_flags_horizontal=Control.SIZE_EXPAND_FILL;node.mouse_filter=Control.MOUSE_FILTER_IGNORE
  node.add_theme_color_override("font_color",INK);node.add_theme_font_size_override("font_size",points)
@@ -52,9 +40,4 @@ static func progress(meter: ProgressBar) -> void:
  meter.add_theme_stylebox_override("background",back);meter.add_theme_stylebox_override("fill",fill)
 
 static func modal_style() -> StyleBox:
- # The old atlas includes a dark rectangular matte outside its ornament.
- # Use the existing transparent Imperial frame over a jade material surface.
- var frame=preload("res://scripts/ui/pavilion_imperial_style.gd").new()
- frame.tint=Color(0.84,1.0,0.92); frame.selected=true; frame.corner=Vector2(24,24)
- frame.content_margin_left=24; frame.content_margin_right=24; frame.content_margin_top=28; frame.content_margin_bottom=28
- return frame
+ return JadeMaterial.panel()

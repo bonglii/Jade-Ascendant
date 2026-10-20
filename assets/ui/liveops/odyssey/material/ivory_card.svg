@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="240" viewBox="0 0 600 240">
+<defs><linearGradient id="paper" x2=".25" y2="1"><stop stop-color="#fff5d8"/><stop offset=".5" stop-color="#f0dfb8"/><stop offset="1" stop-color="#e8d2a6"/></linearGradient><linearGradient id="gold" x2="0" y2="1"><stop stop-color="#f8df9c"/><stop offset="1" stop-color="#ad8248"/></linearGradient></defs>
+<rect x="2" y="2" width="596" height="236" rx="21" fill="url(#paper)" stroke="url(#gold)" stroke-width="3"/>
+<rect x="8" y="8" width="584" height="224" rx="16" fill="none" stroke="#ae925e" stroke-opacity=".45"/>
+<path d="M16 43Q16 16 43 16M557 16Q584 16 584 43M16 197Q16 224 43 224M557 224Q584 224 584 197" fill="none" stroke="#608772" stroke-width="3"/>
+<path d="M30 29Q40 38 50 30M570 29Q560 38 550 30M30 211Q40 202 50 210M570 211Q560 202 550 210" fill="none" stroke="#c4a36c" stroke-width="2"/>
+</svg>

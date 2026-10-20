@@ -13,6 +13,7 @@ extends Control
 ## - An explicit deadzone keeps deliberate taps reliable after enabling PASS.
 ## - Contextual FTUE is device-local and does not touch gameplay save domains.
 
+const ScrollPolicy=preload("res://scripts/ui/mobile_scroll_policy.gd")
 const REFRESH_INTERVAL: float = 0.25
 const MOBILE_SCROLL_DEADZONE: int = 6
 const ONBOARDING_PATH: String = "user://jade_onboarding.cfg"
@@ -189,43 +190,20 @@ func _configure_scroll_tree(root_node: Node) -> void:
 
 
 func _configure_scroll_container(scroll_container: ScrollContainer) -> void:
-	scroll_container.scroll_deadzone = MOBILE_SCROLL_DEADZONE
-	# Mobile uses direct touch drag, so keep vertical scrolling enabled while
-	# hiding the desktop-style grabber/track on the right edge.
-	if scroll_container.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
-		scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
-	_configure_scroll_descendants(scroll_container)
+	ScrollPolicy.configure(scroll_container)
+	ScrollPolicy.prepare_tree(scroll_container)
 
 
 func _configure_scroll_descendants(root_node: Node) -> void:
-	for child_node: Node in root_node.get_children():
-		if child_node is ScrollContainer:
-			_configure_scroll_container(child_node as ScrollContainer)
-			continue
-		if child_node is Control:
-			var child_control := child_node as Control
-			# Complex Pavilion/Trials cards contain nested panels and labels. A STOP
-			# anywhere in that chain prevents the ScrollContainer from seeing the
-			# finger drag. PASS preserves taps while allowing the scroll ancestor
-			# to arbitrate the gesture. Existing IGNORE controls stay untouched.
-			if child_control.mouse_filter == Control.MOUSE_FILTER_STOP:
-				child_control.mouse_filter = Control.MOUSE_FILTER_PASS
-		_configure_scroll_descendants(child_node)
-
+	ScrollPolicy.prepare_tree(root_node)
 
 func _on_tree_node_added(added_node: Node) -> void:
 	if not _mobile_display or not is_inside_tree():
 		return
 	if added_node == self or not is_ancestor_of(added_node):
 		return
-	if added_node is ScrollContainer:
-		_configure_scroll_container(added_node as ScrollContainer)
-		return
-	if added_node is Control and _find_scroll_ancestor(added_node) != null:
-		var added_control := added_node as Control
-		if added_control.mouse_filter == Control.MOUSE_FILTER_STOP:
-			added_control.mouse_filter = Control.MOUSE_FILTER_PASS
-
+	if added_node is Control:
+		ScrollPolicy.prepare(added_node)
 
 func _find_scroll_ancestor(start_node: Node) -> ScrollContainer:
 	var ancestor_node: Node = start_node.get_parent()

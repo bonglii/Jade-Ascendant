@@ -1,4 +1,5 @@
 extends Control
+const ScrollPolicy=preload("res://scripts/ui/mobile_scroll_policy.gd")
 const ActionDot=preload("res://scripts/ui/action_ready_dot.gd")
 const Flow=preload("res://scripts/ui/liveops/odyssey_flow_skin.gd")
 const ARENA_PATH: String="res://scripts/ui/liveops/odyssey_arena.gd"
@@ -121,12 +122,12 @@ func _ready() -> void:
 	client=get_node_or_null("/root/OdysseyClient")
 	var background:=TextureRect.new(); background.texture=BG; background.expand_mode=TextureRect.EXPAND_IGNORE_SIZE; background.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); background.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(background)
-	var shade:=ColorRect.new(); shade.color=Color(0.005,0.025,0.032,0.48); shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); shade.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(shade)
+	var shade:=ColorRect.new(); shade.color=Color(0.005,0.025,0.032,0.30); shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); shade.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(shade)
 	safe=Control.new(); safe.set_script(preload("res://scripts/ui/mobile_safe_area.gd")); add_child(safe); safe.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var margin:=MarginContainer.new(); safe.add_child(margin); margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	for side: String in ["left","right"]: margin.add_theme_constant_override("margin_"+side,18)
 	margin.add_theme_constant_override("margin_top",12); margin.add_theme_constant_override("margin_bottom",16)
-	var scroll:=ScrollContainer.new(); scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_SHOW_NEVER; margin.add_child(scroll)
+	var scroll:=ScrollContainer.new(); scroll.name="BoardScroll"; scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_SHOW_NEVER; margin.add_child(scroll)
 	var body:=VBoxContainer.new(); body.size_flags_horizontal=Control.SIZE_EXPAND_FILL; body.size_flags_vertical=Control.SIZE_EXPAND_FILL; body.add_theme_constant_override("separation",6); scroll.add_child(body)
 	var top:=HBoxContainer.new(); top.add_theme_constant_override("separation",8); body.add_child(top); top.add_child(_navigation("back",_back,"Return to events"))
 	var heading:=VBoxContainer.new(); heading.size_flags_horizontal=Control.SIZE_EXPAND_FILL; heading.add_theme_constant_override("separation",1); top.add_child(heading)
@@ -157,10 +158,9 @@ func _ready() -> void:
 	ad=button("+1 DIE · AD 0/2",_watch_ad); optional.add_child(ad); buy=button("TRAVEL SHOP",_shop); optional.add_child(buy)
 	var footer:=HBoxContainer.new(); footer.add_theme_constant_override("separation",8); body.add_child(footer)
 	missions_button=button("DAILY MISSIONS",_missions); missions_button.custom_minimum_size.y=58; footer.add_child(missions_button)
-	var retry: Button=button("RECONNECT",func() -> void:
-		if client!=null and not client.busy and not _presenting(): client.refresh())
-	retry.custom_minimum_size.y=58; footer.add_child(retry)
+
 	if client!=null: client.changed.connect(_refresh); client.finished.connect(_finished); client.refresh_if_stale()
+	ScrollPolicy.prepare_tree(scroll)
 	_refresh()
 	if not Art.reduced(self): body.modulate.a=0.0; create_tween().tween_property(body,"modulate:a",1.0,0.24)
 func _mutating() -> bool:
@@ -188,8 +188,8 @@ func _process(delta: float) -> void:
 		elif _queued_ad: _queued_ad=false;_watch_ad()
 	if not _arena_submit_pending.is_empty() and client!=null and not client.busy:
 		var action: Dictionary=_arena_submit_pending;_arena_submit_pending={};_submit(action)
-	if client!=null and not client.busy and client.status in ["NETWORK_UNAVAILABLE","REQUEST_TIMEOUT","connection_timeout","BACKEND_NOT_READY","BUSY"] and _retry_count<3 and Time.get_ticks_msec()>=_retry_at:
-		_retry_count+=1; _retry_at=Time.get_ticks_msec()+4000*(1<<_retry_count); client.refresh()
+	if _app_focused and client!=null and not client.busy and client.status in ["NETWORK_UNAVAILABLE","REQUEST_TIMEOUT","connection_timeout","BACKEND_NOT_READY","BUSY"] and Time.get_ticks_msec()>=_retry_at:
+		_retry_count=mini(_retry_count+1,4); _retry_at=Time.get_ticks_msec()+4000*(1<<_retry_count); client.refresh()
 	if _modal_kind == "battle" and is_instance_valid(_battle_timer) and not is_instance_valid(_arena):
 		var battle: Dictionary = client.snapshot.get("state",{}).get("battle",{})
 		var now: int = int(client.server_time())
@@ -212,7 +212,7 @@ func _update_time() -> void:
 	if client==null: return
 	var event: Variant=client.snapshot.get("event")
 	if not event is Dictionary:
-		countdown.text="CONNECTING TO THE ATLAS" if client.busy else "EVENT NOT YET SCHEDULED" if client.status=="connected" else "CONNECTION REQUIRED · TAP RECONNECT"
+		countdown.text="CONNECTING TO THE ATLAS" if client.busy else "EVENT NOT YET SCHEDULED" if client.status=="connected" else "RECONNECTING AUTOMATICALLY…"
 		return
 	var now: int=int(client.server_time()); var remaining: int=int(event.ends_at)-now
 	if not bool(event.enabled): countdown.text="EVENT PAUSED"; return
@@ -289,8 +289,20 @@ func _fit_popup() -> void:
 	var width: float = maxf(220,minf(span.x-28,580))
 	var cap: float = minf(span.y-36,820 if _modal_kind in ["shop","missions"] else 680)
 	_modal_panel.size.x = width
-	var header_height: float = 96 if span.y > 600 else 68
-	if is_instance_valid(_modal_header): _modal_header.custom_minimum_size.y = header_height
+	var compact: bool = width < 420
+	var header_height: float = 86 if compact else 100
+	if is_instance_valid(_modal_header):
+		_modal_header.custom_minimum_size.y = header_height
+		var heading: Label = _modal_header.find_child("ModalTitle",true,false)
+		if heading != null: heading.add_theme_font_size_override("font_size",20 if compact else 26)
+		var artwork: TextureRect = _modal_header.find_child("HeaderArt",true,false)
+		if artwork != null: artwork.custom_minimum_size=Vector2.ONE*(42 if compact else 70)
+	for entry: Dictionary in _shop_handles:
+		if is_instance_valid(entry.button): entry.button.custom_minimum_size.x=104 if compact else 150
+		if is_instance_valid(entry.button):
+			entry.button.add_theme_font_size_override("font_size",14 if compact else 16)
+			if entry.button.has_meta("jade_shop_price") and not (_shop_busy and _shop_product==str(entry.product_id)): entry.button.text=_price_caption(entry.button,str(entry.button.get_meta("jade_shop_price")))
+
 	var natural: float = header_height + 80
 	if is_instance_valid(_modal_body): natural += _modal_body.get_combined_minimum_size().y
 	if is_instance_valid(_modal_footer): natural += _modal_footer.get_combined_minimum_size().y
@@ -305,12 +317,12 @@ func _popup(title: String, kind: String) -> VBoxContainer:
 	for side: String in ["left","right"]: inset.add_theme_constant_override("margin_"+side,24)
 	for side: String in ["top","bottom"]: inset.add_theme_constant_override("margin_"+side,28)
 	var column:=VBoxContainer.new();column.add_theme_constant_override("separation",12);inset.add_child(column)
-	_modal_header=Control.new();_modal_header.clip_contents=true;column.add_child(_modal_header)
-	var banner:=TextureRect.new();banner.texture=Flow.texture(0 if kind=="missions" else 1 if kind in ["shop","confirm_pack"] else 2);banner.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;banner.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_COVERED;_modal_header.add_child(banner);banner.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var shade:=ColorRect.new();shade.color=Color(0.006,0.05,0.045,0.78);_modal_header.add_child(shade);shade.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE);shade.offset_top=-62
-	var heading: Label=label(title,27);heading.add_theme_font_override("font",FONT);heading.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;shade.add_child(heading);heading.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);heading.offset_left=12;heading.offset_right=-12
-	var close: Button=_navigation("close",_close_modal,"Close");close.custom_minimum_size=Vector2(52,52);_modal_header.add_child(close);close.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT);close.offset_left=-56;close.offset_right=-4;close.offset_top=4;close.offset_bottom=56
-	var scroll:=ScrollContainer.new();scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL;scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_SHOW_NEVER;scroll.scroll_deadzone=12;column.add_child(scroll)
+	_modal_header=PanelContainer.new();_modal_header.name="ModalHeader";_modal_header.add_theme_stylebox_override("panel",StyleBoxEmpty.new());column.add_child(_modal_header)
+	var header_row:=HBoxContainer.new();header_row.add_theme_constant_override("separation",10);_modal_header.add_child(header_row)
+	var banner: TextureRect=_icon(Art.DIE if kind=="missions" else COMPASS,70);banner.name="HeaderArt";banner.size_flags_vertical=Control.SIZE_SHRINK_CENTER;header_row.add_child(banner)
+	var heading: Label=label(title,26);heading.name="ModalTitle";heading.add_theme_font_override("font",FONT);heading.size_flags_horizontal=Control.SIZE_EXPAND_FILL;heading.vertical_alignment=VERTICAL_ALIGNMENT_CENTER;header_row.add_child(heading)
+	var close: Button=_navigation("close",_close_modal,"Close");close.name="CloseModal";close.custom_minimum_size=Vector2(44,44);close.size_flags_vertical=Control.SIZE_SHRINK_CENTER;header_row.add_child(close)
+	var scroll:=ScrollContainer.new();scroll.name="ModalScroll";scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL;scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_SHOW_NEVER;column.add_child(scroll);ScrollPolicy.configure(scroll)
 	var body:=VBoxContainer.new();_modal_body=body;body.size_flags_horizontal=Control.SIZE_EXPAND_FILL;body.add_theme_constant_override("separation",10);scroll.add_child(body)
 	_modal_footer=VBoxContainer.new();column.add_child(_modal_footer)
 	_fit_popup();_fit_popup.call_deferred()
@@ -386,16 +398,23 @@ func _shop() -> void:
 			if str(product.get("type","")) == "consumable": offers.append({"product_id":product_id,"jade":int(product.get("celestial_jade",0)),"dice":0,"claimed":false,"bonus_unknown":true})
 		offers.sort_custom(func(left: Dictionary,right: Dictionary) -> bool: return int(left.jade) < int(right.jade))
 	if not offers.is_empty():
-		for offer: Dictionary in offers:
-			var card:=Flow.card();body.add_child(card);var content:=VBoxContainer.new();content.add_theme_constant_override("separation",6);card.add_child(content)
-			var pack_title: Label = Flow.text("",19,true); content.add_child(pack_title)
-			var row:=HBoxContainer.new();row.add_theme_constant_override("separation",8);content.add_child(row)
-			row.add_child(_icon(preload("res://assets/ui/shared/resources/celestial_jade_premium.png"),40));row.add_child(Flow.text(str(int(offer.jade)),18));row.add_child(_icon(Art.DIE,40));row.add_child(Flow.text("+%d" % int(offer.dice),18))
-			var buy_pack: Button=Flow.button("MEMUAT HARGA…",_purchase_shop_pack.bind(str(offer.product_id)));content.add_child(buy_pack)
-			var eligibility: Label = Flow.text("",14)
-			content.add_child(eligibility)
-			_shop_handles.append({"product_id":str(offer.product_id),"button":buy_pack,"eligibility":eligibility,"offer":offer.duplicate(true),"title":pack_title,"dice_icon":row.get_child(2),"dice_amount":row.get_child(3)})
-			if bool(offer.claimed): content.add_child(Flow.text("Bonus season ini sudah diterima. Pembelian berikutnya hanya Jade.",14))
+		for offer_index: int in range(offers.size()):
+			var offer: Dictionary=offers[offer_index]
+			var card:=Flow.card();card.name="ShopOffer_%d"%offer_index;body.add_child(card)
+			var content:=VBoxContainer.new();content.add_theme_constant_override("separation",6);card.add_child(content)
+			var row:=HBoxContainer.new();row.add_theme_constant_override("separation",10);content.add_child(row)
+			var items:=VBoxContainer.new();items.name="PackItems";items.size_flags_horizontal=Control.SIZE_EXPAND_FILL;items.add_theme_constant_override("separation",6);row.add_child(items)
+			var pack_title: Label=Flow.text("",18,true);items.add_child(pack_title)
+			var icons:=HBoxContainer.new();icons.add_theme_constant_override("separation",4);items.add_child(icons)
+			icons.add_child(_icon(preload("res://assets/ui/shared/resources/celestial_jade_premium.png"),26))
+			var dice_icon: TextureRect=_icon(Art.DIE,22);icons.add_child(dice_icon)
+			var dice_amount: Label=Flow.text("+%d"%int(offer.dice),15);dice_amount.autowrap_mode=TextServer.AUTOWRAP_OFF;dice_amount.size_flags_horizontal=Control.SIZE_SHRINK_BEGIN;icons.add_child(dice_amount)
+			var buy_pack: Button=Flow.button("MEMUAT\nHARGA…",_purchase_shop_pack.bind(str(offer.product_id)));buy_pack.name="PackPrice";buy_pack.custom_minimum_size=Vector2(150,64);buy_pack.size_flags_horizontal=Control.SIZE_SHRINK_END;buy_pack.size_flags_vertical=Control.SIZE_SHRINK_CENTER;buy_pack.add_theme_font_size_override("font_size",16)
+			for skin_state: String in ["normal","hover","pressed","disabled"]:
+				var price_skin: StyleBox=buy_pack.get_theme_stylebox(skin_state);price_skin.content_margin_left=8;price_skin.content_margin_right=8;buy_pack.add_theme_stylebox_override(skin_state,price_skin)
+			row.add_child(buy_pack)
+			var eligibility: Label=Flow.text("",13);content.add_child(eligibility)
+			_shop_handles.append({"product_id":str(offer.product_id),"button":buy_pack,"eligibility":eligibility,"offer":offer.duplicate(true),"title":pack_title,"dice_icon":dice_icon,"dice_amount":dice_amount})
 	else:
 		var card:=Flow.card();body.add_child(card);card.add_child(Flow.text("Katalog belum tersedia. Sambungkan akun lalu buka kembali toko.",17))
 	var exchange:=Flow.card();body.add_child(exchange);var box:=VBoxContainer.new();box.add_theme_constant_override("separation",8);exchange.add_child(box);box.add_child(Flow.text("TUKAR PURCHASED JADE",19,true))
@@ -406,8 +425,11 @@ func _shop() -> void:
 	var exchange_ready: bool=not _mutating() and _confirmed_view() and bool(event.get("enabled",false)) and bool(event.get("purchases_enabled",false)) and client.server_time()>=int(event.get("starts_at",0)) and client.server_time()<int(event.get("ends_at",0)) and int(state.get("rolls",0))<152
 	for pack: int in [1,5]:
 		var price: int=int(limits.get("price_one" if pack==1 else "price_five",10 if pack==1 else 40))
-		var action: Button=Flow.button("%d Dadu · %d Jade" % [pack,price],_confirm_pack.bind(pack,price));action.disabled=not exchange_ready or balance<price or int(state.get("daily_bought",0))+pack>10 or int(state.get("season_bought",0))+pack>40;box.add_child(action)
+		var exchange_row:=HBoxContainer.new();exchange_row.add_theme_constant_override("separation",10);box.add_child(exchange_row)
+		var item_name: Label=Flow.text("%d Dadu"%pack,18);item_name.size_flags_horizontal=Control.SIZE_EXPAND_FILL;exchange_row.add_child(item_name)
+		var action: Button=Flow.button("%d Jade"%price,_confirm_pack.bind(pack,price));action.custom_minimum_size.x=100;action.size_flags_horizontal=Control.SIZE_SHRINK_END;action.disabled=not exchange_ready or balance<price or int(state.get("daily_bought",0))+pack>10 or int(state.get("season_bought",0))+pack>40;exchange_row.add_child(action)
 	_refresh_shop_products()
+	_fit_popup.call_deferred()
 	var footer: Label=label("Bonus setelah verifikasi server. Maksimal 152 perjalanan; dadu tidak terpakai kedaluwarsa. Satu Compass per season.",14);footer.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;body.add_child(footer)
 func _refresh_shop_products(_products: Variant = null) -> void:
 	if _modal_kind != "shop" or not is_instance_valid(_modal_panel): return
@@ -423,14 +445,35 @@ func _refresh_shop_products(_products: Variant = null) -> void:
 			if str(latest.product_id) == str(entry.product_id): offer = latest; break
 		var active_bonus: bool = client != null and client.purchase_bonus_active() and not bool(offer.get("bonus_unknown",false))
 		var included: bool = active_bonus and not bool(offer.get("claimed",false)) and int(offer.get("dice",0)) > 0
-		entry.title.text = "%d Jade + %d Dadu" % [int(offer.jade),int(offer.dice)] if included else "%d Celestial Jade" % int(offer.jade)
+		entry.title.text = "%d Celestial Jade" % int(offer.jade)
 		entry.dice_icon.visible = included
 		entry.dice_amount.visible = included
+		entry.dice_amount.text = "+%d" % int(offer.get("dice",0))
 		entry.eligibility.text = tr("Bonus dadu sudah diklaim · pembelian ini hanya Jade") if bool(offer.get("claimed",false)) else tr("+%d bonus dadu · sekali per season") % int(offer.get("dice",0)) if active_bonus else tr("Bonus dadu belum terkonfirmasi · paket ini hanya Jade")
 		entry.button.disabled = _shop_busy or price.is_empty() or not bool(readiness.ready) or not PavilionManager.is_iap_purchase_supported(str(entry.product_id))
-		entry.button.text = tr("MEMPROSES…") if _shop_busy and _shop_product == str(entry.product_id) else tr("BELI · ") + price if not price.is_empty() else tr("HARGA BELUM TERSEDIA")
+		entry.button.set_meta("jade_shop_price",price)
+		entry.button.text = tr("MEMPROSES…") if _shop_busy and _shop_product == str(entry.product_id) else _price_caption(entry.button,price)
 	if is_instance_valid(_shop_message) and not bool(readiness.ready):
 		_shop_message.text = tr("Akun perlu peninjauan refund") if str(readiness.get("reason","")) == "account_held" else tr("Menunggu verifikasi wallet · harga Play tetap ditampilkan")
+
+func _price_caption(action: Button,price: String) -> String:
+	if price.is_empty():return tr("HARGA\nBELUM\nTERSEDIA")
+	action.tooltip_text=price
+	var font: Font=action.get_theme_font("font")
+	var points: int=14 if _modal_panel.size.x<420 else 16
+	var width: float=maxf(40,action.custom_minimum_size.x-16)
+	var display: String=price
+	if font.get_string_size(price,HORIZONTAL_ALIGNMENT_LEFT,-1,points).x>width:
+		var pattern:=RegEx.new();pattern.compile("^([^0-9]+)\\s*([0-9].*)$")
+		var found: RegExMatch=pattern.search(price)
+		if found!=null:display=found.get_string(1).strip_edges()+"\n"+found.get_string(2).strip_edges()
+	var longest: float=0
+	for line: String in display.split("\n"):longest=maxf(longest,font.get_string_size(line,HORIZONTAL_ALIGNMENT_LEFT,-1,points).x)
+	while longest>width and points>12:
+		points-=1;longest=0
+		for line: String in display.split("\n"):longest=maxf(longest,font.get_string_size(line,HORIZONTAL_ALIGNMENT_LEFT,-1,points).x)
+	action.add_theme_font_size_override("font_size",points)
+	return display
 
 func _purchase_shop_pack(product_id: String) -> void:
 	if _shop_busy: return

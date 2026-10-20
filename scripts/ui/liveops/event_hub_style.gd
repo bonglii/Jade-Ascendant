@@ -1,4 +1,5 @@
 extends RefCounted
+const JadeMaterial=preload("res://scripts/ui/liveops/event_jade_material.gd")
 const GOLD: Color=Color("d6b56f")
 const CREAM: Color=Color("ffedbc")
 const JADE: Color=Color("8ed7bc")
@@ -21,9 +22,12 @@ static func button(button_node: Button,featured: bool=false) -> void:
   button_node.add_theme_stylebox_override("normal",skin);button_node.add_theme_stylebox_override("hover",skin)
   var pressed: StyleBoxTexture=skin.duplicate();pressed.modulate_color=Color(.8,.9,.82);button_node.add_theme_stylebox_override("pressed",pressed)
  else:
-  var box: StyleBoxFlat=panel(Color("103b30"),GOLD,10);box.content_margin_left=12;box.content_margin_right=12;box.content_margin_top=6;box.content_margin_bottom=6
-  button_node.add_theme_stylebox_override("normal",box);button_node.add_theme_stylebox_override("hover",box)
-  button_node.add_theme_stylebox_override("pressed",panel(Color("1c5140"),CREAM,10))
+  button_node.add_theme_stylebox_override("normal",JadeMaterial.button())
+  button_node.add_theme_stylebox_override("hover",JadeMaterial.button())
+  button_node.add_theme_stylebox_override("pressed",JadeMaterial.button(false,true))
+ button_node.add_theme_stylebox_override("focus",StyleBoxEmpty.new())
+ button_node.add_theme_stylebox_override("disabled",JadeMaterial.button(true))
+
 static func meter() -> ProgressBar:
  var bar:=ProgressBar.new();bar.show_percentage=false;bar.custom_minimum_size.y=5;bar.mouse_filter=Control.MOUSE_FILTER_IGNORE
  bar.add_theme_stylebox_override("background",panel(Color("041914"),Color("314d3c"),2))

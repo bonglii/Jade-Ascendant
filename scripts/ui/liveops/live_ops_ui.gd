@@ -387,65 +387,15 @@ static func _install_scroll_guard(
 	scroll: ScrollContainer,
 	content: Control
 ) -> void:
-	# ScrollContainer emits these signals specifically for touch drag scrolling.
-	# While a drag is active, descendant buttons are temporarily disabled so a
-	# release cannot also activate a card/action that the finger started on.
-	var tracked_buttons: Array[Button] = []
-	var disabled_before: Dictionary = {}
-	make_scroll_tree_touch_safe(content)
-
-	scroll.scroll_started.connect(
-		func() -> void:
-			make_scroll_tree_touch_safe(content)
-			tracked_buttons.clear()
-			disabled_before.clear()
-			_collect_buttons(content, tracked_buttons)
-			for button: Button in tracked_buttons:
-				if not is_instance_valid(button):
-					continue
-				disabled_before[button] = button.disabled
-				if not button.disabled:
-					button.disabled = true
-	)
-
-	scroll.scroll_ended.connect(
-		func() -> void:
-			if not is_instance_valid(scroll):
-				return
-			var tree: SceneTree = scroll.get_tree()
-			if tree == null:
-				return
-			var timer: SceneTreeTimer = tree.create_timer(
-				0.06,
-				true,
-				false,
-				true
-			)
-			timer.timeout.connect(
-				func() -> void:
-					for button: Button in tracked_buttons:
-						if not is_instance_valid(button):
-							continue
-						button.disabled = bool(
-							disabled_before.get(button, false)
-						)
-					tracked_buttons.clear()
-					disabled_before.clear()
-			)
-	)
+	var policy = preload("res://scripts/ui/mobile_scroll_policy.gd")
+	policy.configure(scroll)
+	policy.prepare_tree(content)
+	# Native ScrollContainer cancels descendant presses on NOTIFICATION_SCROLL_BEGIN.
+	# Never toggle all buttons disabled: that flickers and can restore stale eligibility.
 
 
 static func make_scroll_tree_touch_safe(root: Node) -> void:
-	# Layout-only Controls must never become dead drag zones. Buttons stay
-	# interactive, but PASS lets ScrollContainer still win once a swipe starts.
-	if root is Control:
-		var control := root as Control
-		if control is Button:
-			control.mouse_filter = Control.MOUSE_FILTER_PASS
-		elif not (control is ScrollContainer):
-			control.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	for child: Node in root.get_children():
-		make_scroll_tree_touch_safe(child)
+	preload("res://scripts/ui/mobile_scroll_policy.gd").prepare_tree(root)
 
 
 static func _collect_buttons(

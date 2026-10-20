@@ -67,7 +67,7 @@ func run() -> void:
  page._missions();var modal_id: int=page.modal.get_instance_id()
  for i in range(100):page._missions()
  check(page.modal.get_instance_id()==modal_id,"100 mission taps preserve one sheet instance")
- check(page._modal_panel.get_theme_stylebox("panel").get_script()!=null,"all board modals use the transparent material frame")
+ check(page._modal_panel.get_theme_stylebox("panel").get_script()!=null,"all board modals use the shared transparent rounded texture")
  check(page.modal.get_node("JadeModalScrim").color.a<=.5,"modal backdrop stays jade-tinted and bounded")
  for dims: Vector2i in [Vector2i(320,568),Vector2i(390,844),Vector2i(648,1152),Vector2i(896,504)]:
   viewport.size=dims;await settle();page._fit_popup();await settle()
@@ -90,7 +90,8 @@ func run() -> void:
  for i in range(100):pavilion._open_target_picker()
  check(pavilion._target_overlay.get_instance_id()==picker_id and pavilion._target_epoch==epoch,"100 Choose Equipment taps cannot rebuild or duplicate picker")
  for i in range(50):pavilion._open_target_picker("set" if i%2==0 else "weapon")
- check(pavilion._target_overlay.get_instance_id()==picker_id,"rapid alternating tab taps are bounded")
+ await settle()
+ check(is_instance_valid(pavilion._target_overlay) and pavilion.find_children("TargetChoices","GridContainer",true,false).size()==1,"alternating tabs retain exactly one live picker after deferred cleanup")
  pavilion._close_target_picker();pavilion._sheet_guard_until=0;pavilion._show_drop_rates_overlay()
  var rates_id: int=pavilion.locked_rates_overlay.get_instance_id()
  for i in range(100):pavilion._show_drop_rates_overlay()

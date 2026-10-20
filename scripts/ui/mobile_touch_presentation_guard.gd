@@ -1,5 +1,6 @@
 extends Node
-## Visual hover suppression and scrollbar policy; never consumes scrolling input.
+## Shared native scroll routing and touch hover suppression.
+const ScrollPolicy = preload("res://scripts/ui/mobile_scroll_policy.gd")
 var touch_mode: bool=false
 var _applying: bool=false
 var _tracked: Dictionary={}
@@ -14,14 +15,16 @@ func _ready() -> void:
  get_tree().node_added.connect(_on_node_added)
  _scan(get_tree().root)
 func _scan(node: Node) -> void:
+ if node is Control:ScrollPolicy.prepare(node)
  if node is Button:_track(node)
  if node is ScrollContainer:_track_scroll(node)
  for child: Node in node.get_children():_scan(child)
 func _on_node_added(node: Node) -> void:
- if node is Button or node is ScrollContainer:_track_queued.call_deferred(weakref(node))
+ if node is Control:_track_queued.call_deferred(weakref(node))
 func _track_queued(ref: WeakRef) -> void:
  var node: Object=ref.get_ref()
  if not is_instance_valid(node):return
+ if node is Control:ScrollPolicy.prepare(node)
  if node is Button:_track(node)
  elif node is ScrollContainer:_track_scroll(node)
 func _track_scroll(scroll: ScrollContainer) -> void:
@@ -30,11 +33,9 @@ func _track_scroll(scroll: ScrollContainer) -> void:
  if not _scrollers.has(id):
   _scrollers[id]=weakref(scroll)
   scroll.tree_exiting.connect(func():_scrollers.erase(id),CONNECT_ONE_SHOT)
- _hide_scrollbars(scroll)
+ ScrollPolicy.prepare_tree(scroll)
 func _hide_scrollbars(scroll: ScrollContainer) -> void:
- # SHOW_NEVER keeps the enabled axis scrollable; DISABLED must stay disabled.
- if scroll.horizontal_scroll_mode!=ScrollContainer.SCROLL_MODE_DISABLED:scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_SHOW_NEVER
- if scroll.vertical_scroll_mode!=ScrollContainer.SCROLL_MODE_DISABLED:scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_SHOW_NEVER
+ ScrollPolicy.configure(scroll)
 func _process(delta: float) -> void:
  _tick+=delta
  if _tick<.25:return

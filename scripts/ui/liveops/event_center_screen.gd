@@ -16,7 +16,7 @@ const TREASURE_HUNT_EVENT_ID: String="celestial_treasure_hunt"
 const FIVE_ELEMENTS_EVENT_ID: String="path_of_five_elements"
 const DAILY_SCENE: String="res://scenes/ui/daily_quest_screen.tscn"
 const PAVILION_SCENE: String="res://scenes/ui/pavilion_screen.tscn"
-const SCROLL_DEADZONE: int=7
+const SCROLL_DEADZONE: int=6
 var _live_ops: Node
 var _popup: PanelContainer
 var _scroll: ScrollContainer
@@ -93,15 +93,16 @@ func _build() -> void:
   filter_row.add_child(tab);_filters[key]=tab;tab.pressed.connect(_set_filter.bind(key))
  _scroll=ScrollContainer.new();_scroll.name="EventList";_scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL
  _scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;_scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_SHOW_NEVER;_scroll.follow_focus=false
- body.add_child(_scroll);_scroll.scroll_started.connect(_on_scroll_started);_scroll.scroll_ended.connect(_on_scroll_ended)
+ body.add_child(_scroll);preload("res://scripts/ui/mobile_scroll_policy.gd").configure(_scroll);_scroll.scroll_started.connect(_on_scroll_started);_scroll.scroll_ended.connect(_on_scroll_ended)
  var list:=VBoxContainer.new();list.size_flags_horizontal=Control.SIZE_EXPAND_FILL;list.add_theme_constant_override("separation",12);_scroll.add_child(list)
  _build_hero(list)
  var section:=HBoxContainer.new();section.name="EventSection";list.add_child(section)
  _section_title=_label("",17,HubStyle.CREAM,true);_section_title.size_flags_horizontal=Control.SIZE_EXPAND_FILL;section.add_child(_section_title)
  _ready_count=_label("",13,HubStyle.JADE);_ready_count.autowrap_mode=TextServer.AUTOWRAP_OFF;_ready_count.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;section.add_child(_ready_count)
  for key: String in Catalog.IDS:_build_row(list,key)
+ preload("res://scripts/ui/mobile_scroll_policy.gd").prepare_tree(_scroll)
 func _build_hero(parent: Node) -> void:
- _hero_stage=PanelContainer.new();_hero_stage.name="FeaturedOdyssey";_hero_stage.clip_contents=true;_hero_stage.add_theme_stylebox_override("panel",HubStyle.panel(Color("0b2d22"),HubStyle.GOLD,12));parent.add_child(_hero_stage)
+ _hero_stage=PanelContainer.new();_hero_stage.name="FeaturedOdyssey";_hero_stage.clip_contents=true;_hero_stage.add_theme_stylebox_override("panel",HubStyle.panel(Color("0b2d22"),HubStyle.GOLD,20));parent.add_child(_hero_stage)
  var art: TextureRect=_texture(HERO);art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);_hero_stage.add_child(art)
  # A bottom fade leaves the dragon visible and reserves a quiet reading surface.
  var gradient:=Gradient.new();gradient.set_color(0,Color(0,.035,.02,.04));gradient.set_color(1,Color(.006,.06,.035,.99));gradient.add_point(.44,Color(.004,.04,.02,.1));gradient.add_point(.72,Color(.005,.05,.03,.86))
@@ -127,13 +128,13 @@ func _build_hero(parent: Node) -> void:
  _hero_action=Button.new();_hero_action.name="ContinueJourney";_hero_action.custom_minimum_size=Vector2(0,54);_hero_action.add_theme_font_size_override("font_size",16);HubStyle.button(_hero_action,true);journey_stack.add_child(_hero_action);_wire_navigation_button(_hero_action,"odyssey")
 func _build_row(parent: Node,key: String) -> void:
  var card:=PanelContainer.new();card.name="Event_"+key;card.custom_minimum_size.y=148;card.clip_contents=true
- card.add_theme_stylebox_override("panel",HubStyle.panel(Color("0a2b23"),Color("4a644b"),10));parent.add_child(card)
+ card.add_theme_stylebox_override("panel",HubStyle.panel(Color("0a2b23"),Color("688f6b"),18));parent.add_child(card)
  var row:=HBoxContainer.new();row.add_theme_constant_override("separation",12);_margin(card,10).add_child(row)
  var picture: Texture2D=load("res://assets/ui/liveops/seven_day/seven_day_ascension_hero_portrait_bg.png") if key=="seven_day" else EventArt.texture_for(key)
  var art: TextureRect=_texture(picture);art.custom_minimum_size=Vector2(128,0);art.clip_contents=true;row.add_child(art)
  var text_stack:=VBoxContainer.new();text_stack.size_flags_horizontal=Control.SIZE_EXPAND_FILL;text_stack.add_theme_constant_override("separation",4);row.add_child(text_stack)
  var title_label: Label=_label("",23,HubStyle.CREAM,true);text_stack.add_child(title_label)
- var description_label: Label=_label("",14,HubStyle.MUTED);text_stack.add_child(description_label)
+ var description_label: Label=_label("",15,HubStyle.MUTED);text_stack.add_child(description_label)
  var status_label: Label=_label("",13,HubStyle.JADE);text_stack.add_child(status_label)
  var meter: ProgressBar=HubStyle.meter();text_stack.add_child(meter)
  var reward_label: Label=_label("",13,HubStyle.CREAM);text_stack.add_child(reward_label)
@@ -207,13 +208,14 @@ func _fit_layout() -> void:
  _header_title.add_theme_font_size_override("font_size",23 if compact else 32)
  _subtitle.add_theme_font_size_override("font_size",13 if compact else 15)
  _hero_title.add_theme_font_size_override("font_size",29 if compact else 38)
- _hero_stage.custom_minimum_size.y=360 if compact else 400
+ _hero_stage.custom_minimum_size.y=344 if compact else 384
  _hero_actions.columns=1 if compact else 2
  for key: String in _activity_handles:
-  var item: Dictionary=_activity_handles[key];item.art.custom_minimum_size.x=68 if compact else 128
+  var item: Dictionary=_activity_handles[key];item.art.custom_minimum_size.x=76 if compact else 128
   item.title.add_theme_font_size_override("font_size",19 if compact else 23)
   item.description.visible=not compact
-  item.reward.add_theme_font_size_override("font_size",12 if compact else 13)
+  item.status.add_theme_font_size_override("font_size",13 if compact else 14)
+  item.reward.add_theme_font_size_override("font_size",13)
   item.card.custom_minimum_size.y=132 if compact else 148
 func _wire_navigation_button(button: Button,id: String) -> void:
  button.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE;button.keep_pressed_outside=false;button.mouse_filter=Control.MOUSE_FILTER_PASS
