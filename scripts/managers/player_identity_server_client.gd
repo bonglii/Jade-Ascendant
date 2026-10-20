@@ -256,7 +256,7 @@ func _on_health_response(result: int, code: int,_headers: PackedStringArray,body
 func _endpoint_host() -> String:
 	return ENDPOINT.trim_prefix("https://").get_slice("/",0)
 
-func _prepare_route(request: HTTPRequest, path: String) -> String:
+func _prepare_route(request: Node, path: String) -> String:
 	if _ipv4_address.is_empty():
 		request.set_tls_options(_route_tls_options())
 		return "https://"+_endpoint_host()+path

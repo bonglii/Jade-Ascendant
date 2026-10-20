@@ -47,7 +47,10 @@ func run() -> void:
 	await process_frame
 	await process_frame
 	var mail: Control = current_scene
-	check(ops.get_mail_unread_count() == 1,"open only selected read")
+	check(ops.get_mail_unread_count() == 2,"opening inbox does not read any letter")
+	mail._select_mail("welcome_initiate")
+	await process_frame
+	check(ops.get_mail_unread_count() == 1,"explicit selection reads one letter")
 	check(ops.get_home_mail_badge_count() == 2,"badge counts two distinct actionable letters")
 	check(mail._delete_button.disabled,"delete blocked in UI")
 	var before: int = int(progression.spirit_stone)
@@ -67,7 +70,7 @@ func run() -> void:
 	check(not ops.claim_mail("welcome_initiate"),"deleted cannot reclaim")
 	check(ops.get_mail_ids().size() == 1,"deleted removed from list")
 	check(ops.get_mail_ids(true).size() == 2,"catalog audit still includes deleted")
-	check(mail._selected_id == "celestial_path_notice","selection advances")
+	check(mail._selected_id.is_empty() and mail._compact_inbox_open,"deletion returns to inbox without reading another letter")
 	check(ops.delete_mail("celestial_path_notice"),"notice deletable")
 	check(ops.get_home_mail_badge_count() == 0,"empty badge")
 	check(not ops.delete_mail("celestial_path_notice"),"duplicate delete")

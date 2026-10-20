@@ -62,7 +62,7 @@ var _popup: Control = null
 var _popup_safe: MarginContainer = null
 var _hero: Control = null
 var _compact_inbox_button: Button = null
-var _compact_inbox_open: bool = false
+var _compact_inbox_open: bool = true
 var _body: Control = null
 var _inbox_panel: PanelContainer = null
 var _inbox_safe: MarginContainer
@@ -269,6 +269,7 @@ func _build_mail_toolbar(parent: VBoxContainer) -> void:
 	clear_button.tooltip_text = tr("Deletes completed and expired mail. Unclaimed rewards are kept.")
 	clear_button.pressed.connect(func() -> void:
 		if _claim_batch.active: return
+		_claim_batch.message = ""
 		if bool(live_ops.delete_all_completed_mail()): _on_live_ops_changed()
 	)
 	toolbar.add_child(clear_button)
@@ -541,7 +542,8 @@ func _layout_body() -> void:
 	var h: float = _body.size.y
 	if is_instance_valid(_compact_inbox_button):
 		_compact_inbox_button.visible = w < WIDE_READER_THRESHOLD
-		_compact_inbox_button.text = tr("READ") if _compact_inbox_open else tr("INBOX")
+		_compact_inbox_button.text = tr("READ") if _compact_inbox_open and not _selected_id.is_empty() else tr("INBOX")
+		_compact_inbox_button.disabled = _compact_inbox_open and _selected_id.is_empty()
 	if w >= WIDE_READER_THRESHOLD:
 		_inbox_panel.visible = true
 		_letter_panel.visible = true
@@ -639,7 +641,7 @@ func _update_inbox_card_heights(inbox_width: float) -> void:
 	var inset: int = roundi(clampf(inbox_width*.08,18,42))
 	_inbox_safe.add_theme_constant_override("margin_left",inset)
 	_inbox_safe.add_theme_constant_override("margin_right",inset)
-	var text_width: float = maxf(inbox_width - inset*2.0 - 24.0, 40.0)
+	var text_width: float = maxf(inbox_width - inset*2.0 - 40.0, 40.0)
 	for raw_refs: Variant in _mail_card_refs.values():
 		var refs: Dictionary = raw_refs as Dictionary
 		var item: Button = refs.get("button") as Button
@@ -684,6 +686,7 @@ func _inbox_required_height() -> float:
 
 
 func _toggle_compact_inbox() -> void:
+	if _compact_inbox_open and _selected_id.is_empty(): return
 	_compact_inbox_open = not _compact_inbox_open
 	_layout_body()
 
@@ -718,9 +721,8 @@ func _refresh_from_authority() -> void:
 			selection_found = true
 			break
 	if not selection_found:
-		_selected_id = str(entries[0].get("id", "")) if not entries.is_empty() else ""
-	if not _selected_id.is_empty():
-		live_ops.mark_mail_read(_selected_id)
+		_selected_id = ""
+		_compact_inbox_open = true
 	var signature_parts: Array=[]
 	for entry: Dictionary in entries: signature_parts.append([entry.get("id"),entry.get("read"),entry.get("claimed"),entry.get("can_claim"),entry.get("pending"),entry.get("expired"),entry.get("title"),entry.get("created_at")])
 	var next_signature: String=JSON.stringify([_selected_id,signature_parts])
@@ -780,7 +782,7 @@ func _rebuild_inbox(preserve_scroll: bool = true) -> void:
 		var inside := MarginContainer.new()
 		inside.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		inside.add_theme_constant_override("margin_left", 10)
-		inside.add_theme_constant_override("margin_right", 8)
+		inside.add_theme_constant_override("margin_right", 24 if unread else 8)
 		inside.add_theme_constant_override("margin_top", 9)
 		inside.add_theme_constant_override("margin_bottom", 8)
 		inside.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -819,8 +821,19 @@ func _rebuild_inbox(preserve_scroll: bool = true) -> void:
 		badge.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		badge.tooltip_text = status
 		v.add_child(badge)
+		var unread_dot := Panel.new()
+		unread_dot.name = "UnreadMailDot"
+		unread_dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		unread_dot.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+		unread_dot.offset_left = -21; unread_dot.offset_right = -9
+		unread_dot.offset_top = 9; unread_dot.offset_bottom = 21
+		unread_dot.add_theme_stylebox_override("panel", _style(Color("e7474d"), GOLD_LIGHT, 6, 1))
+		unread_dot.tooltip_text = tr("UNREAD")
+		unread_dot.visible = unread
+		item.add_child(unread_dot)
 		_mail_card_refs[id] = {
 			"button": item,
+			"unread_dot": unread_dot,
 			"title": title,
 			"sender": sender,
 			"badge": badge,
@@ -850,9 +863,9 @@ func _select_mail(id: String) -> void:
 	var selection_changed: bool = id != _selected_id
 	if not selection_changed and not _compact_inbox_open:
 		return
-	if selection_changed:
-		_selected_id = id
-		_refresh_from_authority()
+	_selected_id = id
+	live_ops.mark_mail_read(id)
+	_refresh_from_authority()
 	# On narrow viewports, selecting the current letter must still open it.
 	if _body.size.x < WIDE_READER_THRESHOLD:
 		_compact_inbox_open = false
@@ -908,9 +921,9 @@ func _refresh_letter() -> void:
 		_displayed_id = ""
 		_document_signature = ""
 		_reader_scroll.set_deferred("scroll_vertical",0)
-		_letter_subject.text = tr("The Empty Sky")
+		_letter_subject.text = tr("SELECT A LETTER") if not _entries().is_empty() else tr("The Empty Sky")
 		_letter_sender.text = tr("JADE SANCTUARY")
-		_letter_body.text = tr("No messages have arrived.\n\nMay the Celestial Courier bring good tidings to your cultivation path.")
+		_letter_body.text = tr("Tap a letter in your inbox to read it.") if not _entries().is_empty() else tr("No messages have arrived.\n\nMay the Celestial Courier bring good tidings to your cultivation path.")
 		_attachment_group.visible = false
 		_attachment_caption.text = tr("NO ATTACHMENTS")
 		_fill_attachment_tiles([])
@@ -945,12 +958,12 @@ func _refresh_letter() -> void:
 	_claim_button.visible = has_reward
 	_no_claim_hint.visible = not has_reward
 	_no_claim_hint.text = tr("MESSAGE · NO REWARD")
-	var server_busy: bool = _selected_id.begins_with("server:") and ServerMailManager.is_busy_for(_selected_id)
+	var server_busy: bool = _selected_id.begins_with("server:") and ServerMailManager.is_delivery_busy_for(_selected_id)
 	var claim_allowed: bool = bool(entry.get("can_claim",true))
 	_claim_button.disabled = claimed or read_only or _claim_busy or server_busy or not claim_allowed or (is_instance_valid(_claim_batch) and _claim_batch.active)
 	_claim_button.text = (
 		tr("CLAIMED") if claimed
-		else tr("CONNECTING") if server_busy
+		else tr("CLAIMING…") if server_busy
 		else tr("EXPIRED") if bool(entry.get("expired",false)) and not bool(entry.get("pending",false))
 		else tr("UNAVAILABLE") if not claim_allowed
 		else tr("READ ONLY") if read_only

@@ -26,6 +26,8 @@ var _ad_feedback_until: int=0
 var _received_msec: int = 0
 var run_authorized: bool = false
 var _preparing_run: bool = false
+var _warm_next_at: int = 0
+var _backgrounded: bool = false
 
 func server_time() -> int:
 	return int(snapshot.get("server_time", 0)) + floori(float(maxi(0, Time.get_ticks_msec() - _received_msec)) / 1000.0)
@@ -98,12 +100,34 @@ func _bridge() -> Object:
 	if not native.call("has_java_method", "requestOdysseyV1") or not native.has_signal("odysseyResultV1"): return null
 	if not native.is_connected("odysseyResultV1", _on_result): native.connect("odysseyResultV1", _on_result)
 	return native
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_PAUSED: _backgrounded = true
+	elif what == NOTIFICATION_APPLICATION_RESUMED: _backgrounded = false; _warm_next_at = Time.get_ticks_msec() + 1500
+
+func _can_prewarm() -> bool:
+	return is_inside_tree() and name == "OdysseyClient" and get_parent() == get_tree().root
+
+func refresh_if_stale(max_age_ms: int = 60000) -> bool:
+	if _binding == _live_binding() and not snapshot.is_empty() and Time.get_ticks_msec() - _received_msec < max_age_ms: return true
+	return refresh()
+
+func _prewarm_if_due() -> void:
+	if not _can_prewarm() or _backgrounded or busy or _binding.length() != 64: return
+	if Time.get_ticks_msec() < _warm_next_at: return
+	if get_tree().get_first_node_in_group("player") != null: return
+	_warm_next_at = Time.get_ticks_msec() + 30000
+	if not _pending().is_empty() or ad_waiting(): return
+	if not snapshot.is_empty() and Time.get_ticks_msec() - _received_msec < 180000: return
+	refresh()
+
 func _process(_delta: float) -> void:
 	var live: String = _live_binding()
 	if live != _binding:
 		_binding = live; snapshot = {}; busy = false; run_authorized = false; _request_id = ""; _command = {}; _ad_nonce = ""; _poll_until = 0;_ad_before=-1;_ad_day="";ad_delivery_state="idle";_ad_expires_at=0;_ad_attempts=0;_ad_earned_seen=false;_ad_reward_notice={}
 		_load_ad_wait()
+		_warm_next_at = Time.get_ticks_msec() + 1500
 		status = "account_changed"; changed.emit()
+	_prewarm_if_due()
 	if busy and Time.get_ticks_msec() > _deadline:
 		busy = false; status = "connection_timeout"
 		if _command.get("action",{}).get("kind")=="ad_intent": ad_delivery_state="verification_unavailable"

@@ -16,6 +16,7 @@ class Event extends Node:
  var busy: bool=false
  var last_action: Dictionary={}
  func refresh()->bool: return true
+ func refresh_if_stale(_age: int=60000)->bool: return true
  func server_time()->int: return 1800000000
  func submit(action: Dictionary)->bool: last_action=action;busy=true;status="sending_action";changed.emit();return true
  func purchase_bonus_active()->bool: return bool(snapshot.get("purchase_bonus",{}).get("active",false))

@@ -33,6 +33,8 @@ func run() -> void:
    var viewport := SubViewport.new();viewport.size=dims;root.add_child(viewport)
    var mail: Control = scene.instantiate();viewport.add_child(mail);await settled();mail._fit_popup();await settled()
    var label: String = str(dims)+" "+locale
+   check(mail._selected_id.is_empty(),label+" entering inbox never auto-reads the first letter")
+   mail._select_mail("server:"+LONG_ID);await settled()
    check(mail._letter_panel.size.x==mail._body.size.x if mail._body.size.x<mail.WIDE_READER_THRESHOLD else mail._inbox_panel.visible,label+" mobile reader uses full width; tablet keeps columns")
    var safe_rect: Rect2=mail._letter_safe.get_global_rect()
    var paper_rect: Rect2=mail._letter_panel.get_global_rect()
@@ -107,5 +109,6 @@ func run() -> void:
     mail._reader_scroll.scroll_ended.emit();mail._on_claim_pressed()
     check(root.get_node("ProgressionManager").spirit_stone==balance,label+" drag release cannot claim a real reward")
    viewport.queue_free();await settled()
+ await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
  print("MAILBOX_PAPER_QA checks=",checks," failures=",failures)
- quit(1 if failures else 0)
+ call_deferred("quit",1 if failures else 0)

@@ -33,6 +33,8 @@ func run() -> void:
    var viewport := SubViewport.new();viewport.size=dims;root.add_child(viewport)
    var mail: Control = scene.instantiate();viewport.add_child(mail);await settled();mail._fit_popup();await settled()
    var label: String = str(dims)+" "+locale
+   check(mail._selected_id.is_empty(),label+" inbox does not auto-select")
+   mail._select_mail("server:"+LONG_ID);await settled()
    check(mail._selected_id=="server:"+LONG_ID,label+" server mail selected")
    check(mail._letter_subject.text==fixture[0].title and mail._letter_subject.max_lines_visible==-1,label+" full title without line cap")
    check(mail._letter_sender.text.ends_with(fixture[0].sender),label+" full sender")

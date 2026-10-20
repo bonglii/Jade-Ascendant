@@ -159,7 +159,7 @@ func _ready() -> void:
 	var retry: Button=button("RECONNECT",func() -> void:
 		if client!=null and not client.busy and not _presenting(): client.refresh())
 	retry.custom_minimum_size.y=58; footer.add_child(retry)
-	if client!=null: client.changed.connect(_refresh); client.finished.connect(_finished); client.refresh()
+	if client!=null: client.changed.connect(_refresh); client.finished.connect(_finished); client.refresh_if_stale()
 	_refresh()
 	if not Art.reduced(self): body.modulate.a=0.0; create_tween().tween_property(body,"modulate:a",1.0,0.24)
 func _mutating() -> bool:
