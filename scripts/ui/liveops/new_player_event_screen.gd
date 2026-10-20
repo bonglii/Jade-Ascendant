@@ -1,5 +1,7 @@
 extends Control
 
+const ActionDot=preload("res://scripts/ui/action_ready_dot.gd")
+
 ## CELESTIAL SIGN-IN — PRODUCTION POPUP
 ## Presentation and input only. LiveOpsManager handles the active-day ledger,
 ## catalog, claim verification and save. Existing RewardManager signals drive

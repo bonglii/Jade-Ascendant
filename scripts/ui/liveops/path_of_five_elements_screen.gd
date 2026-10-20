@@ -1,5 +1,7 @@
 extends Control
 
+const ActionDot=preload("res://scripts/ui/action_ready_dot.gd")
+
 ## PATH OF FIVE ELEMENTS — EVENT CONTENT EXPANSION E6
 ## Presentation/input only. JourneyManager remains progress authority,
 ## LiveOpsManager owns claims, and RewardManager owns reward delivery.
