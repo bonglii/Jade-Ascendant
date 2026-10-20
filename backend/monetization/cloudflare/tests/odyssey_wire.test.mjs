@@ -15,7 +15,7 @@ test('all receipt stages preserve currency state and legacy responses',async()=>
  const f=setup(),base=await f.api.read('alice');for(const stage of ['none','pending','credited','expired','configuration_required']){
   const ad={configured:stage!=='configuration_required',stage,...(['pending','credited','expired'].includes(stage)?{nonce:'d'.repeat(32),expires_at:time+1200}:{})};
   const after=odysseyWire({...base,ad_delivery:ad},envValues);assert.ok(closed(after));assert.equal(after.state.tickets,base.state.tickets);assert.equal(after.state.daily_ads,base.state.daily_ads);record(stage,after);
- }const legacy={...base};delete legacy.ad_delivery;assert.deepEqual(odysseyWire(legacy,envValues),legacy);record('legacy',legacy);
+ }const legacy={...base};delete legacy.ad_delivery;delete legacy.board_rewards;assert.deepEqual(odysseyWire(legacy,envValues),legacy);record('legacy',legacy);
 });
 test('actual HTTP GET, fresh POST and old journal replay all normalize; persisted receipt stays byte-identical',async()=>{
  const f=setup(),env={DB:f.db,...envValues},previous=Date.now;Date.now=()=>time*1000;

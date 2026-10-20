@@ -627,6 +627,7 @@ func _build_focus_ladder_checkpoint(
 	)
 	action.custom_minimum_size.y = 52.0
 	action.disabled = disabled
+	preload("res://scripts/ui/action_ready_dot.gd").show_on(action,int(not disabled))
 
 
 func _add_ladder_thumbnail(

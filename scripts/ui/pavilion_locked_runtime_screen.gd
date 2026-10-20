@@ -527,7 +527,7 @@ func _refresh_rewarded_seal_section() -> void:
 			locked_watch_ad_visual.modulate = Color.WHITE if ad_ready else Color(0.62, 0.64, 0.66, 0.78)
 
 
-func _summon(pull_count: int) -> void:	
+func _summon(pull_count: int) -> void:
 	var result: Dictionary = PavilionManager.summon_equipment(pull_count)
 	if not bool(result.get("success", false)):
 		_set_status(
@@ -1015,7 +1015,7 @@ func _request_locked_rewarded_ad() -> void:
 
 func _show_drop_rates_overlay() -> void:
 	if locked_rates_overlay != null and is_instance_valid(locked_rates_overlay):
-		locked_rates_overlay.queue_free()
+		locked_rates_overlay.hide();locked_rates_overlay.queue_free()
 	locked_rates_overlay = _build_modal_overlay(tr("DROP RATES & PITY RULES"))
 	var box: VBoxContainer = locked_rates_overlay.get_meta("content") as VBoxContainer
 	var rates: Array[Dictionary] = PavilionManager.get_effective_drop_rate_disclosure()
@@ -1035,13 +1035,13 @@ func _show_drop_rates_overlay() -> void:
 
 func _close_rates_overlay() -> void:
 	if locked_rates_overlay != null and is_instance_valid(locked_rates_overlay):
-		locked_rates_overlay.queue_free()
+		locked_rates_overlay.hide();locked_rates_overlay.queue_free()
 	locked_rates_overlay = null
 
 
 func _show_history_overlay() -> void:
 	if locked_history_overlay != null and is_instance_valid(locked_history_overlay):
-		locked_history_overlay.queue_free()
+		locked_history_overlay.hide();locked_history_overlay.queue_free()
 	locked_history_overlay = _build_modal_overlay(tr("SUMMON HISTORY • THIS PAVILION VISIT"))
 	var box: VBoxContainer = locked_history_overlay.get_meta("content") as VBoxContainer
 	if session_summon_history.is_empty():
@@ -1073,7 +1073,7 @@ func _show_history_overlay() -> void:
 
 func _close_history_overlay() -> void:
 	if locked_history_overlay != null and is_instance_valid(locked_history_overlay):
-		locked_history_overlay.queue_free()
+		locked_history_overlay.hide();locked_history_overlay.queue_free()
 	locked_history_overlay = null
 
 

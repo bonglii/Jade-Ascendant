@@ -507,6 +507,7 @@ func _build_route_checkpoint(
 	)
 	action.custom_minimum_size.y = 56.0
 	action.disabled = disabled
+	preload("res://scripts/ui/action_ready_dot.gd").show_on(action,int(not disabled))
 	_style_checkpoint_action(action, state_id)
 	_queue_checkpoint_intro(row, index)
 

@@ -618,6 +618,7 @@ func _build_focus_treasure_checkpoint(
 	)
 	normal_button.custom_minimum_size.y = 52.0
 	normal_button.disabled = normal_disabled
+	preload("res://scripts/ui/action_ready_dot.gd").show_on(normal_button,int(not normal_disabled))
 
 	if unlocked:
 		var double_button := LiveOpsUi.add_action_button(

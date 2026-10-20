@@ -1,1151 +1,308 @@
 extends Control
-
-## CELESTIAL EVENTS — USER-APPROVED PRODUCTION UI (LAB V1.5).
-## Presentation and navigation only. LiveOpsManager remains the exclusive
-## authority for seven-day progress, rewards, claims and persistent state.
-## Daily Trials and Pavilion continue to own their own gameplay and economy.
-
-const EventArt = preload("res://scripts/ui/liveops/event_identity_catalog.gd")
-const EventBanner = preload("res://scripts/ui/liveops/event_identity_banner.gd")
-const ImperialStyle = preload("res://scripts/ui/pavilion_imperial_style.gd")
-var _activity_handles: Dictionary = {}
-
-const LiveOpsUi = preload("res://scripts/ui/liveops/live_ops_ui.gd")
-const FEATURED_EVENT_ID: String = "seven_days_of_ascension"
-const PILGRIMAGE_EVENT_ID: String = "jade_valley_pilgrimage"
-const BOSS_HUNT_EVENT_ID: String = "celestial_boss_hunt"
-const HEAVENLY_LADDER_EVENT_ID: String = "heavenly_ladder"
-const TREASURE_HUNT_EVENT_ID: String = "celestial_treasure_hunt"
-const FIVE_ELEMENTS_EVENT_ID: String = "path_of_five_elements"
-const DAILY_SCENE: String = "res://scenes/ui/daily_quest_screen.tscn"
-const PAVILION_SCENE: String = "res://scenes/ui/pavilion_screen.tscn"
-
-const HOME_ART: Texture2D = preload(
-	"res://assets/ui/main_menu/main_menu_key_art_lin_yue.png"
-)
-const SEVEN_DAY_ART: Texture2D = preload(
-	"res://assets/ui/liveops/seven_day/seven_day_ascension_hero_portrait_bg.png"
-)
-const DAILY_ICON: Texture2D = preload(
-	"res://assets/ui/icons/actions/daily.png"
-)
-const PILGRIMAGE_ICON: Texture2D = preload(
-	"res://assets/ui/home/liveops_premium/event_center_premium.png"
-)
-const PAVILION_ICON: Texture2D = preload(
-	"res://assets/ui/pavilion/icons/pavilion_crest.png"
-)
-# Exact copies of the visually approved Treasury frame and its fitted mask.
-# Production owns its copies so a future LAB cleanup cannot break this screen.
-const FRAME_ART: Texture2D = preload(
-	"res://assets/ui/liveops/event_center_production/treasury_frame_approved.png"
-)
-const INTERIOR_ART: Texture2D = preload(
-	"res://assets/ui/liveops/event_center_production/frame_interior_silhouette.png"
-)
-
-const GOLD: Color = Color(0.93, 0.74, 0.35, 1.0)
-const GOLD_LIGHT: Color = Color(1.0, 0.91, 0.67, 1.0)
-const JADE: Color = Color(0.44, 0.91, 0.79, 1.0)
-const IVORY: Color = Color(0.97, 0.97, 0.92, 1.0)
-const MUTED: Color = Color(0.73, 0.84, 0.82, 1.0)
-const SCROLL_GUARD_MS: int = 190
-const SCROLL_DEADZONE: int = 7
-
-var _live_ops: Node = null
-var _popup: PanelContainer = null
-var _chrome_mask: TextureRect = null
-var _chrome_frame: TextureRect = null
-var _close_button: Button = null
-var _body_margin: MarginContainer = null
-var _scroll: ScrollContainer = null
-var _header: Control = null
-var _header_title: Label = null
-var _hero_art: TextureRect = null
-var _hero_stage: Control = null
-var _event_status: Label = null
-var _event_progress: Label = null
-var _featured_title: Label = null
-var _featured_description: Label = null
-var _featured_tag: Label = null
-var _featured_action_row: GridContainer = null
-var _grid: GridContainer = null
-var _dragging: bool = false
-var _tap_guard_until: int = 0
-var _press_scroll_y: Dictionary = {}
-var _layout_generation: int = 0
-
+## Approved Celestial Event hub. Resident layout; read-only manager snapshots.
+const ActionDot=preload("res://scripts/ui/action_ready_dot.gd")
+const Catalog=preload("res://scripts/ui/liveops/event_hub_catalog.gd")
+const HubStyle=preload("res://scripts/ui/liveops/event_hub_style.gd")
+const EventArt=preload("res://scripts/ui/liveops/event_identity_catalog.gd")
+const LiveOpsUi=preload("res://scripts/ui/liveops/live_ops_ui.gd")
+const HUB_REVISION: int=1
+const HERO: Texture2D=preload("res://assets/ui/liveops/event_center_v2/odyssey_hero.png")
+const ICONS: Dictionary={"spirit_stone":preload("res://assets/ui/shared/resources/spirit_stone_premium.png"),"celestial_jade":preload("res://assets/ui/shared/resources/celestial_jade_premium.png"),"pavilion_seal":preload("res://assets/ui/shared/resources/pavilion_seal_premium.png"),"compass":preload("res://assets/ui/liveops/odyssey/compass.png")}
+const FEATURED_EVENT_ID: String="seven_days_of_ascension"
+const PILGRIMAGE_EVENT_ID: String="jade_valley_pilgrimage"
+const BOSS_HUNT_EVENT_ID: String="celestial_boss_hunt"
+const HEAVENLY_LADDER_EVENT_ID: String="heavenly_ladder"
+const TREASURE_HUNT_EVENT_ID: String="celestial_treasure_hunt"
+const FIVE_ELEMENTS_EVENT_ID: String="path_of_five_elements"
+const DAILY_SCENE: String="res://scenes/ui/daily_quest_screen.tscn"
+const PAVILION_SCENE: String="res://scenes/ui/pavilion_screen.tscn"
+const SCROLL_DEADZONE: int=7
+var _live_ops: Node
+var _popup: PanelContainer
+var _scroll: ScrollContainer
+var _header_title: Label
+var _subtitle: Label
+var _close_button: Button
+var _hero_stage: PanelContainer
+var _hero_title: Label
+var _hero_description: Label
+var _hero_tag: Label
+var _event_status: Label
+var _event_progress: Label
+var _hero_action: Button
+var _hero_meter: ProgressBar
+var _section_title: Label
+var _ready_count: Label
+var _hero_rewards: HBoxContainer
+var _hero_actions: GridContainer
+var _activity_handles: Dictionary={}
+var _filters: Dictionary={}
+var _filter: String="all"
+var _dragging: bool=false
+var _tap_guard_until: int=0
+var _press_scroll_y: Dictionary={}
+var _press_positions: Dictionary={}
+var _navigating: bool=false
+var _refresh_elapsed: float=0.0
 
 func _ready() -> void:
-	mouse_filter = Control.MOUSE_FILTER_STOP
-	process_mode = Node.PROCESS_MODE_ALWAYS
-	_live_ops = get_node_or_null("/root/LiveOpsManager")
-	if _live_ops == null:
-		push_error("EventCenterScreen: LiveOpsManager tidak tersedia.")
-		return
-	# Popup mode receives a Back handler from LiveOpsManager after add_child().
-	if not bool(get_meta("liveops_popup", false)):
-		SceneTransitionManager.set_back_handler(_back)
-	_build_production()
-	# Hold only the initial layout until responsive container measurements settle.
-	# This prevents the blank tall popup from appearing for one frame.
-	_popup.visible = false
-	_refresh_event_status()
-	_fit_layout()
-	resized.connect(_fit_layout)
-	if _live_ops != null and _live_ops.has_signal("live_ops_changed"):
-		var refresh_callback: Callable = Callable(self, "_refresh_event_status")
-		if not _live_ops.is_connected("live_ops_changed", refresh_callback):
-			_live_ops.connect("live_ops_changed", refresh_callback)
-
-
+ mouse_filter=Control.MOUSE_FILTER_STOP;process_mode=Node.PROCESS_MODE_ALWAYS
+ _live_ops=get_node_or_null("/root/LiveOpsManager")
+ if not bool(get_meta("liveops_popup",false)):SceneTransitionManager.set_back_handler(_back)
+ _build();_fit_layout();_refresh_event_status()
+ resized.connect(_fit_layout)
+ for manager_name: String in ["LiveOpsManager","OdysseyClient","DailyQuestManager","PavilionManager","SaveManager"]:
+  var manager: Node=get_node_or_null("/root/"+manager_name)
+  if manager==null:continue
+  for event_name: String in ["live_ops_changed","changed","daily_quest_progressed","daily_quest_claimed","daily_quests_reset","pavilion_changed","save_write_barrier_changed"]:
+   if manager.has_signal(event_name) and not manager.is_connected(event_name,_refresh_from_signal):manager.connect(event_name,_refresh_from_signal)
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_TRANSLATION_CHANGED and is_inside_tree():
-		_refresh_event_status()
-		_fit_layout()
-
-func _build_production() -> void:
-	# Home owns its actual backdrop, wallet and bottom navigation when this
-	# scene is embedded as a LiveOps popup. Only standalone mode adds key art.
-	if not bool(get_meta("liveops_popup", false)):
-		var backdrop := TextureRect.new()
-		backdrop.name = "StandaloneHomeBackdrop"
-		backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		backdrop.texture = HOME_ART
-		backdrop.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		backdrop.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-		backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(backdrop)
-
-	var shade := ColorRect.new()
-	shade.name = "PopupSafeScrim"
-	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	shade.color = Color(0.0, 0.009, 0.020, 0.79)
-	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(shade)
-
-	_chrome_mask = _texture(INTERIOR_ART)
-	_chrome_mask.name = "FrameConformantInteriorMask"
-	_chrome_mask.stretch_mode = TextureRect.STRETCH_SCALE
-	_chrome_mask.visible = false
-	add_child(_chrome_mask)
-
-	_popup = PanelContainer.new()
-	_popup.name = "CelestialEventsProductionPopup"
-	_popup.mouse_filter = Control.MOUSE_FILTER_STOP
-	# No old flat rectangle or shadow behind the irregular approved frame.
-	_popup.add_theme_stylebox_override(
-		"panel", _panel(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0, 0)
-	)
-	add_child(_popup)
-
-	_body_margin = MarginContainer.new()
-	_popup.add_child(_body_margin)
-
-	var outer := VBoxContainer.new()
-	outer.add_theme_constant_override("separation", 9)
-	_body_margin.add_child(outer)
-
-	_header = Control.new()
-	_header.custom_minimum_size.y = 78.0
-	outer.add_child(_header)
-
-	# The Treasury frame already has a large central jewel; a second crest would
-	# overlap it, so the old small emblem is omitted rather than regenerated.
-	var eyebrow := _label("JADE ASCENDANT  /  LIVE EVENTS", 12, JADE)
-	eyebrow.name = "EventEyebrow"
-	eyebrow.position = Vector2(0.0, 43.0)
-	eyebrow.size = Vector2(280.0, 22.0)
-	eyebrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_header.add_child(eyebrow)
-
-	_header_title = _label("CELESTIAL EVENTS", 30, GOLD_LIGHT)
-	_header_title.name = "EventCenterHeadline"
-	_header_title.position = Vector2(0.0, 2.0)
-	_header_title.size = Vector2(280.0, 41.0)
-	_header_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_header_title.autowrap_mode = TextServer.AUTOWRAP_OFF
-	_header_title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	_header_title.add_theme_color_override(
-		"font_shadow_color", Color(0.0, 0.0, 0.0, 0.8)
-	)
-	_header_title.add_theme_constant_override("shadow_offset_y", 2)
-	_header.add_child(_header_title)
-
-	var divider := HSeparator.new()
-	divider.name = "HeaderSeparator"
-	divider.position = Vector2(0.0, 70.0)
-	divider.size = Vector2(280.0, 2.0)
-	divider.add_theme_stylebox_override(
-		"separator", _panel(Color(0.95, 0.73, 0.30, 0.62), Color.TRANSPARENT, 0, 0)
-	)
-	_header.add_child(divider)
-
-	_scroll = ScrollContainer.new()
-	_scroll.name = "EventCenterVerticalScroll"
-	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
-	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	_scroll.scroll_deadzone = SCROLL_DEADZONE
-	_scroll.follow_focus = false
-	_scroll.mouse_filter = Control.MOUSE_FILTER_STOP
-	outer.add_child(_scroll)
-
-	var body := VBoxContainer.new()
-	body.name = "EventCenterBody"
-	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	body.add_theme_constant_override("separation", 12)
-	_scroll.add_child(body)
-
-	_build_featured(body)
-	_build_secondary(body)
-
-	var footer := _label(
-		"EVENT REWARDS ARE CLAIMED IN THEIR OWN SCREENS",
-		12, MUTED
-	)
-	footer.name = "EventCenterFooter"
-	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	footer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	footer.custom_minimum_size.y = 26.0
-	body.add_child(footer)
-
-	var bottom_safe_pad := Control.new()
-	bottom_safe_pad.name = "OrnamentalBottomSafePad"
-	bottom_safe_pad.custom_minimum_size.y = 112.0
-	bottom_safe_pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	body.add_child(bottom_safe_pad)
-
-	# Every noninteractive descendant is transparent to touch drags; buttons use
-	# PASS so mobile swipes can begin anywhere inside a card without dead zones.
-	LiveOpsUi.make_scroll_tree_touch_safe(body)
-
-	_scroll.scroll_started.connect(_on_scroll_started)
-	_scroll.scroll_ended.connect(_on_scroll_ended)
-
-	# Frame is drawn over only the noninteractive outer edge.
-	# All interactive content remains inset from its opaque ornament.
-	_chrome_frame = _texture(FRAME_ART)
-	_chrome_frame.name = "ExactTreasuryApprovedOrnamentalFrame"
-	_chrome_frame.stretch_mode = TextureRect.STRETCH_SCALE
-	_chrome_frame.visible = false
-	_chrome_frame.z_index = 2
-	add_child(_chrome_frame)
-
-	_close_button = _button("×", false)
-	_close_button.name = "CloseEventCenter"
-	_close_button.custom_minimum_size = Vector2(44.0, 44.0)
-	_close_button.size = Vector2(44.0, 44.0)
-	_close_button.add_theme_font_size_override("font_size", 29)
-	_close_button.add_theme_color_override("font_color", IVORY)
-	_close_button.add_theme_color_override("font_hover_color", GOLD_LIGHT)
-	_close_button.add_theme_color_override("font_pressed_color", GOLD_LIGHT)
-	for state: String in ["normal", "hover", "pressed", "focus", "disabled"]:
-		_close_button.add_theme_stylebox_override(state, StyleBoxEmpty.new())
-	_close_button.z_index = 3
-	_close_button.visible = false
-	_close_button.pressed.connect(_back)
-	add_child(_close_button)
-
-
-func _build_featured(parent: VBoxContainer) -> void:
-	var main := _panel_container(
-		"FeaturedSevenDays", Color(0.005, 0.050, 0.062, 0.98), GOLD, 16, 2
-	)
-	parent.add_child(main)
-
-	var content := VBoxContainer.new()
-	content.add_theme_constant_override("separation", 8)
-	_add_panel_margin(main, content, 11, 11, 11, 12)
-
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 9)
-	content.add_child(row)
-
-	_featured_tag = _badge("FEATURED EVENT", GOLD_LIGHT, Color(0.34, 0.18, 0.055, 0.96))
-	_featured_tag.custom_minimum_size = Vector2(139.0, 29.0)
-	row.add_child(_featured_tag)
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(spacer)
-	_event_status = _badge("EVENT ACTIVE", JADE, Color(0.018, 0.11, 0.11, 0.98))
-	_event_status.custom_minimum_size = Vector2(126.0, 29.0)
-	row.add_child(_event_status)
-
-	# Approved LAB V1.4: fill the complete banner with the original Seven Days
-	# image. Direct STRETCH_SCALE is intentional: the user prefers a slight
-	# aspect-ratio change over cropping, letterboxing, or panoramic edge artifacts.
-	_hero_stage = Control.new()
-	_hero_stage.name = "FullArtworkSafeBanner"
-	_hero_stage.custom_minimum_size.y = 220.0
-	_hero_stage.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_hero_stage.clip_contents = true
-	content.add_child(_hero_stage)
-	_hero_art = _texture(SEVEN_DAY_ART)
-	_hero_art.name = "ExistingSevenDayArtwork_StretchToFrame"
-	_hero_art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_hero_art.stretch_mode = TextureRect.STRETCH_SCALE
-	_hero_stage.add_child(_hero_art)
-	var hero_outline := Panel.new()
-	hero_outline.name = "FeaturedArtworkInsetGoldEdge"
-	hero_outline.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	hero_outline.add_theme_stylebox_override(
-		"panel", _panel(Color.TRANSPARENT, GOLD, 8, 1)
-	)
-	hero_outline.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_hero_stage.add_child(hero_outline)
-
-	_featured_title = _label(
-		"SEVEN DAYS OF ASCENSION",
-		23,
-		GOLD_LIGHT
-	)
-	_featured_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	content.add_child(_featured_title)
-
-	_featured_description = _label(
-		"Continue your cultivation journey and collect the rewards you have earned.",
-		15,
-		IVORY
-	)
-	_featured_description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	content.add_child(_featured_description)
-
-	_featured_action_row = GridContainer.new()
-	_featured_action_row.columns = 2
-	_featured_action_row.add_theme_constant_override("h_separation", 9)
-	_featured_action_row.add_theme_constant_override("v_separation", 8)
-	content.add_child(_featured_action_row)
-	_event_progress = _badge("CHECKING EVENT", IVORY, Color(0.008, 0.078, 0.083, 0.97))
-	_event_progress.custom_minimum_size = Vector2(158.0, 48.0)
-	_event_progress.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_featured_action_row.add_child(_event_progress)
-
-	var open := _button("OPEN EVENT  ›", true)
-	open.name = "OpenSevenDayEvent"
-	open.custom_minimum_size = Vector2(153.0, 48.0)
-	open.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_wire_navigation_button(open, "seven_day")
-	_featured_action_row.add_child(open)
-
-
-func _build_secondary(parent: VBoxContainer) -> void:
-	var heading_shell := PanelContainer.new()
-	heading_shell.name = "CultivationActivitiesHeading"
-	heading_shell.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	heading_shell.add_theme_stylebox_override(
-		"panel",
-		_panel(
-			Color(0.004, 0.025, 0.032, 0.84),
-			Color(GOLD.r, GOLD.g, GOLD.b, 0.72),
-			8,
-			1
-		)
-	)
-	parent.add_child(heading_shell)
-
-	var heading := _label("YOUR CULTIVATION ACTIVITIES", 16, GOLD_LIGHT)
-	heading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	heading.custom_minimum_size.y = 24.0
-	_add_panel_margin(heading_shell, heading, 9, 5, 9, 5)
-
-	_grid = GridContainer.new()
-	# The production frame caps content width at ~528 logical pixels.
-	# A single column prevents narrow card copy and orphan final cards.
-	_grid.columns = 1
-	_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_grid.add_theme_constant_override("h_separation", 12)
-	_grid.add_theme_constant_override("v_separation", 12)
-	parent.add_child(_grid)
-
-	var pilgrimage_event: Dictionary = _live_ops.call(
-		"get_event",
-		PILGRIMAGE_EVENT_ID
-	)
-	if not pilgrimage_event.is_empty():
-		_add_activity_card(
-			str(pilgrimage_event.get("title", "JADE VALLEY PILGRIMAGE")),
-			"JOURNEY EVENT",
-			str(
-				pilgrimage_event.get(
-					"description",
-					"Clear key trials across Verdant Qi Valley and claim pilgrimage offerings."
-				)
-			),
-			PILGRIMAGE_ICON,
-			GOLD,
-			"OPEN PILGRIMAGE  ›",
-			"pilgrimage"
-		)
-
-	var boss_hunt_event: Dictionary = _live_ops.call(
-		"get_event",
-		BOSS_HUNT_EVENT_ID
-	)
-	if not boss_hunt_event.is_empty():
-		_add_activity_card(
-			str(boss_hunt_event.get("title", "CELESTIAL BOSS HUNT")),
-			"BOSS HUNT EVENT",
-			str(
-				boss_hunt_event.get(
-					"description",
-					"Defeat the sovereign at the end of each realm and claim one-time celestial bounties."
-				)
-			),
-			PILGRIMAGE_ICON,
-			Color(0.96, 0.55, 0.28, 1.0),
-			"OPEN BOSS HUNT  ›",
-			"boss_hunt"
-		)
-	var ladder_event: Dictionary = _live_ops.call(
-		"get_event",
-		HEAVENLY_LADDER_EVENT_ID
-	)
-	if not ladder_event.is_empty():
-		_add_activity_card(
-			str(ladder_event.get("title", "HEAVENLY LADDER")),
-			"LADDER EVENT",
-			str(
-				ladder_event.get(
-					"description",
-					"Clear stages across every realm and ascend the Heavenly Ladder for one-time rewards."
-				)
-			),
-			PILGRIMAGE_ICON,
-			Color(0.58, 0.79, 1.0, 1.0),
-			"OPEN LADDER  ›",
-			"heavenly_ladder"
-		)
-	var treasure_event: Dictionary = _live_ops.call(
-		"get_event",
-		TREASURE_HUNT_EVENT_ID
-	)
-	if not treasure_event.is_empty():
-		_add_activity_card(
-			str(treasure_event.get("title", "CELESTIAL TREASURE HUNT")),
-			"TREASURE HUNT EVENT",
-			str(
-				treasure_event.get(
-					"description",
-					"Complete every stage in a realm to reveal its one-time celestial treasure cache."
-				)
-			),
-			PILGRIMAGE_ICON,
-			Color(0.95, 0.75, 0.31, 1.0),
-			"OPEN TREASURE HUNT  ›",
-			"treasure_hunt"
-		)
-	var five_elements_event: Dictionary = _live_ops.call(
-		"get_event",
-		FIVE_ELEMENTS_EVENT_ID
-	)
-	if not five_elements_event.is_empty():
-		_add_activity_card(
-			str(five_elements_event.get("title", "PATH OF FIVE ELEMENTS")),
-			"FIVE ELEMENTS EVENT",
-			str(
-				five_elements_event.get(
-					"description",
-					"Complete five elemental trials drawn from key Journey stages, then claim the convergence reward."
-				)
-			),
-			PILGRIMAGE_ICON,
-			Color(0.42, 0.90, 0.68, 1.0),
-			"OPEN FIVE ELEMENTS  ›",
-			"five_elements"
-		)
-	_add_activity_card("Jade Dragon Odyssey", "14-DAY CELESTIAL EXPEDITION", "Walk the celestial board. Earn the exclusive Heavenweaver Compass at 72 journeys.", DAILY_ICON, GOLD_LIGHT, "EXPLORE ODYSSEY  ›", "odyssey")
-	_add_activity_card(
-		"Daily Trials", "DAILY CULTIVATION", "Complete daily disciplines and collect available rewards.",
-		DAILY_ICON, JADE, "OPEN DAILY  ›", "daily"
-	)
-	_add_activity_card(
-		"Celestial Pavilion", "OPTIONAL ACTIVITIES", "Discover Pavilion services and optional rewarded activities.",
-		PAVILION_ICON, Color(0.58, 0.79, 1.0, 1.0), "OPEN PAVILION  ›", "pavilion"
-	)
-
-
-func _add_activity_card(
-	card_name: String,
-	eyebrow_text: String,
-	description_text: String,
-	_icon_art: Texture2D,
-	accent: Color,
-	cta_text: String,
-	preview_id: String
-) -> void:
-	var panel := _panel_container(
-		card_name,
-		Color(0.004, 0.038, 0.048, 0.985),
-		Color(accent.r, accent.g, accent.b, 0.78),
-		14,
-		2
-	)
-	panel.add_theme_stylebox_override(
-		"panel",
-		_panel(
-			Color(0.004, 0.038, 0.048, 0.985),
-			Color(accent.r, accent.g, accent.b, 0.78),
-			14,
-			2,
-			8
-		)
-	)
-	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_grid.add_child(panel)
-
-	var card_content := VBoxContainer.new()
-	card_content.add_theme_constant_override("separation", 7)
-	_add_panel_margin(panel, card_content, 11, 11, 11, 12)
-
-	panel.set_meta("event_identity",preview_id)
-	var art=EventBanner.new()
-	art.name="EventArtwork_"+preview_id
-	art.identity=preview_id
-	art.artwork=EventArt.texture_for(preview_id)
-	art.accent=accent
-	art.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-	card_content.add_child(art)
-	var identity:=VBoxContainer.new()
-	identity.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-	identity.add_theme_constant_override("separation",3)
-	card_content.add_child(identity)
-	var eyebrow := _label(eyebrow_text, 13, accent)
-	eyebrow.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	eyebrow.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	eyebrow.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	identity.add_child(eyebrow)
-
-	var title := _label(card_name.to_upper(), 20, GOLD_LIGHT)
-	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	title.max_lines_visible = -1
-	title.add_theme_color_override(
-		"font_shadow_color",
-		Color(0.0, 0.0, 0.0, 0.72)
-	)
-	title.add_theme_constant_override("shadow_offset_y", 1)
-	identity.add_child(title)
-
-	var description := _label(description_text, 15, IVORY)
-	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	description.custom_minimum_size.y = 48.0
-	description.max_lines_visible = -1
-	card_content.add_child(description)
-
-	# Status and CTA share a row at the approved portrait width; on
-	# narrower logical layouts _fit_layout stacks them for readability.
-	var action_row := GridContainer.new()
-	action_row.name = "EventCardActionRow"
-	action_row.columns = 2
-	action_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	action_row.add_theme_constant_override("h_separation", 9)
-	action_row.add_theme_constant_override("v_separation", 7)
-
-	var handle: Dictionary={"panel":panel,"art":art,"accent":accent}
-	var reward_ready: bool = false
-	var preview: Dictionary = _activity_progress_preview(preview_id)
-	if not preview.is_empty():
-		var current_value: int = int(preview.get("current", 0))
-		var total: int = int(preview.get("total", 0))
-		var ready_count: int = int(preview.get("ready", 0))
-		var complete: bool = bool(preview.get("complete", false))
-		reward_ready = ready_count > 0
-
-		var progress_text := _label(
-			tr("PROGRESS %d / %d") % [current_value, total],
-			13,
-			MUTED
-		)
-		progress_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		card_content.add_child(progress_text)
-
-		handle["progress"]=progress_text
-		handle["meter"]=LiveOpsUi.add_progress_meter(
-			card_content,
-			current_value,
-			total,
-			accent
-		)
-
-		var state_text: String = tr("IN PROGRESS")
-		var state_ink: Color = accent
-		var state_fill: Color = Color(0.008, 0.070, 0.076, 0.98)
-		if complete:
-			state_text = tr("COMPLETED")
-			state_ink = JADE
-			state_fill = Color(0.012, 0.105, 0.090, 0.98)
-		elif reward_ready:
-			state_text = tr("%d READY") % ready_count
-			state_ink = GOLD_LIGHT
-			state_fill = Color(0.25, 0.135, 0.035, 0.98)
-
-		var state := _badge(state_text, state_ink, state_fill)
-		state.custom_minimum_size = Vector2(0.0, 34.0)
-		state.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		state.size_flags_stretch_ratio = 0.95
-		action_row.add_child(state)
-		handle["status"]=state
-
-		if reward_ready:
-			panel.add_theme_stylebox_override(
-				"panel",
-				_panel(
-					Color(0.009, 0.050, 0.057, 0.99),
-					Color(GOLD_LIGHT.r, GOLD_LIGHT.g, GOLD_LIGHT.b, 0.88),
-					14,
-					2,
-					10
-				)
-			)
-
-	var cta := _button(cta_text, false)
-	cta.custom_minimum_size.y = 50.0
-	cta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cta.size_flags_stretch_ratio = 1.55
-	_style_activity_cta(cta, accent, reward_ready)
-	_wire_navigation_button(cta, preview_id)
-	action_row.add_child(cta)
-	card_content.add_child(action_row)
-	handle["cta"]=cta
-	_activity_handles[preview_id]=handle
-	art.claim_ready=reward_ready
-
-func _activity_progress_preview(preview_id: String) -> Dictionary:
-	if _live_ops == null:
-		return {}
-
-	match preview_id:
-		"pilgrimage":
-			var pilgrimage_ids: Array = _live_ops.call(
-				"get_pilgrimage_milestone_ids"
-			)
-			return {
-				"current": int(_live_ops.call("get_pilgrimage_unlocked_count")),
-				"total": pilgrimage_ids.size(),
-				"ready": int(_live_ops.call("get_pilgrimage_claimable_count")),
-				"complete": bool(_live_ops.call("is_pilgrimage_complete")),
-			}
-		"boss_hunt":
-			var boss_ids: Array = _live_ops.call("get_boss_hunt_milestone_ids")
-			var boss_claimed: int = int(
-				_live_ops.call("get_boss_hunt_claimed_count")
-			)
-			return {
-				"current": int(_live_ops.call("get_boss_hunt_unlocked_count")),
-				"total": boss_ids.size(),
-				"ready": int(_live_ops.call("get_boss_hunt_claimable_count")),
-				"complete": (
-					boss_claimed == boss_ids.size()
-					and not boss_ids.is_empty()
-				),
-			}
-		"heavenly_ladder":
-			return {
-				"current": int(
-					_live_ops.call("get_heavenly_ladder_cleared_stage_count")
-				),
-				"total": int(
-					_live_ops.call("get_heavenly_ladder_total_stage_count")
-				),
-				"ready": int(
-					_live_ops.call("get_heavenly_ladder_claimable_count")
-				),
-				"complete": bool(
-					_live_ops.call("is_heavenly_ladder_complete")
-				),
-			}
-		"treasure_hunt":
-			var treasure_ids: Array = _live_ops.call(
-				"get_treasure_hunt_cache_ids"
-			)
-			return {
-				"current": int(_live_ops.call("get_treasure_hunt_unlocked_count")),
-				"total": treasure_ids.size(),
-				"ready": int(_live_ops.call("get_treasure_hunt_claimable_count")),
-				"complete": bool(_live_ops.call("is_treasure_hunt_complete")),
-			}
-		"five_elements":
-			var element_ids: Array = _live_ops.call("get_five_elements_trial_ids")
-			return {
-				"current": int(_live_ops.call("get_five_elements_unlocked_count")),
-				"total": element_ids.size(),
-				"ready": int(_live_ops.call("get_five_elements_claimable_count")),
-				"complete": bool(_live_ops.call("is_five_elements_complete")),
-			}
-		_:
-			return {}
-
-
-func _style_activity_cta(
-	button: Button,
-	accent: Color,
-	reward_ready: bool
-) -> void:
-	var edge: Color = GOLD_LIGHT if reward_ready else accent
-	var normal_fill := Color(0.004, 0.058, 0.067, 0.99)
-	if reward_ready:
-		normal_fill = Color(0.105, 0.066, 0.018, 0.99)
-
-	button.add_theme_color_override(
-		"font_color",
-		GOLD_LIGHT if reward_ready else IVORY
-	)
-	button.add_theme_color_override("font_hover_color", GOLD_LIGHT)
-	button.add_theme_color_override("font_pressed_color", GOLD_LIGHT)
-	button.add_theme_stylebox_override(
-		"normal",
-		_panel(
-			normal_fill,
-			Color(edge.r, edge.g, edge.b, 0.88),
-			9,
-			2,
-			5
-		)
-	)
-	button.add_theme_stylebox_override(
-		"hover",
-		_panel(
-			Color(0.012, 0.112, 0.105, 1.0),
-			Color(edge.r, edge.g, edge.b, 1.0),
-			9,
-			2,
-			7
-		)
-	)
-	button.add_theme_stylebox_override(
-		"pressed",
-		_panel(
-			Color(0.001, 0.030, 0.038, 1.0),
-			Color(edge.r, edge.g, edge.b, 0.92),
-			9,
-			2,
-			1
-		)
-	)
-
-	_apply_material_button(button,accent,reward_ready)
-
+ if what==NOTIFICATION_TRANSLATION_CHANGED and is_inside_tree() and is_instance_valid(_popup):_refresh_event_status();_fit_layout()
+func _process(delta: float) -> void:
+ _refresh_elapsed+=delta
+ if _refresh_elapsed>=1.0:_refresh_elapsed=0.0;_refresh_event_status()
+func _label(text: String,font_size: int,color: Color=HubStyle.TEXT,display: bool=false) -> Label:
+ var label:=Label.new();label.text=text;label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;label.mouse_filter=Control.MOUSE_FILTER_IGNORE
+ label.add_theme_font_size_override("font_size",font_size);label.add_theme_color_override("font_color",color)
+ if display:label.add_theme_font_override("font",HubStyle.DISPLAY)
+ return label
+func _margin(parent: Node,amount: int) -> MarginContainer:
+ var margin:=MarginContainer.new()
+ for side: String in ["left","right","top","bottom"]:margin.add_theme_constant_override("margin_"+side,amount)
+ parent.add_child(margin);return margin
+func _pill(parent: Node) -> PanelContainer:
+ var pill:=PanelContainer.new();pill.add_theme_stylebox_override("panel",HubStyle.panel(Color(.015,.10,.07,.92),Color(.44,.51,.28,.6),5));parent.add_child(pill);return pill
+func _texture(image: Texture2D) -> TextureRect:
+ var texture:=TextureRect.new();texture.texture=image;texture.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
+ texture.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_COVERED;texture.mouse_filter=Control.MOUSE_FILTER_IGNORE
+ return texture
+func _build() -> void:
+ var scrim:=ColorRect.new();scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);scrim.color=Color(.005,.018,.014,.77);scrim.mouse_filter=Control.MOUSE_FILTER_IGNORE;add_child(scrim)
+ _popup=PanelContainer.new();_popup.name="CelestialEventsProductionPopup";_popup.add_theme_stylebox_override("panel",HubStyle.panel(Color("061d18"),HubStyle.GOLD,16));add_child(_popup)
+ var body:=VBoxContainer.new();body.add_theme_constant_override("separation",12);_margin(_popup,16).add_child(body)
+ var heading:=HBoxContainer.new();heading.add_theme_constant_override("separation",10);body.add_child(heading)
+ var titles:=VBoxContainer.new();titles.size_flags_horizontal=Control.SIZE_EXPAND_FILL;heading.add_child(titles)
+ var eyebrow: Label=_label("JADE ASCENDANT",12,HubStyle.JADE);titles.add_child(eyebrow)
+ _header_title=_label("",32,HubStyle.CREAM,true);titles.add_child(_header_title)
+ _subtitle=_label("",15,HubStyle.MUTED);titles.add_child(_subtitle)
+ _close_button=Button.new();_close_button.text="×";_close_button.custom_minimum_size=Vector2(48,48);_close_button.size_flags_vertical=Control.SIZE_SHRINK_BEGIN
+ _close_button.add_theme_font_size_override("font_size",27);HubStyle.button(_close_button);heading.add_child(_close_button);_close_button.pressed.connect(_back)
+ var filter_row:=HBoxContainer.new();filter_row.add_theme_constant_override("separation",8);body.add_child(filter_row)
+ for key: String in ["all","limited","progress"]:
+  var tab:=Button.new();tab.name="Filter_"+key;tab.custom_minimum_size.y=44;tab.size_flags_horizontal=Control.SIZE_EXPAND_FILL;tab.add_theme_font_size_override("font_size",15);HubStyle.button(tab)
+  filter_row.add_child(tab);_filters[key]=tab;tab.pressed.connect(_set_filter.bind(key))
+ _scroll=ScrollContainer.new();_scroll.name="EventList";_scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL
+ _scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;_scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_SHOW_NEVER;_scroll.follow_focus=false
+ body.add_child(_scroll);_scroll.scroll_started.connect(_on_scroll_started);_scroll.scroll_ended.connect(_on_scroll_ended)
+ var list:=VBoxContainer.new();list.size_flags_horizontal=Control.SIZE_EXPAND_FILL;list.add_theme_constant_override("separation",12);_scroll.add_child(list)
+ _build_hero(list)
+ var section:=HBoxContainer.new();section.name="EventSection";list.add_child(section)
+ _section_title=_label("",17,HubStyle.CREAM,true);_section_title.size_flags_horizontal=Control.SIZE_EXPAND_FILL;section.add_child(_section_title)
+ _ready_count=_label("",13,HubStyle.JADE);_ready_count.autowrap_mode=TextServer.AUTOWRAP_OFF;_ready_count.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;section.add_child(_ready_count)
+ for key: String in Catalog.IDS:_build_row(list,key)
+func _build_hero(parent: Node) -> void:
+ _hero_stage=PanelContainer.new();_hero_stage.name="FeaturedOdyssey";_hero_stage.clip_contents=true;_hero_stage.add_theme_stylebox_override("panel",HubStyle.panel(Color("0b2d22"),HubStyle.GOLD,12));parent.add_child(_hero_stage)
+ var art: TextureRect=_texture(HERO);art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);_hero_stage.add_child(art)
+ # A bottom fade leaves the dragon visible and reserves a quiet reading surface.
+ var gradient:=Gradient.new();gradient.set_color(0,Color(0,.035,.02,.04));gradient.set_color(1,Color(.006,.06,.035,.99));gradient.add_point(.44,Color(.004,.04,.02,.1));gradient.add_point(.72,Color(.005,.05,.03,.86))
+ var fade:=GradientTexture2D.new();fade.gradient=gradient;fade.fill_from=Vector2(.5,0);fade.fill_to=Vector2(.5,1)
+ var veil: TextureRect=_texture(fade);veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);_hero_stage.add_child(veil)
+ var stack:=VBoxContainer.new();stack.add_theme_constant_override("separation",8);_margin(_hero_stage,18).add_child(stack)
+ var ribbon:=HBoxContainer.new();ribbon.add_theme_constant_override("separation",8);stack.add_child(ribbon)
+ _hero_tag=_label("",12,HubStyle.CREAM);_hero_tag.autowrap_mode=TextServer.AUTOWRAP_OFF;_hero_tag.size_flags_horizontal=Control.SIZE_EXPAND_FILL;_margin(_pill(ribbon),6).add_child(_hero_tag)
+ var ribbon_space:=Control.new();ribbon_space.mouse_filter=Control.MOUSE_FILTER_IGNORE;ribbon_space.size_flags_horizontal=Control.SIZE_EXPAND_FILL;ribbon.add_child(ribbon_space)
+ _event_status=_label("",13,HubStyle.JADE);_event_status.autowrap_mode=TextServer.AUTOWRAP_OFF;_event_status.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;_margin(_pill(ribbon),6).add_child(_event_status)
+ _hero_title=_label("Jade Dragon\nOdyssey",38,HubStyle.CREAM,true);stack.add_child(_hero_title)
+ _hero_description=_label("",15,HubStyle.TEXT);_hero_description.custom_minimum_size.x=0;stack.add_child(_hero_description)
+ var space:=Control.new();space.mouse_filter=Control.MOUSE_FILTER_IGNORE;space.custom_minimum_size.y=65;space.size_flags_vertical=Control.SIZE_EXPAND_FILL;stack.add_child(space)
+ _hero_actions=GridContainer.new();_hero_actions.columns=2;_hero_actions.add_theme_constant_override("h_separation",14);_hero_actions.add_theme_constant_override("v_separation",8);stack.add_child(_hero_actions)
+ var reward_stack:=VBoxContainer.new();reward_stack.size_flags_horizontal=Control.SIZE_EXPAND_FILL;_hero_actions.add_child(reward_stack)
+ var reward_caption: Label=_label("",11,HubStyle.MUTED);reward_caption.name="JourneyRewardsCaption";reward_stack.add_child(reward_caption)
+ _hero_rewards=HBoxContainer.new();_hero_rewards.add_theme_constant_override("separation",10);reward_stack.add_child(_hero_rewards)
+ for key: String in ["compass","celestial_jade","pavilion_seal"]:
+  var icon: TextureRect=_texture(ICONS[key]);icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;icon.custom_minimum_size=Vector2(38,38);_hero_rewards.add_child(icon)
+ var journey_stack:=VBoxContainer.new();journey_stack.size_flags_horizontal=Control.SIZE_EXPAND_FILL;_hero_actions.add_child(journey_stack)
+ _event_progress=_label("",13,HubStyle.CREAM);journey_stack.add_child(_event_progress)
+ _hero_meter=HubStyle.meter();journey_stack.add_child(_hero_meter)
+ _hero_action=Button.new();_hero_action.name="ContinueJourney";_hero_action.custom_minimum_size=Vector2(0,54);_hero_action.add_theme_font_size_override("font_size",16);HubStyle.button(_hero_action,true);journey_stack.add_child(_hero_action);_wire_navigation_button(_hero_action,"odyssey")
+func _build_row(parent: Node,key: String) -> void:
+ var card:=PanelContainer.new();card.name="Event_"+key;card.custom_minimum_size.y=148;card.clip_contents=true
+ card.add_theme_stylebox_override("panel",HubStyle.panel(Color("0a2b23"),Color("4a644b"),10));parent.add_child(card)
+ var row:=HBoxContainer.new();row.add_theme_constant_override("separation",12);_margin(card,10).add_child(row)
+ var picture: Texture2D=load("res://assets/ui/liveops/seven_day/seven_day_ascension_hero_portrait_bg.png") if key=="seven_day" else EventArt.texture_for(key)
+ var art: TextureRect=_texture(picture);art.custom_minimum_size=Vector2(128,0);art.clip_contents=true;row.add_child(art)
+ var text_stack:=VBoxContainer.new();text_stack.size_flags_horizontal=Control.SIZE_EXPAND_FILL;text_stack.add_theme_constant_override("separation",4);row.add_child(text_stack)
+ var title_label: Label=_label("",23,HubStyle.CREAM,true);text_stack.add_child(title_label)
+ var description_label: Label=_label("",14,HubStyle.MUTED);text_stack.add_child(description_label)
+ var status_label: Label=_label("",13,HubStyle.JADE);text_stack.add_child(status_label)
+ var meter: ProgressBar=HubStyle.meter();text_stack.add_child(meter)
+ var reward_label: Label=_label("",13,HubStyle.CREAM);text_stack.add_child(reward_label)
+ var arrow:=Button.new();arrow.name="OpenEvent";arrow.text="›";arrow.custom_minimum_size=Vector2(48,48);arrow.size_flags_vertical=Control.SIZE_SHRINK_CENTER;arrow.add_theme_font_size_override("font_size",30);HubStyle.button(arrow);row.add_child(arrow)
+ # One hit target across the whole row; decorations and arrow never own a second callback.
+ arrow.mouse_filter=Control.MOUSE_FILTER_IGNORE
+ var hit:=Button.new();hit.name="EventHitTarget";hit.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);hit.flat=true;hit.focus_mode=Control.FOCUS_NONE
+ for state_name: String in ["normal","hover","pressed","focus"]:hit.add_theme_stylebox_override(state_name,StyleBoxEmpty.new())
+ card.add_child(hit);_wire_navigation_button(hit,key)
+ _activity_handles[key]={"card":card,"title":title_label,"description":description_label,"status":status_label,"meter":meter,"reward":reward_label,"cta":arrow,"hit":hit,"art":art}
+func _refresh_from_signal(_first: Variant=null,_second: Variant=null,_third: Variant=null) -> void:_refresh_event_status()
 func _refresh_event_status() -> void:
-	if _event_status == null or _event_progress == null:
-		return
-	if _live_ops == null:
-		return
-
-	var featured_event: Dictionary = _live_ops.call(
-		"get_event",
-		FEATURED_EVENT_ID
-	)
-	if featured_event.is_empty():
-		push_error(
-			"EventCenterScreen: featured event catalog entry is missing."
-		)
-		return
-
-	if is_instance_valid(_featured_title):
-		_featured_title.text = tr(
-			str(featured_event.get("title", ""))
-		)
-	if is_instance_valid(_featured_description):
-		_featured_description.text = tr(
-			str(featured_event.get("description", ""))
-		)
-
-	var day_count: int = int(_live_ops.get_active_login_day_count())
-	var total: int = int(_live_ops.LOGIN_DAY_COUNT)
-	var claimable: int = int(_live_ops.get_login_claimable_count())
-	_refresh_activity_handles()
-	_event_progress.text = tr("DAY %d / %d") % [day_count, total]
-	if bool(_live_ops.is_new_player_event_complete()):
-		_event_status.text = tr("NEXT CYCLE TOMORROW")
-	elif claimable > 0:
-		_event_status.text = tr("%d READY") % claimable
-	else:
-		_event_status.text = tr("IN PROGRESS")
-
-
-func _wire_navigation_button(button: Button, id: String) -> void:
-	button.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
-	button.keep_pressed_outside = false
-	button.mouse_filter = Control.MOUSE_FILTER_PASS
-	button.button_down.connect(_record_button_down.bind(id))
-	button.pressed.connect(_open_destination.bind(id))
-
-
+ if not is_instance_valid(_header_title):return
+ _header_title.text=Catalog.copy("CELESTIAL EVENTS","EVENT SURGAWI");_subtitle.text=Catalog.copy("Your next adventure starts here.","Petualangan berikutmu dimulai di sini.")
+ _close_button.tooltip_text=Catalog.copy("Close events","Tutup event")
+ for entry: Array in [["all","ALL","SEMUA"],["limited","LIMITED","TERBATAS"],["progress","PROGRESS","PROGRES"]]:
+  var tab: Button=_filters[entry[0]];tab.text=Catalog.copy(entry[1],entry[2]);tab.modulate=Color.WHITE if _filter==entry[0] else Color(.72,.82,.76)
+ _section_title.text=Catalog.copy("YOUR EVENTS","EVENT KAMU")
+ var total_ready: int=ActionDot.count(self,"all_events")
+ _ready_count.text=Catalog.copy("%d READY","%d TERSEDIA")%total_ready if total_ready>0 else Catalog.copy("KEEP EXPLORING","TERUS JELAJAHI")
+ for key: String in _activity_handles:
+  var item: Dictionary=_activity_handles[key];var data: Dictionary=Catalog.preview(self,key);var ready_count: int=ActionDot.count(self,key)
+  item.title.text=Catalog.title(key);item.description.text=Catalog.description(key)
+  item.status.text=Catalog.copy("%d READY TO CLAIM","%d SIAP DIKLAIM")%ready_count if ready_count>0 else (Catalog.copy("COMPLETED","SELESAI") if data.complete else Catalog.copy("PROGRESS %d / %d","PROGRES %d / %d")%[data.current,data.total])
+  item.status.add_theme_color_override("font_color",HubStyle.CREAM if ready_count>0 else HubStyle.JADE)
+  item.meter.max_value=maxi(1,int(data.total));item.meter.value=data.current
+  item.reward.text=_reward_text(data.reward);item.reward.visible=not item.reward.text.is_empty()
+  item.cta.tooltip_text=Catalog.copy("Open ","Buka ")+Catalog.title(key);item.hit.tooltip_text=item.cta.tooltip_text
+  ActionDot.show_on(item.cta,ready_count)
+ _refresh_odyssey()
+func _refresh_activity_handles() -> void:_refresh_event_status()
+func _reward_text(reward: Dictionary) -> String:
+ var parts: PackedStringArray=[]
+ for entry: Array in [["spirit_stone","Spirit Stones"],["celestial_jade","Celestial Jade"],["pavilion_seal","Pavilion Seal"]]:
+  var amount: int=int(reward.get(entry[0],0))
+  if amount>0:parts.append("%d %s"%[amount,entry[1]])
+ return Catalog.copy("Next: ","Berikut: ")+"  ·  ".join(parts) if not parts.is_empty() else ""
+func _refresh_odyssey() -> void:
+ var client: Node=get_node_or_null("/root/OdysseyClient");var snapshot: Dictionary=client.snapshot if client!=null else {}
+ var event: Dictionary=snapshot.get("event",{}) if snapshot.get("event") is Dictionary else {};var state: Dictionary=snapshot.get("state",{})
+ var now: float=client.server_time() if client!=null else 0.0
+ _hero_tag.text=Catalog.copy("LIMITED EVENT","EVENT TERBATAS");_hero_description.text=Catalog.copy("Roll the dice. Explore the celestial isles.","Lempar dadu. Jelajahi kepulauan surgawi.")
+ _hero_rewards.get_parent().get_node("JourneyRewardsCaption").text=Catalog.copy("EVENT REWARDS","HADIAH EVENT")
+ _event_progress.text=Catalog.copy("%d / 72 journeys","%d / 72 perjalanan")%int(state.get("rolls",0));_hero_meter.max_value=72;_hero_meter.value=int(state.get("rolls",0))
+ _hero_action.text=Catalog.copy("CONTINUE JOURNEY","LANJUTKAN PERJALANAN") if not event.is_empty() and bool(event.get("enabled",false)) and now>=float(event.get("starts_at",0)) and now<float(event.get("ends_at",0)) else Catalog.copy("VIEW EVENT","LIHAT EVENT")
+ _event_status.text=_odyssey_status(event,now)
+ ActionDot.show_on(_hero_action,ActionDot.count(self,"odyssey"))
+func _odyssey_status(event: Dictionary,now: float) -> String:
+ if event.is_empty():return Catalog.copy("AWAITING SEASON","MENUNGGU MUSIM")
+ if not bool(event.get("enabled",false)):return Catalog.copy("PAUSED","DIJEDA")
+ var starts: float=float(event.get("starts_at",0));var ends: float=float(event.get("ends_at",0))
+ if now<starts:return Catalog.copy("STARTS IN ","MULAI ")+_duration(starts-now)
+ if now<ends:return _duration(ends-now)+Catalog.copy(" LEFT"," LAGI")
+ if now<ends+259200:return Catalog.copy("CLAIM REWARDS","KLAIM HADIAH")
+ return Catalog.copy("SEASON ENDED","MUSIM BERAKHIR")
+func _duration(seconds: float) -> String:
+ if seconds>=86400:return Catalog.copy("%d DAYS","%d HARI")%int(ceil(seconds/86400))
+ if seconds>=3600:return Catalog.copy("%d HOURS","%d JAM")%int(ceil(seconds/3600))
+ return Catalog.copy("%d MIN","%d MNT")%maxi(1,int(ceil(seconds/60)))
+func _set_filter(key: String) -> void:
+ if _dragging or Time.get_ticks_msec()<_tap_guard_until or _filter==key:return
+ _filter=key;_scroll.scroll_vertical=0;_hero_stage.visible=key!="progress"
+ _section_title.get_parent().visible=key!="limited"
+ for id: String in _activity_handles:_activity_handles[id].card.visible=key!="limited" and (key!="progress" or id!="pavilion")
+ _refresh_event_status()
+func _fit_layout() -> void:
+ if not is_instance_valid(_popup):return
+ var popup_size:=Vector2(minf(maxf(size.x-16,280),760),maxf(size.y-20,240))
+ _popup.size=popup_size;_popup.position=(size-popup_size)*.5
+ var compact: bool=popup_size.x<430
+ _header_title.add_theme_font_size_override("font_size",23 if compact else 32)
+ _subtitle.add_theme_font_size_override("font_size",13 if compact else 15)
+ _hero_title.add_theme_font_size_override("font_size",29 if compact else 38)
+ _hero_stage.custom_minimum_size.y=360 if compact else 400
+ _hero_actions.columns=1 if compact else 2
+ for key: String in _activity_handles:
+  var item: Dictionary=_activity_handles[key];item.art.custom_minimum_size.x=68 if compact else 128
+  item.title.add_theme_font_size_override("font_size",19 if compact else 23)
+  item.description.visible=not compact
+  item.reward.add_theme_font_size_override("font_size",12 if compact else 13)
+  item.card.custom_minimum_size.y=132 if compact else 148
+func _wire_navigation_button(button: Button,id: String) -> void:
+ button.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE;button.keep_pressed_outside=false;button.mouse_filter=Control.MOUSE_FILTER_PASS
+ button.button_down.connect(_record_button_down.bind(id));button.pressed.connect(_open_destination.bind(id))
 func _record_button_down(id: String) -> void:
-	if is_instance_valid(_scroll):
-		_press_scroll_y[id] = _scroll.scroll_vertical
-
+ _press_scroll_y[id]=_scroll.scroll_vertical;_press_positions[id]=get_global_mouse_position()
+func _on_scroll_started() -> void:_dragging=true;_tap_guard_until=Time.get_ticks_msec()+190
+func _on_scroll_ended() -> void:_dragging=false;_tap_guard_until=Time.get_ticks_msec()+190
+func _back() -> void:
+ if _navigating:return
+ _navigating=true;LiveOpsUi.return_home(self)
+func _unhandled_key_input(event: InputEvent) -> void:
+ if event.is_action_pressed("ui_cancel"):get_viewport().set_input_as_handled();_back()
 
 func _open_destination(id: String) -> void:
-	var before: int = int(_press_scroll_y.get(id, -1))
-	_press_scroll_y.erase(id)
-	if _dragging or Time.get_ticks_msec() < _tap_guard_until:
-		return
-	if before >= 0 and absi(_scroll.scroll_vertical - before) >= SCROLL_DEADZONE:
-		return
+ if _navigating or SceneTransitionManager.is_transitioning:return
+ var moved: bool=_press_positions.has(id) and get_global_mouse_position().distance_to(_press_positions[id])>=SCROLL_DEADZONE
+ _press_positions.erase(id)
+ if moved:return
+ var before: int = int(_press_scroll_y.get(id, -1))
+ _press_scroll_y.erase(id)
+ if _dragging or Time.get_ticks_msec() < _tap_guard_until:
+  return
+ if before >= 0 and absi(_scroll.scroll_vertical - before) >= SCROLL_DEADZONE:
+  return
 
-	var scene_path: String = ""
-	var event_id: String = ""
-	match id:
-		"seven_day":
-			event_id = FEATURED_EVENT_ID
-		"pilgrimage":
-			event_id = PILGRIMAGE_EVENT_ID
-		"boss_hunt":
-			event_id = BOSS_HUNT_EVENT_ID
-		"heavenly_ladder":
-			event_id = HEAVENLY_LADDER_EVENT_ID
-		"treasure_hunt":
-			event_id = TREASURE_HUNT_EVENT_ID
-		"five_elements":
-			event_id = FIVE_ELEMENTS_EVENT_ID
-		"odyssey":
-			scene_path = "res://scenes/ui/odyssey_screen.tscn"
-		"daily":
-			scene_path = DAILY_SCENE
-		"pavilion":
-			scene_path = PAVILION_SCENE
-		_:
-			return
+ var scene_path: String = ""
+ var event_id: String = ""
+ match id:
+  "seven_day":
+   event_id = FEATURED_EVENT_ID
+  "pilgrimage":
+   event_id = PILGRIMAGE_EVENT_ID
+  "boss_hunt":
+   event_id = BOSS_HUNT_EVENT_ID
+  "heavenly_ladder":
+   event_id = HEAVENLY_LADDER_EVENT_ID
+  "treasure_hunt":
+   event_id = TREASURE_HUNT_EVENT_ID
+  "five_elements":
+   event_id = FIVE_ELEMENTS_EVENT_ID
+  "odyssey":
+   scene_path = "res://scenes/ui/odyssey_screen.tscn"
+  "daily":
+   scene_path = DAILY_SCENE
+  "pavilion":
+   scene_path = PAVILION_SCENE
+  _:
+   return
 
-	if not event_id.is_empty():
-		if _live_ops == null:
-			return
-		var event: Dictionary = _live_ops.call(
-			"get_event",
-			event_id
-		)
-		scene_path = str(
-			event.get("scene_path", "")
-		).strip_edges()
+ if not event_id.is_empty():
+  if _live_ops == null:
+   return
+  var event: Dictionary = _live_ops.call(
+   "get_event",
+   event_id
+  )
+  scene_path = str(
+   event.get("scene_path", "")
+  ).strip_edges()
 
-	if (
-		scene_path.is_empty()
-		or not ResourceLoader.exists(scene_path, "PackedScene")
-	):
-		push_error(
-			"EventCenterScreen: destination scene is unavailable for " + id
-		)
-		return
+ if (
+  scene_path.is_empty()
+  or not ResourceLoader.exists(scene_path, "PackedScene")
+ ):
+  push_error(
+   "EventCenterScreen: destination scene is unavailable for " + id
+  )
+  return
 
-	# Seven Days remains a popup when Event Center was opened from Home.
-	# For other destinations retain the existing lightweight menu transition.
-	if (
-		bool(get_meta("liveops_popup", false))
-		and id in ["seven_day", "pilgrimage", "boss_hunt"]
-	):
-		if _live_ops != null and _live_ops.has_method("open_live_popup"):
-			_live_ops.call("open_live_popup", scene_path)
-			return
+ _navigating=true
+ # Seven Days remains a popup when Event Center was opened from Home.
+ # For other destinations retain the existing lightweight menu transition.
+ if (
+  bool(get_meta("liveops_popup", false))
+  and id in ["seven_day", "pilgrimage", "boss_hunt"]
+ ):
+  if _live_ops != null and _live_ops.has_method("open_live_popup"):
+   _live_ops.call("open_live_popup", scene_path)
+   return
 
-	if SceneTransitionManager.is_transitioning:
-		return
-	var change_error: Error = SceneTransitionManager.transition_menu_to(
-		scene_path, 1
-	)
-	if change_error != OK:
-		push_error(
-			"EventCenterScreen: gagal membuka scene. Error code: "
-			+ str(change_error)
-		)
-
-
-func _on_scroll_started() -> void:
-	_dragging = true
-	_tap_guard_until = Time.get_ticks_msec() + SCROLL_GUARD_MS
-
-
-func _on_scroll_ended() -> void:
-	_dragging = false
-	_tap_guard_until = Time.get_ticks_msec() + SCROLL_GUARD_MS
-
-
-func _fit_layout() -> void:
-	if not is_instance_valid(_popup) or size.x < 1.0 or size.y < 1.0:
-		return
-	_popup.visible = false
-	_chrome_mask.visible = false
-	_chrome_frame.visible = false
-	_close_button.visible = false
-
-	var compact: bool = size.x < 500.0
-	var popup_w: float = minf(size.x - 14.0, 640.0)
-	var popup_h: float = minf(size.y - 40.0, 1020.0)
-	_popup.position = Vector2((size.x - popup_w) * 0.5, (size.y - popup_h) * 0.5)
-	_popup.size = Vector2(popup_w, popup_h)
-
-	# The approved frame has a narrow closed interior. Keep EVERY interactive
-	# child within it; the custom background is masked to that same silhouette.
-	var safe_x: int = ceili(maxf(27.0, popup_w * 0.087))
-	var safe_top: int = ceili(maxf(74.0, popup_h * 0.132))
-	var safe_bottom: int = ceili(maxf(76.0, popup_h * 0.107))
-	_body_margin.add_theme_constant_override("margin_left", safe_x)
-	_body_margin.add_theme_constant_override("margin_right", safe_x)
-	_body_margin.add_theme_constant_override("margin_top", safe_top)
-	_body_margin.add_theme_constant_override("margin_bottom", safe_bottom)
-
-	# Preserve the one-column card layout at the 648px logical viewport.
-	_grid.columns = 1
-	_featured_action_row.columns = 1 if compact else 2
-	var footer := _scroll.find_child(
-		"EventCenterFooter",
-		true,
-		false
-	) as Label
-	if footer != null:
-		footer.visible = not compact
-	# Production readability raises 13px badges to 15px. Author at that
-	# final size in the LAB and reserve real widths for every status value.
-	_featured_tag.text = tr("FEATURED") if compact else tr("FEATURED EVENT")
-	_featured_tag.custom_minimum_size.x = 92.0 if compact else 155.0
-	_event_status.custom_minimum_size.x = 122.0 if compact else 126.0
-	var ribbon_row: HBoxContainer = _featured_tag.get_parent() as HBoxContainer
-	if ribbon_row != null:
-		ribbon_row.add_theme_constant_override("separation", 5 if compact else 9)
-
-	var inner_w: float = popup_w - float(safe_x) * 2.0
-	# Only the card status/CTA reflows: no event state or navigation changes.
-	var action_columns: int = 2 if inner_w >= 420.0 else 1
-	for card: Node in _grid.get_children():
-		var art: Control=card.find_child("EventArtwork_*",true,false)
-		if art!=null: art.custom_minimum_size.y=clampf(inner_w*0.40,110.0,195.0)
-		var actions := card.find_child("EventCardActionRow", true, false) as GridContainer
-		if actions != null and actions.columns != action_columns:
-			actions.columns = action_columns
-	var target_title_font: int = 22 if compact else 28
-	if _header_title.get_theme_font_size("font_size") != target_title_font:
-		_header_title.add_theme_font_size_override("font_size", target_title_font)
-	_header_title.size = Vector2(inner_w, 40.0)
-	var eye := _header.get_node_or_null("EventEyebrow") as Label
-	if eye != null:
-		eye.text = (
-			tr("JADE ASCENDANT  /  EVENTS")
-			if compact else tr("JADE ASCENDANT  /  LIVE EVENTS")
-		)
-		eye.size.x = inner_w
-	var divider := _header.get_node_or_null("HeaderSeparator") as HSeparator
-	if divider != null:
-		divider.size.x = inner_w
-
-	# Keep the approved banner height, layout and scroll behavior unchanged.
-	# Only the picture-fitting policy above changes in V1.4.
-	var source_size: Vector2i = SEVEN_DAY_ART.get_size()
-	var source_ratio: float = float(source_size.y) / maxf(float(source_size.x), 1.0)
-	var hero_available_w: float = maxf(inner_w - 26.0, 1.0)
-	var hero_h: float = clampf(
-		hero_available_w * source_ratio,
-		196.0 if compact else 240.0,
-		260.0 if compact else 355.0
-	)
-	_hero_stage.custom_minimum_size.y = hero_h
-
-	_layout_generation += 1
-	call_deferred("_settle_popup_height", _layout_generation)
-
-
-func _settle_popup_height(expected_generation: int) -> void:
-	if not is_inside_tree(): return
-	var tree: SceneTree = get_tree()
-	if tree == null:
-		return
-	await tree.process_frame
-	if not is_inside_tree() or expected_generation != _layout_generation:
-		return
-	if not is_instance_valid(_popup) or not is_instance_valid(_scroll):
-		return
-	# Reapply width AFTER responsive rows settle. Setting it before changing
-	# their columns can clamp against the old wide minimum and crop phones.
-	_popup.size.x=minf(size.x-14.0,640.0)
-	_popup.position.x=(size.x-_popup.size.x)*0.5
-	await tree.process_frame
-	if not is_inside_tree() or expected_generation!=_layout_generation: return
-	if not is_instance_valid(_popup) or not is_instance_valid(_scroll): return
-	var body: Control = _scroll.get_child(0) as Control
-	if body == null:
-		return
-	var desired_body_height: float = body.get_combined_minimum_size().y
-	var safe_top: float = float(_body_margin.get_theme_constant("margin_top"))
-	var safe_bottom: float = float(_body_margin.get_theme_constant("margin_bottom"))
-	var required_height: float = (
-		_header.custom_minimum_size.y + 9.0 + safe_top
-		+ safe_bottom + desired_body_height + 6.0
-	)
-	var viewport_cap: float = minf(maxf(size.y - 40.0, 1.0), 1020.0)
-	var target_height: float = minf(viewport_cap, maxf(required_height, 340.0))
-	_popup.size.y = target_height
-	_popup.position.y = (size.y - target_height) * 0.5
-
-	# Frame AND background use the exact same rect/stretch. Never leave the
-	# old rectangular shadow sticking outside the ornamental alpha silhouette.
-	_chrome_mask.position = _popup.position
-	_chrome_mask.size = _popup.size
-	_chrome_frame.position = _popup.position
-	_chrome_frame.size = _popup.size
-	_close_button.position = (
-		_popup.position
-		+ Vector2(_popup.size.x * 0.908 - 22.0, _popup.size.y * 0.084 - 22.0)
-	)
-
-	_popup.visible = true
-	_chrome_mask.visible = true
-	_chrome_frame.visible = true
-	_close_button.visible = true
-
-
-func _unhandled_key_input(event: InputEvent) -> void:
-	if not event.is_action_pressed("ui_cancel"):
-		return
-	get_viewport().set_input_as_handled()
-	_back()
-
-
-func _back() -> void:
-	LiveOpsUi.return_home(self)
-
-
-func _add_panel_margin(
-	parent: PanelContainer,
-	child: Control,
-	left: int,
-	top: int,
-	right: int,
-	bottom: int
-) -> void:
-	var m := MarginContainer.new()
-	m.add_theme_constant_override("margin_left", left)
-	m.add_theme_constant_override("margin_top", top)
-	m.add_theme_constant_override("margin_right", right)
-	m.add_theme_constant_override("margin_bottom", bottom)
-	parent.add_child(m)
-	m.add_child(child)
-
-
-func _panel_container(
-	ui_name: String,
-	fill: Color,
-	border: Color,
-	radius: int,
-	width_value: int
-) -> PanelContainer:
-	var p := PanelContainer.new()
-	p.name = ui_name
-	p.mouse_filter = Control.MOUSE_FILTER_PASS
-	p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	p.add_theme_stylebox_override("panel", _panel(fill, border, radius, width_value, 3))
-	return p
-
-
-func _panel(
-	fill: Color,
-	edge: Color,
-	radius: int,
-	width_value: int,
-	shadow_size: int = 0
-) -> StyleBoxFlat:
-	var p := StyleBoxFlat.new()
-	p.bg_color = fill
-	p.border_color = edge
-	p.set_border_width_all(width_value)
-	p.set_corner_radius_all(radius)
-	p.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
-	p.shadow_size = shadow_size
-	return p
-
-
-func _texture(tex: Texture2D) -> TextureRect:
-	var v := TextureRect.new()
-	v.texture = tex
-	v.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	v.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return v
-
-
-func _badge(value: String, ink: Color, fill: Color) -> Label:
-	var l := _label(value, 13, ink)
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	l.autowrap_mode = TextServer.AUTOWRAP_OFF
-	l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	l.add_theme_stylebox_override("normal", _panel(fill, GOLD, 7, 1))
-	return l
-
-
-func _label(value: String, size_value: int, ink: Color) -> Label:
-	var l := Label.new()
-	l.text = tr(value)
-	# Author the production 16px floor before first paint, so the global
-	# readability manager has no deferred adjustment to apply.
-	var final_size: int = maxi(size_value, 16)
-	l.add_theme_font_size_override("font_size", final_size)
-	l.add_theme_color_override("font_color", ink)
-	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return l
-
-
-func _button(value: String, main: bool) -> Button:
-	var b := Button.new()
-	b.text = tr(value)
-	b.focus_mode = Control.FOCUS_NONE
-	b.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
-	b.keep_pressed_outside = false
-	b.add_theme_font_size_override("font_size", 16)
-	b.add_theme_color_override(
-		"font_color", Color(0.12, 0.07, 0.01, 1.0) if main else IVORY
-	)
-	b.add_theme_stylebox_override(
-		"normal",
-		_panel(
-			Color(0.99, 0.78, 0.34, 1.0) if main else Color(0.0, 0.08, 0.09, 0.98),
-			GOLD if main else JADE, 9, 2
-		)
-	)
-	b.add_theme_stylebox_override(
-		"hover",
-		_panel(
-			Color(1.0, 0.89, 0.53, 1.0) if main else Color(0.03, 0.14, 0.15, 1.0),
-			GOLD_LIGHT, 9, 2
-		)
-	)
-	b.add_theme_stylebox_override(
-		"pressed",
-		_panel(
-			Color(0.88, 0.63, 0.25, 1.0) if main else Color(0.0, 0.05, 0.06, 1.0),
-			GOLD, 9, 2
-		)
-	)
-	b.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
-	_apply_material_button(b,GOLD if main else JADE,main)
-	return b
-
-func _apply_material_button(button: Button, _accent: Color, claimable: bool) -> void:
-	for mode: String in ["normal","hover","pressed","disabled"]:
-		var style=ImperialStyle.new()
-		style.corner=Vector2(17,14)
-		style.content_margin_top=8;style.content_margin_bottom=8
-		style.tint=Color(1.0,0.92,0.73) if claimable else Color(0.78,0.97,0.87)
-		if mode=="hover": style.tint=style.tint.lightened(0.12)
-		if mode=="pressed": style.tint=style.tint.darkened(0.22);style.pressed=true
-		if mode=="disabled": style.tint=Color(0.3,0.4,0.35)
-		style.selected=claimable
-		button.add_theme_stylebox_override(mode,style)
-	button.add_theme_color_override("font_color",GOLD_LIGHT if claimable else IVORY)
-	button.add_theme_color_override("font_shadow_color",Color(0,0.01,0.015,0.9))
-	button.add_theme_constant_override("shadow_offset_y",1)
-func _refresh_activity_handles() -> void:
-	for id: String in _activity_handles:
-		var h: Dictionary=_activity_handles[id]
-		var data: Dictionary=_activity_progress_preview(id)
-		if data.is_empty() or not h.has("status"): continue
-		var claim_available: bool=int(data.get("ready",0))>0
-		var complete: bool=bool(data.get("complete",false))
-		h.progress.text=tr("PROGRESS %d / %d") % [int(data.get("current",0)),int(data.get("total",0))]
-		h.meter.max_value=maxi(1,int(data.get("total",0)))
-		h.meter.value=int(data.get("current",0))
-		h.status.text=tr("COMPLETED") if complete else (tr("%d READY") % int(data.ready) if claim_available else tr("IN PROGRESS"))
-		h.status.add_theme_color_override("font_color",JADE if complete else GOLD_LIGHT if claim_available else h.accent)
-		if h.art.claim_ready!=claim_available:
-			h.art.claim_ready=claim_available
-			h.art.queue_redraw()
-		_apply_material_button(h.cta,h.accent,claim_available)
+ if SceneTransitionManager.is_transitioning:
+  return
+ var change_error: Error = SceneTransitionManager.transition_menu_to(
+  scene_path, 1
+ )
+ if change_error != OK:
+  _navigating=false
+  push_error(
+   "EventCenterScreen: gagal membuka scene. Error code: "
+   + str(change_error)
+  )

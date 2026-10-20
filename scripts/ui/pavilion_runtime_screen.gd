@@ -358,6 +358,8 @@ func _build_meditation_section() -> void:
 
 func _refresh() -> void:
 	super()
+	if is_instance_valid(chest): preload("res://scripts/ui/action_ready_dot.gd").show_on(chest,int(not chest.disabled))
+	if is_instance_valid(starter_button): preload("res://scripts/ui/action_ready_dot.gd").show_on(starter_button,int(starter_button.visible and not starter_button.disabled))
 	_restore_summon_focal_if_needed()
 	_refresh_rewarded_seal_section()
 	if content != null:

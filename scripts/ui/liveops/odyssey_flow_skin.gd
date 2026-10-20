@@ -13,7 +13,12 @@ static func texture(index: int)->Texture2D:
  var tile:=AtlasTexture.new();tile.atlas=ATLAS;tile.filter_clip=true
  tile.region=Rect2(Vector2(float(index%3)*cell.x,floorf(float(index)/3.0)*cell.y)+Vector2(12,12),Vector2(cell.x-24,cell.y-56 if index==3 else cell.y-68 if index in [4,5] else cell.y-24))
  regions[index]=tile;return tile
-static func style(index: int=3,compact: bool=false)->StyleBoxTexture:
+static func style(index: int=3,compact: bool=false)->StyleBox:
+ if index in [4,5]:
+  var material=preload("res://scripts/ui/pavilion_imperial_style.gd").new()
+  material.tint=Color(0.85,1.0,0.91) if index==4 else Color(0.5,0.61,0.57)
+  material.corner=Vector2(18,18);material.content_margin_left=24;material.content_margin_right=24;material.content_margin_top=14;material.content_margin_bottom=14
+  return material
  # StyleBoxTexture nine-patch uses an independent image, never a nested atlas
  # region. Resolve each of the three frame textures once, not once per card.
  var key: String=str(index)+("_compact" if compact else "_panel")
@@ -45,3 +50,11 @@ static func progress(meter: ProgressBar) -> void:
  var back:=StyleBoxFlat.new();back.bg_color=Color("d1ccb9");back.set_corner_radius_all(5)
  var fill:=StyleBoxFlat.new();fill.bg_color=Color("17896b");fill.set_corner_radius_all(5)
  meter.add_theme_stylebox_override("background",back);meter.add_theme_stylebox_override("fill",fill)
+
+static func modal_style() -> StyleBox:
+ # The old atlas includes a dark rectangular matte outside its ornament.
+ # Use the existing transparent Imperial frame over a jade material surface.
+ var frame=preload("res://scripts/ui/pavilion_imperial_style.gd").new()
+ frame.tint=Color(0.84,1.0,0.92); frame.selected=true; frame.corner=Vector2(24,24)
+ frame.content_margin_left=24; frame.content_margin_right=24; frame.content_margin_top=28; frame.content_margin_bottom=28
+ return frame

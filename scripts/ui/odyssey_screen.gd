@@ -1,4 +1,5 @@
 extends Control
+const ActionDot=preload("res://scripts/ui/action_ready_dot.gd")
 const Flow=preload("res://scripts/ui/liveops/odyssey_flow_skin.gd")
 const ARENA_PATH: String="res://scripts/ui/liveops/odyssey_arena.gd"
 const Art=preload("res://scripts/ui/liveops/odyssey_art.gd")
@@ -238,6 +239,7 @@ func _refresh() -> void:
 			if not dice_view.rolling: dice_view.start()
 			dice_view.resolve(dice)
 		else: board.show_position(int(state.get("position",0))); dice_view.face=maxi(1,dice); dice_view.queue_redraw()
+	board.set_reward_stops(client.snapshot.get("state",{}).get("board_rewards",{}),state.get("board_seal_claims",[]))
 	observed_rolls = count
 	var travelling: bool = _presenting()
 	var resolving: bool=state.get("battle") is Dictionary or state.get("pending","")=="route"
@@ -251,6 +253,7 @@ func _refresh() -> void:
 		var n: int = [24,48,72][i]; var claimed: bool = n in state.get("milestones",[])
 		milestones[i].text = "%d · %s" % [n, "CLAIMED" if claimed else "CLAIM" if count>=n else "2 SEALS" if n==24 else "3 SEALS" if n==48 else "COMPASS"]
 		milestones[i].disabled = travelling
+		ActionDot.show_on(milestones[i],int(claim_open and not claimed and count>=n))
 	notice.text = str(state.get("notice","Connect Google to begin your journey.")) if client.status in ["connected","sending_action","refreshing"] else {"NETWORK_UNAVAILABLE":"Connection failed. Tap Reconnect; your progress is saved.","ENDPOINT_POLICY_REJECTED":"App update required. Install the latest Play build.","native_update_required":"App update required. Install the latest Play build.","ACCOUNT_HELD":"A refunded purchase requires review. Contact support.","BACKEND_NOT_READY":"Server is preparing the event. Please retry shortly."}.get(str(client.status),str(client.status).replace("_"," ").capitalize())
 	if client.busy and client.status=="sending_action": notice.text="MENGIRIM AKSI…"
 	elif client.has_method("ad_feedback") and not str(client.call("ad_feedback")).is_empty(): notice.text=str(client.call("ad_feedback"))
@@ -259,11 +262,9 @@ func _refresh() -> void:
 	roll.text="ROLLING…" if client.busy and dice_view.rolling else "TRAVELLING…" if travelling else "CONTINUE THE GATE" if state.get("battle") is Dictionary else "CHOOSE YOUR PATH" if state.get("pending","")=="route" else "ROLL DICE · 1 DIE"
 	buy.text="TRAVEL SHOP"
 	missions_button.disabled=travelling or not active
-	var mission_ready: bool=false
-	for n: int in [1,3,5]:
-		if int(state.get("daily_rolls",0))>=n and n not in state.get("missions",[]): mission_ready=true
-	mission_ready=mission_ready or (int(state.get("daily_gifts",0))>=3 and "gifts" not in state.get("task_claims",[])) or (int(state.get("daily_guardians",0))>=1 and "guardian" not in state.get("task_claims",[]))
+	var mission_ready: bool=ActionDot.count(self,"odyssey_missions")>0
 	missions_button.text="MISSIONS · CLAIM" if mission_ready else "DAILY MISSIONS"
+	ActionDot.show_on(missions_button,int(mission_ready))
 	if not client.busy and not travelling and dice_view.rolling: dice_view.cancel()
 	_update_time()
 	if modal == null and not client.busy and not travelling:
@@ -279,7 +280,8 @@ func _finished(action: String, success: bool) -> void:
 		elif success: _show_reward()
 		_pending_milestone = 0
 func _close_modal() -> void:
-	if is_instance_valid(modal): modal.queue_free()
+	if _modal_motion!=null: _modal_motion.kill();_modal_motion=null
+	if is_instance_valid(modal): modal.hide();modal.queue_free()
 	modal = null; _modal_kind = ""; _card_sequence=0; _battle_buttons.clear(); _battle_timer = null; _mission_handles.clear(); _mission_all=null; _modal_panel=null; _modal_header=null; _modal_footer=null; _modal_body=null; _shop_handles.clear(); _shop_message=null; _arena=null
 func _fit_popup() -> void:
 	if not is_instance_valid(_modal_panel): return
@@ -296,9 +298,9 @@ func _fit_popup() -> void:
 	_modal_panel.position = (span-_modal_panel.size)*0.5
 func _popup(title: String, kind: String) -> VBoxContainer:
 	_close_modal(); _modal_kind=kind
-	modal=Control.new();modal.z_index=20;safe.add_child(modal);modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var dim:=ColorRect.new();dim.color=Color(0.002,0.01,0.02,0.68);modal.add_child(dim);dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_modal_panel=Panel.new();_modal_panel.name="OdysseyFlowPanel";_modal_panel.clip_contents=true;_modal_panel.add_theme_stylebox_override("panel",Flow.style(4));modal.add_child(_modal_panel)
+	modal=Control.new();modal.name="OdysseyModal";modal.z_index=20;safe.add_child(modal);modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var dim:=ColorRect.new();dim.name="JadeModalScrim";dim.color=Color(0.015,0.07,0.067,0.50);modal.add_child(dim);dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_modal_panel=Panel.new();_modal_panel.name="OdysseyFlowPanel";_modal_panel.clip_contents=true;_modal_panel.add_theme_stylebox_override("panel",Flow.modal_style());modal.add_child(_modal_panel)
 	var inset:=MarginContainer.new();_modal_panel.add_child(inset);inset.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	for side: String in ["left","right"]: inset.add_theme_constant_override("margin_"+side,24)
 	for side: String in ["top","bottom"]: inset.add_theme_constant_override("margin_"+side,28)
@@ -318,7 +320,14 @@ func _popup(title: String, kind: String) -> VBoxContainer:
 	if not safe.resized.is_connected(_fit_popup): safe.resized.connect(_fit_popup)
 	return body
 func _info() -> void:
+	if is_instance_valid(modal) and _modal_kind=="info":return
 	var body: VBoxContainer=_popup("THE CELESTIAL ATLAS","info")
+	var stops: Array=client.snapshot.get("state",{}).get("board_rewards",{}).get("seal_tiles",[]) if client!=null else []
+	if not stops.is_empty():
+		var names: Array[String]=[]
+		for stop: Variant in stops:names.append(str(int(stop)+1))
+		body.add_child(label("PAVILION SEAL · "+", ".join(names),19))
+		body.add_child(label("Petak bertanda memberi +1 Pavilion Seal sekali per event. Kunjungan berikutnya memberi supplies. Hadiah masuk Mailbox." if TranslationServer.get_locale().begins_with("id") else "Each marked stop adds +1 Pavilion Seal on its first landing this event. Repeat visits give supplies. Rewards arrive in Mailbox.",16))
 	var limits: Dictionary=client.snapshot.get("limits",{}) if client!=null else {}
 	body.add_child(label("FREE DAILY JOURNEYS",19)); body.add_child(label("3 dice arrive on daily login. Roll 1, 3 and 5 times to claim 3 more from Missions. Reset: 00:00 UTC (07:00 WIB).",16))
 	body.add_child(label("OPTIONAL DICE",19)); body.add_child(label("2 verified ad dice per day. Purchased Jade: 1 die for %d or 5 dice for %d. Limit 10 bought per day and 40 per season. Every face has a 1 in 6 chance." % [int(limits.get("price_one",10)),int(limits.get("price_five",40))],16))
@@ -343,12 +352,14 @@ func _update_mission_handles() -> void:
 		var claimed: bool=int(handle.key) in state.get("missions",[]) if handle.kind=="roll" else str(handle.key) in state.get("task_claims",[]) if handle.kind=="task" else progress_value==1
 		var claim_available: bool=progress_value>=int(handle.target) and not claimed
 		handle.meter.value=mini(progress_value,int(handle.target));handle.heading.text="%s  ·  %d/%d" % [handle.caption,mini(progress_value,int(handle.target)),int(handle.target)]
+		ActionDot.show_on(handle.button,int(claim_available))
 		handle.button.text="DITERIMA" if claimed and handle.kind=="login" else "DIKLAIM" if claimed else "MENGIRIM…" if _mutating() and _active_action.get("kind")==("mission" if handle.kind=="roll" else "task") and _active_action.get("mission" if handle.kind=="roll" else "task")==handle.key else "KLAIM" if claim_available else "LANJUTKAN"
 		handle.button.disabled=_mutating() or claimed or not claim_available or not _confirmed_view()
 		handle.button.add_theme_stylebox_override("disabled",Flow.style(5 if claimed else 4,true))
 		any_ready=any_ready or claim_available
 	if is_instance_valid(_mission_all): _mission_all.disabled=not any_ready or _mutating() or not _confirmed_view();_mission_all.text="MENGIRIM…" if _mutating() and _active_action.get("kind")=="missions_all" else "KLAIM TERSEDIA"
 func _missions() -> void:
+	if is_instance_valid(modal) and _modal_kind=="missions":return
 	var body: VBoxContainer=_popup("DAILY MISSIONS","missions")
 	var hint: Label=label("RESET 07.00 WIB · Hadiah tambahan masuk Mailbox",14);hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;body.add_child(hint)
 	_mission_row(body,"Masuk hari ini",1,"login","login","+3 Dadu",Art.DIE)
@@ -358,6 +369,7 @@ func _missions() -> void:
 	_mission_row(body,"Selesaikan Gerbang Naga",1,"task","guardian","+60 Stones",stone)
 	_mission_all=Flow.button("KLAIM TERSEDIA",func() -> void: _submit({"kind":"missions_all"}));_modal_footer.add_child(_mission_all);_update_mission_handles()
 func _shop() -> void:
+	if is_instance_valid(modal) and _modal_kind=="shop":return
 	if client==null or _presenting(): return
 	var body: VBoxContainer=_popup("TRAVEL SHOP","shop")
 	_shop_handles.clear()
@@ -445,11 +457,13 @@ func _shop_delivery_finished(product_id: String, success: bool, message: String)
 	_refresh_shop_products()
 
 func _confirm_pack(pack: int, price: int) -> void:
+	if is_instance_valid(modal) and _modal_kind=="confirm_pack":return
 	var body: VBoxContainer=_popup("CONFIRM YOUR JOURNEY","confirm_pack")
 	body.add_child(_icon(Art.DIE,110)); body.add_child(label("%d travel %s for %d Purchased Jade." % [pack,"die" if pack==1 else "dice",price],22))
 	body.add_child(label("The server charges once. Extra dice do not change die odds or grant extra Compass copies.",16))
 	body.add_child(button("CONFIRM · %d JADE" % price,func() -> void: _submit({"kind":"buy_dice","pack":pack}),true)); body.add_child(button("BACK TO PACKS",_shop))
 func _journey_rewards() -> void:
+	if is_instance_valid(modal) and _modal_kind=="journey":return
 	var body: VBoxContainer=_popup("JOURNEY REWARDS","journey")
 	var state: Dictionary=client.snapshot.get("state",{});var count: int=int(state.get("rolls",0))
 	var title: Label=label("%d / 72 PERJALANAN" % count,22);title.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;body.add_child(title)
@@ -462,9 +476,10 @@ func _journey_rewards() -> void:
 		var claimed: bool=n in state.get("milestones",[])
 		var event: Dictionary=client.snapshot.get("event",{}) if client.snapshot.get("event") is Dictionary else {}
 		var claim_open: bool=bool(event.get("enabled",false)) and client.server_time()>=int(event.get("starts_at",0)) and client.server_time()<int(event.get("ends_at",0))+3*86400
-		var claim: Button=Flow.button("DIKLAIM" if claimed else "KLAIM" if count>=n else "BELUM TERCAPAI",func() -> void: _submit({"kind":"milestone","milestone":n}));claim.disabled=claimed or count<n or _mutating() or not _confirmed_view() or not claim_open;content.add_child(claim)
+		var claim: Button=Flow.button("DIKLAIM" if claimed else "KLAIM" if count>=n else "BELUM TERCAPAI",func() -> void: _submit({"kind":"milestone","milestone":n}));claim.disabled=claimed or count<n or _mutating() or not _confirmed_view() or not claim_open;content.add_child(claim);ActionDot.show_on(claim,int(not claim.disabled))
 	var footer: Label=label("Hadiah dikirim ke Mailbox · Masa klaim 3 hari setelah season",14);footer.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;body.add_child(footer)
 func _routes() -> void:
+	if is_instance_valid(modal) and _modal_kind=="route":return
 	if not ResourceLoader.has_cached(ARENA_PATH): ResourceLoader.load_threaded_request(ARENA_PATH)
 	var body: VBoxContainer = _popup("CHOOSE YOUR PATH","route")
 	for choice: String in ["safe","challenge"]:
@@ -486,10 +501,11 @@ func _routes() -> void:
 		content.add_child(action)
 	_fit_popup.call_deferred()
 func _battle() -> void:
+	if is_instance_valid(modal) and _modal_kind=="battle":return
 	var battle: Dictionary = client.snapshot.get("state",{}).get("battle",{})
 	if battle.get("mode","")=="arena":
 		_close_modal();_modal_kind="battle"
-		modal=Control.new();modal.z_index=20;safe.add_child(modal);modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		modal=Control.new();modal.name="OdysseyModal";modal.z_index=20;safe.add_child(modal);modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		var arena_script: GDScript=load(ARENA_PATH);_arena=arena_script.new();_arena.client=client;_arena.battle=battle.duplicate(true);modal.add_child(_arena);_arena.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		_arena.completed.connect(func(trace: String,abandon: bool) -> void:
 			var action: Dictionary={"kind":"arena_finish","trace":trace,"abandon":abandon}
@@ -503,6 +519,7 @@ func _battle() -> void:
 	for i: int in range(3):
 		var counter: Button = button(names[i],func() -> void: _submit({"kind":"counter","choice":i})); counter.disabled = true; body.add_child(counter); _battle_buttons.append(counter)
 func _ceremony() -> void:
+	if is_instance_valid(modal) and _modal_kind=="ceremony":return
 	var body: VBoxContainer = _popup("HEAVENWEAVER AWAKENS","ceremony")
 	var art: Control = preload("res://scripts/ui/liveops/odyssey_ceremony.gd").new(); body.add_child(art)
 	body.add_child(label("★★★★★  HEAVENWEAVER COMPASS\nSecured in Mail. Claim its attachment to equip your new armament.",20))

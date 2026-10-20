@@ -1,0 +1,588 @@
+{
+  "cell_size": 192,
+  "feet_baseline": 164,
+  "gutter": 16,
+  "frames": [
+    {
+      "atlas": "walk.png",
+      "row": 0,
+      "column": 0,
+      "bounds": [
+        51,
+        19,
+        148,
+        164
+      ],
+      "scale": 0.556390977443609
+    },
+    {
+      "atlas": "walk.png",
+      "row": 0,
+      "column": 1,
+      "bounds": [
+        45,
+        19,
+        147,
+        164
+      ],
+      "scale": 0.556390977443609
+    },
+    {
+      "atlas": "walk.png",
+      "row": 0,
+      "column": 2,
+      "bounds": [
+        46,
+        20,
+        153,
+        164
+      ],
+      "scale": 0.556390977443609
+    },
+    {
+      "atlas": "walk.png",
+      "row": 0,
+      "column": 3,
+      "bounds": [
+        41,
+        19,
+        146,
+        164
+      ],
+      "scale": 0.556390977443609
+    },
+    {
+      "atlas": "walk.png",
+      "row": 0,
+      "column": 4,
+      "bounds": [
+        43,
+        18,
+        146,
+        164
+      ],
+      "scale": 0.556390977443609
+    },
+    {
+      "atlas": "walk.png",
+      "row": 0,
+      "column": 5,
+      "bounds": [
+        44,
+        18,
+        148,
+        164
+      ],
+      "scale": 0.556390977443609
+    },
+    {
+      "atlas": "walk.png",
+      "row": 0,
+      "column": 6,
+      "bounds": [
+        42,
+        19,
+        153,
+        164
+      ],
+      "scale": 0.556390977443609
+    },
+    {
+      "atlas": "walk.png",
+      "row": 0,
+      "column": 7,
+      "bounds": [
+        43,
+        16,
+        149,
+        164
+      ],
+      "scale": 0.556390977443609
+    },
+    {
+      "atlas": "walk.png",
+      "row": 1,
+      "column": 0,
+      "bounds": [
+        61,
+        16,
+        160,
+        164
+      ],
+      "scale": 0.31827956989247314
+    },
+    {
+      "atlas": "walk.png",
+      "row": 1,
+      "column": 1,
+      "bounds": [
+        71,
+        17,
+        159,
+        164
+      ],
+      "scale": 0.31827956989247314
+    },
+    {
+      "atlas": "walk.png",
+      "row": 1,
+      "column": 2,
+      "bounds": [
+        71,
+        16,
+        155,
+        164
+      ],
+      "scale": 0.31827956989247314
+    },
+    {
+      "atlas": "walk.png",
+      "row": 1,
+      "column": 3,
+      "bounds": [
+        61,
+        17,
+        159,
+        164
+      ],
+      "scale": 0.31827956989247314
+    },
+    {
+      "atlas": "walk.png",
+      "row": 1,
+      "column": 4,
+      "bounds": [
+        59,
+        17,
+        162,
+        164
+      ],
+      "scale": 0.31827956989247314
+    },
+    {
+      "atlas": "walk.png",
+      "row": 1,
+      "column": 5,
+      "bounds": [
+        71,
+        17,
+        159,
+        164
+      ],
+      "scale": 0.31827956989247314
+    },
+    {
+      "atlas": "walk.png",
+      "row": 1,
+      "column": 6,
+      "bounds": [
+        69,
+        17,
+        155,
+        164
+      ],
+      "scale": 0.31827956989247314
+    },
+    {
+      "atlas": "walk.png",
+      "row": 1,
+      "column": 7,
+      "bounds": [
+        59,
+        18,
+        160,
+        164
+      ],
+      "scale": 0.31827956989247314
+    },
+    {
+      "atlas": "walk.png",
+      "row": 2,
+      "column": 0,
+      "bounds": [
+        32,
+        16,
+        131,
+        164
+      ],
+      "scale": 0.31827956989247314
+    },
+    {
+      "atlas": "walk.png",
+      "row": 2,
+      "column": 1,
+      "bounds": [
+        33,
+        17,
+        121,
+        164
+      ],
+      "scale": 0.31827956989247314
+    },
+    {
+      "atlas": "walk.png",
+      "row": 2,
+      "column": 2,
+      "bounds": [
+        37,
+        16,
+        121,
+        164
+      ],
+      "scale": 0.31827956989247314
+    },
+    {
+      "atlas": "walk.png",
+      "row": 2,
+      "column": 3,
+      "bounds": [
+        33,
+        17,
+        131,
+        164
+      ],
+      "scale": 0.31827956989247314
+    },
+    {
+      "atlas": "walk.png",
+      "row": 2,
+      "column": 4,
+      "bounds": [
+        30,
+        17,
+        133,
+        164
+      ],
+      "scale": 0.31827956989247314
+    },
+    {
+      "atlas": "walk.png",
+      "row": 2,
+      "column": 5,
+      "bounds": [
+        33,
+        17,
+        121,
+        164
+      ],
+      "scale": 0.31827956989247314
+    },
+    {
+      "atlas": "walk.png",
+      "row": 2,
+      "column": 6,
+      "bounds": [
+        37,
+        17,
+        123,
+        164
+      ],
+      "scale": 0.31827956989247314
+    },
+    {
+      "atlas": "walk.png",
+      "row": 2,
+      "column": 7,
+      "bounds": [
+        32,
+        18,
+        133,
+        164
+      ],
+      "scale": 0.31827956989247314
+    },
+    {
+      "atlas": "walk.png",
+      "row": 3,
+      "column": 0,
+      "bounds": [
+        40,
+        19,
+        154,
+        164
+      ],
+      "scale": 0.578125
+    },
+    {
+      "atlas": "walk.png",
+      "row": 3,
+      "column": 1,
+      "bounds": [
+        41,
+        17,
+        154,
+        164
+      ],
+      "scale": 0.578125
+    },
+    {
+      "atlas": "walk.png",
+      "row": 3,
+      "column": 2,
+      "bounds": [
+        37,
+        19,
+        148,
+        164
+      ],
+      "scale": 0.578125
+    },
+    {
+      "atlas": "walk.png",
+      "row": 3,
+      "column": 3,
+      "bounds": [
+        38,
+        16,
+        151,
+        164
+      ],
+      "scale": 0.578125
+    },
+    {
+      "atlas": "walk.png",
+      "row": 3,
+      "column": 4,
+      "bounds": [
+        40,
+        18,
+        151,
+        164
+      ],
+      "scale": 0.578125
+    },
+    {
+      "atlas": "walk.png",
+      "row": 3,
+      "column": 5,
+      "bounds": [
+        38,
+        19,
+        153,
+        164
+      ],
+      "scale": 0.578125
+    },
+    {
+      "atlas": "walk.png",
+      "row": 3,
+      "column": 6,
+      "bounds": [
+        39,
+        18,
+        154,
+        164
+      ],
+      "scale": 0.578125
+    },
+    {
+      "atlas": "walk.png",
+      "row": 3,
+      "column": 7,
+      "bounds": [
+        38,
+        19,
+        152,
+        164
+      ],
+      "scale": 0.578125
+    },
+    {
+      "atlas": "idle.png",
+      "row": 0,
+      "column": 0,
+      "bounds": [
+        53,
+        16,
+        159,
+        164
+      ],
+      "scale": 0.6379310344827587
+    },
+    {
+      "atlas": "idle.png",
+      "row": 0,
+      "column": 1,
+      "bounds": [
+        56,
+        16,
+        161,
+        164
+      ],
+      "scale": 0.6379310344827587
+    },
+    {
+      "atlas": "idle.png",
+      "row": 0,
+      "column": 2,
+      "bounds": [
+        55,
+        17,
+        162,
+        164
+      ],
+      "scale": 0.6379310344827587
+    },
+    {
+      "atlas": "idle.png",
+      "row": 0,
+      "column": 3,
+      "bounds": [
+        56,
+        17,
+        159,
+        164
+      ],
+      "scale": 0.6379310344827587
+    },
+    {
+      "atlas": "idle.png",
+      "row": 1,
+      "column": 0,
+      "bounds": [
+        65,
+        17,
+        170,
+        164
+      ],
+      "scale": 0.6519823788546255
+    },
+    {
+      "atlas": "idle.png",
+      "row": 1,
+      "column": 1,
+      "bounds": [
+        65,
+        16,
+        171,
+        164
+      ],
+      "scale": 0.6519823788546255
+    },
+    {
+      "atlas": "idle.png",
+      "row": 1,
+      "column": 2,
+      "bounds": [
+        66,
+        16,
+        170,
+        164
+      ],
+      "scale": 0.6519823788546255
+    },
+    {
+      "atlas": "idle.png",
+      "row": 1,
+      "column": 3,
+      "bounds": [
+        64,
+        16,
+        174,
+        164
+      ],
+      "scale": 0.6519823788546255
+    },
+    {
+      "atlas": "idle.png",
+      "row": 2,
+      "column": 0,
+      "bounds": [
+        22,
+        17,
+        127,
+        164
+      ],
+      "scale": 0.6519823788546255
+    },
+    {
+      "atlas": "idle.png",
+      "row": 2,
+      "column": 1,
+      "bounds": [
+        21,
+        16,
+        127,
+        164
+      ],
+      "scale": 0.6519823788546255
+    },
+    {
+      "atlas": "idle.png",
+      "row": 2,
+      "column": 2,
+      "bounds": [
+        22,
+        16,
+        126,
+        164
+      ],
+      "scale": 0.6519823788546255
+    },
+    {
+      "atlas": "idle.png",
+      "row": 2,
+      "column": 3,
+      "bounds": [
+        18,
+        16,
+        128,
+        164
+      ],
+      "scale": 0.6519823788546255
+    },
+    {
+      "atlas": "idle.png",
+      "row": 3,
+      "column": 0,
+      "bounds": [
+        49,
+        17,
+        156,
+        164
+      ],
+      "scale": 0.6519823788546255
+    },
+    {
+      "atlas": "idle.png",
+      "row": 3,
+      "column": 1,
+      "bounds": [
+        46,
+        16,
+        157,
+        164
+      ],
+      "scale": 0.6519823788546255
+    },
+    {
+      "atlas": "idle.png",
+      "row": 3,
+      "column": 2,
+      "bounds": [
+        48,
+        17,
+        153,
+        164
+      ],
+      "scale": 0.6519823788546255
+    },
+    {
+      "atlas": "idle.png",
+      "row": 3,
+      "column": 3,
+      "bounds": [
+        47,
+        17,
+        156,
+        164
+      ],
+      "scale": 0.6519823788546255
+    }
+  ],
+  "source_hashes": {
+    "walk_side.png": "7dc6428f38f7e16f0dd25d8cd87527316a56baf3d28d8f7e26edf12821759d2a",
+    "idle_hurt_death.png": "4ebc85ff7c2dc7cb8ba1b032be621d9a1e11783ccf734317db5e4547d0072a42",
+    "walk_all.png": "2203ddb1f26fc542d8e58bb687d5688f127c50ccaaaaa00dd46813d0df35fb74"
+  }
+}

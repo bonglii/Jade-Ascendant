@@ -536,6 +536,7 @@ func _refresh_day_card(day: int) -> void:
 		return
 
 	var state: String = _state(day)
+	ActionDot.show_on(card,int(state=="ready" and not SaveManager.is_progress_read_only()))
 	var selected: bool = day == _selected_day
 	var final_day: bool = day == _total_days()
 	var accent: Color = _accent(day, state)
@@ -736,6 +737,7 @@ func _refresh_footer() -> void:
 		_action.disabled = true
 		_action_art.texture = CLAIM_BLUE
 
+	preload("res://scripts/ui/action_ready_dot.gd").show_on(_action,int(state=="ready" and not _action.disabled))
 	_footer_note.text = (
 		tr("SAVING UNAVAILABLE") if progress_locked
 		else tr("NEXT CYCLE ON YOUR NEXT ACTIVE DATE")

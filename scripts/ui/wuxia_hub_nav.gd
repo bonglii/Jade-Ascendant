@@ -16,6 +16,7 @@ extends Control
 	"Pavilion"
 ) var active_tab: int = 0
 
+const ActionDot=preload("res://scripts/ui/action_ready_dot.gd")
 const UiTokens = preload("res://scripts/ui/jade_ui_tokens.gd")
 
 const HOME_SCENE: String = "res://scenes/ui/main_menu.tscn"
@@ -115,7 +116,7 @@ func _notification(what: int) -> void:
 
 func _process(delta: float) -> void:
 	badge_refresh_elapsed += delta
-	if badge_refresh_elapsed >= UiTokens.BADGE_REFRESH_INTERVAL:
+	if badge_refresh_elapsed >= maxf(0.5,UiTokens.BADGE_REFRESH_INTERVAL):
 		badge_refresh_elapsed = 0.0
 		_refresh_notification_badge()
 
@@ -371,30 +372,12 @@ func _create_trials_badge(button: Button) -> Label:
 
 
 func _refresh_notification_badge() -> void:
-	if trials_badge == null:
-		return
-	var claimable_total: int = (
-		AchievementManager.get_claimable_count()
-		+ DailyQuestManager.get_claimable_count()
-	)
-	if claimable_total == last_trials_badge_count:
-		return
-	last_trials_badge_count = claimable_total
-	trials_badge.visible = claimable_total > 0
-	trials_badge.text = (
-		"9+"
-		if claimable_total > 9
-		else str(claimable_total)
-	)
-	trials_badge.tooltip_text = (
-		"%d Trials reward%s ready to claim"
-		% [
-			claimable_total,
-			"" if claimable_total == 1 else "s",
-		]
-		if claimable_total > 0
-		else ""
-	)
+	if is_instance_valid(trials_badge): trials_badge.visible=false
+	var sources: Array[String]=["home","cultivation","hero","trials","pavilion"]
+	for index: int in range(tab_buttons.size()):
+		var dot: Panel=ActionDot.show_on(tab_buttons[index],ActionDot.count(self,sources[index]))
+		dot.anchor_left=0.5; dot.anchor_right=0.5
+		dot.offset_left=12; dot.offset_right=26
 
 
 func _on_tab_hover(

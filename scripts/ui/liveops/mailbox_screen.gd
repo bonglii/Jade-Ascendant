@@ -708,6 +708,7 @@ func _refresh_from_authority() -> void:
 		_server_status.tooltip_text = _server_status.text
 	if is_instance_valid(_claim_all_button) and is_instance_valid(_claim_batch):
 		_claim_all_button.disabled=SaveManager.is_progress_read_only() or (_claim_batch.active and not _claim_batch.paused) or (not _claim_batch.active and int(_claim_batch.available())==0)
+		preload("res://scripts/ui/action_ready_dot.gd").show_on(_claim_all_button,int(not _claim_all_button.disabled and _claim_batch.available()>0))
 		_claim_all_button.text="LANJUTKAN" if _claim_batch.paused else "%d/%d" % [int(_claim_batch.claimed),int(_claim_batch.total)] if _claim_batch.active else "CLAIM ALL"
 		if not str(_claim_batch.message).is_empty(): _server_status.text=str(_claim_batch.message);_server_status.tooltip_text=_server_status.text
 	if is_instance_valid(_delete_all_button):
@@ -961,6 +962,7 @@ func _refresh_letter() -> void:
 	var server_busy: bool = _selected_id.begins_with("server:") and ServerMailManager.is_delivery_busy_for(_selected_id)
 	var claim_allowed: bool = bool(entry.get("can_claim",true))
 	_claim_button.disabled = claimed or read_only or _claim_busy or server_busy or not claim_allowed or (is_instance_valid(_claim_batch) and _claim_batch.active)
+	preload("res://scripts/ui/action_ready_dot.gd").show_on(_claim_button,int(not _claim_button.disabled and has_reward))
 	_claim_button.text = (
 		tr("CLAIMED") if claimed
 		else tr("CLAIMING…") if server_busy

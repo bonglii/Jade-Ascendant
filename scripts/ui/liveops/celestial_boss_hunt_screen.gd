@@ -571,6 +571,7 @@ func _build_ready_boss_checkpoint(
 	)
 	normal_button.custom_minimum_size.y = 54.0
 	normal_button.disabled = pending
+	preload("res://scripts/ui/action_ready_dot.gd").show_on(normal_button,int(not pending))
 
 	var double_button := LiveOpsUi.add_action_button(
 		body,

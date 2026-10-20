@@ -10,6 +10,7 @@ var _target_scroll_start: int=0
 var _target_epoch: int=0
 var _target_overlay: ColorRect
 var _target_category: String="weapon"
+var _sheet_guard_until: int=0
 var _banner_title: Label
 var _banner_subtitle: Label
 var _banner_notice: Label
@@ -601,6 +602,9 @@ func _section_card(parent_node: Node, eyebrow: String, title: String, descriptio
 	if shell != null: shell.add_theme_stylebox_override("panel",_imperial_style(accent,false,false,Vector2(26,26)))
 	return box
 func _show_history_overlay() -> void:
+	if is_instance_valid(locked_history_overlay):return
+	if not _admit_sheet_open():return
+	_close_target_picker();_close_rates_overlay()
 	if summon_reveal_overlay != null and summon_reveal_overlay.visible: return
 	super()
 
@@ -743,11 +747,14 @@ func _fit_compact_popup(overlay: ColorRect,panel: PanelContainer,root_box: VBoxC
 
 func _close_target_picker() -> void:
 	_target_epoch+=1
-	if is_instance_valid(_target_overlay):_target_overlay.queue_free()
+	if is_instance_valid(_target_overlay):
+		_target_overlay.hide();_target_overlay.queue_free()
 	_target_overlay=null
 
 func _open_target_picker(category: String="") -> void:
 	if summon_reveal_overlay!=null and summon_reveal_overlay.visible:return
+	if is_instance_valid(_target_overlay) and (category.is_empty() or category==_target_category):return
+	if not _admit_sheet_open():return
 	if not category.is_empty():_target_category=category
 	_close_target_picker();_close_rates_overlay();_close_history_overlay()
 	_target_overlay=_build_modal_overlay("PILIH TARGET SUMMON" if SettingsManager.language=="id" else "SUMMON TARGET")
@@ -788,3 +795,14 @@ func _back() -> void:
 	if is_instance_valid(locked_rates_overlay):_close_rates_overlay();return
 	if is_instance_valid(locked_history_overlay):_close_history_overlay();return
 	super()
+
+func _show_drop_rates_overlay() -> void:
+	if is_instance_valid(locked_rates_overlay) or (summon_reveal_overlay!=null and summon_reveal_overlay.visible): return
+	if not _admit_sheet_open():return
+	_close_target_picker();_close_history_overlay()
+	super()
+
+func _admit_sheet_open() -> bool:
+	if Time.get_ticks_msec()<_sheet_guard_until:return false
+	_sheet_guard_until=Time.get_ticks_msec()+140
+	return true

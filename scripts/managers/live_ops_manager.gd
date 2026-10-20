@@ -2048,6 +2048,7 @@ func apply_server_mail_reward(owner_binding: String,mail_id: String,reward: Dict
 
 
 func open_live_popup(scene_path: String) -> void:
+	if is_instance_valid(_active_live_popup) and _active_live_popup_scene==scene_path: return
 	if SceneTransitionManager.is_transitioning or not ResourceLoader.exists(scene_path, "PackedScene"):
 		return
 	var tree := get_tree()

@@ -2,6 +2,7 @@ extends "res://scripts/ui/home_production_presenter.gd"
 
 ## Approved Sanctuary layout. All balances, rewards, run/checkpoint decisions,
 ## account state and popup ownership remain in the existing authorities.
+const ActionDot=preload("res://scripts/ui/action_ready_dot.gd")
 const RealmArt = preload("res://scripts/ui/journey_art_catalog.gd")
 const Art = preload("res://scripts/ui/home_sanctuary_art.gd")
 const BOSS_SCENE: String = "res://scenes/ui/celestial_boss_hunt_screen.tscn"
@@ -223,6 +224,8 @@ func _refresh_journey() -> void:
 func _refresh_liveops_badges() -> void:
  if event_card==null:return
  super._refresh_liveops_badges()
+ ActionDot.show_on(all_events_button,ActionDot.count(self,"all_events"))
+ ActionDot.show_on(profile_shortcut,ActionDot.count(self,"profile"))
  var live_ops: Node=get_node_or_null("/root/LiveOpsManager")
  if live_ops==null:return
  var ids: Array=live_ops.get_boss_hunt_milestone_ids()

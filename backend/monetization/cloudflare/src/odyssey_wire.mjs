@@ -5,9 +5,11 @@
  */
 export function odysseyWire(data,env={}) {
  if(!data || typeof data!=='object' || !data.state || typeof data.state!=='object')return data;
- const {ad_delivery:delivery,...root}=data;
- if(!delivery)return root;
- return {...root,state:{...data.state,ad_delivery:{...delivery,
-  expected_unit:env.ODYSSEY_AD_UNIT||'',
-  expected_reward_item:env.ODYSSEY_AD_REWARD_ITEM||''}}};
+ const {ad_delivery:delivery,board_rewards:board,...root}=data;
+ if(!delivery&&!board)return root;
+ return {...root,state:{...data.state,
+  ...(board?{board_rewards:structuredClone(board)}:{}),
+  ...(delivery?{ad_delivery:{...delivery,
+   expected_unit:env.ODYSSEY_AD_UNIT||'',
+   expected_reward_item:env.ODYSSEY_AD_REWARD_ITEM||''}}:{})}};
 }

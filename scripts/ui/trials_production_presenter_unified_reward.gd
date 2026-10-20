@@ -43,7 +43,7 @@ func _create_claim_badge(
 	var badge := Label.new()
 	badge.name = node_name
 	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	badge.z_index = 40
+	badge.z_index = 0
 	badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	badge.add_theme_font_size_override("font_size", 11)
@@ -78,9 +78,9 @@ func _create_claim_badge(
 	badge.anchor_right = 1.0
 	badge.anchor_bottom = 0.0
 	badge.offset_left = -33.0
-	badge.offset_top = -7.0
+	badge.offset_top = 3.0
 	badge.offset_right = -5.0
-	badge.offset_bottom = 21.0
+	badge.offset_bottom = 31.0
 	badge.visible = false
 	return badge
 

@@ -1,4 +1,4 @@
-import {flowTransition,flowState} from './odyssey_flow_rules.mjs';
+import {flowTransition,flowState,BOARD_REWARDS} from './odyssey_flow_rules.mjs';
 import {utcDay} from './odyssey_rules.mjs';
 import {reconcileTopupBonus,bonusSummary} from './odyssey_purchase_bonus.mjs';
 import {createHash} from 'node:crypto';
@@ -47,7 +47,7 @@ export function service(db,{now=()=>Math.floor(Date.now()/1000),rng,economy=1,ad
   const grants=(await db.prepare("SELECT state FROM odyssey_players p WHERE owner=? AND EXISTS(SELECT 1 FROM json_each(p.state,'$.milestones') WHERE value=72) LIMIT 100").bind(owner).all()).results.map(row=>JSON.parse(row.state));
   if(grants.length&&grants.every(influenced)&&!influenced(state))await paidEligible(db,owner,now());
   const result={version:1,owner_binding:owner,event,state,revision:r?.revision||0,server_time:now(),limits:prices,compass_authorized:grants.length>0,lease_seconds:60};
-  if(withFlow)result.ad_delivery=await delivery(event,owner,now());
+  if(withFlow){result.board_rewards=BOARD_REWARDS;result.ad_delivery=await delivery(event,owner,now());}
   if(withBonus)result.purchase_bonus=await bonusSummary(db,event,owner,now());return result;
  }
  async function execute(uid,input){
@@ -64,6 +64,7 @@ export function service(db,{now=()=>Math.floor(Date.now()/1000),rng,economy=1,ad
   let ad=null;
   if(adIntent){if(!adConfigured)reject('ads_not_configured',503);exact(input.action,['kind']);if(!event.ads_enabled||out.state.daily_ads>=LIMITS.ads_daily)reject('ad_limit');const outstanding=await db.prepare('SELECT COUNT(*) AS n FROM odyssey_ad_intents WHERE event_id=? AND owner=? AND consumed_at=0 AND expires_at>?').bind(event.id,owner,stamp).first();if(outstanding.n>=4)reject('ad_already_pending');ad={nonce:id(),expires_at:Math.min(stamp+1200,event.ends_at)};}
   const response={version:1,owner_binding:owner,event,state:out.state,revision:input.revision+1,server_time:stamp,limits:prices,ad_intent:ad,jade_spent:out.cost};
+  if(withFlow)response.board_rewards=BOARD_REWARDS;
   if(withFlow)response.ad_delivery=ad?{configured:true,stage:'pending',nonce:ad.nonce,expires_at:ad.expires_at}:await delivery(event,owner,stamp);
   if(withBonus)response.purchase_bonus=await bonusSummary(db,event,owner,stamp);
   const guarded=out.cost>0||influenced(state);

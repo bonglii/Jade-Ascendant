@@ -67,7 +67,7 @@ func _create_badge(button: Button, node_name: String) -> Label:
 	var badge := Label.new()
 	badge.name = node_name
 	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	badge.z_index = 20
+	badge.z_index = 0
 	badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	badge.add_theme_font_size_override("font_size", 10)

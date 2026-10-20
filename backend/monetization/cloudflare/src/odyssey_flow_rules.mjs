@@ -1,7 +1,15 @@
 import {transition,utcDay,TILES,reject,exact,integer,PREMIUM_LIMITS} from './odyssey_rules.mjs';
 import {replayArena} from './odyssey_arena.mjs';
+export const BOARD_REWARDS=Object.freeze({seal_tiles:Object.freeze([9,17]),seal_per_stop:1,max_seals:2,repeat:"once_per_event"});
 const add=(r,k,n)=>{r[k]=(r[k]||0)+n;};
-export function flowState(input,time){const s=structuredClone(input);if(s.task_day!==utcDay(time)){s.task_day=utcDay(time);s.daily_gifts=0;s.daily_guardians=0;s.task_claims=[];}return s;}
+export function flowState(input,time){
+ const s=structuredClone(input);
+ if(s.task_day!==utcDay(time)){s.task_day=utcDay(time);s.daily_gifts=0;s.daily_guardians=0;s.task_claims=[];}
+ // Legacy/partial JSON states must not serialize undefined++ as NaN/null.
+ for(const key of ['daily_gifts','daily_guardians'])if(!Number.isSafeInteger(s[key])||s[key]<0)s[key]=0;
+ s.task_claims=Array.isArray(s.task_claims)?[...new Set(s.task_claims.filter(x=>['gifts','guardian'].includes(x)))]:[];
+ return s;
+}
 export const taskReady=(s,id)=>id==='gifts'?s.daily_gifts>=3:id==='guardian'?s.daily_guardians>=1:false;
 export function flowTransition(input,command,event,time,rng,prices=PREMIUM_LIMITS){
  const state=flowState(input,time),kind=command?.kind;
@@ -25,6 +33,16 @@ export function flowTransition(input,command,event,time,rng,prices=PREMIUM_LIMIT
  }
  const out=transition(state,command,event,time,rng,prices),s=out.state;
  if(kind==='roll'&&['stone','scroll','chest','jade'].includes(TILES[s.position]))s.daily_gifts++;
+ if(kind==='roll'&&BOARD_REWARDS.seal_tiles.includes(s.position)){
+  // JSON state and the existing reward outbox commit in the same CAS batch.
+  // Keep base supplies. Each marked stop adds a seal once for this event owner.
+  const claimed=Array.isArray(s.board_seal_claims)?s.board_seal_claims.filter(x=>BOARD_REWARDS.seal_tiles.includes(x)):[];
+  if(!claimed.includes(s.position)){
+   s.board_seal_claims=[...new Set([...claimed,s.position])];add(out.reward,'pavilion_seal',BOARD_REWARDS.seal_per_stop);
+   s.notice='Pavilion Seal discovered · secured in Mail';s.last_reward=out.reward;
+  }
+ }
+
  if(kind==='route'&&command.choice==='challenge'){
   // The die and encounter seed are server-generated. Old encounters retain the
   // legacy counter route; only new v4 encounters create a movable arena.

@@ -661,6 +661,7 @@ func _build_focus_element_trial(
 	)
 	action.custom_minimum_size.y = 52.0
 	action.disabled = disabled
+	preload("res://scripts/ui/action_ready_dot.gd").show_on(action,int(not disabled))
 
 
 func _build_convergence_checkpoint(
@@ -781,6 +782,7 @@ func _build_convergence_checkpoint(
 	)
 	action.custom_minimum_size.y = 52.0
 	action.disabled = not unlocked
+	ActionDot.show_on(action,int(unlocked and not SaveManager.is_progress_read_only()))
 
 
 func _build_compact_convergence(

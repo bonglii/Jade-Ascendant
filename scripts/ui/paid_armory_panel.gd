@@ -68,6 +68,7 @@ func _button(parent: Node, text: String, action: Callable, color: Color = GOLD) 
 	button.button_down.connect(func() -> void: _touch=get_global_mouse_position())
 	button.pressed.connect(func() -> void:
 		if Time.get_ticks_msec() < _blocked_until or get_global_mouse_position().distance_to(_touch)>10: return
+		_blocked_until=Time.get_ticks_msec()+140
 		action.call())
 	return button
 func _redraw() -> void:
