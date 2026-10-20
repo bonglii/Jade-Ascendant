@@ -18,12 +18,34 @@ func _ready() -> void:
 	_host.set_meta("ja_clean_popup_v3", true)
 	_panel = _host.get_node("ColorRect/SafeArea/CenterContainer/Panel")
 	_safe = _host.get_node("ColorRect/SafeArea")
+	var backdrop: ColorRect = _host.get_node("ColorRect")
+	backdrop.color = Color(0.018,0.055,0.065,0.98)
+	for child: Node in backdrop.get_children():
+		if child is TextureRect: child.hide()
+	var landscape := TextureRect.new()
+	landscape.name = "AscendantResultBackdrop"
+	landscape.texture = load("res://assets/ui/results/ascendant_v3/%s_backdrop.png" % _mode)
+	landscape.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	landscape.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	landscape.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	backdrop.add_child(landscape)
+	backdrop.move_child(landscape,0)
+	landscape.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var veil := ColorRect.new()
+	veil.name = "ResultReadabilityVeil"
+	veil.color = Color(0.015,0.04,0.045,0.16)
+	veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	backdrop.add_child(veil)
+	backdrop.move_child(veil,1)
+	veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
 	_margin = _panel.get_node("Margin")
 	_content = _margin.get_node("Content")
 	var empty := StyleBoxEmpty.new()
 	_panel.add_theme_stylebox_override("panel", empty)
 	var frame := TextureRect.new()
 	frame.name = "CeremonialResultFrame"
+	frame.self_modulate.a = 0.95
 	frame.texture = load("res://assets/ui/results/neo/%s.svg" % ("crimson" if _mode == "defeat" else "jade"))
 	frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	frame.stretch_mode = TextureRect.STRETCH_SCALE

@@ -872,7 +872,9 @@ func get_login_reward(day: int) -> Dictionary:
 	if not LOGIN_REWARDS.has(day):
 		return {}
 	var reward: Dictionary = LOGIN_REWARDS[day]
-	return reward.duplicate(true)
+	var result: Dictionary = reward.duplicate(true)
+	result.merge(preload("res://scripts/data/earned_reward_catalog.gd").premium(RewardManager.SOURCE_PAVILION,"live_ops_login_day_%d" % day),true)
+	return result
 
 
 func is_login_day_unlocked(day: int) -> bool:
@@ -922,6 +924,8 @@ func claim_login_day(day: int) -> bool:
 	ledger.append(claim_marker)
 	var next_pavilion: Dictionary = _build_pavilion_snapshot(ledger)
 
+	next_pavilion["celestial_jade"] = PavilionManager.get_local_celestial_jade() + int(reward.get("celestial_jade",0))
+	next_pavilion["pavilion_seals"] = PavilionManager.get_pavilion_seals() + int(reward.get("pavilion_seal",0))
 	_login_claim_in_progress = true
 	var cycle: int = get_login_cycle_id()
 	var source_id: String = (
@@ -1944,6 +1948,18 @@ func delete_mail(mail_id: String) -> bool:
 	var ledger: Array[String] = _get_ledger()
 	ledger.append(MAIL_DELETE_PREFIX + mail_id)
 	return _commit_ledger(ledger)
+
+
+func delete_all_completed_mail() -> bool:
+	if _mail_mutation_in_progress or _login_claim_in_progress or SaveManager.is_progress_read_only(): return false
+	var ledger: Array[String] = _get_ledger()
+	var changed: bool = false
+	for mail_id: String in get_mail_ids():
+		if mail_id.begins_with("server:") or not can_delete_mail(mail_id): continue
+		ledger.append(MAIL_DELETE_PREFIX + mail_id)
+		changed = true
+	if changed and not _commit_ledger(ledger): return false
+	return ServerMailManager.delete_all_completed() if not ServerMailManager.get_mail_ids().is_empty() else true
 
 
 func mark_all_mail_read() -> bool:

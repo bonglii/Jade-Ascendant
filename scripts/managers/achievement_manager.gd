@@ -301,6 +301,11 @@ func get_target(achievement_id: String) -> int:
 	var data: Dictionary = ACHIEVEMENTS[achievement_id]
 	return max(int(data.get("target", 0)), 0)
 
+func get_reward_data(achievement_id: String) -> Dictionary:
+	var data: Dictionary = RewardManager.create_reward_data(get_reward(achievement_id))
+	data.merge(preload("res://scripts/data/earned_reward_catalog.gd").premium(RewardManager.SOURCE_ACHIEVEMENT,achievement_id),true)
+	return data
+
 func get_reward(achievement_id: String) -> int:
 	if not has_achievement(achievement_id):
 		return 0
@@ -403,10 +408,10 @@ func set_progress_at_least(
 	return true
 
 func claim_reward(achievement_id: String) -> bool:
-	if not is_claimable(achievement_id):
+	if SaveManager.is_progress_read_only() or not is_claimable(achievement_id):
 		return false
 	var reward := get_reward(achievement_id)
-	var reward_data := RewardManager.create_reward_data(reward)
+	var reward_data: Dictionary = get_reward_data(achievement_id)
 	if not RewardManager.is_valid_reward(
 		RewardManager.SOURCE_ACHIEVEMENT,
 		achievement_id,
@@ -417,12 +422,15 @@ func claim_reward(achievement_id: String) -> bool:
 			+ achievement_id
 		)
 		return false
+	var next_pavilion: Dictionary = PavilionManager.state.duplicate(true)
+	next_pavilion["celestial_jade"] = PavilionManager.get_local_celestial_jade() + int(reward_data.get("celestial_jade",0))
+	next_pavilion["pavilion_seals"] = PavilionManager.get_pavilion_seals() + int(reward_data.get("pavilion_seal",0))
 	claimed_achievement_ids.append(achievement_id)
 	var grant_result := RewardManager.grant_reward(
 		RewardManager.SOURCE_ACHIEVEMENT,
 		achievement_id,
 		reward_data,
-		{"achievements": build_save_data()}
+		{"achievements": build_save_data(), "pavilion":next_pavilion}
 	)
 	if not bool(grant_result.get("success", false)):
 		claimed_achievement_ids.erase(achievement_id)
@@ -431,6 +439,8 @@ func claim_reward(achievement_id: String) -> bool:
 			+ str(grant_result.get("error", "unknown error"))
 		)
 		return false
+	PavilionManager.state = next_pavilion
+	PavilionManager.pavilion_changed.emit()
 	achievement_claimed.emit(achievement_id, reward)
 	DebugLogger.system(str(
 		"Achievement reward diklaim: ",

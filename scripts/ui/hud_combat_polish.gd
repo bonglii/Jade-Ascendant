@@ -33,7 +33,7 @@ var _exp_bar: ProgressBar = null
 var _boss_bar: ProgressBar = null
 var _hp_highlight: ColorRect = null
 var _exp_highlight: ColorRect = null
-var _hp_fill_styles: Array[StyleBoxFlat] = []
+var _hp_fill_styles: Array[StyleBox] = []
 var _exp_fill_style: StyleBoxFlat = null
 var _boss_fill_style: StyleBoxFlat = null
 var _health_state: int = -1
@@ -88,6 +88,7 @@ func _initialize_hud_presentation() -> void:
 	_polish_player_bars()
 	_polish_boss_bar()
 	_build_pre_boss_warning()
+	preload("res://scripts/ui/combat_chrome.gd").apply(_hud)
 
 	if _enemy_spawner.has_signal("boss_spawned_signal"):
 		var boss_callable: Callable = Callable(self, "_on_boss_spawned")
@@ -101,9 +102,9 @@ func _initialize_hud_presentation() -> void:
 func _polish_player_bars() -> void:
 	_exp_fill_style = _make_fill(EXP_JADE)
 	_hp_fill_styles = [
-		_make_fill(HP_HEALTHY),
-		_make_fill(HP_WARNING),
-		_make_fill(HP_CRITICAL)
+		preload("res://scripts/ui/combat_chrome.gd").skin("crimson",true),
+		preload("res://scripts/ui/combat_chrome.gd").skin("gold",true),
+		preload("res://scripts/ui/combat_chrome.gd").skin("crimson",true)
 	]
 
 	_exp_bar.custom_minimum_size.y = 21.0
@@ -116,7 +117,7 @@ func _polish_player_bars() -> void:
 		"background",
 		_make_track(Color(0.76, 0.30, 0.26, 1.0))
 	)
-	_exp_bar.add_theme_stylebox_override("fill", _exp_fill_style)
+	_exp_bar.add_theme_stylebox_override("fill", preload("res://scripts/ui/combat_chrome.gd").skin("jade",true))
 	_hp_bar.add_theme_stylebox_override("fill", _hp_fill_styles[0])
 
 	_exp_highlight = _make_fill_glint(
@@ -161,7 +162,7 @@ func _polish_boss_bar() -> void:
 		"background",
 		_make_track(Color(0.89, 0.50, 0.22, 1.0))
 	)
-	_boss_bar.add_theme_stylebox_override("fill", _boss_fill_style)
+	_boss_bar.add_theme_stylebox_override("fill", preload("res://scripts/ui/combat_chrome.gd").skin("crimson",true))
 
 	var boss_name: Label = _hud.get("boss_name_label") as Label
 	if boss_name != null:
@@ -246,7 +247,7 @@ func _refresh_visual_ratios() -> void:
 			next_state = 2
 		elif hp_ratio <= 0.55:
 			next_state = 1
-		var expected_fill: StyleBoxFlat = _hp_fill_styles[next_state]
+		var expected_fill: StyleBox = _hp_fill_styles[next_state]
 		# The original HUD refreshes its fill style after damage. Restore the
 		# premium treatment when that happens, but do not rebuild resources.
 		if _hp_bar.get_theme_stylebox("fill") != expected_fill:
@@ -295,6 +296,9 @@ func _check_boss_pre_warning() -> void:
 	_boss_warning_shown = true
 	_active_realm_id = _detect_realm_id()
 	_active_stage_id = _detect_stage_id()
+	_warning_side_right.hide()
+	for chip: Node in _warning_side_left.get_child(0).get_children():
+		if chip is ColorRect: chip.hide()
 	_apply_warning_theme(_theme_for_realm(_active_realm_id), false)
 	NoticeLayout.decorate(_warning_panel, GOLD)
 	_show_boss_warning()
@@ -340,14 +344,14 @@ func _build_pre_boss_warning() -> void:
 	root.add_child(_warning_side_left)
 	var seal := TextureRect.new()
 	seal.texture = preload("res://assets/ui/wuxia/stage_boss.png")
-	seal.custom_minimum_size = Vector2(38,38)
+	seal.custom_minimum_size = Vector2(52,52)
 	seal.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	seal.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	seal.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	seal.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_warning_side_left.get_child(0).add_child(seal)
 	var mark := Label.new()
-	mark.text = "!"
+	mark.text = ""
 	mark.add_theme_font_size_override("font_size", 24)
 	mark.add_theme_color_override("font_color", GOLD)
 	mark.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -653,9 +657,10 @@ func _show_boss_warning() -> void:
 		return
 	if _warning_tween != null and _warning_tween.is_valid():
 		_warning_tween.kill()
-	_warning_panel.visible = true
+	_warning_panel.modulate.a = 0.0
 	NoticeLayout.decorate(_warning_panel, GOLD)
 	NoticeLayout.settle(_warning_panel, _warning_panel.get_parent())
+	_warning_panel.visible = true
 	_warning_panel.scale = Vector2.ONE
 	_warning_panel.modulate = Color.WHITE
 
@@ -728,9 +733,6 @@ func _extend_boss_arrival_banner(boss: Node) -> void:
 	var banner: PanelContainer = _hud.get("_encounter_banner") as PanelContainer
 	if banner == null or not banner.visible:
 		return
-	var old_tween: Tween = _hud.get("_encounter_banner_tween") as Tween
-	if old_tween != null and old_tween.is_valid():
-		old_tween.kill()
 
 	var realm_id: int = int(boss.get("realm_id")) if boss.get("realm_id") != null and int(boss.get("realm_id")) > 0 else _active_realm_id
 	var stage_id: int = int(boss.get("boss_stage_id")) if boss.get("boss_stage_id") != null else _active_stage_id
@@ -752,42 +754,10 @@ func _extend_boss_arrival_banner(boss: Node) -> void:
 		_make_warning_style(theme, true)
 	)
 	banner.z_index = 60
-	banner.visible = true
-	banner.scale = Vector2.ONE
-	banner.modulate = Color.WHITE
-
-	_add_arrival_ornaments(banner, theme, realm_id, stage_id)
-	NoticeLayout.decorate(banner, theme.get("border", GOLD))
-	NoticeLayout.settle(banner, banner.get_parent())
-
-	var name_tween: Tween = banner.create_tween()
-	if bool(SettingsManager.reduced_effects):
-		name_tween.tween_interval(BOSS_ARRIVAL_NAME_HOLD)
-	else:
-		banner.pivot_offset = banner.size * 0.5
-		banner.scale = Vector2(0.92, 0.92)
-		banner.modulate = Color(1.0, 0.95, 0.84, 0.0)
-		name_tween.tween_property(
-			banner,
-			"modulate",
-			Color.WHITE,
-			0.20
-		).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		name_tween.parallel().tween_property(
-			banner,
-			"scale",
-			Vector2.ONE,
-			0.28
-		).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		name_tween.tween_interval(BOSS_ARRIVAL_NAME_HOLD)
-		name_tween.tween_property(
-			banner,
-			"modulate:a",
-			0.0,
-			BOSS_ARRIVAL_FADE
-		).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	name_tween.tween_callback(Callable(_hud, "_hide_encounter_banner"))
-	_hud.set("_encounter_banner_tween", name_tween)
+	# HUD owns one fade sequence. This extension only styles the existing notice.
+	_add_arrival_ornaments(banner,theme,realm_id,stage_id)
+	NoticeLayout.decorate(banner,theme.get("border",GOLD))
+	NoticeLayout.fit(banner,banner.get_parent())
 
 
 func _add_arrival_ornaments(banner: PanelContainer, theme: Dictionary, realm_id: int, stage_id: int) -> void:

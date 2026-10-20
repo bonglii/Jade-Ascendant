@@ -9,6 +9,8 @@ try {
     $started=[DateTimeOffset]::FromUnixTimeMilliseconds([long]$receipt.started_ms).UtcDateTime
     if ((Get-Item -LiteralPath $aab).LastWriteTimeUtc -lt $started.AddSeconds(-2)) { throw 'AAB predates this export attempt. Do not upload the previous artifact.' }
     if ([string]$receipt.source_revision -notmatch '^[a-f0-9]{40}$') { throw 'Export source revision is missing. Use the production export launcher.' }
+     $currentHead=(& git -C $Project rev-parse HEAD).Trim()
+    if ($LASTEXITCODE -ne 0 -or $currentHead -ne [string]$receipt.source_revision) { throw 'Export receipt is from an older commit. Export the current source.' }
     $proof=[IO.File]::ReadAllText((Join-Path $Project 'docs/checkpoints/IAP_PRODUCTION_NATIVE_CANDIDATE.json')) | ConvertFrom-Json
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $zip=[IO.Compression.ZipFile]::OpenRead($aab)
@@ -22,7 +24,7 @@ try {
         if ($entries.Count -ne 1 -or $entries[0].Length -gt 16384) { throw 'Unique release metadata not found in AAB.' }
         $reader=New-Object IO.StreamReader($entries[0].Open())
         try { $meta=$reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }
-        if ($meta.debug -ne $false -or $meta.iap_target -ne 'production' -or $meta.odyssey_presentation -ne 3 -or $meta.update_notifications -ne 1 -or $meta.odyssey_shop_protocol -ne 4 -or $meta.odyssey_flow_revision -ne 4 -or $meta.odyssey_reliability_revision -ne 1 -or $meta.odyssey_ad_feedback_revision -ne 1 -or $meta.native_sha256 -ne $proof.aar_sha256 -or $meta.source_revision -ne $receipt.source_revision) { throw 'AAB metadata does not match this verified Odyssey release candidate.' }
+        if ($meta.debug -ne $false -or $meta.iap_target -ne 'production' -or $meta.odyssey_presentation -ne 3 -or $meta.update_notifications -ne 1 -or $meta.odyssey_shop_protocol -ne 4 -or $meta.odyssey_flow_revision -ne 4 -or $meta.odyssey_reliability_revision -ne 1 -or $meta.odyssey_ad_feedback_revision -ne 1 -or $meta.premium_reliability_revision -ne 1 -or $meta.native_sha256 -ne $proof.aar_sha256 -or $meta.source_revision -ne $receipt.source_revision) { throw 'AAB metadata does not match this verified Odyssey release candidate.' }
         $found=$false; $pushService=$false; $pushTopic=$false
         foreach ($entry in @($zip.Entries | Where-Object { $_.FullName -match '(^|/)classes[0-9]*\.dex$' })) {
             if ($entry.Length -gt 134217728) { throw 'Unexpectedly large DEX entry.' }
@@ -34,6 +36,7 @@ try {
     } finally { $zip.Dispose() }
     $hash=(Get-FileHash -LiteralPath $aab -Algorithm SHA256).Hash.ToLowerInvariant()
     Write-Host ('ODYSSEY_FINAL_AAB=PASS; RELEASE_METADATA=VERIFIED; NATIVE_FLOW_PROTOCOL_V4=VERIFIED; SHA256='+$hash)
+    Write-Host ('SOURCE='+$meta.source_revision)
     Write-Host ('AAB='+$aab)
     Write-Host 'Upload this verified AAB to internal test using a new version code. Event/player records were not reset.'
 } catch { Write-Error $_ -ErrorAction Continue; exit 1 }

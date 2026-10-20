@@ -138,7 +138,30 @@ export function createMailHandler({verify}={}){
   const version=request.headers.get('x-jade-client-version')||'';
   await db.prepare('INSERT INTO mail_player_activity(owner_binding,last_seen,client_version) VALUES(?,?,?) ON CONFLICT(owner_binding) DO UPDATE SET last_seen=excluded.last_seen,client_version=CASE WHEN excluded.client_version<>\'\' THEN excluded.client_version ELSE client_version END').bind(owner,nowSeconds(),/^[a-zA-Z0-9._+-]{1,40}$/.test(version)?version:'').run();
   if(path==='/v1/mail/list'&&request.method==='GET')return json(200,await inbox(db,owner,url,request.headers.get('x-jade-mail-features')==='gifts-v2',request.headers.get('x-jade-equipment-catalog')==='jade-chain-v1',request.headers.get('x-jade-returning-glaive')==='v1',request.headers.get('x-jade-announcements')==='v1',request.headers.get('x-jade-ascendant-arsenal')==='v1',request.headers.get('x-jade-odyssey')==='v1'));
-  if(request.method!=='POST')fail(405,'method_not_allowed');const input=await readBody(request,512);
+  if(request.method!=='POST')fail(405,'method_not_allowed');const input=await readBody(request,path.endsWith('_batch')?4096:512);
+  if(path==='/v1/mail/claim_batch'||path==='/v1/mail/ack_batch'){
+   exact(input,['entries']);
+   if(!Array.isArray(input.entries)||input.entries.length<1||input.entries.length>8)fail(400,'invalid_batch');
+   const ids=new Set();
+   // Validate the whole envelope before touching any reservation.
+   for(const entry of input.entries){exact(entry,path.endsWith('claim_batch')?['mail_id','installation_id']:['mail_id','installation_id','receipt_id']);mailId(entry.mail_id);install(entry.installation_id);if(path.endsWith('ack_batch'))mailId(entry.receipt_id);if(ids.has(entry.mail_id))fail(400,'duplicate_mail');ids.add(entry.mail_id);}
+   const entries=[];
+   for(const entry of input.entries){try{
+    const result=path.endsWith('claim_batch')?await claimMail(db,owner,entry,request.headers.get('x-jade-mail-features')==='gifts-v2',request.headers.get('x-jade-equipment-catalog')==='jade-chain-v1',request.headers.get('x-jade-returning-glaive')==='v1',request.headers.get('x-jade-ascendant-arsenal')==='v1',request.headers.get('x-jade-odyssey')==='v1'):await acknowledgeMail(db,owner,entry);
+    entries.push({...result,success:true});
+   }catch(error){if(!(error instanceof MailError)||error.status>=500)throw error;entries.push({mail_id:entry.mail_id,success:false,error:error.code});}}
+   return json(200,{owner_binding:owner,entries});
+  }
+  if(path==='/v1/mail/delete_all'){
+   exact(input,[]);
+   // Hide completed/expired letters only. Never discard unclaimed gifts or an
+   // unacknowledged lease, and never erase campaign/receipt audit records.
+   const changed=await db.prepare(`UPDATE mail_recipients SET deleted_at=? WHERE owner_binding=? AND deleted_at=0
+    AND NOT EXISTS(SELECT 1 FROM mail_claims k WHERE k.mail_id=mail_recipients.mail_id AND k.owner_binding=mail_recipients.owner_binding AND k.acknowledged_at=0)
+    AND (EXISTS(SELECT 1 FROM mail_claims k WHERE k.mail_id=mail_recipients.mail_id AND k.owner_binding=mail_recipients.owner_binding AND k.acknowledged_at>0)
+     OR EXISTS(SELECT 1 FROM mail_campaigns c WHERE c.id=mail_recipients.mail_id AND (c.expires_at<=? OR c.cancelled_at>0 OR (COALESCE(json_extract(c.reward_json,'$.spirit_stone'),0)=0 AND COALESCE(json_extract(c.reward_json,'$.celestial_jade'),0)=0 AND COALESCE(json_extract(c.reward_json,'$.pavilion_seal'),0)=0 AND NOT EXISTS(SELECT 1 FROM json_each(json_extract(c.reward_json,'$.items')))))))`).bind(nowSeconds(),owner,nowSeconds()).run();
+   return json(200,{ok:true,owner_binding:owner,deleted_count:changed.meta?.changes||0});
+  }
   if(path==='/v1/mail/claim')return json(200,await claimMail(db,owner,input,request.headers.get('x-jade-mail-features')==='gifts-v2',request.headers.get('x-jade-equipment-catalog')==='jade-chain-v1',request.headers.get('x-jade-returning-glaive')==='v1',request.headers.get('x-jade-ascendant-arsenal')==='v1',request.headers.get('x-jade-odyssey')==='v1'));
   if(path==='/v1/mail/ack')return json(200,await acknowledgeMail(db,owner,input));
   if(path==='/v1/mail/read_all'){

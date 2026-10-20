@@ -316,6 +316,7 @@ func set_progress_at_least(
 	return true
 
 func claim_reward(quest_id: String) -> bool:
+	if SaveManager.is_progress_read_only(): return false
 	refresh_daily_date()
 	if not is_claimable(quest_id):
 		return false

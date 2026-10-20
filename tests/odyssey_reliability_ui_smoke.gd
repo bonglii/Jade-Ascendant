@@ -96,9 +96,26 @@ func run()->void:
   check(screen._modal_panel.size.y<=float(dimensions.y),"Journey sheet height")
   screen._close_modal();screen._shop();await process_frame;await process_frame
   check(screen._modal_panel.size.x<=float(dimensions.x),"Shop width")
+  var store: Node=root.get_node("PavilionManager")
+  check(screen._shop_handles.size()==1 and screen._shop_handles[0].button.text.contains("Rp75.000"),"Real localized Play price is visible directly in event")
+  var buy_button: Button=screen._shop_handles[0].button
+  check(not buy_button.disabled,"Supported ready wallet can open Play purchase")
+  var purchase_before: int=store.purchases.size()
+  buy_button.pressed.emit();buy_button.pressed.emit()
+  check(store.purchases.size()==purchase_before+1 and store.purchases.back()=="jade_satchel_550","Direct checkout delegates one exact SKU, no Treasury detour or duplicate tap")
+  store.billing_purchase_state_changed.emit("jade_satchel_550","cancelled","Cancelled")
+  check(not buy_button.disabled,"Cancellation releases only the matching checkout")
+  store.allow=false;screen._refresh_shop_products()
+  check(buy_button.disabled and buy_button.text.contains("Rp75.000"),"Refund/authority gate disables checkout without hiding known price")
+  store.allow=true;store.products={};screen._refresh_shop_products()
+  check(buy_button.disabled and not buy_button.text.contains("Rp75.000"),"Missing ProductDetails never invents a price")
+  store.products={"jade_satchel_550":{"formatted_price":"Rp75.000","price_amount_micros":75000000000}};screen._refresh_shop_products()
+  client.snapshot.purchase_bonus.offers[0].claimed=true;screen._refresh_shop_products()
+  check(screen._shop_handles[0].eligibility.text.contains("hanya Jade"),"Consumed dice bonus is clearly ineligible on repeat purchase")
+
   screen._close_modal()
   client.busy=true;client.status="refreshing";screen._routes();await process_frame
-  var route: Button=screen.modal.find_children("*","Button",true,false).filter(func(node: Node)->bool:return node.text=="QUIET GROVE")[0]
+  var route: Button=screen.modal.find_children("*","Button",true,false).filter(func(node: Node)->bool:return node.name=="RouteChoiceSafe")[0]
   route.pressed.emit();route.pressed.emit();check(screen._queued_action.get("kind")=="route","Route tap during a read queues once instead of disappearing")
   screen._queued_action={};screen._confirm_pack(1,10);await process_frame
   var confirm: Button=screen.modal.find_children("*","Button",true,false).filter(func(node: Node)->bool:return node.text.begins_with("CONFIRM ·"))[0]

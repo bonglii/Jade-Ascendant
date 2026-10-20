@@ -9,4 +9,6 @@ SELECT substr(i.owner,1,12) AS account_ref,datetime(i.created_at,'unixepoch') AS
  & npx.cmd --yes wrangler@4.151.0 d1 execute jade-iap-ledger --remote --config backend/monetization/cloudflare/wrangler.production-live.toml --command $query --json
  if ($LASTEXITCODE -ne 0) { throw 'Ad receipt query failed. No data was changed.' }
  Write-Host 'NOTE: A pending intent is not proof that a video completed. Credit requires the signed Google callback; daily reward cap is 2.'
+ Write-Host 'SSV_UNIT_POLICY=SIGNED_NUMERIC_ID_OR_EXACT_SDK_ID; SIGNED_BYTES=UNCHANGED'
+ Write-Host 'If still awaiting Google: check the rewarded unit SSV callback, amount 1, exact reward label and Worker tail JADE_ODYSSEY_AD. Rejections report binding=unit/reward_item/amount without tokens or raw nonce.'
 } catch { Write-Error $_ -ErrorAction Continue; exit 1 } finally { Pop-Location }

@@ -55,6 +55,9 @@ var _popup: Control = null
 var _panel: PanelContainer = null
 var _scroll: ScrollContainer = null
 var _body: VBoxContainer = null
+var _active_result: Dictionary = {}
+var _reward_grid: GridContainer
+var _claim_title: Label
 
 
 func _ready() -> void:
@@ -155,7 +158,7 @@ func _is_explicit_claim_source(
 
 	if source_type == RewardManager.SOURCE_PAVILION:
 		return (
-			source_id.begins_with("live_ops_login_day_")
+			source_id.begins_with("live_ops_login_")
 			or source_id.begins_with("live_ops_mail_")
 		)
 
@@ -175,7 +178,7 @@ func _get_source_label(
 	if source_type == RewardManager.SOURCE_HERO_MILESTONE:
 		return tr("HERO MILESTONE")
 	if source_type == RewardManager.SOURCE_PAVILION:
-		if source_id.begins_with("live_ops_login_day_"):
+		if source_id.begins_with("live_ops_login_"):
 			return tr("7-DAY LOGIN")
 		if source_id.begins_with("live_ops_mail_"):
 			return tr("MAIL ATTACHMENT")
@@ -248,16 +251,29 @@ func _flush_pending_claims() -> void:
 		):
 			source_label = tr("MULTIPLE REWARDS")
 
-	_result_queue.append({
-		"scene_id": scene_id,
-		"source_label": source_label,
-		"reward_data": merged_reward,
-		"claim_count": claim_count,
-	})
+	var incoming: Dictionary = {"scene_id":scene_id,"source_label":source_label,"reward_data":merged_reward,"claim_count":claim_count}
+	if is_instance_valid(_popup) and int(_active_result.get("scene_id",0)) == scene_id:
+		_merge_claim_result(_active_result,incoming)
+		if is_instance_valid(_reward_grid):
+			for child: Node in _reward_grid.get_children(): _reward_grid.remove_child(child); child.queue_free()
+			_add_reward_cards(_reward_grid,_active_result.reward_data)
+			_reward_grid.columns = mini(3,maxi(1,_reward_grid.get_child_count()))
+			_claim_title.text = tr("REWARDS CLAIMED") + " · %d" % int(_active_result.claim_count)
+			_fit_popup_to_content.call_deferred()
+	elif not _result_queue.is_empty() and int(_result_queue.back().get("scene_id",0)) == scene_id:
+		_merge_claim_result(_result_queue.back(),incoming)
+	else:
+		_result_queue.append(incoming)
 
 	_pending_entries.clear()
 	_pending_elapsed = 0.0
 	_queue_elapsed = 0.0
+
+
+func _merge_claim_result(target: Dictionary, addition: Dictionary) -> void:
+	target.reward_data = _merge_rewards(target.reward_data,addition.reward_data)
+	target.claim_count = int(target.claim_count) + int(addition.claim_count)
+	if str(target.source_label) != str(addition.source_label): target.source_label = tr("MULTIPLE REWARDS")
 
 
 func _merge_rewards(
@@ -383,6 +399,8 @@ func _show_next_result() -> void:
 		)
 	)
 
+	_active_result = result.duplicate(true)
+
 
 func _build_result_popup(
 	scene: Node,
@@ -505,6 +523,7 @@ func _build_result_popup(
 	_body.add_child(eyebrow)
 
 	var title := Label.new()
+	_claim_title = title
 	title.text = (
 		tr("REWARDS CLAIMED")
 		if claim_count > 1
@@ -547,6 +566,7 @@ func _build_result_popup(
 	_body.add_child(heading)
 
 	var reward_grid := GridContainer.new()
+	_reward_grid = reward_grid
 	reward_grid.columns = 3
 	reward_grid.size_flags_horizontal = (
 		Control.SIZE_EXPAND_FILL
@@ -1075,6 +1095,9 @@ func _close_popup() -> void:
 		_popup.queue_free()
 
 	_popup = null
+	_active_result = {}
+	_reward_grid = null
+	_claim_title = null
 	_panel = null
 	_scroll = null
 	_body = null

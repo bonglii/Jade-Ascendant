@@ -23,7 +23,7 @@ export class SsvRejection extends Error {
   }
 }
 
-function reject(code) { throw new SsvRejection(code); }
+function reject(code, binding) { const error=new SsvRejection(code); if(binding)error.binding=binding; throw error; }
 
 /** Extract signed bytes WITHOUT URLSearchParams or canonical re-serialization. */
 export function parseSignedCallback(rawQuery) {
@@ -32,7 +32,7 @@ export function parseSignedCallback(rawQuery) {
       /[\r\n#]/.test(rawQuery)) reject('MALFORMED_QUERY');
   const query = rawQuery.slice(1);
   // Google specifies signature and key_id as LAST parameters, in that order.
-  const tail = query.match(/^(.*)&signature=([A-Za-z0-9_-]+={0,2})&key_id=([1-9][0-9]{0,15})$/);
+  const tail = query.match(/^(.*)&signature=([A-Za-z0-9_%-]+={0,2})&key_id=([1-9][0-9]{0,15})$/);
   if (!tail || !tail[1]) reject('SIGNATURE_TAIL_INVALID');
   const signedPart = tail[1];
   const params = Object.create(null);
@@ -52,7 +52,11 @@ export function parseSignedCallback(rawQuery) {
   for (const name of REQUIRED) {
     if (!Object.hasOwn(params, name)) reject('MISSING_PARAMETER');
   }
-  const signatureText = tail[2].replace(/=+$/, '');
+  // Decode only the unsigned signature field; never reserialize signed bytes.
+  let decodedSignature;
+  try { decodedSignature = decodeURIComponent(tail[2]); } catch { reject('SIGNATURE_ENCODING_INVALID'); }
+  if (!/^[A-Za-z0-9_-]+={0,2}$/.test(decodedSignature)) reject('SIGNATURE_ENCODING_INVALID');
+  const signatureText = decodedSignature.replace(/=+$/, '');
   const signature = Buffer.from(signatureText, 'base64url');
   if (signature.length < 64 || signature.length > 80 ||
       signature.toString('base64url') !== signatureText) reject('SIGNATURE_ENCODING_INVALID');
@@ -117,10 +121,14 @@ export function verifyGoogleSsv(rawQuery, {
   if (!isValid) reject('SIGNATURE_INVALID');
 
   const p = callback.params;
-  if (p.ad_unit !== expectedAdUnit ||
-      p.custom_data !== expectedCustomData ||
-      p.reward_item !== expectedRewardItem ||
-      p.reward_amount !== String(expectedRewardAmount)) reject('INTENT_BINDING_MISMATCH');
+  // AdMob SSV documents a numeric ad_unit; the SDK uses publisher/unit.
+  // Only the exact numeric suffix of a valid configured SDK ID is equivalent.
+  const sdkUnit = expectedAdUnit.match(/^ca-app-pub-[0-9]{16}\/([0-9]{10})$/);
+  const unitMatches = p.ad_unit === expectedAdUnit || (sdkUnit && p.ad_unit === sdkUnit[1]);
+  if (!unitMatches) reject('INTENT_BINDING_MISMATCH','unit');
+  if (p.custom_data !== expectedCustomData) reject('INTENT_BINDING_MISMATCH','nonce');
+  if (p.reward_item !== expectedRewardItem) reject('INTENT_BINDING_MISMATCH','reward_item');
+  if (p.reward_amount !== String(expectedRewardAmount)) reject('INTENT_BINDING_MISMATCH','amount');
   if (!/^[0-9a-fA-F]{16,128}$/.test(p.transaction_id)) reject('TRANSACTION_ID_INVALID');
   // Google docs show both millisecond and older microsecond-looking examples.
   // The deployment must confirm timestamp units; only signed values are used.
@@ -134,7 +142,7 @@ export function verifyGoogleSsv(rawQuery, {
     transactionId: p.transaction_id.toLowerCase(),
     keyId: callback.keyId,
     timestampMs,
-    adUnit: p.ad_unit,
+    adUnit: expectedAdUnit,
     customData: p.custom_data,
     rewardAmount: expectedRewardAmount,
     rewardItem: expectedRewardItem,

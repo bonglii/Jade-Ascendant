@@ -42,10 +42,11 @@ func _ready()->void:
    for column: int in range(6):
     var tile:=AtlasTexture.new();tile.atlas=BOSS;tile.region=Rect2(Vector2(float(column)*cell.x,float(row)*cell.y),cell);tile.filter_clip=true;_boss_frames.add_frame(family,tile)
  _boss=AnimatedSprite2D.new();_boss.sprite_frames=_boss_frames;_boss.play("walk");add_child(_boss)
- var top:=VBoxContainer.new();top.mouse_filter=Control.MOUSE_FILTER_IGNORE;add_child(top);top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE);top.offset_left=20;top.offset_right=-20;top.offset_top=12
- _title=Flow.text("DRAGON GATE GUARDIAN",22,true);_title.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;top.add_child(_title)
- _health=ProgressBar.new();_health.max_value=16;_health.show_percentage=false;_health.custom_minimum_size.y=12;top.add_child(_health)
- _hint=Flow.text("",17);_hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;top.add_child(_hint)
+ var shell:=PanelContainer.new();shell.name="GuardianCombatHeader";shell.mouse_filter=Control.MOUSE_FILTER_IGNORE;shell.add_theme_stylebox_override("panel",preload("res://scripts/ui/combat_chrome.gd").skin("crimson"));add_child(shell);shell.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE);shell.offset_left=14;shell.offset_right=-14;shell.offset_top=12
+ var top:=VBoxContainer.new();top.mouse_filter=Control.MOUSE_FILTER_IGNORE;top.add_theme_constant_override("separation",6);shell.add_child(top)
+ _title=Flow.text("DRAGON GATE GUARDIAN",22,true);_title.add_theme_color_override("font_color",Color("f3d89f"));_title.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;top.add_child(_title)
+ _health=ProgressBar.new();_health.max_value=16;_health.show_percentage=false;_health.custom_minimum_size.y=22;_health.add_theme_stylebox_override("fill",preload("res://scripts/ui/combat_chrome.gd").skin("crimson",true));top.add_child(_health)
+ _hint=Flow.text("",15);_hint.add_theme_color_override("font_color",Color("e5e9dd"));_hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;top.add_child(_hint)
  _retreat=Flow.button("KELUAR · HADIAH DASAR",func()->void: _finish(true));add_child(_retreat);_retreat.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT);_retreat.offset_left=-clampf(size.x*0.43,150,240)-16;_retreat.offset_right=-16;_retreat.offset_top=-84;_retreat.offset_bottom=-18
  _retry=Flow.button("COBA SAMBUNG",func()->void:
   if client!=null and not client.busy:

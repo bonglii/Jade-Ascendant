@@ -23,19 +23,21 @@ static func style(index: int=3,compact: bool=false)->StyleBoxTexture:
   frames[key]=ImageTexture.create_from_image(image)
  var box:=StyleBoxTexture.new();box.texture=frames[key]
  box.texture_margin_left=40 if compact else 48;box.texture_margin_right=40 if compact else 48;box.texture_margin_top=40;box.texture_margin_bottom=40
- box.content_margin_left=36;box.content_margin_right=36;box.content_margin_top=52 if index==3 else 18;box.content_margin_bottom=42 if index==3 else 18
+ box.content_margin_left=40 if index==3 else 24;box.content_margin_right=40 if index==3 else 24;box.content_margin_top=44 if index==3 else 14;box.content_margin_bottom=48 if index==3 else 14
  return box
 static func card()->PanelContainer:
  var panel:=PanelContainer.new();panel.size_flags_vertical=Control.SIZE_SHRINK_BEGIN;panel.add_theme_stylebox_override("panel",style(3));return panel
 static func button(title: String,callback: Callable)->Button:
- var action:=Button.new();action.text=title;action.custom_minimum_size=Vector2(0,96)
+ var action:=Button.new();action.text=title;action.custom_minimum_size=Vector2(0,58)
  action.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;action.size_flags_horizontal=Control.SIZE_EXPAND_FILL
  action.add_theme_stylebox_override("normal",style(4,true));action.add_theme_stylebox_override("hover",style(4,true));action.add_theme_stylebox_override("pressed",style(4,true));action.add_theme_stylebox_override("disabled",style(4,true))
- action.add_theme_color_override("font_color",Color("fff0c4"));action.add_theme_color_override("font_hover_color",Color("ffffff"));action.add_theme_color_override("font_pressed_color",GOLD);action.add_theme_color_override("font_disabled_color",Color("c2c9b0"));action.add_theme_font_size_override("font_size",20)
+ action.add_theme_color_override("font_color",Color("fff0c4"));action.add_theme_color_override("font_hover_color",Color("ffffff"));action.add_theme_color_override("font_pressed_color",GOLD);action.add_theme_color_override("font_disabled_color",Color("c2c9b0"));action.add_theme_font_size_override("font_size",18)
  action.keep_pressed_outside=false;action.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE;action.pressed.connect(callback);return action
 static func text(copy: String,points: int=17,heading: bool=false)->Label:
  var node:=Label.new();node.text=copy;node.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;node.size_flags_horizontal=Control.SIZE_EXPAND_FILL;node.mouse_filter=Control.MOUSE_FILTER_IGNORE
  node.add_theme_color_override("font_color",INK);node.add_theme_font_size_override("font_size",points)
+ node.add_theme_color_override("font_shadow_color",Color.TRANSPARENT);node.add_theme_color_override("font_outline_color",Color.TRANSPARENT);node.add_theme_constant_override("outline_size",0);node.add_theme_constant_override("shadow_offset_x",0);node.add_theme_constant_override("shadow_offset_y",0)
+ node.set_meta("jade_mobile_readability_v2",true)
  if heading: node.add_theme_font_override("font",FONT)
  return node
 

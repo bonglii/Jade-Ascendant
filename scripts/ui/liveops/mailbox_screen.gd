@@ -51,6 +51,8 @@ const WIDE_READER_THRESHOLD: float = 760.0
 
 var live_ops: Node = null
 var _claim_busy: bool = false
+var _mail_refresh_queued: bool = false
+var _delete_all_button: Button
 var _claim_all_button: Button
 var _claim_batch: Node
 var _inbox_signature: String=""
@@ -112,7 +114,7 @@ func _ready() -> void:
 	_claim_batch=live_ops.get_node_or_null("MailboxClaimBatch")
 	if _claim_batch==null:
 		_claim_batch=preload("res://scripts/ui/liveops/mailbox_claim_batch.gd").new();_claim_batch.name="MailboxClaimBatch";_claim_batch.authority=live_ops;live_ops.add_child(_claim_batch)
-	_claim_batch.changed.connect(_refresh_from_authority)
+	_claim_batch.changed.connect(_on_live_ops_changed)
 	_build_home_scrim()
 	_build_popup()
 	_refresh_from_authority()
@@ -260,6 +262,16 @@ func _build_mail_toolbar(parent: VBoxContainer) -> void:
 	_compact_inbox_button.pressed.connect(_toggle_compact_inbox)
 	row.add_child(_compact_inbox_button)
 	_claim_all_button=_button("CLAIM ALL",true);_claim_all_button.name="MailboxClaimAll";_claim_all_button.custom_minimum_size.y=48;_claim_all_button.size_flags_horizontal=Control.SIZE_EXPAND_FILL;_claim_all_button.add_theme_font_size_override("font_size",14);_claim_all_button.pressed.connect(func()->void: _claim_batch.start());row.add_child(_claim_all_button)
+	var clear_button: Button = _button("DELETE ALL",false)
+	_delete_all_button = clear_button
+	clear_button.name = "MailboxDeleteAllCompleted"
+	clear_button.custom_minimum_size.y = 44
+	clear_button.tooltip_text = tr("Deletes completed and expired mail. Unclaimed rewards are kept.")
+	clear_button.pressed.connect(func() -> void:
+		if _claim_batch.active: return
+		if bool(live_ops.delete_all_completed_mail()): _on_live_ops_changed()
+	)
+	toolbar.add_child(clear_button)
 	_server_status = _label(ServerMailManager.get_status(),12,MUTED)
 	_server_status.name = "MailboxServerStatus"
 	_server_status.add_theme_stylebox_override("normal",_style(Color(0.002,0.02,0.028,.95),Color(GOLD,.3),6,1))
@@ -684,6 +696,7 @@ func _entries() -> Array[Dictionary]:
 
 
 func _refresh_from_authority() -> void:
+	_mail_refresh_queued = false
 	if _refreshing or live_ops == null or not is_instance_valid(_inbox_list):
 		return
 	_refreshing = true
@@ -694,6 +707,10 @@ func _refresh_from_authority() -> void:
 		_claim_all_button.disabled=SaveManager.is_progress_read_only() or (_claim_batch.active and not _claim_batch.paused) or (not _claim_batch.active and int(_claim_batch.available())==0)
 		_claim_all_button.text="LANJUTKAN" if _claim_batch.paused else "%d/%d" % [int(_claim_batch.claimed),int(_claim_batch.total)] if _claim_batch.active else "CLAIM ALL"
 		if not str(_claim_batch.message).is_empty(): _server_status.text=str(_claim_batch.message);_server_status.tooltip_text=_server_status.text
+	if is_instance_valid(_delete_all_button):
+		var deleting: bool = ServerMailManager.is_deleting_all_completed()
+		_delete_all_button.disabled = deleting or SaveManager.is_progress_read_only() or (is_instance_valid(_claim_batch) and _claim_batch.active)
+		_delete_all_button.text = tr("DELETING…") if deleting else tr("DELETE ALL")
 	var entries: Array[Dictionary] = _entries()
 	var selection_found: bool = false
 	for entry: Dictionary in entries:
@@ -714,9 +731,9 @@ func _refresh_from_authority() -> void:
 
 
 func _on_live_ops_changed() -> void:
-	if _claim_busy or not is_inside_tree():
-		return
-	_refresh_from_authority()
+	if _claim_busy or not is_inside_tree() or _mail_refresh_queued: return
+	_mail_refresh_queued = true
+	_refresh_from_authority.call_deferred()
 
 
 func _rebuild_inbox(preserve_scroll: bool = true) -> void:

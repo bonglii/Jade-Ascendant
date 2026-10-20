@@ -278,3 +278,37 @@ test('historical Bell receipts preserve client fence and immutable send retries'
  headers['x-jade-ascendant-arsenal']='v1';const reserved=await f.api('/v1/mail/claim',claim,{headers});assert.equal(reserved.status,200);assert.equal(reserved.data.reward.items.astral_resonance_bell,1);
  assert.equal((await f.api('/v1/mail/claim',claim,{headers})).data.receipt_id,reserved.data.receipt_id);f.db.sql.close();
 });
+
+test('bounded claim and ack batches retain independent receipts after response loss',async()=>{
+ const f=await fixture();await f.login();const mails=[];for(let i=0;i<8;i++)mails.push((await f.publish()).mail.id);
+ const entries=mails.map(mail_id=>({mail_id,installation_id:installation}));
+ const first=await f.api('/v1/mail/claim_batch',{entries});assert.equal(first.status,200);assert.equal(first.data.entries.length,8);
+ const retry=await f.api('/v1/mail/claim_batch',{entries});assert.deepEqual(retry.data,first.data);
+ const alien=await f.api('/v1/mail/claim_batch',{entries:entries.map(x=>({...x,installation_id:otherInstallation}))});assert.ok(alien.data.entries.every(x=>!x.success&&x.error==='claimed_on_other_device'));
+ const acks=first.data.entries.map(x=>({mail_id:x.mail_id,installation_id:installation,receipt_id:x.receipt_id}));
+ assert.ok((await f.api('/v1/mail/ack_batch',{entries:acks})).data.entries.every(x=>x.success));
+ assert.ok((await f.api('/v1/mail/ack_batch',{entries:acks})).data.entries.every(x=>x.success));
+ const done=await f.api('/v1/mail/claim_batch',{entries});assert.ok(done.data.entries.every(x=>x.delivery_state==='claimed'&&!x.reward));
+ assert.equal(f.db.sql.prepare('SELECT count(*) AS n FROM mail_claims').get().n,8);f.db.sql.close();
+});
+test('batch validates all IDs before mutation, isolates owners and allows partial eligibility',async()=>{
+ const f=await fixture();await f.login();const a=(await f.publish()).mail.id,b=(await f.publish()).mail.id;
+ assert.equal((await f.api('/v1/mail/claim_batch',{entries:[{mail_id:a,installation_id:installation},{mail_id:'bad',installation_id:installation}]})).status,400);
+ assert.equal(f.db.sql.prepare('SELECT count(*) AS n FROM mail_claims').get().n,0);
+ assert.equal((await f.api('/v1/mail/claim_batch',{entries:Array(9).fill({mail_id:a,installation_id:installation})})).status,400);
+ await f.api('/admin/api/cancel',{mail_id:b});
+ const out=await f.api('/v1/mail/claim_batch',{entries:[a,b].map(mail_id=>({mail_id,installation_id:installation}))});
+ assert.equal(out.data.entries[0].success,true);assert.equal(out.data.entries[1].success,false);
+ const bob=await f.api('/v1/mail/claim_batch',{entries:[{mail_id:a,installation_id:installation}]},{user:'bob'});assert.equal(bob.data.entries[0].error,'mail_not_found');f.db.sql.close();
+});
+test('delete completed preserves unclaimed gifts, pending expired leases, receipts and other players',async()=>{
+ const f=await fixture();await f.login();const gift=(await f.publish({audience:'all',target_uid:''})).mail.id,leased=(await f.publish()).mail.id,done=(await f.publish()).mail.id,notice=(await f.publish({reward:{spirit_stone:0,items:{}}})).mail.id;
+ await f.api('/v1/mail/claim',{mail_id:leased,installation_id:installation});f.db.sql.prepare('UPDATE mail_campaigns SET expires_at=1 WHERE id=?').run(leased);
+ const claim=(await f.api('/v1/mail/claim',{mail_id:done,installation_id:installation})).data;
+ await f.api('/v1/mail/ack',{mail_id:done,installation_id:installation,receipt_id:claim.receipt_id});
+ const result=await f.api('/v1/mail/delete_all',{});assert.equal(result.status,200);assert.equal(result.data.deleted_count,2);
+ assert.equal((await f.api('/v1/mail/delete_all',{})).data.deleted_count,0);
+ const visible=(await f.api('/v1/mail/list?installation_id='+installation)).data.entries.map(x=>x.mail_id);assert.deepEqual(new Set(visible),new Set([gift,leased]));
+ assert.equal((await f.api('/v1/mail/list?installation_id='+installation,undefined,{user:'bob'})).data.entries[0].mail_id,gift);
+ assert.equal(f.db.sql.prepare('SELECT count(*) AS n FROM mail_claims').get().n,2);f.db.sql.close();
+});

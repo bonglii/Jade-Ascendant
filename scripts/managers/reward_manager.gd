@@ -358,6 +358,8 @@ func get_reward_summary(
 			tr("%d HERO EXP") % hero_exp_amount
 		)
 
+	for pair: Array in [["celestial_jade","Celestial Jade"],["pavilion_seal","Pavilion Seal"]]:
+		if int(reward_data.get(pair[0],0)) > 0: summary_lines.append("%d %s" % [int(reward_data[pair[0]]),tr(pair[1])])
 	var raw_items = reward_data.get(REWARD_KEY_ITEMS, {})
 	if raw_items is Dictionary:
 		var item_ids: Array[String] = []
@@ -524,8 +526,12 @@ func grant_reward(
 		return _reject_reward(source_type, source_id, validation_error)
 	var normalized_reward: Dictionary = _normalize_reward_data(reward_data)
 	var server_mail: bool = source_type == SOURCE_PAVILION and source_id.begins_with("live_ops_mail_server_")
-	if server_mail:
-		if not ServerMailManager._valid_reward(reward_data): return _reject_reward(source_type,source_id,"Invalid mail gift")
+	var catalog_premium: Dictionary = preload("res://scripts/data/earned_reward_catalog.gd").premium(source_type,source_id)
+	if not catalog_premium.is_empty():
+		for key: String in ["celestial_jade","pavilion_seal"]:
+			if int(reward_data.get(key,0)) != int(catalog_premium.get(key,0)): return _reject_reward(source_type,source_id,"Catalog reward mismatch")
+	if server_mail or not catalog_premium.is_empty():
+		if server_mail and not ServerMailManager._valid_reward(reward_data): return _reject_reward(source_type,source_id,"Invalid mail gift")
 		for key: String in ["celestial_jade","pavilion_seal"]:
 			var amount: int = int(reward_data.get(key,0))
 			if amount > 0:
@@ -605,7 +611,7 @@ func grant_reward(
 		applied_items,
 		applied_hero_exp
 	)
-	if server_mail:
+	if server_mail or not catalog_premium.is_empty():
 		for key: String in ["celestial_jade","pavilion_seal"]:
 			if normalized_reward.has(key): last_grant_result["applied_reward_data"][key] = normalized_reward[key]
 	reward_granted.emit(source_type, source_id, normalized_reward.duplicate(true))

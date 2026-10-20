@@ -35,6 +35,7 @@ var _clock: float = 0.0
 var _modal_kind: String = ""
 var _modal_panel: Panel
 var _modal_header: Control
+var _modal_body: VBoxContainer
 var _modal_footer: VBoxContainer
 var _mission_handles: Array[Dictionary]=[]
 var _mission_all: Button
@@ -52,6 +53,10 @@ var _battle_timer: Label
 var _pending_milestone: int = 0
 var _app_focused: bool=true
 var _ad_feedback_clock: float=0.0
+var _shop_handles: Array[Dictionary] = []
+var _shop_busy: bool = false
+var _shop_product: String = ""
+var _shop_message: Label
 func label(text: String, font_size: int = 18) -> Label:
 	var node := Label.new(); node.text = text; node.add_theme_font_size_override("font_size",font_size)
 	node.add_theme_color_override("font_color", Color("eee6cb")); node.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -107,6 +112,11 @@ func _show_reward() -> void:
 	_reward_banner.modulate.a=0.0; _toast_motion=create_tween(); _toast_motion.tween_property(_reward_banner,"modulate:a",1.0,0.18); _toast_motion.tween_interval(1.9); _toast_motion.tween_property(_reward_banner,"modulate:a",0.0,0.35)
 func _ready() -> void:
 	SceneTransitionManager.set_back_handler(_back)
+	PavilionManager.store_products_updated.connect(_refresh_shop_products)
+	PavilionManager.billing_purchase_state_changed.connect(_shop_purchase_state)
+	PavilionManager.purchase_delivery_finished.connect(_shop_delivery_finished)
+	PavilionManager.pavilion_changed.connect(_refresh_shop_products)
+
 	client=get_node_or_null("/root/OdysseyClient")
 	var background:=TextureRect.new(); background.texture=BG; background.expand_mode=TextureRect.EXPAND_IGNORE_SIZE; background.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); background.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(background)
@@ -211,6 +221,7 @@ func _refresh() -> void:
 	if client == null: return
 	if client.status=="connected": _retry_count=0; _retry_at=Time.get_ticks_msec()+4000
 	_update_mission_handles()
+	_refresh_shop_products()
 	var state: Dictionary = client.snapshot.get("state", {})
 	if _modal_kind=="battle" and is_instance_valid(_arena) and not state.get("battle") is Dictionary: _close_modal()
 	var event: Dictionary = client.snapshot.get("event", {}) if client.snapshot.get("event") is Dictionary else {}
@@ -269,16 +280,24 @@ func _finished(action: String, success: bool) -> void:
 		_pending_milestone = 0
 func _close_modal() -> void:
 	if is_instance_valid(modal): modal.queue_free()
-	modal = null; _modal_kind = ""; _card_sequence=0; _battle_buttons.clear(); _battle_timer = null; _mission_handles.clear(); _mission_all=null; _modal_panel=null; _modal_header=null; _modal_footer=null; _arena=null
+	modal = null; _modal_kind = ""; _card_sequence=0; _battle_buttons.clear(); _battle_timer = null; _mission_handles.clear(); _mission_all=null; _modal_panel=null; _modal_header=null; _modal_footer=null; _modal_body=null; _shop_handles.clear(); _shop_message=null; _arena=null
 func _fit_popup() -> void:
 	if not is_instance_valid(_modal_panel): return
-	var span: Vector2=safe.size
-	_modal_panel.size=Vector2(minf(span.x-32,600),minf(span.y-48,1020));_modal_panel.position=(span-_modal_panel.size)*0.5
-	if is_instance_valid(_modal_header): _modal_header.custom_minimum_size.y=clampf(span.y*0.16,90,156)
+	var span: Vector2 = safe.size
+	var width: float = maxf(220,minf(span.x-28,580))
+	var cap: float = minf(span.y-36,820 if _modal_kind in ["shop","missions"] else 680)
+	_modal_panel.size.x = width
+	var header_height: float = 96 if span.y > 600 else 68
+	if is_instance_valid(_modal_header): _modal_header.custom_minimum_size.y = header_height
+	var natural: float = header_height + 80
+	if is_instance_valid(_modal_body): natural += _modal_body.get_combined_minimum_size().y
+	if is_instance_valid(_modal_footer): natural += _modal_footer.get_combined_minimum_size().y
+	_modal_panel.size = Vector2(width,minf(cap,maxf(header_height+180,natural)))
+	_modal_panel.position = (span-_modal_panel.size)*0.5
 func _popup(title: String, kind: String) -> VBoxContainer:
 	_close_modal(); _modal_kind=kind
 	modal=Control.new();modal.z_index=20;safe.add_child(modal);modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var dim:=ColorRect.new();dim.color=Color(0.002,0.01,0.02,0.88);modal.add_child(dim);dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var dim:=ColorRect.new();dim.color=Color(0.002,0.01,0.02,0.68);modal.add_child(dim);dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_modal_panel=Panel.new();_modal_panel.name="OdysseyFlowPanel";_modal_panel.clip_contents=true;_modal_panel.add_theme_stylebox_override("panel",Flow.style(4));modal.add_child(_modal_panel)
 	var inset:=MarginContainer.new();_modal_panel.add_child(inset);inset.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	for side: String in ["left","right"]: inset.add_theme_constant_override("margin_"+side,24)
@@ -290,7 +309,7 @@ func _popup(title: String, kind: String) -> VBoxContainer:
 	var heading: Label=label(title,27);heading.add_theme_font_override("font",FONT);heading.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;shade.add_child(heading);heading.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);heading.offset_left=12;heading.offset_right=-12
 	var close: Button=_navigation("close",_close_modal,"Close");close.custom_minimum_size=Vector2(52,52);_modal_header.add_child(close);close.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT);close.offset_left=-56;close.offset_right=-4;close.offset_top=4;close.offset_bottom=56
 	var scroll:=ScrollContainer.new();scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL;scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_SHOW_NEVER;scroll.scroll_deadzone=12;column.add_child(scroll)
-	var body:=VBoxContainer.new();body.size_flags_horizontal=Control.SIZE_EXPAND_FILL;body.add_theme_constant_override("separation",14);scroll.add_child(body)
+	var body:=VBoxContainer.new();_modal_body=body;body.size_flags_horizontal=Control.SIZE_EXPAND_FILL;body.add_theme_constant_override("separation",10);scroll.add_child(body)
 	_modal_footer=VBoxContainer.new();column.add_child(_modal_footer)
 	_fit_popup();_fit_popup.call_deferred()
 	if not Art.reduced(self):
@@ -307,7 +326,7 @@ func _info() -> void:
 	body.add_child(label("GUARANTEED MILESTONES",19)); body.add_child(label("24 journeys: 2 Pavilion Seals.\n48: 3 Pavilion Seals + 500 Spirit Stones.\n72: one Heavenweaver Compass, secured in Mail.\nYou have 3 days after the season to claim reached milestones. Unused dice expire.",16))
 func _mission_row(body: VBoxContainer, caption: String, target: int, kind: String, key: Variant, reward: String, icon: Texture2D) -> void:
 	var card:=Flow.card();body.add_child(card);var content:=VBoxContainer.new();content.add_theme_constant_override("separation",6);card.add_child(content)
-	var heading: Label=Flow.text(caption,22);content.add_child(heading)
+	var heading: Label=Flow.text(caption,19);content.add_child(heading)
 	var meter:=ProgressBar.new();meter.max_value=target;meter.show_percentage=false;meter.custom_minimum_size.y=8;Flow.progress(meter);content.add_child(meter)
 	var row:=HBoxContainer.new();row.add_theme_constant_override("separation",10);content.add_child(row);row.add_child(_icon(icon,40))
 	var count: Label=Flow.text(reward,20);row.add_child(count)
@@ -341,18 +360,32 @@ func _missions() -> void:
 func _shop() -> void:
 	if client==null or _presenting(): return
 	var body: VBoxContainer=_popup("TRAVEL SHOP","shop")
+	_shop_handles.clear()
+	_shop_message = label("Harga langsung dari Google Play",15)
+	body.add_child(_shop_message)
+	PavilionManager.refresh_iap_store_products()
 	var bonus: Dictionary=client.snapshot.get("purchase_bonus",{})
 	var hint: Label=label("Jade + bonus dadu · Sekali per paket per season",15);hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;body.add_child(hint)
-	if not bonus.get("offers",[]).is_empty():
-		for offer: Dictionary in bonus.get("offers",[]):
+	var offers: Array = bonus.get("offers",[]).duplicate(true)
+	if offers.is_empty():
+		var catalog: Dictionary = PavilionManager.get_iap_product_catalog()
+		for product_id: String in catalog:
+			var product: Dictionary = catalog[product_id]
+			if str(product.get("type","")) == "consumable": offers.append({"product_id":product_id,"jade":int(product.get("celestial_jade",0)),"dice":0,"claimed":false,"bonus_unknown":true})
+		offers.sort_custom(func(left: Dictionary,right: Dictionary) -> bool: return int(left.jade) < int(right.jade))
+	if not offers.is_empty():
+		for offer: Dictionary in offers:
 			var card:=Flow.card();body.add_child(card);var content:=VBoxContainer.new();content.add_theme_constant_override("separation",6);card.add_child(content)
-			content.add_child(Flow.text("%d Jade + %d Dadu" % [int(offer.jade),int(offer.dice)],21,true))
+			var pack_title: Label = Flow.text("",19,true); content.add_child(pack_title)
 			var row:=HBoxContainer.new();row.add_theme_constant_override("separation",8);content.add_child(row)
 			row.add_child(_icon(preload("res://assets/ui/shared/resources/celestial_jade_premium.png"),40));row.add_child(Flow.text(str(int(offer.jade)),18));row.add_child(_icon(Art.DIE,40));row.add_child(Flow.text("+%d" % int(offer.dice),18))
-			var buy_pack: Button=Flow.button("BONUS DIKLAIM · JADE SAJA" if bool(offer.claimed) else "LIHAT HARGA PLAY",_open_treasury.bind(str(offer.product_id)));content.add_child(buy_pack)
+			var buy_pack: Button=Flow.button("MEMUAT HARGA…",_purchase_shop_pack.bind(str(offer.product_id)));content.add_child(buy_pack)
+			var eligibility: Label = Flow.text("",14)
+			content.add_child(eligibility)
+			_shop_handles.append({"product_id":str(offer.product_id),"button":buy_pack,"eligibility":eligibility,"offer":offer.duplicate(true),"title":pack_title,"dice_icon":row.get_child(2),"dice_amount":row.get_child(3)})
 			if bool(offer.claimed): content.add_child(Flow.text("Bonus season ini sudah diterima. Pembelian berikutnya hanya Jade.",14))
 	else:
-		var card:=Flow.card();body.add_child(card);card.add_child(Flow.text("Bonus dadu tersedia saat season aktif dan tersambung. Harga asli dan pembelian Jade ada di Treasury.",17));body.add_child(Flow.button("BUKA CELESTIAL TREASURY",_open_treasury.bind("")))
+		var card:=Flow.card();body.add_child(card);card.add_child(Flow.text("Katalog belum tersedia. Sambungkan akun lalu buka kembali toko.",17))
 	var exchange:=Flow.card();body.add_child(exchange);var box:=VBoxContainer.new();box.add_theme_constant_override("separation",8);exchange.add_child(box);box.add_child(Flow.text("TUKAR PURCHASED JADE",19,true))
 	var state: Dictionary=client.snapshot.get("state",{});var event: Dictionary=client.snapshot.get("event",{}) if client.snapshot.get("event") is Dictionary else {}
 	var paid: Node=get_node_or_null("/root/PavilionManager/PaidGameplayV2");var balance: int=int(paid.call("paid_balance")) if paid!=null else 0
@@ -362,12 +395,55 @@ func _shop() -> void:
 	for pack: int in [1,5]:
 		var price: int=int(limits.get("price_one" if pack==1 else "price_five",10 if pack==1 else 40))
 		var action: Button=Flow.button("%d Dadu · %d Jade" % [pack,price],_confirm_pack.bind(pack,price));action.disabled=not exchange_ready or balance<price or int(state.get("daily_bought",0))+pack>10 or int(state.get("season_bought",0))+pack>40;box.add_child(action)
+	_refresh_shop_products()
 	var footer: Label=label("Bonus setelah verifikasi server. Maksimal 152 perjalanan; dadu tidak terpakai kedaluwarsa. Satu Compass per season.",14);footer.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;body.add_child(footer)
-func _open_treasury(product_id: String) -> void:
-	if SceneTransitionManager.is_transitioning: return
-	get_tree().set_meta("odyssey_treasury_return",true)
-	get_tree().set_meta("odyssey_treasury_product",product_id)
-	SceneTransitionManager.transition_menu_to("res://scenes/ui/celestial_treasury_screen.tscn",1)
+func _refresh_shop_products(_products: Variant = null) -> void:
+	if _modal_kind != "shop" or not is_instance_valid(_modal_panel): return
+	var products: Dictionary = PavilionManager.get_iap_store_products()
+	var readiness: Dictionary = PavilionManager.get_paid_delivery_readiness()
+	var offers: Array = client.snapshot.get("purchase_bonus",{}).get("offers",[]) if client != null else []
+	for entry: Dictionary in _shop_handles:
+		if not is_instance_valid(entry.button): continue
+		var info: Dictionary = products.get(entry.product_id,{})
+		var price: String = str(info.get("formatted_price","")).strip_edges() if int(info.get("price_amount_micros",0)) > 0 else ""
+		var offer: Dictionary = entry.offer
+		for latest: Dictionary in offers:
+			if str(latest.product_id) == str(entry.product_id): offer = latest; break
+		var active_bonus: bool = client != null and client.purchase_bonus_active() and not bool(offer.get("bonus_unknown",false))
+		var included: bool = active_bonus and not bool(offer.get("claimed",false)) and int(offer.get("dice",0)) > 0
+		entry.title.text = "%d Jade + %d Dadu" % [int(offer.jade),int(offer.dice)] if included else "%d Celestial Jade" % int(offer.jade)
+		entry.dice_icon.visible = included
+		entry.dice_amount.visible = included
+		entry.eligibility.text = tr("Bonus dadu sudah diklaim · pembelian ini hanya Jade") if bool(offer.get("claimed",false)) else tr("+%d bonus dadu · sekali per season") % int(offer.get("dice",0)) if active_bonus else tr("Bonus dadu belum terkonfirmasi · paket ini hanya Jade")
+		entry.button.disabled = _shop_busy or price.is_empty() or not bool(readiness.ready) or not PavilionManager.is_iap_purchase_supported(str(entry.product_id))
+		entry.button.text = tr("MEMPROSES…") if _shop_busy and _shop_product == str(entry.product_id) else tr("BELI · ") + price if not price.is_empty() else tr("HARGA BELUM TERSEDIA")
+	if is_instance_valid(_shop_message) and not bool(readiness.ready):
+		_shop_message.text = tr("Akun perlu peninjauan refund") if str(readiness.get("reason","")) == "account_held" else tr("Menunggu verifikasi wallet · harga Play tetap ditampilkan")
+
+func _purchase_shop_pack(product_id: String) -> void:
+	if _shop_busy: return
+	var product: Dictionary = PavilionManager.get_iap_store_products().get(product_id,{})
+	if int(product.get("price_amount_micros",0)) <= 0 or str(product.get("formatted_price","")).is_empty() or not PavilionManager.is_iap_purchase_supported(product_id): return
+	_shop_busy = true; _shop_product = product_id
+	if is_instance_valid(_shop_message): _shop_message.text = tr("Membuka Google Play…")
+	_refresh_shop_products()
+	if not PavilionManager.purchase_iap(product_id): _shop_busy = false; _shop_product = ""; _refresh_shop_products()
+
+func _shop_purchase_state(product_id: String, state: String, message: String) -> void:
+	if _shop_product.is_empty() or product_id != _shop_product: return
+	if state in ["opening","verification_required","verification_in_progress","verification_deferred","recovery_deferred"]: _shop_busy = true
+	else: _shop_busy = false
+	if is_instance_valid(_shop_message): _shop_message.text = tr(message)
+	if state in ["delivered","wallet_credited"] and client != null and not client.busy: client.refresh()
+	_refresh_shop_products()
+
+func _shop_delivery_finished(product_id: String, success: bool, message: String) -> void:
+	if product_id != _shop_product: return
+	_shop_busy = false
+	if is_instance_valid(_shop_message): _shop_message.text = tr("PEMBELIAN TERVERIFIKASI · JADE TERSIMPAN") if success else tr(message)
+	if success and client != null and not client.busy: client.refresh()
+	_refresh_shop_products()
+
 func _confirm_pack(pack: int, price: int) -> void:
 	var body: VBoxContainer=_popup("CONFIRM YOUR JOURNEY","confirm_pack")
 	body.add_child(_icon(Art.DIE,110)); body.add_child(label("%d travel %s for %d Purchased Jade." % [pack,"die" if pack==1 else "dice",price],22))
@@ -391,11 +467,24 @@ func _journey_rewards() -> void:
 func _routes() -> void:
 	if not ResourceLoader.has_cached(ARENA_PATH): ResourceLoader.load_threaded_request(ARENA_PATH)
 	var body: VBoxContainer = _popup("CHOOSE YOUR PATH","route")
-	body.add_child(label("QUIET GROVE · peaceful supplies\nSafe passage grants 30 Spirit Stones.\n\nDRAGON GATE · free-movement arena\nMove with the joystick, avoid marked attacks and stay within sword range. Victory grants 60 Spirit Stones; retreat grants base supplies."))
-	var grove := TextureRect.new(); grove.texture = preload("res://assets/ui/liveops/event_identity/pilgrimage.png"); grove.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; grove.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED; grove.custom_minimum_size.y = 90; body.add_child(grove)
-	body.add_child(button("QUIET GROVE",func() -> void: _submit({"kind":"route","choice":"safe"})))
-	var gate := TextureRect.new(); gate.texture = preload("res://assets/ui/liveops/event_identity/boss_hunt.png"); gate.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; gate.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED; gate.custom_minimum_size.y = 90; body.add_child(gate)
-	body.add_child(button("DRAGON GATE",func() -> void: _submit({"kind":"route","choice":"challenge"})))
+	for choice: String in ["safe","challenge"]:
+		var card: PanelContainer = Flow.card()
+		body.add_child(card)
+		var content := VBoxContainer.new()
+		content.add_theme_constant_override("separation",8)
+		card.add_child(content)
+		var scene := TextureRect.new()
+		scene.texture = preload("res://assets/ui/liveops/event_identity/pilgrimage.png") if choice == "safe" else preload("res://assets/ui/liveops/event_identity/boss_hunt.png")
+		scene.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		scene.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		scene.custom_minimum_size.y = 82
+		content.add_child(scene)
+		content.add_child(Flow.text("Quiet Grove · 30 Spirit Stones" if choice == "safe" else "Dragon Gate · 60 Spirit Stones",20,true))
+		content.add_child(Flow.text("Safe passage, guaranteed supplies." if choice == "safe" else "Move freely. Dodge the guardian and strike within sword range.",15))
+		var action: Button = Flow.button("TAKE THE QUIET PATH" if choice == "safe" else "ENTER THE ARENA",_submit.bind({"kind":"route","choice":choice}))
+		action.name = "RouteChoiceSafe" if choice == "safe" else "RouteChoiceChallenge"
+		content.add_child(action)
+	_fit_popup.call_deferred()
 func _battle() -> void:
 	var battle: Dictionary = client.snapshot.get("state",{}).get("battle",{})
 	if battle.get("mode","")=="arena":

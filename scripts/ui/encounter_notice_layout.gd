@@ -1,24 +1,27 @@
 extends RefCounted
 ## One coordinate space for all combat notices: the actual HUD safe area.
 static func fit(panel: Control, safe_area: Control) -> void:
- if not is_instance_valid(panel) or not is_instance_valid(safe_area):return
- var width: float=minf(560.0,safe_area.size.x*.9)
+ if not is_instance_valid(panel) or not is_instance_valid(safe_area): return
+ var width: float = maxf(220,minf(560,safe_area.size.x-28))
  panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
- panel.size.x=width
- var top: float=12.0
- for name: String in ["TopHUD","BossPanel"]:
-  var strip: Control=safe_area.get_node_or_null(name)
-  if strip!=null and strip.visible:top=maxf(top,strip.get_rect().end.y+16.0)
- var height: float=maxf(110.0,panel.get_combined_minimum_size().y)
- panel.size=Vector2(width,height)
- panel.position=Vector2((safe_area.size.x-panel.size.x)*.5,top)
- panel.pivot_offset=panel.size*.5
-static func settle(panel: Control,safe_area: Control) -> void:
+ panel.custom_minimum_size = Vector2.ZERO
+ panel.clip_contents = true
+ for label: Label in panel.find_children("*","Label",true,false):
+  label.custom_minimum_size.x = 0
+  label.max_lines_visible = 2
+  label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+ var top: float = clampf(safe_area.size.y*0.28,150,320)
+ for node_name: String in ["TopHUD","BossPanel"]:
+  var strip: Control = safe_area.get_node_or_null(node_name)
+  if strip != null and strip != panel and strip.visible: top = maxf(top,strip.get_rect().end.y+14)
+ var height: float = 176 if panel.name == "BossPreWarning" else 156
+ panel.size = Vector2(width,height)
+ panel.position = Vector2((safe_area.size.x-width)*0.5,minf(top,maxf(0,safe_area.size.y-height-24)))
+ panel.pivot_offset = panel.size*0.5
+static func settle(panel: Control, safe_area: Control) -> void:
+ # All geometry is established before visibility; no multi-frame resize coroutine
+ # may resurrect an old notice after spawn/defeat or paint a full-height dark box.
  fit(panel,safe_area)
- for i: int in range(3):
-  if not is_instance_valid(panel) or not is_instance_valid(safe_area):return
-  await safe_area.get_tree().process_frame
-  fit(panel,safe_area)
 
 class Frame extends Control:
  var accent: Color=Color.GOLD
@@ -37,6 +40,7 @@ class Frame extends Control:
    draw_line(c+Vector2(-38,0),c+Vector2(-8,0),ink,1,true)
    draw_line(c+Vector2(8,0),c+Vector2(38,0),ink,1,true)
 static func decorate(panel: Control,accent: Color) -> void:
+ panel.add_theme_stylebox_override("panel",preload("res://scripts/ui/combat_chrome.gd").skin("crimson" if panel.name == "BossPreWarning" else "gold"))
  var frame: Frame=panel.get_node_or_null("CeremonialFrame") as Frame
  if frame==null:
   frame=Frame.new();frame.name="CeremonialFrame";panel.add_child(frame)

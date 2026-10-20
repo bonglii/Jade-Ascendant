@@ -20,6 +20,8 @@ var _queue: Array[Dictionary] = []
 var _pending: Dictionary = {}
 var _busy: bool = false
 var _waiting_token: bool = false
+var _cached_token: String = ""
+var _cached_token_until: int = 0
 var _nonce: int = 0
 var _refreshing: bool = false
 var _incoming: Array[Dictionary] = []
@@ -93,6 +95,8 @@ func _on_profile(snapshot: Dictionary) -> void:
 		_last_started_msec=-MIN_SYNC_GAP_MSEC
 		_last_success_msec=-AUTO_SYNC_SECONDS*1000
 		_list_failures=0
+		_cached_token = ""
+		_cached_token_until = 0
 		_owner = current
 		var notices: Node = get_node_or_null("/root/AnnouncementCenter")
 		if notices != null: notices.set_account_owner(current)
@@ -170,6 +174,8 @@ func get_mail(id: String) -> Dictionary:
 
 func is_busy_for(id: String) -> bool:
 	if _busy and str(_pending.get("id","")) == id: return true
+	for part: Dictionary in _pending.get("parts",[]):
+		if str(part.id) == id: return true
 	for item: Dictionary in _queue:
 		if str(item.get("id","")) == id: return true
 	return false
@@ -230,6 +236,15 @@ func can_delete_mail(id: String) -> bool:
 func delete_mail(id: String) -> bool:
 	return _enqueue("delete",id,{"mail_id":id.trim_prefix("server:")}) if can_delete_mail(id) else false
 
+func is_deleting_all_completed() -> bool:
+	if _busy and str(_pending.get("kind","")) == "delete_all": return true
+	for item: Dictionary in _queue:
+		if str(item.get("kind","")) == "delete_all": return true
+	return false
+
+func delete_all_completed() -> bool:
+	return _enqueue("delete_all","",{})
+
 func _enqueue(kind: String,id: String,payload: Dictionary,cursor: String = "") -> bool:
 	if _owner.is_empty() or _state.is_empty() or _auth_node == null or _queue.size() >= 64: return false
 	var key: String = kind+":"+id+":"+cursor
@@ -246,12 +261,26 @@ func _start_next() -> void:
 	if _owner != _current_owner(): _on_profile(PlayerIdentityManager.get_profile_snapshot()); return
 	_pending = _queue.pop_front()
 	if str(_pending.owner) != _owner: call_deferred("_start_next"); return
+	var kind: String = str(_pending.kind)
+	if kind in ["claim","ack"]:
+		var parts: Array[Dictionary] = [_pending.duplicate(true)]
+		while not _queue.is_empty() and parts.size() < 8 and str(_queue[0].kind) == kind and str(_queue[0].owner) == _owner:
+			parts.append(_queue.pop_front())
+		if parts.size() > 1:
+			_pending.parts = parts
+			_pending.kind = kind + "_batch"
+			var entries: Array = []
+			for part: Dictionary in parts: entries.append(part.payload)
+			_pending.payload = {"entries":entries}
 	_busy = true
 	_waiting_token = true
 	_nonce += 1
 	var nonce: int = _nonce
 	_status = "Syncing server mail"
-	_auth_node.get_id_token(bool(_pending.get("refreshed_token",false)))
+	if not bool(_pending.get("refreshed_token",false)) and not _cached_token.is_empty() and Time.get_ticks_msec() < _cached_token_until:
+		_on_token(_cached_token)
+	else:
+		_auth_node.get_id_token(bool(_pending.get("refreshed_token",false)))
 	get_tree().create_timer(10.0).timeout.connect(func():
 		if _nonce == nonce and _waiting_token: _fail("Sign-in token timed out"))
 	_emit_changed()
@@ -264,6 +293,9 @@ func _on_token(token: String) -> void:
 	var pattern := RegEx.new()
 	pattern.compile("^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$")
 	if token.length() > 8192 or pattern.search(token) == null: _fail("Invalid sign-in token"); return
+	if token != _cached_token:
+		_cached_token = token
+		_cached_token_until = Time.get_ticks_msec() + 45000
 	var kind: String = str(_pending.kind)
 	var path: String = "/v1/mail/"+kind
 	if kind == "list": path += "?installation_id="+str(_state.installation_id)+"&after="+str(_pending.cursor)
@@ -275,6 +307,9 @@ func _on_response(result: int,code: int,_headers: PackedStringArray,body: Packed
 	if not _busy: return
 	if _owner != _current_owner(): _on_profile(PlayerIdentityManager.get_profile_snapshot()); return
 	if result != HTTPRequest.RESULT_SUCCESS: _fail("Offline · automatic retry scheduled"); return
+	if code == 401:
+		_cached_token = ""
+		_cached_token_until = 0
 	if code == 401 and not bool(_pending.get("refreshed_token",false)):
 		var again: Dictionary = _pending.duplicate(true)
 		again.refreshed_token = true
@@ -298,10 +333,30 @@ func _on_response(result: int,code: int,_headers: PackedStringArray,body: Packed
 		return
 	if str(data.get("owner_binding","")) != _owner: _fail("Mail account mismatch"); return
 	var kind: String = str(_pending.kind)
-	if kind not in ["list","read_all","announcement_read"] and str(data.get("mail_id","")) != str(_pending.id).trim_prefix("server:"): _fail("Mail response mismatch"); return
+	if kind not in ["list","read_all","announcement_read","claim_batch","ack_batch","delete_all"] and str(data.get("mail_id","")) != str(_pending.id).trim_prefix("server:"): _fail("Mail response mismatch"); return
 	if kind == "announcement_read" and (str(data.get("announcement_id", "")) != str(_pending.id) or data.get("ok") != true): _fail("Announcement response mismatch"); return
-	if kind in ["read","read_all","delete"] and data.get("ok") != true: _fail("Mail action not confirmed"); return
-	if kind == "list":
+	if kind in ["read","read_all","delete","delete_all"] and data.get("ok") != true: _fail("Mail action not confirmed"); return
+	if kind in ["claim_batch","ack_batch"]:
+		var parts: Array = _pending.get("parts",[])
+		if not data.get("entries") is Array or data.entries.size() != parts.size(): _fail("Invalid mail batch response"); return
+		for index: int in parts.size():
+			var entry: Variant = data.entries[index]
+			if not entry is Dictionary or str(entry.get("mail_id","")) != str(parts[index].id).trim_prefix("server:") or not entry.get("success") is bool: _fail("Mail batch identity mismatch"); return
+		var original: Dictionary = _pending.duplicate(true)
+		for index: int in parts.size():
+			var entry: Dictionary = data.entries[index]
+			if not bool(entry.success): continue
+			_pending.id = parts[index].id
+			if kind == "claim_batch":
+				if not _apply_delivery(entry,false): _pending = original; _fail("Claim could not be saved · retry after restart"); return
+			else: _update_cache(str(parts[index].id),"claimed",false)
+		_pending = original
+		_persist_cache()
+	elif kind == "delete_all":
+		for id: String in get_mail_ids():
+			if can_delete_mail(id): _update_cache(id,"deleted",false)
+		_persist_cache()
+	elif kind == "list":
 		if not _accept_page(data): _fail("Invalid mail catalog"); return
 	elif kind == "claim":
 		if not _apply_delivery(data): _fail("Claim could not be saved · retry after restart"); return
@@ -314,7 +369,7 @@ func _on_response(result: int,code: int,_headers: PackedStringArray,body: Packed
 	elif kind == "read_all":
 		for id: String in get_mail_ids(): _update_cache(id,"read",false)
 		_persist_cache()
-	_status = "Server mail synced"
+	_status = "Completed mail cleared" if kind == "delete_all" else "Server mail synced"
 	_finish()
 
 func _accept_page(data: Dictionary) -> bool:
@@ -386,7 +441,7 @@ func _valid_mail(mail: Dictionary) -> bool:
 	if not mail.get("reward") is Dictionary: return false
 	return (mail.reward as Dictionary).is_empty() or _valid_reward(mail.reward)
 
-func _apply_delivery(data: Dictionary) -> bool:
+func _apply_delivery(data: Dictionary,persist_cache: bool = true) -> bool:
 	var id: String = str(_pending.id).trim_prefix("server:")
 	if str(data.get("mail_id","")) != id: return false
 	if str(data.get("delivery_state","")) == "claimed":
@@ -396,7 +451,7 @@ func _apply_delivery(data: Dictionary) -> bool:
 	var authority: Node = get_node_or_null("/root/LiveOpsManager")
 	if authority == null or not authority.apply_server_mail_reward(_owner,id,data.reward): return false
 	_enqueue("ack","server:"+id,{"mail_id":id,"installation_id":_state.installation_id,"receipt_id":data.receipt_id})
-	_update_cache("server:"+id,"applied")
+	_update_cache("server:"+id,"applied",persist_cache)
 	return true
 
 func _update_cache(id: String,action: String,persist: bool = true) -> void:

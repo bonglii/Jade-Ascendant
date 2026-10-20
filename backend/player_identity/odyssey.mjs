@@ -11,7 +11,7 @@ export async function receiveOdysseyMail(request,env){
  const p=await db.prepare('SELECT public_uid FROM player_identities WHERE owner_binding=?').bind(r.owner).first();if(!p)return reply(409,{error:'profile_required'});
  const now=Math.floor(Date.now()/1000),fingerprint=await hash(JSON.stringify([r.owner,r.event_id,reward,r.expires_at])),key='odyssey:'+r.id;
  await db.batch([
-  db.prepare('INSERT OR IGNORE INTO mail_campaigns(id,request_id,fingerprint,title,body,sender,reward_json,audience,target_uid,created_at,expires_at,published_at) VALUES(?,?,?,?,?,?,?,\'uid\',?,?,?,?)').bind(r.id,key,fingerprint,'Jade Dragon Odyssey','Your journey rewards are secured. Claim the attached supplies.','CELESTIAL ODYSSEY',r.reward,p.public_uid,now,r.expires_at,now),
+  db.prepare('INSERT OR IGNORE INTO mail_campaigns(id,request_id,fingerprint,title,body,sender,reward_json,audience,target_uid,created_at,expires_at,published_at) VALUES(?,?,?,?,?,?,?,\'uid\',?,?,?,?)').bind(r.id,key,fingerprint,('Odyssey · '+(typeof r.title==='string'?r.title:'Journey reward')).slice(0,100),'Earned from Jade Dragon Odyssey: '+(typeof r.title==='string'?r.title.slice(0,160):'journey supplies')+'. These are event action rewards, not an automatic daily allowance. Claim the attached supplies.','CELESTIAL ODYSSEY',r.reward,p.public_uid,now,r.expires_at,now),
   db.prepare('INSERT OR IGNORE INTO mail_recipients(mail_id,owner_binding) SELECT id,? FROM mail_campaigns WHERE id=? AND fingerprint=?').bind(r.owner,r.id,fingerprint)
  ]);
  const stored=await db.prepare('SELECT fingerprint FROM mail_campaigns WHERE id=?').bind(r.id).first();return stored?.fingerprint===fingerprint?reply(200,{id:r.id}):reply(409,{error:'delivery_conflict'});

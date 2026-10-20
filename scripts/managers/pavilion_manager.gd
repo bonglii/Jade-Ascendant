@@ -1714,12 +1714,23 @@ func _sync_daily_completion_bonus() -> bool:
 	):
 		return false
 	pavilion_changed.emit()
+	for node: Node in get_tree().root.get_children():
+		var script: Script = node.get_script()
+		if script != null and script.resource_path == "res://scripts/ui/reward_claim_result_presenter.gd":
+			node.call("show_claimed_reward",tr("DAILY TRIALS"),{"spirit_stone":0,"items":{},"celestial_jade":jade_amount,"pavilion_seal":seal_amount})
 	DebugLogger.system(str(
 		"Economy cadence daily granted: +", jade_amount,
 		" Jade | +", seal_amount, " Seal | Active day progress ",
 		active_days, "/", EconomyCatalog.ACTIVE_DAY_CYCLE_LENGTH
 	))
 	return true
+
+
+func get_daily_completion_reward_preview() -> Dictionary:
+	var date_key: String = DailyQuestManager.get_current_date_key()
+	if str(state.get("cadence_last_daily_bonus_date","")) >= date_key: return {}
+	var final_day: bool = int(state.get("cadence_active_days",0)) + 1 >= EconomyCatalog.ACTIVE_DAY_CYCLE_LENGTH
+	return {"celestial_jade":EconomyCatalog.DAILY_COMPLETION_JADE + (EconomyCatalog.ACTIVE_DAY_CYCLE_BONUS_JADE if final_day else 0),"pavilion_seal":EconomyCatalog.ACTIVE_DAY_CYCLE_BONUS_SEALS if final_day else 0}
 
 
 func get_cadence_status() -> Dictionary:

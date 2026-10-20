@@ -14,6 +14,7 @@ var selected_filter: String = "all"
 var filter_buttons: Dictionary = {}
 var clock_tick: float = 0.0
 var observed_date: String = ""
+var completion_reward: Label
 var hall_title: Label
 const DISPLAY_FONT = preload("res://assets/ui/library/fonts/archive_serif.ttf")
 const FRAME = preload("res://assets/ui/trials/ascendant_v2/record_frame.svg")
@@ -72,6 +73,7 @@ func _button(text_value: String, gold: bool = false) -> Button:
 	return button
 
 func _build_presentation() -> void:
+	PavilionManager.pavilion_changed.connect(_queue_refresh)
 	var old_overlay := scene_root.get_node_or_null("TrialsHallOverlay") as CanvasItem
 	if old_overlay != null:
 		old_overlay.hide()
@@ -167,6 +169,11 @@ func _build_presentation() -> void:
 	claim_all_button.custom_minimum_size.y = 56
 	claim_all_button.pressed.connect(_on_claim_all_pressed)
 	footer.add_child(claim_all_button)
+	completion_reward = _label("",15)
+	completion_reward.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	completion_reward.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	completion_reward.add_theme_color_override("font_color",GOLD)
+	footer.add_child(completion_reward)
 	presentation_root.resized.connect(_adapt_header)
 	_adapt_header()
 
@@ -200,7 +207,9 @@ func _refresh() -> void:
 	filters.visible = not is_daily
 	footer.visible = is_daily
 	claim_all_button.disabled = _get_claimable_count() <= 0
-	claim_all_button.text = tr("CLAIM ALL  ·  %d") % _get_total_claimable_reward() if not claim_all_button.disabled else tr("NO REWARDS READY")
+	claim_all_button.text = tr("CLAIM ALL · %d STONES") % _get_total_claimable_reward() if not claim_all_button.disabled else tr("NO REWARDS READY")
+	var completion: Dictionary = PavilionManager.get_daily_completion_reward_preview()
+	completion_reward.text = tr("Complete all daily trials: ") + RewardManager.get_reward_summary(completion).replace("\n"," · ") if not completion.is_empty() else tr("Daily completion bonus claimed")
 	for tab: Button in [daily_tab, achievement_tab]:
 		var selected: bool = (tab == daily_tab) == is_daily
 		for state: String in ["normal", "hover"]:
@@ -318,6 +327,13 @@ func _build_trial_card(record_id: String) -> PanelContainer:
 	stone.custom_minimum_size = Vector2(24, 24)
 	reward.add_child(stone)
 	reward.add_child(_label(str(_get_reward(record_id)), 21))
+	if active_section == "achievement":
+		var premium: Dictionary = preload("res://scripts/data/earned_reward_catalog.gd").premium(RewardManager.SOURCE_ACHIEVEMENT,record_id)
+		if not premium.is_empty():
+			var extra: Label = _label(RewardManager.get_reward_summary(premium).replace("Pavilion Seal","Seal"),14)
+			extra.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			extra.add_theme_color_override("font_color",GOLD)
+			actions.add_child(extra)
 	var action := _button(tr("CLAIM") if claimable else tr("CLAIMED") if claimed else tr("GO") if active_section == "daily" else tr("ONGOING"), claimable)
 	action.add_theme_font_size_override("font_size", 14)
 	action.disabled = claimed or (active_section != "daily" and not claimable)

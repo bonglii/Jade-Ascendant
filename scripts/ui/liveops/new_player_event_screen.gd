@@ -569,8 +569,8 @@ func _refresh_day_card(day: int) -> void:
 	var stone_text: String = "+%d" % int(reward.get("spirit_stone", 0))
 	if gift_amount.text != stone_text:
 		gift_amount.text = stone_text
-	var shard_count: int = int(reward.get("refinement_shard", 0))
-	var secondary_text: String = tr("+%d SHARDS") % shard_count if shard_count > 0 else tr("STONES")
+	var _shard_count: int = int(reward.get("refinement_shard", 0))
+	var secondary_text: String = "+%d JADE%s" % [int(reward.get("celestial_jade",0))," · +1 SEAL" if int(reward.get("pavilion_seal",0))>0 else ""]
 	if secondary.text != secondary_text:
 		secondary.text = secondary_text
 
@@ -648,7 +648,7 @@ func _make_day_card(day: int) -> Button:
 	content.add_child(spacer)
 
 	var reward_icon := _texture(
-		SEVEN_DAY_BADGE if final_day else (SHARD_ICON if day in [2, 3, 4, 5, 6] else SPIRIT_ICON),
+		SEVEN_DAY_BADGE if final_day else preload("res://assets/ui/shared/resources/celestial_jade_premium.png"),
 		Vector2(68.0, 68.0),
 		TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	)
@@ -660,9 +660,9 @@ func _make_day_card(day: int) -> Button:
 	gift_amount.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	content.add_child(gift_amount)
 
-	var shard_count: int = int(_reward(day).get("refinement_shard", 0))
+	var _shard_count: int = int(_reward(day).get("refinement_shard", 0))
 	var secondary := _label(
-		tr("+%d SHARDS") % shard_count if shard_count > 0 else tr("STONES"),
+		"+%d JADE%s" % [int(_reward(day).get("celestial_jade",0))," · +1 SEAL" if final_day else ""],
 		14,
 		MUTED
 	)
@@ -705,17 +705,23 @@ func _refresh_footer() -> void:
 		var stone_tile := _footer_reward_item(SPIRIT_ICON, "0", "SPIRIT STONES")
 		_reward_row.add_child(stone_tile)
 		_stone_reward_value = stone_tile.find_child("RewardValue", true, false) as Label
-		_shard_reward_slot = _footer_reward_item(SHARD_ICON, "0", "REFINEMENT SHARDS")
+		_shard_reward_slot = _footer_reward_item(preload("res://assets/ui/shared/resources/celestial_jade_premium.png"), "0", "CELESTIAL JADE")
 		_shard_reward_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_reward_row.add_child(_shard_reward_slot)
 		_shard_reward_value = _shard_reward_slot.find_child("RewardValue", true, false) as Label
 	if is_instance_valid(_stone_reward_value):
-		_stone_reward_value.text = str(int(reward.get("spirit_stone", 0)))
-	var shard_amount: int = int(reward.get("refinement_shard", 0))
+		_stone_reward_value.text = str(int(reward.get("spirit_stone",0)))
+	var shard_amount: int = int(reward.get("celestial_jade", 0))
 	if is_instance_valid(_shard_reward_value):
 		_shard_reward_value.text = str(shard_amount)
-	_shard_reward_slot.visible = false
+	_shard_reward_slot.visible = shard_amount > 0
 
+	var seal_note: Label = _reward_row.get_node_or_null("FinalSealReward")
+	if seal_note == null:
+		seal_note = _label("+1 PAVILION SEAL",14,GOLD_LIGHT)
+		seal_note.name = "FinalSealReward"
+		_reward_row.add_child(seal_note)
+	seal_note.visible = int(reward.get("pavilion_seal",0)) > 0
 	var progress_locked: bool = SaveManager.is_progress_read_only()
 	if state == "ready":
 		_action.text = tr("CLAIM FINAL GIFT") if final_day else tr("CLAIM REWARD")
@@ -936,6 +942,8 @@ func _reward(day: int) -> Dictionary:
 	return {
 		"spirit_stone": int(data.get("spirit_stone", 0)),
 		"refinement_shard": shards,
+		"celestial_jade":int(data.get("celestial_jade",0)),
+		"pavilion_seal":int(data.get("pavilion_seal",0)),
 	}
 
 func _texture(texture: Texture2D, minimum_size: Vector2, stretch_mode: int) -> TextureRect:

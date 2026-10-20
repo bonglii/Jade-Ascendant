@@ -634,6 +634,7 @@ func _build_encounter_banner() -> void:
 	_encounter_banner_name = Label.new()
 	_encounter_banner_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_encounter_banner_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_encounter_banner_name.max_lines_visible = 2
 	_encounter_banner_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_encounter_banner_name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_encounter_banner_name.add_theme_font_size_override("font_size", 22)
@@ -683,8 +684,9 @@ func _show_encounter_banner(phase_text: String, accent: Color) -> void:
 		_encounter_banner_bottom_line.color = Color(accent.r, accent.g, accent.b, 0.94)
 	if _encounter_banner_tween != null and _encounter_banner_tween.is_valid():
 		_encounter_banner_tween.kill()
-	_encounter_banner.visible = true
+	_encounter_banner.modulate.a = 0.0
 	NoticeLayout.settle(_encounter_banner, _encounter_banner.get_parent())
+	_encounter_banner.visible = true
 	_encounter_banner.pivot_offset = _encounter_banner.size * 0.5
 	_encounter_banner.scale = Vector2.ONE
 	_encounter_banner.modulate = Color.WHITE
@@ -819,6 +821,8 @@ func setup_boss_health_bar(boss: Node) -> void:
 	boss_hp_bar.max_value = maxf(initial_max_hp, 1.0)
 	boss_hp_bar.value = initial_hp
 	_update_boss_hp_label(initial_hp, initial_max_hp)
+	boss_panel.modulate.a = 0.0
+	preload("res://scripts/ui/combat_chrome.gd").apply(self)
 	boss_panel.visible = true
 	_present_boss_arrival()
 	_show_encounter_banner(boss_phase_label.text,boss_panel.get_meta("premium_accent",HUD_JADE))

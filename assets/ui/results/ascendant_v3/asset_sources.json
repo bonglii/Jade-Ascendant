@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "mode": "built-in image generation; integrated production UI textures",
+  "generated_at": "2026-10-20",
+  "assets": [
+    {
+      "path": "assets/ui/results/ascendant_v3/victory_backdrop.png",
+      "prompt": "Use case: stylized-concept. Asset type: production portrait background painting for the VICTORY results screen of Jade Ascendant, a premium 2D xianxia/wuxia mobile game. Create a full-bleed 1024x1536 portrait scenic painting. An ancient jade mountain sanctuary above a sea of mist, emerald carved roofs and elegant gold architectural inlay around the lower sides, distant luminous peaks and a restrained golden sunrise with delicate qi ribbons. Match hand-painted ornate jade-and-gold fantasy game art, crisp decorative detail, layered atmospheric depth, refined rich color, not 3D plastic, no generic AI anatomy. No character or creature, no lettering, no title, no logo, no UI panel, no border, no icons. Upper third and bottom side corners provide scenic grandeur; middle 65 percent has calm deep teal atmospheric negative space suitable behind a legible translucent results panel. Real tonal and painted texture throughout rather than a plain black fill. Keep gold highlights restrained and avoid an overexposed center. This is an actual game texture, not a mockup screenshot."
+    },
+    {
+      "path": "assets/ui/results/ascendant_v3/defeat_backdrop.png",
+      "prompt": "Use case: stylized-concept. Asset type: production portrait background painting for the DEFEAT/retry results screen of Jade Ascendant, a premium 2D xianxia/wuxia mobile game. Create a full-bleed 1024x1536 portrait scenic painting. A rain-washed ancient cultivation sanctuary at moonlit dusk with distant mountains, slate blue mist, elegant dark jade temple eaves and weathered crimson silk standards at the lower side corners, faint ember red qi drifting near the ground. Mood dignified, solemn and hopeful of another attempt, not gruesome. Match hand-painted ornate jade-and-gold fantasy game art with crisp detail and layered painterly atmospheric depth, not 3D plastic. No person or creature, no lettering, no title, no logo, no UI panel, no border, no icons. Upper third and bottom corners carry scenery; middle 65 percent has calm smoky blue atmospheric negative space suitable behind a legible translucent results panel. Clearly painted scenery and subtle tactile texture throughout, no flat black background. Restrained antique gold accents, no excessive particles. Actual game texture, not a mockup screenshot."
+    }
+  ],
+  "other_art": "Existing reviewed event atlas and original game icons retained; six new combat SVG frames/fills are repo-native vectors."
+}

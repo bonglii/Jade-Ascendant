@@ -2,6 +2,19 @@ extends Node
 
 ## English message IDs; proper names of arts, items and realms stay consistent.
 const INDONESIAN: Dictionary = {
+	"DELETE ALL": "HAPUS SEMUA",
+	"DELETING…": "MENGHAPUS…",
+	"Deletes completed and expired mail. Unclaimed rewards are kept.": "Menghapus surat selesai dan kedaluwarsa. Hadiah yang belum diklaim tetap disimpan.",
+	"Completed mail cleared": "Surat selesai sudah dihapus",
+	"Complete all daily trials: ": "Selesaikan semua tugas harian: ",
+	"Daily completion bonus claimed": "Bonus harian sudah diklaim",
+	"TAKE THE QUIET PATH": "PILIH JALUR TENANG",
+	"ENTER THE ARENA": "MASUK ARENA",
+	"Quiet Grove · 30 Spirit Stones": "Quiet Grove · 30 Spirit Stone",
+	"Dragon Gate · 60 Spirit Stones": "Dragon Gate · 60 Spirit Stone",
+	"Safe passage, guaranteed supplies.": "Jalur aman dengan hadiah pasti.",
+	"Move freely. Dodge the guardian and strike within sword range.": "Bergerak bebas. Hindari serangan dan dekati penjaga untuk menyerang.",
+
 	"THE GATE RESONATES": "GERBANG BERESONANSI",
 	"Weapon": "Senjata",
 	"THE SEAL FALLS SILENT": "SEGEL MENJADI HENING",
