@@ -223,8 +223,8 @@ func ad_control() -> Dictionary:
 	if cooldown>0: return {"enabled":false,"text":"IKLAN BERIKUTNYA · %ds" % cooldown}
 	var provider: Node=ads.get("provider")
 	if provider!=null and provider.has_method("warm_rewarded_ad"): provider.call("warm_rewarded_ad")
-	var ready: bool=bool(ads.call("rewarded_available","odyssey_roll"))
-	return {"enabled":ready,"text":"+1 DADU · IKLAN %d/2" % used if ready else "IKLAN DISIAPKAN…"}
+	var ad_ready: bool=bool(ads.call("rewarded_available","odyssey_roll"))
+	return {"enabled":ad_ready,"text":"+1 DADU · IKLAN %d/2" % used if ad_ready else "IKLAN DISIAPKAN…"}
 func get_ad_reward_notice() -> Dictionary: return _ad_reward_notice.duplicate(true)
 func acknowledge_ad_reward_notice(key: String) -> void:
 	if str(_ad_reward_notice.get("key",""))==key: _ad_reward_notice={}

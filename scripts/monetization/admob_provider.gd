@@ -209,10 +209,10 @@ func get_runtime_status() -> Dictionary:
 	var loading: bool = false
 	for unit: String in UnitCatalog.UNITS:
 		var slot: Dictionary = _slot(unit)
-		var ready: bool = slot.ad != null and not slot.loading and _active_unit != unit
-		if ready: ready_count += 1
+		var unit_ready: bool = slot.ad != null and not slot.loading and _active_unit != unit
+		if unit_ready: ready_count += 1
 		loading = loading or bool(slot.loading)
-		details[unit] = {"state": slot.state, "ready": ready, "loading": slot.loading,
+		details[unit] = {"state": slot.state, "ready": unit_ready, "loading": slot.loading,
 			"last_load_error_code": slot.last_error}
 	var state: String = _state
 	if _consent_gate_open and _ads_initialized and _active_request_id < 0:

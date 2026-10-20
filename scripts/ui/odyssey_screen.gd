@@ -341,12 +341,12 @@ func _update_mission_handles() -> void:
 	for handle: Dictionary in _mission_handles:
 		var progress_value: int=int(state.get("daily_rolls",0)) if handle.kind=="roll" else int(state.get("daily_gifts",0)) if handle.key=="gifts" else int(state.get("daily_guardians",0)) if handle.key=="guardian" else 1 if not str(state.get("day","")).is_empty() else 0
 		var claimed: bool=int(handle.key) in state.get("missions",[]) if handle.kind=="roll" else str(handle.key) in state.get("task_claims",[]) if handle.kind=="task" else progress_value==1
-		var ready: bool=progress_value>=int(handle.target) and not claimed
+		var claim_available: bool=progress_value>=int(handle.target) and not claimed
 		handle.meter.value=mini(progress_value,int(handle.target));handle.heading.text="%s  ·  %d/%d" % [handle.caption,mini(progress_value,int(handle.target)),int(handle.target)]
-		handle.button.text="DITERIMA" if claimed and handle.kind=="login" else "DIKLAIM" if claimed else "MENGIRIM…" if _mutating() and _active_action.get("kind")==("mission" if handle.kind=="roll" else "task") and _active_action.get("mission" if handle.kind=="roll" else "task")==handle.key else "KLAIM" if ready else "LANJUTKAN"
-		handle.button.disabled=_mutating() or claimed or not ready or not _confirmed_view()
+		handle.button.text="DITERIMA" if claimed and handle.kind=="login" else "DIKLAIM" if claimed else "MENGIRIM…" if _mutating() and _active_action.get("kind")==("mission" if handle.kind=="roll" else "task") and _active_action.get("mission" if handle.kind=="roll" else "task")==handle.key else "KLAIM" if claim_available else "LANJUTKAN"
+		handle.button.disabled=_mutating() or claimed or not claim_available or not _confirmed_view()
 		handle.button.add_theme_stylebox_override("disabled",Flow.style(5 if claimed else 4,true))
-		any_ready=any_ready or ready
+		any_ready=any_ready or claim_available
 	if is_instance_valid(_mission_all): _mission_all.disabled=not any_ready or _mutating() or not _confirmed_view();_mission_all.text="MENGIRIM…" if _mutating() and _active_action.get("kind")=="missions_all" else "KLAIM TERSEDIA"
 func _missions() -> void:
 	var body: VBoxContainer=_popup("DAILY MISSIONS","missions")
