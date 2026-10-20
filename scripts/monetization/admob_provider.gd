@@ -15,7 +15,7 @@ extends "res://scripts/monetization/offline_provider.gd"
 const TEST_REWARDED_AD_UNIT_ID: String = "ca-app-pub-3940256099942544/5224354917"
 const GOOGLE_SAMPLE_ANDROID_APP_ID: String = "ca-app-pub-3940256099942544~3347511713"
 const ANDROID_APP_ID_SETTING: String = "admob/general/android/app_id"
-const RELEASE_REWARDED_SETTING: String = "monetization/admob/rewarded_ad_unit_id"
+const UnitCatalog = preload("res://scripts/monetization/rewarded_unit_catalog.gd")
 
 const CONSENT_RETRY_INITIAL_SECONDS: float = 5.0
 const CONSENT_RETRY_MAX_SECONDS: float = 60.0
@@ -32,13 +32,12 @@ const REQUIRED_NATIVE_SINGLETONS: Array[String] = [
 var _state: String = "created"
 var _load_epoch: int = 0
 var _privacy_form_open: bool = false
-var _ad_unit_id: String = ""
 var _consent_gate_open: bool = false
 var _initialization_started: bool = false
 var _ads_initialized: bool = false
-var _rewarded_loading: bool = false
-var _rewarded_loaded_at: int=-1
-var _rewarded_ad: RewardedAd
+# Each unit owns its cache, load generation, retry backoff and safe status.
+var _units: Dictionary = {}
+var _active_unit: String = ""
 var _consent_form: ConsentForm
 
 var _odyssey_ssv_nonce: String = ""
@@ -49,8 +48,6 @@ var _last_load_error_code: int = -1
 
 var _consent_retry_timer: Timer
 var _consent_retry_delay_seconds: float = CONSENT_RETRY_INITIAL_SECONDS
-var _retry_timer: Timer
-var _retry_delay_seconds: float = LOAD_RETRY_INITIAL_SECONDS
 
 
 func _ready() -> void:
@@ -66,11 +63,6 @@ func _ready() -> void:
 		_trace_state()
 		return
 
-	_ad_unit_id = _resolve_rewarded_ad_unit_id()
-	if _ad_unit_id.is_empty():
-		_state = "disabled_missing_release_ad_unit"
-		_trace_state()
-		return
 
 	if not _native_plugins_available():
 		_state = "native_plugin_missing"
@@ -85,12 +77,6 @@ func _ready() -> void:
 	_consent_retry_timer.timeout.connect(_begin_consent_update)
 	add_child(_consent_retry_timer)
 
-	_retry_timer = Timer.new()
-	_retry_timer.name = "RewardedLoadRetry"
-	_retry_timer.one_shot = true
-	_retry_timer.wait_time = LOAD_RETRY_INITIAL_SECONDS
-	_retry_timer.timeout.connect(_load_rewarded_ad)
-	add_child(_retry_timer)
 
 	_begin_consent_update()
 
@@ -99,57 +85,99 @@ func _exit_tree() -> void:
 	_destroy_rewarded_ad()
 
 
-func rewarded_available(_placement: String) -> bool:
-	if OS.get_name()=="Android": warm_rewarded_ad()
-	return (
-		OS.get_name() == "Android"
-		and _consent_gate_open
-		and not _privacy_form_open
-		and _ads_initialized
-		and _rewarded_ad != null
-		and not _rewarded_loading
-		and _active_request_id < 0
-	)
+func _ads_platform_supported() -> bool:
+	return OS.get_name() == "Android"
 
 
-func _ad_clock_ms() -> int: return Time.get_ticks_msec()
-func warm_rewarded_ad() -> void:
-	if _active_request_id>=0: return
-	if _rewarded_ad!=null and _rewarded_loaded_at>=0 and _ad_clock_ms()-_rewarded_loaded_at>=55*60*1000: _destroy_rewarded_ad()
-	if _retry_timer!=null and not _retry_timer.is_stopped(): return
-	_load_rewarded_ad()
+func _slot(unit: String) -> Dictionary:
+	if not UnitCatalog.UNITS.has(unit): return {}
+	if not _units.has(unit):
+		_units[unit] = {"ad": null, "loaded_at": -1, "loading": false,
+			"generation": 0, "load_started": -1, "retry_at": 0, "retry_delay": LOAD_RETRY_INITIAL_SECONDS,
+			"state": "idle", "last_error": -1}
+	return _units[unit]
+
+
+func rewarded_available(placement: String) -> bool:
+	var unit: String = UnitCatalog.unit_for(placement)
+	if unit.is_empty(): return false
+	if _ads_platform_supported(): warm_rewarded_ad(placement)
+	var slot: Dictionary = _slot(unit)
+	return (_ads_platform_supported() and _consent_gate_open and not _privacy_form_open
+		and _ads_initialized and slot.ad != null and not slot.loading and _active_request_id < 0)
+
+
+func _ad_clock_ms() -> int:
+	return Time.get_ticks_msec()
+
+
+func warm_rewarded_ad(placement: String = "odyssey_roll") -> void:
+	var unit: String = UnitCatalog.unit_for(placement)
+	if unit.is_empty() or _active_request_id >= 0: return
+	var slot: Dictionary = _slot(unit)
+	if slot.ad != null and int(slot.loaded_at) >= 0 and _ad_clock_ms() - int(slot.loaded_at) >= 55 * 60 * 1000:
+		_destroy_unit_ad(unit)
+	if _ad_clock_ms() < int(slot.retry_at): return
+	_load_rewarded_ad(unit)
+
+
+func _warm_all_units() -> void:
+	for unit: String in UnitCatalog.UNITS:
+		if _ad_clock_ms() >= int(_slot(unit).retry_at): _load_rewarded_ad(unit)
+
+
+func _process(_delta: float) -> void:
+	if not _consent_gate_open or _privacy_form_open or not _ads_initialized or _active_request_id >= 0: return
+	for unit: String in _units:
+		var slot: Dictionary = _units[unit]
+		if slot.loading and _ad_clock_ms() - int(slot.load_started) >= 45000:
+			slot.loading = false
+			slot.generation = int(slot.generation) + 1
+			slot.last_error = -2
+			slot.state = "load_timeout"
+			_schedule_load_retry(unit)
+		if int(slot.retry_at) > 0 and _ad_clock_ms() >= int(slot.retry_at):
+			slot.retry_at = 0
+			_load_rewarded_ad(unit)
+
+
 func is_rewarded_showing(request_id: int) -> bool:
-	return request_id>=0 and _active_request_id==request_id
+	return request_id >= 0 and _active_request_id == request_id
+
+
 func prepare_odyssey_ssv(nonce: String) -> void:
 	_odyssey_ssv_nonce = nonce if nonce.length() == 32 and nonce.is_valid_hex_number(false) else ""
+
 
 func show_rewarded(request_id: int, placement: String) -> void:
 	if request_id < 0 or not rewarded_available(placement):
 		request_finished.emit(request_id, "unavailable")
 		return
-
 	if placement == "odyssey_roll" and _odyssey_ssv_nonce.is_empty():
 		request_finished.emit(request_id, "unavailable")
 		return
+	var unit: String = UnitCatalog.unit_for(placement)
+	var ad: RewardedAd = _slot(unit).ad
 	var verification := ServerSideVerificationOptions.new()
 	verification.custom_data = _odyssey_ssv_nonce if placement == "odyssey_roll" else ""
 	verification.user_id = _odyssey_ssv_nonce if placement == "odyssey_roll" else ""
-	_rewarded_ad.set_server_side_verification_options(verification)
+	ad.set_server_side_verification_options(verification)
+	# A nonce belongs to the dice intent only; never carry it into another unit.
 	_odyssey_ssv_nonce = ""
+	_active_unit = unit
 	_active_request_id = request_id
 	_reward_earned_for_request = false
 	_request_finishing = false
+	_slot(unit).state = "showing"
 	_state = "rewarded_showing"
 	_trace_state()
-
 	var content_callback := FullScreenContentCallback.new()
 	content_callback.on_ad_dismissed_full_screen_content = _on_rewarded_dismissed.bind(request_id)
 	content_callback.on_ad_failed_to_show_full_screen_content = _on_rewarded_failed_to_show.bind(request_id)
-	_rewarded_ad.full_screen_content_callback = content_callback
-
+	ad.full_screen_content_callback = content_callback
 	var reward_listener := OnUserEarnedRewardListener.new()
 	reward_listener.on_user_earned_reward = _on_user_earned_reward.bind(request_id)
-	_rewarded_ad.show(reward_listener)
+	ad.show(reward_listener)
 
 
 func privacy_options_required() -> bool:
@@ -176,79 +204,45 @@ func show_privacy_options() -> bool:
 
 
 func get_runtime_status() -> Dictionary:
+	var details: Dictionary = {}
+	var ready_count: int = 0
+	var loading: bool = false
+	for unit: String in UnitCatalog.UNITS:
+		var slot: Dictionary = _slot(unit)
+		var ready: bool = slot.ad != null and not slot.loading and _active_unit != unit
+		if ready: ready_count += 1
+		loading = loading or bool(slot.loading)
+		details[unit] = {"state": slot.state, "ready": ready, "loading": slot.loading,
+			"last_load_error_code": slot.last_error}
+	var state: String = _state
+	if _consent_gate_open and _ads_initialized and _active_request_id < 0:
+		state = "rewarded_ready" if ready_count > 0 else "rewarded_loading" if loading else "rewarded_waiting"
 	return {
-		"provider": "admob",
-		"last_load_error_code": _last_load_error_code,
-		"state": _state,
-		"test_mode": OS.is_debug_build(),
-		"consent_gate_open": _consent_gate_open,
-		"consent_retry_scheduled": (
-			_consent_retry_timer != null
-			and not _consent_retry_timer.is_stopped()
-		),
-		"consent_retry_delay_seconds": _consent_retry_delay_seconds,
-		"ads_initialized": _ads_initialized,
-		"rewarded_loading": _rewarded_loading,
-		"rewarded_ready": _rewarded_ad != null,
-		"privacy_options_required": privacy_options_required(),
-		"privacy_form_open": _privacy_form_open,
-		"native_plugins_available": _native_plugins_available() if OS.get_name() == "Android" else false
+		"provider": "admob", "state": state, "test_mode": OS.is_debug_build(),
+		"last_load_error_code": _last_load_error_code, "consent_gate_open": _consent_gate_open,
+		"consent_retry_scheduled": _consent_retry_timer != null and not _consent_retry_timer.is_stopped(),
+		"consent_retry_delay_seconds": _consent_retry_delay_seconds, "ads_initialized": _ads_initialized,
+		"rewarded_loading": loading, "rewarded_ready": ready_count > 0,
+		"privacy_options_required": privacy_options_required(), "privacy_form_open": _privacy_form_open,
+		"native_plugins_available": _native_plugins_available() if _ads_platform_supported() else false,
+		"rewarded_units_revision": UnitCatalog.REVISION, "active_unit": _active_unit, "units": details
 	}
 
 
 func _production_configuration_valid() -> bool:
-	var app_id: String = str(
-		ProjectSettings.get_setting(ANDROID_APP_ID_SETTING, "")
-	).strip_edges()
-	var rewarded_id: String = str(
-		ProjectSettings.get_setting(RELEASE_REWARDED_SETTING, "")
-	).strip_edges()
-
-	if not _is_valid_app_id(app_id):
-		push_error("AdMobProvider: production Android App ID tidak valid.")
-		return false
-
-	if app_id == GOOGLE_SAMPLE_ANDROID_APP_ID:
-		push_error("AdMobProvider: release build menolak Google sample App ID.")
-		return false
-
-	if not _is_valid_rewarded_id(rewarded_id):
-		push_error("AdMobProvider: production rewarded ad-unit ID tidak valid.")
-		return false
-
-	if rewarded_id == TEST_REWARDED_AD_UNIT_ID:
-		push_error("AdMobProvider: release build menolak Google rewarded test ad unit.")
-		return false
-
-	if _publisher_prefix(app_id, "~") != _publisher_prefix(rewarded_id, "/"):
-		push_error(
-			"AdMobProvider: App ID dan rewarded ad-unit ID berasal dari publisher berbeda."
-		)
-		return false
-
-	return true
+	var ids: Dictionary = {}
+	for unit: String in UnitCatalog.UNITS: ids[unit] = UnitCatalog.unit_id(unit, false)
+	var valid: bool = UnitCatalog.release_configuration_valid(str(ProjectSettings.get_setting(ANDROID_APP_ID_SETTING, "")).strip_edges(), ids)
+	if not valid: push_error("AdMobProvider: production App ID or distinct rewarded-unit configuration invalid.")
+	return valid
 
 
-func _resolve_rewarded_ad_unit_id() -> String:
-	if OS.is_debug_build():
-		return TEST_REWARDED_AD_UNIT_ID
+func _uses_test_ads() -> bool:
+	return OS.is_debug_build()
 
-	var configured: String = str(
-		ProjectSettings.get_setting(RELEASE_REWARDED_SETTING, "")
-	).strip_edges()
 
-	if configured.is_empty():
-		return ""
-
-	if configured == TEST_REWARDED_AD_UNIT_ID:
-		push_error("AdMobProvider: release build menolak Google rewarded test ad unit.")
-		return ""
-
-	if not _is_valid_rewarded_id(configured):
-		push_error("AdMobProvider: production rewarded ad-unit ID tidak valid.")
-		return ""
-
-	return configured
+func _resolve_rewarded_ad_unit_id(unit: String = "dice") -> String:
+	return UnitCatalog.unit_id(unit, _uses_test_ads())
 
 
 func _is_valid_app_id(value: String) -> bool:
@@ -402,7 +396,7 @@ func _on_privacy_options_dismissed(form_error) -> void:
 		if _ads_initialized:
 			_state = "ads_initialized"
 			_trace_state()
-			_load_rewarded_ad()
+			_warm_all_units()
 		else:
 			_initialize_mobile_ads()
 	else:
@@ -456,7 +450,7 @@ func _initialize_mobile_ads() -> void:
 		return
 
 	if _ads_initialized:
-		_load_rewarded_ad()
+		_warm_all_units()
 		return
 
 	if _initialization_started:
@@ -476,92 +470,87 @@ func _on_mobile_ads_initialized(_initialization_status) -> void:
 	_initialization_started = false
 	_state = "ads_initialized"
 	_trace_state()
-	_load_rewarded_ad()
+	_warm_all_units()
 
 
-func _load_rewarded_ad() -> void:
-	if (
-		not _consent_gate_open
-		or _privacy_form_open
-		or not _ads_initialized
-		or _rewarded_loading
-		or _rewarded_ad != null
-		or _active_request_id >= 0
-		or _ad_unit_id.is_empty()
-	):
-		return
-
-	_rewarded_loading = true
-	_state = "rewarded_loading"
-	_trace_state()
-
+func _load_rewarded_ad(unit: String = "dice") -> void:
+	if not UnitCatalog.UNITS.has(unit): return
+	var slot: Dictionary = _slot(unit)
+	if not _consent_gate_open or _privacy_form_open or not _ads_initialized or bool(slot.loading) or slot.ad != null or _active_request_id >= 0: return
+	if _ad_clock_ms() < int(slot.retry_at): return
+	var id: String = _resolve_rewarded_ad_unit_id(unit)
+	if id.is_empty(): slot.state = "invalid_configuration"; return
+	slot.loading = true
+	slot.load_started = _ad_clock_ms()
+	slot.generation = int(slot.generation) + 1
+	slot.state = "loading"
 	var request := AdRequest.new()
 	request.keywords = []
 	request.mediation_extras = []
 	request.extras = {}
-
 	var callback := RewardedAdLoadCallback.new()
-	var epoch: int = _load_epoch
-	callback.on_ad_loaded = _on_rewarded_loaded.bind(epoch)
-	callback.on_ad_failed_to_load = _on_rewarded_failed_to_load.bind(epoch)
+	callback.on_ad_loaded = _on_rewarded_loaded.bind(_load_epoch, unit, int(slot.generation))
+	callback.on_ad_failed_to_load = _on_rewarded_failed_to_load.bind(_load_epoch, unit, int(slot.generation))
+	_request_ad(id, request, callback)
 
+
+func _request_ad(id: String, request: AdRequest, callback: RewardedAdLoadCallback) -> void:
 	var loader := RewardedAdLoader.new()
-	loader.load(_ad_unit_id, request, callback)
+	loader.load(id, request, callback)
 
 
-func _on_rewarded_loaded(ad: RewardedAd, epoch: int) -> void:
-	if epoch != _load_epoch or not _consent_gate_open or _privacy_form_open:
-		if ad != null: ad.destroy()
+func _current_load(epoch: int, unit: String, generation: int) -> bool:
+	return (_units.has(unit) and epoch == _load_epoch and generation == int(_units[unit].generation)
+		and bool(_units[unit].loading) and _consent_gate_open and not _privacy_form_open)
+
+
+func _on_rewarded_loaded(ad: RewardedAd, epoch: int, unit: String, generation: int) -> void:
+	if not _current_load(epoch, unit, generation):
+		# Duplicate callbacks must not destroy the very object already held by us.
+		if ad != null and (not _units.has(unit) or _units[unit].ad != ad): ad.destroy()
 		return
+	var slot: Dictionary = _units[unit]
+	slot.loading = false
+	slot.last_error = -1
 	_last_load_error_code = -1
-	_rewarded_loading = false
-	_retry_delay_seconds = LOAD_RETRY_INITIAL_SECONDS
-
 	if ad == null:
-		_state = "rewarded_load_empty"
-		_trace_state()
-		_schedule_load_retry()
+		slot.state = "load_empty"
+		_schedule_load_retry(unit)
 		return
+	slot.ad = ad
+	slot.loaded_at = _ad_clock_ms()
+	slot.retry_at = 0
+	slot.retry_delay = LOAD_RETRY_INITIAL_SECONDS
+	slot.state = "ready"
+	_trace_unit(unit)
 
-	_destroy_rewarded_ad()
-	_rewarded_ad = ad
-	_rewarded_loaded_at=_ad_clock_ms()
-	_state = "rewarded_ready"
-	_trace_state()
+
+func _on_rewarded_failed_to_load(load_error, epoch: int, unit: String, generation: int) -> void:
+	if not _current_load(epoch, unit, generation): return
+	var slot: Dictionary = _units[unit]
+	slot.last_error = int(load_error.code) if load_error != null else -1
+	_last_load_error_code = int(slot.last_error)
+	slot.loading = false
+	slot.state = "load_failed"
+	_schedule_load_retry(unit)
+	_trace_unit(unit)
 
 
-func _on_rewarded_failed_to_load(load_error, epoch: int) -> void:
-	if epoch != _load_epoch or not _consent_gate_open or _privacy_form_open: return
-	_last_load_error_code = int(load_error.code) if load_error != null else -1
+func _schedule_load_retry(unit: String) -> void:
+	if not _units.has(unit) or not _consent_gate_open or not _ads_initialized: return
+	var slot: Dictionary = _units[unit]
+	if int(slot.retry_at) <= 0:
+		slot.retry_at = _ad_clock_ms() + int(float(slot.retry_delay) * 1000.0)
+		slot.retry_delay = minf(float(slot.retry_delay) * 2.0, LOAD_RETRY_MAX_SECONDS)
+
+
+func _trace_unit(unit: String) -> void:
 	if OS.get_name() == "Android":
-		print("JADE_ADS_QA load_error_code=", _last_load_error_code)
-	_rewarded_loading = false
-	_state = "rewarded_load_failed"
-	_trace_state()
-	_schedule_load_retry()
-
-
-func _schedule_load_retry() -> void:
-	if (
-		_retry_timer == null
-		or not _consent_gate_open
-		or not _ads_initialized
-		or _active_request_id >= 0
-	):
-		return
-
-	_retry_timer.wait_time = _retry_delay_seconds
-	if _retry_timer.is_stopped():
-		_retry_timer.start()
-
-	_retry_delay_seconds = minf(
-		_retry_delay_seconds * 2.0,
-		LOAD_RETRY_MAX_SECONDS
-	)
+		print("JADE_ADS_QA unit=", unit, " state=", _slot(unit).state, " code=", _slot(unit).last_error)
 
 
 func _on_user_earned_reward(_rewarded_item, request_id: int) -> void:
-	if request_id < 0 or request_id != _active_request_id or _reward_earned_for_request:
+	if request_id < 0 or request_id != _active_request_id or _reward_earned_for_request or not _consent_gate_open or _privacy_form_open:
 		return
 	_reward_earned_for_request = true
 	if OS.get_name() == "Android":
@@ -581,27 +570,31 @@ func _finalize_rewarded_dismissal(request_id: int) -> void:
 	if request_id != _active_request_id or not _request_finishing:
 		return
 	var status: String = "completed" if _reward_earned_for_request else "cancelled"
+	var unit: String = _active_unit
 	_active_request_id = -1
+	_active_unit = ""
 	_reward_earned_for_request = false
 	_request_finishing = false
-	_destroy_rewarded_ad()
+	_destroy_unit_ad(unit)
 	_state = "ads_initialized"
 	_trace_state()
 	request_finished.emit(request_id, status)
-	_load_rewarded_ad()
+	_warm_all_units()
 
 
 func _on_rewarded_failed_to_show(_ad_error, request_id: int) -> void:
 	if request_id < 0 or request_id != _active_request_id or _request_finishing:
 		return
+	var unit: String = _active_unit
 	_active_request_id = -1
+	_active_unit = ""
 	_reward_earned_for_request = false
 	_request_finishing = false
-	_destroy_rewarded_ad()
+	_destroy_unit_ad(unit)
 	_state = "rewarded_show_failed"
 	_trace_state()
 	request_finished.emit(request_id, "failed")
-	_schedule_load_retry()
+	_schedule_load_retry(unit)
 
 
 func _trace_state() -> void:
@@ -609,17 +602,29 @@ func _trace_state() -> void:
 		print("JADE_ADS_QA state=", _state, " test=", OS.is_debug_build())
 
 
+func _destroy_unit_ad(unit: String) -> void:
+	if not _units.has(unit): return
+	var slot: Dictionary = _units[unit]
+	var ad: RewardedAd = slot.ad
+	slot.ad = null
+	slot.loaded_at = -1
+	if ad != null: ad.destroy()
+	if not slot.loading: slot.state = "idle"
+
+
 func _destroy_rewarded_ad() -> void:
-	_rewarded_loaded_at=-1
-	if _rewarded_ad != null:
-		_rewarded_ad.destroy()
-		_rewarded_ad = null
+	for unit: String in _units: _destroy_unit_ad(unit)
+
 
 func _pause_ads_for_privacy() -> void:
-	# Fence a pending SDK load before consent/privacy changes, including late callbacks.
 	_consent_gate_open = false
 	_load_epoch += 1
-	_rewarded_loading = false
-	if _retry_timer != null: _retry_timer.stop()
+	_odyssey_ssv_nonce = ""
 	if _consent_retry_timer != null: _consent_retry_timer.stop()
+	for unit: String in _units:
+		var slot: Dictionary = _units[unit]
+		slot.generation = int(slot.generation) + 1
+		slot.loading = false
+		slot.retry_at = 0
+		slot.retry_delay = LOAD_RETRY_INITIAL_SECONDS
 	_destroy_rewarded_ad()

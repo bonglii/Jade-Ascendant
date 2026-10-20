@@ -1221,6 +1221,11 @@ func get_support_summary() -> String:
 	summary += "\nProgress backup stage=%s\nProgress backup revision=%d\nProgress backup domains=%d\nProgress auto backup=%s\n" % [str(backup.stage), int(backup.revision), int(backup.domain_count), str(bool(backup.auto_enabled))]
 	var ads: Dictionary = MonetizationManager.get_provider_runtime_status()
 	summary += "\nAds provider=%s\nAds state=%s\nAds test mode=%s\nAds consent gate=%s\nAds privacy options required=%s\nAds privacy form open=%s\nAds native plugins=%s\nAds ready=%s\nAds load error code=%d\n" % [str(ads.get("provider", "unknown")), str(ads.get("state", "unknown")), str(ads.get("test_mode", false)), str(ads.get("consent_gate_open", false)), str(ads.get("privacy_options_required", false)), str(ads.get("privacy_form_open", false)), str(ads.get("native_plugins_available", false)), str(ads.get("rewarded_ready", false)), int(ads.get("last_load_error_code", -1))]
+	var ad_units: Dictionary = ads.get("units", {})
+	for unit: String in ["dice", "pavilion", "revive", "general"]:
+		var detail: Dictionary = ad_units.get(unit, {})
+		summary += "Ads %s=%s; ready=%s; error=%d\n" % [unit, str(detail.get("state", "unavailable")), str(detail.get("ready", false)), int(detail.get("last_load_error_code", -1))]
+
 	summary += ReleaseDiagnostics.support_lines()
 	return summary
 

@@ -23,7 +23,7 @@ func run() -> void:
  p.reward_confirmed.connect(func(id: int):earned.append(id))
  p.request_finished.connect(func(id: int,status: String):ended.append(str(id)+":"+status))
  var ad: FakeAd=FakeAd.new()
- p._rewarded_ad=ad;p.show_rewarded(101,"pavilion_seal")
+ p._slot("pavilion").ad=ad;p.show_rewarded(101,"pavilion_seal")
  check(p._active_request_id==101,"production show installs active request")
  var old_listener: OnUserEarnedRewardListener=ad.listener
  var old_callback: FullScreenContentCallback=ad.full_screen_content_callback
@@ -36,7 +36,7 @@ func run() -> void:
  check(ended==["101:completed"],"earned completion")
  check(ad.destroys==1,"ad destroyed once")
  var next_ad: FakeAd=FakeAd.new()
- p._rewarded_ad=next_ad;p.show_rewarded(102,"pavilion_seal")
+ p._slot("pavilion").loading=false;p._slot("pavilion").ad=next_ad;p.show_rewarded(102,"pavilion_seal")
  old_listener.on_user_earned_reward.call(null)
  old_callback.on_ad_dismissed_full_screen_content.call()
  old_callback.on_ad_failed_to_show_full_screen_content.call(null)
@@ -51,12 +51,12 @@ func run() -> void:
  next_ad.listener.on_user_earned_reward.call(null)
  check(earned.size()==2,"post-finalization reward rejected")
  var cancelled: FakeAd=FakeAd.new()
- p._rewarded_ad=cancelled;p.show_rewarded(103,"pavilion_seal")
+ p._slot("pavilion").loading=false;p._slot("pavilion").ad=cancelled;p.show_rewarded(103,"pavilion_seal")
  cancelled.full_screen_content_callback.on_ad_dismissed_full_screen_content.call()
  await process_frame
  check(ended[-1]=="103:cancelled" and earned.size()==2,"close without earned gives no reward")
  var failed: FakeAd=FakeAd.new()
- p._rewarded_ad=failed;p.show_rewarded(104,"pavilion_seal")
+ p._slot("pavilion").loading=false;p._slot("pavilion").ad=failed;p.show_rewarded(104,"pavilion_seal")
  failed.full_screen_content_callback.on_ad_failed_to_show_full_screen_content.call(null)
  failed.listener.on_user_earned_reward.call(null)
  check(ended[-1]=="104:failed" and earned.size()==2,"failed show gives no reward")
@@ -84,5 +84,14 @@ func run() -> void:
  check(manager.get_rewarded_daily_limit("pavilion_seal")==1,"one daily cap")
  check(not manager.show_rewarded("pavilion_seal"),"daily cap blocks second request")
  level.free();p.queue_free()
+ await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
+ await process_frame
+ var factory: GDScript=load("res://addons/admob/internal/mock/mock_admob_factory.gd")
+ RewardedAd._plugin=null
+ RewardedAdLoader._plugin=null
+ for mock: Variant in factory._mocks.values():
+  if is_instance_valid(mock): mock.free()
+ factory._mocks.clear()
+ await process_frame
  print("BALANCE_ADS_SMOKE checks=",checks," failures=",failures)
- quit(1 if failures else 0)
+ call_deferred("quit", 1 if failures else 0)

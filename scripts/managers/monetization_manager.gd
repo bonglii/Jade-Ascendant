@@ -41,6 +41,7 @@ var active_request: int = -1
 var active_placement: String = ""
 var active_grant_id: String = ""
 var reward_consumed: bool = false
+var active_reward_owner: String = ""
 
 var last_reward_at: int = -REWARD_COOLDOWN_MSEC
 var last_reward_unix: int = 0
@@ -184,6 +185,7 @@ func show_rewarded(placement: String) -> bool:
 	active_request = request_sequence
 	active_placement = placement
 	active_grant_id = grant_id
+	active_reward_owner = _reward_owner()
 	reward_consumed = false
 	timeout_left = 90.0
 	_active_elapsed=0.0
@@ -236,6 +238,9 @@ func _on_reward_confirmed(request_id: int) -> void:
 	if request_id != active_request or active_request < 0 or reward_consumed:
 		return
 
+	if active_reward_owner != _reward_owner():
+		_on_request_finished(request_id, "account_changed")
+		return
 	reward_consumed = true
 	last_reward_at = Time.get_ticks_msec()
 	last_reward_unix = _get_unix_time()
@@ -276,6 +281,7 @@ func _on_request_finished(request_id: int, status: String) -> void:
 	active_request = -1
 	active_placement = ""
 	active_grant_id = ""
+	active_reward_owner = ""
 	timeout_left = 0.0
 	rewarded_request_finished.emit(finished_placement, status)
 	operation_finished.emit(status)
@@ -361,3 +367,11 @@ func _get_unix_time() -> int:
 
 func _get_day_bucket(unix_time: int) -> int:
 	return int(float(unix_time) / 86400.0)
+
+
+func _reward_owner() -> String:
+	if not is_inside_tree(): return ""
+	var identity: Node = get_node_or_null("/root/PlayerIdentityServerClient")
+	if identity != null and identity.has_method("_current_owner"):
+		return str(identity.call("_current_owner"))
+	return ""

@@ -1,9 +1,13 @@
 extends "res://scripts/monetization/admob_provider.gd"
-var loads: int=0
-var clock: int=4000000
-func _ad_clock_ms()->int: return clock
-func _load_rewarded_ad()->void:
- loads+=1;_rewarded_loading=true
-func rewarded_available(_placement: String)->bool:
- return _consent_gate_open and not _privacy_form_open and _rewarded_ad!=null and _active_request_id<0
-func _trace_state()->void: pass
+var debug_inventory: bool = true
+func _uses_test_ads() -> bool: return debug_inventory
+var loads: int = 0
+var clock: int = 4000000
+var requests: Array[Dictionary] = []
+func _ready() -> void: pass
+func _ads_platform_supported() -> bool: return true
+func _ad_clock_ms() -> int: return clock
+func _request_ad(id: String, request: AdRequest, callback: RewardedAdLoadCallback) -> void:
+	loads += 1
+	requests.append({"id": id, "request": request, "callback": callback})
+func _trace_state() -> void: pass
