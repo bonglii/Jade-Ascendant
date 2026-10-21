@@ -1,10 +1,28 @@
 extends Node
 ## Local run report only; never currency/reward authority.
 const Catalog=preload("res://scripts/data/skill_catalog.gd")
-const SOURCES: Array[String]=["heavenweaver_compass","phoenix_war_fan","void_piercer_spear","astral_resonance_bell","spirit_sword","jade_binding_chain","celestial_returning_glaive","fire_orb","thunder_talisman","yin_yang_blades","heavenly_sword_rain","eight_trigrams_formation","heavenly_tribulation","set_bleed","set_poison","set_burn"]
+const SOURCES: Array[String]=preload("res://scripts/data/stage_record_book.gd").SOURCES
 var totals: Dictionary={}
 var partial: bool=false
 var frozen: bool=false
+var hp_hits: int=0
+var deaths: int=0
+var metrics_complete: bool=true
+var _previous_hp: float=0
+
+func _ready() -> void:_attach_health.call_deferred()
+func _attach_health() -> void:
+ var health: Node=get_parent().get_parent().get_node_or_null("PlayerHealth")
+ if health==null:metrics_complete=false;return
+ _previous_hp=float(health.current_health)
+ if not health.health_changed.is_connected(_health_changed):health.health_changed.connect(_health_changed)
+ if not health.died.is_connected(_died):health.died.connect(_died)
+func _health_changed(hp: float,_maximum: float) -> void:
+ if not frozen and hp<_previous_hp:hp_hits=mini(1000000,hp_hits+1)
+ _previous_hp=hp
+func _died() -> void:
+ if not frozen:deaths=mini(1000000,deaths+1)
+
 
 static func apply_hit(target: Node,amount: float,source: String) -> float:
  if not is_instance_valid(target) or not target.has_method("take_damage"):return 0.0
@@ -35,10 +53,16 @@ func record(source: String,amount: float) -> void:
  totals[source]=float(totals.get(source,0.0))+amount
 
 func snapshot() -> Dictionary:
- return {"version":1,"totals":totals.duplicate(),"partial":partial}
+ return {"version":1,"totals":totals.duplicate(),"partial":partial,"metrics":{"hits":hp_hits,"deaths":deaths,"complete":metrics_complete}}
 
 static func valid_snapshot(value: Variant) -> bool:
  if not value is Dictionary or value.get("version")!=1 or not value.get("totals") is Dictionary or not value.get("partial") is bool:return false
+ if value.has("metrics"):
+  var metrics: Variant=value.metrics
+  if not metrics is Dictionary or not metrics.get("complete") is bool:return false
+  for key: String in ["hits","deaths"]:
+   var number: Variant=metrics.get(key)
+   if typeof(number) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(number)) or float(number)!=floorf(float(number)) or number<0 or number>1000000:return false
  if value.totals.size()>SOURCES.size():return false
  for id: Variant in value.totals:
   var amount: Variant=value.totals[id]
@@ -46,10 +70,12 @@ static func valid_snapshot(value: Variant) -> bool:
  return true
 
 func restore(value: Variant) -> void:
- totals.clear();frozen=false
+ totals.clear();frozen=false;hp_hits=0;deaths=0;metrics_complete=false
  partial=not valid_snapshot(value)
  if partial:return
  totals=value.totals.duplicate();partial=bool(value.partial)
+ var metrics: Dictionary=value.get("metrics",{})
+ hp_hits=int(metrics.get("hits",0));deaths=int(metrics.get("deaths",0));metrics_complete=bool(metrics.get("complete",false))
 
 func skills() -> Array[Dictionary]:
  var manager: Node=get_parent()

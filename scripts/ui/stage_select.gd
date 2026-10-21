@@ -21,6 +21,10 @@ var seal_textures: Dictionary = {}
 var background_texture: TextureRect
 var view_host: Control
 var map_scroll: ScrollContainer
+var _record_button: Button
+var _realm_header: PanelContainer
+var _realm_subtitle: Label
+var _detail_art: PanelContainer
 var start_button: Button
 var confirm_overlay: Control
 var start_confirm_dialog: Control
@@ -50,6 +54,8 @@ func _ready() -> void:
 	_build_shell()
 	_refresh_screen()
 	SceneTransitionManager.set_back_handler(handle_system_back)
+	resized.connect(_fit_phone)
+	_fit_phone.call_deferred()
 
 
 func _load_textures() -> void:
@@ -149,6 +155,8 @@ func _build_shell() -> void:
 	context.add_theme_font_size_override("font_size", 12)
 	context.text = "%s • JOURNEY MAP" % str(JourneyManager.get_chapter_data(chapter_id).get("display_name", "REALM")).to_upper()
 	context.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	context.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	context.clip_text=true;context.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 	top_bar.add_child(context)
 
 	view_host = Control.new()
@@ -180,6 +188,7 @@ func _build_journey_view() -> void:
 	)
 
 	var header := PanelContainer.new()
+	_realm_header=header
 	header.custom_minimum_size = Vector2(0.0, 104.0)
 	header.add_theme_stylebox_override("panel", _make_panel_style(Color(0.003, 0.018, 0.027, 0.84), Color(accent.r, accent.g, accent.b, 0.30), 14, 1))
 	layout.add_child(header)
@@ -197,14 +206,17 @@ func _build_journey_view() -> void:
 	eyebrow.add_theme_font_size_override("font_size", 13)
 	eyebrow.text = "REALM %d   •   %d-TRIAL ASCENSION PATH" % [chapter_id, stage_ids.size()]
 	eyebrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	eyebrow.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	hb.add_child(eyebrow)
 	var title := Label.new()
 	title.theme_type_variation = &"JadeTitle"
 	title.add_theme_font_size_override("font_size", 26)
 	title.text = str(chapter_data.get("display_name", "Unknown Realm")).to_upper()
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	hb.add_child(title)
 	var subtitle := Label.new()
+	_realm_subtitle=subtitle
 	subtitle.theme_type_variation = &"JadeMutedLabel"
 	subtitle.add_theme_font_size_override("font_size", 13)
 	subtitle.add_theme_color_override("font_color", Color(0.79, 0.84, 0.84, 1.0))
@@ -215,7 +227,7 @@ func _build_journey_view() -> void:
 
 	map_scroll = ScrollContainer.new()
 	map_scroll.name = "JourneyMapScroll"
-	map_scroll.custom_minimum_size = Vector2(0.0, 300.0)
+	map_scroll.custom_minimum_size = Vector2(0.0, 72.0)
 	map_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	map_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	map_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
@@ -228,6 +240,9 @@ func _build_journey_view() -> void:
 	canvas.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	map_scroll.add_child(canvas)
 	_build_stage_map(canvas, accent, metrics, stage_ids)
+	canvas.resized.connect(_fit_map_width.bind(canvas))
+	map_scroll.resized.connect(func():_scroll_stage_map_to_selected.call_deferred(metrics,stage_ids))
+	_fit_map_width.call_deferred(canvas)
 
 	layout.add_child(_build_selected_stage_panel(accent))
 	call_deferred("_scroll_stage_map_to_selected", metrics, stage_ids)
@@ -397,7 +412,8 @@ func _build_selected_stage_panel(accent: Color) -> PanelContainer:
 	row.add_theme_constant_override("separation", 13)
 	margin.add_child(row)
 	var image_panel := PanelContainer.new()
-	image_panel.custom_minimum_size = Vector2(112.0, 172.0)
+	_detail_art=image_panel;image_panel.clip_contents=true
+	image_panel.custom_minimum_size = Vector2(84.0, 130.0)
 	image_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	image_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.01, 0.03, 0.04, 0.96), Color(GOLD.r, GOLD.g, GOLD.b, 0.42), 10, 1))
 	row.add_child(image_panel)
@@ -445,7 +461,8 @@ func _build_selected_stage_panel(accent: Color) -> PanelContainer:
 	reward.theme_type_variation = &"JadeSubtitle"
 	reward.add_theme_font_size_override("font_size", 12)
 	reward.add_theme_color_override("font_color", Color(1.0, 0.84, 0.50, 1.0))
-	reward.text = str(state.get("reward_text", ""))
+	reward.text = str(state.get("reward_text", "")).replace("\n"," · ")
+	reward.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	text_box.add_child(reward)
 	start_button = Button.new()
 	start_button.custom_minimum_size = Vector2(0.0, 50.0)
@@ -456,6 +473,12 @@ func _build_selected_stage_panel(accent: Color) -> PanelContainer:
 	start_button.focus_mode = Control.FOCUS_NONE
 	start_button.pressed.connect(_on_start_pressed)
 	text_box.add_child(start_button)
+	var records_button:=Button.new()
+	records_button.name="OpenCombatRecords";records_button.text="REKOR COMBAT" if SettingsManager.language=="id" else "COMBAT RECORDS"
+	records_button.custom_minimum_size.y=44;records_button.theme_type_variation=&"JadeSecondaryButton";records_button.add_theme_font_size_override("font_size",14)
+	records_button.pressed.connect(func():preload("res://scripts/ui/stage_records_panel.gd").open(self,chapter_id))
+	_record_button=records_button
+	text_box.add_child(records_button)
 	_preview_image = image
 	_preview_code = code
 	_preview_status = status_label
@@ -557,7 +580,7 @@ func _refresh_selected_stage_panel() -> void:
 	var next_hint: String = str(data.get("description", ""))
 	if _preview_hint.text != next_hint:
 		_preview_hint.text = next_hint
-	var next_reward: String = str(state.get("reward_text", ""))
+	var next_reward: String = str(state.get("reward_text", "")).replace("\n"," · ")
 	if _preview_reward.text != next_reward:
 		_preview_reward.text = next_reward
 	var next_button_text: String = str(state.get("button_text", ""))
@@ -761,6 +784,7 @@ func _add_stage_label_plate(canvas: Control, point: Vector2, data: Dictionary, s
 		desired = Rect2(Vector2(18.0, point.y - 32.0), Vector2(350.0, 64.0))
 	var safe_rect := _resolve_stage_label_rect(desired, occupied, map_height)
 	var plate := PanelContainer.new()
+	plate.set_meta("map_label_point",point)
 	plate.position = safe_rect.position
 	plate.size = safe_rect.size
 	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -840,7 +864,7 @@ func _scroll_stage_map_to_selected(metrics: Dictionary, stage_ids: Array) -> voi
 	var y := top_y
 	if distance > 0:
 		y += boss_gap + float(distance - 1) * normal_gap
-	map_scroll.scroll_vertical = maxi(int(y - maxf(map_scroll.size.y, 300.0) * 0.42), 0)
+	map_scroll.scroll_vertical = maxi(int(y - maxf(map_scroll.size.y, 1.0) * 0.5), 0)
 
 
 func _hide_scrollbar_chrome(scroll: ScrollContainer) -> void:
@@ -884,3 +908,29 @@ func _on_back_pressed() -> void:
 	var error := SceneTransitionManager.transition_menu_to(CHAPTER_SELECT_SCENE, -1)
 	if error != OK:
 		push_error("StageSelect: failed to return to Realm Select. Error code: " + str(error))
+
+func _fit_phone() -> void:
+	var compact: bool=size.y<700 or size.x<350
+	if is_instance_valid(_realm_header):_realm_header.custom_minimum_size.y=64 if compact else 104
+	if is_instance_valid(_realm_subtitle):_realm_subtitle.visible=not compact
+	if is_instance_valid(_detail_art):_detail_art.visible=not compact
+	if is_instance_valid(_preview_hint):_preview_hint.visible=not compact
+
+func _fit_map_width(canvas: Control) -> void:
+	if not is_instance_valid(canvas):return
+	var width: float=maxf(240,canvas.size.x)
+	var ratio: float=width/612.0
+	for child: Node in canvas.get_children():
+		if child is Line2D:
+			if not child.has_meta("map_original_points"):child.set_meta("map_original_points",child.points)
+			var points: PackedVector2Array=child.get_meta("map_original_points").duplicate()
+			for i: int in range(points.size()):points[i].x*=ratio
+			child.points=points
+		elif child is Control:
+			if not child.has_meta("map_original_rect"):child.set_meta("map_original_rect",Rect2(child.position,child.size))
+			var original: Rect2=child.get_meta("map_original_rect")
+			if child.has_meta("map_label_point"):
+				child.size.x=minf(original.size.x,width-24)
+				child.position.x=clampf(original.position.x*ratio,8,width-child.size.x-8)
+				child.position.y=(child.get_meta("map_label_point") as Vector2).y+72 if width<500 else original.position.y
+			else:child.position.x=original.get_center().x*ratio-original.size.x*.5

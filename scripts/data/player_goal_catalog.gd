@@ -16,14 +16,18 @@ static func choose(context: Dictionary) -> Dictionary:
  if int(context.get("daily_ready",0))>0:return {"action":"trials","title":"TRIAL REWARDS READY","hint":"Claim completed disciplines before the daily reset.","button":"CLAIM TRIALS"}
  if not bool(context.get("daily_complete",false)):return {"action":"trials","title":"TODAY'S DISCIPLINES","hint":"Complete all daily trials for %d Celestial Jade."%int(context.get("daily_completion_jade",20)),"button":"VIEW DAILY TRIALS"}
  if int(context.get("event_ready",0))>0:return {"action":"events","title":"EVENT REWARDS READY","hint":"Collect the milestones you have already earned.","button":"VIEW EVENTS"}
+ var target: Dictionary=context.get("record_target",{})
+ if not target.is_empty():
+  var indonesian: bool=context.get("language","")=="id"
+  return {"action":"journey","chapter":int(target.chapter),"stage":int(target.stage),"title":("TAKLUKKAN STAGE %d-%d" if indonesian else "MASTER STAGE %d-%d")%[int(target.chapter),int(target.stage)],"hint":"Menang tanpa HP berkurang. Target rekor pribadi." if indonesian else "Aim for a clear with zero HP hits. Personal record only.","button":("ULANGI %d-%d" if indonesian else "REPLAY %d-%d")%[int(target.chapter),int(target.stage)]}
  return {"action":"library","title":"MASTER YOUR BUILD","hint":"Explore set roles, independent weapons and resonances.","button":"EXPLORE BUILDS"}
 
 static func context(root: Node, has_checkpoint: bool) -> Dictionary:
  var journey: Node=root.get_node("JourneyManager")
- var result: Dictionary={"read_only":root.get_node("SaveManager").is_progress_read_only(),"checkpoint":has_checkpoint,"stages":[],"daily_ready":root.get_node("DailyQuestManager").get_claimable_count(),"daily_complete":root.get_node("DailyQuestManager").get_completed_count()>=root.get_node("DailyQuestManager").get_daily_quest_ids().size()}
+ var result: Dictionary={"language":root.get_node("SettingsManager").language,"read_only":root.get_node("SaveManager").is_progress_read_only(),"checkpoint":has_checkpoint,"stages":[],"daily_ready":root.get_node("DailyQuestManager").get_claimable_count(),"daily_complete":root.get_node("DailyQuestManager").get_completed_count()>=root.get_node("DailyQuestManager").get_daily_quest_ids().size()}
  var chapters: Array=journey.get_chapter_ids();chapters.erase(journey.selected_chapter_id);chapters.push_front(journey.selected_chapter_id)
  for chapter: int in chapters:
-  for stage: int in journey.get_stage_ids(chapter):result.stages.append({"chapter":chapter,"stage":stage,"implemented":journey.is_stage_implemented(chapter,stage),"unlocked":journey.is_stage_unlocked(chapter,stage),"cleared":journey.is_stage_cleared(chapter,stage)})
+  for stage: int in preload("res://scripts/ui/journey_art_catalog.gd").get_presentation_stage_ids(chapter,journey.get_stage_ids(chapter)):result.stages.append({"chapter":chapter,"stage":stage,"implemented":journey.is_stage_implemented(chapter,stage),"unlocked":journey.is_stage_unlocked(chapter,stage),"cleared":journey.is_stage_cleared(chapter,stage)})
  var mastery: Node=root.get_node_or_null("CultivationMasteryManager")
  result.cultivation_maxed=true;result.mastery_choice=false;result.trial_ready=false;result.trial_complete=false
  for path: String in ["vitality","sword_power","swift_qi"]:
@@ -34,4 +38,8 @@ static func context(root: Node, has_checkpoint: bool) -> Dictionary:
   result.trial_ready=mastery.trial_ready();result.trial_complete=int(mastery.state.get("realm",0))>=1
  result.daily_completion_jade=preload("res://scripts/data/economy_catalog.gd").DAILY_COMPLETION_JADE
  result.event_ready=preload("res://scripts/ui/action_ready_dot.gd").count(root,"all_events")
+ result.record_target={}
+ for stage: Dictionary in result.stages:
+  if stage.implemented and stage.unlocked and stage.cleared and not bool(journey.stage_records.get(journey.get_stage_key(int(stage.chapter),int(stage.stage)),{}).get("untouched",false)):
+   result.record_target={"chapter":stage.chapter,"stage":stage.stage};break
  return result

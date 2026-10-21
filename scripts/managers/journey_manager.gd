@@ -55,6 +55,18 @@ var active_run_stage_id: int = NO_ACTIVE_ID
 var unlocked_stage_keys: Array = []
 var cleared_stage_keys: Array = []
 var m7d_run_id: String = ""
+var stage_records: Dictionary = {}
+const RecordBook=preload("res://scripts/data/stage_record_book.gd")
+
+func record_stage_clear(chapter: int, stage: int, run_id: String, report: Dictionary) -> bool:
+	if not is_stage_cleared(chapter,stage) or not is_stage_implemented(chapter,stage) or SaveManager.is_progress_read_only() or SaveManager.has_pending_transaction():return false
+	var next: Dictionary=RecordBook.merge(stage_records,get_stage_key(chapter,stage),run_id,report)
+	if next.is_empty():return false
+	var save: Dictionary=build_save_data();save.stage_records=next
+	if not bool(SaveManager.write_save_data("journey",save).get("success",false)):return false
+	stage_records=next
+	return true
+
 
 func _ready() -> void:
 	_load_progress()
@@ -373,6 +385,10 @@ func _load_progress() -> void:
 	unlocked_stage_keys = save_data.get("unlocked_stage_keys", [])
 	cleared_stage_keys = save_data.get("cleared_stage_keys", [])
 	m7d_run_id = str(save_data.get("m7d_run_id", ""))
+	var known: Array=[]
+	for chapter: int in get_chapter_ids():
+		for stage: int in get_stage_ids(chapter):known.append(get_stage_key(chapter,stage))
+	stage_records=RecordBook.clean(save_data.get("stage_records",{}),known)
 
 func build_save_data() -> Dictionary:
 	return {
@@ -383,7 +399,8 @@ func build_save_data() -> Dictionary:
 		"active_run_stage_id": active_run_stage_id,
 		"unlocked_stage_keys": unlocked_stage_keys.duplicate(),
 		"cleared_stage_keys": cleared_stage_keys.duplicate(),
-		"m7d_run_id": m7d_run_id
+		"m7d_run_id": m7d_run_id,
+		"stage_records": stage_records.duplicate(true)
 	}
 
 

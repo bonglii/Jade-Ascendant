@@ -1,0 +1,43 @@
+{
+  "batch": "Personal Stage Records",
+  "date": "2026-10-21",
+  "base_commit": "227cedb810a3c7745611ca90fba5bb8b1b5a9f6a",
+  "branch": "checkpoint/iap-fasttrack-20261010",
+  "phase": "implemented/tested/packaged; pending Windows install, scoped push and AAB export",
+  "features": [
+    "per-stage recorded clears and best time",
+    "clear, survivor and untouched personal medals",
+    "last-clear actual skills/armament, damage and HP metrics",
+    "existing Journey/cloud backup and checkpoint Continue compatibility",
+    "read-only records sheet and contextual Home replay target"
+  ],
+  "validation": {
+    "existing_ui_checks": 621,
+    "new_game_checks": 84,
+    "records_restart_checks": 3,
+    "run_report_checks": 176,
+    "run_report_restart_checks": 4,
+    "game_total": 888,
+    "server_checks": 122,
+    "installer_checks": 21,
+    "software_renders": 5,
+    "phone_tested": false,
+    "failures": 0
+  },
+  "preserved": [
+    "real production IAP/ad/refund gates",
+    "all numeric combat/economy balance",
+    "event schedules and paused new-event scope",
+    "native libraries and server schemas"
+  ],
+  "author_pushed": false,
+  "deployed": false,
+  "aab_exported": false,
+  "resume": [
+    "Read STAGE_RECORDS_2026-10-21.md and this state before work.",
+    "Reuse passed unchanged evidence; completed Player Direction is already remote at 227cedb.",
+    "Use the final Jade-Stage-Records/apply_and_publish.cmd, which verifies source, runs QA and prints the actual GitHub commit after push.",
+    "After STAGE_RECORDS_BATCH=PASS use backend/player_identity/export_production.cmd; no Worker deploy or native rebuild is needed."
+  ],
+  "source_files": 17
+}

@@ -34,3 +34,7 @@ Latest user-confirmed IAP status supersedes historical parking notes: real non-t
 ## Player direction continuity — 2026-10-21
 
 Resume the current guidance/receipts/build batch from docs/checkpoints/PLAYER_DIRECTION_STATE_2026-10-21.json and PLAYER_DIRECTION_AUDIT_2026-10-21.md. Home guidance is read-only until tapped; recovery/Continue precede new progression. Receipt history is a bounded account-isolated display cache of actual grants, never a balance/restore authority. Preserve valid repeat grants sharing a source ID. Share audit and production cost rules, disclose set/weapon separation, and reuse evidence for unchanged combat. The proposed new event/weekly challenge stays parked until its design scope is resumed.
+
+## Personal stage records — 2026-10-21
+
+Continue from docs/checkpoints/STAGE_RECORDS_STATE_2026-10-21.json. Personal clear/time/HP medals are optional Journey statistics, not reward, leaderboard or purchase authority. Capture only after a committed victory and after the final hit returns. Continue must restore hit/death counters; a legacy checkpoint without them is explicitly incomplete and cannot award no-hit/no-death medals. Preserve old Journey progress if optional records are absent/corrupt. Use the shared touch-scroll policy and existing record artwork. New weekly/event modes remain parked; existing-stage replay is the current scope.

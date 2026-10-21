@@ -143,6 +143,7 @@ func fit() -> void:
 	var grid: GridContainer = _host.get("reward_chip_row") as GridContainer if _mode == "victory" else null
 	if grid != null: grid.columns = 2 if desired.x - 48 >= 300 else 1
 
+var _record_summary: Label
 var _report: VBoxContainer
 var _report_rows: VBoxContainer
 var _damage_tab: Button
@@ -157,6 +158,7 @@ func _install_run_report() -> void:
 	_report.name="RunReport"
 	_report.add_theme_constant_override("separation",10)
 	_body.add_child(_report)
+	_record_summary=_report_label("",Color(.48,.87,.73),15);_record_summary.name="PersonalRecordSummary";_record_summary.hide();_report.add_child(_record_summary)
 	var tabs:=HBoxContainer.new()
 	_report.add_child(tabs)
 	_damage_tab=Button.new();_skills_tab=Button.new()
@@ -180,6 +182,13 @@ func capture_run_report() -> void:
 	if ledger==null:return
 	ledger.frozen=true
 	_report_damage=ledger.damage_rows();_report_skills=ledger.skills();_report_partial=ledger.partial
+	var victory: Node=_host.get_parent().get_node_or_null("VictoryManager")
+	if victory!=null and not str(victory.record_result).is_empty():
+		var id_language: bool=SettingsManager.language=="id"
+		var labels: Dictionary={"first":"REKOR PERTAMA" if id_language else "FIRST RECORD","best":"REKOR WAKTU BARU" if id_language else "NEW PERSONAL BEST","saved":"REKOR TERSIMPAN" if id_language else "RECORD SAVED","unavailable":"REKOR BELUM TERSIMPAN" if id_language else "RECORD NOT SAVED"}
+		_record_summary.text=str(labels.get(victory.record_result,""))
+		if victory.record_result!="unavailable":_record_summary.text+=" · "+preload("res://scripts/data/stage_record_book.gd").clock(int(victory.record_report.get("time_ms",0)))
+		_record_summary.show()
 	_refresh_report_rows()
 
 func _report_label(text: String,color: Color,font_size: int=15) -> Label:

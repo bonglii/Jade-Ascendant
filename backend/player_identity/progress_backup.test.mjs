@@ -68,3 +68,17 @@ test('rejects missing mastery, newer schema, paid state, active runs and oversiz
 test('snapshot archive creates no paid ledger/wallet tables',async()=>{
  const f=fixture();await f.call('A',command());const names=f.sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map(x=>x.name);assert.deepEqual(names,['player_progress_backups_v1']);f.sqlite.close();
 });
+
+test('personal stage records round trip with the existing nine-domain backup; account isolation remains intact',async()=>{
+ const f=fixture(),body=command();
+ body.snapshot.domains.journey.stage_records={'1-1':{clears:2,best_ms:180250,survivor:true,untouched:false,last_id:'f'.repeat(32),last:{time_ms:180250,hits:1,deaths:0,complete:true,damage_complete:true,skills:[{id:'spirit_sword',level:7,armament_id:'jade_binding_chain'}],damage:{jade_binding_chain:10000}}}};
+ assert(validSnapshot(body.snapshot));assert.equal((await f.call('A',body)).status,200);
+ const stored=(await (await f.call('A')).json()).backup.snapshot;
+ assert.deepEqual(stored.domains.journey.stage_records,body.snapshot.domains.journey.stage_records);
+ assert.equal((await (await f.call('B')).json()).backup,null);f.sqlite.close();
+});
+test('all authored stage records stay well below the existing snapshot byte limit',()=>{
+ const s=snapshot(),records={};
+ for(let realm=1;realm<=5;realm++)for(let stage=1;stage<=6;stage++)records[`${realm}-${stage}`]={clears:1000000,best_ms:86400000,survivor:true,untouched:true,last_id:'f'.repeat(32),last:{time_ms:86400000,hits:1000000,deaths:1000000,complete:true,damage_complete:true,skills:Array.from({length:32},(_,i)=>({id:'heavenly_tribulation',level:100,armament_id:'jade_binding_chain'})),damage:Object.fromEntries(Array.from({length:16},(_,i)=>['source_'+i,1000000000000]))}};
+ s.domains.journey.stage_records=records;assert(validSnapshot(s));assert(Buffer.byteLength(JSON.stringify({expected_revision:0,request_id:'a'.repeat(32),snapshot:s}))<MAX_BYTES);
+});

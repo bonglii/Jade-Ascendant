@@ -31,7 +31,9 @@ jobs:
           unzip -q /tmp/jade-event-engine/godot.zip -d /tmp/jade-event-engine
           chmod +x /tmp/jade-event-engine/Godot_v4.7.2-stable_linux.x86_64
       - name: Player flows, GUI gestures, narrow layouts and backend guards
-        run: node backend/player_identity/check_player_flow.cjs "$GITHUB_WORKSPACE" /tmp/jade-event-engine/Godot_v4.7.2-stable_linux.x86_64
+        run: |
+          node backend/player_identity/check_stage_records.cjs "$GITHUB_WORKSPACE" /tmp/jade-event-engine/Godot_v4.7.2-stable_linux.x86_64
+          node backend/player_identity/check_player_flow.cjs "$GITHUB_WORKSPACE" --server-only
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -39,3 +41,4 @@ jobs:
           path: |
             .local/event_touch_qa/*.log
             .local/player_flow_qa/*.log
+            .local/stage_records_qa/*.log

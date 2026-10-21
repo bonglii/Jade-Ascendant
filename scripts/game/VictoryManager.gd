@@ -7,6 +7,9 @@ extends Node
 
 var victory_processed: bool = false
 var current_boss_reward_source_id: String = ""
+var record_result: String = ""
+var record_report: Dictionary = {}
+
 
 @onready var enemy_spawner: Node = (
 	get_parent().get_node_or_null("EnemySpawner")
@@ -89,6 +92,7 @@ func _on_boss_defeated() -> void:
 	DebugLogger.system(str("VICTORY!"))
 	DebugLogger.system(str("=========================================="))
 
+	var record_run_id: String=JourneyManager.m7d_run_id
 	route_boss_defeat_reward()
 	var stage_completion := complete_journey_stage()
 	if not grant_victory_reward(stage_completion):
@@ -97,6 +101,7 @@ func _on_boss_defeated() -> void:
 			victory_ui.call("show_victory")
 		return
 	if bool(stage_completion.get("completed", false)):
+		_capture_personal_record.call_deferred(stage_completion,record_run_id)
 		JourneyManager.stage_completed.emit(int(stage_completion["chapter_id"]), int(stage_completion["stage_id"]), bool(stage_completion["was_first_clear"]))
 
 	if (
@@ -297,3 +302,22 @@ func grant_victory_reward(stage_completion: Dictionary) -> bool:
 	DebugLogger.system(str("Total Spirit Stone: ", ProgressionManager.spirit_stone))
 	DebugLogger.system(str("=========================================="))
 	return true
+
+func _capture_personal_record(completion: Dictionary, run_id: String) -> void:
+	var player: Node=get_tree().get_first_node_in_group("player")
+	var timer: Node=get_parent().get_node_or_null("SurvivalManager")
+	var ledger: Node=player.get_node_or_null("WeaponManager/RunCombatLedger") if player!=null else null
+	if ledger==null or timer==null:return
+	var elapsed: float=float(timer.survival_time)
+	if not is_finite(elapsed) or elapsed<=0 or elapsed>86400:return
+	ledger.frozen=true
+	var damage: Dictionary={}
+	for key: String in ledger.totals:damage[key]=roundi(float(ledger.totals[key]))
+	var skills: Array=[]
+	for skill: Dictionary in ledger.skills():skills.append({"id":skill.id,"level":skill.level,"armament_id":skill.get("armament_id","")})
+	record_report={"time_ms":maxi(1,roundi(elapsed*1000)),"hits":ledger.hp_hits,"deaths":ledger.deaths,"complete":ledger.metrics_complete,"damage_complete":not ledger.partial,"skills":skills,"damage":damage}
+	var chapter: int=int(completion.chapter_id);var stage: int=int(completion.stage_id)
+	var old: Dictionary=JourneyManager.stage_records.get(JourneyManager.get_stage_key(chapter,stage),{})
+	if JourneyManager.record_stage_clear(chapter,stage,run_id,record_report):
+		record_result="first" if old.is_empty() else ("best" if record_report.time_ms<int(old.best_ms) else "saved")
+	else:record_result="unavailable"
