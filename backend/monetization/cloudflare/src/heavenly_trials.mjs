@@ -1,3 +1,4 @@
+import {trialsOperations} from './heavenly_trials_operations.mjs';
 import {createHash,timingSafeEqual} from 'node:crypto';
 import {boundedBody,json} from './odyssey_http.mjs';
 import {flushOutbox,account} from './odyssey_service.mjs';
@@ -27,7 +28,15 @@ export async function publish(db,input,now){
   const fixed={...old,enabled:next.enabled,ads_enabled:next.ads_enabled,shop_enabled:next.shop_enabled};
   if(JSON.stringify(definition(fixed))!==JSON.stringify(next))fail('published_rotation_immutable');
  }else if(next.starts_at<now-WEEK+1||next.starts_at>now+90*86400)fail('invalid_schedule');
- await db.batch([db.prepare('INSERT INTO ht_campaigns VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET document=excluded.document').bind(next.id,JSON.stringify(next),now),db.prepare('INSERT INTO ht_audit(campaign,action,document,created_at) VALUES(?,?,?,?)').bind(next.id,'publish',JSON.stringify(next),now)]);return next;
+ const document=JSON.stringify(next);
+ // A single weekly rotation wins a reset slot, including concurrent publishes.
+ await db.batch([
+  db.prepare("INSERT INTO ht_campaigns SELECT ?,?,? WHERE EXISTS(SELECT 1 FROM ht_campaigns WHERE id=?) OR NOT EXISTS(SELECT 1 FROM ht_campaigns WHERE CAST(json_extract(document,'$.starts_at') AS INTEGER)=? AND id<>?) ON CONFLICT(id) DO UPDATE SET document=excluded.document").bind(next.id,document,now,next.id,next.starts_at,next.id),
+  db.prepare("INSERT INTO ht_audit(campaign,action,document,created_at) SELECT ?,'publish',?,? WHERE EXISTS(SELECT 1 FROM ht_campaigns WHERE id=? AND document=?)").bind(next.id,document,now,next.id,document)
+ ]);
+ const saved=await db.prepare('SELECT document FROM ht_campaigns WHERE id=?').bind(next.id).first();
+ if(!saved||saved.document!==document)fail('schedule_slot_occupied');
+ return next;
 }
 export async function weekFor(db,campaign,now,offset=0){
  if(!campaign||now<campaign.starts_at)return null;
@@ -140,9 +149,10 @@ export async function settleTrials(env){
 export async function trialsRoute(request,env,ctx,uid){
  try{
   const url=new URL(request.url),stamp=Math.floor(Date.now()/1000);
-  if(url.pathname==='/internal/trials/config'){
+  if(['/internal/trials/config','/internal/trials/operations'].includes(url.pathname)){
    const expected=env.ODYSSEY_ADMIN_KEY||'',actual=request.headers.get('x-odyssey-key')||'';
-   if(!/^[a-f0-9]{64}$/.test(expected)||actual.length!==64||!timingSafeEqual(Buffer.from(expected),Buffer.from(actual)))return json(403,{error:'forbidden'});
+   if(!/^[a-f0-9]{64}$/.test(expected)||!/^[a-f0-9]{64}$/.test(actual)||!timingSafeEqual(Buffer.from(expected),Buffer.from(actual)))return json(403,{error:'forbidden'});
+   if(url.pathname==='/internal/trials/operations')return request.method==='GET'?json(200,await trialsOperations(env.DB,env,{now:stamp})):json(405,{error:'method_not_allowed'});
    if(request.method==='GET')return json(200,{campaign:await currentCampaign(env.DB),server_time:stamp});
    if(request.method==='POST')return json(200,{campaign:await publish(env.DB,await boundedBody(request),stamp),server_time:stamp});
   }

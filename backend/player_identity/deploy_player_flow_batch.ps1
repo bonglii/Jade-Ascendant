@@ -29,7 +29,7 @@ try {
         try { $fingerprint = [BitConverter]::ToString($algorithm.ComputeHash([Text.Encoding]::UTF8.GetBytes(($parts -join "`n")))).Replace('-','').ToLowerInvariant() } finally { $algorithm.Dispose() }
         $receipt = Join-Path $checkpointFolder ($stage + '-' + $fingerprint + '.done')
         if (Test-Path -LiteralPath $receipt) { Write-Host ('PLAYER_FLOW_DEPLOY_SKIP=' + $stage); continue }
-        & npx.cmd --yes wrangler@4.151.0 deploy --config $config
+        & npx.cmd --yes wrangler@4.151.0 deploy --config $config --keep-vars
         if ($LASTEXITCODE -ne 0) { throw ($stage + ' Worker deploy failed. Rerun this command; finished stages are retained.') }
         [IO.File]::WriteAllText($receipt, [DateTime]::UtcNow.ToString('o'))
     }

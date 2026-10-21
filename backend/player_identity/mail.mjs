@@ -1,4 +1,4 @@
-import {trialsAdmin} from './heavenly_trials.mjs';
+import {trialsAdmin,trialsOperationsAdmin} from './heavenly_trials.mjs';
 import trialsDashboard from './heavenly_trials_dashboard.mjs';
 import {updatePushAdminRoute} from './update_push.mjs';
 import {odysseyAdmin,odysseyDashboard} from './odyssey.mjs';
@@ -108,6 +108,7 @@ export function createMailHandler({verify}={}){
   if(path==='/admin/api/login'){if(request.method!=='POST')fail(405,'method_not_allowed');return login(request,env,db);}
   if(path.startsWith('/admin/api/')){
    const auth=await session(request,env,request.method!=='GET');
+   if(path==='/admin/api/trials/operations')return trialsOperationsAdmin(request,env);
    if(path==='/admin/api/trials')return trialsAdmin(request,env);
    if(path==='/admin/api/odyssey')return odysseyAdmin(request,env);
    const update=await updatePushAdminRoute(db,env,request,url);if(update)return update;

@@ -1,0 +1,54 @@
+{
+  "batch": "LiveOps Control Desk",
+  "date": "2026-10-22",
+  "base_commit": "3e1904c6f96491cf1ade393af3db68d4cfae5e30",
+  "branch": "checkpoint/iap-fasttrack-20261010",
+  "phase": "author implementation and validation complete; portable delivery prepared",
+  "features": [
+    "read-only operational counters and mail queue",
+    "current/future campaign selector and five-week calendar",
+    "truthful ad/Play/refund readiness",
+    "immutable published editor and draft preservation",
+    "atomic reset-slot collision prevention"
+  ],
+  "preserved": [
+    "all game scenes/assets/scripts",
+    "current native receipt/AAR and AAB export",
+    "all nine live IAP gates",
+    "existing rewards and balances",
+    "admin login/CSRF",
+    "Windows DNS and isolated dashboard launcher"
+  ],
+  "author_pushed": false,
+  "deployed": false,
+  "phone_tested": false,
+  "user_confirmed_previous_batch": {
+    "heavenly_trials_commit": "3e1904c6f96491cf1ade393af3db68d4cfae5e30",
+    "qa_native_publish_deploy": "PASS per user launcher output",
+    "aab": "user exporting/testing; not yet confirmed"
+  },
+  "resume": "Implementation is complete on base3e1904c. Use the new portable LiveOps Control Desk launcher for installation/QA/scoped push/additive indexes/IAP/profile deploy. Do not repeat Heavenly Trials, native builds, old installer folders or AAB export. Existing user internal-test build remains valid. Author browser captures are internal-only and must not be included in saved deliverables.",
+  "validation": {
+    "server_tests": 202,
+    "browser_checks": 37,
+    "installer_publish_resume_checks": 26,
+    "production_gates_unchanged": 9,
+    "viewports": [
+      320,
+      390,
+      1365
+    ],
+    "sqlite_query_only": true,
+    "sqlite_query_plan_indexes": 3,
+    "windows_powershell_executed": false,
+    "live_deploy_executed": false,
+    "phone_tested": false,
+    "iap_worker_bundle_dry_run": true,
+    "profile_worker_fixture_bundle_dry_run": true
+  },
+  "pending": [
+    "Windows scoped push/index/IAP/profile deploy through packaged launcher"
+  ],
+  "aab_export_required": false,
+  "checkpoint_policy": "Standing AGENTS rule: update after meaningful stages, before long steps and delivery; inspect state plus actual diff on resume and reuse unchanged passing evidence."
+}

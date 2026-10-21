@@ -23,9 +23,9 @@ try {
     } else { Write-Host 'TRIALS_DEPLOY_RESUME_SKIP=schema' }
     & node backend/player_identity/build_mail_assets.mjs
     if ($LASTEXITCODE -ne 0) { throw 'Dashboard assets failed.' }
-    & npx.cmd --yes wrangler@4.151.0 deploy --config $iap
+    & npx.cmd --yes wrangler@4.151.0 deploy --config $iap --keep-vars
     if ($LASTEXITCODE -ne 0) { throw 'IAP worker deploy failed. Completed schema retained.' }
-    & npx.cmd --yes wrangler@4.151.0 deploy --config $profile
+    & npx.cmd --yes wrangler@4.151.0 deploy --config $profile --keep-vars
     if ($LASTEXITCODE -ne 0) { throw 'Dashboard deploy failed. Retry this same launcher.' }
     Write-Host 'HEAVENLY_TRIALS_DEPLOY=PASS; NOT_AUTOSTARTED; PAYMENT_GATES_UNCHANGED; BROADCAST=NONE'
     Write-Host 'Dashboard: https://jade-ascendant-player.jade-ascendant-studio.workers.dev/admin/trials'

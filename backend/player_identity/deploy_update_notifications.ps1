@@ -14,9 +14,9 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Notification audit schema failed. No worker deployment attempted.' }
     & node backend/player_identity/build_mail_assets.mjs
     if ($LASTEXITCODE -ne 0) { throw 'Dashboard assets failed.' }
-    & npx.cmd --yes wrangler@4.151.0 deploy --config backend/monetization/cloudflare/wrangler.production-live.toml
+    & npx.cmd --yes wrangler@4.151.0 deploy --config backend/monetization/cloudflare/wrangler.production-live.toml --keep-vars
     if ($LASTEXITCODE -ne 0) { throw 'FCM sender deployment failed. Rerun this deployment command.' }
-    & npx.cmd --yes wrangler@4.151.0 deploy --config $profile
+    & npx.cmd --yes wrangler@4.151.0 deploy --config $profile --keep-vars
     if ($LASTEXITCODE -ne 0) { throw 'Dashboard deployment failed. Rerun this deployment command.' }
     Write-Host 'UPDATE_NOTIFICATIONS_DEPLOY=PASS; BROADCAST=NONE; SECRETS=UNCHANGED; PAYMENT_AND_PLAYER_RECORDS=PRESERVED'
     Write-Host 'Open admin > Pengumuman > Cek koneksi Firebase. This validates only; nothing is sent.'

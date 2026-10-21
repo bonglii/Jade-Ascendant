@@ -318,3 +318,8 @@ test('mail batches run four independent letters concurrently and preserve respon
  const entries=Array.from({length:8},(_,i)=>i),out=await mapMailBatch(entries,async value=>{live++;peak=Math.max(peak,live);await new Promise(resolve=>setTimeout(resolve,8-value));live--;return value;});
  assert.equal(peak,4);assert.equal(live,0);assert.deepEqual(out,entries);
 });
+
+test('weekly operations needs an admin session and forwards only the read-only service route',async()=>{
+ const f=await fixture();let calls=0;f.env.ODYSSEY_ADMIN_KEY='c'.repeat(64);f.env.ODYSSEY_IAP={async fetch(url,init){calls++;assert.equal(url,'https://jade-ascendant-iap.jade-ascendant-studio.workers.dev/internal/trials/operations');assert.equal(init.method,'GET');assert.equal(init.headers['x-odyssey-key'],'c'.repeat(64));return new Response(JSON.stringify({version:1,stats:{participants:2}}),{headers:{'content-type':'application/json'}})}};
+ try{assert.equal((await f.api('/admin/api/trials/operations')).status,401);assert.equal(calls,0);await f.login();const r=await f.api('/admin/api/trials/operations');assert.equal(r.status,200);assert.equal(r.data.stats.participants,2);assert.equal(calls,1);assert.equal((await f.api('/admin/api/trials/operations',{})).status,405);assert.equal(calls,1);}finally{f.db.sql.close()}
+});

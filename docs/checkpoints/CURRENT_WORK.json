@@ -1,0 +1,18 @@
+{
+  "project": "Jade Ascendant",
+  "batch": "LiveOps Control Desk",
+  "state": "docs/checkpoints/LIVEOPS_CONTROL_STATE_2026-10-22.json",
+  "details": "docs/checkpoints/LIVEOPS_CONTROL_2026-10-22.md",
+  "base_commit": "3e1904c6f96491cf1ade393af3db68d4cfae5e30",
+  "author_status": "implemented and author-tested",
+  "owner_pending": [
+    "scoped push",
+    "additive indexes",
+    "IAP deployment",
+    "Profile dashboard deployment"
+  ],
+  "next_action": "D:\\Godot\\tools\\Jade-LiveOps-Control\\apply_publish_and_deploy.cmd",
+  "aab_export_required": false,
+  "previous_batch": "Heavenly Trials already user-confirmed pushed/deployed; its AAB export/internal test remains with owner",
+  "resume_rule": "Read state and actual diff/receipts first. Repeat only incomplete or invalidated stages."
+}

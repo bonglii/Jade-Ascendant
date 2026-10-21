@@ -16,9 +16,9 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Dice bonus schema failed. No Worker deployment attempted.' }
     & node backend/player_identity/build_mail_assets.mjs
     if ($LASTEXITCODE -ne 0) { throw 'Dashboard asset build failed.' }
-    & npx.cmd --yes wrangler@4.151.0 deploy --config $iap
+    & npx.cmd --yes wrangler@4.151.0 deploy --config $iap --keep-vars
     if ($LASTEXITCODE -ne 0) { throw 'IAP event worker deploy failed. Completed schema is retained.' }
-    & npx.cmd --yes wrangler@4.151.0 deploy --config $profile
+    & npx.cmd --yes wrangler@4.151.0 deploy --config $profile --keep-vars
     if ($LASTEXITCODE -ne 0) { throw 'Dashboard deploy failed. Retry this launcher.' }
     Write-Host 'ODYSSEY_SHOP_DEPLOY=PASS; BONUS_CUTOFF_PRESERVED; EVENT_SCHEDULE_UNCHANGED; PAYMENT_GATES_UNCHANGED; BROADCAST=NONE'
     Write-Host 'Dashboard > Pengumuman > Cek koneksi Firebase validates the actual sender. No push is sent by this launcher.'
