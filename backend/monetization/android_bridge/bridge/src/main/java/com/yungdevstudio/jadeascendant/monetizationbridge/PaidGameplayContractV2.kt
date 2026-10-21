@@ -74,13 +74,13 @@ internal object PaidGameplayContractV2 {
  fun commandOrNull(id: String, raw: String): String? = try {
   require(uuid.matches(id) && raw.toByteArray(Charsets.UTF_8).size <= 1024)
   val c=JSONObject(raw); val kind=c.getString("kind")
-  val extra=when(kind){"initialize"->emptySet();"summon"->setOf("pull_count");"equip"->setOf("slot","item_id");"refine","wish"->setOf("item_id");"run_start"->setOf("run_id","weapon_level");"run_resume"->setOf("run_id");else->error("kind")}
+  val extra=when(kind){"initialize"->emptySet();"summon","seal_summon"->setOf("pull_count");"equip"->setOf("slot","item_id");"refine","wish"->setOf("item_id");"run_start"->setOf("run_id","weapon_level");"run_resume"->setOf("run_id");else->error("kind")}
   require(keys(c)==setOf("request_id","expected_revision","kind")+extra && c.getString("request_id")==id)
   require(whole(c.opt("expected_revision"),0,9_007_199_254_740_989L))
   if("run_id" in extra) require(c.opt("run_id") is String && uuid.matches(c.getString("run_id")))
   if(kind=="run_start") require(whole(c.opt("weapon_level"),0,50))
   if(kind=="initialize") require(c.getLong("expected_revision")==0L)
-  if(kind=="summon") require(whole(c.opt("pull_count"),1,10) && c.getInt("pull_count") in setOf(1,10))
+  if(kind=="summon"||kind=="seal_summon") require(whole(c.opt("pull_count"),1,10) && c.getInt("pull_count") in (if(kind=="seal_summon") setOf(1) else setOf(1,10)))
   if("item_id" in extra){val item=c.getString("item_id");require(item=="" || item in items)
    if(kind=="refine") require(item in items)
    if(kind=="wish") require(item=="" || items[item]?.second=="legendary")
@@ -112,7 +112,7 @@ internal object PaidGameplayContractV2 {
    val c=JSONObject(command);val op=raw.getJSONObject("operation")
    require(exact(op,"request_id","kind","outcome") && op.getString("request_id")==requestId)
    val kind=op.getString("kind");require(kind==c.getString("kind") || kind=="not_committed")
-   if(kind=="summon"){
+   if(kind=="summon"||kind=="seal_summon"){
     val o=op.getJSONObject("outcome");require(exact(o,"pull_count","results","next_pity") && whole(o.opt("pull_count"),1,10) && o.getInt("pull_count")==c.getInt("pull_count"))
     require(pity(o.getJSONObject("next_pity")))
     val list=o.getJSONArray("results");require(list.length()==o.getInt("pull_count"))

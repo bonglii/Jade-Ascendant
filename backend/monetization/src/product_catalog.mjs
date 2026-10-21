@@ -2,6 +2,7 @@ export const PACKAGE_NAME = "com.yungdevstudio.jadeascendant";
 export const PURCHASE_CONTRACT_VERSION = 1;
 
 const PRODUCTS = Object.freeze({
+  heavenly_trials_support_550: Object.freeze({internalProductId:"heavenly_trials_support_550",playProductId:"heavenly_trials_support_550",celestialJade:550}),
   jade_pouch_100: Object.freeze({
     internalProductId: "jade_pouch_100",
     playProductId: "jade_pouch_100",

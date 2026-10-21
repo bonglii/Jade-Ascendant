@@ -33,13 +33,14 @@ test("Google Play account attribution uses only a SHA-256 Firebase UID binding",
   assert.match(billing, /_is_sha256_hex\(secure_account_binding\)/);
 });
 
-test("billing provider supports exactly the six server-approved consumables", () => {
+test("billing provider supports six unchanged Jade consumables plus the dedicated weekly support product", () => {
   const match = billing.match(
     /const SECURE_CONSUMABLE_PRODUCT_IDS: Array = \[([\s\S]*?)\n\]/,
   );
   assert.ok(match);
   const ids = [...match[1].matchAll(/"([^"]+)"/g)].map(x => x[1]);
   assert.deepEqual(ids, [
+    "heavenly_trials_support_550",
     "jade_pouch_100",
     "jade_satchel_550",
     "jade_casket_1200",

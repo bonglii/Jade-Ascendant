@@ -140,14 +140,15 @@ func _new_id() -> String:
 	return "%s-%s-%s-%s-%s" % [h.substr(0,8), h.substr(8,4), h.substr(12,4), h.substr(16,4), h.substr(20,12)]
 static func valid_command(cmd: Dictionary) -> bool:
 	var kind: String=str(cmd.get("kind",""))
-	var fields: Dictionary={"initialize":[],"summon":["pull_count"],"equip":["slot","item_id"],"refine":["item_id"],"wish":["item_id"],"run_start":["run_id","weapon_level"],"run_resume":["run_id"]}
+	var fields: Dictionary={"initialize":[],"summon":["pull_count"],"seal_summon":["pull_count"],"equip":["slot","item_id"],"refine":["item_id"],"wish":["item_id"],"run_start":["run_id","weapon_level"],"run_resume":["run_id"]}
 	if not fields.has(kind) or cmd.size()!=3+fields[kind].size() or not _uuid(str(cmd.get("request_id",""))) or not _whole(cmd.get("expected_revision"),0,9007199254740989): return false
 	for field: String in fields[kind]:
 		if not cmd.has(field): return false
 	if cmd.has("run_id") and (not cmd.run_id is String or not _uuid(cmd.run_id)): return false
 	if kind=="run_start" and not _whole(cmd.get("weapon_level"),0,50): return false
 	if kind=="initialize" and int(cmd.expected_revision)!=0: return false
-	if kind=="summon" and (not _whole(cmd.get("pull_count"),1,10) or int(cmd.pull_count) not in [1,10]): return false
+	if kind=="seal_summon" and int(cmd.get("pull_count",0))!=1: return false
+	if kind in ["summon","seal_summon"] and (not _whole(cmd.get("pull_count"),1,10) or int(cmd.pull_count) not in [1,10]): return false
 	if cmd.has("item_id"):
 		if not cmd.item_id is String: return false
 		var id: String=cmd.item_id
@@ -197,10 +198,13 @@ func submit(kind: String, extra: Dictionary = {}) -> bool:
 	if get_tree().get_first_node_in_group("player") != null and kind not in ["run_start", "run_resume"]: return false
 	var saves: Node = _service("SaveManager")
 	if saves == null or bool(saves.call("is_progress_read_only")) or bool(saves.call("has_pending_transaction")): return false
+	if kind == "seal_summon":
+		var trial_client: Node = _service("HeavenlyTrialsClient")
+		if trial_client == null or int(trial_client.get("snapshot").get("bonus_seals",0)) < 1 or int(extra.get("pull_count",0)) != 1: return false
 	if kind == "summon":
 		var pavilion: Node = _service("PavilionManager")
 		if pavilion == null or not bool(pavilion.call("is_summon_unlocked")) or not can_summon(int(extra.get("pull_count", 0))): return false
-	if kind not in ["initialize", "summon", "equip", "refine", "wish", "run_start", "run_resume"]: return false
+	if kind not in ["initialize", "summon", "seal_summon", "equip", "refine", "wish", "run_start", "run_resume"]: return false
 	if _bridge() == null: return false
 	var cmd: Dictionary = {"request_id": _new_id(), "expected_revision": int(snapshot.get("revision", 0)), "kind": kind}
 	for key: String in extra:
@@ -284,9 +288,9 @@ func _on_result(request_id: String, success: bool, result_status: String, payloa
 		if pending != cmd or DirAccess.remove_absolute(_journal_path()) != OK:
 			_invalidate("journal_unavailable"); finished.emit(result); return
 		result = {"success": op.kind != "not_committed", "operation": op, "error": "State changed. No extra payment was taken." if op.kind == "not_committed" else ""}
-		if op.kind == "summon" and op.get("outcome") is Dictionary:
+		if op.kind in ["summon","seal_summon"] and op.get("outcome") is Dictionary:
 			result.merge(op.outcome, true)
-			result.merge({"payment_method": "paid_jade", "payment_amount": 100 if int(cmd.pull_count) == 1 else 900, "refinement_shards_gained": 0}, true)
+			result.merge({"payment_method": "paid_seal" if op.kind=="seal_summon" else "paid_jade", "payment_amount": 1 if op.kind=="seal_summon" else 100 if int(cmd.pull_count) == 1 else 900, "refinement_shards_gained": 0}, true)
 	snapshot = next.duplicate(true); _expires = Time.get_ticks_msec() + 120000
 	_next_read = Time.get_ticks_msec() + 60000; status = "verified"
 	_last_result = result.duplicate(true)
@@ -319,6 +323,8 @@ func runtime_weapon_level(item_id: String) -> int:
 	if not _run_prepared or selected_slot("armament",true)!=item_id: return 0
 	return clampi(_run_weapon_level,1,item_star(item_id,true)*10)
 func _checkpoint_for_gate() -> Dictionary:
+	var trials: Node = _service("HeavenlyTrialsClient")
+	if trials != null and bool(trials.get("launching")): return trials.call("checkpoint_data")
 	var script: Script=load("res://scripts/managers/checkpoint_manager.gd")
 	var result: Dictionary=script.read_checkpoint_result()
 	return result.get("data",{}) if bool(result.get("success",false)) else {}

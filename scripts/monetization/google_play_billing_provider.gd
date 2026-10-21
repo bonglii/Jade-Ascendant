@@ -21,6 +21,7 @@ const MAX_AUTOMATIC_RETRIES: int = 5
 const TRANSIENT_CODES: Array[int] = [-3, -1, 2, 6, 12]
 
 const SECURE_CONSUMABLE_PRODUCT_IDS: Array = [
+	"heavenly_trials_support_550",
 	"jade_pouch_100",
 	"jade_satchel_550",
 	"jade_casket_1200",
@@ -33,6 +34,7 @@ const SECURE_CONSUMABLE_PRODUCT_IDS: Array = [
 # Five Google Play Console products use jade_pouch_* IDs, so translation happens
 # only at this provider boundary.
 const PLAY_PRODUCT_ID_BY_INTERNAL: Dictionary = {
+	"heavenly_trials_support_550": "heavenly_trials_support_550",
 	"jade_pouch_100": "jade_pouch_100",
 	"jade_satchel_550": "jade_pouch_550",
 	"jade_casket_1200": "jade_pouch_1200",
@@ -41,6 +43,7 @@ const PLAY_PRODUCT_ID_BY_INTERNAL: Dictionary = {
 	"jade_ascendant_14000": "jade_pouch_14000",
 }
 const INTERNAL_PRODUCT_ID_BY_PLAY: Dictionary = {
+	"heavenly_trials_support_550": "heavenly_trials_support_550",
 	"jade_pouch_100": "jade_pouch_100",
 	"jade_pouch_550": "jade_satchel_550",
 	"jade_pouch_1200": "jade_casket_1200",

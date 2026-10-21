@@ -1,3 +1,5 @@
+import {trialsAdmin} from './heavenly_trials.mjs';
+import trialsDashboard from './heavenly_trials_dashboard.mjs';
 import {updatePushAdminRoute} from './update_push.mjs';
 import {odysseyAdmin,odysseyDashboard} from './odyssey.mjs';
 import {MailError,fail,json,readBody,exact,digest,mac,checkProof,session,login,sameOrigin,randomId,nowSeconds} from './mail_admin.mjs';
@@ -97,6 +99,7 @@ export function createMailHandler({verify}={}){
  return async(request,env)=>{
   const url=new URL(request.url),path=url.pathname,db=primary(env.PROFILE_DB);if(!db)fail(503,'service_unavailable');
   if(path.startsWith('/admin/assets/')){await session(request,env);if(request.method!=='GET'||!/^\/admin\/assets\/[a-z0-9_]+\.png$/.test(path)||!env.ASSETS)fail(404,'not_found');return env.ASSETS.fetch(request);}
+  if(path==='/admin/trials'){await session(request,env);if(request.method!=='GET')fail(405,'method_not_allowed');const nonce=randomId();return new Response(trialsDashboard.replaceAll('__NONCE__',nonce),{headers:{'content-type':'text/html;charset=utf-8','cache-control':'no-store','content-security-policy':`default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`}});}
   if(path==='/admin/odyssey'){await session(request,env);if(request.method!=='GET')fail(405,'method_not_allowed');const nonce=randomId();return new Response(odysseyDashboard.replaceAll('__NONCE__',nonce),{headers:{'content-type':'text/html;charset=utf-8','cache-control':'no-store','content-security-policy':`default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`}});}
   if(path==='/admin'||path==='/admin/'){
    if(request.method!=='GET')fail(405,'method_not_allowed');const nonce=randomId();
@@ -105,6 +108,7 @@ export function createMailHandler({verify}={}){
   if(path==='/admin/api/login'){if(request.method!=='POST')fail(405,'method_not_allowed');return login(request,env,db);}
   if(path.startsWith('/admin/api/')){
    const auth=await session(request,env,request.method!=='GET');
+   if(path==='/admin/api/trials')return trialsAdmin(request,env);
    if(path==='/admin/api/odyssey')return odysseyAdmin(request,env);
    const update=await updatePushAdminRoute(db,env,request,url);if(update)return update;
    const announcement=await announcementAdminRoute(db,env,request,url);if(announcement)return announcement;

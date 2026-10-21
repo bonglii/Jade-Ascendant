@@ -82,13 +82,13 @@ async function migrate(db,uid,now){
 }
 function normalize(c){
  if(!plain(c)||typeof c.request_id!=='string'||!UUID.test(c.request_id)||!int(c.expected_revision,0,REV-1))fail('invalid_command');
- if(typeof c.kind!=='string'||!['initialize','summon','equip','refine','wish','run_start','run_resume'].includes(c.kind))fail('invalid_command');
- const fields={initialize:[],summon:['pull_count'],equip:['slot','item_id'],refine:['item_id'],wish:['item_id'],run_start:['run_id','weapon_level'],run_resume:['run_id']}[c.kind];
+ if(typeof c.kind!=='string'||!['initialize','summon','seal_summon','equip','refine','wish','run_start','run_resume'].includes(c.kind))fail('invalid_command');
+ const fields={initialize:[],summon:['pull_count'],seal_summon:['pull_count'],equip:['slot','item_id'],refine:['item_id'],wish:['item_id'],run_start:['run_id','weapon_level'],run_resume:['run_id']}[c.kind];
  if(!fields||!exact(c,['request_id','expected_revision','kind',...fields]))fail('invalid_command');
  const n={request_id:c.request_id,expected_revision:c.expected_revision,kind:c.kind};for(const k of fields)n[k]=c[k];
  if(fields.includes('run_id')&&(typeof c.run_id!=='string'||!UUID.test(c.run_id)))fail('invalid_command');
  if(c.kind==='run_start'&&!int(c.weapon_level,0,50))fail('invalid_command');
- if(c.kind==='summon'&&![1,10].includes(c.pull_count))fail('invalid_command');
+ if((c.kind==='summon'&&![1,10].includes(c.pull_count))||(c.kind==='seal_summon'&&c.pull_count!==1))fail('invalid_command');
  if(fields.includes('item_id')&&(typeof c.item_id!=='string'||(c.item_id!==''&&!ITEMS.has(c.item_id))))fail('invalid_command');
  if(c.kind==='equip'&&!SLOTS.includes(c.slot))fail('invalid_command');return n;
 }
@@ -143,11 +143,13 @@ export function createPaidGameplayV2(db,{now=()=>Date.now(),rng=secureInt}={}){
    if(c.kind==='run_start')runInsert=JSON.stringify(frozen);
    outcome={run_id:c.run_id,...frozen};
   }
+  if(c.kind==='seal_summon'){const seals=await primary(db).prepare("SELECT COALESCE((SELECT SUM(delta/550*2) FROM iap_wallet_events_v1 e WHERE owner_key=? AND event_kind='play_credit' AND item_key='heavenly_trials_support_550' AND delta=550 AND NOT EXISTS(SELECT 1 FROM iap_play_void_events_v1 v WHERE v.token_key='playtoken:'||substr(e.event_key,7))),0)-(SELECT COUNT(*) FROM ht_seal_spends WHERE owner=?) AS balance").bind(owner,owner.slice(3)).first();if(!seals||seals.balance<1)return cancel();outcome=draw(s,1,rng);}
   if(c.kind==='summon'){cost=c.pull_count===1?100:900;outcome=draw(s,c.pull_count,rng);}
   if(c.kind==='equip'){if(c.item_id!==''&&(ITEMS.get(c.item_id)?.slot!==c.slot||!s.inventory[c.item_id]))fail('item_not_owned');s.slots[c.slot]=c.item_id;}
   if(c.kind==='refine'){if(!s.inventory[c.item_id]||s.inventory[c.item_id]<2||s.stars[c.item_id]>=5)fail('refine_not_ready');s.inventory[c.item_id]--;s.stars[c.item_id]++;}
   if(c.kind==='wish'){if(c.item_id!==''&&ITEMS.get(c.item_id)?.rarity!=='legendary')fail('invalid_command');if(s.wish!==c.item_id){s.wish=c.item_id;s.wish_guaranteed=false;}}
   validate(s);const operation={request_id:c.request_id,kind:c.kind,outcome},steps=[];
+  if(c.kind==='seal_summon')steps.push(db.prepare("INSERT INTO ht_seal_spends(operation_key,owner,available_after,created_at) SELECT ?,?,COALESCE((SELECT SUM(delta/550*2) FROM iap_wallet_events_v1 e WHERE owner_key=? AND event_kind='play_credit' AND item_key='heavenly_trials_support_550' AND delta=550 AND NOT EXISTS(SELECT 1 FROM iap_play_void_events_v1 v WHERE v.token_key='playtoken:'||substr(e.event_key,7))),0)-(SELECT COUNT(*) FROM ht_seal_spends WHERE owner=?)-1,?").bind(key,owner.slice(3),owner,owner.slice(3),Math.floor(time/1000)));
   if(cost){steps.push(db.prepare("INSERT INTO iap_wallet_events_v1(event_key,owner_key,event_kind,item_key,delta) VALUES(?,?,'summon_debit',?,?)").bind(key,owner,'paid-v2:summon:'+c.pull_count,-cost));steps.push(db.prepare('UPDATE iap_wallet_accounts_v1 SET balance=balance-?,revision=revision+1 WHERE owner_key=?').bind(cost,owner));}
   steps.push(db.prepare(`UPDATE iap_paid_gameplay_v2 SET revision=CASE WHEN revision=? AND ${guard} THEN revision+1 ELSE -1 END,state_json=?,updated_at=CURRENT_TIMESTAMP WHERE owner_key=?`).bind(c.expected_revision,time-7200000,time+60000,JSON.stringify(s),owner));
   if(runInsert!==null)steps.push(db.prepare('INSERT INTO iap_paid_runs_v2(owner_key,run_id,loadout_json) VALUES(?,?,?)').bind(owner,c.run_id,runInsert));

@@ -1,9 +1,9 @@
 extends RefCounted
 ## Read-only hub adapter. Claims, rewards and progress belong to existing managers.
 const Economy=preload("res://scripts/data/economy_catalog.gd")
-const IDS: Array[String]=["seven_day","boss_hunt","pilgrimage","heavenly_ladder","treasure_hunt","five_elements","daily","pavilion"]
-const TITLES: Dictionary={"seven_day":["Seven Days of Ascension","Tujuh Hari Ascension"],"boss_hunt":["Celestial Boss Hunt","Perburuan Boss"],"pilgrimage":["Jade Valley Pilgrimage","Ziarah Lembah Jade"],"heavenly_ladder":["Heavenly Ladder","Tangga Surgawi"],"treasure_hunt":["Celestial Treasure Hunt","Perburuan Harta"],"five_elements":["Path of Five Elements","Jalan Lima Elemen"],"daily":["Daily Trials","Trial Harian"],"pavilion":["Celestial Pavilion","Paviliun Surgawi"]}
-const DESCRIPTIONS: Dictionary={"seven_day":["Return daily. Ascend with every gift.","Kembali tiap hari. Raih hadiah perjalananmu."],"boss_hunt":["Defeat realm guardians. Claim your bounty.","Kalahkan penjaga realm. Raih hadiahnya."],"pilgrimage":["Explore the realms. Unlock new milestones.","Jelajahi realm. Buka pencapaian baru."],"heavenly_ladder":["Rise through each stage of your journey.","Taklukkan setiap tahap perjalananmu."],"treasure_hunt":["Uncover treasures along your path.","Temukan harta di sepanjang perjalanan."],"five_elements":["Master five trials. Unlock Convergence.","Tuntaskan lima trial. Buka Convergence."],"daily":["Complete today's disciplines and claim rewards.","Selesaikan latihan hari ini dan raih hadiah."],"pavilion":["Meditate, collect seals and summon equipment.","Meditasi, kumpulkan seal dan summon equipment."]}
+const IDS: Array[String]=["heavenly_trials","seven_day","boss_hunt","pilgrimage","heavenly_ladder","treasure_hunt","five_elements","daily","pavilion"]
+const TITLES: Dictionary={"heavenly_trials":["Heavenly Trials","Trial Surgawi"],"seven_day":["Seven Days of Ascension","Tujuh Hari Ascension"],"boss_hunt":["Celestial Boss Hunt","Perburuan Boss"],"pilgrimage":["Jade Valley Pilgrimage","Ziarah Lembah Jade"],"heavenly_ladder":["Heavenly Ladder","Tangga Surgawi"],"treasure_hunt":["Celestial Treasure Hunt","Perburuan Harta"],"five_elements":["Path of Five Elements","Jalan Lima Elemen"],"daily":["Daily Trials","Trial Harian"],"pavilion":["Celestial Pavilion","Paviliun Surgawi"]}
+const DESCRIPTIONS: Dictionary={"heavenly_trials":["Three weekly challenges. Master the rotating rule.","Tiga tantangan mingguan. Kuasai aturan yang berganti."],"seven_day":["Return daily. Ascend with every gift.","Kembali tiap hari. Raih hadiah perjalananmu."],"boss_hunt":["Defeat realm guardians. Claim your bounty.","Kalahkan penjaga realm. Raih hadiahnya."],"pilgrimage":["Explore the realms. Unlock new milestones.","Jelajahi realm. Buka pencapaian baru."],"heavenly_ladder":["Rise through each stage of your journey.","Taklukkan setiap tahap perjalananmu."],"treasure_hunt":["Uncover treasures along your path.","Temukan harta di sepanjang perjalanan."],"five_elements":["Master five trials. Unlock Convergence.","Tuntaskan lima trial. Buka Convergence."],"daily":["Complete today's disciplines and claim rewards.","Selesaikan latihan hari ini dan raih hadiah."],"pavilion":["Meditate, collect seals and summon equipment.","Meditasi, kumpulkan seal dan summon equipment."]}
 const METHODS: Dictionary={
  "pilgrimage":["get_pilgrimage_milestone_ids","get_pilgrimage_milestone","get_pilgrimage_unlocked_count","get_pilgrimage_claimed_count"],
  "boss_hunt":["get_boss_hunt_milestone_ids","get_boss_hunt_milestone","get_boss_hunt_unlocked_count","get_boss_hunt_claimed_count"],
@@ -15,6 +15,12 @@ static func copy(en: String,id: String) -> String:
 static func title(key: String) -> String:return copy(TITLES[key][0],TITLES[key][1])
 static func description(key: String) -> String:return copy(DESCRIPTIONS[key][0],DESCRIPTIONS[key][1])
 static func preview(context: Node,key: String) -> Dictionary:
+ if key=="heavenly_trials":
+  var trials: Node=context.get_node_or_null("/root/HeavenlyTrialsClient")
+  var claimed: int=0
+  if trials!=null:
+   for row: Dictionary in trials.snapshot.get("progress",[]):claimed+=int(row.get("claimed",0))
+  return {"current":claimed,"total":3,"complete":trials==null or not trials.is_available() or claimed==3,"reward":{"celestial_jade":40,"pavilion_seal":1,"spirit_stone":600}}
  var live: Node=context.get_node_or_null("/root/LiveOpsManager")
  if live==null:return {"current":0,"total":1,"complete":false,"reward":{}}
  var result: Dictionary={"current":0,"total":1,"complete":false,"reward":{}}

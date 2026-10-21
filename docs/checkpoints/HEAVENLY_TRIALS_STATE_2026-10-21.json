@@ -1,0 +1,70 @@
+{
+  "batch": "Heavenly Trials",
+  "base_commit": "60fd56de78f455eaddd01b86b24676e9ff6b531b",
+  "phase": "Implementation and author integration QA complete; portable Windows batch ready",
+  "visual_approved": true,
+  "scope": [
+    "weekly event hub and boss combat",
+    "server session and bounded rewards",
+    "scheduled dashboard presets",
+    "optional separate rewarded unit",
+    "direct Play event support pack",
+    "portable resumable delivery"
+  ],
+  "pushed": false,
+  "deployed": false,
+  "phone_tested": false,
+  "external_setup_pending": [
+    "dedicated AdMob rewarded unit",
+    "dedicated Play SKU publication"
+  ],
+  "resume": "Use current source and delivery package; do not restart Stage Records or Heavenly Trials implementation. Base60fd56d. Run portable apply_publish_and_deploy.cmd on owner Windows project. Reuse passing evidence when source unchanged. Full native AAR/JNI, real GitHub push, deployment, AAB and phone checks must retain independent evidence.",
+  "completed": [
+    "source/asset audit",
+    "new jade temple art",
+    "weekly D1 tables and session/reward service",
+    "profile eligibility and scheduled dashboard",
+    "native weekly protocol and additive Play SKU",
+    "weekly client journal and separate checkpoint",
+    "hub tiers/reward/shop composition",
+    "arena and Journey terminal isolation",
+    "SSV/action retry and account/restart recovery",
+    "real Continue scene and low-health boss phase restore",
+    "authored boss victory and final-hit report",
+    "bonus Seal summon uses existing premium Pavilion reveal",
+    "narrow native gestures, actual renders and localized shop price",
+    "portable binary-safe installer, scoped publisher and resumable stage runner",
+    "new weekly GitHub integration workflow"
+  ],
+  "pending": [
+    "owner Windows full native AAR/JNI build and publish through launcher",
+    "owner deployment and campaign schedule through launcher/dashboard",
+    "dedicated Play SKU and optional AdMob unit configuration",
+    "new AAB export and phone validation"
+  ],
+  "evidence": {
+    "server_integration": 182,
+    "runtime": 49,
+    "ad_recovery_runtime": 22,
+    "jvm_contracts_compiled": 25,
+    "scroll": 159,
+    "event_hub": 337,
+    "player_direction": 53,
+    "portable_fixture": 20,
+    "actual_render_widths": [
+      320,
+      390
+    ],
+    "conditional_offense_total_seconds": [
+      95.77,
+      103.12,
+      123.43
+    ],
+    "native_aar_built": false,
+    "phone_tested": false,
+    "production_gates_unchanged": 9,
+    "legacy_disabled_era_failures_unchanged": 5
+  },
+  "exported": false,
+  "author_implementation_complete": true
+}

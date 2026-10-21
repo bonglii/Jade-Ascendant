@@ -51,7 +51,7 @@ func _ready() -> void:
  if not bool(get_meta("liveops_popup",false)):SceneTransitionManager.set_back_handler(_back)
  _build();_fit_layout();_refresh_event_status()
  resized.connect(_fit_layout)
- for manager_name: String in ["LiveOpsManager","OdysseyClient","DailyQuestManager","PavilionManager","SaveManager"]:
+ for manager_name: String in ["LiveOpsManager","HeavenlyTrialsClient","OdysseyClient","DailyQuestManager","PavilionManager","SaveManager"]:
   var manager: Node=get_node_or_null("/root/"+manager_name)
   if manager==null:continue
   for event_name: String in ["live_ops_changed","changed","daily_quest_progressed","daily_quest_claimed","daily_quests_reset","pavilion_changed","save_write_barrier_changed"]:
@@ -248,6 +248,8 @@ func _open_destination(id: String) -> void:
  var scene_path: String = ""
  var event_id: String = ""
  match id:
+  "heavenly_trials":
+   scene_path = "res://scenes/ui/heavenly_trials_screen.tscn"
   "seven_day":
    event_id = FEATURED_EVENT_ID
   "pilgrimage":

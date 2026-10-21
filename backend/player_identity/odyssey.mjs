@@ -6,12 +6,13 @@ export async function receiveOdysseyMail(request,env){
  if(request.method!=='POST'||!internalAuthorized(request,env))return reply(403,{error:'forbidden'});
  const r=await boundedBody(request),db=env.PROFILE_DB.withSession?env.PROFILE_DB.withSession('first-primary'):env.PROFILE_DB;
  if(!/^[a-f0-9]{32}$/.test(r.id||'')||!/^[a-f0-9]{64}$/.test(r.owner||'')||typeof r.reward!=='string'||r.reward.length>1024||!Number.isSafeInteger(r.expires_at))return reply(400,{error:'invalid_delivery'});
+ const isTrials=typeof r.event_id==='string'&&r.event_id.startsWith('ht_');
  const reward=JSON.parse(r.reward),allowed=['spirit_stone','celestial_jade','pavilion_seal','items'];
  if(Object.keys(reward).some(k=>!allowed.includes(k))||Object.entries(reward.items||{}).some(([k,v])=>k!=='heavenweaver_compass'||v!==1)||allowed.slice(0,3).some(k=>reward[k]!==undefined&&(!Number.isSafeInteger(reward[k])||reward[k]<0||reward[k]>10000)))return reply(400,{error:'invalid_reward'});
  const p=await db.prepare('SELECT public_uid FROM player_identities WHERE owner_binding=?').bind(r.owner).first();if(!p)return reply(409,{error:'profile_required'});
  const now=Math.floor(Date.now()/1000),fingerprint=await hash(JSON.stringify([r.owner,r.event_id,reward,r.expires_at])),key='odyssey:'+r.id;
  await db.batch([
-  db.prepare('INSERT OR IGNORE INTO mail_campaigns(id,request_id,fingerprint,title,body,sender,reward_json,audience,target_uid,created_at,expires_at,published_at) VALUES(?,?,?,?,?,?,?,\'uid\',?,?,?,?)').bind(r.id,key,fingerprint,('Odyssey · '+(typeof r.title==='string'?r.title:'Journey reward')).slice(0,100),'Earned from Jade Dragon Odyssey: '+(typeof r.title==='string'?r.title.slice(0,160):'journey supplies')+'. These are event action rewards, not an automatic daily allowance. Claim the attached supplies.','CELESTIAL ODYSSEY',r.reward,p.public_uid,now,r.expires_at,now),
+  db.prepare('INSERT OR IGNORE INTO mail_campaigns(id,request_id,fingerprint,title,body,sender,reward_json,audience,target_uid,created_at,expires_at,published_at) VALUES(?,?,?,?,?,?,?,\'uid\',?,?,?,?)').bind(r.id,key,fingerprint,((isTrials?'Heavenly Trials · ':'Odyssey · ')+(typeof r.title==='string'?r.title:'Journey reward')).slice(0,100),(isTrials?'Earned from Heavenly Trials: ':'Earned from Jade Dragon Odyssey: ')+(typeof r.title==='string'?r.title.slice(0,160):'journey supplies')+'. These are event action rewards, not an automatic daily allowance. Claim the attached supplies.',isTrials?'HEAVENLY TRIALS':'CELESTIAL ODYSSEY',r.reward,p.public_uid,now,r.expires_at,now),
   db.prepare('INSERT OR IGNORE INTO mail_recipients(mail_id,owner_binding) SELECT id,? FROM mail_campaigns WHERE id=? AND fingerprint=?').bind(r.owner,r.id,fingerprint)
  ]);
  const stored=await db.prepare('SELECT fingerprint FROM mail_campaigns WHERE id=?').bind(r.id).first();return stored?.fingerprint===fingerprint?reply(200,{id:r.id}):reply(409,{error:'delivery_conflict'});

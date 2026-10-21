@@ -2,6 +2,7 @@ extends RefCounted
 ## Reviewed event artwork. Keys are navigation IDs, never reward IDs.
 const ROOT: String="res://assets/ui/liveops/event_identity/"
 const ART: Dictionary={
+	"heavenly_trials":"res://assets/ui/heavenly_trials/jade_gate.png",
 	"odyssey":"res://assets/ui/liveops/odyssey/temple.png",
 	"pilgrimage":ROOT+"pilgrimage.png",
 	"boss_hunt":ROOT+"boss_hunt.png",

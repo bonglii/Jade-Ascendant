@@ -83,6 +83,7 @@ const PRODUCT_TYPE_MONTHLY_BLESSING: String = "monthly_blessing"
 ## Grant amounts only. Localized money prices must come from Google Play / App
 ## Store billing. Nothing here can purchase or grant currency by itself.
 const IAP_PRODUCTS: Dictionary = {
+	"heavenly_trials_support_550": {"type": PRODUCT_TYPE_CONSUMABLE, "celestial_jade": 550},
 	"jade_pouch_100": {
 		"type": PRODUCT_TYPE_CONSUMABLE,
 		"celestial_jade": 100

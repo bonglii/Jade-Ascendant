@@ -245,7 +245,7 @@ func _refresh_liveops_badges() -> void:
  var live_ops: Node=get_node_or_null("/root/LiveOpsManager")
  if live_ops==null:return
  var choices: Array[String]=[];var claim_choices: Array[String]=[]
- for key: String in ["boss_hunt","pilgrimage","heavenly_ladder","treasure_hunt","five_elements"]:
+ for key: String in ["heavenly_trials","boss_hunt","pilgrimage","heavenly_ladder","treasure_hunt","five_elements"]:
   var data: Dictionary=EventCatalog.preview(self,key)
   if not bool(data.complete) or ActionDot.count(self,key)>0:choices.append(key)
   if ActionDot.count(self,key)>0:claim_choices.append(key)
@@ -260,7 +260,7 @@ func _refresh_liveops_badges() -> void:
   var key: String=_featured_key if event_button.button_pressed and _featured_key in pool else pool[int(Time.get_ticks_msec()/6500)%pool.size()]
   _featured_key=key
   var map: Dictionary={"boss_hunt":"celestial_boss_hunt","pilgrimage":"jade_valley_pilgrimage","heavenly_ladder":"heavenly_ladder","treasure_hunt":"celestial_treasure_hunt","five_elements":"path_of_five_elements"}
-  _featured_scene="res://scenes/ui/odyssey_screen.tscn" if key=="odyssey" else str(live_ops.get_event(str(map[key])).get("scene_path",""))
+  _featured_scene="res://scenes/ui/heavenly_trials_screen.tscn" if key=="heavenly_trials" else "res://scenes/ui/odyssey_screen.tscn" if key=="odyssey" else str(live_ops.get_event(str(map[key])).get("scene_path",""))
   var info: Dictionary=EventCatalog.preview(self,key) if key!="odyssey" else {"current":preload("res://scripts/data/odyssey_progress.gd").current(client.snapshot.get("state",{})),"total":preload("res://scripts/data/odyssey_progress.gd").goal(client.snapshot.get("state",{})),"reward":{}}
   event_card.get_node("FeaturedTitle").text=EventCatalog.title(key) if key!="odyssey" else "JADE DRAGON ODYSSEY"
   event_card.get_node("EventKind").text=tr("CELESTIAL EVENTS")+" · %d/%d"%[pool.find(key)+1,pool.size()]

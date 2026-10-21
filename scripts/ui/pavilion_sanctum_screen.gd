@@ -1,6 +1,7 @@
 extends "res://scripts/ui/pavilion_fast_first_frame.gd"
 ## Approved ritual redesign. Managers remain the only grant/save authority.
 const ImperialStyle = preload("res://scripts/ui/pavilion_imperial_style.gd")
+var _trial_seal_button: Button
 var _paid_status: Label
 var _paid_buttons: Array[Button] = []
 var _paid_reveal_busy: bool = false
@@ -187,6 +188,10 @@ func _build_paid_summons() -> void:
 		var button: Button=_button(row,"%d× · %d PAID JADE"%[count,cost],_summon_paid.bind(count),true,GOLD)
 		button.custom_minimum_size=Vector2(0,54);button.add_theme_font_size_override("font_size",13)
 		_paid_buttons.append(button)
+	_trial_seal_button=_button(summon_controls_stack,"",_summon_trial_seal,true,GOLD)
+	_trial_seal_button.custom_minimum_size=Vector2(0,54)
+	var trials: Node=get_node_or_null("/root/HeavenlyTrialsClient")
+	if trials!=null and not trials.is_connected("changed",_refresh_paid_summons):trials.connect("changed",_refresh_paid_summons)
 	_button(summon_controls_stack,"SERVER ARMORY · TARGET & GEAR",func() -> void: load("res://scripts/ui/paid_armory_panel.gd").open_for($SafeArea),false,JADE)
 	if is_instance_valid(PavilionManager.paid_gameplay): PavilionManager.paid_gameplay.connect("changed",_refresh_paid_summons)
 	if not PavilionManager.paid_summon_finished.is_connected(_on_paid_summon_finished): PavilionManager.paid_summon_finished.connect(_on_paid_summon_finished)
@@ -197,8 +202,20 @@ func _refresh_paid_summons() -> void:
 	var view: Dictionary=paid.get("snapshot") if is_instance_valid(paid) else {}
 	var pity: Dictionary=view.get("pity",{})
 	_paid_status.text="SERVER STANDARD · %d PAID JADE\n60%% Common · 29%% Rare · 9%% Epic · 2%% Legendary\nSeparate pity: %d/10 · %d/30 · %d/50"%[int(paid.call("paid_balance")) if paid!=null else 0,int(pity.get("rare_plus",0)),int(pity.get("epic_plus",0)),int(pity.get("legendary",0))]
+	var trials: Node=get_node_or_null("/root/HeavenlyTrialsClient")
+	var bonus: int=int(trials.snapshot.get("bonus_seals",0)) if trials!=null else 0
+	if is_instance_valid(_trial_seal_button):
+		_trial_seal_button.visible=bonus>0
+		_trial_seal_button.text="BONUS SEAL · %d AVAILABLE"%bonus
+		_trial_seal_button.disabled=paid==null or not paid.is_verified_ready() or paid.busy or not PavilionManager.is_summon_unlocked() or _paid_reveal_busy or (is_instance_valid(summon_reveal_overlay) and summon_reveal_overlay.visible)
 	for i: int in range(_paid_buttons.size()):
 		_paid_buttons[i].disabled=paid==null or not bool(paid.call("can_summon",1 if i==0 else 10)) or not PavilionManager.is_summon_unlocked() or _paid_reveal_busy or (is_instance_valid(summon_reveal_overlay) and summon_reveal_overlay.visible)
+func _summon_trial_seal() -> void:
+	if _paid_reveal_busy or (is_instance_valid(summon_reveal_overlay) and summon_reveal_overlay.visible): return
+	_paid_reveal_busy=true;_refresh_paid_summons()
+	if not PavilionManager.request_paid_summon(1,true):
+		_paid_reveal_busy=false;_set_status("Connect to recover your bonus Seal.",GOLD);_refresh_paid_summons()
+
 func _summon_paid(count: int) -> void:
 	if _paid_reveal_busy or (is_instance_valid(summon_reveal_overlay) and summon_reveal_overlay.visible): return
 	_paid_reveal_busy=true;_refresh_paid_summons()
@@ -207,10 +224,12 @@ func _summon_paid(count: int) -> void:
 func _on_paid_summon_finished(result: Dictionary) -> void:
 	if not _paid_reveal_busy: return
 	_paid_reveal_busy=false
-	if bool(result.get("success",false)) and result.get("operation",{}).get("kind")=="summon":
+	if bool(result.get("success",false)) and result.get("operation",{}).get("kind") in ["summon","seal_summon"]:
 		_paid_reveal_mode=true
 		_record_session_history(result);_start_summon_reveal(result)
 	else: _set_status(str(result.get("error","Recover your server request.")),GOLD)
+	var trials: Node=get_node_or_null("/root/HeavenlyTrialsClient")
+	if trials!=null:trials.call("refresh")
 	_sync_wallet_balances();_refresh_summon_panel();_refresh_paid_summons()
 func _build_utility_rows() -> void:
 	_build_paid_summons()

@@ -41,6 +41,10 @@ func _bootstrap_runtime_helpers() -> void:
 	var tree: SceneTree = get_tree()
 	if tree == null or tree.root == null:
 		return
+	if tree.root.get_node_or_null("HeavenlyTrialsClient") == null:
+		var trials_client: Node = preload("res://scripts/monetization/heavenly_trials_client.gd").new()
+		trials_client.name = "HeavenlyTrialsClient"
+		tree.root.add_child(trials_client)
 	if tree.root.get_node_or_null("AnnouncementCenter") == null:
 		var announcements: Node = preload("res://scripts/managers/announcement_center.gd").new()
 		announcements.name = "AnnouncementCenter"

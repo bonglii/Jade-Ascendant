@@ -89,10 +89,16 @@ try {
     }
     $pushClass=@(& $javap -classpath $jar -public ($ns+'JadeUpdateMessagingService')) -join "`n"
     if ($LASTEXITCODE -ne 0 -or $pushClass -notmatch 'onMessageReceived') { throw 'Update messaging service not compiled.' }
+    foreach ($variant in @('Debug','Release')) {
+        $trialsTests=Join-Path $build ('bridge/build/test-results/test'+$variant+'UnitTest/TEST-com.yungdevstudio.jadeascendant.monetizationbridge.HeavenlyTrialsContractV1Test.xml')
+        if (-not (Test-Path -LiteralPath $trialsTests)) { throw 'Heavenly Trials native tests missing.' }
+        [xml]$trialsResult=Get-Content -LiteralPath $trialsTests -Raw
+        if ([int]$trialsResult.testsuite.tests -lt 5 -or [int]$trialsResult.testsuite.failures -ne 0 -or [int]$trialsResult.testsuite.errors -ne 0 -or [int]$trialsResult.testsuite.skipped -ne 0) { throw 'Heavenly Trials native tests failed.' }
+    }
     $inputs = @{}
     $inputFiles = @(Get-ChildItem -LiteralPath (Join-Path $build 'bridge/src') -Recurse -Filter '*.kt' -File)
     $inputFiles += @(Get-ChildItem -LiteralPath (Join-Path $build 'bridge/src/main') -Recurse -Filter '*.xml' -File)
-    foreach ($path in @('backend/monetization/android_bridge/build.gradle.kts','backend/monetization/android_bridge/settings.gradle.kts','backend/monetization/android_bridge/bridge/build.gradle.kts','addons/JadeMonetizationNativeBridge/export_plugin.gd','backend/monetization/android_bridge/bridge/src/test/resources/odyssey_snapshot_v1.json')) { $inputFiles += Get-Item -LiteralPath (Join-Path $repo $path) }
+    foreach ($path in @('backend/monetization/android_bridge/build.gradle.kts','backend/monetization/android_bridge/settings.gradle.kts','backend/monetization/android_bridge/bridge/build.gradle.kts','addons/JadeMonetizationNativeBridge/export_plugin.gd','backend/monetization/android_bridge/bridge/src/test/resources/odyssey_snapshot_v1.json','backend/monetization/android_bridge/bridge/src/test/resources/heavenly_trials_snapshot_v1.json')) { $inputFiles += Get-Item -LiteralPath (Join-Path $repo $path) }
     foreach ($file in $inputFiles) {
         $sha = [Security.Cryptography.SHA256]::Create()
         try { $hash = ([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes([IO.File]::ReadAllText($file.FullName).Replace("`r`n","`n"))))).Replace('-','').ToLowerInvariant() } finally { $sha.Dispose() }
@@ -102,7 +108,7 @@ try {
     Copy-Item -LiteralPath $outputs[0].FullName -Destination $destination
     $receipt = @{version=1; target='production-candidate'; installed=$false; deployed=$false; inputs=$inputs;
         aar_sha256=(Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant();
-        compiled_utc=[DateTime]::UtcNow.ToString('o'); jvm_test_executions=$tests; update_notifications=1; odyssey_shop_protocol=4; odyssey_flow_revision=4;
+        compiled_utc=[DateTime]::UtcNow.ToString('o'); jvm_test_executions=$tests; heavenly_trials_protocol=1; update_notifications=1; odyssey_shop_protocol=4; odyssey_flow_revision=4;
         evidence='COMPILE_JVM_JNI_PLAY_INTEGRITY_PROVIDER_ONLY_NOT_LIVE_PLAY'}
     [IO.File]::WriteAllText((Join-Path $work 'receipt.json'),($receipt | ConvertTo-Json -Depth 5),(New-Object Text.UTF8Encoding($false)))
     [IO.File]::WriteAllText((Join-Path $work 'compiled-flags.txt'),$flags)

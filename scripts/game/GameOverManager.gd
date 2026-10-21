@@ -27,6 +27,11 @@ func _ready() -> void:
 
 ## Menangani Game Over satu kali saat Player mati.
 func _on_player_died() -> void:
+	if get_parent().has_method("finish_heavenly_trial"):
+		if not game_over_triggered:
+			game_over_triggered = true
+			get_parent().call_deferred("finish_heavenly_trial",false)
+		return
 	var other_end: Node = get_parent().get_node_or_null("VictoryManager")
 	if other_end != null and bool(other_end.get("victory_processed")):
 		return

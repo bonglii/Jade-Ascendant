@@ -2128,20 +2128,23 @@ func can_summon(pull_count: int, payment_method: String = PAYMENT_AUTO) -> bool:
 	return true
 
 
-func request_paid_summon(pull_count: int) -> bool:
+func request_paid_summon(pull_count: int,use_trial_seal: bool=false) -> bool:
 	if summon_delivery_active or not is_instance_valid(paid_gameplay) or not is_summon_unlocked(): return false
-	if not bool(paid_gameplay.call("can_summon",pull_count)): return false
+	if use_trial_seal:
+		var trials: Node=get_node_or_null("/root/HeavenlyTrialsClient")
+		if pull_count!=1 or trials==null or int(trials.snapshot.get("bonus_seals",0))<1 or not paid_gameplay.is_verified_ready(): return false
+	elif not bool(paid_gameplay.call("can_summon",pull_count)): return false
 	summon_delivery_active=true
 	var callback:=Callable(self,"_on_paid_summon_finished_v2")
 	paid_gameplay.connect("finished",callback,CONNECT_ONE_SHOT)
-	if not bool(paid_gameplay.call("submit","summon",{"pull_count":pull_count})):
+	if not bool(paid_gameplay.call("submit","seal_summon" if use_trial_seal else "summon",{"pull_count":pull_count})):
 		if paid_gameplay.is_connected("finished",callback): paid_gameplay.disconnect("finished",callback)
 		summon_delivery_active=false
 		return false
 	return true
 func _on_paid_summon_finished_v2(result: Dictionary) -> void:
 	summon_delivery_active=false
-	if bool(result.get("success",false)) and result.get("operation",{}).get("kind")=="summon": summon_completed.emit(result)
+	if bool(result.get("success",false)) and result.get("operation",{}).get("kind") in ["summon","seal_summon"]: summon_completed.emit(result)
 	paid_summon_finished.emit(result)
 
 

@@ -79,6 +79,11 @@ func _on_boss_spawned(boss: Node) -> void:
 	))
 
 func _on_boss_defeated() -> void:
+	if get_parent().has_method("finish_heavenly_trial"):
+		if not victory_processed:
+			victory_processed = true
+			get_parent().call_deferred("finish_heavenly_trial",true)
+		return
 	var other_end: Node = get_parent().get_node_or_null("GameOverManager")
 	if other_end != null and bool(other_end.get("game_over_triggered")):
 		return

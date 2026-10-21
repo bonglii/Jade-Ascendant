@@ -1,3 +1,4 @@
+import {trialsProgress} from './heavenly_trials.mjs';
 import {receiveOdysseyMail} from './odyssey.mjs';
 import {InvalidIdentity} from '../monetization/cloudflare/src/jwt_verify.mjs';
 import {verifyAuth, ProfileAuthRejected, ProfileAuthUnavailable} from './auth.mjs';
@@ -49,6 +50,7 @@ export function createHandler({verify=verifyAuth,register=registerIdentity}={}) 
   const handleProgressBackup=createProgressBackupHandler({verify});
   return async(request,env)=>{
     const url = new URL(request.url);
+    if(url.pathname==='/internal/trials/progress')return trialsProgress(request,env);
     if(url.pathname==='/internal/odyssey/mail')return receiveOdysseyMail(request,env);
     if(Object.hasOwn(trustPages,url.pathname)){
       if(!['GET','HEAD'].includes(request.method))return reply(405,{error:'method_not_allowed'});

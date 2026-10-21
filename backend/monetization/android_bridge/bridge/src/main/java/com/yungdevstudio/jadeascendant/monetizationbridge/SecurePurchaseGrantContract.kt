@@ -5,6 +5,7 @@ internal object SecurePurchaseGrantContract {
     private const val STATE_GRANT_READY = "grant_ready"
     private val grantId = Regex("^iapv1:[a-f0-9]{64}$")
     private val jadeByInternalProduct = mapOf(
+        "heavenly_trials_support_550" to 550,
         "jade_pouch_100" to 100,
         "jade_satchel_550" to 550,
         "jade_casket_1200" to 1200,

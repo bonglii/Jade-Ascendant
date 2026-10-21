@@ -1,0 +1,8 @@
+[gd_scene load_steps=4 format=3]
+[ext_resource type="PackedScene" path="res://scenes/levels/level_1.tscn" id="1"]
+[ext_resource type="Script" path="res://scripts/game/heavenly_trial_arena.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/game/heavenly_trial_checkpoint.gd" id="3"]
+[node name="HeavenlyTrialsArena" instance=ExtResource("1")]
+script=ExtResource("2")
+[node name="CheckPointManager" parent="."]
+script=ExtResource("3")

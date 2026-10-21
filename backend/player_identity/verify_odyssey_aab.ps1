@@ -24,14 +24,15 @@ try {
         if ($entries.Count -ne 1 -or $entries[0].Length -gt 16384) { throw 'Unique release metadata not found in AAB.' }
         $reader=New-Object IO.StreamReader($entries[0].Open())
         try { $meta=$reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }
-        if ($meta.debug -ne $false -or $meta.iap_target -ne 'production' -or $meta.odyssey_presentation -ne 4 -or $meta.update_notifications -ne 1 -or $meta.odyssey_shop_protocol -ne 4 -or $meta.odyssey_flow_revision -ne 4 -or $meta.odyssey_reliability_revision -ne 1 -or $meta.odyssey_ad_feedback_revision -ne 1 -or $meta.premium_reliability_revision -ne 1 -or $meta.rewarded_units_revision -ne 1 -or $meta.mailbox_session_revision -ne 1 -or $meta.board_polish_revision -ne 1 -or $meta.celestial_hub_revision -ne 1 -or $meta.native_sha256 -ne $proof.aar_sha256 -or $meta.source_revision -ne $receipt.source_revision) { throw 'AAB metadata does not match this verified Odyssey release candidate.' }
-        $found=$false; $pushService=$false; $pushTopic=$false
+        if ($meta.heavenly_trials_revision -ne 1 -or $meta.debug -ne $false -or $meta.iap_target -ne 'production' -or $meta.odyssey_presentation -ne 4 -or $meta.update_notifications -ne 1 -or $meta.odyssey_shop_protocol -ne 4 -or $meta.odyssey_flow_revision -ne 4 -or $meta.odyssey_reliability_revision -ne 1 -or $meta.odyssey_ad_feedback_revision -ne 1 -or $meta.premium_reliability_revision -ne 1 -or $meta.rewarded_units_revision -ne 1 -or $meta.mailbox_session_revision -ne 1 -or $meta.board_polish_revision -ne 1 -or $meta.celestial_hub_revision -ne 1 -or $meta.native_sha256 -ne $proof.aar_sha256 -or $meta.source_revision -ne $receipt.source_revision) { throw 'AAB metadata does not match this verified Odyssey release candidate.' }
+        $found=$false; $trials=$false; $pushService=$false; $pushTopic=$false
         foreach ($entry in @($zip.Entries | Where-Object { $_.FullName -match '(^|/)classes[0-9]*\.dex$' })) {
             if ($entry.Length -gt 134217728) { throw 'Unexpectedly large DEX entry.' }
             $stream=$entry.Open(); $memory=New-Object IO.MemoryStream
-            try { $stream.CopyTo($memory); $text=[Text.Encoding]::UTF8.GetString($memory.ToArray()); if ($text.Contains('JadeUpdateMessagingService')) { $pushService=$true }; if ($text.Contains('jade_release_updates_v1')) { $pushTopic=$true }; if ($text.Contains('/v4/odyssey') -and $text.Contains('requestOdysseyV1')) { $found=$true } } finally { $memory.Dispose(); $stream.Dispose() }
+            try { $stream.CopyTo($memory); $text=[Text.Encoding]::UTF8.GetString($memory.ToArray()); if ($text.Contains('requestHeavenlyTrialsV1') -and $text.Contains('/v1/heavenly-trials')) { $trials=$true }; if ($text.Contains('JadeUpdateMessagingService')) { $pushService=$true }; if ($text.Contains('jade_release_updates_v1')) { $pushTopic=$true }; if ($text.Contains('/v4/odyssey') -and $text.Contains('requestOdysseyV1')) { $found=$true } } finally { $memory.Dispose(); $stream.Dispose() }
         }
         if (-not $pushService -or -not $pushTopic) { throw 'AAB lacks the compiled update notification service/topic.' }
+        if (-not $trials) { throw 'AAB lacks the compiled Heavenly Trials route. Do not upload an older native binary.' }
         if (-not $found) { throw 'AAB DEX lacks the expected Odyssey native method/economy route. Do not upload this artifact.' }
     } finally { $zip.Dispose() }
     $hash=(Get-FileHash -LiteralPath $aab -Algorithm SHA256).Hash.ToLowerInvariant()

@@ -109,8 +109,9 @@ function expectCode(promise, code) {
   );
 }
 
-test("server product allowlist is exactly the six active Celestial Jade packs", () => {
+test("server product allowlist is six unchanged Jade packs plus the dedicated weekly support product", () => {
   assert.deepEqual(listProducts(), [
+    { internalProductId: "heavenly_trials_support_550", playProductId: "heavenly_trials_support_550", celestialJade: 550 },
     { internalProductId: "jade_pouch_100", playProductId: "jade_pouch_100", celestialJade: 100 },
     { internalProductId: "jade_satchel_550", playProductId: "jade_pouch_550", celestialJade: 550 },
     { internalProductId: "jade_casket_1200", playProductId: "jade_pouch_1200", celestialJade: 1200 },
@@ -121,6 +122,17 @@ test("server product allowlist is exactly the six active Celestial Jade packs", 
   assert.equal(productByInternalId("starter_support_pack"), null);
   assert.equal(productByInternalId("monthly_jade_blessing"), null);
   assert.equal(productByPlayId("unknown"), null);
+});
+
+test("weekly support credit derives 550 Jade from its distinct Play product and deduplicates the order", async () => {
+  const ledger = new FakeLedger();
+  const gateway = new FakePlayGateway(playPurchase({playProductId:"heavenly_trials_support_550"}));
+  const first = await authorizePurchase({request:request(),playGateway:gateway,ledger});
+  assert.equal(first.internal_product_id,"heavenly_trials_support_550");
+  assert.equal(first.celestial_jade,550);
+  const replay = await authorizePurchase({request:request(),playGateway:gateway,ledger});
+  assert.equal(replay.grant_id,first.grant_id);
+  assert.equal(ledger.records.size,1);
 });
 
 test("Firebase anonymous and Google identities are accepted, but App Check/auth are mandatory", async () => {

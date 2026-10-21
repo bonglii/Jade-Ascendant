@@ -1,0 +1,62 @@
+{
+  "bonus_seals": 0,
+  "version": 1,
+  "owner_binding": "2bd806c97f0e00af1a1fc3328fa763a9269723c8db8fac4f93af71db186d6e90",
+  "server_time": 1792357230,
+  "campaign": {
+    "id": "trials-one",
+    "starts_at": 1792357200,
+    "enabled": true,
+    "ads_enabled": false,
+    "shop_enabled": false,
+    "themes": [
+      "jade_wind",
+      "scarlet_rite",
+      "starfall",
+      "froststep",
+      "sunforge"
+    ],
+    "reward": {
+      "celestial_jade": 40,
+      "pavilion_seal": 1,
+      "spirit_stone": 600
+    }
+  },
+  "week": {
+    "id": "ht_trials-one_0",
+    "campaign": "trials-one",
+    "index": 0,
+    "theme": "jade_wind",
+    "stage": 5,
+    "starts_at": 1792357200,
+    "ends_at": 1792962000,
+    "reward": {
+      "celestial_jade": 40,
+      "pavilion_seal": 1,
+      "spirit_stone": 600
+    }
+  },
+  "unlock_tier": 3,
+  "progress": [
+    {
+      "owner": "2bd806c97f0e00af1a1fc3328fa763a9269723c8db8fac4f93af71db186d6e90",
+      "week": "ht_trials-one_0",
+      "tier": 1,
+      "clears": 1,
+      "best_ms": 30000,
+      "survivor": 1,
+      "untouched": 1,
+      "claimed": 0,
+      "bonus": 0
+    }
+  ],
+  "previous": null,
+  "previous_progress": [],
+  "session": null,
+  "ad": null,
+  "pack_claimed": false,
+  "ad_unit": "",
+  "ads_ready": false,
+  "shop_ready": false,
+  "pack_product": "heavenly_trials_support_550"
+}

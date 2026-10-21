@@ -52,9 +52,11 @@ static func count(context: Node, source: String) -> int:
   "odyssey", "odyssey_missions", "odyssey_milestones":
    var client: Node=context.get_node_or_null("/root/OdysseyClient")
    return odyssey_count(client.snapshot,client.server_time(),source) if client!=null else 0
+  "heavenly_trials":
+   return _number(context,"HeavenlyTrialsClient","ready_count")
   "all_events":
    var total: int=0
-   for key: String in ["seven_day","pilgrimage","boss_hunt","heavenly_ladder","treasure_hunt","five_elements","odyssey","daily","pavilion"]: total+=count(context,key)
+   for key: String in ["heavenly_trials","seven_day","pilgrimage","boss_hunt","heavenly_ladder","treasure_hunt","five_elements","odyssey","daily","pavilion"]: total+=count(context,key)
    return total
   "home": return count(context,"all_events")+count(context,"mail")+count(context,"meditation")+count(context,"profile")
  return 0

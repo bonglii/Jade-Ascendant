@@ -41,6 +41,7 @@ var _active_unit: String = ""
 var _consent_form: ConsentForm
 
 var _odyssey_ssv_nonce: String = ""
+var _trials_ssv_nonce: String = ""
 var _active_request_id: int = -1
 var _reward_earned_for_request: bool = false
 var _request_finishing: bool = false
@@ -90,7 +91,7 @@ func _ads_platform_supported() -> bool:
 
 
 func _slot(unit: String) -> Dictionary:
-	if not UnitCatalog.UNITS.has(unit): return {}
+	if not UnitCatalog.UNITS.has(unit) and not (unit=="trials" and not UnitCatalog.trials_unit_id.is_empty()): return {}
 	if not _units.has(unit):
 		_units[unit] = {"ad": null, "loaded_at": -1, "loading": false,
 			"generation": 0, "load_started": -1, "retry_at": 0, "retry_delay": LOAD_RETRY_INITIAL_SECONDS,
@@ -100,7 +101,7 @@ func _slot(unit: String) -> Dictionary:
 
 func rewarded_available(placement: String) -> bool:
 	var unit: String = UnitCatalog.unit_for(placement)
-	if unit.is_empty(): return false
+	if unit.is_empty() or (unit=="trials" and UnitCatalog.trials_unit_id.is_empty()): return false
 	if _ads_platform_supported(): warm_rewarded_ad(placement)
 	var slot: Dictionary = _slot(unit)
 	return (_ads_platform_supported() and _consent_gate_open and not _privacy_form_open
@@ -113,7 +114,7 @@ func _ad_clock_ms() -> int:
 
 func warm_rewarded_ad(placement: String = "odyssey_roll") -> void:
 	var unit: String = UnitCatalog.unit_for(placement)
-	if unit.is_empty() or _active_request_id >= 0: return
+	if unit.is_empty() or (unit=="trials" and UnitCatalog.trials_unit_id.is_empty()) or _active_request_id >= 0: return
 	var slot: Dictionary = _slot(unit)
 	if slot.ad != null and int(slot.loaded_at) >= 0 and _ad_clock_ms() - int(slot.loaded_at) >= 55 * 60 * 1000:
 		_destroy_unit_ad(unit)
@@ -122,7 +123,9 @@ func warm_rewarded_ad(placement: String = "odyssey_roll") -> void:
 
 
 func _warm_all_units() -> void:
-	for unit: String in UnitCatalog.UNITS:
+	var configured: Array = UnitCatalog.UNITS.keys()
+	if not UnitCatalog.trials_unit_id.is_empty(): configured.append("trials")
+	for unit: String in configured:
 		if _ad_clock_ms() >= int(_slot(unit).retry_at): _load_rewarded_ad(unit)
 
 
@@ -149,6 +152,17 @@ func prepare_odyssey_ssv(nonce: String) -> void:
 	_odyssey_ssv_nonce = nonce if nonce.length() == 32 and nonce.is_valid_hex_number(false) else ""
 
 
+func prepare_trials_ssv(nonce: String) -> void:
+	_trials_ssv_nonce=nonce if nonce.length()==32 and nonce.is_valid_hex_number(false) else ""
+
+func configure_trials_unit(value: String) -> bool:
+	if value==UnitCatalog.trials_unit_id: return not value.is_empty()
+	if _active_unit=="trials": return false
+	var previous: String=UnitCatalog.trials_unit_id
+	if not UnitCatalog.configure_trials(value): return false
+	if not previous.is_empty(): _destroy_unit_ad("trials")
+	return true
+
 func show_rewarded(request_id: int, placement: String) -> void:
 	if request_id < 0 or not rewarded_available(placement):
 		request_finished.emit(request_id, "unavailable")
@@ -156,14 +170,17 @@ func show_rewarded(request_id: int, placement: String) -> void:
 	if placement == "odyssey_roll" and _odyssey_ssv_nonce.is_empty():
 		request_finished.emit(request_id, "unavailable")
 		return
+	if placement=="heavenly_trials_bonus" and _trials_ssv_nonce.is_empty():
+		request_finished.emit(request_id,"unavailable"); return
 	var unit: String = UnitCatalog.unit_for(placement)
 	var ad: RewardedAd = _slot(unit).ad
 	var verification := ServerSideVerificationOptions.new()
-	verification.custom_data = _odyssey_ssv_nonce if placement == "odyssey_roll" else ""
-	verification.user_id = _odyssey_ssv_nonce if placement == "odyssey_roll" else ""
+	verification.custom_data = _odyssey_ssv_nonce if placement == "odyssey_roll" else _trials_ssv_nonce if placement=="heavenly_trials_bonus" else ""
+	verification.user_id = verification.custom_data
 	ad.set_server_side_verification_options(verification)
 	# A nonce belongs to the dice intent only; never carry it into another unit.
 	_odyssey_ssv_nonce = ""
+	_trials_ssv_nonce = ""
 	_active_unit = unit
 	_active_request_id = request_id
 	_reward_earned_for_request = false
@@ -474,7 +491,7 @@ func _on_mobile_ads_initialized(_initialization_status) -> void:
 
 
 func _load_rewarded_ad(unit: String = "dice") -> void:
-	if not UnitCatalog.UNITS.has(unit): return
+	if not UnitCatalog.UNITS.has(unit) and not (unit=="trials" and not UnitCatalog.trials_unit_id.is_empty()): return
 	var slot: Dictionary = _slot(unit)
 	if not _consent_gate_open or _privacy_form_open or not _ads_initialized or bool(slot.loading) or slot.ad != null or _active_request_id >= 0: return
 	if _ad_clock_ms() < int(slot.retry_at): return

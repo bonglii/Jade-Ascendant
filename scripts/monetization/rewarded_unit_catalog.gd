@@ -11,7 +11,9 @@ const UNITS: Dictionary = {
 	"revive": {"name": "Rewarded_Revive", "id": "ca-app-pub-3082528078187093/9686167686", "reward": "Revive"},
 	"general": {"name": "Rewarded_General_Bonus", "id": "ca-app-pub-3082528078187093/9338683323", "reward": "Bonus"}
 }
+static var trials_unit_id: String = ""
 const PLACEMENTS: Dictionary = {
+	"heavenly_trials_bonus": "trials",
 	"odyssey_roll": "dice",
 	"pavilion_seal": "pavilion",
 	"game_over_revive": "revive",
@@ -24,6 +26,7 @@ static func unit_for(placement: String) -> String:
 	return str(PLACEMENTS.get(placement, ""))
 
 static func unit_id(unit: String, debug_build: bool) -> String:
+	if unit == "trials": return (TEST_UNIT if debug_build else trials_unit_id) if not trials_unit_id.is_empty() else ""
 	if not UNITS.has(unit): return ""
 	return TEST_UNIT if debug_build else str(UNITS[unit].id)
 
@@ -38,3 +41,10 @@ static func release_configuration_valid(app_id: String, ids: Dictionary) -> bool
 		if value.get_slice("/", 0) != app_id.get_slice("~", 0) or seen.has(value): return false
 		seen[value] = true
 	return true
+
+static func configure_trials(value: String) -> bool:
+	var pattern:=RegEx.new();pattern.compile("^ca-app-pub-[0-9]{16}/[0-9]{10}$")
+	if pattern.search(value)==null or value==TEST_UNIT or value.get_slice("/",0)!=APP_ID.get_slice("~",0):return false
+	for unit: Dictionary in UNITS.values():
+		if value==str(unit.id):return false
+	trials_unit_id=value;return true

@@ -30,6 +30,7 @@ func run() -> void:
  var now: int=int(Time.get_unix_time_from_system());var day: String=Time.get_datetime_string_from_unix_time(now).substr(0,10)
  var catalog: Dictionary=root.get_node("PavilionManager").get_iap_product_catalog();var offers: Array=[]
  for id: String in catalog:
+  if id=="heavenly_trials_support_550":continue
   var product: Dictionary=catalog[id]
   if str(product.get("type",""))=="consumable":offers.append({"product_id":id,"jade":int(product.get("celestial_jade",0)),"dice":[1,3,5,8,12,16][offers.size()],"claimed":false})
  client.snapshot={"event":{"id":"qa-scroll","enabled":true,"ads_enabled":true,"purchases_enabled":true,"starts_at":now-100,"ends_at":now+86400},"state":{"tickets":6,"rolls":36,"daily_rolls":3,"position":4,"day":day,"task_day":day,"missions":[],"task_claims":[],"milestones":[],"last_die":0,"daily_ads":0},"revision":1,"server_time":now,"purchase_bonus":{"active":true,"offers":offers}}

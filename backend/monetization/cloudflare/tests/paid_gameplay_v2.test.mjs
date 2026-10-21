@@ -148,3 +148,26 @@ test('confirmed not-committed receipt fences a delayed original request permanen
  assert.equal((await f.service.read(UID)).wallet.balance,2400);
  assert.equal(f.sql.prepare("SELECT COUNT(*) AS n FROM iap_wallet_events_v1 WHERE event_kind='summon_debit'").get().n,0);
 }));
+
+test('Trial support Seals consume paid inventory atomically, preserve Jade, and replay once',each(async f=>{
+ await f.init();const key=owner(UID),token='a'.repeat(64);
+ f.sql.prepare("INSERT INTO iap_wallet_events_v1(event_key,owner_key,event_kind,item_key,delta) VALUES(?,?,'play_credit','heavenly_trials_support_550',550)").run('iapv1:'+token,key);
+ const input=command('seal_summon',0,{pull_count:1});const result=await f.service.execute(UID,input);
+ assert.equal(result.snapshot.wallet.balance,2400);assert.equal(result.operation.outcome.results.length,1);assert.equal(result.snapshot.lifetime_pulls,1);
+ await f.service.execute(UID,input);assert.equal(f.sql.prepare('SELECT COUNT(*) n FROM ht_seal_spends').get().n,1);
+ const again=await f.service.execute(UID,command('seal_summon',1,{pull_count:1}));assert.equal(again.snapshot.lifetime_pulls,2);
+ const empty=await f.service.execute(UID,command('seal_summon',2,{pull_count:1}));assert.equal(empty.operation.kind,'not_committed');assert.equal(empty.snapshot.lifetime_pulls,2);
+ assert.equal(f.sql.prepare('SELECT COUNT(*) n FROM ht_seal_spends').get().n,2);
+}));
+test('failed Trial Seal inventory write rolls back the Seal and summon outcome',each(async f=>{
+ await f.init();f.sql.prepare("INSERT INTO iap_wallet_events_v1(event_key,owner_key,event_kind,item_key,delta) VALUES(?,?,'play_credit','heavenly_trials_support_550',550)").run('iapv1:'+'b'.repeat(64),owner(UID));
+ const input=command('seal_summon',0,{pull_count:1});f.injectFailure(true);await assert.rejects(f.service.execute(UID,input),/injected/);
+ assert.equal(f.sql.prepare('SELECT COUNT(*) n FROM ht_seal_spends').get().n,0);assert.equal((await f.service.read(UID)).lifetime_pulls,0);
+ f.injectFailure(false);assert.equal((await f.service.execute(UID,input)).snapshot.lifetime_pulls,1);
+}));
+test('refunded Trial pack cannot supply new bonus Seals',each(async f=>{
+ await f.init();const token='c'.repeat(64),key=owner(UID);
+ f.sql.prepare("INSERT INTO iap_wallet_events_v1(event_key,owner_key,event_kind,item_key,delta) VALUES(?,?,'play_credit','heavenly_trials_support_550',550)").run('iapv1:'+token,key);
+ f.sql.prepare('INSERT INTO iap_play_void_events_v1(token_key,owner_key,voided_time_ms,voided_reason,voided_source) VALUES(?,?,?,1,1)').run('playtoken:'+token,key,NOW);
+ const out=await f.service.execute(UID,command('seal_summon',0,{pull_count:1}));assert.equal(out.operation.kind,'not_committed');assert.equal(out.snapshot.lifetime_pulls,0);
+}));

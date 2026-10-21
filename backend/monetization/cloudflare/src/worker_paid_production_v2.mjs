@@ -1,3 +1,4 @@
+import {trialsRoute,settleTrials} from './heavenly_trials.mjs';
 import {updatePushRoute} from './update_push_gateway.mjs';
 /** Explicit production entrypoint. Existing production config is unchanged. */
 import candidate from './worker_release_candidate.mjs';
@@ -24,19 +25,21 @@ export function createProductionWorkerV2({base=candidate,verifyIdentity=verifyFi
   if(url.pathname==='/health'&&request.method==='GET')return reply(200,{service:'jade-iap',gameplay_contract:2,release_enabled:active});
   if(!active)return reply(503,{error:'real_money_locked'});
   if(url.pathname==='/internal/updates')return updatePushRoute(request,env);
+  if(['/internal/trials/config','/v1/heavenly-trials/ssv'].includes(url.pathname))return trialsRoute(request,env,ctx);
   if(['/internal/odyssey/config','/v1/odyssey/ssv'].includes(url.pathname))return odysseyRoute(request,env,ctx);
   // RTDN uses its own trusted Google service identity, never a player token.
   if(url.pathname==='/v1/rtdn/voids')return base.fetch(request,env,ctx);
-  if(!['/v1/iap/authorize-v2','/v1/iap/recover-verified','/v1/wallet/paid','/v1/wallet/gameplay-v2','/v1/odyssey','/v2/odyssey','/v3/odyssey','/v4/odyssey'].includes(url.pathname))return reply(410,{error:'paid_route_retired'});
+  if(!['/v1/iap/authorize-v2','/v1/iap/recover-verified','/v1/wallet/paid','/v1/wallet/gameplay-v2','/v1/odyssey','/v2/odyssey','/v3/odyssey','/v4/odyssey','/v1/heavenly-trials'].includes(url.pathname))return reply(410,{error:'paid_route_retired'});
   try{
    const identity=await verifyIdentity(request.headers,env);
    if(identity?.auth?.token?.firebase?.sign_in_provider!=='google.com'||!identity?.auth?.uid||typeof identity?.app?.appId!=='string')return reply(401,{error:'recoverable_google_account_required'});
+   if(url.pathname==='/v1/heavenly-trials')return trialsRoute(request,env,ctx,identity.auth.uid);
    if(['/v1/odyssey','/v2/odyssey','/v3/odyssey','/v4/odyssey'].includes(url.pathname))return odysseyRoute(request,env,ctx,identity.auth.uid);
   }catch{return reply(401,{error:'unauthenticated'});}
   return base.fetch(request,env,ctx);
  },async scheduled(event,env,ctx){
   // Mail delivery retries cannot suppress the existing refund monitor.
-  const results=await Promise.allSettled([base.scheduled?.(event,env,ctx),flushOutbox(env)]);
+  const results=await Promise.allSettled([base.scheduled?.(event,env,ctx),flushOutbox(env),settleTrials(env)]);
   if(results[0].status==='rejected')throw results[0].reason;
  }};
 }

@@ -101,6 +101,7 @@ func use_test_provider(test_provider: Node) -> bool:
 
 func get_rewarded_daily_limit(placement: String) -> int:
 	if placement == "odyssey_roll": return 2
+	if placement == "heavenly_trials_bonus": return 3
 	if placement == GAME_OVER_REVIVE_PLACEMENT:
 		return GAME_OVER_REVIVE_DAILY_LIMIT
 	return DAILY_PLACEMENT_LIMIT
@@ -128,7 +129,7 @@ func rewarded_available(placement: String) -> bool:
 	)
 	return (
 		active_request < 0
-		and (placement=="odyssey_roll" or int(placement_counts.get(placement, 0)) < daily_limit)
+		and (placement in ["odyssey_roll","heavenly_trials_bonus"] or int(placement_counts.get(placement, 0)) < daily_limit)
 		and Time.get_ticks_msec() - last_reward_at >= cooldown_msec
 		and persistent_cooldown_ready
 		and bool(provider.call("rewarded_available", placement))
@@ -145,7 +146,7 @@ func is_rewarded_request_active(placement: String) -> bool:
 func get_rewarded_policy_status(placement: String) -> Dictionary:
 	_sync_policy_day()
 	var now_unix: int = _get_unix_time()
-	var placement_claims: int = 0 if placement=="odyssey_roll" else int(placement_counts.get(placement, 0))
+	var placement_claims: int = 0 if placement in ["odyssey_roll","heavenly_trials_bonus"] else int(placement_counts.get(placement, 0))
 	var daily_limit: int = get_rewarded_daily_limit(placement)
 	var cooldown_seconds: int = get_rewarded_cooldown_seconds(placement)
 	var cooldown_remaining: int = 0
@@ -246,7 +247,7 @@ func _on_reward_confirmed(request_id: int) -> void:
 	last_reward_unix = _get_unix_time()
 	_sync_policy_day(false)
 	# Odyssey quota belongs to its signed server receipt, not SDK playback.
-	if active_placement!="odyssey_roll": placement_counts[active_placement] = int(placement_counts.get(active_placement, 0)) + 1
+	if active_placement not in ["odyssey_roll","heavenly_trials_bonus"]: placement_counts[active_placement] = int(placement_counts.get(active_placement, 0)) + 1
 
 	if not _save_policy_state():
 		push_error("MonetizationManager: persistent reward policy gagal disimpan.")

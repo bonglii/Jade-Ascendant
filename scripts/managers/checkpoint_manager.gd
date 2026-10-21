@@ -696,6 +696,9 @@ func _restore_journey_identity(save_data: Dictionary) -> bool:
 	))
 	return true
 
+func _read_runtime_checkpoint() -> Dictionary:
+	return read_checkpoint_result()
+
 func load_checkpoint() -> bool:
 	DebugLogger.system(str("=========================================="))
 	DebugLogger.system(str("MEMUAT CHECKPOINT..."))
@@ -740,7 +743,7 @@ func load_checkpoint() -> bool:
 		push_error(str("ERROR: WeaponManager tidak ditemukan!"))
 		return false
 
-	var io_result: Dictionary = read_checkpoint_result()
+	var io_result: Dictionary = _read_runtime_checkpoint()
 	if not bool(io_result.get("success", false)):
 		DebugLogger.system("Checkpoint: load ditolak: %s" % io_result.get("error", ""))
 		return false

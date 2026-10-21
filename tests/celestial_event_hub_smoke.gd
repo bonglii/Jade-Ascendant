@@ -21,8 +21,8 @@ func run() -> void:
  var before: Dictionary=economy()
  var viewport:=SubViewport.new();viewport.size=Vector2i(648,1152);viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS;root.add_child(viewport)
  var page: Control=load("res://scenes/ui/event_center_screen.tscn").instantiate();page.set_meta("liveops_popup",true);viewport.add_child(page);await settle()
- check(Dot.count(page,"all_events")==Dot.count(page,"seven_day")+Dot.count(page,"boss_hunt")+Dot.count(page,"pilgrimage")+Dot.count(page,"heavenly_ladder")+Dot.count(page,"treasure_hunt")+Dot.count(page,"five_elements")+Dot.count(page,"odyssey")+Dot.count(page,"daily")+Dot.count(page,"pavilion"),"All Events aggregates every claimable destination in the hub")
- check(page._activity_handles.size()==8,"all eight supporting destinations plus featured Odyssey retained")
+ check(Dot.count(page,"all_events")==Dot.count(page,"seven_day")+Dot.count(page,"boss_hunt")+Dot.count(page,"pilgrimage")+Dot.count(page,"heavenly_ladder")+Dot.count(page,"treasure_hunt")+Dot.count(page,"five_elements")+Dot.count(page,"odyssey")+Dot.count(page,"daily")+Dot.count(page,"pavilion")+Dot.count(page,"heavenly_trials"),"All Events aggregates every claimable destination in the hub")
+ check(page._activity_handles.size()==9,"all existing destinations and Heavenly Trials retained alongside Odyssey")
  check(page._hero_action.pressed.get_connections().filter(func(c: Dictionary) -> bool:return c.callable.get_method()=="_open_destination")[0].callable.get_bound_arguments()==["odyssey"],"hero opens the real board")
  check(page._hero_action.get_node("ActionReadyDot").visible,"actual Odyssey mission and milestone light the hero dot")
  var identities: Dictionary={}
