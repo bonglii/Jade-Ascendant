@@ -2,6 +2,7 @@ extends "res://scripts/ui/library_skill_reader.gd"
 ## Read-only encyclopedia; gameplay and upgrade authority stay in their managers.
 const Visual=preload("res://scripts/ui/equipment_visual_catalog.gd")
 const Sets=preload("res://scripts/data/equipment_set_catalog.gd")
+const BuildGuide=preload("res://scripts/data/build_guidance_catalog.gd")
 const ArchiveFont=preload("res://assets/ui/library/fonts/archive_serif.ttf")
 var _mode: String="EQUIPMENT"
 var _rarity: String="ALL"
@@ -32,7 +33,7 @@ func _ready() -> void:
 	var seal:=_label("JADE ARCHIVES",13,Color(.97,.80,.43));seal.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;top.add_child(seal)
 	body.add_child(_label("LIBRARY",30,Color(1,.88,.55)))
 	var tabs:=HBoxContainer.new();body.add_child(tabs)
-	for value: String in ["EQUIPMENT","SKILLS"]:
+	for value: String in ["EQUIPMENT","SKILLS","BUILDS"]:
 		var tab:=_button(value);tab.name="LibraryTab"+value;tab.size_flags_horizontal=Control.SIZE_EXPAND_FILL;tab.pressed.connect(_set_mode.bind(value));tabs.add_child(tab);_tabs[value]=tab
 	_search=LineEdit.new();_search.name="SkillBookSearch";_search.placeholder_text="Search the archives…";_search.custom_minimum_size.y=44
 	_search.add_theme_font_size_override("font_size",16)
@@ -57,7 +58,10 @@ func _ready() -> void:
 	_summary_text=_label("Tap a relic to explore.",15,Color(.98,.86,.56));_summary_text.max_lines_visible=3;copy.add_child(_summary_text)
 	var detail:=_button("VIEW DETAILS ›");detail.custom_minimum_size.y=36;detail.pressed.connect(func():if not _selected.is_empty():_open_equipment_detail(_selected));copy.add_child(detail)
 	var guard: Node=preload("res://scripts/ui/mobile_touch_presentation_guard.gd").new();add_child(guard)
-	SceneTransitionManager.set_back_handler(_back);_refresh()
+	SceneTransitionManager.set_back_handler(_back)
+	if bool(get_tree().root.get_meta("library_open_builds",false)):
+		get_tree().root.remove_meta("library_open_builds");_set_mode("BUILDS")
+	else:_refresh()
 func _skin(state: String) -> StyleBoxTexture:
 	var skin:=StyleBoxTexture.new();skin.texture=load("res://assets/ui/account_gate/imperial_v1/jade_button.png")
 	for edge: String in ["left","right","top","bottom"]:
@@ -76,13 +80,14 @@ func _set_mode(value: String) -> void:
 func _build_filters() -> void:
 	for child: Node in _filters.get_children():_filters.remove_child(child);child.queue_free()
 	_filter_buttons.clear()
-	var categories: Array=["ALL","WEAPONS","ARMOR","SETS"] if _mode=="EQUIPMENT" else ["ALL","WEAPONS","PASSIVES","SYNERGIES"]
+	var categories: Array=["ALL","WEAPONS","ARMOR","SETS"] if _mode=="EQUIPMENT" else ["ALL","LOADOUT","SETS","WEAPONS"] if _mode=="BUILDS" else ["ALL","WEAPONS","PASSIVES","SYNERGIES"]
 	for category: String in categories:
 		var b:=_button(category);b.custom_minimum_size.y=38;b.add_theme_font_size_override("font_size",11 if size.x<400 else 14);b.size_flags_horizontal=Control.SIZE_EXPAND_FILL;b.pressed.connect(_set_filter.bind(category));_filters.add_child(b);_filter_buttons[category]=b
 func _refresh() -> void:
 	_summary.visible=_mode=="EQUIPMENT" and _filter!="SETS"
 	_rarity_picker.visible=_summary.visible
 	for tab: String in _tabs:_tabs[tab].add_theme_color_override("font_color",Color(1,.87,.44) if tab==_mode else Color(.72,.83,.79))
+	if _mode=="BUILDS":_refresh_builds();return
 	if _mode=="SKILLS":super._refresh();return
 	for child: Node in _list.get_children():_list.remove_child(child);child.queue_free()
 	var query: String=_search.text.strip_edges().to_lower();var shown: int=0
@@ -143,7 +148,7 @@ func _open_equipment_detail(id: String) -> void:
 	else:c.add_child(_label("Independent weapon • does not count toward a set. Permanent level cap: 10 / 20 / 30 / 40 / 50 at 1–5 stars. Run refinement is separate.",15,Color(.68,.90,.80)))
 	c.add_child(_label("Star ascension requires identical duplicates. Manage your loadout and upgrades in HERO.",14,Color(.73,.83,.79)))
 	if bool(d.get("event_only",false)):
-		c.add_child(_label("EVENT EXCLUSIVE • Jade Dragon Odyssey: complete 72 journeys, claim the milestone, then collect the Compass in Mail. Not in normal gacha or forging.",14,Color(.99,.83,.45)))
+		c.add_child(_label("EVENT EXCLUSIVE • Jade Dragon Odyssey: complete 12 full laps past START, claim the milestone, then collect the Compass in Mail. Not in normal gacha or forging.",14,Color(.99,.83,.45)))
 	else:
 		var chapter: int=int(d.get("requires_chapter",0));var stage: int=int(d.get("requires_stage",0))
 		c.add_child(_label("SHOP / FORGE UNLOCK: Clear %d-%d"%[chapter,stage] if chapter>0 else "ACQUISITION: Available from the beginning",14,Color(.99,.83,.45)))
@@ -167,3 +172,42 @@ func _label(value: String,font_size: int,color: Color) -> Label:
 	var label: Label=super._label(value,font_size,color)
 	if font_size>=20:label.add_theme_font_override("font",ArchiveFont)
 	return label
+
+func _guide_card(title: String, detail: String, texture: Texture2D=null) -> PanelContainer:
+	var panel:=PanelContainer.new();panel.name="BuildGuideCard"
+	panel.add_theme_stylebox_override("panel",Ui.make_panel_style(Color(.004,.035,.04,.99),Color(.66,.57,.31),12))
+	var copy:=VBoxContainer.new();copy.add_theme_constant_override("separation",10);panel.add_child(copy)
+	if texture!=null:
+		var icon:=TextureRect.new();icon.texture=texture;icon.custom_minimum_size=Vector2(54,54);icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;copy.add_child(icon)
+	copy.add_child(_label(title,20,Color(.99,.85,.48)));copy.add_child(_label(detail,16,Color(.75,.91,.85)))
+	return panel
+func _refresh_builds() -> void:
+	for child: Node in _list.get_children():_list.remove_child(child);child.queue_free()
+	var query: String=_search.text.strip_edges().to_lower();var shown: int=0
+	if _filter in ["ALL","LOADOUT"]:
+		var ids: Array[String]=[]
+		for slot: String in ["robe","bracer","boots","pendant"]:ids.append(EquipmentManager.get_loadout_equipped_item_id(slot))
+		var current: Dictionary=BuildGuide.loadout(ids)
+		var title: String="CURRENT BUILD · %d / 4"%int(current.piece_count)
+		var detail: String="No matching set equipped. Visit HERO to assemble your loadout."
+		if not str(current.set_id).is_empty():detail=Sets.get_display_name(current.set_id)+" · "+str(current.role)+"\n"+(str(current.passive.get("name",""))+" · ACTIVE" if current.active else "FULL SET · HP BONUSES ACTIVE" if bool(current.full_resonance) else "Four matching pieces activate the full bonus.")+"\n"+str(current.advice)
+		detail+="\nOne dominant set supplies the set tiers. A mixed 2+2 build does not combine both sets' tier bonuses. The weapon is independent."
+		if query.is_empty() or (title+detail).to_lower().contains(query):_list.add_child(_guide_card(title,detail));shown+=1
+	if _filter in ["ALL","SETS"]:
+		for id: String in Sets.SET_ORDER:
+			var guide: Dictionary=BuildGuide.set_advice(id)
+			var detail: String=str(guide.role)+"\n"+str(guide.advice)+"\n4 PIECES: "+Sets.get_tier_description(id,4)
+			if not query.is_empty() and not (id+Sets.get_display_name(id)+detail).to_lower().contains(query):continue
+			var first: String=Sets.get_piece_ids(id)[0]
+			_list.add_child(_guide_card(Sets.get_display_name(id),detail,load(Visual.get_icon_path(first)) as Texture2D));shown+=1
+	if _filter in ["ALL","WEAPONS"]:
+		for id: String in EquipmentManager.get_item_ids():
+			var data: Dictionary=EquipmentManager.get_item_data(id)
+			if str(data.get("slot",""))!="armament" or bool(data.get("retired",false)):continue
+			var detail: String=str(BuildGuide.WEAPON_ROLES.get(id,"INDEPENDENT WEAPON"))+"\n"+str(data.get("signature_effect_description",data.get("description","")))
+			detail+="\nPermanent weapon levels add 1% damage per level after Lv.1. Identical duplicate stars unlock caps 10 / 20 / 30 / 40 / 50. Combat skill levels are separate."
+			if not query.is_empty() and not (id+str(data.display_name)+detail).to_lower().contains(query):continue
+			_list.add_child(_guide_card(str(data.display_name),detail,load(Visual.get_icon_path(id)) as Texture2D));shown+=1
+	_count.text="%d BUILD GUIDES"%shown
+	if shown==0:_list.add_child(_label("NO MATCHING BUILDS",18,Color(.77,.85,.8)))
+	for category: String in _filter_buttons:_filter_buttons[category].add_theme_color_override("font_color",Color(1,.87,.44) if category==_filter else Color(.75,.85,.8))

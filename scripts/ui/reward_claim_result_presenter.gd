@@ -46,6 +46,10 @@ const JADE_SOFT: Color = Color(0.47, 0.98, 0.87, 1.0)
 const TEXT: Color = Color(0.95, 0.99, 0.97, 1.0)
 const MUTED: Color = Color(0.71, 0.82, 0.79, 1.0)
 
+var receipt_journal=preload("res://scripts/data/reward_receipt_journal.gd").new()
+var _receipt_elapsed: float=0.0
+var _receipts_panel: Control
+
 var _pending_entries: Array[Dictionary] = []
 var _pending_elapsed: float = 0.0
 var _result_queue: Array[Dictionary] = []
@@ -62,6 +66,7 @@ var _claim_title: Label
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_sync_receipt_owner()
 	if (
 		is_instance_valid(RewardManager)
 		and not RewardManager.reward_granted.is_connected(
@@ -74,6 +79,9 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	_receipt_elapsed+=delta
+	if _receipt_elapsed>=1.0:
+		_receipt_elapsed=0;_sync_receipt_owner();receipt_journal.flush()
 	if not _pending_entries.is_empty():
 		_pending_elapsed += delta
 		if _pending_elapsed >= CLAIM_BUFFER_SECONDS:
@@ -97,6 +105,8 @@ func _on_reward_granted(
 	source_id: String,
 	reward_data: Dictionary
 ) -> void:
+	_sync_receipt_owner()
+	receipt_journal.record(_get_source_label(source_type,source_id),source_type+":"+source_id+":"+Crypto.new().generate_random_bytes(16).hex_encode(),_get_applied_reward(source_type,source_id,reward_data),int(Time.get_unix_time_from_system()))
 	var mail_batch: Node=get_node_or_null("/root/LiveOpsManager/MailboxClaimBatch")
 	if mail_batch!=null and bool(mail_batch.call("owns_reward",source_id)): return
 	if not _is_explicit_claim_source(
@@ -182,6 +192,7 @@ func _get_source_label(
 			return tr("7-DAY LOGIN")
 		if source_id.begins_with("live_ops_mail_"):
 			return tr("MAIL ATTACHMENT")
+	if source_type==RewardManager.SOURCE_STAGE_CLEAR:return tr("STAGE CLEAR")
 	return tr("REWARD")
 
 
@@ -1147,3 +1158,18 @@ func _panel_style(
 	style.content_margin_right = 10.0
 	style.content_margin_bottom = 8.0
 	return style
+
+func _sync_receipt_owner() -> void:
+	var account: Node=get_node_or_null("/root/GoogleAccountManager")
+	var binding: String=str(account.call("get_monetization_account_binding")) if account!=null else ""
+	var receipt_owner: String="account:"+binding if binding.length()==64 else "guest"
+	if receipt_journal.owner_hash!=receipt_owner.sha256_text() and is_instance_valid(_receipts_panel):_receipts_panel.call("close")
+	receipt_journal.bind_owner(receipt_owner)
+func open_receipts() -> void:
+	if is_instance_valid(_receipts_panel):return
+	var scene: Node=get_tree().current_scene
+	if scene==null or get_tree().get_first_node_in_group("player")!=null:return
+	_sync_receipt_owner();receipt_journal.flush()
+	_receipts_panel=preload("res://scripts/ui/reward_receipts_panel.gd").new();_receipts_panel.set("records",receipt_journal.entries.duplicate(true));scene.add_child(_receipts_panel)
+func _notification(what: int) -> void:
+	if what in [NOTIFICATION_APPLICATION_PAUSED,NOTIFICATION_WM_CLOSE_REQUEST,NOTIFICATION_EXIT_TREE]:receipt_journal.flush()

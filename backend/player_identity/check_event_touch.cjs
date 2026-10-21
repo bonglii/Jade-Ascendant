@@ -1,6 +1,6 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),{spawn}=require('node:child_process');
-const tests=[['event_scroll_surface_smoke.gd','EVENT_SCROLL_SURFACE'],['celestial_event_hub_smoke.gd','CELESTIAL_HUB'],['board_polish_interaction_smoke.gd','BOARD_POLISH_INTERACTION'],['player_flow_consistency_smoke.gd','PLAYER_FLOW_CONSISTENCY']];
+const tests=[['event_scroll_surface_smoke.gd','EVENT_SCROLL_SURFACE'],['celestial_event_hub_smoke.gd','CELESTIAL_HUB'],['board_polish_interaction_smoke.gd','BOARD_POLISH_INTERACTION'],['player_flow_consistency_smoke.gd','PLAYER_FLOW_CONSISTENCY'],['player_direction_smoke.gd','PLAYER_DIRECTION']];
 const clean=s=>s.replace(/\x1b\[[0-9;]*m/g,'');
 async function runProcess(executable,args,{cwd,logs,name,marker='',idleMs=300000,totalMs=1200000,heartbeatMs=15000}={}){
  const started=Date.now(),logPath=path.join(logs,name+'.log'),metaPath=path.join(logs,name+'.json');
@@ -80,7 +80,9 @@ async function qa(project,godot,options={}){
   console.log('EVENT_TOUCH_QA_SYNC_FILES='+syncFixture(root,fixture,path.join(logs,'cache-inputs.json')));
   config();await runProcess(godot,['--headless','--audio-driver','Dummy','--editor','--path',fixture,'--import','--quit'],{cwd:root,logs,name:'import',idleMs:300000,totalMs:1200000});
  }
- for(const [script,marker]of tests){config();await runProcess(godot,['--headless','--audio-driver','Dummy','--path',fixture,'--script','res://tests/'+script],{cwd:root,logs,name:script,marker,idleMs:100000,totalMs:100000});}
+ const selected=options.only?tests.filter(([name])=>options.only.includes(name)):tests;
+ if(options.only&&selected.length!==options.only.length)throw Error("Unknown focused QA suite");
+ for(const [script,marker]of selected){config();await runProcess(godot,['--headless','--audio-driver','Dummy','--path',fixture,'--script','res://tests/'+script],{cwd:root,logs,name:script,marker,idleMs:100000,totalMs:100000});}
  console.log('EVENT_TOUCH_QA=PASS; REAL_SAVES=UNTOUCHED; PURCHASE=NONE');return {pass:true,tests:tests.length};
 }
 if(require.main===module)qa(process.argv[2]||path.resolve(__dirname,'../..'),process.argv[3]).catch(e=>{console.error('EVENT_TOUCH_QA_STOPPED: '+e.message);process.exitCode=1;});

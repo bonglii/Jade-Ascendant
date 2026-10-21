@@ -360,10 +360,12 @@ func get_weapon_level_multiplier(item_id: String="") -> float:
 	var id: String=get_equipped_item_id(SLOT_ARMAMENT) if item_id.is_empty() else item_id
 	return 1.0+maxi(get_item_weapon_level(id)-1,0)*0.01
 
+static func weapon_level_cost_at(current_level: int, cap: int) -> int:
+	return 10*(current_level+3) if current_level>=1 and current_level<cap else 0
+
 func get_weapon_level_cost(item_id: String) -> int:
-	# Preserve the first 40-stone step; soften the long-term slope.
-	# Permanent levels still add 1% damage, independently of duplicate stars.
-	return 10*(get_item_weapon_level(item_id)+3) if get_item_weapon_level(item_id)<get_weapon_level_cap(item_id) else 0
+	# Shared with the read-only audit; keep gameplay and reported prices identical.
+	return weapon_level_cost_at(get_item_weapon_level(item_id),get_weapon_level_cap(item_id))
 
 func can_level_weapon(item_id: String) -> bool:
 	if bool(get_item_data(item_id).get("retired",false)): return false

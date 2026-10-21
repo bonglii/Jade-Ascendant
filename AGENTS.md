@@ -30,3 +30,7 @@ User-approved consistency rule, 2026-10-20: every new/reworked menu and popup mu
 ## Player flow continuity — 2026-10-21
 
 Latest user-confirmed IAP status supersedes historical parking notes: real non-tester payments work. Preserve all existing live payment protections and configuration. Resume the current batch from docs/checkpoints/PLAYER_FLOW_BATCH_2026-10-21.md and docs/checkpoints/PLAYER_FLOW_BATCH_STATE_2026-10-21.json evidence before doing work again. Do not repeat passed unchanged work. Stage names installed/committed/pushed/deployed/exported/device-tested are separate facts. All stage-clear event entry points use the shared popup, numeric markers keep natural width, touch tooltips do not persist, and event visibility follows actual completion/time with earned-claim grace. Never reuse one ad nonce across devices or show an ad merely because a background prewarm completed.
+
+## Player direction continuity — 2026-10-21
+
+Resume the current guidance/receipts/build batch from docs/checkpoints/PLAYER_DIRECTION_STATE_2026-10-21.json and PLAYER_DIRECTION_AUDIT_2026-10-21.md. Home guidance is read-only until tapped; recovery/Continue precede new progression. Receipt history is a bounded account-isolated display cache of actual grants, never a balance/restore authority. Preserve valid repeat grants sharing a source ID. Share audit and production cost rules, disclose set/weapon separation, and reuse evidence for unchanged combat. The proposed new event/weekly challenge stays parked until its design scope is resumed.

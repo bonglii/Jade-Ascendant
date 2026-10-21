@@ -85,6 +85,7 @@ func _ready() -> void:
 	content.add_child(_server_connect)
 	_retry = _button(_local("RETRY","COBA LAGI"),PlayerIdentityManager.refresh_profile)
 	content.add_child(_retry)
+	var receipts:=_button(_local("RECENT REWARDS","RIWAYAT HADIAH"),_open_receipts);receipts.name="ProfileRewardReceipts";content.add_child(receipts)
 	PlayerIdentityManager.profile_changed.connect(_refresh)
 	_refresh(PlayerIdentityManager.get_profile_snapshot())
 
@@ -197,3 +198,7 @@ func _copy_uid() -> void:
 	if not bool(snapshot.ready): return
 	DisplayServer.clipboard_set(str(snapshot.player_uid))
 	_status.text = _local("UID COPIED","UID DISALIN")
+
+func _open_receipts() -> void:
+	var presenter: Node=get_node_or_null("/root/RewardClaimResultPresenter")
+	if presenter!=null:presenter.open_receipts()

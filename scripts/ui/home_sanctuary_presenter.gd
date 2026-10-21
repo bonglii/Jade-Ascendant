@@ -9,6 +9,9 @@ const BOSS_SCENE: String = "res://scenes/ui/celestial_boss_hunt_screen.tscn"
 const LIBRARY_SCENE: String = "res://scenes/ui/skill_book_screen.tscn"
 const BOSS_ART: Texture2D = preload("res://assets/ui/liveops/event_identity/boss_hunt.png")
 const STONE: Texture2D = preload("res://assets/ui/shared/resources/spirit_stone_premium.png")
+const Goals=preload("res://scripts/data/player_goal_catalog.gd")
+var _goal: Dictionary={}
+var goal_hint: Label
 var lower_scroll: ScrollContainer
 var lower_stack: VBoxContainer
 var journey_card: Control
@@ -156,13 +159,14 @@ func _build_journey_card() -> void:
  chapter_label=_copy(journey_card,"",12,GOLD_BRIGHT,true)
  realm_title=_copy(journey_card,"",21,TEXT,true);realm_title.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;realm_title.max_lines_visible=2
  next_path_label=_copy(journey_card,"",12,Color(.77,.9,.86))
+ goal_hint=_copy(journey_card,"",13,JADE_SOFT);goal_hint.name="NextGoalHint";goal_hint.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;goal_hint.max_lines_visible=2
  realm_progress=ProgressBar.new();realm_progress.name="SanctuaryRealmProgress";realm_progress.show_percentage=false
  realm_progress.mouse_filter=Control.MOUSE_FILTER_IGNORE
  realm_progress.add_theme_stylebox_override("background",_meter_style(Color(.01,.06,.07),Color(.22,.57,.5)))
  realm_progress.add_theme_stylebox_override("fill",_meter_style(JADE,Color(.88,.81,.44)))
  journey_card.add_child(realm_progress)
  progress_label=_copy(journey_card,"",12,JADE_SOFT)
- journey_button=_button("SanctuaryJourney",_call_main_menu.bind("_on_journey_pressed"),journey_card)
+ journey_button=_button("SanctuaryJourney",_open_primary_goal,journey_card)
  _plate(journey_button,true,Color(.025,.18,.16,.99))
  journey_button.text=tr("ENTER JOURNEY")+" ›";_font_button(journey_button,19)
  continue_button=_button("SanctuaryContinue",_call_main_menu.bind("_on_continue_pressed"),journey_card)
@@ -198,7 +202,9 @@ func _shortcut(name_value: String,texture: Texture2D,title: String,action: Calla
 
 func _refresh_journey() -> void:
  if journey_card==null:return
- var chapter_id: int=JourneyManager.selected_chapter_id
+ if journey_button.button_pressed:return
+ _goal=Goals.choose(Goals.context(get_tree().root,checkpoint_available))
+ var chapter_id: int=int(_goal.get("chapter",JourneyManager.selected_chapter_id))
  if presented_chapter!=chapter_id:
   presented_chapter=chapter_id
   var path: String=RealmArt.get_realm_vista_path(chapter_id)
@@ -207,24 +213,29 @@ func _refresh_journey() -> void:
  var progress: Dictionary=JourneyManager.get_chapter_progress(chapter_id)
  var total: int=maxi(int(progress.get("total_stages",1)),1)
  var cleared: int=clampi(int(progress.get("cleared_stages",0)),0,total)
- chapter_label.text=tr("CHAPTER %02d") % chapter_id
- realm_title.text=tr(str(chapter.get("display_name","Jade Sanctuary"))).to_upper()
- progress_label.text="%d / %d"%[cleared,total]
- realm_progress.max_value=total;realm_progress.value=cleared
- var next_stage: int=total
- for stage_id: int in JourneyManager.get_stage_ids(chapter_id):
-  if not JourneyManager.is_stage_cleared(chapter_id,stage_id):next_stage=stage_id;break
- next_path_label.text=tr("NEXT")+" · "+tr("STAGE")+" %d-%d"%[chapter_id,next_stage]
- var menu: Node=_main_menu()
- var has_checkpoint: bool=checkpoint_available
- if continue_button.visible!=has_checkpoint:
-  continue_button.visible=has_checkpoint;_queue_layout()
- continue_button.text=tr("CONTINUE")+" ›" if size.x<560 else tr("CONTINUE RUN")
- if has_checkpoint and menu.has_method("_get_continue_button_text"):
-  continue_button.tooltip_text=str(menu.call("_get_continue_button_text"))
- var locked: bool=SaveManager.is_progress_read_only()
- journey_button.disabled=locked or SceneTransitionManager.is_transitioning
- continue_button.disabled=locked or not has_checkpoint or SceneTransitionManager.is_transitioning
+ chapter_label.text=tr("CHAPTER %02d") % chapter_id if _goal.action=="journey" else tr("YOUR NEXT STEP")
+ realm_title.text=tr(str(chapter.get("display_name","Jade Sanctuary"))).to_upper() if _goal.action=="journey" else tr(str(_goal.title))
+ next_path_label.text=tr(str(_goal.title)) if _goal.action=="journey" else tr("PROGRESS SAVED")
+ goal_hint.text=tr(str(_goal.hint))
+ progress_label.text="%d / %d"%[cleared,total];realm_progress.max_value=total;realm_progress.value=cleared
+ journey_button.text=tr(str(_goal.button))+" ›"
+ continue_button.visible=false
+ journey_button.disabled=SceneTransitionManager.is_transitioning
+
+func _open_primary_goal() -> void:
+ if _goal.is_empty() or SceneTransitionManager.is_transitioning:return
+ var current: Dictionary=Goals.choose(Goals.context(get_tree().root,checkpoint_available))
+ if current!=_goal:_refresh_journey();return
+ match str(_goal.action):
+  "journey":
+   if JourneyManager.select_stage(int(_goal.chapter),int(_goal.stage)):_call_main_menu("_on_journey_pressed")
+  "continue":_call_main_menu("_on_continue_pressed")
+  "recovery":_open_menu_scene(SETTINGS_SCENE)
+  "cultivation":_open_menu_scene("res://scenes/ui/cultivation_menu.tscn")
+  "trials":_open_menu_scene("res://scenes/ui/daily_quest_screen.tscn")
+  "events":_open_live_popup(EVENT_CENTER_SCENE)
+  "library":
+   get_tree().root.set_meta("library_open_builds",true);_open_menu_scene(LIBRARY_SCENE)
 
 func _refresh_liveops_badges() -> void:
  if event_card==null:return
@@ -324,7 +335,7 @@ func _layout_sanctuary() -> void:
  _rect(title_name,Vector2.ZERO,Vector2(hero_title.size.x,42*u));_font(title_name,35,true)
  _rect(title_role,Vector2(0,43*u),Vector2(hero_title.size.x,17*u));_font(title_role,12)
  var compact: bool=size.x<560
- var card_h: float=206.0 if compact else maxf(152,158*u)
+ var card_h: float=244.0 if compact else maxf(210,216*u)
  var event_h: float=maxf(166,190*u)
  var shortcut_h: float=90.0 if size.x<420 else maxf(65,80*u)
  var heading_h: float=maxf(60,66*u)
@@ -349,10 +360,10 @@ func _layout_sanctuary() -> void:
  _rect(chapter_label,Vector2(text_start,16.0 if compact else 23*u),Vector2(text_width,20));_font(chapter_label,13,true)
  _rect(realm_title,Vector2(text_start,38.0 if compact else 46*u),Vector2(text_width,48));_font(realm_title,22,true)
  _rect(next_path_label,Vector2(text_start,83.0 if compact else 100*u),Vector2(text_width,20));_font(next_path_label,13)
- var meter_y: float=112.0 if compact else card_h-38*u
- _rect(realm_progress,Vector2(text_start,meter_y),Vector2(maxf(30,text_width-43*u),7))
- _rect(progress_label,Vector2(text_start+maxf(30,text_width-40*u),meter_y-5),Vector2(42*u,20));_font(progress_label,12)
- journey_button.text=tr("ENTER JOURNEY")+" ›"
+ var meter_y: float=112.0 if compact else 116*u
+ _rect(realm_progress,Vector2(text_start,meter_y),Vector2(maxf(30,text_width-54),7))
+ _rect(progress_label,Vector2(text_start+maxf(30,text_width-49),meter_y-5),Vector2(48,20));_font(progress_label,12)
+ _rect(goal_hint,Vector2(text_start,meter_y+13),Vector2(text_width,38));_font(goal_hint,13)
  continue_button.text=tr("CONTINUE")+" ›" if compact else tr("CONTINUE RUN")
  var button_h: float=50.0 if compact else maxf(52,64*u)
  var action_x: float=12.0 if compact else width-action_w-12*u

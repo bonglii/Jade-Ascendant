@@ -1,0 +1,52 @@
+{
+  "batch": "Player Direction, Reward Receipts and Build Audit",
+  "date": "2026-10-21",
+  "base_commit": "45c2f18e130cd7f96c8cf535c9d4c3a936bfcad6",
+  "branch": "checkpoint/iap-fasttrack-20261010",
+  "phase": "implemented/tested/packaged; pending Windows install, scoped push and AAB export",
+  "features": [
+    "contextual Home goal and safe navigation",
+    "account-isolated recent reward receipts in Profile",
+    "read-only Library Builds for11 sets and13 armaments",
+    "corrected shared cost/gacha/exclusive-item audit"
+  ],
+  "validation": {
+    "ui_assertions": 621,
+    "economy_assertions": 767,
+    "economy_restart_assertions": 4,
+    "game_total": 1392,
+    "catalog_export": {
+      "equipment": 57,
+      "sets": 11,
+      "stages": 26,
+      "runtime_weapon_rows": 44
+    },
+    "software_renders": 8,
+    "phone_tested": false,
+    "backend_tests": 120,
+    "installer_checks": 21,
+    "failures": 0
+  },
+  "unchanged": [
+    "live IAP/ad/refund protections",
+    "native AARs",
+    "backend schemas/config/deploy",
+    "all gameplay numeric balance and prices",
+    "gacha rates/pity",
+    "event schedule/new event parked"
+  ],
+  "author_pushed": false,
+  "deployed": false,
+  "aab_exported": false,
+  "remaining": [
+    "actual Android/device/provider timings require the existing internal-test build",
+    "new weekly/endless content remains a future design task, per parked event scope"
+  ],
+  "resume": [
+    "Read this state and PLAYER_DIRECTION_AUDIT_2026-10-21.md before doing work.",
+    "Use passed evidence for unchanged source; do not recreate the preceding Player Flow batch.",
+    "Run Jade-Player-Direction/apply_and_publish.cmd on Windows; publisher prints the real commit after push.",
+    "After PLAYER_DIRECTION_BATCH=PASS, export from backend/player_identity/export_production.cmd."
+  ],
+  "source_files": 19
+}

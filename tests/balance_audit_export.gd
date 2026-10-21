@@ -2,7 +2,7 @@ extends SceneTree
 ## Read-only catalog/runtime export; refuses the real player profile.
 func _initialize() -> void:run.call_deferred()
 func run() -> void:
- if not OS.get_user_data_dir().contains("jade_balance_qa"):push_error("Use isolated jade_balance_qa XDG profile");quit(2);return
+ if not OS.get_user_data_dir().contains("jade_balance_qa") and not OS.get_user_data_dir().contains("jade_event_touch_qa"):push_error("Use isolated jade_balance_qa XDG profile");quit(2);return
  await create_timer(.5).timeout
  var progression: Node=root.get_node("ProgressionManager")
  var equipment: Node=root.get_node("EquipmentManager")
@@ -19,7 +19,7 @@ func run() -> void:
  for stars: int in range(1,6):
   var cap: int=10*stars
   var cost: int=0
-  for level: int in range(1,cap):cost+=20*(level+1)
+  for level: int in range(1,cap):cost+=equipment.weapon_level_cost_at(level,cap)
   output.permanent_weapon_progression.append({"stars":stars,"level_cap":cap,"max_damage_multiplier":1.0+(cap-1)*.01,"total_stones_from_level1":cost})
  var chapters: Array[String]=["one","two","three","four","five"]
  for i: int in range(5):
@@ -48,7 +48,7 @@ func run() -> void:
   var bonuses: Dictionary={}
   for stat: String in ["max_health_flat","damage_bonus","critical_chance_bonus","stationary_damage_bonus","high_health_damage_bonus","attack_cooldown_reduction"]:bonuses[stat]=sets.get_gameplay_bonus(stat,pieces)
   output.sets.append({"id":id,"rarity":sets.get_set_rarity(id),"pieces":pieces,"bonuses":bonuses,"passive":sets.get_four_piece_passive(id)})
- for name_value: String in ["spirit_sword","fire_orb","thunder_talisman","yin_yang_blades","heavenly_sword_rain","eight_trigrams_formation","jade_binding_chain","celestial_returning_glaive"]:
+ for name_value: String in ["spirit_sword","fire_orb","thunder_talisman","yin_yang_blades","heavenly_sword_rain","eight_trigrams_formation","jade_binding_chain","celestial_returning_glaive","phoenix_war_fan","void_piercer_spear","heavenweaver_compass"]:
   var weapon: Node=load("res://scripts/weapon/"+name_value+"_weapon.gd").new()
   if weapon.has_method("_ready"):weapon._ready()
   for target_level: int in [1,3,5,7]:
@@ -64,6 +64,9 @@ func run() -> void:
  for level: int in progression.HERO_MILESTONE_LEVELS:output.milestones.append({"level":level,"reward":rewards.get_hero_milestone_reward(level)})
  output.login_rewards=[]
  for day: int in range(1,8):output.login_rewards.append(root.get_node("LiveOpsManager").get_login_reward(day))
+ output.endgame={"cultivation_cap":10,"mastery_paths":root.get_node("CultivationMasteryManager").Catalog.PATHS,"golden_core_trial":{"chapter":1,"stage":5,"max_hp_hits":3,"requires_all_masteries":true},"new_event_created":false}
+ output.build_roles=[]
+ for id: String in sets.SET_ORDER:output.build_roles.append(load("res://scripts/data/build_guidance_catalog.gd").set_advice(id))
  output.daily_quests=root.get_node("DailyQuestManager").DAILY_QUESTS.duplicate(true)
  output.hero_exp_cap=progression.get_hero_total_experience_cap()
  # Simulate local sampler only: default rates, full pool, fixed target, fresh pity.
@@ -72,7 +75,8 @@ func run() -> void:
  var old_rng_state: int=pavilion.rng.state
  pavilion.rng.seed=13102026
  var pool: Dictionary={"common":[],"rare":[],"epic":[],"legendary":[]}
- for item: Dictionary in output.equipment:pool[str(item.star1.rarity)].append(item.id)
+ for item: Dictionary in output.equipment:
+  if not bool(item.star1.get("event_only",false)) and not bool(item.star1.get("retired",false)):pool[str(item.star1.rarity)].append(item.id)
  var totals: Array[int]=[]
  var first_targets: Array[int]=[]
  for experiment: int in range(1000):
@@ -96,7 +100,7 @@ func run() -> void:
  var sum_first: int=0
  for value: int in totals:sum_pulls+=value
  for value: int in first_targets:sum_first+=value
- output.gacha_simulation={"seed":13102026,"experiments":1000,"scope":"default offline rates; all rarities populated; fixed target; fresh pity each campaign","mean_pulls_first_target":float(sum_first)/1000.0,"mean_pulls_five_copies":float(sum_pulls)/1000.0,"median_pulls_five_copies":totals[499],"p95_pulls_five_copies":totals[949],"max_observed_five_copies":totals[999],"hard_upper_bound":495}
+ output.gacha_simulation={"seed":13102026,"experiments":1000,"scope":"default offline rates; full non-retired normal collection excluding event exclusives; fixed target; fresh pity each campaign","mean_pulls_first_target":float(sum_first)/1000.0,"mean_pulls_five_copies":float(sum_pulls)/1000.0,"median_pulls_five_copies":totals[499],"p95_pulls_five_copies":totals[949],"max_observed_five_copies":totals[999],"hard_upper_bound":495}
  pavilion.rng.seed=old_seed;pavilion.rng.state=old_rng_state
  var after: Dictionary={"progression":progression.build_progression_save_data(),"equipment":equipment.build_equipment_save_data(),"inventory":root.get_node("InventoryManager").item_counts,"pavilion":root.get_node("PavilionManager").state}
  if before!=after:push_error("Audit changed player state");quit(1);return
