@@ -48,6 +48,9 @@ const DAILY_QUESTS: Dictionary = {
 	"reach_level_7": {"title": "Quiet Comprehension", "description": "Reach Level 7 during a run.", "category": "progression", "target": 7, "reward": 35},
 	"reach_level_10": {"title": "Deep Meditation", "description": "Reach Level 10 during a run.", "category": "progression", "target": 10, "reward": 45},
 	"clear_2_stages": {"title": "Walk the Jade Path", "description": "Clear 2 stages, including repeats.", "category": "journey", "target": 2, "reward": 70},
+	"defeat_150_enemies": {"title":"Guard the Meridian", "description":"Defeat 150 enemies.", "category":"combat", "target":150, "reward":55},
+	"reach_level_12": {"title":"Flowing Qi", "description":"Reach Level 12 during a run.", "category":"progression", "target":12, "reward":55},
+	"clear_4_stages": {"title":"Four Gates Open", "description":"Clear 4 stages, including repeats.", "category":"journey", "target":4, "reward":110},
 	"clear_3_stages": {"title": "Three Seals", "description": "Clear 3 stages, including repeats.", "category": "journey", "target": 3, "reward": 90}
 }
 
@@ -72,6 +75,7 @@ func _ready() -> void:
 	_initialize_progress_entries()
 	load_daily_quests()
 	_apply_daily_reset_if_needed()
+	_expand_daily_records()
 	_validate_loaded_state()
 	_connect_runtime_hooks()
 	save_daily_quests()
@@ -470,7 +474,7 @@ func load_daily_quests() -> void:
 	for quest_id in saved_active:
 		if has_daily_quest(quest_id) and quest_id not in active_quest_ids:
 			active_quest_ids.append(quest_id)
-	if active_quest_ids.size() != 3:
+	if active_quest_ids.size() not in [3,6]:
 		active_quest_ids = LEGACY_QUEST_IDS.duplicate()
 	var loaded_progress = save_data.get("progress", {})
 	if loaded_progress is Dictionary:
@@ -519,16 +523,24 @@ func _pick_quests_for_date(date_key: String) -> Array[String]:
 	# Stable across reopen/reinstall; no global RNG is consumed by daily rotation.
 	var result: Array[String] = []
 	var groups: Array = [
-		["defeat_20_enemies", "defeat_50_enemies", "defeat_100_enemies"],
-		["reach_level_5", "reach_level_7", "reach_level_10"],
-		["clear_1_stage", "clear_2_stages", "clear_3_stages"]
+		["defeat_20_enemies", "defeat_50_enemies", "defeat_100_enemies", "defeat_150_enemies"],
+		["reach_level_5", "reach_level_7", "reach_level_10", "reach_level_12"],
+		["clear_1_stage", "clear_2_stages", "clear_3_stages", "clear_4_stages"]
 	]
 	var seed_value: int = 0
 	for byte in date_key.to_utf8_buffer():
 		seed_value = (seed_value * 31 + int(byte)) % 100003
 	for index in range(groups.size()):
-		result.append(str(groups[index][(seed_value + index * 5) % 3]))
+		for offset: int in range(2):result.append(str(groups[index][(seed_value + index * 5 + offset) % groups[index].size()]))
 	return result
+
+func _expand_daily_records() -> void:
+	if active_quest_ids.size()!=3:return
+	var seed: Array[String]=_pick_quests_for_date(active_date_key)
+	for category: String in ["combat","progression","journey"]:
+		for id: String in seed:
+			if str(DAILY_QUESTS[id].category)==category and id not in active_quest_ids:active_quest_ids.append(id);break
+	_initialize_progress_entries()
 
 func refresh_daily_date() -> void:
 	var previous: String = active_date_key

@@ -15,16 +15,23 @@ func _ready() -> void:
  get_tree().node_added.connect(_on_node_added)
  _scan(get_tree().root)
 func _scan(node: Node) -> void:
- if node is Control:ScrollPolicy.prepare(node)
+ if node is Control:
+  ScrollPolicy.prepare(node)
+  _suppress_touch_tooltip(node)
  if node is Button:_track(node)
  if node is ScrollContainer:_track_scroll(node)
  for child: Node in node.get_children():_scan(child)
 func _on_node_added(node: Node) -> void:
  if node is Control:_track_queued.call_deferred(weakref(node))
+func _suppress_touch_tooltip(control: Control) -> void:
+ if touch_mode and not control.tooltip_text.is_empty():control.tooltip_text=""
+
 func _track_queued(ref: WeakRef) -> void:
  var node: Object=ref.get_ref()
  if not is_instance_valid(node):return
- if node is Control:ScrollPolicy.prepare(node)
+ if node is Control:
+  ScrollPolicy.prepare(node)
+  _suppress_touch_tooltip(node)
  if node is Button:_track(node)
  elif node is ScrollContainer:_track_scroll(node)
 func _track_scroll(scroll: ScrollContainer) -> void:
@@ -40,6 +47,10 @@ func _process(delta: float) -> void:
  _tick+=delta
  if _tick<.25:return
  _tick=0
+ if touch_mode:
+  for ref: WeakRef in _tracked.values():
+   var control: Control=ref.get_ref()
+   if is_instance_valid(control):_suppress_touch_tooltip(control)
  for ref: WeakRef in _scrollers.values():
   var scroll: ScrollContainer=ref.get_ref()
   if is_instance_valid(scroll):_hide_scrollbars(scroll)

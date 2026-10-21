@@ -71,5 +71,5 @@ static func odyssey_count(snapshot: Dictionary, now: float, source: String="odys
    if int(state.get("daily_gifts",0))>=3 and "gifts" not in state.get("task_claims",[]): mission_count+=1
    if int(state.get("daily_guardians",0))>=1 and "guardian" not in state.get("task_claims",[]): mission_count+=1
  for target: int in [24,48,72]:
-  if int(state.get("rolls",0))>=target and target not in state.get("milestones",[]): milestone_count+=1
+  if preload("res://scripts/data/odyssey_progress.gd").ready(state,target) and target not in state.get("milestones",[]): milestone_count+=1
  return mission_count if source=="odyssey_missions" else milestone_count if source=="odyssey_milestones" else mission_count+milestone_count

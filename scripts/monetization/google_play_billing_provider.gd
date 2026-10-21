@@ -456,8 +456,11 @@ func _on_purchase_updated(response: Dictionary) -> void:
 		return
 	var code := int(response.get("response_code", -999))
 	if code == RESPONSE_USER_CANCELED:
+		var cancelled_product: String=active_product_id
+		active_product_id = ""
+		_active_purchase_binding = ""
 		purchase_state_changed.emit(
-			active_product_id,
+			cancelled_product,
 			"cancelled",
 			"Purchase cancelled."
 		)
@@ -465,8 +468,11 @@ func _on_purchase_updated(response: Dictionary) -> void:
 		_active_purchase_binding = ""
 		return
 	if code != RESPONSE_OK:
+		var failed_product: String=active_product_id
+		active_product_id = ""
+		_active_purchase_binding = ""
 		purchase_state_changed.emit(
-			active_product_id,
+			failed_product,
 			"failed",
 			str(response.get(
 				"debug_message",

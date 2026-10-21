@@ -338,6 +338,7 @@ func _build_treasure_route_heading() -> void:
 	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rule.custom_minimum_size = Vector2(54.0, 2.0)
 	rule.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rule.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	rule.color = Color(GOLD.r, GOLD.g, GOLD.b, 0.54)
 	row.add_child(rule)
 

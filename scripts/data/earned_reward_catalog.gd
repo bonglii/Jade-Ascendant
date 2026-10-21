@@ -3,6 +3,9 @@ extends RefCounted
 ## Existing claim IDs remain authoritative; previously claimed rewards never replay.
 const LOGIN_JADE: Array[int] = [5,10,10,15,15,20,25]
 const ACHIEVEMENT_PREMIUM: Dictionary = {
+ "enemy_slayer_10000":[60,1], "enemy_slayer_25000":[80,2],
+ "trial_veteran_200":[60,1], "trial_veteran_300":[80,2],
+ "boss_slayer_100":[60,1], "boss_slayer_200":[80,2],
  "first_stage_clear":[10,0], "first_boss_defeat":[15,0],
  "stage_1_5_clear":[25,1], "stage_1_6_clear":[25,0],
  "enemy_slayer_500":[10,0], "enemy_slayer_1000":[20,0],

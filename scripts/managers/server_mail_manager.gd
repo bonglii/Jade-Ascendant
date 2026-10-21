@@ -312,6 +312,10 @@ func _enqueue(kind: String,id: String,payload: Dictionary,cursor: String = "") -
 	if _busy and str(_pending.get("key","")) == key: return true
 	for item: Dictionary in _queue:
 		if str(item.get("key","")) == key: return true
+	if kind in ["claim","delete","delete_all"] and _busy and str(_pending.get("kind",""))=="list" and Time.get_ticks_msec()-_operation_started_at>=1500:
+		var interrupted: Dictionary=_pending.duplicate(true)
+		_http.cancel_request();_nonce+=1;_waiting_token=false;_busy=false;_pending={}
+		_queue.push_front(interrupted)
 	_queue.append({"kind":kind,"id":id,"payload":payload,"cursor":cursor,"key":key,"owner":_owner,"refreshed_token":false})
 	if kind == "read_all": _queue[-1].read_ids = _pending_read_ids()
 	call_deferred("_start_next")

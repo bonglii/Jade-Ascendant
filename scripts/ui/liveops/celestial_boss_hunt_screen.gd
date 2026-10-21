@@ -314,6 +314,7 @@ func _build_bounty_route_heading() -> void:
 	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rule.custom_minimum_size = Vector2(54.0, 2.0)
 	rule.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rule.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	rule.color = Color(EMBER.r, EMBER.g, EMBER.b, 0.52)
 	row.add_child(rule)
 

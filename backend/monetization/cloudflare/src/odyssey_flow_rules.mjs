@@ -4,6 +4,7 @@ export const BOARD_REWARDS=Object.freeze({seal_tiles:Object.freeze([9,17]),seal_
 const add=(r,k,n)=>{r[k]=(r[k]||0)+n;};
 export function flowState(input,time){
  const s=structuredClone(input);
+ if(s.journey_laps_version!==2){s.journey_laps_version=2;s.journey_legacy_rolls=Number.isSafeInteger(s.rolls)?s.rolls:0;}
  if(s.task_day!==utcDay(time)){s.task_day=utcDay(time);s.daily_gifts=0;s.daily_guardians=0;s.task_claims=[];}
  // Legacy/partial JSON states must not serialize undefined++ as NaN/null.
  for(const key of ['daily_gifts','daily_guardians'])if(!Number.isSafeInteger(s[key])||s[key]<0)s[key]=0;

@@ -1,14 +1,15 @@
-name: Event mobile scroll and surfaces
+name: Player flow and event surfaces
 on:
   workflow_dispatch:
   push:
     branches: [checkpoint/iap-fasttrack-20261010]
     paths:
-      - 'scripts/ui/**'
-      - 'assets/ui/liveops/odyssey/material/**'
-      - 'tests/event_scroll_surface_smoke.gd'
-      - 'tests/board_polish_interaction_smoke.gd'
-      - 'backend/player_identity/check_event_touch.cjs'
+      - 'scripts/**'
+      - 'assets/ui/liveops/**'
+      - 'assets/ui/trials/**'
+      - 'tests/**'
+      - 'backend/player_identity/**'
+      - 'backend/monetization/cloudflare/**'
       - '.github/workflows/event-touch-qa.yml'
 permissions:
   contents: read
@@ -29,10 +30,12 @@ jobs:
           echo 'cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4  /tmp/jade-event-engine/godot.zip' | sha256sum --check
           unzip -q /tmp/jade-event-engine/godot.zip -d /tmp/jade-event-engine
           chmod +x /tmp/jade-event-engine/Godot_v4.7.2-stable_linux.x86_64
-      - name: Native GUI gestures and narrow-screen layouts
-        run: node backend/player_identity/check_event_touch.cjs "$GITHUB_WORKSPACE" /tmp/jade-event-engine/Godot_v4.7.2-stable_linux.x86_64
+      - name: Player flows, GUI gestures, narrow layouts and backend guards
+        run: node backend/player_identity/check_player_flow.cjs "$GITHUB_WORKSPACE" /tmp/jade-event-engine/Godot_v4.7.2-stable_linux.x86_64
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: event-touch-qa
-          path: .local/event_touch_qa/*.log
+          path: |
+            .local/event_touch_qa/*.log
+            .local/player_flow_qa/*.log

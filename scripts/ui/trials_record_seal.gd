@@ -4,6 +4,7 @@ class_name TrialsRecordSeal
 ## Lightweight category seal used by Daily Trials and Eternal Records.
 ## Presentation only.
 
+var _insignia: Texture2D
 var category: String = "trial"
 var record_state: String = "in_progress"
 var daily_variant: bool = false
@@ -31,82 +32,10 @@ func _notification(what: int) -> void:
 
 
 func _draw() -> void:
-	var canvas_size: Vector2 = size
-	if canvas_size.x <= 2.0 or canvas_size.y <= 2.0:
-		return
-
-	var center: Vector2 = canvas_size * 0.5
-	var radius: float = minf(canvas_size.x, canvas_size.y) * 0.34
-	var accent: Color = _get_category_color()
-	var state_alpha: float = 0.98
-
-	if record_state == "claimed":
-		state_alpha = 0.56
-	elif record_state == "in_progress":
-		state_alpha = 0.80
-
-	var soft := Color(accent.r, accent.g, accent.b, 0.10 * state_alpha)
-	var border := Color(accent.r, accent.g, accent.b, 0.72 * state_alpha)
-	var bright := Color(
-		minf(accent.r + 0.22, 1.0),
-		minf(accent.g + 0.22, 1.0),
-		minf(accent.b + 0.22, 1.0),
-		0.96 * state_alpha
-	)
-
-	draw_circle(center, radius * 1.15, soft)
-	draw_arc(
-		center,
-		radius,
-		0.0,
-		TAU,
-		32,
-		border,
-		2.0,
-		true
-	)
-
-	if daily_variant:
-		draw_arc(
-			center,
-			radius * 0.78,
-			-PI * 0.78,
-			PI * 0.36,
-			20,
-			Color(bright.r, bright.g, bright.b, 0.46),
-			1.1,
-			true
-		)
-	else:
-		_draw_record_diamond(center, radius * 0.83, border)
-
-	match category:
-		"combat":
-			_draw_combat(center, radius, bright)
-		"progression":
-			_draw_progression(center, radius, bright)
-		"journey":
-			_draw_journey(center, radius, bright)
-		"boss":
-			_draw_boss(center, radius, bright)
-		"cultivation":
-			_draw_cultivation(center, radius, bright)
-		_:
-			_draw_cultivation(center, radius, bright)
-
-	if record_state == "reward_ready":
-		_draw_reward_star(
-			center + Vector2(radius * 0.72, -radius * 0.72),
-			radius * 0.22,
-			Color(1.0, 0.80, 0.30, 1.0)
-		)
-	elif record_state == "claimed":
-		_draw_check(
-			center + Vector2(radius * 0.68, -radius * 0.68),
-			radius * 0.24,
-			Color(0.55, 0.92, 0.75, 0.90)
-		)
-
+	var key: String=category if category in ["combat","progression","journey","boss","cultivation"] else "trial"
+	if _insignia==null or not _insignia.resource_path.ends_with(key+".svg"):_insignia=load("res://assets/ui/trials/insignia/"+key+".svg") as Texture2D
+	var side: float=minf(size.x,size.y)
+	draw_texture_rect(_insignia,Rect2((size-Vector2.ONE*side)*.5,Vector2.ONE*side),false,Color(1,1,1,.55 if record_state=="claimed" else 1.0))
 
 func _get_category_color() -> Color:
 	match category:

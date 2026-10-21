@@ -2058,7 +2058,8 @@ func open_live_popup(scene_path: String) -> void:
 		"res://scenes/ui/cultivation_menu.tscn", "res://scenes/ui/equipment_screen.tscn",
 		"res://scenes/ui/daily_quest_screen.tscn", "res://scenes/ui/achievement_screen.tscn",
 		"res://scenes/ui/pavilion_screen.tscn"]
-	if host_path != MAIN_MENU_SCENE and not treasury_from_hub:
+	var event_detail: bool=scene_path in ["res://scenes/ui/jade_valley_pilgrimage_screen.tscn","res://scenes/ui/heavenly_ladder_screen.tscn","res://scenes/ui/celestial_boss_hunt_screen.tscn","res://scenes/ui/celestial_treasure_hunt_screen.tscn","res://scenes/ui/path_of_five_elements_screen.tscn"]
+	if host_path != MAIN_MENU_SCENE and not treasury_from_hub and not event_detail:
 		SceneTransitionManager.transition_menu_to(scene_path, 1)
 		return
 	if is_instance_valid(_active_live_popup):

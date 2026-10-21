@@ -39,11 +39,12 @@ export function transition(inputState,command,event,time,random=()=>crypto.getRa
   const b=s.battle;if(b?.mode==='arena')reject('event_update_required');if(!b||!integer(command.choice,0,2))reject('battle_unavailable');if(time<b.opens_at)reject('guardian_windup');b.hits+=Number(time<=b.deadline&&command.choice===b.attack);b.turn++;
   if(b.turn>=3||time>b.deadline){const win=b.hits>=2;add(reward,'spirit_stone',win?event.rewards.challenge_stone:event.rewards.tile_stone);s.battle=null;s.notice=win?'Guardian defeated':'Base supplies secured';}else{b.attack=pick(3);b.opens_at=time+1;b.deadline=time+15;}
  }else if(command.kind==='milestone'){
-  const n=command.milestone;if(![24,48,72].includes(n)||s.rolls<n||s.milestones.includes(n))reject('milestone_unavailable');s.milestones.push(n);
+  const n=command.milestone;if(![24,48,72].includes(n)||(s.journey_laps_version===2?s.laps<n/6&&(s.journey_legacy_rolls||0)<n:s.rolls<n)||s.milestones.includes(n))reject('milestone_unavailable');s.milestones.push(n);
   if(n===24)add(reward,'pavilion_seal',event.rewards.seal_24);if(n===48){add(reward,'pavilion_seal',event.rewards.seal_48);add(reward,'spirit_stone',event.rewards.stone_48);}if(n===72)reward.items.heavenweaver_compass=1;s.notice=n===72?'Heavenweaver Compass secured in Mail':'Milestone secured in Mail';
  }else if(command.kind==='buy_dice'){
   if(!event.purchases_enabled)reject('purchases_disabled');if(![1,5].includes(command.pack))reject('invalid_pack',400);
   if(s.daily_bought+command.pack>LIMITS.paid_daily||s.season_bought+command.pack>LIMITS.paid_season)reject('purchase_limit');
+  if(s.rolls+s.tickets+command.pack>LIMITS.max_rolls)reject('journey_capacity');
   cost=command.pack===1?limits.price_one:limits.price_five;s.tickets+=command.pack;s.daily_bought+=command.pack;s.season_bought+=command.pack;s.notice='Travel seals purchased';
  }else reject('unknown_action',400);
  s.last_reward=reward;return {state:s,reward,cost};

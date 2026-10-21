@@ -11,7 +11,7 @@ var _reduced: bool=false
 func _ready() -> void:
 	mouse_filter=Control.MOUSE_FILTER_IGNORE
 	clip_contents=true
-	custom_minimum_size=Vector2(0,150)
+	custom_minimum_size=Vector2(0,88)
 	resized.connect(queue_redraw)
 func _visible_in_scroll() -> bool:
 	if not is_visible_in_tree(): return false

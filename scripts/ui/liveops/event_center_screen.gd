@@ -157,6 +157,7 @@ func _refresh_event_status() -> void:
  _ready_count.text=Catalog.copy("%d READY","%d TERSEDIA")%total_ready if total_ready>0 else Catalog.copy("KEEP EXPLORING","TERUS JELAJAHI")
  for key: String in _activity_handles:
   var item: Dictionary=_activity_handles[key];var data: Dictionary=Catalog.preview(self,key);var ready_count: int=ActionDot.count(self,key)
+  item.card.visible=_filter!="limited" and (_filter!="progress" or key!="pavilion") and (not bool(data.complete) or ready_count>0)
   item.title.text=Catalog.title(key);item.description.text=Catalog.description(key)
   item.status.text=Catalog.copy("%d READY TO CLAIM","%d SIAP DIKLAIM")%ready_count if ready_count>0 else (Catalog.copy("COMPLETED","SELESAI") if data.complete else Catalog.copy("PROGRESS %d / %d","PROGRES %d / %d")%[data.current,data.total])
   item.status.add_theme_color_override("font_color",HubStyle.CREAM if ready_count>0 else HubStyle.JADE)
@@ -178,7 +179,9 @@ func _refresh_odyssey() -> void:
  var now: float=client.server_time() if client!=null else 0.0
  _hero_tag.text=Catalog.copy("LIMITED EVENT","EVENT TERBATAS");_hero_description.text=Catalog.copy("Roll the dice. Explore the celestial isles.","Lempar dadu. Jelajahi kepulauan surgawi.")
  _hero_rewards.get_parent().get_node("JourneyRewardsCaption").text=Catalog.copy("EVENT REWARDS","HADIAH EVENT")
- _event_progress.text=Catalog.copy("%d / 72 journeys","%d / 72 perjalanan")%int(state.get("rolls",0));_hero_meter.max_value=72;_hero_meter.value=int(state.get("rolls",0))
+ var laps: bool=int(state.get("journey_laps_version",0))==2;var goal: int=12 if laps else 72;var completed: int=int(state.get("laps",0)) if laps else int(state.get("rolls",0))
+ _event_progress.text="%d / %d %s"%[mini(completed,goal),goal,Catalog.copy("laps","putaran") if laps else Catalog.copy("journeys","perjalanan")];_hero_meter.max_value=goal;_hero_meter.value=mini(completed,goal)
+ _hero_stage.visible=_filter!="progress" and preload("res://scripts/data/odyssey_progress.gd").visible(event,state,int(now))
  _hero_action.text=Catalog.copy("CONTINUE JOURNEY","LANJUTKAN PERJALANAN") if not event.is_empty() and bool(event.get("enabled",false)) and now>=float(event.get("starts_at",0)) and now<float(event.get("ends_at",0)) else Catalog.copy("VIEW EVENT","LIHAT EVENT")
  _event_status.text=_odyssey_status(event,now)
  ActionDot.show_on(_hero_action,ActionDot.count(self,"odyssey"))
@@ -291,7 +294,7 @@ func _open_destination(id: String) -> void:
  # For other destinations retain the existing lightweight menu transition.
  if (
   bool(get_meta("liveops_popup", false))
-  and id in ["seven_day", "pilgrimage", "boss_hunt"]
+  and id in ["seven_day", "pilgrimage", "boss_hunt", "heavenly_ladder", "treasure_hunt", "five_elements"]
  ):
   if _live_ops != null and _live_ops.has_method("open_live_popup"):
    _live_ops.call("open_live_popup", scene_path)

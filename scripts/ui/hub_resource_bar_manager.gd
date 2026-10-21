@@ -412,23 +412,8 @@ func _enforce_pavilion_layout(scene_root: Node) -> void:
 
 
 func _format_count(value: int) -> String:
-	if is_instance_valid(_resource_bar) and _resource_bar.has_node("WalletSource0"):
-		for threshold: int in [1000000000, 1000000, 10000]:
-			if value >= threshold:
-				var divisor: float = 1000.0 if threshold == 10000 else float(threshold)
-				var suffix: String = "K" if threshold == 10000 else ("M" if threshold == 1000000 else "B")
-				var amount: String=String.num(floorf(value/divisor*10)/10,1).trim_suffix(".0")
-				var unit: float=clampf(_resource_bar.size.x/610.0,.49,1.8)
-				var room: float=(_resource_bar.size.x-18.0)/3.0-clampf(34*unit,26,40)-32
-				if _stone_value != null and _stone_value.get_theme_font("font").get_string_size(amount+suffix,HORIZONTAL_ALIGNMENT_LEFT,-1,14).x>room:amount=str(floori(value/divisor))
-				return amount+suffix
-	var remaining: String = str(maxi(value, 0))
-	var groups: Array[String] = []
-	while remaining.length() > 3:
-		groups.push_front(remaining.right(3))
-		remaining = remaining.left(remaining.length() - 3)
-	groups.push_front(remaining)
-	return ".".join(groups)
+	return preload("res://scripts/ui/readable_numbers.gd").compact(value)
+
 
 func _install_sanctuary_wallet(scene_root: Node) -> void:
 	var bar: Control = _resource_bar

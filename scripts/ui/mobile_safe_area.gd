@@ -353,9 +353,12 @@ func _build_onboarding_overlay() -> void:
 	center_container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	var tutorial_panel := PanelContainer.new()
-	tutorial_panel.custom_minimum_size = Vector2(520.0, 0.0)
+	tutorial_panel.name="ResponsiveOnboardingCard"
+	tutorial_panel.custom_minimum_size = Vector2(minf(520.0,maxf(240.0,parent_control.size.x-32.0)), 0.0)
 	tutorial_panel.add_theme_stylebox_override("panel", _onboarding_panel_style())
 	center_container.add_child(tutorial_panel)
+	_tutorial_overlay.resized.connect(func() -> void:
+		tutorial_panel.custom_minimum_size.x=minf(520.0,maxf(240.0,_tutorial_overlay.size.x-32.0)))
 
 	var tutorial_box := VBoxContainer.new()
 	tutorial_box.add_theme_constant_override("separation", 10)

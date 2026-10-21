@@ -1,6 +1,6 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),{spawn}=require('node:child_process');
-const tests=[['event_scroll_surface_smoke.gd','EVENT_SCROLL_SURFACE'],['celestial_event_hub_smoke.gd','CELESTIAL_HUB'],['board_polish_interaction_smoke.gd','BOARD_POLISH_INTERACTION']];
+const tests=[['event_scroll_surface_smoke.gd','EVENT_SCROLL_SURFACE'],['celestial_event_hub_smoke.gd','CELESTIAL_HUB'],['board_polish_interaction_smoke.gd','BOARD_POLISH_INTERACTION'],['player_flow_consistency_smoke.gd','PLAYER_FLOW_CONSISTENCY']];
 const clean=s=>s.replace(/\x1b\[[0-9;]*m/g,'');
 async function runProcess(executable,args,{cwd,logs,name,marker='',idleMs=300000,totalMs=1200000,heartbeatMs=15000}={}){
  const started=Date.now(),logPath=path.join(logs,name+'.log'),metaPath=path.join(logs,name+'.json');
@@ -46,7 +46,7 @@ function syncFixture(root,fixture,stateFile){
    if(['.godot','.git','node_modules'].includes(path.basename(source)))return;
    for(const child of fs.readdirSync(source).sort())scan(path.join(relative,child));return;
   }
-  if(/\.(?:aar|jar|so|mp4|webm|ogv)$/i.test(relative))return;
+  if(/\.(?:aar|jar|so|mp4|webm)$/i.test(relative))return;
   const bytes=fs.readFileSync(source),hash=crypto.createHash('sha256').update(bytes).digest('hex'),key=relative.split(path.sep).join('/'),dest=path.join(fixture,relative);
   current[key]=hash;
   if(previous[key]!==hash||!fs.existsSync(dest)){fs.mkdirSync(path.dirname(dest),{recursive:true});fs.writeFileSync(dest,bytes);copied++;}

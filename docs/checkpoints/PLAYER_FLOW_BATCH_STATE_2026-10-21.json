@@ -1,0 +1,73 @@
+{
+  "batch": "Player Flow and Consistency",
+  "date": "2026-10-21",
+  "base_commit": "a3dff88c8283a723b3402d6a04f2eacbea2a1aea",
+  "branch": "checkpoint/iap-fasttrack-20261010",
+  "phase": "implemented-tested-packaged; pending user Windows installation/push/deploy/export",
+  "source_files": 62,
+  "requests": {
+    "1": "Implemented and covered by focused regression; see checkpoint mapping",
+    "2": "Implemented and covered by focused regression; see checkpoint mapping",
+    "3": "Implemented and covered by focused regression; see checkpoint mapping",
+    "4": "Implemented and covered by focused regression; see checkpoint mapping",
+    "5": "Implemented and covered by focused regression; see checkpoint mapping",
+    "6": "Implemented and covered by focused regression; see checkpoint mapping",
+    "7": "Implemented and covered by focused regression; see checkpoint mapping",
+    "8": "Implemented and covered by focused regression; see checkpoint mapping",
+    "9": "Implemented and covered by focused regression; see checkpoint mapping",
+    "10": "Implemented and covered by focused regression; see checkpoint mapping",
+    "11": "Implemented and covered by focused regression; see checkpoint mapping",
+    "12": "Implemented and covered by focused regression; see checkpoint mapping",
+    "13": "Implemented and covered by focused regression; see checkpoint mapping",
+    "14": "Implemented and covered by focused regression; see checkpoint mapping",
+    "15": "Implemented and covered by focused regression; see checkpoint mapping",
+    "16": "Implemented and covered by focused regression; see checkpoint mapping"
+  },
+  "validation": {
+    "game_assertions": 568,
+    "backend_tests": 120,
+    "installer_publisher_checks": 21,
+    "failures": 0,
+    "godot": "4.7.2 official ed1daf0bf",
+    "visual": "11 desktop software-rendered phone-size captures; not device gameplay",
+    "evidence_policy": "Latest passing gesture suites reused after focused fixture-only follow-up; all final per-suite logs/metadata included. No failed run is represented as passing."
+  },
+  "author_stages": {
+    "implemented": true,
+    "qa_passed": true,
+    "github_pushed": false,
+    "workers_deployed": false,
+    "aab_exported": false,
+    "phone_tested": false
+  },
+  "unchanged": [
+    "native AARs",
+    "live IAP configuration/gates",
+    "Play products/prices/dice bonuses",
+    "ad units/caps/SSV protections",
+    "refund protections",
+    "save domains",
+    "event schedule",
+    "weapons/equipment"
+  ],
+  "remaining": [
+    "Normal-browser custom dashboard hostname requires an actual owned domain and Cloudflare routing/certificate. Desktop shortcut works through existing isolated browser DNS approach.",
+    "Windows launcher/COM shortcut/production deploy and actual device/provider timings remain user-environment checks; no auth or network success is fabricated."
+  ],
+  "resume": [
+    "Read this state and PLAYER_FLOW_BATCH_2026-10-21.md first.",
+    "Reuse the final passed evidence; do not repeat unchanged work.",
+    "Run the packaged apply_and_publish.cmd on Windows; completed stages are recorded and safely resumable.",
+    "After PLAYER_FLOW_BATCH=PASS use backend\\player_identity\\export_production.cmd and export from that editor."
+  ],
+  "evidence": [
+    "event_scroll_surface_smoke.gd.log",
+    "celestial_event_hub_smoke.gd.log",
+    "board_polish_interaction_smoke.gd.log",
+    "player_flow_consistency_smoke.gd.log",
+    "server.log",
+    "installer.log",
+    "render.log",
+    "render/*.png"
+  ]
+}

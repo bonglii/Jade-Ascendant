@@ -330,13 +330,24 @@ func _build_trial_card(record_id: String) -> PanelContainer:
 	if active_section == "achievement":
 		var premium: Dictionary = preload("res://scripts/data/earned_reward_catalog.gd").premium(RewardManager.SOURCE_ACHIEVEMENT,record_id)
 		if not premium.is_empty():
-			var extra: Label = _label(RewardManager.get_reward_summary(premium).replace("Pavilion Seal","Seal"),14)
-			extra.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			extra.add_theme_color_override("font_color",GOLD)
-			actions.add_child(extra)
+			actions.set_meta("premium_reward",true)
+			for currency: String in ["celestial_jade","pavilion_seal"]:
+				var amount: int=int(premium.get(currency,0))
+				if amount<=0:continue
+				var currency_icon:=TextureRect.new()
+				currency_icon.texture=load("res://assets/ui/shared/resources/"+currency+"_premium.png") as Texture2D
+				currency_icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
+				currency_icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+				currency_icon.custom_minimum_size=Vector2(24,24)
+				reward.add_child(currency_icon)
+				var amount_label:=_label(preload("res://scripts/ui/readable_numbers.gd").compact(amount),18)
+				amount_label.name="PremiumRewardAmount";amount_label.autowrap_mode=TextServer.AUTOWRAP_OFF
+				amount_label.add_theme_color_override("font_color",GOLD)
+				reward.add_child(amount_label)
 	var action := _button(tr("CLAIM") if claimable else tr("CLAIMED") if claimed else tr("GO") if active_section == "daily" else tr("ONGOING"), claimable)
 	action.add_theme_font_size_override("font_size", 14)
 	action.disabled = claimed or (active_section != "daily" and not claimable)
+	if action.disabled:action.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	actions.add_child(action)
 	if claimable:
 		action.pressed.connect(_on_single_claim.bind(record_id))
@@ -358,7 +369,7 @@ func _adapt_card(card: PanelContainer) -> void:
 		destination = body
 	if actions.get_parent() != destination:
 		actions.reparent(destination, false)
-	actions.vertical = not narrow
+	actions.vertical = not narrow or bool(actions.get_meta("premium_reward",false))
 	actions.alignment = BoxContainer.ALIGNMENT_END
 	actions.add_theme_constant_override("separation", 12 if narrow else 4)
 	seal.custom_minimum_size.x = 48 if narrow else 64

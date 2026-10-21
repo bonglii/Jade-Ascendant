@@ -3,6 +3,7 @@ extends PanelContainer
 const GOLD := Color(1.0,0.83,0.43)
 const JADE := Color(0.40,0.94,0.79)
 const MUTED := Color(0.70,0.83,0.80)
+var _progress_label: Label
 var _name: Label
 var _uid: Label
 var _edit: Button
@@ -41,6 +42,7 @@ func _ready() -> void:
 	heading.add_child(_name)
 	_edit = _button(_local("EDIT","UBAH"),_begin_edit)
 	heading.add_child(_edit)
+	_progress_label=_label("",14,JADE);_progress_label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;content.add_child(_progress_label)
 	var uid_row := HBoxContainer.new()
 	uid_row.add_theme_constant_override("separation",8)
 	content.add_child(uid_row)
@@ -109,6 +111,9 @@ func _button(text: String, action: Callable) -> Button:
 
 func _refresh(snapshot: Dictionary) -> void:
 	var profile_ready: bool = bool(snapshot.ready)
+	var stage: Dictionary=JourneyManager.get_selected_stage_data()
+	_progress_label.text="Lv.%d · %s · %d-%d" % [ProgressionManager.get_hero_level(),tr(ProgressionManager.get_hero_rank_title_for_level(ProgressionManager.get_hero_level())),JourneyManager.selected_chapter_id,JourneyManager.selected_stage_id]
+	if not stage.is_empty():_progress_label.tooltip_text=str(stage.get("title",""))
 	_name.text = str(snapshot.display_name) if profile_ready else _local("Profile unavailable","Profil belum tersedia")
 	_uid.text = str(snapshot.player_uid) if profile_ready else "—"
 	_uid.tooltip_text = str(snapshot.player_uid)

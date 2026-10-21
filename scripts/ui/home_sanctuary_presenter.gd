@@ -37,6 +37,11 @@ var realm_window: Panel
 var event_window: Panel
 var realm_vista: TextureRect
 var presented_chapter: int = -1
+var _featured_key: String="boss_hunt"
+var _featured_scene: String=BOSS_SCENE
+var _feature_signature: String=""
+const EventCatalog=preload("res://scripts/ui/liveops/event_hub_catalog.gd")
+const EventArtwork=preload("res://scripts/ui/liveops/event_identity_catalog.gd")
 
 func _ready() -> void:
  var root: Node = get_parent().get_parent()
@@ -178,7 +183,7 @@ func _build_featured_event() -> void:
  var reward_icon:=_icon(event_card,STONE);reward_icon.name="UpcomingRewardIcon"
  boss_reward=_copy(event_card,"",13,GOLD_BRIGHT);boss_reward.name="UpcomingReward"
  event_action=_copy(event_card,tr("VIEW EVENT")+" ›",14,GOLD_BRIGHT,true)
- event_button=_button("FeaturedEventAction",_open_live_popup.bind(BOSS_SCENE),event_card)
+ event_button=_button("FeaturedEventAction",_open_featured_event,event_card)
  feature_dot=_red_dot(event_card)
  event_button.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
  event_button.tooltip_text=tr("CELESTIAL BOSS HUNT")
@@ -228,15 +233,33 @@ func _refresh_liveops_badges() -> void:
  ActionDot.show_on(profile_shortcut,ActionDot.count(self,"profile"))
  var live_ops: Node=get_node_or_null("/root/LiveOpsManager")
  if live_ops==null:return
- var ids: Array=live_ops.get_boss_hunt_milestone_ids()
- boss_progress.text="%d / %d "%[live_ops.get_boss_hunt_unlocked_count(),ids.size()]+tr("GUARDIANS")
- feature_dot.visible=live_ops.get_boss_hunt_claimable_count()>0
- var reward: Dictionary={}
- for id: String in ids:
-  if not live_ops.is_boss_hunt_milestone_claimed(id):reward=live_ops.get_boss_hunt_milestone(id).get("reward",{});break
- var stones: int=int(RewardManager.retire_fragments(reward).get("spirit_stone",0))
- boss_reward.text=tr("UPCOMING")+" +%d"%stones if stones>0 else tr("ALL CLAIMED")
- event_action.text=(tr("CLAIM REWARD") if feature_dot.visible else tr("VIEW EVENT"))+" ›"
+ var choices: Array[String]=[];var claim_choices: Array[String]=[]
+ for key: String in ["boss_hunt","pilgrimage","heavenly_ladder","treasure_hunt","five_elements"]:
+  var data: Dictionary=EventCatalog.preview(self,key)
+  if not bool(data.complete) or ActionDot.count(self,key)>0:choices.append(key)
+  if ActionDot.count(self,key)>0:claim_choices.append(key)
+ var client: Node=get_node_or_null("/root/OdysseyClient")
+ var event: Dictionary=client.snapshot.get("event",{}) if client!=null and client.snapshot.get("event") is Dictionary else {}
+ if client!=null and client.server_time()>=int(event.get("starts_at",0)) and preload("res://scripts/data/odyssey_progress.gd").visible(event,client.snapshot.get("state",{}),client.server_time()):
+  choices.push_front("odyssey")
+  if ActionDot.count(self,"odyssey")>0:claim_choices.push_front("odyssey")
+ var pool: Array[String]=claim_choices if not claim_choices.is_empty() else choices
+ event_card.visible=not pool.is_empty()
+ if not pool.is_empty():
+  var key: String=_featured_key if event_button.button_pressed and _featured_key in pool else pool[int(Time.get_ticks_msec()/6500)%pool.size()]
+  _featured_key=key
+  var map: Dictionary={"boss_hunt":"celestial_boss_hunt","pilgrimage":"jade_valley_pilgrimage","heavenly_ladder":"heavenly_ladder","treasure_hunt":"celestial_treasure_hunt","five_elements":"path_of_five_elements"}
+  _featured_scene="res://scenes/ui/odyssey_screen.tscn" if key=="odyssey" else str(live_ops.get_event(str(map[key])).get("scene_path",""))
+  var info: Dictionary=EventCatalog.preview(self,key) if key!="odyssey" else {"current":preload("res://scripts/data/odyssey_progress.gd").current(client.snapshot.get("state",{})),"total":preload("res://scripts/data/odyssey_progress.gd").goal(client.snapshot.get("state",{})),"reward":{}}
+  event_card.get_node("FeaturedTitle").text=EventCatalog.title(key) if key!="odyssey" else "JADE DRAGON ODYSSEY"
+  event_card.get_node("EventKind").text=tr("CELESTIAL EVENTS")+" · %d/%d"%[pool.find(key)+1,pool.size()]
+  if _feature_signature!=key:
+   _feature_signature=key;event_window.get_node("EventArt").texture=EventArtwork.texture_for(key)
+   event_card.modulate.a=.75;create_tween().tween_property(event_card,"modulate:a",1.0,.22)
+  boss_progress.text="%d / %d"%[mini(int(info.current),int(info.total)),int(info.total)]
+  feature_dot.visible=ActionDot.count(self,key)>0
+  boss_reward.text=tr("REWARD READY") if feature_dot.visible else tr("CONTINUE YOUR JOURNEY")
+  event_action.text=(tr("CLAIM REWARD") if feature_dot.visible else tr("VIEW EVENT"))+" ›"
  login_state.text=tr("DAY")+" %d / %d"%[live_ops.get_active_login_day_count(),live_ops.LOGIN_DAY_COUNT]
  var unlocked: bool=IdleCultivationManager.is_unlocked()
  var claim_available: bool=unlocked and IdleCultivationManager.get_claimable_units()>0
@@ -456,3 +479,6 @@ func open_currency_sources(index: int) -> void:
  if index==1:
   _open_live_popup("res://scenes/ui/celestial_treasury_screen.tscn")
  else:_open_menu_scene("res://scenes/ui/daily_quest_screen.tscn" if index==0 else "res://scenes/ui/pavilion_screen.tscn")
+
+func _open_featured_event() -> void:
+ if not _featured_scene.is_empty():_open_live_popup(_featured_scene)

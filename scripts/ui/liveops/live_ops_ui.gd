@@ -150,7 +150,9 @@ static func build_shell(
 	hero_text.add_child(title)
 
 	var subtitle := Label.new()
-	subtitle.text = subtitle_text
+	var summaries: Dictionary={"jade_valley_pilgrimage":["Clear marked stages. Claim each offering once.","Tuntaskan stage yang ditandai. Klaim tiap persembahan sekali."],"heavenly_ladder":["Clear Journey stages. Claim each ascent once.","Tuntaskan stage Journey. Klaim tiap tingkatan sekali."],"celestial_boss_hunt":["Defeat realm guardians. Claim each bounty once.","Kalahkan penjaga realm. Klaim tiap hadiah sekali."],"celestial_treasure_hunt":["Complete each realm to reveal its treasure.","Tuntaskan setiap realm untuk membuka hartanya."],"path_of_five_elements":["Complete the five elemental trials.","Tuntaskan kelima trial elemen."]}
+	var event_key: String=root.scene_file_path.get_file().trim_suffix("_screen.tscn")
+	subtitle.text=str(summaries[event_key][1 if TranslationServer.get_locale().begins_with("id") else 0]) if summaries.has(event_key) else subtitle_text
 	subtitle.add_theme_font_size_override("font_size", 13)
 	subtitle.add_theme_color_override(
 		"font_color",
@@ -273,7 +275,8 @@ static func _build_popup_shell(
 	hm.add_child(hr)
 	if hero_icon != null:
 		var icon_frame := PanelContainer.new()
-		icon_frame.custom_minimum_size = Vector2(74.0, 74.0)
+		icon_frame.custom_minimum_size = Vector2(56.0, 56.0)
+		icon_frame.size_flags_vertical=Control.SIZE_SHRINK_CENTER
 		icon_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var icon_style := make_panel_style(
 			Color(0.002, 0.020, 0.028, 0.98),
@@ -289,9 +292,10 @@ static func _build_popup_shell(
 		icon_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		icon_frame.add_child(icon_margin)
 		var icon := TextureRect.new()
-		icon.custom_minimum_size = Vector2(62.0, 62.0)
+		icon.custom_minimum_size = Vector2(44.0, 44.0)
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		icon.texture = hero_icon
+		var emblem: String="progression" if root.scene_file_path.contains("heavenly_ladder") else "boss" if root.scene_file_path.contains("boss_hunt") else "treasure" if root.scene_file_path.contains("treasure_hunt") else "cultivation" if root.scene_file_path.contains("five_elements") else "journey"
+		icon.texture = load("res://assets/ui/trials/insignia/"+emblem+".svg") as Texture2D
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon_margin.add_child(icon)
@@ -310,7 +314,9 @@ static func _build_popup_shell(
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ht.add_child(title)
 	var subtitle := Label.new()
-	subtitle.text = subtitle_text
+	var summaries: Dictionary={"jade_valley_pilgrimage":["Clear marked stages. Claim each offering once.","Tuntaskan stage yang ditandai. Klaim tiap persembahan sekali."],"heavenly_ladder":["Clear Journey stages. Claim each ascent once.","Tuntaskan stage Journey. Klaim tiap tingkatan sekali."],"celestial_boss_hunt":["Defeat realm guardians. Claim each bounty once.","Kalahkan penjaga realm. Klaim tiap hadiah sekali."],"celestial_treasure_hunt":["Complete each realm to reveal its treasure.","Tuntaskan setiap realm untuk membuka hartanya."],"path_of_five_elements":["Complete the five elemental trials.","Tuntaskan kelima trial elemen."]}
+	var event_key: String=root.scene_file_path.get_file().trim_suffix("_screen.tscn")
+	subtitle.text=str(summaries[event_key][1 if TranslationServer.get_locale().begins_with("id") else 0]) if summaries.has(event_key) else subtitle_text
 	subtitle.add_theme_font_size_override("font_size", 12)
 	subtitle.add_theme_color_override("font_color", Color(0.78, 0.88, 0.86, 1.0))
 	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

@@ -17,6 +17,12 @@ const SAVE_PATH: String = "user://achievements.save"
 const SAVE_VERSION: int = 1
 
 const ACHIEVEMENTS: Dictionary = {
+	"enemy_slayer_10000":{"title":"Ten Thousand Echoes","description":"Defeat 10,000 enemies.","category":"combat","target":10000,"reward":900},
+	"enemy_slayer_25000":{"title":"Immortal Vanguard","description":"Defeat 25,000 enemies.","category":"combat","target":25000,"reward":1300},
+	"trial_veteran_200":{"title":"Jade Road Pilgrim","description":"Complete 200 stages, including repeats.","category":"journey","target":200,"reward":1100},
+	"trial_veteran_300":{"title":"Beyond Three Hundred Gates","description":"Complete 300 stages, including repeats.","category":"journey","target":300,"reward":1500},
+	"boss_slayer_100":{"title":"Hundred Guardians Silenced","description":"Defeat 100 stage guardians.","category":"boss","target":100,"reward":850},
+	"boss_slayer_200":{"title":"Throne of the Ascendant","description":"Defeat 200 stage guardians.","category":"boss","target":200,"reward":1300},
 	"first_blood":{"title":"First Blood","description":"Defeat your first enemy.","category":"combat","target":1,"reward":20},
 	"enemy_slayer_50":{"title":"Enemy Slayer","description":"Defeat 50 enemies.","category":"combat","target":50,"reward":50},
 	"cultivator_level_5":{"title":"Rising Cultivator","description":"Reach Level 5 during a run.","category":"progression","target":5,"reward":50},
@@ -216,7 +222,7 @@ func _on_enemy_killed() -> void:
 	set_progress_at_least("first_blood", 1)
 	for achievement_id: String in [
 		"enemy_slayer_50","enemy_slayer_250","enemy_slayer_500",
-		"enemy_slayer_1000","enemy_slayer_2500","enemy_slayer_5000"
+		"enemy_slayer_1000","enemy_slayer_2500","enemy_slayer_5000","enemy_slayer_10000","enemy_slayer_25000"
 	]:
 		add_progress(achievement_id, 1)
 
@@ -248,7 +254,7 @@ func _on_boss_spawned(boss: Node) -> void:
 
 func _on_boss_defeated() -> void:
 	set_progress_at_least("first_boss_defeat", 1)
-	for achievement_id: String in ["boss_slayer_10","boss_slayer_25","boss_slayer_50"]:
+	for achievement_id: String in ["boss_slayer_10","boss_slayer_25","boss_slayer_50","boss_slayer_100","boss_slayer_200"]:
 		add_progress(achievement_id, 1)
 
 func _on_stage_completed(
@@ -262,7 +268,7 @@ func _on_stage_completed(
 		set_progress_at_least(str(STAGE_CLEAR_ACHIEVEMENTS[stage_key]), 1)
 	for achievement_id: String in [
 		"trial_veteran_5","trial_veteran_10","trial_veteran_30",
-		"trial_veteran_60","trial_veteran_100"
+		"trial_veteran_60","trial_veteran_100","trial_veteran_200","trial_veteran_300"
 	]:
 		add_progress(achievement_id, 1)
 	_sync_journey_achievement_progress()
@@ -575,7 +581,7 @@ func _sync_extended_progress() -> void:
 	)
 	for achievement_id: String in [
 		"trial_veteran_5","trial_veteran_10","trial_veteran_30",
-		"trial_veteran_60","trial_veteran_100"
+		"trial_veteran_60","trial_veteran_100","trial_veteran_200","trial_veteran_300"
 	]:
 		set_progress_at_least(achievement_id, replay_seed)
 
@@ -593,11 +599,11 @@ func _sync_extended_progress() -> void:
 		JourneyManager.cleared_stage_keys.size(),
 		get_progress("boss_slayer_10")
 	)
-	for achievement_id: String in ["boss_slayer_10","boss_slayer_25","boss_slayer_50"]:
+	for achievement_id: String in ["boss_slayer_10","boss_slayer_25","boss_slayer_50","boss_slayer_100","boss_slayer_200"]:
 		set_progress_at_least(achievement_id, boss_seed)
 
-	var kill_seed: int = get_progress("enemy_slayer_1000")
-	for achievement_id: String in ["enemy_slayer_500","enemy_slayer_2500","enemy_slayer_5000"]:
+	var kill_seed: int = maxi(get_progress("enemy_slayer_1000"),get_progress("enemy_slayer_5000"))
+	for achievement_id: String in ["enemy_slayer_500","enemy_slayer_2500","enemy_slayer_5000","enemy_slayer_10000","enemy_slayer_25000"]:
 		set_progress_at_least(achievement_id, kill_seed)
 
 	var level_seed: int = get_progress("cultivator_level_20")

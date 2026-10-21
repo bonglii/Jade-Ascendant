@@ -436,7 +436,6 @@ func _build_presentation_options() -> void:
 	privacy.pressed.connect(_open_privacy)
 	system_box.add_child(privacy)
 
-	_build_update_notifications(parent_box, source_card)
 	_build_connection_support(parent_box, source_card)
 	_build_monetization_qa(parent_box, source_card)
 
@@ -1122,7 +1121,11 @@ func _build_connection_support(parent_box: VBoxContainer, source: PanelContainer
 	box.add_child(copy)
 	copy.pressed.connect(func():
 		if not bool(copy.get_meta("jade_scroll_cancelled", false)): DisplayServer.clipboard_set(get_support_summary()))
-	_build_progress_backup(parent_box, source)
+	var account_tools := VBoxContainer.new()
+	account_tools.name="AccountRecoveryTools";account_tools.visible=false;parent_box.add_child(account_tools)
+	var recovery := Button.new();recovery.name="AccountRecoveryToggle";recovery.text=_local("ACCOUNT & SAVE RECOVERY", "PEMULIHAN AKUN & SAVE");recovery.custom_minimum_size.y=48;box.add_child(recovery)
+	recovery.pressed.connect(func() -> void:account_tools.visible=not account_tools.visible)
+	_build_progress_backup(account_tools, source)
 
 func _build_progress_backup(parent_box: VBoxContainer, source: PanelContainer) -> void:
 	var card: PanelContainer = _create_settings_card(parent_box, source, _local("PROGRESS", "PROGRESS"), _local("Cloud backup", "Backup cloud"), _local("Save progress to this Google account. After your first backup, updates run every five minutes while in menus. Purchased items stay on the purchase server.", "Simpan progress ke akun Google ini. Setelah backup pertama, pembaruan otomatis tiap lima menit saat di menu. Pembelian tetap di server."))

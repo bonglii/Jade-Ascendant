@@ -35,7 +35,7 @@ export function service(db,{now=()=>Math.floor(Date.now()/1000),rng,economy=1,ad
    await db.prepare('INSERT OR IGNORE INTO odyssey_players(event_id,owner,state) VALUES(?,?,?)').bind(event.id,owner,JSON.stringify(initial())).run();
    for(let attempt=0;attempt<2;attempt++){
     const current=await db.prepare('SELECT state,revision FROM odyssey_players WHERE event_id=? AND owner=?').bind(event.id,owner).first(),s=JSON.parse(current.state),stamp=now();
-    if(s.day===utcDay(stamp)&&s.task_day===utcDay(stamp))break;
+    if(s.day===utcDay(stamp)&&s.task_day===utcDay(stamp)&&s.journey_laps_version===2)break;
     if(influenced(s))await paidEligible(db,owner,stamp);
     const next=resolve(s,{kind:'sync'},event,stamp,rng,prices).state;
     const protectedRead=influenced(s),guardArgs=protectedRead?['u1:'+owner,stamp*1000-7200000,stamp*1000+60000,'u1:'+owner]:[];

@@ -351,6 +351,7 @@ func _build_route_heading() -> void:
 	var rule := ColorRect.new()
 	rule.custom_minimum_size.y = 2.0
 	rule.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rule.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	rule.color = Color(GOLD.r, GOLD.g, GOLD.b, 0.46)
 	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	section.add_child(rule)

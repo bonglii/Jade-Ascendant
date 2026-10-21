@@ -312,3 +312,9 @@ test('delete completed preserves unclaimed gifts, pending expired leases, receip
  assert.equal((await f.api('/v1/mail/list?installation_id='+installation,undefined,{user:'bob'})).data.entries[0].mail_id,gift);
  assert.equal(f.db.sql.prepare('SELECT count(*) AS n FROM mail_claims').get().n,2);f.db.sql.close();
 });
+
+test('mail batches run four independent letters concurrently and preserve response order',async()=>{
+ const {mapMailBatch}=await import('./mail.mjs');let live=0,peak=0;
+ const entries=Array.from({length:8},(_,i)=>i),out=await mapMailBatch(entries,async value=>{live++;peak=Math.max(peak,live);await new Promise(resolve=>setTimeout(resolve,8-value));live--;return value;});
+ assert.equal(peak,4);assert.equal(live,0);assert.deepEqual(out,entries);
+});

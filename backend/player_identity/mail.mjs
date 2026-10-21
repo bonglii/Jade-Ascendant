@@ -11,6 +11,7 @@ import {studioRoute,historyPage,countRecipients,selector,segment,audit} from './
 export {MailError};
 const ID=/^[a-f0-9]{32}$/;
 const UID=/^JA[0-9A-HJKMNP-TV-Z]{10}$/;
+export async function mapMailBatch(entries,operation){const out=[];for(let offset=0;offset<entries.length;offset+=4)out.push(...await Promise.all(entries.slice(offset,offset+4).map(operation)));return out;}
 const primary=db=>db?.withSession?db.withSession('first-primary'):db;
 const list=async statement=>(await statement.all()).results;
 const install=value=>{if(!ID.test(value||''))fail(400,'invalid_installation');return value;};
@@ -145,11 +146,11 @@ export function createMailHandler({verify}={}){
    const ids=new Set();
    // Validate the whole envelope before touching any reservation.
    for(const entry of input.entries){exact(entry,path.endsWith('claim_batch')?['mail_id','installation_id']:['mail_id','installation_id','receipt_id']);mailId(entry.mail_id);install(entry.installation_id);if(path.endsWith('ack_batch'))mailId(entry.receipt_id);if(ids.has(entry.mail_id))fail(400,'duplicate_mail');ids.add(entry.mail_id);}
-   const entries=[];
-   for(const entry of input.entries){try{
-    const result=path.endsWith('claim_batch')?await claimMail(db,owner,entry,request.headers.get('x-jade-mail-features')==='gifts-v2',request.headers.get('x-jade-equipment-catalog')==='jade-chain-v1',request.headers.get('x-jade-returning-glaive')==='v1',request.headers.get('x-jade-ascendant-arsenal')==='v1',request.headers.get('x-jade-odyssey')==='v1'):await acknowledgeMail(db,owner,entry);
-    entries.push({...result,success:true});
-   }catch(error){if(!(error instanceof MailError)||error.status>=500)throw error;entries.push({mail_id:entry.mail_id,success:false,error:error.code});}}
+   const entries=await mapMailBatch(input.entries,async entry=>{try{
+    const entryDb=primary(env.PROFILE_DB);
+    const result=path.endsWith('claim_batch')?await claimMail(entryDb,owner,entry,request.headers.get('x-jade-mail-features')==='gifts-v2',request.headers.get('x-jade-equipment-catalog')==='jade-chain-v1',request.headers.get('x-jade-returning-glaive')==='v1',request.headers.get('x-jade-ascendant-arsenal')==='v1',request.headers.get('x-jade-odyssey')==='v1'):await acknowledgeMail(entryDb,owner,entry);
+    return {...result,success:true};
+   }catch(error){if(!(error instanceof MailError)||error.status>=500)throw error;return {mail_id:entry.mail_id,success:false,error:error.code};}});
    return json(200,{owner_binding:owner,entries});
   }
   if(path==='/v1/mail/delete_all'){

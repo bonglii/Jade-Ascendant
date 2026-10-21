@@ -8,6 +8,7 @@ var _state: String=""
 var _motion: Tween
 func _ready() -> void:
 	mouse_filter=Control.MOUSE_FILTER_PASS; focus_mode=Control.FOCUS_NONE
+	if not glyph.is_empty():size_flags_vertical=Control.SIZE_SHRINK_CENTER
 	custom_minimum_size.y=maxf(custom_minimum_size.y,44 if not glyph.is_empty() else 58)
 	for state: String in ["normal","hover","pressed","disabled","focus"]: add_theme_stylebox_override(state,StyleBoxEmpty.new())
 	for color: String in ["font_color","font_hover_color","font_pressed_color","font_disabled_color","font_focus_color","font_outline_color"]: add_theme_color_override(color,Color.TRANSPARENT)
@@ -33,9 +34,11 @@ func _press(down: bool) -> void:
 	_motion.tween_property(self,"scale",Vector2.ONE*(0.965 if down else 1.0),0.09)
 func _draw() -> void:
 	var skin: StyleBox = JadeMaterial.medallion(disabled,button_pressed) if not glyph.is_empty() else JadeMaterial.button(disabled,button_pressed)
-	draw_style_box(skin,Rect2(Vector2.ZERO,size))
+	var edge: float=minf(size.x,size.y)
+	var bounds:=Rect2((size-Vector2.ONE*edge)*.5,Vector2.ONE*edge) if not glyph.is_empty() else Rect2(Vector2.ZERO,size)
+	draw_style_box(skin,bounds)
 	if glyph.is_empty(): return
-	var center: Vector2=size*0.5; var r: float=size.x*0.13; var ink:=Color("f4e4b5")
+	var center: Vector2=size*0.5; var r: float=edge*0.15; var ink:=Color("f4e4b5")
 	match glyph:
 		"back": draw_polyline(PackedVector2Array([center+Vector2(r,-r),center+Vector2(-r,0),center+Vector2(r,r)]),ink,3,true)
 		"close":

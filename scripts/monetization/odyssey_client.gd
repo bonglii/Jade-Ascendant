@@ -28,6 +28,9 @@ var run_authorized: bool = false
 var _preparing_run: bool = false
 var _warm_next_at: int = 0
 var _backgrounded: bool = false
+var _prepared_ad: Dictionary={}
+var _ad_open_requested: bool=false
+var _ad_prepare_next: int=0
 
 func server_time() -> int:
 	return int(snapshot.get("server_time", 0)) + floori(float(maxi(0, Time.get_ticks_msec() - _received_msec)) / 1000.0)
@@ -116,7 +119,7 @@ func _prewarm_if_due() -> void:
 	if Time.get_ticks_msec() < _warm_next_at: return
 	if get_tree().get_first_node_in_group("player") != null: return
 	_warm_next_at = Time.get_ticks_msec() + 30000
-	if not _pending().is_empty() or ad_waiting(): return
+	if ad_waiting(): return
 	if not snapshot.is_empty() and Time.get_ticks_msec() - _received_msec < 180000: return
 	refresh()
 
@@ -124,10 +127,13 @@ func _process(_delta: float) -> void:
 	var live: String = _live_binding()
 	if live != _binding:
 		_binding = live; snapshot = {}; busy = false; run_authorized = false; _request_id = ""; _command = {}; _ad_nonce = ""; _poll_until = 0;_ad_before=-1;_ad_day="";ad_delivery_state="idle";_ad_expires_at=0;_ad_attempts=0;_ad_earned_seen=false;_ad_reward_notice={}
+		_prepared_ad={};_ad_open_requested=false;_ad_prepare_next=0
 		_load_ad_wait()
+		_load_prepared_ad()
 		_warm_next_at = Time.get_ticks_msec() + 1500
 		status = "account_changed"; changed.emit()
 	_prewarm_if_due()
+	_prepare_ad_if_due()
 	if busy and Time.get_ticks_msec() > _deadline:
 		busy = false; status = "connection_timeout"
 		if _command.get("action",{}).get("kind")=="ad_intent": ad_delivery_state="verification_unavailable"
@@ -142,7 +148,9 @@ func refresh() -> bool:
 	var live: String = _live_binding()
 	if live != _binding:
 		_binding = live; snapshot = {}; run_authorized = false; _request_id = ""; _command = {}; _ad_nonce = ""; _poll_until = 0;_ad_before=-1;_ad_day="";ad_delivery_state="idle";_ad_expires_at=0;_ad_attempts=0;_ad_earned_seen=false;_ad_reward_notice={}
+		_prepared_ad={};_ad_open_requested=false;_ad_prepare_next=0
 		_load_ad_wait()
+		_load_prepared_ad()
 	if _binding.length() != 64: status = "google_sign_in_required"; changed.emit(); return false
 	var pending: Dictionary = _pending()
 	if pending.has("error"): status = "recovery_required"; changed.emit(); return false
@@ -190,10 +198,11 @@ func _on_result(request_id: String, success: bool, result_status: String, payloa
 			var paid: Node = get_node_or_null("/root/PavilionManager/PaidGameplayV2")
 			if paid != null: paid.call("refresh")
 		if action == "ad_intent" and data.get("ad_intent") is Dictionary:
-			_ad_before=int(data.state.get("daily_ads",0));_ad_day=str(data.state.get("day",""))
-			_ad_nonce = str(data.ad_intent.nonce);_ad_expires_at=int(data.ad_intent.expires_at);_ad_attempts=0;_ad_cancelled=false;_ad_earned_seen=false;ad_delivery_state="watching"
-			if _save_ad_wait(): _show_ad()
-			else: ad_delivery_state="journal_failed";_ad_nonce=""
+			_prepared_ad={"nonce":str(data.ad_intent.nonce),"expires_at":int(data.ad_intent.expires_at),"owner":_binding,"event_id":str(data.get("event",{}).get("id","")),"day":str(data.state.get("day",""))}
+			_persist_prepared_ad()
+			if ad_waiting():_clear_prepared_ad()
+			elif _ad_open_requested:_activate_prepared_ad()
+			else:ad_delivery_state="idle"
 		var mail: Node = get_node_or_null("/root/ServerMailManager")
 		if mail != null and action in ["roll", "route", "counter", "milestone", "task", "missions_all", "arena_finish"]:
 			if mail.has_method("hint_pending_delivery"): mail.call("hint_pending_delivery")
@@ -203,9 +212,44 @@ func _on_result(request_id: String, success: bool, result_status: String, payloa
 		# transport failures keep the exact durable request for recovery.
 		if DirAccess.remove_absolute(_path()) == OK:
 			_command = {}; call_deferred("refresh")
-	if not success and action=="ad_intent": ad_delivery_state="verification_unavailable"
+	if not success and action=="ad_intent": ad_delivery_state="verification_unavailable" if _ad_open_requested else "idle"
 	finished.emit(action, success); changed.emit()
+func _prepared_ad_path() -> String:return "user://odyssey_prepared_ad_"+_binding+".json" if _binding.length()==64 else ""
+func _clear_prepared_ad() -> void:
+	_prepared_ad={}
+	if not _prepared_ad_path().is_empty() and FileAccess.file_exists(_prepared_ad_path()):DirAccess.remove_absolute(_prepared_ad_path())
+func _persist_prepared_ad() -> void:
+	if _prepared_ad_path().is_empty():return
+	var file:=FileAccess.open(_prepared_ad_path(),FileAccess.WRITE)
+	if file!=null:file.store_string(JSON.stringify(_prepared_ad));file.close()
+func _load_prepared_ad() -> void:
+	if ad_waiting() or _prepared_ad_path().is_empty() or not FileAccess.file_exists(_prepared_ad_path()):return
+	var file:=FileAccess.open(_prepared_ad_path(),FileAccess.READ)
+	if file==null or file.get_length()>2048:return
+	var data: Variant=JSON.parse_string(file.get_as_text())
+	if data is Dictionary and data.get("owner")==_binding and _matches(data.get("nonce"),"^[a-f0-9]{32}$") and _whole(data.get("expires_at"),1,4102444800):_prepared_ad=data
+func _prepared_ad_valid() -> bool:
+	return not _prepared_ad.is_empty() and _prepared_ad.get("owner")==_live_binding() and _prepared_ad.get("event_id")==snapshot.get("event",{}).get("id") and _prepared_ad.get("day")==snapshot.get("state",{}).get("day") and int(_prepared_ad.get("expires_at",0))>_ad_now()+15
+func _activate_prepared_ad() -> bool:
+	if not _prepared_ad_valid():return false
+	_ad_before=int(snapshot.get("state",{}).get("daily_ads",0));_ad_day=str(snapshot.get("state",{}).get("day",""))
+	_ad_nonce=str(_prepared_ad.nonce);_ad_expires_at=int(_prepared_ad.expires_at);_clear_prepared_ad();_ad_open_requested=false
+	_ad_attempts=0;_ad_cancelled=false;_ad_earned_seen=false;ad_delivery_state="watching"
+	if not _save_ad_wait():ad_delivery_state="journal_failed";_ad_nonce="";changed.emit();return false
+	_show_ad();changed.emit();return true
+func _prepare_ad_if_due() -> void:
+	if not _can_prewarm() or _backgrounded or busy or ad_waiting() or _binding.length()!=64 or snapshot.is_empty() or Time.get_ticks_msec()<_ad_prepare_next:return
+	if get_tree().get_first_node_in_group("player")!=null or not _pending().is_empty():return
+	if _prepared_ad_valid():return
+	var event: Variant=snapshot.get("event")
+	if not event is Dictionary or not bool(event.get("enabled",false)) or not bool(event.get("ads_enabled",false)) or _ad_now()<int(event.get("starts_at",0)) or _ad_now()>=int(event.get("ends_at",0)):return
+	if int(snapshot.get("state",{}).get("daily_ads",0))>=2 or ad_metadata().get("configured",true)==false:return
+	var ads: Node=get_node_or_null("/root/MonetizationManager")
+	if ads==null or not bool(ads.call("rewarded_available","odyssey_roll")):return
+	_ad_prepare_next=Time.get_ticks_msec()+60000;_ad_open_requested=false
+	submit({"kind":"ad_intent"})
 func watch_ad() -> bool:
+	if busy and _command.get("action",{}).get("kind")=="ad_intent":_ad_open_requested=true;ad_delivery_state="preparing";changed.emit();return true
 	var ads: Node = get_node_or_null("/root/MonetizationManager")
 	if ad_waiting(): return false
 	if snapshot.get("state",{}).get("ad_delivery",snapshot.get("ad_delivery",{})).get("configured",true)==false: ad_delivery_state="configuration_required";changed.emit();return false
@@ -215,6 +259,8 @@ func watch_ad() -> bool:
 	if int(snapshot.get("state",{}).get("daily_ads",0))>=2: ad_delivery_state="limit_reached";changed.emit();return false
 	if ads == null or not bool(ads.call("rewarded_available", "odyssey_roll")):
 		ad_delivery_state = "unavailable"; changed.emit(); return false
+	if _prepared_ad_valid():return _activate_prepared_ad()
+	_ad_open_requested=true
 	ad_delivery_state="preparing";changed.emit()
 	var sent: bool=submit({"kind": "ad_intent"})
 	if not sent: ad_delivery_state="unavailable";changed.emit()
@@ -299,6 +345,7 @@ func _clear_ad_wait() -> void:
 func _observe_ad_delivery(data: Dictionary) -> void:
 	var receipt: Dictionary=data.get("state",{}).get("ad_delivery",data.get("ad_delivery",{}))
 	if receipt.get("configured",true)==false and _ad_nonce.is_empty(): ad_delivery_state="configuration_required"
+	if not _prepared_ad.is_empty() and str(receipt.get("nonce",""))==str(_prepared_ad.get("nonce","")) and receipt.get("stage") in ["credited","expired"]:_clear_prepared_ad()
 	if _ad_nonce.is_empty(): return
 	var same: bool=str(receipt.get("nonce",""))==_ad_nonce
 	var confirmed: bool=same and receipt.get("stage")=="credited"
