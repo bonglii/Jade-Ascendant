@@ -37,6 +37,7 @@ var spawn_timer: float = 0.0
 var elite_spawned_waves: Dictionary = {}
 var run_kill_count: int = 0
 var stage_profile: Dictionary = {}
+var _restoring_elite_wave: int = 0
 
 var player: Node2D = null
 var difficulty_manager: Node = null
@@ -472,6 +473,60 @@ func get_qi_magnet_state() -> Dictionary:
 			pending.append({"x": magnet.global_position.x, "y": magnet.global_position.y})
 	return {"awarded_waves": qi_magnet_awarded_waves.keys(), "pending": pending}
 
+## Preserve authored elite slots and spawn cadence, not ordinary crowds or
+## hostile projectiles. Restoring a living elite never calls die()/kill signals.
+func get_encounter_cadence_state() -> Dictionary:
+	var active: Dictionary = {}
+	for enemy: Node in get_tree().get_nodes_in_group("enemy"):
+		if enemy.get_parent() != get_parent() or not enemy.has_meta("qi_magnet_wave") or enemy.is_queued_for_deletion() or bool(enemy.get("is_dead")):
+			continue
+		var slot: int = int(enemy.get_meta("qi_magnet_wave"))
+		var schedule: Dictionary = stage_profile.get("elite_schedule", {4: 1, 8: 2})
+		if not schedule.has(slot):
+			continue
+		var offset: Vector2 = (enemy as Node2D).global_position - player.global_position
+		active = {"wave": slot, "type": int(schedule[slot]), "health_ratio": clampf(float(enemy.get("current_hp")) / maxf(float(enemy.get("max_hp")), 0.001), 0.000001, 1.0), "x": offset.x, "y": offset.y}
+		break
+	return {"version": 1, "spawn_timer": maxf(spawn_timer, 0.0), "kills": run_kill_count, "spawned": elite_spawned_waves.keys(), "active": active}
+
+func scheduled_spawn_wave() -> int:
+	return _restoring_elite_wave if _restoring_elite_wave > 0 else int(wave_manager.current_wave)
+
+func restore_encounter_cadence_state(raw: Variant) -> void:
+	var schedule: Dictionary = stage_profile.get("elite_schedule", {4: 1, 8: 2})
+	var state: Dictionary = preload("res://scripts/data/encounter_cadence_state.gd").clean(raw, schedule, int(wave_manager.current_wave), int(wave_manager.final_wave))
+	elite_spawned_waves.clear()
+	if state.is_empty():
+		# Old saves only prove completed drop milestones. Never invent an elite
+		# kill from an unproven slot; the existing two-magnet ledger stays intact.
+		for slot: int in qi_magnet_awarded_waves:
+			if schedule.has(slot):
+				elite_spawned_waves[slot] = true
+		return
+	for enemy: Node in get_tree().get_nodes_in_group("enemy"):
+		if enemy.get_parent() == get_parent() and enemy.has_meta("qi_magnet_wave"):
+			enemy.remove_from_group("enemy")
+			enemy.queue_free()
+	spawn_timer = float(state.spawn_timer)
+	run_kill_count = int(state.kills)
+	for slot: int in state.spawned:
+		elite_spawned_waves[slot] = true
+	var active: Dictionary = state.active
+	if active.is_empty():
+		return
+	_restoring_elite_wave = int(active.wave)
+	var restored: bool = spawn_elite_enemy_1() if int(active.type) == 1 else spawn_elite_enemy_2()
+	_restoring_elite_wave = 0
+	if not restored:
+		# Scene/config faults must not silently consume an unfinished slot.
+		elite_spawned_waves.erase(int(active.wave))
+		return
+	for enemy: Node in get_tree().get_nodes_in_group("enemy"):
+		if enemy.get_parent() == get_parent() and enemy.has_meta("qi_magnet_wave") and not enemy.is_queued_for_deletion():
+			enemy.set("current_hp", float(enemy.get("max_hp")) * float(active.health_ratio))
+			(enemy as Node2D).global_position = player.global_position + Vector2(float(active.x), float(active.y))
+			break
+
 func restore_qi_magnet_state(state: Variant) -> void:
 	qi_magnet_awarded_waves.clear()
 	for magnet: Node in get_tree().get_nodes_in_group("qi_magnet"):
@@ -567,7 +622,7 @@ func spawn_elite_enemy_1() -> bool:
 
 	elite_enemy.global_position = get_random_spawn_position()
 
-	elite_enemy.set_meta("qi_magnet_wave", int(wave_manager.current_wave))
+	elite_enemy.set_meta("qi_magnet_wave", scheduled_spawn_wave())
 	connect_enemy_defeated_signal(elite_enemy)
 
 	DebugLogger.system(str("=========================================="))
@@ -596,7 +651,7 @@ func spawn_elite_enemy_2() -> bool:
 
 	elite_enemy.global_position = get_random_spawn_position()
 
-	elite_enemy.set_meta("qi_magnet_wave", int(wave_manager.current_wave))
+	elite_enemy.set_meta("qi_magnet_wave", scheduled_spawn_wave())
 	connect_enemy_defeated_signal(elite_enemy)
 
 	DebugLogger.system(str("=========================================="))

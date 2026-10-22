@@ -68,6 +68,7 @@ var result_atmosphere: Control = null
 var recovery_chip: PanelContainer = null
 var revive_button: Button = null
 var revive_refresh_left: float = 0.0
+var _leaving_run: bool = false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_WHEN_PAUSED
@@ -107,7 +108,9 @@ func _process(delta: float) -> void:
 
 
 func show_game_over() -> void:
+	_leaving_run = false
 	get_node("ResultCeremony").fit()
+	get_node("ResultCeremony").capture_defeat_report.call_deferred()
 	last_game_over_reward.clear()
 	_refresh_stage_identity()
 	_refresh_reward_summary()
@@ -607,6 +610,8 @@ func _refresh_revive_button() -> void:
 
 
 func _on_revive_pressed() -> void:
+	if _leaving_run or SceneTransitionManager.is_transitioning:
+		return
 	var game_over_manager: Node = get_parent().get_node_or_null(
 		"GameOverManager"
 	)
@@ -983,51 +988,43 @@ func _reset_intro_visual_state() -> void:
 		defeat_seal.modulate.a = 1.0
 		defeat_seal.scale = Vector2.ONE
 
+func _finalize_for_exit() -> bool:
+	if _leaving_run or SceneTransitionManager.is_transitioning:
+		return false
+	var manager: Node = get_parent().get_node_or_null("GameOverManager")
+	if manager == null:
+		return false
+	if bool(manager.rewarded_revive_pending):
+		hint_label.text = (
+			"Tunggu proses revive selesai."
+			if SettingsManager.language == "id"
+			else "Wait for the revive request to finish."
+		)
+		return false
+	_leaving_run = true
+	if not bool(manager.call("finalize_defeat")):
+		_leaving_run = false
+		hint_label.text = tr("Run end could not be saved. Please try again.")
+		return false
+	_reset_intro_visual_state()
+	return true
+
 func _on_retry_pressed() -> void:
 	if SaveManager.is_progress_read_only():
 		return
-	if SceneTransitionManager.is_transitioning:
-		return
-	_reset_intro_visual_state()
-	var game_over_manager: Node = get_parent().get_node_or_null("GameOverManager")
-	if (
-		game_over_manager == null
-		or not bool(game_over_manager.call("finalize_defeat"))
-	):
-		hint_label.text = tr(
-			"Run end could not be saved. Please try again."
-		)
-		return
 	var selected_stage_data: Dictionary = JourneyManager.get_selected_stage_data()
-	if selected_stage_data.is_empty():
-		push_error("GameOverUI: data stage untuk Retry tidak ditemukan.")
+	var expected_scene_path: String = str(selected_stage_data.get("scene_path", ""))
+	if expected_scene_path.is_empty() or not ResourceLoader.exists(expected_scene_path):
+		hint_label.text = tr("Run end could not be saved. Please try again.")
 		return
-	var expected_scene_path: String = str(
-		selected_stage_data.get("scene_path", "")
-	)
-	if expected_scene_path.is_empty():
-		push_error("GameOverUI: stage untuk Retry belum memiliki scene.")
-		return
-	if not ResourceLoader.exists(expected_scene_path):
-		push_error(
-			"GameOverUI: scene Retry tidak ditemukan: "
-			+ expected_scene_path
-		)
+	if not _finalize_for_exit():
 		return
 	GameSession.start_new_game()
 	var stage_scene_path: String = JourneyManager.begin_selected_stage()
 	if stage_scene_path.is_empty():
+		_leaving_run = false
 		get_tree().paused = true
-		push_error("GameOverUI: JourneyManager gagal memulai Retry.")
 		return
-	DebugLogger.system(str(
-		"Retry Chapter ",
-		JourneyManager.active_run_chapter_id,
-		" Stage ",
-		JourneyManager.active_run_stage_id,
-		" -> ",
-		stage_scene_path
-	))
 	var change_error: Error = SceneTransitionManager.transition_to(
 		stage_scene_path,
 		{
@@ -1037,37 +1034,29 @@ func _on_retry_pressed() -> void:
 		}
 	)
 	if change_error != OK:
+		_leaving_run = false
 		JourneyManager.clear_active_run()
 		get_tree().paused = true
-		push_error(
-			"GameOverUI: gagal membuka stage Retry. Error code: "
-			+ str(change_error)
-		)
+		hint_label.text = tr("Run end could not be saved. Please try again.")
 
 func _on_main_menu_pressed() -> void:
-	if SceneTransitionManager.is_transitioning:
-		return
-	_reset_intro_visual_state()
-	var game_over_manager: Node = get_parent().get_node_or_null("GameOverManager")
-	if (
-		game_over_manager == null
-		or not bool(game_over_manager.call("finalize_defeat"))
-	):
-		hint_label.text = tr(
-			"Run end could not be saved. Please try again."
-		)
+	_return_to_preparation(MAIN_MENU_SCENE, "Returning to Jade Sanctuary")
+
+func _on_review_hero_pressed() -> void:
+	_return_to_preparation("res://scenes/ui/equipment_screen.tscn", "Reviewing your cultivation")
+
+func _return_to_preparation(scene_path: String, title: String) -> void:
+	if not _finalize_for_exit():
 		return
 	var change_error: Error = SceneTransitionManager.transition_to(
-		MAIN_MENU_SCENE,
+		scene_path,
 		{
-			"title": "Returning to Jade Sanctuary",
+			"title": title,
 			"subtitle": "Reflect, refine, and rise again",
 			"minimum_display_time": 0.4
 		}
 	)
 	if change_error != OK:
+		_leaving_run = false
 		get_tree().paused = true
-		push_error(
-			"GameOverUI: gagal kembali ke Main Menu. Error code: "
-			+ str(change_error)
-		)
+		hint_label.text = tr("Run end could not be saved. Please try again.")

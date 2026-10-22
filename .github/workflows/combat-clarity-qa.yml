@@ -1,0 +1,32 @@
+name: Player Release QA
+on:
+  push:
+    branches: [checkpoint/iap-fasttrack-20261010]
+    paths: ['scripts/**', 'tests/**', 'backend/player_identity/check_player_release.cjs', '.github/workflows/combat-clarity-qa.yml']
+  pull_request:
+    paths: ['scripts/**', 'tests/**', 'backend/player_identity/check_player_release.cjs']
+permissions:
+  contents: read
+jobs:
+  combat-and-continue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Get pinned Godot
+        run: |
+          mkdir -p /tmp/jade-combat-godot
+          curl -fsSL https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip -o /tmp/jade-combat-godot/godot.zip
+          echo 'cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4  /tmp/jade-combat-godot/godot.zip' | sha256sum --check
+          unzip -q /tmp/jade-combat-godot/godot.zip -d /tmp/jade-combat-godot
+      - name: Run review, final-hit reports and safe Continue
+        run: node backend/player_identity/check_player_release.cjs "$GITHUB_WORKSPACE" /tmp/jade-combat-godot/Godot_v4.7.2-stable_linux.x86_64
+      - name: Preserve evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: player-release-qa
+          path: .local/player_release_qa/

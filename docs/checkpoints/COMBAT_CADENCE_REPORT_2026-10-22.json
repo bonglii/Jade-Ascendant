@@ -1,0 +1,1064 @@
+{
+	"daily_rotation_samples": [
+		{
+			"date": "2026-11-01",
+			"quest_ids": [
+				"defeat_150_enemies",
+				"defeat_20_enemies",
+				"reach_level_5",
+				"reach_level_7",
+				"clear_2_stages",
+				"clear_3_stages"
+			],
+			"quest_stones": 300,
+			"required_clears": 3,
+			"required_kills": 150,
+			"required_run_level": 7
+		},
+		{
+			"date": "2026-11-02",
+			"quest_ids": [
+				"defeat_20_enemies",
+				"defeat_50_enemies",
+				"reach_level_7",
+				"reach_level_10",
+				"clear_3_stages",
+				"clear_4_stages"
+			],
+			"quest_stones": 340,
+			"required_clears": 4,
+			"required_kills": 50,
+			"required_run_level": 10
+		},
+		{
+			"date": "2026-11-03",
+			"quest_ids": [
+				"defeat_50_enemies",
+				"defeat_100_enemies",
+				"reach_level_10",
+				"reach_level_12",
+				"clear_4_stages",
+				"clear_1_stage"
+			],
+			"quest_stones": 340,
+			"required_clears": 4,
+			"required_kills": 100,
+			"required_run_level": 12
+		},
+		{
+			"date": "2026-11-04",
+			"quest_ids": [
+				"defeat_100_enemies",
+				"defeat_150_enemies",
+				"reach_level_12",
+				"reach_level_5",
+				"clear_1_stage",
+				"clear_2_stages"
+			],
+			"quest_stones": 300,
+			"required_clears": 2,
+			"required_kills": 150,
+			"required_run_level": 12
+		},
+		{
+			"date": "2026-11-05",
+			"quest_ids": [
+				"defeat_150_enemies",
+				"defeat_20_enemies",
+				"reach_level_5",
+				"reach_level_7",
+				"clear_2_stages",
+				"clear_3_stages"
+			],
+			"quest_stones": 300,
+			"required_clears": 3,
+			"required_kills": 150,
+			"required_run_level": 7
+		},
+		{
+			"date": "2026-11-06",
+			"quest_ids": [
+				"defeat_20_enemies",
+				"defeat_50_enemies",
+				"reach_level_7",
+				"reach_level_10",
+				"clear_3_stages",
+				"clear_4_stages"
+			],
+			"quest_stones": 340,
+			"required_clears": 4,
+			"required_kills": 50,
+			"required_run_level": 10
+		},
+		{
+			"date": "2026-11-07",
+			"quest_ids": [
+				"defeat_50_enemies",
+				"defeat_100_enemies",
+				"reach_level_10",
+				"reach_level_12",
+				"clear_4_stages",
+				"clear_1_stage"
+			],
+			"quest_stones": 340,
+			"required_clears": 4,
+			"required_kills": 100,
+			"required_run_level": 12
+		},
+		{
+			"date": "2026-11-08",
+			"quest_ids": [
+				"defeat_100_enemies",
+				"defeat_150_enemies",
+				"reach_level_12",
+				"reach_level_5",
+				"clear_1_stage",
+				"clear_2_stages"
+			],
+			"quest_stones": 300,
+			"required_clears": 2,
+			"required_kills": 150,
+			"required_run_level": 12
+		},
+		{
+			"date": "2026-11-09",
+			"quest_ids": [
+				"defeat_150_enemies",
+				"defeat_20_enemies",
+				"reach_level_5",
+				"reach_level_7",
+				"clear_2_stages",
+				"clear_3_stages"
+			],
+			"quest_stones": 300,
+			"required_clears": 3,
+			"required_kills": 150,
+			"required_run_level": 7
+		},
+		{
+			"date": "2026-11-10",
+			"quest_ids": [
+				"defeat_50_enemies",
+				"defeat_100_enemies",
+				"reach_level_10",
+				"reach_level_12",
+				"clear_4_stages",
+				"clear_1_stage"
+			],
+			"quest_stones": 340,
+			"required_clears": 4,
+			"required_kills": 100,
+			"required_run_level": 12
+		},
+		{
+			"date": "2026-11-11",
+			"quest_ids": [
+				"defeat_100_enemies",
+				"defeat_150_enemies",
+				"reach_level_12",
+				"reach_level_5",
+				"clear_1_stage",
+				"clear_2_stages"
+			],
+			"quest_stones": 300,
+			"required_clears": 2,
+			"required_kills": 150,
+			"required_run_level": 12
+		},
+		{
+			"date": "2026-11-12",
+			"quest_ids": [
+				"defeat_150_enemies",
+				"defeat_20_enemies",
+				"reach_level_5",
+				"reach_level_7",
+				"clear_2_stages",
+				"clear_3_stages"
+			],
+			"quest_stones": 300,
+			"required_clears": 3,
+			"required_kills": 150,
+			"required_run_level": 7
+		},
+		{
+			"date": "2026-11-13",
+			"quest_ids": [
+				"defeat_20_enemies",
+				"defeat_50_enemies",
+				"reach_level_7",
+				"reach_level_10",
+				"clear_3_stages",
+				"clear_4_stages"
+			],
+			"quest_stones": 340,
+			"required_clears": 4,
+			"required_kills": 50,
+			"required_run_level": 10
+		},
+		{
+			"date": "2026-11-14",
+			"quest_ids": [
+				"defeat_50_enemies",
+				"defeat_100_enemies",
+				"reach_level_10",
+				"reach_level_12",
+				"clear_4_stages",
+				"clear_1_stage"
+			],
+			"quest_stones": 340,
+			"required_clears": 4,
+			"required_kills": 100,
+			"required_run_level": 12
+		},
+		{
+			"date": "2026-11-15",
+			"quest_ids": [
+				"defeat_100_enemies",
+				"defeat_150_enemies",
+				"reach_level_12",
+				"reach_level_5",
+				"clear_1_stage",
+				"clear_2_stages"
+			],
+			"quest_stones": 300,
+			"required_clears": 2,
+			"required_kills": 150,
+			"required_run_level": 12
+		},
+		{
+			"date": "2026-11-16",
+			"quest_ids": [
+				"defeat_150_enemies",
+				"defeat_20_enemies",
+				"reach_level_5",
+				"reach_level_7",
+				"clear_2_stages",
+				"clear_3_stages"
+			],
+			"quest_stones": 300,
+			"required_clears": 3,
+			"required_kills": 150,
+			"required_run_level": 7
+		},
+		{
+			"date": "2026-11-17",
+			"quest_ids": [
+				"defeat_20_enemies",
+				"defeat_50_enemies",
+				"reach_level_7",
+				"reach_level_10",
+				"clear_3_stages",
+				"clear_4_stages"
+			],
+			"quest_stones": 340,
+			"required_clears": 4,
+			"required_kills": 50,
+			"required_run_level": 10
+		},
+		{
+			"date": "2026-11-18",
+			"quest_ids": [
+				"defeat_50_enemies",
+				"defeat_100_enemies",
+				"reach_level_10",
+				"reach_level_12",
+				"clear_4_stages",
+				"clear_1_stage"
+			],
+			"quest_stones": 340,
+			"required_clears": 4,
+			"required_kills": 100,
+			"required_run_level": 12
+		},
+		{
+			"date": "2026-11-19",
+			"quest_ids": [
+				"defeat_100_enemies",
+				"defeat_150_enemies",
+				"reach_level_12",
+				"reach_level_5",
+				"clear_1_stage",
+				"clear_2_stages"
+			],
+			"quest_stones": 300,
+			"required_clears": 2,
+			"required_kills": 150,
+			"required_run_level": 12
+		},
+		{
+			"date": "2026-11-20",
+			"quest_ids": [
+				"defeat_20_enemies",
+				"defeat_50_enemies",
+				"reach_level_7",
+				"reach_level_10",
+				"clear_3_stages",
+				"clear_4_stages"
+			],
+			"quest_stones": 340,
+			"required_clears": 4,
+			"required_kills": 50,
+			"required_run_level": 10
+		},
+		{
+			"date": "2026-11-21",
+			"quest_ids": [
+				"defeat_50_enemies",
+				"defeat_100_enemies",
+				"reach_level_10",
+				"reach_level_12",
+				"clear_4_stages",
+				"clear_1_stage"
+			],
+			"quest_stones": 340,
+			"required_clears": 4,
+			"required_kills": 100,
+			"required_run_level": 12
+		},
+		{
+			"date": "2026-11-22",
+			"quest_ids": [
+				"defeat_100_enemies",
+				"defeat_150_enemies",
+				"reach_level_12",
+				"reach_level_5",
+				"clear_1_stage",
+				"clear_2_stages"
+			],
+			"quest_stones": 300,
+			"required_clears": 2,
+			"required_kills": 150,
+			"required_run_level": 12
+		},
+		{
+			"date": "2026-11-23",
+			"quest_ids": [
+				"defeat_150_enemies",
+				"defeat_20_enemies",
+				"reach_level_5",
+				"reach_level_7",
+				"clear_2_stages",
+				"clear_3_stages"
+			],
+			"quest_stones": 300,
+			"required_clears": 3,
+			"required_kills": 150,
+			"required_run_level": 7
+		},
+		{
+			"date": "2026-11-24",
+			"quest_ids": [
+				"defeat_20_enemies",
+				"defeat_50_enemies",
+				"reach_level_7",
+				"reach_level_10",
+				"clear_3_stages",
+				"clear_4_stages"
+			],
+			"quest_stones": 340,
+			"required_clears": 4,
+			"required_kills": 50,
+			"required_run_level": 10
+		},
+		{
+			"date": "2026-11-25",
+			"quest_ids": [
+				"defeat_50_enemies",
+				"defeat_100_enemies",
+				"reach_level_10",
+				"reach_level_12",
+				"clear_4_stages",
+				"clear_1_stage"
+			],
+			"quest_stones": 340,
+			"required_clears": 4,
+			"required_kills": 100,
+			"required_run_level": 12
+		},
+		{
+			"date": "2026-11-26",
+			"quest_ids": [
+				"defeat_100_enemies",
+				"defeat_150_enemies",
+				"reach_level_12",
+				"reach_level_5",
+				"clear_1_stage",
+				"clear_2_stages"
+			],
+			"quest_stones": 300,
+			"required_clears": 2,
+			"required_kills": 150,
+			"required_run_level": 12
+		},
+		{
+			"date": "2026-11-27",
+			"quest_ids": [
+				"defeat_150_enemies",
+				"defeat_20_enemies",
+				"reach_level_5",
+				"reach_level_7",
+				"clear_2_stages",
+				"clear_3_stages"
+			],
+			"quest_stones": 300,
+			"required_clears": 3,
+			"required_kills": 150,
+			"required_run_level": 7
+		},
+		{
+			"date": "2026-11-28",
+			"quest_ids": [
+				"defeat_20_enemies",
+				"defeat_50_enemies",
+				"reach_level_7",
+				"reach_level_10",
+				"clear_3_stages",
+				"clear_4_stages"
+			],
+			"quest_stones": 340,
+			"required_clears": 4,
+			"required_kills": 50,
+			"required_run_level": 10
+		}
+	],
+	"permanent_weapon_costs": [
+		{
+			"cap": 10,
+			"star": 1,
+			"stones_level_1_to_cap": 720
+		},
+		{
+			"cap": 20,
+			"star": 2,
+			"stones_level_1_to_cap": 2470
+		},
+		{
+			"cap": 30,
+			"star": 3,
+			"stones_level_1_to_cap": 5220
+		},
+		{
+			"cap": 40,
+			"star": 4,
+			"stones_level_1_to_cap": 8970
+		},
+		{
+			"cap": 50,
+			"star": 5,
+			"stones_level_1_to_cap": 13720
+		}
+	],
+	"scope": "Authored pre-boss survival time; boss duration and actual player income are unmeasured. No balances changed.",
+	"seven_active_day_baseline": {
+		"cycle_jade": 160,
+		"cycle_seals": 4,
+		"daily_completion_jade": 140,
+		"excludes": "Ads, first clears, achievements, one-time gifts, live campaigns and paid purchases. Seven fully claimed active daily sets plus seven login claims; not guaranteed calendar income.",
+		"login_jade": 100,
+		"login_seals": 1,
+		"total_jade": 400,
+		"total_seals": 5
+	},
+	"stages": [
+		{
+			"elite_schedule": {
+				"4": 1,
+				"8": 2
+			},
+			"enemy_cap": 64,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 60,
+				"items": {},
+				"spirit_stone": 100
+			},
+			"id": "1-1",
+			"name": "Verdant Awakening",
+			"preboss_seconds": 126.0,
+			"repeat_clear": {
+				"hero_exp": 40,
+				"items": {},
+				"spirit_stone": 120
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 57.1428571428571
+		},
+		{
+			"elite_schedule": {
+				"4": 1,
+				"8": 2
+			},
+			"enemy_cap": 80,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 75,
+				"items": {},
+				"spirit_stone": 150
+			},
+			"id": "1-2",
+			"name": "Bamboo Mist Pass",
+			"preboss_seconds": 162.0,
+			"repeat_clear": {
+				"hero_exp": 50,
+				"items": {},
+				"spirit_stone": 120
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 44.4444444444444
+		},
+		{
+			"elite_schedule": {
+				"4": 1,
+				"8": 1
+			},
+			"enemy_cap": 80,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 90,
+				"items": {},
+				"spirit_stone": 175
+			},
+			"id": "1-3",
+			"name": "Ruined Jade Shrine",
+			"preboss_seconds": 180.0,
+			"repeat_clear": {
+				"hero_exp": 60,
+				"items": {},
+				"spirit_stone": 150
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 50.0
+		},
+		{
+			"elite_schedule": {
+				"4": 2,
+				"8": 2
+			},
+			"enemy_cap": 88,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 105,
+				"items": {},
+				"spirit_stone": 200
+			},
+			"id": "1-4",
+			"name": "Storm Peak Approach",
+			"preboss_seconds": 198.0,
+			"repeat_clear": {
+				"hero_exp": 70,
+				"items": {},
+				"spirit_stone": 160
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 48.4848484848485
+		},
+		{
+			"elite_schedule": {
+				"3": 1,
+				"6": 2,
+				"8": 2
+			},
+			"enemy_cap": 96,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 150,
+				"items": {},
+				"spirit_stone": 300
+			},
+			"id": "1-5",
+			"name": "Sovereign's Celestial Gate",
+			"preboss_seconds": 234.0,
+			"repeat_clear": {
+				"hero_exp": 100,
+				"items": {},
+				"spirit_stone": 210
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 53.8461538461538
+		},
+		{
+			"elite_schedule": {
+				"2": 1,
+				"4": 2,
+				"6": 1,
+				"8": 2
+			},
+			"enemy_cap": 104,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 195,
+				"items": {},
+				"spirit_stone": 450
+			},
+			"id": "1-6",
+			"name": "Heart of Verdant Heaven",
+			"preboss_seconds": 252.0,
+			"repeat_clear": {
+				"hero_exp": 130,
+				"items": {},
+				"spirit_stone": 260
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 61.9047619047619
+		},
+		{
+			"elite_schedule": {
+				"4": 2,
+				"8": 1
+			},
+			"enemy_cap": 76,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 135,
+				"items": {},
+				"spirit_stone": 350
+			},
+			"id": "2-1",
+			"name": "Moonlit Bloodwood",
+			"preboss_seconds": 162.0,
+			"repeat_clear": {
+				"hero_exp": 90,
+				"items": {},
+				"spirit_stone": 215
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 79.6296296296296
+		},
+		{
+			"elite_schedule": {
+				"3": 2,
+				"6": 1,
+				"8": 2
+			},
+			"enemy_cap": 82,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 165,
+				"items": {},
+				"spirit_stone": 425
+			},
+			"id": "2-2",
+			"name": "Cinnabar Veil Pass",
+			"preboss_seconds": 180.0,
+			"repeat_clear": {
+				"hero_exp": 110,
+				"items": {},
+				"spirit_stone": 260
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 86.6666666666667
+		},
+		{
+			"elite_schedule": {
+				"3": 1,
+				"6": 1,
+				"8": 2
+			},
+			"enemy_cap": 86,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 195,
+				"items": {},
+				"spirit_stone": 500
+			},
+			"id": "2-3",
+			"name": "Scarlet Ritual Court",
+			"preboss_seconds": 198.0,
+			"repeat_clear": {
+				"hero_exp": 130,
+				"items": {},
+				"spirit_stone": 285
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 86.3636363636364
+		},
+		{
+			"elite_schedule": {
+				"2": 2,
+				"4": 1,
+				"6": 2,
+				"8": 2
+			},
+			"enemy_cap": 92,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 225,
+				"items": {},
+				"spirit_stone": 600
+			},
+			"id": "2-4",
+			"name": "Blood Moon Ascension Stair",
+			"preboss_seconds": 216.0,
+			"repeat_clear": {
+				"hero_exp": 150,
+				"items": {},
+				"spirit_stone": 355
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 98.6111111111111
+		},
+		{
+			"elite_schedule": {
+				"2": 1,
+				"4": 2,
+				"6": 1,
+				"8": 2
+			},
+			"enemy_cap": 96,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 300,
+				"items": {},
+				"spirit_stone": 800
+			},
+			"id": "2-5",
+			"name": "Crimson Moon Sanctum",
+			"preboss_seconds": 252.0,
+			"repeat_clear": {
+				"hero_exp": 200,
+				"items": {},
+				"spirit_stone": 450
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 107.142857142857
+		},
+		{
+			"elite_schedule": {
+				"4": 1,
+				"8": 2
+			},
+			"enemy_cap": 94,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 240,
+				"items": {},
+				"spirit_stone": 900
+			},
+			"id": "3-1",
+			"name": "Cloudsea Star Gate",
+			"preboss_seconds": 216.0,
+			"repeat_clear": {
+				"hero_exp": 160,
+				"items": {},
+				"spirit_stone": 480
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 133.333333333333
+		},
+		{
+			"elite_schedule": {
+				"3": 2,
+				"6": 1,
+				"8": 2
+			},
+			"enemy_cap": 98,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 285,
+				"items": {},
+				"spirit_stone": 1050
+			},
+			"id": "3-2",
+			"name": "Astral Mirror Causeway",
+			"preboss_seconds": 225.0,
+			"repeat_clear": {
+				"hero_exp": 190,
+				"items": {},
+				"spirit_stone": 550
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 146.666666666667
+		},
+		{
+			"elite_schedule": {
+				"3": 1,
+				"6": 2,
+				"8": 1
+			},
+			"enemy_cap": 102,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 330,
+				"items": {},
+				"spirit_stone": 1200
+			},
+			"id": "3-3",
+			"name": "Constellation Sword Court",
+			"preboss_seconds": 234.0,
+			"repeat_clear": {
+				"hero_exp": 220,
+				"items": {},
+				"spirit_stone": 620
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 158.974358974359
+		},
+		{
+			"elite_schedule": {
+				"2": 2,
+				"4": 1,
+				"6": 2,
+				"8": 1
+			},
+			"enemy_cap": 106,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 390,
+				"items": {},
+				"spirit_stone": 1400
+			},
+			"id": "3-4",
+			"name": "Ninefold Heaven Terrace",
+			"preboss_seconds": 243.0,
+			"repeat_clear": {
+				"hero_exp": 260,
+				"items": {},
+				"spirit_stone": 740
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 182.716049382716
+		},
+		{
+			"elite_schedule": {
+				"2": 1,
+				"4": 2,
+				"6": 1,
+				"8": 2
+			},
+			"enemy_cap": 110,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 525,
+				"items": {},
+				"spirit_stone": 1800
+			},
+			"id": "3-5",
+			"name": "Celestial Star Palace",
+			"preboss_seconds": 270.0,
+			"repeat_clear": {
+				"hero_exp": 350,
+				"items": {},
+				"spirit_stone": 910
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 202.222222222222
+		},
+		{
+			"elite_schedule": {
+				"4": 1,
+				"8": 2
+			},
+			"enemy_cap": 102,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 630,
+				"items": {},
+				"spirit_stone": 2140
+			},
+			"id": "4-1",
+			"name": "Silent Frost Passage",
+			"preboss_seconds": 234.0,
+			"repeat_clear": {
+				"hero_exp": 420,
+				"items": {},
+				"spirit_stone": 1125
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 288.461538461538
+		},
+		{
+			"elite_schedule": {
+				"3": 2,
+				"6": 1,
+				"8": 2
+			},
+			"enemy_cap": 104,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 713,
+				"items": {},
+				"spirit_stone": 2380
+			},
+			"id": "4-2",
+			"name": "Mirror-Ice Monastery",
+			"preboss_seconds": 243.0,
+			"repeat_clear": {
+				"hero_exp": 475,
+				"items": {},
+				"spirit_stone": 1260
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 311.111111111111
+		},
+		{
+			"elite_schedule": {
+				"3": 1,
+				"6": 2,
+				"8": 1
+			},
+			"enemy_cap": 106,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 795,
+				"items": {},
+				"spirit_stone": 2620
+			},
+			"id": "4-3",
+			"name": "Frozen Lotus Basin",
+			"preboss_seconds": 252.0,
+			"repeat_clear": {
+				"hero_exp": 530,
+				"items": {},
+				"spirit_stone": 1395
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 332.142857142857
+		},
+		{
+			"elite_schedule": {
+				"2": 2,
+				"4": 1,
+				"6": 2,
+				"8": 1
+			},
+			"enemy_cap": 108,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 878,
+				"items": {},
+				"spirit_stone": 2860
+			},
+			"id": "4-4",
+			"name": "Abyssal Bell Corridor",
+			"preboss_seconds": 270.0,
+			"repeat_clear": {
+				"hero_exp": 585,
+				"items": {},
+				"spirit_stone": 1530
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 340.0
+		},
+		{
+			"elite_schedule": {
+				"2": 1,
+				"4": 2,
+				"6": 1,
+				"8": 2
+			},
+			"enemy_cap": 108,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 960,
+				"items": {},
+				"spirit_stone": 3100
+			},
+			"id": "4-5",
+			"name": "Throne of the Frost Sovereign",
+			"preboss_seconds": 279.0,
+			"repeat_clear": {
+				"hero_exp": 640,
+				"items": {},
+				"spirit_stone": 1665
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 358.064516129032
+		},
+		{
+			"elite_schedule": {
+				"4": 1,
+				"8": 2
+			},
+			"enemy_cap": 104,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 1125,
+				"items": {},
+				"spirit_stone": 3520
+			},
+			"id": "5-1",
+			"name": "First Sun Stair",
+			"preboss_seconds": 252.0,
+			"repeat_clear": {
+				"hero_exp": 750,
+				"items": {},
+				"spirit_stone": 1775
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 422.619047619048
+		},
+		{
+			"elite_schedule": {
+				"3": 2,
+				"6": 1,
+				"8": 2
+			},
+			"enemy_cap": 106,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 1253,
+				"items": {},
+				"spirit_stone": 3840
+			},
+			"id": "5-2",
+			"name": "Sunforge Crucible",
+			"preboss_seconds": 261.0,
+			"repeat_clear": {
+				"hero_exp": 835,
+				"items": {},
+				"spirit_stone": 1950
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 448.275862068966
+		},
+		{
+			"elite_schedule": {
+				"2": 1,
+				"4": 2,
+				"6": 1,
+				"8": 2
+			},
+			"enemy_cap": 108,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 1380,
+				"items": {},
+				"spirit_stone": 4160
+			},
+			"id": "5-3",
+			"name": "Phoenix Ash Expanse",
+			"preboss_seconds": 270.0,
+			"repeat_clear": {
+				"hero_exp": 920,
+				"items": {},
+				"spirit_stone": 2125
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 472.222222222222
+		},
+		{
+			"elite_schedule": {
+				"2": 2,
+				"4": 1,
+				"6": 2,
+				"8": 1
+			},
+			"enemy_cap": 110,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 1508,
+				"items": {},
+				"spirit_stone": 4480
+			},
+			"id": "5-4",
+			"name": "Nine-Sun Eclipse Altar",
+			"preboss_seconds": 288.0,
+			"repeat_clear": {
+				"hero_exp": 1005,
+				"items": {},
+				"spirit_stone": 2300
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 479.166666666667
+		},
+		{
+			"elite_schedule": {
+				"2": 1,
+				"4": 2,
+				"6": 1,
+				"8": 2
+			},
+			"enemy_cap": 110,
+			"final_wave": 10,
+			"first_clear": {
+				"hero_exp": 1635,
+				"items": {},
+				"spirit_stone": 4800
+			},
+			"id": "5-5",
+			"name": "Primordial Sun Throne",
+			"preboss_seconds": 297.0,
+			"repeat_clear": {
+				"hero_exp": 1090,
+				"items": {},
+				"spirit_stone": 2475
+			},
+			"repeat_stones_per_preboss_minute_upper_bound": 500.0
+		}
+	]
+}

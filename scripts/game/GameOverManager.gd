@@ -197,7 +197,9 @@ func finalize_defeat() -> bool:
 	if defeat_finalized:
 		return true
 
-	rewarded_revive_pending = false
+	# Ending the run must not race a verified revive that is still pending.
+	if rewarded_revive_pending:
+		return false
 	if not grant_failure_reward():
 		return false
 

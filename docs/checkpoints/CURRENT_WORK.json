@@ -1,17 +1,7 @@
 {
-  "project": "Jade Ascendant",
-  "batch": "Player Journey Reliability & Polish",
-  "state": "docs/checkpoints/PLAYER_JOURNEY_STATE_2026-10-22.json",
-  "base_commit": "09b9e50e0b3c2253941ac3ba5bb1c87767750b26",
-  "previous_batch": "LiveOps remote commit09b9e50 observed, deployment not independently confirmed",
-  "next_action": "D:\\Godot\\tools\\Jade-Player-Journey\\apply_publish_and_deploy.cmd",
-  "resume_rule": "Inspect actual diff and completed evidence first; reuse passing unchanged checks.",
-  "aab_export_required": true,
-  "author_status": "implemented; source tests and local portable workflow passed",
-  "owner_pending": [
-    "Windows QA/push",
-    "Profile deployment",
-    "IAP deployment",
-    "new AAB/internal test"
-  ]
+  "batch": "Player-led release audit",
+  "state": "docs/checkpoints/PLAYER_RELEASE_AUDIT_STATE_2026-10-22.json",
+  "base_commit": "a2f0b9410f1af3b7478d5f76fe626d664ac88ad6",
+  "next_action": "D:\\Godot\\tools\\Jade-Player-Release\\apply_and_publish.cmd then existing backend\\player_identity\\export_production.cmd",
+  "resume_rule": "Read recovered previous evidence and actual diff; do not repeat unchanged completed work."
 }

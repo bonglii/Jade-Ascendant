@@ -89,12 +89,20 @@ func _ready() -> void:
 		_host.get("hint_label").hide()
 		_host.get("balance_label").hide()
 		_install_run_report()
+	else:
+		if _seal != null: _seal.hide()
+		_host.get("eyebrow_label").hide()
+		_host.get("balance_label").hide()
+		_host.get("wave_label").hide()
+		_install_run_review()
+		_install_run_report()
 	if _host.get("result_atmosphere") != null:
 		_host.get("result_atmosphere").hide()
 		_host.get("result_atmosphere").set_process(false)
 	for button: Button in _content.find_children("*", "Button", true, false):
 		var primary: bool = button == _host.get("main_menu_button") if _mode == "victory" else button == _host.get("retry_button")
 		style_button(button, ("red" if _mode == "defeat" else "jade") if primary else "navy")
+	preload("res://scripts/ui/mobile_scroll_policy.gd").prepare_tree(backdrop)
 	_safe.resized.connect(fit)
 	fit()
 	fit.call_deferred()
@@ -134,6 +142,7 @@ func fit() -> void:
 	var desired := Vector2(minf(520, available.x), minf(clampf(natural, 480, 740), available.y))
 	_panel.custom_minimum_size = desired
 	_panel.size = desired
+	if _mode == "defeat": _host.get("game_over_label").add_theme_font_size_override("font_size", 22 if desired.x < 360 else 30)
 	_margin.add_theme_constant_override("margin_left", 24)
 	_margin.add_theme_constant_override("margin_right", 24)
 	_margin.add_theme_constant_override("margin_top", 32)
@@ -152,12 +161,64 @@ var _show_skills: bool=false
 var _report_damage: Array[Dictionary]=[]
 var _report_skills: Array[Dictionary]=[]
 var _report_partial: bool=false
+var _review_title: Label
+var _review_facts: Label
+var _review_body: Label
+var review: Dictionary = {}
+
+func _install_run_review() -> void:
+	var box := VBoxContainer.new()
+	box.name = "RunReview"
+	box.add_theme_constant_override("separation", 6)
+	_body.add_child(box)
+	_body.move_child(box, _host.get("stage_label").get_index() + 1)
+	_review_facts = _report_label("", Color(.68,.82,.78), 13)
+	_review_facts.name = "RunReviewFacts"
+	box.add_child(_review_facts)
+	_review_title = _report_label("", Color(.96,.81,.49), 17)
+	_review_title.name = "RunReviewTitle"
+	box.add_child(_review_title)
+	_review_body = _report_label("", Color(.84,.91,.86), 14)
+	_review_body.name = "RunReviewAdvice"
+	box.add_child(_review_body)
+	var hero := Button.new()
+	hero.name = "ReviewHeroButton"
+	hero.text = "PERIKSA HERO" if SettingsManager.language == "id" else "REVIEW HERO"
+	style_button(hero, "navy")
+	hero.pressed.connect(_host.call.bind("_on_review_hero_pressed"))
+	box.add_child(hero)
+	preload("res://scripts/ui/mobile_scroll_policy.gd").prepare_tree(_host.get_node("ColorRect"))
+
+func capture_defeat_report() -> void:
+	if _mode != "defeat" or not _host.visible: return
+	var end: Node = _host.get_parent().get_node_or_null("GameOverManager")
+	if end == null or not bool(end.game_over_triggered): return
+	review = preload("res://scripts/data/run_review.gd").capture(_host.get_parent())
+	if review.is_empty(): return
+	var id: bool = SettingsManager.language == "id"
+	var text: Dictionary = preload("res://scripts/data/run_review.gd").advice(review, SettingsManager.language)
+	_review_title.text = text.title
+	_review_body.text = text.body
+	var clock: String = "%02d:%02d" % [int(review.seconds) / 60, int(review.seconds) % 60]
+	_review_facts.text = "WAVE %d · LV.%d · %s" % [int(review.wave), int(review.level), clock]
+	if bool(review.metrics_complete):
+		_review_facts.text += ("\nHIT KE HP %d" if id else "\nHP HITS %d") % int(review.hits)
+	if bool(review.incoming_complete):
+		_review_facts.text += (" · HP HILANG %s" if id else " · HP LOST %s") % preload("res://scripts/ui/readable_numbers.gd").compact(roundi(float(review.hp_loss)))
+	elif bool(review.metrics_complete):
+		_review_facts.text += "\nRiwayat damage masuk belum lengkap." if id else "\nIncoming damage history is incomplete."
+	_report_damage = review.damage
+	_report_skills = review.skills
+	_report_partial = bool(review.damage_partial)
+	_refresh_report_rows()
+	# The player can still revive: never freeze the live combat ledger here.
 
 func _install_run_report() -> void:
 	_report=VBoxContainer.new()
 	_report.name="RunReport"
 	_report.add_theme_constant_override("separation",10)
 	_body.add_child(_report)
+	if _mode == "defeat": _body.move_child(_report, _body.get_node("RunReview").get_index() + 1)
 	_record_summary=_report_label("",Color(.48,.87,.73),15);_record_summary.name="PersonalRecordSummary";_record_summary.hide();_report.add_child(_record_summary)
 	var tabs:=HBoxContainer.new()
 	_report.add_child(tabs)
@@ -216,12 +277,12 @@ func _refresh_report_rows() -> void:
 	else:
 		var total: float=0
 		for item: Dictionary in _report_damage:total+=float(item.damage)
-		_report_rows.add_child(_report_label(("TOTAL TERCATAT" if indonesian else "TOTAL RECORDED")+"  "+str(roundi(total)),Color(.94,.84,.60),17))
+		_report_rows.add_child(_report_label(("TOTAL TERCATAT" if indonesian else "TOTAL RECORDED")+"  "+preload("res://scripts/ui/readable_numbers.gd").compact(roundi(total)),Color(.94,.84,.60),17))
 		for item: Dictionary in _report_damage:
 			var row:=VBoxContainer.new();row.add_theme_constant_override("separation",4);_report_rows.add_child(row)
 			var heading:=HBoxContainer.new();row.add_child(heading)
 			heading.add_child(_report_label(str(item.name),Color(.84,.91,.86)))
-			var number:=_report_label(str(roundi(float(item.damage))),Color(.96,.86,.65));number.name="ReportDamageAmount";number.autowrap_mode=TextServer.AUTOWRAP_OFF;number.custom_minimum_size.x=56;number.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;number.size_flags_horizontal=Control.SIZE_SHRINK_END;heading.add_child(number)
+			var number:=_report_label(preload("res://scripts/ui/readable_numbers.gd").compact(roundi(float(item.damage))),Color(.96,.86,.65));number.name="ReportDamageAmount";number.autowrap_mode=TextServer.AUTOWRAP_OFF;number.custom_minimum_size.x=56;number.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;number.size_flags_horizontal=Control.SIZE_SHRINK_END;heading.add_child(number)
 			var bar:=ProgressBar.new();bar.custom_minimum_size.y=4;bar.show_percentage=false;bar.max_value=maxf(total,1);bar.value=float(item.damage);row.add_child(bar)
 			var fill:=StyleBoxFlat.new();fill.bg_color=Color(.30,.72,.59);fill.set_corner_radius_all(2);bar.add_theme_stylebox_override("fill",fill)
 			var bg:=StyleBoxFlat.new();bg.bg_color=Color(.1,.23,.24);bg.set_corner_radius_all(2);bar.add_theme_stylebox_override("background",bg)

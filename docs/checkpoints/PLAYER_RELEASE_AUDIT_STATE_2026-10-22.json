@@ -1,0 +1,62 @@
+{
+  "batch": "Player-led release audit",
+  "base_commit": "a2f0b9410f1af3b7478d5f76fe626d664ac88ad6",
+  "date_wib": "2026-10-22",
+  "phase": "author audit, implementation, focused runtime/native-input/render checks and portable validation complete; owner handoff",
+  "previous_delivery": "Combat Clarity checkpoint v2 restored and exact hashes verified; remote remains a2f0b94, installation/publication not assumed",
+  "scope": [
+    "real production-input session audit with bounded declared fixture profiles; no invulnerability or forced damage",
+    "fix runtime issues discovered in play and targeted save/end-of-run review",
+    "defeat review and practical next-action guidance using actual run evidence",
+    "targeted regressions, release readiness review and portable combined delivery"
+  ],
+  "target": "candidate for owner Play submission 23\u201324 October; publication/review dates not guaranteed",
+  "validation": {
+    "recovered_source_files": 28,
+    "native_changed": false,
+    "remote_deploy": false,
+    "device_tested": false,
+    "run_review_checks": 40,
+    "native_defeat_layout_checks": 113,
+    "reproduction_before": "6 checks / 2 failures; Continue restoration added a false hit",
+    "play_sessions": {
+      "fresh_offense": "victory 129.10 simulated seconds; clean rerun pending",
+      "fresh_defense": "victory 166.48 simulated seconds",
+      "mid_chain": "defeat 144.92 simulated seconds",
+      "late_glaive": "defeat 178.22 simulated seconds"
+    },
+    "play_scope": "actual authored combat with input pilot; accelerated simulation, not human play or Android FPS",
+    "portable_installer_checks": 34,
+    "affected_report_records_paid_save_checks": 417,
+    "fresh_offense_clean_rerun": "victory129.10 simulated seconds, Lv17,9 hits; no runtime errors",
+    "production_contract": "PASS; GATES=9; existing production",
+    "actual_defeat_render_checks": 113,
+    "final_entrypoint": "check_player_release.cjs PASS; final button-signal/teardown-only fixture delta verified separately 7+33",
+    "source_import": "Godot4.7.2 full isolated import PASS",
+    "known_fixture_warnings": "Paid recovery deliberately injects transition error4; multi-death/revive-to-Hero fixture reports4\u20135 zero-reference RefCounted objects at engine shutdown, no script exception. Sustained device leak not established."
+  },
+  "remaining": [
+    "Owner: apply/QA/publish combined package on Windows",
+    "Owner: export production AAB with next version code and upload through existing Play flow",
+    "Owner: brief Play-installed check of build identity, wounded Continue, defeat/Hero; publication/review external"
+  ],
+  "next_action": "D:\\Godot\\tools\\Jade-Player-Release\\apply_and_publish.cmd then existing backend\\player_identity\\export_production.cmd",
+  "published": false,
+  "owner_stages": {
+    "installed": false,
+    "committed": false,
+    "pushed": false,
+    "deployed": "not required",
+    "native_rebuild": "not required",
+    "aab_exported": false,
+    "play_uploaded": false,
+    "device_tested": false
+  },
+  "delivery": {
+    "package": "Jade-Player-Release.zip",
+    "combines_previous_combat_clarity": true,
+    "known_intermediate_hashes_supported": true,
+    "checkpoint_library_id": "libfile_b70c1af787608191871e73e2d340e352",
+    "commit_link": "printed by owner launcher after actual successful push"
+  }
+}

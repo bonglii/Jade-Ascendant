@@ -55,12 +55,19 @@ static func apply(hud: Node) -> void:
     label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
   if not boss.has_meta("ascendant_geometry_bound"):
    boss.set_meta("ascendant_geometry_bound",true)
-   var resize: Callable = func() -> void: boss_layout.call_deferred(boss,safe)
+   var boss_id: int = boss.get_instance_id()
+   var safe_id: int = safe.get_instance_id()
+   var resize: Callable = func() -> void: boss_layout_by_id.call_deferred(boss_id,safe_id)
    boss.minimum_size_changed.connect(resize)
    safe.resized.connect(resize)
    if top != null: top.resized.connect(resize)
   boss_layout(boss,safe)
-  boss_layout.call_deferred(boss,safe)
+  boss_layout_by_id.call_deferred(boss.get_instance_id(),safe.get_instance_id())
+static func boss_layout_by_id(boss_id: int,safe_id: int) -> void:
+ var boss: Control = instance_from_id(boss_id) as Control
+ var safe: Control = instance_from_id(safe_id) as Control
+ if boss == null or safe == null or boss.is_queued_for_deletion() or safe.is_queued_for_deletion():return
+ boss_layout(boss,safe)
 static func boss_layout(boss: Control, safe: Control) -> void:
  var top: Control = safe.get_node_or_null("TopHUD")
  var y: float = top.get_rect().end.y + 10 if top != null else 150

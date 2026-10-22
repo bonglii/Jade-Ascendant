@@ -73,7 +73,7 @@ func choose(path: String,id: String,expected: String) -> bool:
   next.run={"id":JourneyManager.m7d_run_id,"choices":_fresh().choices}
  next.choices[path]=id
  return _commit(next)
-func get_run_choices() -> Dictionary:
+func get_run_choices(read_only: bool = false) -> Dictionary:
  if not ready_state or not JourneyManager.has_active_run():return {}
  var id: String=JourneyManager.m7d_run_id
  if not _valid_nonce(id):return {}
@@ -83,6 +83,7 @@ func get_run_choices() -> Dictionary:
  for path: String in Catalog.PATHS:
   if not path_maxed(path):choices[path]=""
  candidate.run={"id":id,"choices":choices}
+ if read_only:return choices
  return choices if _commit(candidate) else {}
 func trial_ready() -> bool:
  if not ready_state or _writing or SaveManager.is_progress_read_only() or SaveManager.has_pending_transaction():return false

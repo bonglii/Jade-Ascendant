@@ -8,6 +8,8 @@ var frozen: bool=false
 var hp_hits: int=0
 var deaths: int=0
 var metrics_complete: bool=true
+var hp_loss: float=0.0
+var incoming_complete: bool=true
 var _previous_hp: float=0
 
 func _ready() -> void:_attach_health.call_deferred()
@@ -18,7 +20,9 @@ func _attach_health() -> void:
  if not health.health_changed.is_connected(_health_changed):health.health_changed.connect(_health_changed)
  if not health.died.is_connected(_died):health.died.connect(_died)
 func _health_changed(hp: float,_maximum: float) -> void:
- if not frozen and hp<_previous_hp:hp_hits=mini(1000000,hp_hits+1)
+ if not frozen and hp<_previous_hp:
+  hp_hits=mini(1000000,hp_hits+1)
+  hp_loss=minf(1.0e12,hp_loss+_previous_hp-hp)
  _previous_hp=hp
 func _died() -> void:
  if not frozen:deaths=mini(1000000,deaths+1)
@@ -53,13 +57,17 @@ func record(source: String,amount: float) -> void:
  totals[source]=float(totals.get(source,0.0))+amount
 
 func snapshot() -> Dictionary:
- return {"version":1,"totals":totals.duplicate(),"partial":partial,"metrics":{"hits":hp_hits,"deaths":deaths,"complete":metrics_complete}}
+ return {"version":1,"totals":totals.duplicate(),"partial":partial,"metrics":{"hits":hp_hits,"deaths":deaths,"complete":metrics_complete,"hp_loss":hp_loss,"incoming_complete":incoming_complete}}
 
 static func valid_snapshot(value: Variant) -> bool:
  if not value is Dictionary or value.get("version")!=1 or not value.get("totals") is Dictionary or not value.get("partial") is bool:return false
  if value.has("metrics"):
   var metrics: Variant=value.metrics
   if not metrics is Dictionary or not metrics.get("complete") is bool:return false
+  if metrics.has("hp_loss") or metrics.has("incoming_complete"):
+   if not metrics.get("incoming_complete") is bool:return false
+   var loss: Variant=metrics.get("hp_loss")
+   if typeof(loss) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(loss)) or loss<0.0 or loss>1.0e12:return false
   for key: String in ["hits","deaths"]:
    var number: Variant=metrics.get(key)
    if typeof(number) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(number)) or float(number)!=floorf(float(number)) or number<0 or number>1000000:return false
@@ -70,12 +78,15 @@ static func valid_snapshot(value: Variant) -> bool:
  return true
 
 func restore(value: Variant) -> void:
- totals.clear();frozen=false;hp_hits=0;deaths=0;metrics_complete=false
+ totals.clear();frozen=false;hp_hits=0;deaths=0;metrics_complete=false;hp_loss=0.0;incoming_complete=false
  partial=not valid_snapshot(value)
  if partial:return
  totals=value.totals.duplicate();partial=bool(value.partial)
  var metrics: Dictionary=value.get("metrics",{})
  hp_hits=int(metrics.get("hits",0));deaths=int(metrics.get("deaths",0));metrics_complete=bool(metrics.get("complete",false))
+ hp_loss=float(metrics.get("hp_loss",0.0));incoming_complete=bool(metrics.get("incoming_complete",false))
+ var health: Node=get_parent().get_parent().get_node_or_null("PlayerHealth")
+ if health!=null:_previous_hp=float(health.current_health)
 
 func skills() -> Array[Dictionary]:
  var manager: Node=get_parent()

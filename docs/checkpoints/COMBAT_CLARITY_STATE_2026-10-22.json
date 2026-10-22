@@ -1,0 +1,57 @@
+{
+  "batch": "Combat clarity and progression continuity",
+  "base_commit": "a2f0b9410f1af3b7478d5f76fe626d664ac88ad6",
+  "branch": "checkpoint/iap-fasttrack-20261010",
+  "phase": "author implementation and focused validation complete; portable owner installation/publication next",
+  "previous_batch": {
+    "commit": "a2f0b94",
+    "user_confirmed": "safe/completed"
+  },
+  "scope": [
+    "preserve elite cadence and remaining normal spawn timer across Continue without regranting kills",
+    "show actual weapon cast cooldown and tempo potency plus honest next-upgrade previews",
+    "share conditional damage calculation between runtime and stats; include high-health mastery",
+    "responsive compact combat stats using existing approved assets and shared touch policy",
+    "export authored stage duration/rewards and deterministic progression budget; no unsupported balance edits",
+    "fix boss/HUD deferred callbacks that outlive a quickly defeated boss; preserve normal phase routing"
+  ],
+  "validation": {
+    "combat_clarity_checks": 66,
+    "combat_clarity_separate_process_restart": 6,
+    "combat_stats_layout_checks": 69,
+    "elite_pacing_checks": 147,
+    "real_saves_touched": false,
+    "actual_Android_tested": false,
+    "realm_specific_cadence_checks": 21,
+    "combat_fairness_checks": 84,
+    "cultivation_mastery_checks": 67,
+    "cultivation_mastery_restart_checks": 2,
+    "paid_run_checks": 15,
+    "paid_run_restart_checks": 30,
+    "economy_checks": 767,
+    "economy_restart_checks": 4,
+    "authored_stages_exported": 26,
+    "daily_rotation_dates_exported": 28,
+    "portable_workflow_checks": 27,
+    "production_gates": 9,
+    "real_software_render_checks": 69,
+    "render_script_errors": 0,
+    "production_contract": "PASS; all nine gates retained",
+    "whitespace_check": "PASS",
+    "windows_executed": false,
+    "remote_actions_executed": false,
+    "real_purchase_executed": false,
+    "worker_deploy_required": false
+  },
+  "remaining": [
+    "owner Windows install/QA/scoped push",
+    "new release AAB export and internal-test installation",
+    "actual phone thermal/frame-time, player boss duration and daily completion evidence"
+  ],
+  "published": false,
+  "deployed": false,
+  "native_changed": false,
+  "aab_export_required": true,
+  "next_action": "D:\\Godot\\tools\\Jade-Combat-Clarity\\apply_and_publish.cmd",
+  "commit_link": "printed by owner publisher only after a successful push"
+}

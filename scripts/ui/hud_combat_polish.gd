@@ -719,15 +719,17 @@ func _on_boss_spawned(boss: Node) -> void:
 	_hide_boss_warning()
 	# The HUD applies the original boss banner inside this same spawn signal.
 	# Defer to extend the already-instantiated banner instead of replaying it.
-	call_deferred("_extend_boss_arrival_banner", boss)
+	if is_instance_valid(boss):
+		call_deferred("_extend_boss_arrival_banner", boss.get_instance_id())
 
 
-func _extend_boss_arrival_banner(boss: Node) -> void:
-	if boss == null or not is_instance_valid(boss):
+func _extend_boss_arrival_banner(instance_id: int) -> void:
+	var boss: Node = instance_from_id(instance_id) as Node
+	if boss == null or boss.is_queued_for_deletion():
 		return
 	if bool(boss.get("is_dead")):
 		return
-	if _hud == null:
+	if not is_instance_valid(_hud) or _hud.is_queued_for_deletion():
 		return
 
 	var banner: PanelContainer = _hud.get("_encounter_banner") as PanelContainer

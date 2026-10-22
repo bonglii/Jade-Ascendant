@@ -152,9 +152,10 @@ func run() -> void:
    check(target.get_node_or_null("EquipmentSetStatus")==null,"DOT still expires on original schedule")
    target.queue_free();await process_frame
  eq.equipped_item_ids=old_eq;eq.active_run_loadout_snapshot=old_snapshot
- var up: Node=load("res://scripts/ui/level_up.gd").new();up.weapon_manager=manager
+ var up: Node=load("res://scripts/ui/level_up.gd").new();up.weapon_manager=manager;up.player_stats=stats
  manager.weapons.clear();manager.weapons.append(chain)
- check(up.get_upgrade_effect("attack_speed").contains("STRONGER"),"refinement card discloses real tempo benefit")
+ stats.attack_cooldown=.3
+ check(up.get_upgrade_effect("attack_speed").contains("TEMPO") and up.get_upgrade_effect("attack_speed").contains("→"),"refinement card discloses actual next tempo multiplier")
  check(load("res://scripts/data/skill_catalog.gd").get_upgrade_description("attack_speed").contains("casting limit"),"Skill Book explains extra tempo")
  up.free();chain.queue_free();glaive.queue_free();actor.queue_free()
  print("COMBAT_FAIRNESS_QA checks=",checks," failures=",failures)

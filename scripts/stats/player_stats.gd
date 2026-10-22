@@ -73,29 +73,7 @@ func calculate_damage_result(
 		* equipment_damage_multiplier
 	)
 
-	var conditional_damage_bonus: float = 0.0
-	if _is_player_moving():
-		conditional_damage_bonus += EquipmentSetRuntime.get_capped_combined_secondary_bonus(
-			"moving_damage_bonus",
-			0.08
-		)
-	elif _is_player_stationary():
-		conditional_damage_bonus += EquipmentSetRuntime.get_bonus(
-			"stationary_damage_bonus"
-		)
-	if _is_low_health():
-		conditional_damage_bonus += EquipmentSetRuntime.get_capped_combined_secondary_bonus(
-			"low_health_damage_bonus",
-			0.10
-		)
-	elif _is_high_health():
-		conditional_damage_bonus += EquipmentSetRuntime.get_bonus(
-			"high_health_damage_bonus"
-		)
-	var mastery_health: Node=get_parent().get_node_or_null("PlayerHealth")
-	if mastery_health!=null and float(mastery_health.current_health)>=float(mastery_health.max_health)*.8:
-		conditional_damage_bonus+=CultivationMastery.bonus("high_health_damage")
-	final_damage *= 1.0 + conditional_damage_bonus
+	final_damage *= 1.0 + get_conditional_damage_bonus()
 
 	var is_critical: bool = roll_critical_hit()
 
@@ -117,6 +95,33 @@ func calculate_damage_result(
 		"damage": final_damage,
 		"is_critical": is_critical
 	}
+
+## Shared read-only conditional multiplier: snapshot UI never rolls a crit.
+func get_conditional_damage_bonus(read_only: bool = false) -> float:
+	var conditional_damage_bonus: float = 0.0
+	if _is_player_moving():
+		conditional_damage_bonus += EquipmentSetRuntime.get_capped_combined_secondary_bonus(
+			"moving_damage_bonus",
+			0.08
+		)
+	elif _is_player_stationary():
+		conditional_damage_bonus += EquipmentSetRuntime.get_bonus(
+			"stationary_damage_bonus"
+		)
+	if _is_low_health():
+		conditional_damage_bonus += EquipmentSetRuntime.get_capped_combined_secondary_bonus(
+			"low_health_damage_bonus",
+			0.10
+		)
+	elif _is_high_health():
+		conditional_damage_bonus += EquipmentSetRuntime.get_bonus(
+			"high_health_damage_bonus"
+		)
+	var mastery_health: Node=get_parent().get_node_or_null("PlayerHealth")
+	if mastery_health!=null and float(mastery_health.current_health)>=float(mastery_health.max_health)*.8:
+		conditional_damage_bonus+=CultivationMastery.bonus("high_health_damage", read_only)
+	return conditional_damage_bonus
+
 
 ## Menentukan apakah satu damage event menghasilkan Critical Hit.
 func roll_critical_hit() -> bool:

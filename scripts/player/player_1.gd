@@ -53,11 +53,11 @@ func _physics_process(delta: float) -> void:
 	update_facing(direction)
 	locomotion.advance(delta,facing_direction,global_position.distance_to(start))
 
-func get_effective_movement_speed() -> float:
+func get_effective_movement_speed(read_only: bool = false) -> float:
 	var set_bonus: float = EquipmentSetRuntime.get_bonus("movement_speed_bonus")
 	return (
 		speed
-		* (EquipmentManager.get_movement_speed_multiplier() + set_bonus + CultivationMastery.bonus("movement"))
+		* (EquipmentManager.get_movement_speed_multiplier() + set_bonus + CultivationMastery.bonus("movement", read_only))
 	)
 
 func update_facing(direction: Vector2) -> void:

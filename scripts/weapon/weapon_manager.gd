@@ -374,14 +374,14 @@ func _cast_armament_id(weapon: Weapon) -> String:
 	return str(weapon.get("armament_id"))
 
 
-func get_requested_weapon_cooldown(weapon: Weapon) -> float:
+func get_requested_weapon_cooldown(weapon: Weapon, factor_override: float = -1.0) -> float:
 	if weapon == null:
 		return 1.0
 
 	var base_cooldown: float = weapon.cooldown
 
 	var attack_cooldown: float = (
-		player_stats.attack_cooldown
+		factor_override if factor_override >= 0.0 else player_stats.attack_cooldown
 	)
 	if attack_cooldown <= 0.0:
 		return base_cooldown
@@ -401,3 +401,14 @@ func get_requested_weapon_cooldown(weapon: Weapon) -> float:
 	)
 
 	return maxf(final_cooldown, 0.1)
+
+## Read-only preview using the same request, cast floor and potency cap as
+## runtime. Does not tick timers, mutate stats, randomize or launch attacks.
+func get_cadence_snapshot(weapon: Weapon, factor_override: float = -1.0) -> Dictionary:
+	if weapon == null or not is_instance_valid(weapon):
+		return {}
+	var requested: float = get_requested_weapon_cooldown(weapon, factor_override)
+	var floor_value: float = float(CAST_COOLDOWN_FLOORS.get(_cast_armament_id(weapon), 0.1))
+	var seconds: float = maxf(requested, floor_value)
+	var potency: float = clampf(seconds / requested, 1.0, MAX_CAST_TEMPO_DAMAGE_MULTIPLIER) if CAST_COOLDOWN_FLOORS.has(_cast_armament_id(weapon)) else 1.0
+	return {"seconds": seconds, "potency": potency, "floor": floor_value, "tempo": CAST_COOLDOWN_FLOORS.has(_cast_armament_id(weapon))}

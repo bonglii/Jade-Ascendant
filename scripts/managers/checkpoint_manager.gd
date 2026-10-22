@@ -155,6 +155,7 @@ func save_checkpoint() -> bool:
 	var magnet_spawner: Node = get_parent().get_node_or_null("EnemySpawner")
 	if magnet_spawner != null:
 		save_data["qi_magnet_state"] = magnet_spawner.get_qi_magnet_state()
+		save_data["encounter_cadence"] = magnet_spawner.get_encounter_cadence_state()
 
 	save_data["difficulty_level"] = (
 		difficulty_manager.difficulty_level
@@ -785,7 +786,6 @@ func load_checkpoint() -> bool:
 
 	if save_data.has("wave_timer"):
 		wave_manager.wave_timer = save_data["wave_timer"]
-	weapon_manager.get_node("RunCombatLedger").restore(save_data.get("run_combat_report", {}))
 	var magnet_spawner: Node = get_parent().get_node_or_null("EnemySpawner")
 	if magnet_spawner != null:
 		magnet_spawner.restore_qi_magnet_state(save_data.get("qi_magnet_state", {}))
@@ -794,6 +794,9 @@ func load_checkpoint() -> bool:
 		difficulty_manager.difficulty_level = save_data[
 			"difficulty_level"
 		]
+		difficulty_manager.last_difficulty_level = difficulty_manager.difficulty_level
+	if magnet_spawner != null:
+		magnet_spawner.restore_encounter_cadence_state(save_data.get("encounter_cadence", {}))
 
 	if save_data.has("player_level"):
 		player.level = save_data["player_level"]
@@ -887,6 +890,9 @@ func load_checkpoint() -> bool:
 		player_health.current_health,
 		player_health.max_health
 	)
+	# Restoring wounded HP is not a new hit. Restore metrics only after the
+	# health baseline and its HUD notification have been applied.
+	weapon_manager.get_node("RunCombatLedger").restore(save_data.get("run_combat_report", {}))
 
 	if save_data.has("power_level"):
 		player_stats.power_level = save_data["power_level"]

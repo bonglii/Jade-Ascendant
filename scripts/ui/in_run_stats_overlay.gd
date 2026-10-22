@@ -12,6 +12,16 @@ var _health: PlayerHealth = null
 var _rows: Dictionary = {}
 var _owns_pause: bool = false
 var _frame_style: StyleBox = null
+var _panel: PanelContainer
+var _previous_back: Callable
+var _caption_rows: Dictionary = {}
+var _sections: Array[Label] = []
+
+func _id() -> bool:
+	return str(get_node("/root/SettingsManager").get("language")) == "id"
+
+func _text(english: String, indonesian: String) -> String:
+	return indonesian if _id() else english
 
 
 func setup(player_node: Node, health_node: PlayerHealth, frame_style: StyleBox) -> void:
@@ -30,6 +40,9 @@ func _ready() -> void:
 	visible = false
 	_build_panel()
 	_apply_frame_style()
+	resized.connect(_fit)
+	_fit.call_deferred()
+	preload("res://scripts/ui/mobile_scroll_policy.gd").prepare_tree(self)
 
 
 func open_snapshot() -> void:
@@ -40,25 +53,44 @@ func open_snapshot() -> void:
 	var stats: Node = _player.get_node_or_null("PlayerStats")
 	if stats == null:
 		return
+	_refresh_language()
 	_refresh_snapshot(stats)
 	_owns_pause = true
 	visible = true
 	get_tree().paused = true
+	var transition: Node = get_node("/root/SceneTransitionManager")
+	_previous_back = transition.back_handler
+	transition.set_back_handler(close_snapshot)
+	_fit.call_deferred()
 
 
 func close_snapshot() -> void:
 	if not visible:
 		return
 	visible = false
+	_restore_back()
 	if _owns_pause:
 		_owns_pause = false
 		get_tree().paused = false
 
 
 func _exit_tree() -> void:
+	_restore_back()
 	if _owns_pause:
 		_owns_pause = false
 		get_tree().paused = false
+
+func _restore_back() -> void:
+	var transition: Node = get_node_or_null("/root/SceneTransitionManager")
+	if transition != null and transition.back_handler == Callable(self, "close_snapshot"):
+		transition.set_back_handler(_previous_back)
+
+func _fit() -> void:
+	if not is_instance_valid(_panel) or size.x <= 1.0 or size.y <= 1.0:
+		return
+	var desired: Vector2 = Vector2(minf(540.0, size.x - 32.0), minf(805.0, size.y - 40.0))
+	_panel.custom_minimum_size = desired
+	_panel.size = desired
 
 
 func _build_panel() -> void:
@@ -84,13 +116,13 @@ func _build_panel() -> void:
 
 	var panel := PanelContainer.new()
 	panel.name = "Panel"
-	panel.custom_minimum_size = Vector2(540.0, 805.0)
+	_panel = panel
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	centered.add_child(panel)
 
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 26)
-	margin.add_theme_constant_override("margin_right", 26)
+	margin.add_theme_constant_override("margin_left", 20)
+	margin.add_theme_constant_override("margin_right", 20)
 	margin.add_theme_constant_override("margin_top", 22)
 	margin.add_theme_constant_override("margin_bottom", 22)
 	panel.add_child(margin)
@@ -104,27 +136,35 @@ func _build_panel() -> void:
 	content.add_child(header)
 
 	var title := Label.new()
-	title.text = "IN-RUN STATS"
+	title.name = "CombatStatsTitle"
+	title.text = _text("COMBAT STATS", "STAT COMBAT")
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 26)
+	title.add_theme_font_size_override("font_size", 21)
 	title.add_theme_color_override("font_color", GOLD)
 	header.add_child(title)
 
 	var close_button := Button.new()
-	close_button.text = "CLOSE"
-	close_button.custom_minimum_size = Vector2(94, 44)
+	close_button.name = "CloseCombatStats"
+	close_button.text = _text("CLOSE", "TUTUP")
+	preload("res://scripts/ui/result_ceremony.gd").style_button(close_button, "navy")
+	close_button.add_theme_font_size_override("font_size", 13)
+	close_button.custom_minimum_size = Vector2(72, 46)
 	close_button.focus_mode = Control.FOCUS_NONE
 	close_button.pressed.connect(close_snapshot)
 	header.add_child(close_button)
 
 	var description := Label.new()
-	description.text = "Current combat snapshot. The run is paused while this is open."
+	description.name = "CombatStatsDescription"
+	description.text = _text("Your active build. Combat is paused.", "Build aktifmu. Combat dijeda.")
 	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	description.add_theme_font_size_override("font_size", 14)
 	description.add_theme_color_override("font_color", IVORY)
 	content.add_child(description)
 
 	var scroll := ScrollContainer.new()
+	scroll.name = "CombatStatsScroll"
+	scroll.custom_minimum_size.y = 80
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
@@ -135,73 +175,111 @@ func _build_panel() -> void:
 	body.add_theme_constant_override("separation", 9)
 	scroll.add_child(body)
 
-	_add_section(body, "SURVIVAL")
+	_add_section(body, "SURVIVAL", "PERTAHANAN")
 	_add_row(body, "hp", "CURRENT HP")
 	_add_row(body, "shield", "QI SHIELD CHARGES")
 	_add_row(body, "body_refinement", "BODY REFINEMENT")
-	_add_section(body, "COMBAT - LIVE SNAPSHOT")
+	_add_section(body, "DAMAGE & GROWTH", "DAMAGE & PERTUMBUHAN")
 	_add_row(body, "power", "POWER MULTIPLIER")
 	_add_row(body, "damage", "PRE-HIT DAMAGE MULTIPLIER")
 	_add_row(body, "conditional", "ACTIVE HIT BONUS")
 	_add_row(body, "crit_rate", "CRITICAL CHANCE")
 	_add_row(body, "crit_damage", "CRITICAL DAMAGE")
 	_add_row(body, "sword_intent", "SWORD INTENT")
-	_add_row(body, "attack_speed", "ATTACK SPEED BONUS")
-	_add_section(body, "ACTIVE WEAPONS")
+	_add_row(body, "attack_speed", "CAST SPEED BEFORE LIMITS")
+	_add_section(body, "ACTIVE WEAPONS", "SENJATA AKTIF")
 	_add_row(body, "weapon_spirit_sword", "SPIRIT SWORD")
 	_add_row(body, "weapon_fire_orb", "FIRE ORB")
 	_add_row(body, "weapon_thunder_talisman", "THUNDER TALISMAN")
 	_add_row(body, "weapon_yin_yang_blades", "YIN-YANG BLADES")
 	_add_row(body, "weapon_heavenly_sword_rain", "HEAVENLY SWORD RAIN")
 	_add_row(body, "weapon_eight_trigrams_formation", "EIGHT TRIGRAMS")
-	_add_section(body, "RESONANCE UNLOCKS")
+	_add_section(body, "RESONANCE UNLOCKS", "RESONANSI")
 	_add_row(body, "resonance_sword", "SWORD DAO")
 	_add_row(body, "resonance_reversal", "YIN-YANG REVERSAL")
 	_add_row(body, "resonance_tribulation", "HEAVENLY TRIBULATION")
-	_add_section(body, "MOBILITY AND GROWTH")
+	_add_section(body, "MOBILITY AND GROWTH", "GERAK & EXP")
 	_add_row(body, "movement", "MAX MOVEMENT SPEED")
 	_add_row(body, "exp", "EXP MULTIPLIER")
 
 	var footnote := Label.new()
-	footnote.text = "Damage excludes each weapon's base damage and critical roll. Attack speed excludes weapon-specific cooldown and its 0.1s floor."
+	footnote.name = "CombatStatsFootnote"
+	footnote.text = _text("CAST: cast interval. TEMPO: cast potency.\nOrbit/formation use separate hit timers.", "CAST: jeda cast. TEMPO: kekuatan cast.\nOrbit/formasi punya jeda hit sendiri.")
 	footnote.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	footnote.add_theme_font_size_override("font_size", 13)
+	footnote.add_theme_font_size_override("font_size", 12)
 	footnote.add_theme_color_override("font_color", IVORY)
 	content.add_child(footnote)
 
 
+func _refresh_language() -> void:
+	var title: Label = find_child("CombatStatsTitle", true, false) as Label
+	var close: Button = find_child("CloseCombatStats", true, false) as Button
+	var description: Label = find_child("CombatStatsDescription", true, false) as Label
+	var note: Label = find_child("CombatStatsFootnote", true, false) as Label
+	title.text = _text("COMBAT STATS", "STAT COMBAT")
+	close.text = _text("CLOSE", "TUTUP")
+	description.text = _text("Your active build. Combat is paused.", "Build aktifmu. Combat dijeda.")
+	note.text = _text("CAST: cast interval. TEMPO: cast potency.\nOrbit/formation use separate hit timers.", "CAST: jeda cast. TEMPO: kekuatan cast.\nOrbit/formasi punya jeda hit sendiri.")
+	for section: Label in _sections:
+		var captions: Array = section.get_meta("combat_captions")
+		section.text = _text(str(captions[0]), str(captions[1]))
+	var captions: Dictionary = {
+		"hp": ["CURRENT HP", "HP SAAT INI"], "shield": ["QI SHIELD CHARGES", "MUATAN QI SHIELD"],
+		"body_refinement": ["BODY REFINEMENT", "BODY REFINEMENT"], "power": ["POWER MULTIPLIER", "PENGALI POWER"],
+		"damage": ["BASE DAMAGE MULTIPLIER", "PENGALI DAMAGE DASAR"], "conditional": ["ACTIVE HIT BONUS", "BONUS HIT AKTIF"],
+		"crit_rate": ["CRITICAL CHANCE", "PELUANG CRITICAL"], "crit_damage": ["CRITICAL DAMAGE", "DAMAGE CRITICAL"],
+		"sword_intent": ["SWORD INTENT", "SWORD INTENT"], "attack_speed": ["CAST SPEED BEFORE LIMITS", "SPEED SEBELUM BATAS CAST"],
+		"movement": ["MAX MOVEMENT SPEED", "KECEPATAN GERAK"], "exp": ["EXP MULTIPLIER", "PENGALI EXP"]
+	}
+	for key: String in captions:
+		var label: Label = _caption_rows.get(key) as Label
+		if label != null:
+			label.text = _text(str(captions[key][0]), str(captions[key][1]))
+
+
+
 func _apply_frame_style() -> void:
 	var panel: PanelContainer = get_node_or_null("SafeMargin/Center/Panel") as PanelContainer
-	if panel != null and _frame_style != null:
-		panel.add_theme_stylebox_override("panel", _frame_style.duplicate(true))
+	if panel != null:
+		var frame := StyleBoxTexture.new()
+		frame.texture = preload("res://assets/ui/trials/ascendant_v2/record_frame.svg")
+		for edge: String in ["left", "right", "top", "bottom"]:
+			frame.set("texture_margin_" + edge, 18)
+			frame.set("content_margin_" + edge, 0)
+		panel.add_theme_stylebox_override("panel", frame)
 
 
-func _add_section(parent: VBoxContainer, caption: String) -> void:
+func _add_section(parent: VBoxContainer, caption: String, translation: String) -> void:
 	var section := Label.new()
-	section.text = caption
+	section.text = _text(caption, translation)
+	section.set_meta("combat_captions", [caption, translation])
+	_sections.append(section)
 	section.add_theme_font_size_override("font_size", 16)
 	section.add_theme_color_override("font_color", GOLD)
 	parent.add_child(section)
 
 
 func _add_row(parent: VBoxContainer, key: String, caption: String) -> void:
-	var row := HBoxContainer.new()
+	var row := VBoxContainer.new()
 	row.custom_minimum_size.y = 38.0
-	row.add_theme_constant_override("separation", 10)
+	row.add_theme_constant_override("separation", 3)
 	parent.add_child(row)
 	var name_label := Label.new()
 	name_label.text = caption
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	name_label.add_theme_font_size_override("font_size", 14)
+	name_label.add_theme_font_size_override("font_size", 12)
 	name_label.add_theme_color_override("font_color", IVORY)
 	row.add_child(name_label)
 	var value := Label.new()
 	value.text = "--"
-	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	value.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	value.add_theme_font_size_override("font_size", 17)
 	value.add_theme_color_override("font_color", JADE)
 	row.add_child(value)
 	_rows[key] = value
+	_caption_rows[key] = name_label
 
 
 func _set_value(key: String, value: String) -> void:
@@ -225,21 +303,7 @@ func _refresh_snapshot(stats: Node) -> void:
 	_set_value("power", "%.3fx" % power)
 	_set_value("damage", "%.3fx" % (power * equipment_damage))
 
-	var hit_bonus: float = 0.0
-	var actor: CharacterBody2D = _player as CharacterBody2D
-	if actor != null and actor.velocity.length_squared() > 1.0:
-		hit_bonus += EquipmentSetRuntime.get_capped_combined_secondary_bonus(
-			"moving_damage_bonus", 0.08
-		)
-	else:
-		hit_bonus += EquipmentSetRuntime.get_bonus("stationary_damage_bonus")
-	var hp_ratio: float = current_hp / max_hp
-	if hp_ratio <= 0.50:
-		hit_bonus += EquipmentSetRuntime.get_capped_combined_secondary_bonus(
-			"low_health_damage_bonus", 0.10
-		)
-	elif hp_ratio >= 0.80:
-		hit_bonus += EquipmentSetRuntime.get_bonus("high_health_damage_bonus")
+	var hit_bonus: float = float(stats.call("get_conditional_damage_bonus", true))
 	_set_value("conditional", "+%.1f%%" % (hit_bonus * 100.0))
 
 	_set_value("crit_rate", "%.1f%%" % (
@@ -263,7 +327,7 @@ func _refresh_snapshot(stats: Node) -> void:
 	))
 	if _player.has_method("get_effective_movement_speed"):
 		_set_value("movement", "%.0f px/s" % float(
-			_player.call("get_effective_movement_speed")
+			_player.call("get_effective_movement_speed", true)
 		))
 	if _player.has_method("get_experience_multiplier"):
 		_set_value("exp", "%.3fx" % float(
@@ -299,6 +363,11 @@ func _refresh_live_loadout(stats: Node) -> void:
 				var caption: Label = row.get_child(0) as Label
 				if caption != null: caption.text = weapon.get_combat_display_name().to_upper()
 			_set_value(key, "LV %d" % int(weapon.get("level")))
+			var cadence: Dictionary = manager.get_cadence_snapshot(weapon)
+			var cadence_text: String = "LV %d  ·  CAST %.2fs" % [int(weapon.get("level")), float(cadence.seconds)]
+			if bool(cadence.tempo):
+				cadence_text += "  ·  TEMPO %.2f×" % float(cadence.potency)
+			_set_value(key, cadence_text)
 
 	var sword_unlocked: bool = (
 		stats.has_method("has_sword_dao_resonance")

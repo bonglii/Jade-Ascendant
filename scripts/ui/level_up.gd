@@ -454,6 +454,8 @@ func get_upgrade_display_name(upgrade_id: String) -> String:
 
 
 func get_upgrade_description(upgrade_id: String) -> String:
+	if upgrade_id == "attack_speed":
+		return "Cast lebih cepat. Setelah batas cast, speed memperkuat hit weapon utama yang mendukung TEMPO." if SettingsManager.language == "id" else "Cast faster. At its cast limit, speed strengthens a main weapon that supports TEMPO."
 	if not _arsenal_id().is_empty():
 		if upgrade_id == "spirit_sword": return preload("res://scripts/data/ascendant_arsenal_catalog.gd").summary(_arsenal_id())
 		if upgrade_id == "sword_dao_resonance": return preload("res://scripts/data/ascendant_arsenal_catalog.gd").resonance(_arsenal_id())
@@ -472,9 +474,9 @@ func get_upgrade_effect(upgrade_id: String) -> String:
 
 	match upgrade_id:
 		"power":
-			return "+10% DAMAGE"
+			return "POWER  %.2f× → %.2f×" % [player_stats.power_multiplier, player_stats.power_multiplier + player_stats.POWER_PER_LEVEL]
 		"attack_speed":
-			return "FASTER CAST • STRONGER HIT" if _uses_jade_binding() or _uses_returning_glaive() or not _arsenal_id().is_empty() else "ATTACK COOLDOWN  ×0.90"
+			return _attack_speed_preview()
 		"movement_speed":
 			return "+10% MOVEMENT SPEED"
 		"body_refinement":
@@ -482,7 +484,9 @@ func get_upgrade_effect(upgrade_id: String) -> String:
 		"qi_shield":
 			return "QI SHIELD  +1 CHARGE"
 		"spiritual_insight":
-			return "+15% EXP GAIN"
+			var current: float = player.get_experience_multiplier()
+			var old_insight: float = 1.0 + player.spiritual_insight_level * player.SPIRITUAL_INSIGHT_BONUS
+			return "EXP  %.2f× → %.2f×" % [current, current * (old_insight + player.SPIRITUAL_INSIGHT_BONUS) / old_insight]
 		"iron_body":
 			return "DAMAGE TAKEN  -5%"
 		"blood_qi":
@@ -497,6 +501,19 @@ func get_upgrade_effect(upgrade_id: String) -> String:
 		"heavenly_tribulation":
 			return "HEAVENLY LIGHTNING"
 	return "RUN UPGRADE"
+
+func _attack_speed_preview() -> String:
+	var starter: Weapon = weapon_manager.get_weapon_by_name("Spirit Sword") as Weapon
+	if starter == null:
+		return "ATTACK COOLDOWN  ×0.90"
+	var before: Dictionary = weapon_manager.get_cadence_snapshot(starter)
+	var next_factor: float = maxf(player_stats.attack_cooldown * 0.9, player_stats.minimum_attack_cooldown)
+	var after: Dictionary = weapon_manager.get_cadence_snapshot(starter, next_factor)
+	if not is_equal_approx(before.seconds, after.seconds):
+		return "CAST  %.2fs → %.2fs" % [before.seconds, after.seconds]
+	if after.potency > before.potency + 0.0001:
+		return "TEMPO  %.2f× → %.2f×" % [before.potency, after.potency]
+	return "OTHER ARTS • COOLDOWN ×0.90"
 
 
 func _get_weapon_upgrade_effect(upgrade_id: String) -> String:

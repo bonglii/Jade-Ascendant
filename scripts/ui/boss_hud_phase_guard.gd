@@ -31,11 +31,13 @@ func _ready() -> void:
 func _on_boss_spawned(boss: Node) -> void:
 	# HUD receives this signal and installs its normal boss bindings.
 	# Defer the phase-route swap until its signal dispatch has completed.
-	call_deferred("_install_phase_route", boss)
+	if is_instance_valid(boss):
+		call_deferred("_install_phase_route", boss.get_instance_id())
 
 
-func _install_phase_route(boss: Node) -> void:
-	if boss == null or not is_instance_valid(boss):
+func _install_phase_route(instance_id: int) -> void:
+	var boss: Node = instance_from_id(instance_id) as Node
+	if boss == null or boss.is_queued_for_deletion():
 		return
 	if not boss.has_signal("phase_changed"):
 		return
@@ -58,7 +60,7 @@ func _install_phase_route(boss: Node) -> void:
 	var guarded_callable: Callable = Callable(
 		self,
 		"_on_guarded_boss_phase_changed"
-	).bind(hud)
+	).bind(hud.get_instance_id())
 	if not boss.is_connected("phase_changed", guarded_callable):
 		boss.connect("phase_changed", guarded_callable)
 
@@ -70,9 +72,10 @@ func _install_phase_route(boss: Node) -> void:
 
 func _on_guarded_boss_phase_changed(
 	current_phase: int,
-	hud: Node
+	hud_instance_id: int
 ) -> void:
-	if hud == null or not is_instance_valid(hud):
+	var hud: Node = instance_from_id(hud_instance_id) as Node
+	if hud == null or hud.is_queued_for_deletion():
 		return
 
 	# Keep the compact boss HUD current and retain the phase pulse.
