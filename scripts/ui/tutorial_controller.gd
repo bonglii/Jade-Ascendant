@@ -501,6 +501,7 @@ func _save_tutorial_completed() -> void:
 	config.set_value("tutorial", "completed", true)
 
 	var save_error: Error = config.save(SAVE_PATH)
+	if save_error==OK and not _manual_preview: PlayerCompanion._metric("tutorial_complete",0,0,0,"tutorial_v1")
 	if save_error != OK:
 		push_warning(
 			"Tutorial: gagal menyimpan completion state ke %s"

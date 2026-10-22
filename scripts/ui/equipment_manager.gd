@@ -55,6 +55,12 @@ const EQUIPMENT_CATALOG: Dictionary = EquipmentCatalog.ITEMS
 const PaidEquipmentRuntimeRC6 = preload("res://scripts/monetization/paid_equipment_runtime_rc6.gd")
 const PAID_EQUIPMENT_RUNTIME_APPROVED: bool = false
 
+var practice_items: Dictionary = {}
+var practice_levels: Dictionary = {}
+
+func is_practice() -> bool:
+	return get_tree()!=null and get_tree().current_scene!=null and bool(get_tree().current_scene.get_meta("companion_practice",false))
+
 var equipped_item_ids: Dictionary = {
 	SLOT_ARMAMENT: "",
 	SLOT_ROBE: "",
@@ -162,6 +168,7 @@ func _paid_v2() -> Node:
 	var pavilion: Node = get_tree().root.get_node_or_null("PavilionManager") if is_inside_tree() else null
 	return pavilion.get("paid_gameplay") if pavilion != null else null
 func _paid_selected_v2(slot: String, runtime: bool = false) -> String:
+	if is_practice() and runtime: return "" # Training never freezes a paid run.
 	var paid: Node = _paid_v2()
 	return str(paid.call("selected_slot", slot, runtime)) if paid != null else ""
 func _paid_star_v2(item_id: String, runtime: bool = false) -> int:
@@ -200,6 +207,7 @@ func get_loadout_equipped_item_id(slot_id: String) -> String:
 	return str(equipped_item_ids.get(slot_id, ""))
 
 func get_runtime_equipped_item_id(slot_id: String) -> String:
+	if is_practice(): return str(practice_items.get(slot_id,{}).get("id",""))
 	var paid: String = _paid_selected_v2(slot_id, true)
 	if not paid.is_empty(): return paid
 	if not is_valid_slot(slot_id):
@@ -232,6 +240,7 @@ func get_loadout_equipped_item_data(slot_id: String) -> Dictionary:
 	)
 
 func get_runtime_equipped_item_data(slot_id: String) -> Dictionary:
+	if is_practice(): return practice_items.get(slot_id,{}).get("data",{}).duplicate(true)
 	var item_id: String = get_runtime_equipped_item_id(slot_id)
 	if item_id.is_empty():
 		return {}
@@ -257,6 +266,10 @@ func get_loadout_item_star(item_id: String) -> int:
 	)
 
 func get_runtime_item_star(item_id: String) -> int:
+	if is_practice():
+		for row: Dictionary in practice_items.values():
+			if row.id==item_id: return int(row.data.get("ascension_star",1))
+		return 0
 	if has_item_definition(item_id) and _paid_selected_v2(str(get_item_data(item_id).get("slot", "")), true) == item_id:
 		return _paid_star_v2(item_id, true)
 	if not has_item_definition(item_id):
@@ -347,6 +360,7 @@ func get_weapon_level_cap(item_id: String, star_override: int=0) -> int:
 	return 10 * (get_item_star(item_id) if star_override==0 else clampi(star_override,1,5))
 
 func get_item_weapon_level(item_id: String) -> int:
+	if is_practice(): return int(practice_levels.get(item_id,1))
 	if get_weapon_level_cap(item_id)==0: return 0
 	var paid: Node=_paid_v2()
 	if _has_gameplay_player() and paid!=null:
@@ -878,3 +892,35 @@ func _should_use_active_run_loadout() -> bool:
 		not active_run_loadout_snapshot.is_empty()
 		and _has_gameplay_player()
 	)
+
+
+## Local slots commit together; server slots are validated and never rewritten here.
+func apply_local_preset(slots: Dictionary) -> bool:
+	if not can_modify_equipment() or slots.size()!=5: return false
+	var next: Dictionary={}
+	for slot: String in get_slot_ids():
+		if not slots.get(slot) is String: return false
+		var id: String=slots[slot]
+		var server: String=_paid_selected_v2(slot)
+		if not server.is_empty():
+			if id!=server: return false
+			next[slot]=str(equipped_item_ids.get(slot,""));continue
+		if not id.is_empty() and (not InventoryManager.owns_item(id) or str(get_item_data(id).get("slot",""))!=slot or bool(get_item_data(id).get("retired",false))): return false
+		next[slot]=id
+	var data: Dictionary=build_equipment_save_data();data.equipped_item_ids=next
+	_upgrade_inflight=true
+	var ok: bool=SaveManager.write_save_batch({"equipment":data})
+	if ok:
+		equipped_item_ids=next
+		for slot: String in get_slot_ids(): equipment_changed.emit(slot,get_loadout_equipped_item_id(slot))
+	_upgrade_inflight=false
+	return ok
+
+
+func capture_practice_loadout() -> void:
+	practice_items.clear();practice_levels.clear()
+	for slot: String in get_slot_ids():
+		var id: String=get_loadout_equipped_item_id(slot)
+		var data: Dictionary=get_loadout_equipped_item_data(slot)
+		practice_items[slot]={"id":id,"data":data}
+		if slot==SLOT_ARMAMENT: practice_levels[id]=int(data.get("weapon_level",1))

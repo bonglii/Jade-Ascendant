@@ -1,0 +1,72 @@
+{
+  "batch": "Player feature completion — all nine audited areas",
+  "base_commit": "ece467fb141ba1c6175cfbb136a8ce4dce9765bf",
+  "phase": "Nine-feature source + retention, agenda-cache, practice-target and atomic-install fixes; isolated Node/SQLite 13/13 PASS; Godot CI NOT RUN; no GitHub write permission.",
+  "approved_scope": [
+    "equipment comparison",
+    "persistent summon display history",
+    "three named build presets",
+    "pinned collection goal",
+    "boss codex",
+    "recent victory/defeat reports",
+    "published event agenda",
+    "reward-free production-weapon training",
+    "aggregate gameplay funnel dashboard"
+  ],
+  "completed": [
+    "nine source paths recovered from Work checkpoint (unpublished)",
+    "existing Godot 4.7.2 import PASS as reported by Work checkpoint; NOT rerun in this session",
+    "production gate contract nine gates unchanged per Work checkpoint; NOT rerun in this session",
+    "win-record capture adjusted to confirmed Journey stage_completed instead of boss_defeated signal",
+    "PlayerCompanion scene_changed callback now explicitly accepts/ignores the SceneTree scene parameter",
+    "Opt-in analytics local queue widened to 100, preserving latest events on overflow; server transport remains 20-event batches",
+    "Node22 isolated backend contract/SQLite suite 9/9 PASS (schema, authenticated POST/DELETE, isolation, replay, cap, retention, agenda)",
+    "Focused Godot 4.7.2 player_features_smoke.gd prepared for isolated user://, including practice no-grant proof (NOT EXECUTED)",
+    "Publisher review checklist and bilingual privacy disclosure draft prepared; published pages NOT MODIFIED",
+    "Profile HTTPS receipt recovery now reports failed local save separately, never falsely calling it persisted",
+    "Published event agenda skips malformed time ranges and nonpublic malformed admin labels; derived scheduled/live status follows clock",
+    "Focused SQLite/Node regression suite extended to 10/10 PASS",
+    "Exact-SHA pinned Godot 4.7.2 and backend QA workflow included in source tree (not executed; not published)",
+    "Profile telemetry 30-day retention now has independently scheduled hourly purge, skips pre-migration DB safely and never blocks scheduled mail (not deployed)",
+    "Event agenda cache ends on nearest event transition, verified by regression",
+    "Practice dummy leaves normal enemy targeting group after local death, with Godot regression assertion prepared",
+    "Expanded exact-SHA GitHub workflow to run real-source Node SQLite tests (not pushed)",
+    "Safe local installer stages files and rolls back a partial copy failure with preserved originals"
+  ],
+  "in_progress": "Exact-SHA Godot/Android runtime tests still blocked by unavailable engine/full checkout here; GitHub write integration 403; local changes packaged only.",
+  "next_action": "Apply to clean exact SHA on Windows; execute source-only Godot 4.7.2 + Node 13 regressions; push existing checkpoint branch with legitimate Git credentials; inspect workflow runs; then signed Android QA. Never auto-deploy analytics without privacy review and Profile staging migration.",
+  "remaining": [
+    "Windows exact-base local apply and complete Godot 4.7.2 full import/parser/feature runtime; user:// must be disposable",
+    "Training real player & weapon practice zero reward/save and native 320/390 phone touch QA; smoke test prepared but not executed",
+    "Real Firebase token/account switch and Profile D1 migration staging; no remote D1 change",
+    "Privacy policy generator+copies & Play Data safety publisher review before any telemetry rollout",
+    "Existing unrelated GitHub CI failures on commit ece467f to be fixed separately before Play release",
+    "Owner commit/push, release AAB export with updated version code, actual device and store checks"
+  ],
+  "status": {
+    "installed": false,
+    "committed": false,
+    "pushed": false,
+    "deployed": false,
+    "aab_exported": false,
+    "device_tested": false,
+    "godot_runtime_tested": false,
+    "github_branch_created": false,
+    "github_push_denied": "403 Resource not accessible by integration; no branch written"
+  },
+  "continuation": {
+    "base_commit": "ece467fb141ba1c6175cfbb136a8ce4dce9765bf",
+    "source": "Jade-Player-Features-Checkpoint.zip from ChatGPT Work",
+    "qa": {
+      "portable_node_and_sqlite": "13/13 PASS on Node22 isolated in-memory SQLite (real companion.mjs + schema, fixture auth dependency)",
+      "sql_create": "PASS via real Node SQLite in-memory",
+      "javascript_syntax": "PASS from existing checkpoint plus modified source backend unchanged",
+      "godot_in_this_session": "NOT_AVAILABLE, smoke script prepared only",
+      "android": "NOT_TESTED",
+      "profile_d1": "NOT_DEPLOYED",
+      "privacy": "DRAFTED_NOT_PUBLISHED",
+      "scheduled_telemetry_retention": "13/13 regression includes independent hourly purge; no production DB changed"
+    },
+    "integration_note": "No changes to main, remote Profile, IAP gates, production economy, or player saves in this session; local source-only package."
+  }
+}

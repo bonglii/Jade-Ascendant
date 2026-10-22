@@ -437,6 +437,14 @@ func _build_presentation_options() -> void:
 	system_box.add_child(privacy)
 
 	_build_connection_support(parent_box, source_card)
+	var statistics: PanelContainer=_create_settings_card(parent_box,source_card,_local("OPTIONAL","OPSIONAL"),_local("Gameplay Statistics","Statistik Gameplay"),_local("Share stage entry/results and duration to improve balance. No email or purchase tokens. Account-linked reports retained for up to30 days. Off by default.","Bagikan masuk/hasil stage dan durasi untuk membantu balance. Tanpa email atau token pembelian. Laporan terkait akun disimpan hingga30 hari. Mati secara default."))
+	var choice:=CheckButton.new();choice.name="GameplayMetricsConsent";choice.custom_minimum_size.y=56
+	choice.text=_local("Share gameplay statistics","Bagikan statistik gameplay")
+	choice.button_pressed=bool(PlayerCompanion.state.get("metrics_opt_in",false));choice.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE
+	statistics.get_child(0).add_child(choice)
+	choice.toggled.connect(func(enabled: bool):
+		if not PlayerCompanion.set_metrics_enabled(enabled):choice.set_pressed_no_signal(not enabled))
+
 	_build_monetization_qa(parent_box, source_card)
 
 

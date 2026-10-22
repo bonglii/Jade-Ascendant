@@ -1,3 +1,4 @@
+import {createCompanionHandler,purgeExpiredMetrics} from './companion.mjs';
 import {trialsProgress} from './heavenly_trials.mjs';
 import {equipmentGrantRoute} from './equipment_grants.mjs';
 import {receiveOdysseyMail} from './odyssey.mjs';
@@ -48,6 +49,7 @@ export async function registerIdentity(db,owner,{generate=generateUid,now=Date.n
 
 export function createHandler({verify=verifyAuth,register=registerIdentity}={}) {
   const handleMail=createMailHandler({verify});
+  const handleCompanion=createCompanionHandler({verify});
   const handleProgressBackup=createProgressBackupHandler({verify});
   return async(request,env)=>{
     const url = new URL(request.url);
@@ -58,6 +60,7 @@ export function createHandler({verify=verifyAuth,register=registerIdentity}={}) 
       if(!['GET','HEAD'].includes(request.method))return reply(405,{error:'method_not_allowed'});
       return new Response(request.method==='HEAD'?null:trustPages[url.pathname],{headers:{'content-type':'text/html; charset=utf-8','cache-control':'public,max-age=300','content-security-policy':"default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",'x-content-type-options':'nosniff','referrer-policy':'no-referrer','x-jade-trust-version':'1'}});
     }
+    if(['/v1/player/agenda','/v1/player/gameplay-metrics'].includes(url.pathname))return handleCompanion(request,env);
     if(url.pathname==='/v1/player/progress-backup')return handleProgressBackup(request,env);
     if(url.pathname==='/v1/pavilion/banner') {
       if(request.method!=='GET')return reply(405,{error:'method_not_allowed'});
@@ -111,4 +114,14 @@ export function createHandler({verify=verifyAuth,register=registerIdentity}={}) 
   };
 }
 
-export default {fetch:createHandler(),scheduled(_controller,env,ctx){ctx.waitUntil(processScheduled(env));}};
+export default {fetch:createHandler(),scheduled(controller,env,ctx){
+ // Mail stays independent; an optional analytics purge may never delay mail.
+ ctx.waitUntil(processScheduled(env));
+ // Existing Profile Worker cron is once per minute. Purge at UTC hour 00.
+ // Never touch the new table before its staged SQL migration is present.
+ const scheduledAt=Number(controller?.scheduledTime ?? Date.now());
+ if(env.PROFILE_DB&&Number.isFinite(scheduledAt)&&new Date(scheduledAt).getUTCMinutes()===0){
+  ctx.waitUntil(purgeExpiredMetrics(env.PROFILE_DB,Math.floor(scheduledAt/1000))
+   .catch(()=>console.warn('JADE_METRICS_RETENTION stage=retry_pending')));
+ }
+}};

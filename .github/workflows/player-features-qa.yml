@@ -1,0 +1,97 @@
+name: Player Features / Exact SHA QA
+on:
+  push:
+    branches:
+      - checkpoint/iap-fasttrack-20261010
+      - qa/jade-player-features-20261022
+    paths:
+      - 'scripts/companion/**'
+      - 'scenes/ui/training_ground.tscn'
+      - 'tests/player_features_smoke.gd'
+      - 'backend/player_identity/companion*'
+      - 'backend/player_identity/worker.mjs'
+      - '.github/workflows/player-features-qa.yml'
+      - 'project.godot'
+      - 'scripts/ui/**'
+      - 'scripts/enemy/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backend-contract:
+    name: Opt-in Metrics and Agenda / No Remote Calls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact revision and contract tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          node --check backend/player_identity/companion.mjs
+          node --check backend/player_identity/companion.test.mjs
+          node --test backend/player_identity/companion.test.mjs backend/player_identity/companion_sqlite.test.mjs
+  godot-runtime:
+    name: Godot 4.7.2 / Feature Integrity (No Deploy)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Prepare official pinned engine and isolated project
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          mkdir -p /tmp/jade-player-features/project
+          curl -fsSL --retry 3 https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip -o /tmp/jade-player-features/godot.zip
+          echo 'cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4  /tmp/jade-player-features/godot.zip' | sha256sum --check
+          unzip -q /tmp/jade-player-features/godot.zip -d /tmp/jade-player-features
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          repo=Path.cwd();qa=Path('/tmp/jade-player-features/project')
+          for name in ('assets','scripts','scenes','tests','backend','addons','release'):
+              (qa/name).symlink_to(repo/name,target_is_directory=True)
+          s=(repo/'project.godot').read_text()
+          s=re.sub(r'\[editor_plugins\][\s\S]*?(?=\n\[|\Z)','[editor_plugins]\nenabled=PackedStringArray()\n',s)
+          for folder in ('scripts','addons'):
+              for p in (repo/folder).rglob('*.gd.uid'):
+                  uid=p.read_text().strip()
+                  if uid in s:s=s.replace(uid,'res://'+str(p.relative_to(repo)).removesuffix('.uid'))
+          (qa/'project.godot').write_text(s)
+          PY
+      - name: Import project without writing gameplay data
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 600 /tmp/jade-player-features/Godot_v4.7.2-stable_linux.x86_64 --headless --audio-driver Dummy --path /tmp/jade-player-features/project --editor --import --quit > /tmp/jade-player-features/import.log 2>&1 || { cat /tmp/jade-player-features/import.log; exit 1; }
+          if grep -En 'SCRIPT ERROR|^ERROR:' /tmp/jade-player-features/import.log; then exit 1; fi
+          echo 'FEATURE_IMPORT_PASS'
+      - name: Verify training never grants progress or monetization
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/jade_event_touch_qa_features
+          XDG_DATA_HOME=/tmp/jade_event_touch_qa_features timeout 180 /tmp/jade-player-features/Godot_v4.7.2-stable_linux.x86_64 --headless --audio-driver Dummy --path /tmp/jade-player-features/project --script res://tests/player_features_smoke.gd > /tmp/jade-player-features/player-features.log 2>&1 || { cat /tmp/jade-player-features/player-features.log; exit 1; }
+          cat /tmp/jade-player-features/player-features.log
+          grep -Eq 'PLAYER_FEATURES_QA checks=[1-9][0-9]* failures=0' /tmp/jade-player-features/player-features.log
+          if grep -En 'SCRIPT ERROR|^ERROR:|PLAYER_FEATURES_FAIL' /tmp/jade-player-features/player-features.log; then exit 1; fi
+          echo 'FEATURE_RUNTIME_PASS'
+      - name: Preserve import and runtime logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jade-player-features-${{ github.run_id }}
+          path: |
+            /tmp/jade-player-features/import.log
+            /tmp/jade-player-features/player-features.log
+          if-no-files-found: warn
+          retention-days: 14

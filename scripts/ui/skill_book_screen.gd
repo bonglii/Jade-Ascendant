@@ -32,6 +32,7 @@ func _ready() -> void:
 	var back:=_button("‹ HOME");back.custom_minimum_size.x=100;back.name="SkillBookBack";back.pressed.connect(_back);top.add_child(back)
 	var seal:=_label("JADE ARCHIVES",13,Color(.97,.80,.43));seal.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;top.add_child(seal)
 	body.add_child(_label("LIBRARY",30,Color(1,.88,.55)))
+	var journal: Button=_button("JURNAL KULTIVATOR" if SettingsManager.language=="id" else "CULTIVATOR JOURNAL");journal.name="LibraryJournal";body.add_child(journal);journal.pressed.connect(func():load("res://scripts/companion/player_journal.gd").open(self))
 	var tabs:=HBoxContainer.new();body.add_child(tabs)
 	for value: String in ["EQUIPMENT","SKILLS","BUILDS"]:
 		var tab:=_button(value);tab.name="LibraryTab"+value;tab.size_flags_horizontal=Control.SIZE_EXPAND_FILL;tab.pressed.connect(_set_mode.bind(value));tabs.add_child(tab);_tabs[value]=tab

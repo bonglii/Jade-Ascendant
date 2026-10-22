@@ -1,7 +1,7 @@
 {
-  "batch": "Player-led release audit",
-  "state": "docs/checkpoints/PLAYER_RELEASE_AUDIT_STATE_2026-10-22.json",
-  "base_commit": "a2f0b9410f1af3b7478d5f76fe626d664ac88ad6",
-  "next_action": "D:\\Godot\\tools\\Jade-Player-Release\\apply_and_publish.cmd then existing backend\\player_identity\\export_production.cmd",
-  "resume_rule": "Read recovered previous evidence and actual diff; do not repeat unchanged completed work."
+  "batch": "Player feature completion — all nine audited areas",
+  "state": "docs/checkpoints/PLAYER_FEATURES_STATE_2026-10-22.json",
+  "base_commit": "ece467fb141ba1c6175cfbb136a8ce4dce9765bf",
+  "next_action": "Use atomic overlay on clean ece467f; run Node SQLite source test + Godot CI; no claim of CI, phone or production PASS until exact SHA evidence. GitHub connector write remains 403.",
+  "resume_rule": "Use PLAYER_FEATURES_STATE_2026-10-22.json and SHA manifest; do not repeat nine existing source paths. Do not mistake package for installed, CI, remote or phone pass."
 }

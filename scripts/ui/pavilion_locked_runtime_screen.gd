@@ -1040,35 +1040,7 @@ func _close_rates_overlay() -> void:
 
 
 func _show_history_overlay() -> void:
-	if locked_history_overlay != null and is_instance_valid(locked_history_overlay):
-		locked_history_overlay.hide();locked_history_overlay.queue_free()
-	locked_history_overlay = _build_modal_overlay(tr("SUMMON HISTORY • THIS PAVILION VISIT"))
-	var box: VBoxContainer = locked_history_overlay.get_meta("content") as VBoxContainer
-	if session_summon_history.is_empty():
-		var empty_label: Label = _label(box, tr("No summons recorded during this Pavilion visit yet."), 13, MUTED_TEXT)
-		empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	else:
-		var shown: int = mini(session_summon_history.size(), 20)
-		for index: int in range(shown):
-			var entry: Dictionary = session_summon_history[index]
-			var rarity: String = str(entry.get("rarity", "common"))
-			var state_text: String = tr("DUPLICATE") if bool(entry.get("duplicate", false)) else tr("NEW")
-			var row_label: Label = _label(
-				box,
-				"%s  •  %s  •  %s" % [
-					str(entry.get("name", "")),
-					rarity.to_upper(),
-					state_text
-				],
-				12,
-				EquipmentVisualCatalog.get_rarity_color(rarity)
-			)
-			row_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	var note: Label = _label(box, tr("History is visit-only; the frozen production save schema is unchanged."), 10, MUTED_TEXT)
-	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	var close_button: Button = _button(box, tr("CLOSE"), _close_history_overlay, false, JADE)
-	close_button.custom_minimum_size.y = 42.0
+	load("res://scripts/companion/player_journal.gd").open(self,"summons")
 
 
 func _close_history_overlay() -> void:

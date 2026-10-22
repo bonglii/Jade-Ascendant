@@ -209,6 +209,7 @@ func _refresh_all() -> void:
  armory.pressed.connect(func() -> void: load("res://scripts/ui/paid_armory_panel.gd").open_for(content))
  if content.size.y>=620 or content.size.y>content.size.x:_build_banner()
  _build_slots();_build_resonance()
+ var journal: Button=_button("JURNAL BUILD" if SettingsManager.language=="id" else "BUILD JOURNAL");journal.name="HeroJournal";page.add_child(journal);journal.pressed.connect(func():load("res://scripts/companion/player_journal.gd").open(self,"presets"))
  page=backpack
  _build_collection()
  _layout_sections.call_deferred()
@@ -519,6 +520,7 @@ func _show_detail(id: String,force: bool=false) -> void:
  detail_values.stars=body.get_child(body.get_child_count()-1)
  _paragraph(body,Visual.get_stat_summary(effective),18)
  detail_values.stats=body.get_child(body.get_child_count()-1)
+ _comparison(body,id)
  var weapon: bool=str(data.get("slot",""))=="armament"
  if weapon:
   _paragraph(body,"LEVEL WEAPON %d / %d • +%d%% damage weapon"%[EquipmentManager.get_item_weapon_level(id),EquipmentManager.get_weapon_level_cap(id),roundi((EquipmentManager.get_weapon_level_multiplier(id)-1)*100)],17,JADE)
@@ -659,3 +661,17 @@ func _layout_sections() -> void:
  fixed_deck.size=Vector2(page.custom_minimum_size.x,height)
  scroll.position=Vector2(fixed_deck.position.x,fixed_deck.position.y+height+8)
  scroll.size=Vector2(page.custom_minimum_size.x,maxf(40,nav.position.y-scroll.position.y-8))
+
+func _comparison(body: VBoxContainer,id: String) -> void:
+ var preview: Dictionary=preload("res://scripts/companion/equipment_projection.gd").compare(id)
+ if preview.is_empty():return
+ _paragraph(body,"PERBANDINGAN GEAR" if SettingsManager.language=="id" else "GEAR COMPARISON",17,GOLD)
+ for row: Array in [["max_health_flat","HP gear",1.0],["damage_bonus","Damage gear %",100.0],["critical_chance_bonus","Crit %",100.0],["movement_speed_bonus","Move %",100.0],["experience_bonus","EXP %",100.0]]:
+  var before: float=float(preview.before[row[0]])*float(row[2]);var after: float=float(preview.after[row[0]])*float(row[2])
+  _paragraph(body,"%s  %.1f → %.1f  (%+.1f)"%[row[1],before,after,after-before],14,JADE if after>=before else Color(.97,.57,.45))
+ for row: Array in [["before","SEKARANG" if SettingsManager.language=="id" else "CURRENT"],["after","SESUDAH" if SettingsManager.language=="id" else "AFTER"]]:
+  var state: Dictionary=preview[row[0]].set
+  _paragraph(body,"%s · %s %d/4"%[row[1],str(state.display_name),int(state.piece_count)],14,GOLD)
+  var passive: Dictionary=preview[row[0]].passive
+  _paragraph(body,str(passive.get("name", "Tanpa pasif 4 set" if SettingsManager.language=="id" else "No active 4-piece passive")),13,JADE)
+ _paragraph(body,"Bonus gear tanpa kondisi. Pasif, level weapon dan pola attack tetap punya peran berbeda; ini bukan perkiraan DPS." if SettingsManager.language=="id" else "Unconditional gear bonuses. Passives, weapon levels and attack patterns have distinct roles; this is not a DPS estimate.",12)

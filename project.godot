@@ -52,6 +52,8 @@ PlayerIdentityServerClient="*res://scripts/managers/player_identity_server_clien
 ServerMailManager="*res://scripts/managers/server_mail_manager.gd"
 Firebase="*uid://bfps2e72dlnwq"
 ProgressBackupManager="*res://scripts/managers/progress_backup_manager.gd"
+PlayerCompanion="*res://scripts/companion/player_companion.gd"
+CompanionNetwork="*res://scripts/companion/companion_network.gd"
 
 OdysseyClient="*res://scripts/monetization/odyssey_client.gd"
 [display]
