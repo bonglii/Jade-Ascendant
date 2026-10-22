@@ -37,7 +37,7 @@ func run() -> void:
  var starting_stones: int=progress.spirit_stone
  var empty: Dictionary=companion._empty()
  check(not empty.metrics_opt_in and empty.metrics.is_empty(),"telemetry starts disabled")
- check(companion.valid_slots(preload("res://scripts/companion/equipment_projection.gd").slots()),"current equip slots validate")
+ check(companion.valid_slots(load("res://scripts/companion/equipment_projection.gd").slots()),"current equip slots validate")
  var normal: Dictionary={"id":"a".repeat(32),"kind":"stage_enter","chapter":1,"stage":1,"seconds":42}
  check(companion.valid_metric(normal),"normal metric validates")
  var wrong: Dictionary=normal.duplicate(true)
@@ -55,6 +55,8 @@ func run() -> void:
  check(companion._clean(full).metrics.size()==100,"reload admits 100 bounded events")
  check(companion._clean(full).metrics[99].id==("%032x" % 99),"bounded queue preserves declared ordering")
  check(companion.state.metrics_opt_in==false,"opt-in not enabled by pure validators")
+ var journal_script: Script = load("res://scripts/companion/player_journal.gd")
+ check(journal_script!=null and journal_script.can_instantiate(),"journal script loads without parse errors")
  # Training uses real weapon and enemy code, but cannot produce Journey currency, items or XP.
  var error: Error=change_scene_to_file("res://scenes/ui/training_ground.tscn")
  check(error==OK,"practice scene can instantiate")

@@ -19,7 +19,7 @@ func _ready() -> void:
  GoogleAccountManager.account_state_changed.connect(func(_snapshot: Dictionary): _reload())
  # Stage clear is confirmed by Journey; boss death alone is not a committed victory.
  JourneyManager.stage_completed.connect(_stage_completed)
- get_tree().scene_changed.connect(func(_next_scene: Node): _scene_changed())
+ get_tree().scene_changed.connect(_scene_changed)
  _metric("session_start",0,0)
 func live_owner() -> String:
  if not _owner_override.is_empty() and OS.get_user_data_dir().contains("jade_event_touch_qa"): return _owner_override

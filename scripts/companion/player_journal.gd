@@ -139,7 +139,12 @@ func _bosses() -> void:
   for stage: int in Chapters[chapter-1].STAGES:
    var data: Dictionary=Chapters[chapter-1].STAGES[stage]
    var known: bool=("%d-%d"%[chapter,stage]) in PlayerCompanion.state.seen_bosses or JourneyManager.is_stage_cleared(chapter,stage)
-   var content: VBoxContainer=card("%d-%d · %s"%[chapter,stage,str(data.get("boss_name","Guardian"))) if known else "%d-%d · ???"%[chapter,stage],str(data.get("encounter_hint","")) if known else copy("Not encountered","Belum ditemui"))
+   var boss_title: String = "%d-%d · ???" % [chapter,stage]
+   var boss_hint: String = copy("Not encountered","Belum ditemui")
+   if known:
+    boss_title = "%d-%d · %s" % [chapter,stage,str(data.get("boss_name","Guardian"))]
+    boss_hint = str(data.get("encounter_hint",""))
+   var content: VBoxContainer = card(boss_title,boss_hint)
    if known:content.add_child(button(copy("READ ENCOUNTER","PELAJARI POLA"),_boss_detail.bind(chapter,stage)))
 func _boss_detail(chapter: int,stage: int) -> void:
  for child: Node in _body.get_children():_body.remove_child(child);child.queue_free()
