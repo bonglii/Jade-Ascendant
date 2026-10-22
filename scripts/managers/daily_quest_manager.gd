@@ -148,6 +148,7 @@ func _try_connect_enemy_spawner(node: Node) -> void:
 	DebugLogger.system(str("DailyQuestManager terhubung ke EnemySpawner."))
 
 func _try_connect_player(node: Node) -> void:
+	if EquipmentManager.is_practice(): return
 	if node == null:
 		return
 	if not node.is_in_group("player"):

@@ -1,6 +1,9 @@
 extends Node
 ## Bounded local companion data. No balances, grants, authentication or cloud authority.
 signal changed
+# Public rollout stays closed until the documented privacy/staging gate is completed.
+# Independent of all nine live IAP gates. Local journals never require telemetry.
+const METRICS_ROLLOUT_APPROVED: bool=false
 const FILE: String = "user://jade_companion_v1.json"
 const METRIC_QUEUE_MAX: int = 100 # Bounded offline opt-in queue; upload batches remain 20.
 const GearProjection = preload("res://scripts/companion/equipment_projection.gd")
@@ -219,13 +222,14 @@ func _capture_run(world_id: int,id: String,outcome: String) -> void:
  next.runs.push_front(row)
  if commit(next): _metric("stage_"+("clear" if outcome=="victory" else "defeat"),entry.chapter,entry.stage,int(facts.seconds),id)
 func set_metrics_enabled(enabled: bool) -> bool:
+ if enabled and not METRICS_ROLLOUT_APPROVED:return false
  var next: Dictionary=state.duplicate(true);next.metrics_opt_in=enabled
  if not enabled: next.metrics=[]
  var ok: bool=commit(next)
  if ok and enabled: _metric("session_start",0,0)
  return ok
 func _metric(kind: String, chapter: int, stage: int, seconds: int=0,event_key: String="") -> void:
- if not bool(state.get("metrics_opt_in",false)): return
+ if not METRICS_ROLLOUT_APPROVED or not bool(state.get("metrics_opt_in",false)): return
  var event_id: String=(kind+":"+event_key).sha256_text().left(32) if not event_key.is_empty() else Crypto.new().generate_random_bytes(16).hex_encode()
  if event_id in state.metric_seen:return
  var next: Dictionary=state.duplicate(true)

@@ -30,6 +30,15 @@ func run() -> void:
  var progress: Node=root.get_node("ProgressionManager")
  var pavilion: Node=root.get_node("PavilionManager")
  var inventory: Node=root.get_node("InventoryManager")
+ var mastery_before: Dictionary=root.get_node("CultivationMasteryManager").state.duplicate(true)
+ var paid: Node=equipment._paid_v2()
+ var paid_run_before: Array=[paid._run_started,paid._run_entered,paid._run_prepared,paid._run_slots.duplicate(true)]
+ var save_hashes: Dictionary={}
+ var save: Node=root.get_node("SaveManager")
+ for domain: String in save.get_save_domain_ids():
+  if save.get_save_scope(domain) in [save.SCOPE_PERMANENT,save.SCOPE_ACTIVE_RUN]:
+   var path: String=save.get_save_path(domain)
+   save_hashes[domain]=FileAccess.get_sha256(path) if FileAccess.file_exists(path) else "missing"
  var starting_equipment: Dictionary=equipment.build_equipment_save_data().duplicate(true)
  var starting_journey: Dictionary=journey.build_save_data().duplicate(true)
  var starting_inventory: Dictionary=inventory.item_counts.duplicate(true)
@@ -55,6 +64,12 @@ func run() -> void:
  check(companion._clean(full).metrics.size()==100,"reload admits 100 bounded events")
  check(companion._clean(full).metrics[99].id==("%032x" % 99),"bounded queue preserves declared ordering")
  check(companion.state.metrics_opt_in==false,"opt-in not enabled by pure validators")
+ check(not companion.METRICS_ROLLOUT_APPROVED and not companion.set_metrics_enabled(true),"release candidate cannot enable unapproved telemetry")
+ var optin: Dictionary=companion.state.duplicate(true);companion.state.metrics_opt_in=true
+ var queue_size: int=companion.state.metrics.size()
+ companion._metric("session_start",0,0)
+ check(companion.state.metrics.size()==queue_size,"legacy opt-in cannot collect while rollout is held")
+ companion.state=optin
  var journal_script: Script = load("res://scripts/companion/player_journal.gd")
  check(journal_script!=null and journal_script.can_instantiate(),"journal script loads without parse errors")
  # Training uses real weapon and enemy code, but cannot produce Journey currency, items or XP.
@@ -70,6 +85,22 @@ func run() -> void:
  var actor: Node=practice.get_node_or_null("player_1")
  check(actor!=null,"production player instantiated")
  check(equipment.is_practice(),"equipment uses read-only practice loadout")
+ check(actor.get_node_or_null("PlayerHealth")!=null,"real health dependency available for blade and shield skills")
+ await create_timer(.7).timeout
+ var total: float=0
+ for value: Variant in actor.get_node("WeaponManager/RunCombatLedger").totals.values():total+=float(value)
+ check(total>0,"production starter applies real target damage")
+ for index: int in range(6):
+  practice._skills.select(index);practice._levels.select(3);practice._set_skill();await frames(10)
+  var manager: Node=practice.player.get_node("WeaponManager")
+  var weapon: Node=manager.weapons.back()
+  check(int(weapon.level)==7,"all selectable actual skills reach requested Lv7: "+str(index))
+ practice._skills.select(3);practice._levels.select(0);practice._set_skill();await frames(10)
+ check(practice.player.get_node("WeaponManager").get_weapon_by_name("Yin-Yang Blades").level==1,"lowering selected level replaces stale upgraded actor")
+ actor=practice.player
+ await create_timer(.6).timeout
+ check([paid._run_started,paid._run_entered,paid._run_prepared,paid._run_slots]==paid_run_before,"training never starts or changes a paid run")
+ check(root.get_node("CultivationMasteryManager").state==mastery_before,"training never freezes mastery or attaches trial health")
  var enemy_count: int=0
  for target: Node2D in practice.targets:
   if not is_instance_valid(target): continue
@@ -88,6 +119,9 @@ func run() -> void:
  check(inventory.item_counts==starting_inventory,"practice leaves inventory untouched")
  check(pavilion.get_local_celestial_jade()==starting_jade,"practice grants zero Jade")
  check(progress.spirit_stone==starting_stones,"practice grants zero Spirit Stones")
+ for domain: String in save_hashes:
+  var path: String=save.get_save_path(domain)
+  check((FileAccess.get_sha256(path) if FileAccess.file_exists(path) else "missing")==save_hashes[domain],"practice never writes save domain: "+domain)
  paused=false
  await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
  if is_instance_valid(practice):

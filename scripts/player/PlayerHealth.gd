@@ -71,6 +71,7 @@ func _ready() -> void:
 
 ## Menghubungkan Blood Qi ke event kill terpusat dari EnemySpawner.
 func connect_blood_qi_kill_tracker() -> void:
+	if EquipmentManager.is_practice(): return
 	var enemy_spawner := get_tree().get_first_node_in_group(
 		"enemy_spawner"
 	)

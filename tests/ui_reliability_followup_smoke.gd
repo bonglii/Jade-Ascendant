@@ -66,7 +66,7 @@ func run() -> void:
   root.size=viewport;await frames(16)
   for continuation: bool in [false,true]:
    presenter.continue_button.visible=continuation;presenter._layout_sanctuary();await frames(3)
-   check(presenter.journey_button.text.contains("ENTER JOURNEY"),"full Journey label retained")
+   check(presenter.journey_button.text==tr(str(presenter._goal.button))+" ›","contextual primary goal copy retained without truncation")
    for button: Button in [presenter.journey_button,presenter.continue_button,presenter.all_events_button]:
     if not button.visible:continue
     check(fits_text(button),"complete CTA "+str(button.name)+" "+str(viewport))
@@ -101,7 +101,7 @@ func run() -> void:
     check(value.get_global_rect().end.x<=plus.get_global_rect().position.x,"number and plus do not overlap")
     check(fits_text(value),"resource digits fit")
     var original: String=value.text
-    for amount: int in [96,9999,123456,1234567890]:
+    for amount: int in [0,96,9999,10000,99999,123456,999999,1234567890,1234567890123456,9223372036854775807]:
      value.text=wallet._format_count(amount);wallet._layout_sanctuary_wallet();await frames(2)
      check(fits_text(value) and value.get_global_rect().end.x<=plus.get_global_rect().position.x,"large/short balances stay clear of plus "+str(amount)+" "+str(viewport)+" "+str(value.size.x)+" "+str(value.get_theme_font_size("font_size")))
     value.text=original;wallet._layout_sanctuary_wallet()

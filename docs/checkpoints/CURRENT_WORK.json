@@ -1,7 +1,6 @@
 {
-  "batch": "Player feature completion — all nine audited areas",
-  "state": "docs/checkpoints/PLAYER_FEATURES_STATE_2026-10-22.json",
-  "base_commit": "ece467fb141ba1c6175cfbb136a8ce4dce9765bf",
-  "next_action": "Use atomic overlay on clean ece467f; run Node SQLite source test + Godot CI; no claim of CI, phone or production PASS until exact SHA evidence. GitHub connector write remains 403.",
-  "resume_rule": "Use PLAYER_FEATURES_STATE_2026-10-22.json and SHA manifest; do not repeat nine existing source paths. Do not mistake package for installed, CI, remote or phone pass."
+  "batch": "QA17 release UI regression closure",
+  "state": "docs/checkpoints/RELEASE_QA17_STATE_2026-10-23.json",
+  "base_commit": "14f64e4ae41c1cd69719bdc79412c43dc9a597fb",
+  "next_action": "Owner runs Jade-Release-QA17/apply_and_publish.cmd; confirm printed real commit and exact-SHA CI. Do not repeat delivered nine-feature integration. No native/backend rebuild or Worker deployment required by QA17."
 }

@@ -15,6 +15,11 @@ func run() -> void:
 		root.get_node("SettingsManager").set("language", language)
 		change_scene_to_file("res://scenes/ui/settings_screen.tscn"); await frames(16)
 		var screen: Node = current_scene
+		var tools: Control=screen.find_child("AccountRecoveryTools",true,false)
+		var expand: Button=screen.find_child("AccountRecoveryToggle",true,false)
+		check(not tools.visible,"recovery details start collapsed")
+		expand.pressed.emit();await frames()
+		check(tools.is_visible_in_tree(),"test actual opened recovery panel")
 		for size: Vector2i in [Vector2i(320, 568), Vector2i(390, 844), Vector2i(648, 1152)]:
 			root.size = size; await frames()
 			var save: Button = screen.get("_backup_save")

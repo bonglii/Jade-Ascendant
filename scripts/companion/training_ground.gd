@@ -15,6 +15,8 @@ var _safe: Control
 var _camera: Camera2D
 var _resetting: bool=false
 var _readout_timer: float=0
+var _panel: PanelContainer
+var _joystick: Control
 func _ready() -> void:
  EquipmentManager.capture_practice_loadout()
  set_meta("companion_practice",true);_owner=PlayerCompanion.account_key
@@ -26,21 +28,24 @@ func _ready() -> void:
  var margin:=MarginContainer.new();margin.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
  for side: String in ["left","right","top","bottom"]:margin.add_theme_constant_override("margin_"+side,16)
  _safe.add_child(margin)
- var panel:=PanelContainer.new();panel.add_theme_stylebox_override("panel",Sheet.skin(16));margin.add_child(panel)
+ _panel=PanelContainer.new();_panel.add_theme_stylebox_override("panel",Sheet.skin(16));margin.add_child(_panel)
+ var panel: PanelContainer=_panel
  var box:=VBoxContainer.new();box.add_theme_constant_override("separation",8);panel.add_child(box)
- var heading:=HBoxContainer.new();box.add_child(heading);heading.add_child(Sheet.button("‹",_back));var title: Label=Sheet.label(Sheet.copy("TRAINING GROUNDS","ARENA LATIHAN"),21,Sheet.GOLD);title.size_flags_horizontal=Control.SIZE_EXPAND_FILL;heading.add_child(title)
+ var heading:=HBoxContainer.new();box.add_child(heading);var back: Button=Sheet.button("‹",_back);back.size_flags_horizontal=Control.SIZE_SHRINK_CENTER;back.custom_minimum_size.x=44;back.add_theme_font_size_override("font_size",24);heading.add_child(back);var title: Label=Sheet.label(Sheet.copy("TRAINING GROUNDS","ARENA LATIHAN"),18,Sheet.GOLD);title.size_flags_horizontal=Control.SIZE_EXPAND_FILL;heading.add_child(title)
  box.add_child(Sheet.label(Sheet.copy("Current gear · no cost, rewards, XP or Journey progress.","Gear saat ini · tanpa biaya, reward, XP atau progres Journey."),13))
  var row:=HBoxContainer.new();row.add_theme_constant_override("separation",8);box.add_child(row)
  _skills=OptionButton.new();_skills.custom_minimum_size=Vector2(0,48);_skills.size_flags_horizontal=Control.SIZE_EXPAND_FILL
  for id: String in ATTACKS:_skills.add_item(Skill.get_upgrade_display_name(id))
- row.add_child(_skills);_levels=OptionButton.new();_levels.custom_minimum_size=Vector2(74,48)
+ _skills.fit_to_longest_item=false;_skills.clip_text=true;_skills.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE
+ box.add_child(_skills);box.move_child(_skills,row.get_index());_levels=OptionButton.new();_levels.custom_minimum_size=Vector2(74,48)
  for level: int in [1,3,5,7]:_levels.add_item("Lv."+str(level))
+ _levels.fit_to_longest_item=false;_levels.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE
  row.add_child(_levels);row.add_child(Sheet.button(Sheet.copy("SET","PAKAI"),_set_skill))
  var controls:=HBoxContainer.new();controls.add_theme_constant_override("separation",8);box.add_child(controls)
  controls.add_child(Sheet.button(Sheet.copy("RESET TEST","RESET UJI"),_reset))
  var move:=CheckButton.new();move.text=Sheet.copy("Moving targets","Target bergerak");move.custom_minimum_size.y=48;move.toggled.connect(func(value: bool):moving=value);controls.add_child(move)
  _report=Sheet.label("",16,Sheet.JADE);box.add_child(_report)
- var joystick: Control=load("res://scripts/ui/virtual_joystick.gd").new();joystick.name="TrainingJoystick";joystick.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);hud.add_child(joystick)
+ var joystick: Control=load("res://scripts/ui/virtual_joystick.gd").new();_joystick=joystick;joystick.activation_top_ratio=0.0;joystick.name="TrainingJoystick";joystick.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);hud.add_child(joystick)
  joystick.mouse_filter=Control.MOUSE_FILTER_IGNORE
  _rebuild(false);SceneTransitionManager.set_back_handler(_back)
  preload("res://scripts/ui/mobile_scroll_policy.gd").prepare_tree(_safe)
@@ -67,6 +72,8 @@ func _rebuild(apply_skill: bool) -> void:
    remove_child(child);child.queue_free()
  targets.clear();elapsed=0;_readout_timer=0
  player=load("res://scenes/player/player_1.tscn").instantiate();player.name="player_1"
+ # The level normally supplies health. Real blade/shield skills require it here too.
+ var health:=Node.new();health.set_script(preload("res://scripts/player/PlayerHealth.gd"));health.name="PlayerHealth";health.max_health=100.0;player.add_child(health)
  add_child(player);player.collision_layer=0;player.collision_mask=0;player.position=Vector2(324,620)
  _spawn_targets()
  if apply_skill:
@@ -86,6 +93,7 @@ func _rebuild(apply_skill: bool) -> void:
 func _process(delta: float) -> void:
  if not is_instance_valid(player):return
  if PlayerCompanion.account_key!=_owner:_back();return
+ _fit_arena()
  elapsed+=delta
  player.position=player.position.clamp(Vector2(72,330),Vector2(576,920))
  for i: int in range(targets.size()):
@@ -96,10 +104,18 @@ func _process(delta: float) -> void:
  var total: float=0
  var ledger: Node=player.get_node("WeaponManager/RunCombatLedger")
  for value: Variant in ledger.totals.values():total+=float(value)
- var text: PackedStringArray=["%.1fs · %s damage · %.1f DPS"%[elapsed,preload("res://scripts/ui/readable_numbers.gd").compact(roundi(total)),total/maxf(elapsed,.1)]]
- for row: Dictionary in ledger.damage_rows().slice(0,6):
+ var text: PackedStringArray=["%.1fs · %s DMG · %s DPS"%[elapsed,preload("res://scripts/ui/readable_numbers.gd").compact(roundi(total)),preload("res://scripts/ui/readable_numbers.gd").compact(roundi(total/maxf(elapsed,.1)))]]
+ for row: Dictionary in ledger.damage_rows().slice(0,3):
   if float(row.damage)>0:text.append(str(row.name)+" · "+preload("res://scripts/ui/readable_numbers.gd").compact(roundi(float(row.damage))))
  _report.text="\n".join(text)
+func _fit_arena() -> void:
+ if not is_instance_valid(_panel) or not is_instance_valid(_joystick):return
+ var view: Vector2=get_viewport_rect().size
+ var top: float=minf(_panel.get_global_rect().end.y+12,maxf(100,view.y-100))
+ _joystick.offset_top=top
+ var zoom_value: float=clampf(minf((view.x-32)/504.0,(view.y-top-24)/590.0),.12,1.2)
+ _camera.zoom=Vector2.ONE*zoom_value
+ _camera.position=Vector2(324,625-top/(2*zoom_value))
 func _back() -> void:
  if SceneTransitionManager.is_transitioning:return
  SceneTransitionManager.transition_menu_to("res://scenes/ui/skill_book_screen.tscn")

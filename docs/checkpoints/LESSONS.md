@@ -201,3 +201,12 @@
 
 ## 2026-10-18 — Portable Odyssey continuation
 - Resume a source batch from its installed project and a durable scoped manifest. Do not require the original extracted download folder to still exist. Support moved/nested packages and a completely missing package; test all three before delivery.
+
+## Release QA17 — 2026-10-23
+
+- Reconcile the actual checkpoint SHA and cross-chat CI first. The nine-feature batch is already71f6753; its older recovery ZIP is not the current source.
+- A hidden recovery subtree has no settled visible layout. Test the real expansion, then intrinsic button text, bounds and a first native swipe. Do not weaken the text-fit check or force collection/backup permissions.
+- Home now has one contextual primary goal. Test saved-run/recovery priority and real navigation, instead of restoring the obsolete duplicate Continue UI to satisfy stale assertions.
+- Queued Hero layout/texture work must stop after page removal, including both sides of awaited frames. Clear its pending flag without rebuilding a detached page.
+- Native first-swipe evidence must configure actual mouse-to-touch GUI emulation and dismiss the fixture's unrelated onboarding overlay. A blocked action behind FTUE is not evidence that the underlying card handled a swipe.
+- The training actor scene lacks the health child normally supplied by levels. Include the real health dependency before entering the tree, then test every skill/level control. Training must not freeze a paid run, attach mastery-trial health, or update persistent quest/achievement counters.

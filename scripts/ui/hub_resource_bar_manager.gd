@@ -412,7 +412,7 @@ func _enforce_pavilion_layout(scene_root: Node) -> void:
 
 
 func _format_count(value: int) -> String:
-	return preload("res://scripts/ui/readable_numbers.gd").compact(value)
+	return preload("res://scripts/ui/readable_numbers.gd").compact_short(value)
 
 
 func _install_sanctuary_wallet(scene_root: Node) -> void:

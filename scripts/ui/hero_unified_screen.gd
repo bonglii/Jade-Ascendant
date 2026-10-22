@@ -83,7 +83,7 @@ func _layout() -> void:
  _queue_refresh()
 
 func _queue_refresh() -> void:
- if pending_refresh:return
+ if not is_inside_tree() or is_queued_for_deletion() or pending_refresh:return
  pending_refresh=true;_refresh_all.call_deferred()
 
 func _on_equipment_changed(_slot: String,_id: String) -> void:
@@ -193,7 +193,7 @@ func _sync_detail_loadout() -> void:
 func _refresh_all() -> void:
  var started_usec: int=Time.get_ticks_usec()
  pending_refresh=false
- if not is_instance_valid(page):return
+ if not is_inside_tree() or is_queued_for_deletion() or not is_instance_valid(page):return
  var old_scroll: int=scroll.scroll_vertical
  for container: VBoxContainer in [fixed_deck,page]:
   for child: Node in container.get_children():container.remove_child(child);child.queue_free()
@@ -254,7 +254,7 @@ func _button(value: String,primary: bool=false) -> Button:
 
 func _texture(path: String) -> TextureRect:
  var view:=TextureRect.new()
- var cache: Node=get_node_or_null("/root/MenuResourcePrewarm")
+ var cache: Node=get_node_or_null("/root/MenuResourcePrewarm") if is_inside_tree() else null
  view.texture=cache.get_hub_texture(path) if cache!=null and cache.has_method("get_hub_texture") else load(path) as Texture2D;view.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
  view.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;view.mouse_filter=Control.MOUSE_FILTER_IGNORE
  view.texture_filter=CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
@@ -452,9 +452,10 @@ func _make_sheet(mode: String="item") -> VBoxContainer:
  return sheet_body
 
 func _fit_sheet(expected_generation: int=-1) -> void:
+ if not is_inside_tree() or is_queued_for_deletion():return
  if expected_generation<0:expected_generation=sheet_generation
  await get_tree().process_frame
- if expected_generation!=sheet_generation or not is_instance_valid(detail) or not is_instance_valid(sheet_panel):return
+ if not is_inside_tree() or is_queued_for_deletion() or expected_generation!=sheet_generation or not is_instance_valid(detail) or not is_instance_valid(sheet_panel):return
  var width: float=minf(560.0*unit,detail.size.x-24.0*unit)
  var max_height: float=minf((470.0 if sheet_mode=="stats" else 580.0)*popup_unit,detail.size.y*.72)
  sheet_panel.position=Vector2((detail.size.x-width)*.5,0)
@@ -462,7 +463,7 @@ func _fit_sheet(expected_generation: int=-1) -> void:
  var skin: StyleBox=sheet_panel.get_theme_stylebox("panel")
  sheet_body.custom_minimum_size.x=maxf(0,width-skin.get_minimum_size().x-12)
  await get_tree().process_frame
- if expected_generation!=sheet_generation or not is_instance_valid(detail) or not is_instance_valid(sheet_panel):return
+ if not is_inside_tree() or is_queued_for_deletion() or expected_generation!=sheet_generation or not is_instance_valid(detail) or not is_instance_valid(sheet_panel):return
  var fixed: float=sheet_root.get_child(0).get_combined_minimum_size().y+sheet_actions.get_combined_minimum_size().y+skin.get_minimum_size().y+16
  var natural: float=sheet_body.get_combined_minimum_size().y+fixed
  var height: float=minf(max_height,maxf(fixed+44,natural))

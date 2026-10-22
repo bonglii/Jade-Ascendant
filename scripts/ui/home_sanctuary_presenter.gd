@@ -216,6 +216,10 @@ func _refresh_journey() -> void:
  chapter_label.text=tr("CHAPTER %02d") % chapter_id if _goal.action=="journey" else tr("YOUR NEXT STEP")
  realm_title.text=tr(str(chapter.get("display_name","Jade Sanctuary"))).to_upper() if _goal.action=="journey" else tr(str(_goal.title))
  next_path_label.text=tr(str(_goal.title)) if _goal.action=="journey" else tr("PROGRESS SAVED")
+ if _goal.action=="continue":
+  var menu: Node=_main_menu()
+  var saved: Dictionary=menu.call("_get_continue_checkpoint_data") if menu!=null else {}
+  if not saved.is_empty():next_path_label.text=tr("STAGE %d-%d")%[int(saved.get("chapter_id",JourneyManager.DEFAULT_CHAPTER_ID)),int(saved.get("stage_id",JourneyManager.DEFAULT_STAGE_ID))]
  goal_hint.text=tr(str(_goal.hint))
  progress_label.text="%d / %d"%[cleared,total];realm_progress.max_value=total;realm_progress.value=cleared
  journey_button.text=tr(str(_goal.button))+" ›"

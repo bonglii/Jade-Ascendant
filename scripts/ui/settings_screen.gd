@@ -437,13 +437,14 @@ func _build_presentation_options() -> void:
 	system_box.add_child(privacy)
 
 	_build_connection_support(parent_box, source_card)
-	var statistics: PanelContainer=_create_settings_card(parent_box,source_card,_local("OPTIONAL","OPSIONAL"),_local("Gameplay Statistics","Statistik Gameplay"),_local("Share stage entry/results and duration to improve balance. No email or purchase tokens. Account-linked reports retained for up to30 days. Off by default.","Bagikan masuk/hasil stage dan durasi untuk membantu balance. Tanpa email atau token pembelian. Laporan terkait akun disimpan hingga30 hari. Mati secara default."))
-	var choice:=CheckButton.new();choice.name="GameplayMetricsConsent";choice.custom_minimum_size.y=56
-	choice.text=_local("Share gameplay statistics","Bagikan statistik gameplay")
-	choice.button_pressed=bool(PlayerCompanion.state.get("metrics_opt_in",false));choice.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE
-	statistics.get_child(0).add_child(choice)
-	choice.toggled.connect(func(enabled: bool):
-		if not PlayerCompanion.set_metrics_enabled(enabled):choice.set_pressed_no_signal(not enabled))
+	if PlayerCompanion.METRICS_ROLLOUT_APPROVED:
+		var statistics: PanelContainer=_create_settings_card(parent_box,source_card,_local("OPTIONAL","OPSIONAL"),_local("Gameplay Statistics","Statistik Gameplay"),_local("Share stage entry/results and duration to improve balance. No email or purchase tokens. Account-linked reports retained for up to30 days. Off by default.","Bagikan masuk/hasil stage dan durasi untuk membantu balance. Tanpa email atau token pembelian. Laporan terkait akun disimpan hingga30 hari. Mati secara default."))
+		var choice:=CheckButton.new();choice.name="GameplayMetricsConsent";choice.custom_minimum_size.y=56
+		choice.text=_local("Share gameplay statistics","Bagikan statistik gameplay")
+		choice.button_pressed=bool(PlayerCompanion.state.get("metrics_opt_in",false));choice.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE
+		statistics.get_child(0).add_child(choice)
+		choice.toggled.connect(func(enabled: bool):
+			if not PlayerCompanion.set_metrics_enabled(enabled):choice.set_pressed_no_signal(not enabled))
 
 	_build_monetization_qa(parent_box, source_card)
 
@@ -1130,7 +1131,7 @@ func _build_connection_support(parent_box: VBoxContainer, source: PanelContainer
 	copy.pressed.connect(func():
 		if not bool(copy.get_meta("jade_scroll_cancelled", false)): DisplayServer.clipboard_set(get_support_summary()))
 	var account_tools := VBoxContainer.new()
-	account_tools.name="AccountRecoveryTools";account_tools.visible=false;parent_box.add_child(account_tools)
+	account_tools.name="AccountRecoveryTools";account_tools.size_flags_horizontal=Control.SIZE_EXPAND_FILL;account_tools.visible=false;parent_box.add_child(account_tools)
 	var recovery := Button.new();recovery.name="AccountRecoveryToggle";recovery.text=_local("ACCOUNT & SAVE RECOVERY", "PEMULIHAN AKUN & SAVE");recovery.custom_minimum_size.y=48;box.add_child(recovery)
 	recovery.pressed.connect(func() -> void:account_tools.visible=not account_tools.visible)
 	_build_progress_backup(account_tools, source)
@@ -1141,8 +1142,8 @@ func _build_progress_backup(parent_box: VBoxContainer, source: PanelContainer) -
 	var box: VBoxContainer = card.get_child(0)
 	_backup_status = Label.new(); _backup_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; _backup_status.add_theme_color_override("font_color", JADE); box.add_child(_backup_status)
 	var actions := VBoxContainer.new(); actions.add_theme_constant_override("separation", 10); box.add_child(actions)
-	_backup_save = Button.new(); _backup_save.text = _local("SAVE BACKUP", "SIMPAN BACKUP"); _backup_save.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _backup_save.custom_minimum_size.y = 52; actions.add_child(_backup_save)
-	_backup_restore = Button.new(); _backup_restore.text = _local("RESTORE", "PULIHKAN"); _backup_restore.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _backup_restore.custom_minimum_size.y = 52; actions.add_child(_backup_restore)
+	_backup_save = Button.new(); _backup_save.name="SaveCloudBackup"; _backup_save.set_meta("settings_full_label",true); _backup_save.text = _local("SAVE BACKUP", "SIMPAN BACKUP"); _backup_save.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _backup_save.custom_minimum_size.y = 52; actions.add_child(_backup_save)
+	_backup_restore = Button.new(); _backup_restore.name="RestoreCloudBackup"; _backup_restore.set_meta("settings_full_label",true); _backup_restore.text = _local("RESTORE", "PULIHKAN"); _backup_restore.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _backup_restore.custom_minimum_size.y = 52; actions.add_child(_backup_restore)
 	_backup_save.pressed.connect(func():
 		if not _scroll_gesture_active and not bool(_backup_save.get_meta("jade_scroll_cancelled", false)): _confirm_progress_backup(false))
 	_backup_restore.pressed.connect(func():
@@ -1259,7 +1260,7 @@ func _finish_neo_settings() -> void:
 		if card.name == "GoogleAccountCard": card.add_theme_stylebox_override("panel", _make_premium_card_style(GOLD))
 	for button: Button in find_children("*", "Button", true, false):
 		button.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
-		button.clip_text = not button is CheckButton
+		button.clip_text = not button is CheckButton and not bool(button.get_meta("settings_full_label",false))
 		if not button is CheckButton and not button is OptionButton: _stylize_button(button, JADE)
 	for label: Label in find_children("*", "Label", true, false):
 		if label in [master_value_label, music_value_label, sfx_value_label, joystick_opacity_label]: continue

@@ -56,7 +56,7 @@ func _identity_changed(_ready_identity: bool) -> void:
 		_request_id = ""
 		_command = {}
 		busy = false
-		_run_slots = {}; _run_stars = {}; _run_started = get_tree().get_first_node_in_group("player") != null
+		_run_slots = {}; _run_stars = {}; _run_started = not _is_practice() and get_tree().get_first_node_in_group("player") != null
 		if not _run_started: _reset_run()
 		_last_result = {}
 		last_transport_stage = "not_started"
@@ -64,19 +64,22 @@ func _identity_changed(_ready_identity: bool) -> void:
 		finished.emit({"success": false, "error": "Account changed."})
 	_next_read = 0
 	call_deferred("refresh")
+func _is_practice() -> bool:
+	return get_tree()!=null and get_tree().current_scene!=null and bool(get_tree().current_scene.get_meta("companion_practice",false))
 func _process(delta: float) -> void:
 	_clock += delta
 	if _clock < 0.5: return
 	_clock = 0.0
 	var now: int = Time.get_ticks_msec()
-	var running: bool = get_tree().get_first_node_in_group("player") != null
-	if running: _run_entered = true
-	if running and not _run_started:
-		_run_started = true
-		_run_slots = snapshot.get("slots", {}).duplicate(true) if _fresh() else {}
-		_run_stars = snapshot.get("stars", {}).duplicate(true) if _fresh() else {}
-	elif not running and _run_entered and not _preparing_run:
-		_reset_run()
+	if not _is_practice():
+		var running: bool = get_tree().get_first_node_in_group("player") != null
+		if running: _run_entered = true
+		if running and not _run_started:
+			_run_started = true
+			_run_slots = snapshot.get("slots", {}).duplicate(true) if _fresh() else {}
+			_run_stars = snapshot.get("stars", {}).duplicate(true) if _fresh() else {}
+		elif not running and _run_entered and not _preparing_run:
+			_reset_run()
 	if busy and now >= _deadline:
 		busy = false; _request_id = ""; _command = {}
 		last_transport_stage = "REQUEST_TIMEOUT"
@@ -101,7 +104,7 @@ func item_count(item_id: String) -> int:
 	return int(snapshot.get("inventory", {}).get(item_id, 0)) if is_verified_ready() else 0
 func selected_slot(slot: String, runtime: bool = false) -> String:
 	if not is_verified_ready(): return ""
-	if runtime and not _run_started and get_tree().get_first_node_in_group("player") != null:
+	if runtime and not _is_practice() and not _run_started and get_tree().get_first_node_in_group("player") != null:
 		_run_started=true; _run_slots=snapshot.get("slots",{}).duplicate(true); _run_stars=snapshot.get("stars",{}).duplicate(true)
 	var id: String = str((_run_slots if runtime and _run_started else snapshot.get("slots", {})).get(slot, ""))
 	return id if item_count(id) > 0 else ""

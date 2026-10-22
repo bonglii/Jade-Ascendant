@@ -34,9 +34,9 @@ func _ready() -> void:
  var back: Button=button("‹",func():
   if mode=="tools":close()
   else:mode="tools";_redraw())
- back.custom_minimum_size.x=44;row.add_child(back)
- _heading=label("",21,GOLD);_heading.size_flags_horizontal=SIZE_EXPAND_FILL;row.add_child(_heading)
- var exit: Button=button("×",close);exit.name="JournalClose";exit.custom_minimum_size.x=44;row.add_child(exit)
+ back.custom_minimum_size.x=44;back.size_flags_horizontal=SIZE_SHRINK_CENTER;back.add_theme_font_size_override("font_size",24);row.add_child(back)
+ _heading=label("",18,GOLD);_heading.size_flags_horizontal=SIZE_EXPAND_FILL;row.add_child(_heading)
+ var exit: Button=button("×",close);exit.name="JournalClose";exit.custom_minimum_size.x=44;exit.size_flags_horizontal=SIZE_SHRINK_CENTER;exit.add_theme_font_size_override("font_size",24);row.add_child(exit)
  _scroll=ScrollContainer.new();_scroll.name="JournalScroll";_scroll.size_flags_vertical=SIZE_EXPAND_FILL;Scroll.configure(_scroll);box.add_child(_scroll)
  _body=VBoxContainer.new();_body.size_flags_horizontal=SIZE_EXPAND_FILL;_body.add_theme_constant_override("separation",12);_scroll.add_child(_body)
  _previous_back=SceneTransitionManager.back_handler;SceneTransitionManager.set_back_handler(close)
@@ -99,17 +99,20 @@ func _tools() -> void:
   var action: Button=button(copy(entry[1],entry[2])+"  ›",_go.bind(entry[0]));action.name="Journal_"+entry[0];_body.add_child(action)
  var practice: Button=button(copy("ENTER TRAINING GROUNDS","MASUK ARENA LATIHAN"),_practice);practice.name="JournalPractice";_body.add_child(practice)
 func _presets() -> void:
- _body.add_child(label(copy("Saved for this account on this device. Gear changes affect your next run; Continue keeps its frozen build. Server gear must match Server Armory before applying a preset.","Disimpan untuk akun ini di perangkat ini. Gear untuk run berikutnya; Continue memakai build tersimpan. Samakan gear server di Server Armory sebelum menerapkan preset."),14))
+ _body.add_child(label(copy("On this device · next run only. Continue keeps its saved build. Server gear must match Server Armory.","Di perangkat ini · run berikutnya. Continue memakai build tersimpan. Samakan gear server di Server Armory."),14))
  for index: int in range(3):
   var row: Dictionary=PlayerCompanion.state.presets.get(str(index),{})
   var title: String=str(row.get("name",[copy("Farming","Farming"),copy("Boss","Boss"),copy("Defense","Pertahanan")][index]))
   var content: VBoxContainer=card("%d · %s"%[index+1,title],_slot_names(row.get("slots",{})) if not row.is_empty() else copy("Empty build slot","Slot build kosong"))
   var input:=LineEdit.new();input.text=title;input.max_length=24;input.custom_minimum_size.y=46;input.add_theme_font_size_override("font_size",15);content.add_child(input)
   var actions:=HBoxContainer.new();actions.add_theme_constant_override("separation",8);content.add_child(actions)
-  actions.add_child(button(copy("SAVE CURRENT","SIMPAN BUILD"),func(): _feedback=copy("Build saved.","Build disimpan.") if PlayerCompanion.save_preset(index,input.text) else copy("Cannot save now.","Belum dapat disimpan.");_redraw()))
+  actions.add_child(button(copy("SAVE","SIMPAN"),func(): _feedback=copy("Build saved.","Build disimpan.") if PlayerCompanion.save_preset(index,input.text) else copy("Cannot save now.","Belum dapat disimpan.");_redraw()))
   var apply: Button=button(copy("APPLY","PAKAI"),func():_feedback=copy("Build applied.","Build dipakai.") if PlayerCompanion.apply_preset(index) else copy("Check ownership, Server Armory and save status.","Periksa kepemilikan, Server Armory dan status save.");_redraw())
   apply.disabled=not PlayerCompanion.preset_problem(index).is_empty();actions.add_child(apply)
-  if not row.is_empty() and not PlayerCompanion.preset_problem(index).is_empty():content.add_child(label(copy("Not ready: ","Belum siap: ")+str(PlayerCompanion.preset_problem(index)),12,JADE))
+  if not row.is_empty() and not PlayerCompanion.preset_problem(index).is_empty():content.add_child(label(copy("Not ready: ","Belum siap: ")+_preset_reason(PlayerCompanion.preset_problem(index)),12,JADE))
+func _preset_reason(reason: String) -> String:
+ var messages: Dictionary={"empty":copy("Save a build first.","Simpan build dahulu."),"save_or_run_busy":copy("Finish combat or save recovery first.","Selesaikan combat atau pemulihan save."),"match_server_armory":copy("Match this preset's server gear in Server Armory.","Samakan gear server preset ini di Server Armory."),"item_not_owned":copy("A saved piece is no longer owned.","Salah satu item tersimpan belum dimiliki.")}
+ return str(messages.get(reason,copy("Build unavailable.","Build belum tersedia.")))
 func _slot_names(slots: Dictionary) -> String:
  var parts: PackedStringArray=[]
  for slot: String in EquipmentManager.get_slot_ids():

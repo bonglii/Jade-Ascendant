@@ -907,6 +907,7 @@ func apply_local_preset(slots: Dictionary) -> bool:
 			next[slot]=str(equipped_item_ids.get(slot,""));continue
 		if not id.is_empty() and (not InventoryManager.owns_item(id) or str(get_item_data(id).get("slot",""))!=slot or bool(get_item_data(id).get("retired",false))): return false
 		next[slot]=id
+	if next==equipped_item_ids: return true
 	var data: Dictionary=build_equipment_save_data();data.equipped_item_ids=next
 	_upgrade_inflight=true
 	var ok: bool=SaveManager.write_save_batch({"equipment":data})

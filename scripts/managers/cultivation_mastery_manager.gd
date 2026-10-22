@@ -119,6 +119,7 @@ func cancel_prepared_trial() -> void:
 func _on_node_added(node: Node) -> void:
  if node.get_script()!=null and node.get_script().resource_path=="res://scripts/player/PlayerHealth.gd":_attach_health.call_deferred(node)
 func _attach_health(health: Node) -> void:
+ if EquipmentManager.is_practice():return
  if not is_instance_valid(health) or not health.get_parent().is_in_group("player"):return
  _health=weakref(health);_live_run=JourneyManager.m7d_run_id;_previous_hp=float(health.current_health);_pulse_cooldown=0
  if not health.health_changed.is_connected(_on_health_changed):health.health_changed.connect(_on_health_changed)

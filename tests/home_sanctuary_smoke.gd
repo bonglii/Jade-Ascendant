@@ -34,7 +34,7 @@ func run() -> void:
  var pavilion: Node=root.get_node("PavilionManager")
  var inventory: Node=root.get_node("InventoryManager")
  var live: Node=root.get_node("LiveOpsManager")
- journey.selected_chapter_id=1;journey.cleared_stage_keys=[journey.get_stage_key(1,1),journey.get_stage_key(1,3)]
+ journey.selected_chapter_id=1;journey.unlocked_stage_keys=[journey.get_stage_key(1,1),journey.get_stage_key(1,2),journey.get_stage_key(1,3)];journey.cleared_stage_keys=[journey.get_stage_key(1,1),journey.get_stage_key(1,3)]
  var economy: Array=[progress.spirit_stone,pavilion.get_celestial_jade(),inventory.item_counts.duplicate(true)]
  var checkpoint: Dictionary={"version":1,"chapter_id":1,"stage_id":2,"survival_time":45.0,"wave":2,"wave_timer":3.0,"difficulty_level":1,"player_level":2,"experience":5,"experience_to_next_level":10}
  check(save.write_save_data("checkpoint",checkpoint).success,"isolated real checkpoint fixture")
@@ -44,8 +44,8 @@ func run() -> void:
  print("HOME_SANCTUARY_FIXTURE_READY_MS=",Time.get_ticks_msec()-started)
  var home: Node=current_scene
  var presenter: Node=home.get_node("HomeUI/HomeProductionOverlay")
- check(presenter.continue_button.visible,"validated checkpoint exposes Continue")
- check(presenter.next_path_label.text.contains("1-2"),"non-contiguous clears use first missing stage")
+ check(presenter.checkpoint_available and presenter._goal.action=="continue" and presenter.journey_button.text.contains(tr("CONTINUE RUN")),"validated checkpoint becomes the primary Continue action")
+ check(presenter.next_path_label.text.contains("1-2"),"Continue identifies the saved stage")
  check(presenter.realm_progress.value==2,"actual clear count")
  check(presenter.profile_exp.value==progress.get_hero_progress_ratio(),"actual hero progress")
  check(presenter.profile_name.text==root.get_node("PlayerIdentityManager").get_profile_snapshot().display_name,"actual player name")
@@ -68,6 +68,7 @@ func run() -> void:
   for node: Control in [presenter.profile_shortcut,presenter.mailbox_button,presenter.settings_shortcut,presenter.lower_scroll,home.get_node("HomeUI/HubNav"),bar]:
    check(within(node.get_global_rect(),screen),"screen bounds "+str(viewport)+" "+str(node.name))
   for button: Button in [presenter.journey_button,presenter.continue_button,presenter.settings_shortcut,presenter.mailbox_button]:
+   if not button.visible:continue
    var frame: Control=button.get_node("SanctuaryFrame")
    check(within(frame.get_global_rect(),button.get_global_rect()),"scaled frame fits "+str(viewport)+" "+str(button.name))
    check(frame.show_behind_parent and button.get_node("SanctuaryGlass").show_behind_parent,"decorations cannot cover native button text")
@@ -108,8 +109,12 @@ func run() -> void:
  meditation._close_popup();await frames(8)
  check(save.read_save_data("checkpoint").data==checkpoint_before,"Home and popups do not rewrite checkpoint")
  check([progress.spirit_stone,pavilion.get_celestial_jade(),inventory.item_counts]==economy,"presentation does not mint or consume currency")
+ var legacy: Dictionary=checkpoint.duplicate();legacy.erase("chapter_id");legacy.erase("stage_id")
+ check(save.write_save_data("checkpoint",legacy).success,"legacy identity-free checkpoint remains accepted")
+ await frames(8)
+ check(presenter._goal.action=="continue" and presenter.next_path_label.text.contains("1-1"),"legacy Continue displays the same fallback stage that actual entry uses")
  checkpoint.defeat_pending=true;check(save.write_save_data("checkpoint",checkpoint).success,"mark checkpoint unresumable")
- await frames(8);check(not presenter.continue_button.visible,"save signal refreshes invalid Continue immediately")
+ await frames(8);check(not presenter.checkpoint_available and presenter._goal.action=="journey" and presenter._goal.stage==2,"invalid Continue immediately yields to first missing unlocked stage")
  var transition: Node=root.get_node("SceneTransitionManager")
  transition.is_transitioning=true;presenter._capture_press(presenter.journey_button)
  presenter._activate(Callable(self,"activated"),presenter.journey_button)
@@ -132,7 +137,7 @@ func run() -> void:
   root.get_node("SceneTransitionManager").transition_menu_to("res://scenes/ui/main_menu.tscn",1)
   check(await destination("res://scenes/ui/main_menu.tscn"),"return to Home")
   await frames(8);presenter=current_scene.get_node("HomeUI/HomeProductionOverlay")
-  check(not presenter.continue_button.visible,"invalid checkpoint remains hidden across navigation")
+  check(not presenter.checkpoint_available and presenter._goal.action!="continue","invalid checkpoint cannot become Continue across navigation")
   check(presenter.get_child_count()==count,"reentry does not accumulate page nodes")
   root.size=Vector2i(390,844);await frames();root.size=Vector2i(648,1152);await frames()
  check(save.read_save_data("checkpoint").data.defeat_pending,"navigation preserves saved run status")

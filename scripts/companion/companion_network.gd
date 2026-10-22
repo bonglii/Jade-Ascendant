@@ -30,13 +30,13 @@ func _setup() -> void:
  _tick()
 func _on_changed() -> void:
  var binding: String=GoogleAccountManager.get_monetization_account_binding()
- if _owner_key!=binding or not bool(PlayerCompanion.state.get("metrics_opt_in",false)):
+ if not PlayerCompanion.METRICS_ROLLOUT_APPROVED or _owner_key!=binding or not bool(PlayerCompanion.state.get("metrics_opt_in",false)):
   _nonce+=1;_waiting=false;_busy=false;_batch=[]
   if is_instance_valid(_http):_http.cancel_request()
   _owner_key=binding
 func _tick() -> void:
  if agenda.is_empty():refresh_agenda()
- if _busy or _auth==null or Time.get_ticks_msec()<_retry_at or not bool(PlayerCompanion.state.get("metrics_opt_in",false)) or PlayerCompanion.state.get("metrics",[]).is_empty() or SaveManager.is_progress_read_only():return
+ if not PlayerCompanion.METRICS_ROLLOUT_APPROVED or _busy or _auth==null or Time.get_ticks_msec()<_retry_at or not bool(PlayerCompanion.state.get("metrics_opt_in",false)) or PlayerCompanion.state.get("metrics",[]).is_empty() or SaveManager.is_progress_read_only():return
  var key: String=GoogleAccountManager.get_monetization_account_binding()
  if key.length()!=64 or key!=PlayerCompanion.account_key:return
  _owner_key=key;_batch=PlayerCompanion.state.metrics.slice(0,20).duplicate(true)
@@ -45,7 +45,7 @@ func _tick() -> void:
  _auth.get_id_token(false)
  get_tree().create_timer(12).timeout.connect(func():if nonce==_nonce and _waiting:_finish("token_timeout"))
 func _token(token: String) -> void:
- if not _waiting or not _busy or _owner_key!=GoogleAccountManager.get_monetization_account_binding() or not bool(PlayerCompanion.state.get("metrics_opt_in",false)):return
+ if not PlayerCompanion.METRICS_ROLLOUT_APPROVED or not _waiting or not _busy or _owner_key!=GoogleAccountManager.get_monetization_account_binding() or not bool(PlayerCompanion.state.get("metrics_opt_in",false)):return
  if token.length()>8192 or not DNS.token_owner_matches(token,_owner_key):return
  _waiting=false
  if is_instance_valid(_http):_http.queue_free()

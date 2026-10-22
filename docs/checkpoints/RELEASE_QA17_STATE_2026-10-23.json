@@ -1,0 +1,77 @@
+{
+  "batch": "QA17 release UI regression closure",
+  "base_commit": "14f64e4ae41c1cd69719bdc79412c43dc9a597fb",
+  "date": "2026-10-23",
+  "supersedes_stale_pointer": "Nine features already published71f6753 + fixes66cb946; QA15 c99c485 and QA16 14f64e4 preserved. Do not apply old feature checkpoint.",
+  "phase": "author validation and portable publisher simulation complete; owner apply/push and exact-SHA CI next",
+  "scope": [
+    "responsive visible Cloud Backup actions",
+    "wallet precision and plus spacing",
+    "contextual primary goal/Continue tests",
+    "Hero detached deferred callbacks",
+    "native first-swipe compact UI verification",
+    "release source QA and portable publisher",
+    "real training health dependency for Yin-Yang Blades and isolation from quest/mastery/paid run tracking",
+    "journal compact headers and preset labels",
+    "enforce existing optional analytics rollout HOLD"
+  ],
+  "remote_baseline_evidence": {
+    "sha": "14f64e4ae41c1cd69719bdc79412c43dc9a597fb",
+    "passed_workflows": [
+      "Player Features",
+      "Player Journey",
+      "Player Flow",
+      "Premium UI and account readiness",
+      "Player Release QA"
+    ],
+    "failing_workflows": {
+      "Player trust": 39822873841,
+      "Public readiness": 39822873984,
+      "UI Reliability": 39822873866
+    }
+  },
+  "known_findings": [
+    "Backup tests measure hidden recovery subtree; actual opened layout must be verified",
+    "Home tests expect pre-guidance separate Continue and hardcoded Journey copy; preserve latest contextual goal behavior",
+    "Wallet123.4K exceeds narrow36px label at14px",
+    "Queued Hero refresh executes after removal and attempts absolute cache lookup"
+  ],
+  "completed": [
+    "Reconciled cross-chat source at14f64e4; nine features already upstream; original project untouched",
+    "Downloaded actual failed CI logs; reproduced source regressions before fixing",
+    "Official Godot4.7.2 engine verified by pinned SHA256",
+    "Public recovery UI32/32; UI reliability949/949; Home180/180; player features48/48",
+    "New compact layout/first-swipe122/122 headless and122/122 native GUI; actual 320/390/648/896 EN/ID controls tested",
+    "Real training health/6 skills/damage; no permanent save, quest, mastery or paid-run tracking changes",
+    "Paid-run recovery15 + separate restart30; run review7 + restart33; Hero burst737; trust31; public recovery33",
+    "All132 Profile backend regressions PASS; existing nine production gates PASS",
+    "Compact journal/training author renders inspected and layout defects fixed; screenshots excluded from package",
+    "Portable package all-path source preflight, CRLF, rollback, new-file removal, replay and symlink refusal:12 primitive checks PASS",
+    "Real local Git commit and bare push simulation PASS; unknown changes and existing lock stop safely; same launcher and missing-receipt recovery reuse commit; paths with spaces tested",
+    "GitHub push credentials unavailable to author; portable owner publisher retained; no remote push claimed"
+  ],
+  "remaining": [
+    "Owner apply/push package to matching clean QA13 checkpoint clone",
+    "Exact-SHA GitHub CI including three previously failed workflows and QA17",
+    "Sync actual game project to verified SHA; established production exporter; signed AAB with newer version code",
+    "Play-installed Android update smoke and owner Play Console submission; external review remains unverified"
+  ],
+  "status": {
+    "source_edited": true,
+    "local_tests_passed": true,
+    "portable_publisher_simulated": true,
+    "owner_installed": false,
+    "committed": false,
+    "pushed": false,
+    "deployed": false,
+    "aab_exported": false,
+    "device_tested": false,
+    "play_submitted": false
+  },
+  "next_action": "Owner runs Jade-Release-QA17/apply_and_publish.cmd; confirm printed real commit and exact-SHA CI. Do not repeat delivered nine-feature integration. No native/backend rebuild or Worker deployment required by QA17.",
+  "limitations": [
+    "Native software host prints VSync unsupported and17 RefCounted reference-count0 shutdown warnings; retained verbose evidence. No SCRIPT ERROR/ERROR. This is not phone memory/performance proof.",
+    "Windows CMD launcher has been inspected and its underlying Node/Git flow simulated on Linux, not executed on Windows.",
+    "New optional analytics collection/upload remains disabled under the pre-existing disclosure/staging rollout HOLD. Existing IAP gates remain active."
+  ]
+}
