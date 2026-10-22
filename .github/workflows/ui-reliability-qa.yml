@@ -34,12 +34,21 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
+          qa_failed=0
           for entry in 'ui_reliability_followup_smoke:jade_ui_reliability_qa' 'hero_upgrade_burst_smoke:jade_hero_qa' 'home_sanctuary_smoke:jade_home_sanctuary_qa' 'premium_readiness_smoke:jade_premium_batch_qa'; do
             name="${entry%%:*}"; qa_tag="${entry#*:}"
-            XDG_DATA_HOME="/tmp/$qa_tag" timeout 115 /tmp/jade-qa/Godot_v4.7.2-stable_linux.x86_64 --headless --audio-driver Dummy --path /tmp/jade-qa/project --script "res://tests/$name.gd" > "/tmp/$name.log" 2>&1
+            if XDG_DATA_HOME="/tmp/$qa_tag" timeout 115 /tmp/jade-qa/Godot_v4.7.2-stable_linux.x86_64 --headless --audio-driver Dummy --path /tmp/jade-qa/project --script "res://tests/$name.gd" > "/tmp/$name.log" 2>&1; then rc=0; else rc=$?; qa_failed=1; fi
             cat "/tmp/$name.log"
-            ! grep -E 'SCRIPT ERROR:|UI_RELIABILITY_FAIL|HERO_UPGRADE_BURST_FAILURE|HOME_SANCTUARY_FAIL|PREMIUM_BATCH_FAIL' "/tmp/$name.log"
+            if grep -E 'SCRIPT ERROR:|^ERROR:|UI_RELIABILITY_FAIL|HERO_UPGRADE_BURST_FAILURE|HOME_SANCTUARY_FAIL|PREMIUM_BATCH_FAIL' "/tmp/$name.log"; then qa_failed=1; fi
+            if ! grep -Eq '(checks|CHECKS)=[1-9][0-9]*.*(failures|FAILURES)=0' "/tmp/$name.log"; then qa_failed=1; fi
+            echo "QA16_UI_FIXTURE name=$name exit=$rc failed=$qa_failed"
           done
+          exit "$qa_failed"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qa16-ui-runtime-logs
+          path: /tmp/*_smoke.log
   windows:
     runs-on: windows-latest
     steps:

@@ -55,8 +55,18 @@ jobs:
           python3 tests/setup_public_readiness_qa.py /tmp/jade-trust-qa/project
           godot=/tmp/jade-trust-qa/Godot_v4.7.2-stable_linux.x86_64
           timeout 180 "$godot" --headless --audio-driver Dummy --path /tmp/jade-trust-qa/project --editor --import --quit >/tmp/trust-import.log 2>&1
+          qa_failed=0
           for name in player_trust_smoke public_readiness_ui_smoke; do
-            timeout 60 "$godot" --headless --audio-driver Dummy --path /tmp/jade-trust-qa/project --script "res://tests/$name.gd" >"/tmp/$name.log" 2>&1
+            mkdir -p "/tmp/jade-trust-qa/fixture-$name"
+            if XDG_DATA_HOME="/tmp/jade-trust-qa/fixture-$name" timeout 90 "$godot" --headless --audio-driver Dummy --path /tmp/jade-trust-qa/project --script "res://tests/$name.gd" >"/tmp/$name.log" 2>&1; then rc=0; else rc=$?; qa_failed=1; fi
             cat "/tmp/$name.log"
-            if grep -En 'SCRIPT ERROR|^ERROR:' "/tmp/$name.log"; then exit 1; fi
+            if grep -En 'SCRIPT ERROR|^ERROR:' "/tmp/$name.log"; then qa_failed=1; fi
+            if ! grep -Eq 'checks=[1-9][0-9]* failures=0' "/tmp/$name.log"; then qa_failed=1; fi
+            echo "QA16_TRUST_FIXTURE name=$name exit=$rc failed=$qa_failed"
           done
+          exit "$qa_failed"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qa16-trust-runtime-logs
+          path: /tmp/*_smoke.log

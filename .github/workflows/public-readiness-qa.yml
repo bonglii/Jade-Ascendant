@@ -55,9 +55,19 @@ jobs:
           python3 tests/setup_public_readiness_qa.py /tmp/jade-public-qa/project
           godot=/tmp/jade-public-qa/Godot_v4.7.2-stable_linux.x86_64
           timeout 180 "$godot" --headless --audio-driver Dummy --path /tmp/jade-public-qa/project --editor --import --quit >/tmp/public-import.log 2>&1
+          qa_failed=0
           for runner in public_readiness_smoke public_readiness_ui_smoke; do
-            timeout 60 "$godot" --headless --audio-driver Dummy --path /tmp/jade-public-qa/project --script "res://tests/$runner.gd" >"/tmp/$runner.log" 2>&1
+            mkdir -p "/tmp/jade-public-qa/fixture-$runner"
+            if XDG_DATA_HOME="/tmp/jade-public-qa/fixture-$runner" timeout 90 "$godot" --headless --audio-driver Dummy --path /tmp/jade-public-qa/project --script "res://tests/$runner.gd" >"/tmp/$runner.log" 2>&1; then rc=0; else rc=$?; qa_failed=1; fi
             cat "/tmp/$runner.log"
-            if grep -En 'SCRIPT ERROR|^ERROR:' "/tmp/$runner.log"; then exit 1; fi
+            if grep -En 'SCRIPT ERROR|^ERROR:' "/tmp/$runner.log"; then qa_failed=1; fi
+            if ! grep -Eq 'checks=[1-9][0-9]* failures=0' "/tmp/$runner.log"; then qa_failed=1; fi
+            echo "QA16_PUBLIC_FIXTURE name=$runner exit=$rc failed=$qa_failed"
           done
+          if (( qa_failed != 0 )); then exit 1; fi
           python3 tests/public_readiness_metadata_export.py "$godot"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qa16-public-runtime-logs
+          path: /tmp/public_readiness*_smoke.log

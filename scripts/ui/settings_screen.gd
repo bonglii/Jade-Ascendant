@@ -1232,7 +1232,10 @@ func get_support_summary() -> String:
 	summary += "\nNative IAP target=" + PavilionManager.get_native_iap_target()
 	if is_instance_valid(gameplay): summary += "\nPaid checkout ready=%s\nPaid snapshot stage=%s\nPaid account state=%s\nPaid transport stage=%s" % [str(bool(gameplay.call("checkout_ready"))), str(gameplay.get("status")), str((gameplay.get("snapshot") as Dictionary).get("state", "unknown")), str(gameplay.get("last_transport_stage"))]
 	if is_instance_valid(gameplay): summary += "\nPaid run entry stage=" + str(gameplay.get("run_gate_error"))
-	var odyssey: Node=get_node_or_null("/root/OdysseyClient")
+	# Read-only support diagnostics are also used by detached fixture nodes.
+	# Use the actual root rather than an absolute get_node() on `self`.
+	var support_tree: SceneTree=Engine.get_main_loop() as SceneTree
+	var odyssey: Node=support_tree.root.get_node_or_null("OdysseyClient") if support_tree!=null else null
 	if odyssey != null:
 		summary += "\nCompass run entry stage=" + str(odyssey.get("run_gate_error"))
 		summary += "\nCompass grant verification=" + str(odyssey.get("snapshot").get("state",{}).get("compass_verification","not_checked"))
