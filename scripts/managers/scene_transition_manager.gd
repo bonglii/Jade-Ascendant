@@ -29,6 +29,7 @@ var completing_transition: bool = false
 var previous_tree_paused: bool = false
 var back_handler: Callable = Callable()
 var menu_overlay: ColorRect = null
+var _launch_context: Dictionary = {}
 
 func _ready() -> void:
 	layer = 100
@@ -232,6 +233,7 @@ func transition_to(
 		)
 		return ERR_FILE_NOT_FOUND
 
+	_launch_context = context.duplicate(true)
 	loading_screen = LOADING_SCREEN_SCENE.instantiate()
 	if loading_screen == null:
 		push_error("SceneTransitionManager: LoadingScreen gagal dibuat.")
@@ -315,8 +317,10 @@ func _finish_transition() -> void:
 		if odyssey != null:
 			var event_allowed: bool = await odyssey.call("prepare_scene_run", bool(game_session.get("continue_game")) if game_session != null else false)
 			if not event_allowed:
+				var reason: String=str(odyssey.get("run_gate_error"))
+				var retry_context: Dictionary=_launch_context.duplicate(true)
 				_fail_transition(ERR_UNAUTHORIZED,true)
-				_show_paid_run_notice()
+				_show_paid_run_notice(reason,"",func():transition_to(completed_path,retry_context))
 				return
 		var pavilion: Node=get_node_or_null("/root/PavilionManager")
 		var session: Node=get_node_or_null("/root/GameSession")
@@ -325,10 +329,28 @@ func _finish_transition() -> void:
 			if is_instance_valid(loading_screen): loading_screen.configure({"title":"VERIFYING RUN","subtitle":"Restoring your equipment securely","tip":"Your saved run stays intact if the connection is interrupted."})
 			var allowed: bool=await paid.call("prepare_scene_run",bool(session.get("continue_game")) if session!=null else false)
 			if not allowed:
+				var reason: String=str(paid.get("run_gate_error"))
+				var hint: String=str(paid.get("run_gate_owner_hint"))
+				var retry_context: Dictionary=_launch_context.duplicate(true)
 				_fail_transition(ERR_UNAUTHORIZED,true)
-				_show_paid_run_notice()
+				_show_paid_run_notice(reason,hint,func():transition_to(completed_path,retry_context))
 				return
 
+	# Keep the old checkpoint until both entitlement gates accept the new run.
+	if bool(_launch_context.get("replace_checkpoint_after_verification",false)):
+		if str(JourneyManager.get_selected_stage_data().get("scene_path","")) != completed_path:
+			_fail_transition(ERR_INVALID_DATA,true)
+			_show_paid_run_notice("RUN_STATE_CHANGED")
+			return
+		var reset: Dictionary=SaveManager.reset_active_run_saves()
+		if not bool(reset.get("success",false)):
+			_fail_transition(ERR_CANT_CREATE,true)
+			_show_paid_run_notice("SAVE_UNAVAILABLE")
+			return
+		if JourneyManager.begin_selected_stage().is_empty():
+			_fail_transition(ERR_UNAVAILABLE,true)
+			_show_paid_run_notice("SAVE_UNAVAILABLE")
+			return
 	var change_error: Error = get_tree().change_scene_to_packed(packed_scene)
 	if change_error != OK:
 		_fail_transition(change_error)
@@ -367,16 +389,7 @@ func _reset_state() -> void:
 	loading_screen = null
 	completing_transition = false
 	previous_tree_paused = false
+	_launch_context = {}
 
-func _show_paid_run_notice() -> void:
-	if get_node_or_null("PaidRunNotice")!=null: return
-	var dialog:=AcceptDialog.new(); dialog.name="PaidRunNotice"; dialog.title="RUN VERIFICATION"
-	dialog.dialog_text="Reconnect using the account that owns this run, then retry. Your checkpoint is preserved."
-	dialog.dialog_autowrap=true; dialog.ok_button_text="UNDERSTOOD"
-	var frame:=preload("res://scripts/ui/pavilion_imperial_style.gd").new(); frame.selected=true
-	dialog.add_theme_stylebox_override("panel",frame)
-	dialog.add_theme_color_override("font_color",Color(0.95,0.86,0.65))
-	dialog.get_ok_button().custom_minimum_size=Vector2(160,44)
-	add_child(dialog); dialog.confirmed.connect(dialog.queue_free); dialog.canceled.connect(dialog.queue_free)
-	var viewport: Vector2i=get_viewport().get_visible_rect().size
-	dialog.popup_centered(Vector2i(mini(380,maxi(200,viewport.x-32)),190))
+func _show_paid_run_notice(reason: String="CONNECTION_UNAVAILABLE",owner_hint: String="",retry: Callable=Callable()) -> void:
+	preload("res://scripts/ui/run_verification_notice.gd").open(self,reason,owner_hint,retry)

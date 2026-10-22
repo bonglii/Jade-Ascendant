@@ -1185,6 +1185,9 @@ func _refresh_progress_backup() -> void:
 		"local_account_mismatch": _local("This device's progress belongs to another Google account. Sign back in to that account, or restore this account's cloud backup.", "Progress perangkat ini milik akun Google lain. Login kembali ke akun tersebut, atau pulihkan backup cloud akun ini."),
 	}
 	_backup_status.text = str(messages.get(stage, _local("Backup unavailable. Check your connection and retry.", "Backup belum tersedia. Periksa koneksi lalu coba lagi.")))
+	if stage == "local_account_mismatch":
+		var hint: String=str(view.get("owner_hint", ""))
+		_backup_status.text += "\n" + ((_local("Original account hint: ", "Petunjuk akun asal: ") + hint) if not hint.is_empty() else _local("The original email hint is not recorded on this device.", "Petunjuk email akun asal belum tercatat di perangkat ini."))
 	if int(view.updated_at) > 0: _backup_status.text += "\n" + _local("Last saved: ", "Terakhir disimpan: ") + Time.get_datetime_string_from_unix_time(int(view.updated_at)).replace("T", " ") + " UTC"
 	if not ProgressBackupManager._idle_safe() and not bool(view.busy): _backup_status.text += "\n" + _local("Finish or leave the current run before saving/restoring.", "Selesaikan atau akhiri run aktif sebelum menyimpan/memulihkan.")
 	_backup_save.disabled = not ProgressBackupManager.can_backup(); _backup_restore.disabled = not ProgressBackupManager.can_restore()
@@ -1220,6 +1223,11 @@ func get_support_summary() -> String:
 	summary+="\nIAP account ref=%s\nWallet read stage=%s\nWallet repair stage=%s\nPurchased gameplay ready=%s\nNative IAP route=%s"%[str(jade.get("account_ref","")),str(jade.get("read_stage","not_attempted")),str(jade.get("repair_stage","not_attempted")),str(gameplay_ready),PavilionManager.get_native_iap_network_route()]
 	summary += "\nNative IAP target=" + PavilionManager.get_native_iap_target()
 	if is_instance_valid(gameplay): summary += "\nPaid checkout ready=%s\nPaid snapshot stage=%s\nPaid account state=%s\nPaid transport stage=%s" % [str(bool(gameplay.call("checkout_ready"))), str(gameplay.get("status")), str((gameplay.get("snapshot") as Dictionary).get("state", "unknown")), str(gameplay.get("last_transport_stage"))]
+	if is_instance_valid(gameplay): summary += "\nPaid run entry stage=" + str(gameplay.get("run_gate_error"))
+	var odyssey: Node=get_node_or_null("/root/OdysseyClient")
+	if odyssey != null:
+		summary += "\nCompass run entry stage=" + str(odyssey.get("run_gate_error"))
+		summary += "\nCompass grant verification=" + str(odyssey.get("snapshot").get("state",{}).get("compass_verification","not_checked"))
 	var backup: Dictionary = ProgressBackupManager.get_status()
 	summary += "\nProgress backup stage=%s\nProgress backup revision=%d\nProgress backup domains=%d\nProgress auto backup=%s\n" % [str(backup.stage), int(backup.revision), int(backup.domain_count), str(bool(backup.auto_enabled))]
 	var ads: Dictionary = MonetizationManager.get_provider_runtime_status()

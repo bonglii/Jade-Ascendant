@@ -23,6 +23,7 @@ var view_host: Control
 var map_scroll: ScrollContainer
 var _record_button: Button
 var _realm_header: PanelContainer
+var _realm_eyebrow: Label
 var _realm_subtitle: Label
 var _detail_art: PanelContainer
 var start_button: Button
@@ -55,6 +56,7 @@ func _ready() -> void:
 	_refresh_screen()
 	SceneTransitionManager.set_back_handler(handle_system_back)
 	resized.connect(_fit_phone)
+	preload("res://scripts/ui/mobile_scroll_policy.gd").prepare_tree(self)
 	_fit_phone.call_deferred()
 
 
@@ -127,9 +129,9 @@ func _build_shell() -> void:
 	var safe := MarginContainer.new()
 	safe.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	safe.add_theme_constant_override("margin_left", 12)
-	safe.add_theme_constant_override("margin_top", 16)
+	safe.add_theme_constant_override("margin_top", 12)
 	safe.add_theme_constant_override("margin_right", 12)
-	safe.add_theme_constant_override("margin_bottom", 12)
+	safe.add_theme_constant_override("margin_bottom", 10)
 	safe_host.add_child(safe)
 
 	var main := VBoxContainer.new()
@@ -148,13 +150,14 @@ func _build_shell() -> void:
 	back.pressed.connect(_on_back_pressed)
 	top_bar.add_child(back)
 	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spacer.custom_minimum_size.x = 8
 	top_bar.add_child(spacer)
 	var context := Label.new()
 	context.theme_type_variation = &"JadeNavLabel"
 	context.add_theme_font_size_override("font_size", 12)
-	context.text = "%s • JOURNEY MAP" % str(JourneyManager.get_chapter_data(chapter_id).get("display_name", "REALM")).to_upper()
+	context.text = "REALM %d  •  JOURNEY" % chapter_id
 	context.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	context.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	context.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	context.clip_text=true;context.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 	top_bar.add_child(context)
@@ -189,28 +192,29 @@ func _build_journey_view() -> void:
 
 	var header := PanelContainer.new()
 	_realm_header=header
-	header.custom_minimum_size = Vector2(0.0, 104.0)
+	header.custom_minimum_size = Vector2(0.0, 82.0)
 	header.add_theme_stylebox_override("panel", _make_panel_style(Color(0.003, 0.018, 0.027, 0.84), Color(accent.r, accent.g, accent.b, 0.30), 14, 1))
 	layout.add_child(header)
 	var hm := MarginContainer.new()
 	hm.add_theme_constant_override("margin_left", 15)
-	hm.add_theme_constant_override("margin_top", 9)
+	hm.add_theme_constant_override("margin_top", 7)
 	hm.add_theme_constant_override("margin_right", 15)
-	hm.add_theme_constant_override("margin_bottom", 9)
+	hm.add_theme_constant_override("margin_bottom", 7)
 	header.add_child(hm)
 	var hb := VBoxContainer.new()
 	hb.add_theme_constant_override("separation", 3)
 	hm.add_child(hb)
 	var eyebrow := Label.new()
+	_realm_eyebrow=eyebrow
 	eyebrow.theme_type_variation = &"JadeSubtitle"
 	eyebrow.add_theme_font_size_override("font_size", 13)
-	eyebrow.text = "REALM %d   •   %d-TRIAL ASCENSION PATH" % [chapter_id, stage_ids.size()]
+	eyebrow.text = "ASCENSION PATH  •  %d TRIALS" % stage_ids.size()
 	eyebrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	eyebrow.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	hb.add_child(eyebrow)
 	var title := Label.new()
 	title.theme_type_variation = &"JadeTitle"
-	title.add_theme_font_size_override("font_size", 26)
+	title.add_theme_font_size_override("font_size", 23)
 	title.text = str(chapter_data.get("display_name", "Unknown Realm")).to_upper()
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
@@ -220,7 +224,10 @@ func _build_journey_view() -> void:
 	subtitle.theme_type_variation = &"JadeMutedLabel"
 	subtitle.add_theme_font_size_override("font_size", 13)
 	subtitle.add_theme_color_override("font_color", Color(0.79, 0.84, 0.84, 1.0))
-	subtitle.text = "Follow the awakened route toward the realm boss. Locked paths fade into mist."
+	var cleared: int = 0
+	for stage_id: int in stage_ids:
+		if JourneyManager.is_stage_cleared(chapter_id,stage_id): cleared += 1
+	subtitle.text = ("%d / %d CLEAR  •  Pilih jejak untuk melihat trial" if SettingsManager.language=="id" else "%d / %d CLEARED  •  Tap a seal to inspect its trial") % [cleared,stage_ids.size()]
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hb.add_child(subtitle)
@@ -253,7 +260,7 @@ func _get_stage_map_metrics(stage_count: int) -> Dictionary:
 	var top_y := 122.0
 	var boss_gap := 238.0
 	var normal_gap := 176.0
-	var bottom_padding := 112.0
+	var bottom_padding := 200.0
 	var last_y := top_y
 	if count > 1:
 		last_y += boss_gap + float(count - 2) * normal_gap
@@ -400,7 +407,7 @@ func _build_selected_stage_panel(accent: Color) -> PanelContainer:
 	var status: String = str(state.get("status", "LOCKED"))
 	var can_start: bool = bool(state.get("can_start", false))
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(0.0, 232.0)
+	panel.custom_minimum_size = Vector2(0.0, 160.0)
 	panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.003, 0.018, 0.027, 0.95), Color(accent.r, accent.g, accent.b, 0.38), 14, 1))
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 12)
@@ -413,9 +420,11 @@ func _build_selected_stage_panel(accent: Color) -> PanelContainer:
 	margin.add_child(row)
 	var image_panel := PanelContainer.new()
 	_detail_art=image_panel;image_panel.clip_contents=true
-	image_panel.custom_minimum_size = Vector2(84.0, 130.0)
+	image_panel.custom_minimum_size = Vector2(68.0, 94.0)
 	image_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	image_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.01, 0.03, 0.04, 0.96), Color(GOLD.r, GOLD.g, GOLD.b, 0.42), 10, 1))
+	var image_style: StyleBoxFlat=_make_panel_style(Color(0.01, 0.03, 0.04, 0.96), Color(GOLD.r, GOLD.g, GOLD.b, 0.42), 10, 1)
+	for side: int in [SIDE_LEFT,SIDE_RIGHT,SIDE_TOP,SIDE_BOTTOM]:image_style.set_content_margin(side,4)
+	image_panel.add_theme_stylebox_override("panel", image_style)
 	row.add_child(image_panel)
 	var image := TextureRect.new()
 	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -429,6 +438,7 @@ func _build_selected_stage_panel(accent: Color) -> PanelContainer:
 	text_box.add_theme_constant_override("separation", 5)
 	row.add_child(text_box)
 	var status_row := HBoxContainer.new()
+	status_row.add_theme_constant_override("separation",4)
 	text_box.add_child(status_row)
 	var code := Label.new()
 	code.theme_type_variation = &"JadeSubtitle"
@@ -474,11 +484,11 @@ func _build_selected_stage_panel(accent: Color) -> PanelContainer:
 	start_button.pressed.connect(_on_start_pressed)
 	text_box.add_child(start_button)
 	var records_button:=Button.new()
-	records_button.name="OpenCombatRecords";records_button.text="REKOR COMBAT" if SettingsManager.language=="id" else "COMBAT RECORDS"
-	records_button.custom_minimum_size.y=44;records_button.theme_type_variation=&"JadeSecondaryButton";records_button.add_theme_font_size_override("font_size",14)
+	records_button.name="OpenCombatRecords";records_button.text="REKOR" if SettingsManager.language=="id" else "RECORDS"
+	records_button.custom_minimum_size=Vector2(76,36);records_button.theme_type_variation=&"JadeSecondaryButton";records_button.add_theme_font_size_override("font_size",12)
 	records_button.pressed.connect(func():preload("res://scripts/ui/stage_records_panel.gd").open(self,chapter_id))
 	_record_button=records_button
-	text_box.add_child(records_button)
+	status_row.add_child(records_button)
 	_preview_image = image
 	_preview_code = code
 	_preview_status = status_label
@@ -537,7 +547,7 @@ func _update_stage_node(stage_id: int, accent: Color) -> void:
 		plate.add_theme_stylebox_override(
 			"panel",
 			_make_panel_style(
-				Color(0.002, 0.014, 0.020, 0.84 if selected else 0.74),
+				Color(0.002, 0.014, 0.020, 0.86 if selected else 0.52),
 				Color(border_color.r, border_color.g, border_color.b, 0.24),
 				9, 1
 			)
@@ -592,7 +602,7 @@ func _refresh_selected_stage_panel() -> void:
 
 
 func _on_start_pressed() -> void:
-	if start_button == null or start_button.disabled:
+	if start_button == null or start_button.disabled or SceneTransitionManager.is_transitioning:
 		return
 	if SaveManager.has_save_file("checkpoint"):
 		_show_start_confirm_dialog()
@@ -676,7 +686,7 @@ func _confirm_start_new_stage() -> void:
 
 
 func _start_selected_stage() -> void:
-	if SaveManager.is_progress_read_only():
+	if SceneTransitionManager.is_transitioning or SaveManager.is_progress_read_only():
 		return
 	var data := JourneyManager.get_selected_stage_data()
 	if data.is_empty():
@@ -686,10 +696,8 @@ func _start_selected_stage() -> void:
 	if expected_scene_path.is_empty() or not ResourceLoader.exists(expected_scene_path):
 		push_error("StageSelect: stage scene is unavailable: " + expected_scene_path)
 		return
-	if not _delete_checkpoint_if_present():
-		return
 	GameSession.start_new_game()
-	var stage_scene_path := JourneyManager.begin_selected_stage()
+	var stage_scene_path := expected_scene_path
 	if stage_scene_path.is_empty():
 		push_error("StageSelect: JourneyManager failed to begin selected stage.")
 		return
@@ -697,6 +705,7 @@ func _start_selected_stage() -> void:
 		"title": str(data.get("display_name", "Entering the trial")),
 		"subtitle": "Stage %d-%d" % [JourneyManager.active_run_chapter_id, JourneyManager.active_run_stage_id],
 		"minimum_display_time": 0.65,
+		"replace_checkpoint_after_verification": true,
 	})
 	if change_error != OK:
 		JourneyManager.clear_active_run()
@@ -777,18 +786,18 @@ func _add_stage_label_plate(canvas: Control, point: Vector2, data: Dictionary, s
 	var border_color := _stage_status_color(status, accent)
 	var desired: Rect2
 	if is_boss:
-		desired = Rect2(Vector2(104.0, point.y + 94.0), Vector2(404.0, 64.0))
+		desired = Rect2(Vector2(104.0, point.y + 94.0), Vector2(320.0, 58.0))
 	elif point.x < 300.0:
-		desired = Rect2(Vector2(point.x + 68.0, point.y - 32.0), Vector2(304.0, 64.0))
+		desired = Rect2(Vector2(point.x + 68.0, point.y - 32.0), Vector2(250.0, 56.0))
 	else:
-		desired = Rect2(Vector2(18.0, point.y - 32.0), Vector2(350.0, 64.0))
+		desired = Rect2(Vector2(18.0, point.y - 32.0), Vector2(280.0, 56.0))
 	var safe_rect := _resolve_stage_label_rect(desired, occupied, map_height)
 	var plate := PanelContainer.new()
 	plate.set_meta("map_label_point",point)
 	plate.position = safe_rect.position
 	plate.size = safe_rect.size
 	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	plate.add_theme_stylebox_override("panel", _make_panel_style(Color(0.002, 0.014, 0.020, 0.84 if selected else 0.74), Color(border_color.r, border_color.g, border_color.b, 0.24), 9, 1))
+	plate.add_theme_stylebox_override("panel", _make_panel_style(Color(0.002, 0.014, 0.020, 0.86 if selected else 0.52), Color(border_color.r, border_color.g, border_color.b, 0.24), 9, 1))
 	canvas.add_child(plate)
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 10)
@@ -864,7 +873,11 @@ func _scroll_stage_map_to_selected(metrics: Dictionary, stage_ids: Array) -> voi
 	var y := top_y
 	if distance > 0:
 		y += boss_gap + float(distance - 1) * normal_gap
-	map_scroll.scroll_vertical = maxi(int(y - maxf(map_scroll.size.y, 1.0) * 0.5), 0)
+	var target_scroll: int=maxi(int(y + 45.0 - maxf(map_scroll.size.y,1.0)*0.5),0)
+	var plate: Control=_stage_node_refs.get(preview_stage_id,{}).get("plate") as Control
+	if is_instance_valid(plate):
+		target_scroll=maxi(target_scroll,ceili(plate.position.y+plate.size.y-map_scroll.size.y+8.0))
+	map_scroll.scroll_vertical=target_scroll
 
 
 func _hide_scrollbar_chrome(scroll: ScrollContainer) -> void:
@@ -911,7 +924,8 @@ func _on_back_pressed() -> void:
 
 func _fit_phone() -> void:
 	var compact: bool=size.y<700 or size.x<350
-	if is_instance_valid(_realm_header):_realm_header.custom_minimum_size.y=64 if compact else 104
+	if is_instance_valid(_realm_header):_realm_header.custom_minimum_size.y=50 if compact else 82
+	if is_instance_valid(_realm_eyebrow):_realm_eyebrow.visible=not compact
 	if is_instance_valid(_realm_subtitle):_realm_subtitle.visible=not compact
 	if is_instance_valid(_detail_art):_detail_art.visible=not compact
 	if is_instance_valid(_preview_hint):_preview_hint.visible=not compact

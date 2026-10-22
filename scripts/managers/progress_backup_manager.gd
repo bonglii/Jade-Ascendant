@@ -58,7 +58,7 @@ func _on_profile(_profile: Dictionary) -> void:
 
 func get_status() -> Dictionary:
 	var stage: String = "local_account_mismatch" if not _owner.is_empty() and not busy and str(_local.get("owner", "")) not in ["", _owner] else status
-	return {"stage": stage, "busy": busy, "revision": revision, "updated_at": updated_at, "remote_exists": not remote.is_empty(), "auto_enabled": _local.get("owner") == _owner and bool(_local.get("approved", false)), "domain_count": Snapshot.DOMAINS.size()}
+	return {"stage": stage, "owner_hint": GoogleAccountManager.get_known_account_hint(str(_local.get("owner", ""))) if stage=="local_account_mismatch" else "", "busy": busy, "revision": revision, "updated_at": updated_at, "remote_exists": not remote.is_empty(), "auto_enabled": _local.get("owner") == _owner and bool(_local.get("approved", false)), "domain_count": Snapshot.DOMAINS.size()}
 
 func _idle_safe() -> bool:
 	if restore_committed or SaveManager.is_progress_read_only() or SaveManager.has_pending_transaction() or SceneTransitionManager.is_transitioning: return false

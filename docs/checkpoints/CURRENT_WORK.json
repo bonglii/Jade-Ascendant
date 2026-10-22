@@ -1,18 +1,17 @@
 {
   "project": "Jade Ascendant",
-  "batch": "LiveOps Control Desk",
-  "state": "docs/checkpoints/LIVEOPS_CONTROL_STATE_2026-10-22.json",
-  "details": "docs/checkpoints/LIVEOPS_CONTROL_2026-10-22.md",
-  "base_commit": "3e1904c6f96491cf1ade393af3db68d4cfae5e30",
-  "author_status": "implemented and author-tested",
+  "batch": "Player Journey Reliability & Polish",
+  "state": "docs/checkpoints/PLAYER_JOURNEY_STATE_2026-10-22.json",
+  "base_commit": "09b9e50e0b3c2253941ac3ba5bb1c87767750b26",
+  "previous_batch": "LiveOps remote commit09b9e50 observed, deployment not independently confirmed",
+  "next_action": "D:\\Godot\\tools\\Jade-Player-Journey\\apply_publish_and_deploy.cmd",
+  "resume_rule": "Inspect actual diff and completed evidence first; reuse passing unchanged checks.",
+  "aab_export_required": true,
+  "author_status": "implemented; source tests and local portable workflow passed",
   "owner_pending": [
-    "scoped push",
-    "additive indexes",
+    "Windows QA/push",
+    "Profile deployment",
     "IAP deployment",
-    "Profile dashboard deployment"
-  ],
-  "next_action": "D:\\Godot\\tools\\Jade-LiveOps-Control\\apply_publish_and_deploy.cmd",
-  "aab_export_required": false,
-  "previous_batch": "Heavenly Trials already user-confirmed pushed/deployed; its AAB export/internal test remains with owner",
-  "resume_rule": "Read state and actual diff/receipts first. Repeat only incomplete or invalidated stages."
+    "new AAB/internal test"
+  ]
 }

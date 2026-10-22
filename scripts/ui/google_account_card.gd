@@ -58,12 +58,13 @@ func _ready() -> void:
 
 	_footer = _make_label(
 		_local(
-			"Cloud Save is not active. Gameplay progress stays on this device. Verified purchases are linked to your account.",
-			"Cloud Save belum aktif. Progres game tetap di perangkat ini. Pembelian terverifikasi terhubung ke akunmu."
+			"Local progress saves on this device. Account backup status appears here after sign-in.",
+			"Progres lokal disimpan di perangkat ini. Status backup akun ditampilkan setelah login."
 		), 13, MUTED
 	)
 	content.add_child(_footer)
 
+	ProgressBackupManager.changed.connect(_refresh_backup)
 	GoogleAccountManager.account_state_changed.connect(_refresh)
 	_refresh(GoogleAccountManager.get_account_snapshot())
 
@@ -155,6 +156,9 @@ func _refresh(snapshot: Dictionary) -> void:
 		_status.add_theme_color_override("font_color", MUTED)
 		_action.text = _local("GOOGLE SIGN-IN UNAVAILABLE", "LOGIN GOOGLE BELUM TERSEDIA")
 
+	var hint: String=str(snapshot.get("account_hint", ""))
+	if signed_in and not hint.is_empty(): _status.text += "\n" + hint
+	_refresh_backup()
 	var normal: StyleBoxFlat = _button_style(_action.disabled, signed_in)
 	var hover: StyleBoxFlat = normal.duplicate() as StyleBoxFlat
 	hover.border_color = GOLD
@@ -183,3 +187,19 @@ func _on_action_pressed() -> void:
 		GoogleAccountManager.request_sign_out()
 	else:
 		GoogleAccountManager.request_google_sign_in()
+
+func _refresh_backup() -> void:
+	if not is_instance_valid(_footer): return
+	var view: Dictionary=ProgressBackupManager.get_status()
+	if not bool(GoogleAccountManager.get_account_snapshot().get("signed_in",false)):
+		_footer.text=_local("Local progress saves on this device. Sign in to check this account's cloud backup.","Progres lokal disimpan di perangkat ini. Masuk untuk memeriksa backup cloud akun.")
+	elif str(view.get("stage", ""))=="local_account_mismatch":
+		_footer.text=_local("This device has progress associated with another account. Review its masked account hint and restore options in Settings.","Perangkat ini memiliki progres yang terhubung ke akun lain. Periksa petunjuk akun dan pilihan pemulihan di Settings.")
+	elif bool(view.get("auto_enabled",false)):
+		_footer.text=_local("Automatic menu backups enabled. Last confirmed backup: revision %d. Purchases are verified separately.","Backup otomatis saat di menu aktif. Backup terakhir terkonfirmasi: revisi %d. Pembelian diverifikasi terpisah.") % int(view.get("revision",0))
+	elif bool(view.get("busy",false)):
+		_footer.text=_local("Checking account backup. Local progress remains on this device.","Memeriksa backup akun. Progres lokal tetap tersimpan di perangkat ini.")
+	elif bool(view.get("remote_exists",false)):
+		_footer.text=_local("This account has a cloud backup. Review Save or Restore in Settings; progress is not replaced automatically.","Akun ini memiliki backup cloud. Periksa Simpan atau Pulihkan di Settings; progres tidak diganti otomatis.")
+	else:
+		_footer.text=_local("Automatic cloud backup is not enabled for this device. Check the backup section in Settings. Purchases stay linked to their account.","Backup cloud otomatis belum aktif untuk perangkat ini. Periksa bagian backup di Settings. Pembelian tetap terhubung ke akunnya.")

@@ -1,0 +1,47 @@
+name: Player Journey QA
+on:
+  push:
+    branches: [checkpoint/iap-fasttrack-20261010]
+    paths:
+      - 'scripts/**'
+      - 'tests/**'
+      - 'backend/player_identity/**'
+      - 'backend/monetization/cloudflare/src/**'
+      - 'backend/monetization/cloudflare/tests/**'
+      - '.github/workflows/player-journey-qa.yml'
+  pull_request:
+    paths: ['scripts/**', 'tests/**', 'backend/**']
+jobs:
+  focused-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Get pinned Godot
+        run: |
+          mkdir -p /tmp/jade-journey-godot
+          curl -fsSL https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip -o /tmp/jade-journey-godot/godot.zip
+          echo 'cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4  /tmp/jade-journey-godot/godot.zip' | sha256sum --check
+          unzip -q /tmp/jade-journey-godot/godot.zip -d /tmp/jade-journey-godot
+      - name: Grants, account boundaries, Continue and mobile layout
+        run: node backend/player_identity/check_player_journey.cjs "$GITHUB_WORKSPACE" /tmp/jade-journey-godot/Godot_v4.7.2-stable_linux.x86_64
+      - name: Preserve evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: player-journey-qa
+          path: .local/player_journey_qa/
+  windows-script:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse the actual deployment script
+        shell: powershell
+        run: |
+          $tokens=$null
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $env:GITHUB_WORKSPACE 'backend/player_identity/deploy_player_journey.ps1'),[ref]$tokens,[ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) { $errors | Format-List; exit 1 }

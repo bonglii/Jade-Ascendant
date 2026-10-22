@@ -1,0 +1,52 @@
+{
+  "batch": "Player Journey Reliability & Polish",
+  "base_commit": "09b9e50e0b3c2253941ac3ba5bb1c87767750b26",
+  "branch": "checkpoint/iap-fasttrack-20261010",
+  "phase": "author source and focused validation complete; ready for portable owner install/publish/deploy",
+  "user_scope": "one combined batch from full project assessment; autonomous changes, preserve saves/live IAP, meaningful checkpoints",
+  "confirmed_cause": "user gave Heavenweaver Compass through admin mail; Odyssey combat only accepts milestone72. Existing shared popup mislabels every gate failure as account mismatch.",
+  "implementation": [
+    "read-only acknowledged admin receipt proof in Profile; excludes close-without-reward and Odyssey outbox",
+    "fixed service-binding proof bridge in IAP; historic free gifts recognized without regrant",
+    "preserve existing event/refund checks and native root envelope",
+    "distinct run-entry reasons, known masked email suffix metadata and action-specific modal",
+    "reuse fresh 60-second Compass lease",
+    "start Journey and replace checkpoint only after both gates accept",
+    "actual backup status replaces stale Cloud Save inactive copy",
+    "compact Realm header, readable progress, records in status row, image inset, extra map space and clipped-label scroll target",
+    "backup mismatch uses known masked owner hint; support summary excludes email",
+    "fourteen-area source audit distinguishes implemented systems, fixes, reused evidence and external evidence"
+  ],
+  "validation": {
+    "server_tests": 211,
+    "run_entry_checks": 38,
+    "layout_checks": 27,
+    "paid_run_initial_checks": 15,
+    "paid_run_separate_process_restart_checks": 30,
+    "compass_combat_checks": 22,
+    "economy_checks": 767,
+    "economy_restart_checks": 4,
+    "direction_regression_checks": 53,
+    "godot": "4.7.2 verified SHA256",
+    "production_gates": 9,
+    "iap_bundle_dry_run": true,
+    "profile_bundle_fixture_dry_run": true,
+    "windows_powershell_executed": false,
+    "live_deploy_executed": false,
+    "phone_tested": false,
+    "portable_workflow_checks": 27,
+    "real_software_renders": true,
+    "github_actions_executed": false
+  },
+  "remaining": [
+    "owner Windows installer/QA/scoped push/Profile/IAP deployment",
+    "export new release AAB and internal-test client changes",
+    "actual device/network/player evidence as identified in audit"
+  ],
+  "author_pushed": false,
+  "remote_deployed": false,
+  "native_changed": false,
+  "aab_export_required": true,
+  "next_action": "D:\\Godot\\tools\\Jade-Player-Journey\\apply_publish_and_deploy.cmd",
+  "git_push_evidence": "author HTTPS dry-run rejected: no GitHub username/credentials; use scoped Windows publisher; no author commit/push claimed"
+}

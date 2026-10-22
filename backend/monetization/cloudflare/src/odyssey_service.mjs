@@ -15,7 +15,7 @@ export async function currentEvent(db){const r=await primary(db).prepare('SELECT
 export async function publishEvent(db,input,time){const e=definition(input),old=await db.prepare('SELECT document FROM odyssey_events WHERE id=?').bind(e.id).first();if(old){const original=JSON.parse(old.document);if(JSON.stringify({...original,enabled:e.enabled,ads_enabled:e.ads_enabled,purchases_enabled:e.purchases_enabled})!==JSON.stringify(e))reject('published_event_immutable');await db.prepare('UPDATE odyssey_events SET document=? WHERE id=?').bind(JSON.stringify(e),e.id).run();}else{if(e.starts_at<time-60||e.starts_at>time+90*86400)reject('invalid_schedule',400);const previous=await currentEvent(db);if(previous&&previous.ends_at+3*86400>time)reject('previous_season_not_finished');await db.prepare("INSERT INTO odyssey_events SELECT ?,?,? WHERE NOT EXISTS(SELECT 1 FROM odyssey_events WHERE json_extract(document,'$.ends_at')+259200>?)").bind(e.id,JSON.stringify(e),time,time).run();const created=await db.prepare('SELECT document FROM odyssey_events WHERE id=?').bind(e.id).first();if(!created)reject('previous_season_not_finished');}return e;}
 async function paidEligible(db,owner,time){const key='u1:'+owner;await assertNoRefundHoldRC5({db,owner:key});await assertVerifiedPlayCreditRC14(db,key);const c=await primary(db).prepare("SELECT watermark_ms FROM iap_play_void_cursor_v1 WHERE cursor_name='voided_inapp'").first();if(!integer(c?.watermark_ms,time*1000-7200000,time*1000+60000))reject('refund_monitor_stale',503);}
 const paidGuard="NOT EXISTS(SELECT 1 FROM iap_refund_account_holds_v1 WHERE owner_key=? AND status='held') AND EXISTS(SELECT 1 FROM iap_play_void_cursor_v1 WHERE cursor_name='voided_inapp' AND watermark_ms BETWEEN ? AND ?) AND EXISTS(SELECT 1 FROM iap_wallet_events_v1 WHERE owner_key=? AND event_kind='play_credit')";
-export function service(db,{now=()=>Math.floor(Date.now()/1000),rng,economy=1,adConfigured=true}={}){
+export function service(db,{now=()=>Math.floor(Date.now()/1000),rng,economy=1,adConfigured=true,compassGrant=async()=>({authorized:false,stage:'not_checked'})}={}){
  db=primary(db);
  const prices=economy>=2?PREMIUM_LIMITS:LIMITS;
  const withBonus=economy>=3;
@@ -46,7 +46,8 @@ export function service(db,{now=()=>Math.floor(Date.now()/1000),rng,economy=1,ad
   const state=r?JSON.parse(r.state):initial();if(influenced(state))await paidEligible(db,owner,now());
   const grants=(await db.prepare("SELECT state FROM odyssey_players p WHERE owner=? AND EXISTS(SELECT 1 FROM json_each(p.state,'$.milestones') WHERE value=72) LIMIT 100").bind(owner).all()).results.map(row=>JSON.parse(row.state));
   if(grants.length&&grants.every(influenced)&&!influenced(state))await paidEligible(db,owner,now());
-  const result={version:1,owner_binding:owner,event,state,revision:r?.revision||0,server_time:now(),limits:prices,compass_authorized:grants.length>0,lease_seconds:60};
+  const mailGrant=grants.length?{authorized:false,stage:'milestone'}:await compassGrant(owner);
+  const result={version:1,owner_binding:owner,event,state:{...state,compass_verification:mailGrant.stage},revision:r?.revision||0,server_time:now(),limits:prices,compass_authorized:grants.length>0||mailGrant.authorized===true,lease_seconds:60};
   if(withFlow){result.board_rewards=BOARD_REWARDS;result.ad_delivery=await delivery(event,owner,now());}
   if(withBonus)result.purchase_bonus=await bonusSummary(db,event,owner,now());return result;
  }

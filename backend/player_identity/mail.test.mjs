@@ -323,3 +323,49 @@ test('weekly operations needs an admin session and forwards only the read-only s
  const f=await fixture();let calls=0;f.env.ODYSSEY_ADMIN_KEY='c'.repeat(64);f.env.ODYSSEY_IAP={async fetch(url,init){calls++;assert.equal(url,'https://jade-ascendant-iap.jade-ascendant-studio.workers.dev/internal/trials/operations');assert.equal(init.method,'GET');assert.equal(init.headers['x-odyssey-key'],'c'.repeat(64));return new Response(JSON.stringify({version:1,stats:{participants:2}}),{headers:{'content-type':'application/json'}})}};
  try{assert.equal((await f.api('/admin/api/trials/operations')).status,401);assert.equal(calls,0);await f.login();const r=await f.api('/admin/api/trials/operations');assert.equal(r.status,200);assert.equal(r.data.stats.participants,2);assert.equal(calls,1);assert.equal((await f.api('/admin/api/trials/operations',{})).status,405);assert.equal(calls,1);}finally{f.db.sql.close()}
 });
+
+test('Compass admin gift authorizes only after real acknowledgement, without granting again',async()=>{
+ const f=await fixture();try{
+  await f.login();f.env.ODYSSEY_ADMIN_KEY='c'.repeat(64);
+  const probe=(owner=f.alice)=>f.api('/internal/equipment/compass-grant',{owner},{headers:{'x-odyssey-key':f.env.ODYSSEY_ADMIN_KEY}});
+  const {mail}=await f.publish({reward:{spirit_stone:0,items:{heavenweaver_compass:1}}});
+  assert.equal((await probe()).data.compass_authorized,false);
+  const claim=await f.api('/v1/mail/claim',{mail_id:mail.id,installation_id:installation},{headers:{'x-jade-mail-features':'gifts-v2','x-jade-odyssey':'v1'}});
+  assert.equal(claim.status,200);assert.equal((await probe()).data.compass_authorized,false);
+  assert.equal((await f.api('/v1/mail/ack',{mail_id:mail.id,installation_id:installation,receipt_id:claim.data.receipt_id})).status,200);
+  const changes=f.db.sql.prepare("SELECT total_changes() n").get().n;
+  const result=await probe();assert.equal(result.status,200);assert.deepEqual(result.data,{version:1,owner_binding:f.alice,compass_authorized:true});
+  assert.equal((await probe(f.bob)).data.compass_authorized,false);
+  // History cleanup/cancellation/expiry cannot revoke a completed free grant.
+  f.db.sql.prepare('UPDATE mail_recipients SET deleted_at=1 WHERE mail_id=?').run(mail.id);
+  f.db.sql.prepare('UPDATE mail_campaigns SET expires_at=1,cancelled_at=1 WHERE id=?').run(mail.id);
+  assert.equal((await probe()).data.compass_authorized,true);
+  assert.equal(f.db.sql.prepare('SELECT COUNT(*) n FROM mail_claims').get().n,1);
+  assert.equal(f.db.sql.prepare("SELECT total_changes() n").get().n,changes+2);
+ }finally{f.db.sql.close();}
+});
+test('Compass proof rejects service forgery, oversized or malformed owners; close-without-reward is not ownership',async()=>{
+ const f=await fixture();try{
+  await f.login();f.env.ODYSSEY_ADMIN_KEY='c'.repeat(64);
+  const probe=(body={owner:f.alice},key=f.env.ODYSSEY_ADMIN_KEY)=>f.api('/internal/equipment/compass-grant',body,{headers:{'x-odyssey-key':key}});
+  assert.equal((await probe(undefined,'wrong')).status,403);
+  assert.equal((await probe(undefined,'é'.repeat(64))).status,403);
+  assert.equal((await probe({owner:'x'.repeat(300)})).status,413);
+  assert.equal((await probe({owner:f.alice,item:'heavenweaver_compass'})).status,400);
+  const {mail}=await f.publish({reward:{spirit_stone:0,items:{heavenweaver_compass:1}}});
+  await f.api('/v1/mail/claim',{mail_id:mail.id,installation_id:installation},{headers:{'x-jade-mail-features':'gifts-v2','x-jade-odyssey':'v1'}});
+  assert.equal((await f.api('/admin/api/resolve',{mail_id:mail.id,uid:f.a.public_uid,reason:'Close pending case',confirmation:'CLOSE WITHOUT REWARD'})).status,200);
+  assert.equal((await probe()).data.compass_authorized,false);
+ }finally{f.db.sql.close();}
+});
+test('an Odyssey outbox receipt cannot bypass event refund or milestone checks through admin grant fallback',async()=>{
+ const f=await fixture();try{
+  await f.login();f.env.ODYSSEY_ADMIN_KEY='c'.repeat(64);
+  const {mail}=await f.publish({reward:{spirit_stone:0,items:{heavenweaver_compass:1}}});
+  const c=await f.api('/v1/mail/claim',{mail_id:mail.id,installation_id:installation},{headers:{'x-jade-mail-features':'gifts-v2','x-jade-odyssey':'v1'}});
+  await f.api('/v1/mail/ack',{mail_id:mail.id,installation_id:installation,receipt_id:c.data.receipt_id});
+  f.db.sql.prepare('UPDATE mail_campaigns SET request_id=? WHERE id=?').run('odyssey:'+mail.id,mail.id);
+  const result=await f.api('/internal/equipment/compass-grant',{owner:f.alice},{headers:{'x-odyssey-key':f.env.ODYSSEY_ADMIN_KEY}});
+  assert.equal(result.data.compass_authorized,false);
+ }finally{f.db.sql.close();}
+});

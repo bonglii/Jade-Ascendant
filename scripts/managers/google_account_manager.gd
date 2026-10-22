@@ -7,6 +7,7 @@ extends Node
 signal account_state_changed(snapshot: Dictionary)
 signal monetization_identity_changed(ready: bool)
 
+const AccountHints = preload("res://scripts/managers/account_hint_store.gd")
 const SETTINGS_SCENE: String = "res://scenes/ui/settings_screen.tscn"
 const ACCOUNT_CARD_PATH: String = "res://scripts/ui/google_account_card.gd"
 const NATIVE_SINGLETON: String = "GodotFirebaseAndroid"
@@ -77,7 +78,8 @@ func get_account_snapshot() -> Dictionary:
 		"display_name": _display_name,
 		"status": _status,
 		"monetization_identity_ready": not get_monetization_account_binding().is_empty(),
-		"cloud_save_active": false
+		"account_hint": AccountHints.lookup(_sha256_hex(_account_uid)) if _signed_in else "",
+		"cloud_save_active": bool(ProgressBackupManager.get_status().get("auto_enabled", false))
 	}
 
 
@@ -97,6 +99,10 @@ func get_authenticated_uid() -> String:
 		return ""
 	var live_uid: String = str(user_data.get("uid", "")).strip_edges()
 	return _account_uid if live_uid == _account_uid else ""
+
+
+func get_known_account_hint(binding: String) -> String:
+	return AccountHints.lookup(binding)
 
 
 ## Purchase identity is intentionally separate from the visible Google-account
@@ -455,6 +461,7 @@ func _apply_user(data: Dictionary) -> void:
 
 	_account_uid = uid
 	_signed_in = true
+	AccountHints.remember(_sha256_hex(uid), data.get("email", ""))
 	var account_name: Variant = data.get("name", "")
 	_display_name = account_name.strip_edges() if account_name is String else ""
 	if _display_name.is_empty():

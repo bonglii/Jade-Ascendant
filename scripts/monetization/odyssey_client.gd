@@ -26,6 +26,7 @@ var _ad_feedback_until: int=0
 var _received_msec: int = 0
 var run_authorized: bool = false
 var _preparing_run: bool = false
+var run_gate_error: String = ""
 var _warm_next_at: int = 0
 var _backgrounded: bool = false
 var _prepared_ad: Dictionary={}
@@ -357,22 +358,43 @@ func _observe_ad_delivery(data: Dictionary) -> void:
 	elif same and receipt.get("stage")=="expired": ad_delivery_state="expired";_clear_ad_wait()
 	elif _ad_cancelled and not _ad_earned_seen and _ad_now()-_ad_cancelled_at>=30: ad_delivery_state="cancelled";_clear_ad_wait()
 
+func _gate_fail(reason: String) -> bool:
+	run_gate_error=reason
+	_preparing_run=false
+	return false
+func _connection_gate_reason() -> String:
+	if status in ["ACCOUNT_HELD","paid_account_on_hold"]:return "ACCOUNT_HELD"
+	if status in ["APP_CHECK_UNAVAILABLE","APP_CHECK_NOT_READY"]:return "APP_VERIFICATION_UNAVAILABLE"
+	if status in ["AUTH_REQUIRED","AUTH_UNAVAILABLE","UNAUTHENTICATED"]:return "SIGN_IN_REQUIRED"
+	return "CONNECTION_UNAVAILABLE"
 func prepare_scene_run(continuing: bool) -> bool:
-	if _preparing_run: return false
-	_preparing_run = true; run_authorized = false
-	var equipment: Node = get_node_or_null("/root/EquipmentManager")
-	var armament: String = str(equipment.call("get_loadout_equipped_item_id", "armament")) if equipment != null else ""
-	if continuing and equipment != null:
-		armament = str(equipment.get("active_run_loadout_snapshot").get("equipped_item_ids",{}).get("armament",""))
-	if armament != "heavenweaver_compass": _preparing_run = false; return true
-	var account_binding: String = _live_binding()
-	while busy: await get_tree().process_frame
-	var ok: bool = refresh()
-	while busy: await get_tree().process_frame
-	# An uncertain command is recovered with its exact ID before reading a lease.
-	if ok and status == "connected" and not snapshot.has("compass_authorized"):
-		ok = refresh()
-		while busy: await get_tree().process_frame
-	run_authorized = ok and status == "connected" and account_binding == _live_binding() and snapshot.get("compass_authorized",false) == true and Time.get_ticks_msec() - _received_msec <= 60000
-	_preparing_run = false
-	return run_authorized
+	if _preparing_run: run_gate_error="VERIFICATION_BUSY";return false
+	run_gate_error="";_preparing_run=true;run_authorized=false
+	var equipment: Node=get_node_or_null("/root/EquipmentManager")
+	var armament: String=str(equipment.call("get_loadout_equipped_item_id","armament")) if equipment!=null else ""
+	if continuing and equipment!=null:
+		armament=str(equipment.get("active_run_loadout_snapshot").get("equipped_item_ids",{}).get("armament",""))
+	if armament!="heavenweaver_compass":_preparing_run=false;return true
+	var account_binding: String=_live_binding()
+	if account_binding.length()!=64:return _gate_fail("SIGN_IN_REQUIRED")
+	# A fresh authenticated read is already a lease. Reuse it instead of forcing
+	# another event round trip on every Begin, while pending commands still recover.
+	if _binding==account_binding and status in ["connected","refreshing"] and _pending().is_empty() and snapshot.get("compass_authorized",false)==true and Time.get_ticks_msec()-_received_msec<60000:
+		run_authorized=true;_preparing_run=false;return true
+	while busy:await get_tree().process_frame
+	if account_binding!=_live_binding():return _gate_fail("ACCOUNT_CHANGED")
+	if _pending().has("error"):return _gate_fail("RECOVERY_REQUIRED")
+	var ok: bool=refresh()
+	while busy:await get_tree().process_frame
+	if account_binding!=_live_binding():return _gate_fail("ACCOUNT_CHANGED")
+	if ok and status=="connected" and not snapshot.has("compass_authorized"):
+		ok=refresh()
+		while busy:await get_tree().process_frame
+	if account_binding!=_live_binding():return _gate_fail("ACCOUNT_CHANGED")
+	if not ok or status!="connected":return _gate_fail(_connection_gate_reason())
+	if snapshot.get("state",{}).get("compass_verification")=="unavailable":return _gate_fail("COMPASS_VERIFICATION_UNAVAILABLE")
+	if snapshot.get("compass_authorized",false)!=true:return _gate_fail("COMPASS_GRANT_REQUIRED")
+	run_authorized=Time.get_ticks_msec()-_received_msec<=60000
+	_preparing_run=false
+	if not run_authorized:return _gate_fail("CONNECTION_UNAVAILABLE")
+	return true

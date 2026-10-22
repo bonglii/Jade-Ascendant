@@ -1,9 +1,10 @@
 import {odysseyWire} from './odyssey_wire.mjs';
+import {readCompassMailGrant} from './compass_mail_grant.mjs';
 import {timingSafeEqual} from 'node:crypto';
 import {service,publishEvent,currentEvent,creditAd,flushOutbox,prepareAdVerification} from './odyssey_service.mjs';
 export const json=(status,data)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'private, no-store','x-content-type-options':'nosniff'}});
 export function adsConfigured(env){return /^ca-app-pub-[0-9]{16}\/[0-9]{10}$/.test(env.ODYSSEY_AD_UNIT||'')&&typeof env.ODYSSEY_AD_REWARD_ITEM==='string'&&env.ODYSSEY_AD_REWARD_ITEM.length>0;}
-export function internalAuthorized(request,env){const expected=env.ODYSSEY_ADMIN_KEY,actual=request.headers.get('x-odyssey-key');return /^[a-f0-9]{64}$/.test(expected||'')&&typeof actual==='string'&&actual.length===64&&timingSafeEqual(Buffer.from(expected),Buffer.from(actual));}
+export function internalAuthorized(request,env){const expected=env.ODYSSEY_ADMIN_KEY,actual=request.headers.get('x-odyssey-key');return /^[a-f0-9]{64}$/.test(expected||'')&&/^[a-f0-9]{64}$/.test(actual||'')&&timingSafeEqual(Buffer.from(expected),Buffer.from(actual));}
 export async function boundedBody(request){const reader=request.body?.getReader();if(!reader)throw Object.assign(new Error(),{code:'invalid_body',status:400});let size=0;const chunks=[];while(true){const part=await reader.read();if(part.done)break;size+=part.value.length;if(size>8192){await reader.cancel();throw Object.assign(new Error(),{code:'body_too_large',status:413});}chunks.push(part.value);}try{return JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{throw Object.assign(new Error(),{code:'invalid_json',status:400});}}
 export async function odysseyRoute(request,env,ctx,uid){const url=new URL(request.url);try{
  if(url.pathname==='/internal/odyssey/config'){
@@ -17,7 +18,7 @@ export async function odysseyRoute(request,env,ctx,uid){const url=new URL(reques
   const result=await creditAd(env.DB,url.search,env);console.info('JADE_ODYSSEY_AD stage='+(result.credited?'credited':'other_placement'));return json(200,result);
  }
  if(!uid)return json(401,{error:'unauthenticated'});
- const api=service(env.DB,{adConfigured:adsConfigured(env),economy:url.pathname==='/v4/odyssey'?4:url.pathname==='/v3/odyssey'?3:url.pathname==='/v2/odyssey'?2:1});let data;
+ const api=service(env.DB,{adConfigured:adsConfigured(env),compassGrant:owner=>readCompassMailGrant(env,owner),economy:url.pathname==='/v4/odyssey'?4:url.pathname==='/v3/odyssey'?3:url.pathname==='/v2/odyssey'?2:1});let data;
  if(request.method==='GET')data=await api.read(uid);
  else if(request.method==='POST'){const input=await boundedBody(request);if(input.action?.kind==='ad_intent'){if(!adsConfigured(env))return json(503,{error:'ads_not_configured'});await prepareAdVerification();}data=await api.execute(uid,input);}
  else return json(405,{error:'method_not_allowed'});

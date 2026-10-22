@@ -32,6 +32,8 @@ var _run_prepared: bool = false
 var _run_entered: bool = false
 var _preparing_run: bool = false
 var _last_result: Dictionary = {}
+var run_gate_error: String = ""
+var run_gate_owner_hint: String = ""
 
 func _service(name_id: String) -> Node:
 	return get_tree().root.get_node_or_null(NodePath(name_id)) if is_inside_tree() else null
@@ -334,8 +336,18 @@ func _seal_run(ref: Dictionary, frozen: Dictionary) -> void:
 	_run_ref=ref.duplicate(true); _run_slots=frozen.get("slots",{}).duplicate(true)
 	_run_stars=frozen.get("stars",{}).duplicate(true); _run_weapon_level=int(frozen.get("weapon_level",0))
 	_run_prepared=true; _run_started=true; _run_entered=false
+func _gate_fail(reason: String) -> bool:
+	run_gate_error=reason
+	return false
+func _transport_gate_reason() -> String:
+	if last_transport_stage=="ACCOUNT_HELD": return "ACCOUNT_HELD"
+	if last_transport_stage in ["APP_CHECK_UNAVAILABLE","APP_CHECK_NOT_READY"]: return "APP_VERIFICATION_UNAVAILABLE"
+	if last_transport_stage in ["UNAUTHENTICATED","AUTH_REQUIRED","AUTH_UNAVAILABLE"]: return "SIGN_IN_REQUIRED"
+	if last_transport_stage=="REVISION_OR_OWNERSHIP_CONFLICT": return "RUN_STATE_CHANGED"
+	return "CONNECTION_UNAVAILABLE"
 func prepare_scene_run(continuing: bool) -> bool:
-	if _preparing_run: return false
+	if _preparing_run: return _gate_fail("VERIFICATION_BUSY")
+	run_gate_error="";run_gate_owner_hint=""
 	_preparing_run=true
 	var ok: bool=await _prepare_scene_run(continuing)
 	_preparing_run=false
@@ -343,25 +355,32 @@ func prepare_scene_run(continuing: bool) -> bool:
 	return ok
 func _prepare_scene_run(continuing: bool) -> bool:
 	var saved: Dictionary=_checkpoint_for_gate() if continuing else {}
-	if continuing and saved.is_empty(): return false
+	if continuing and saved.is_empty(): return _gate_fail("CHECKPOINT_UNAVAILABLE")
 	var ref: Variant=saved.get("paid_run_ref",{})
 	# Legacy/local checkpoints must never acquire the current hub's paid selection.
 	if continuing and not saved.has("paid_run_ref"):
 		_seal_run({},{}); return true
-	if continuing and (not valid_run_ref(ref) or ref.binding!=_live_binding()): return false
+	if continuing and not valid_run_ref(ref): return _gate_fail("CHECKPOINT_UNAVAILABLE")
+	if continuing and _live_binding().is_empty(): return _gate_fail("SIGN_IN_REQUIRED")
+	if continuing and ref.binding!=_live_binding():
+		var account: Node=_service("GoogleAccountManager")
+		if account!=null and account.has_method("get_known_account_hint"):run_gate_owner_hint=str(account.call("get_known_account_hint",str(ref.binding)))
+		return _gate_fail("ACCOUNT_MISMATCH")
 	var account_binding: String=_live_binding()
 	await _await_transport()
-	if account_binding!=_live_binding(): return false
+	if account_binding!=_live_binding(): return _gate_fail("ACCOUNT_CHANGED")
 	if not _read_pending().is_empty():
-		if not refresh(): return false
+		if not refresh(): return _gate_fail("RECOVERY_REQUIRED")
 		await _await_transport()
-		if account_binding!=_live_binding() or not _read_pending().is_empty(): return false
+		if account_binding!=_live_binding(): return _gate_fail("ACCOUNT_CHANGED")
+		if not _read_pending().is_empty(): return _gate_fail("RECOVERY_REQUIRED")
 	if not continuing and not is_verified_ready():
 		_seal_run({},{}); return true
 	if continuing:
-		if not refresh(): return false
+		if not refresh(): return _gate_fail(_transport_gate_reason())
 		await _await_transport()
-		if account_binding!=_live_binding() or not is_verified_ready(): return false
+		if account_binding!=_live_binding(): return _gate_fail("ACCOUNT_CHANGED")
+		if not is_verified_ready(): return _gate_fail(_transport_gate_reason())
 	var selected: Dictionary=snapshot.get("slots",{})
 	if not continuing and selected.values().all(func(id: Variant) -> bool: return id==""):
 		_seal_run({},{}); return true
@@ -371,11 +390,12 @@ func _prepare_scene_run(continuing: bool) -> bool:
 		var equipment: Node=_service("EquipmentManager")
 		var arm: String=str(selected.get("armament",""))
 		extra.weapon_level=0 if arm=="" else clampi(int(equipment.get("weapon_levels").get(arm,1)),1,item_star(arm)*10)
-	if not submit("run_resume" if continuing else "run_start",extra): return false
+	if not submit("run_resume" if continuing else "run_start",extra): return _gate_fail("RECOVERY_REQUIRED")
 	await _await_transport()
-	if account_binding!=_live_binding() or not _last_result.get("success",false) or not _fresh(): return false
+	if account_binding!=_live_binding(): return _gate_fail("ACCOUNT_CHANGED")
+	if not _last_result.get("success",false) or not _fresh(): return _gate_fail(_transport_gate_reason())
 	var op: Dictionary=_last_result.get("operation",{})
 	var frozen: Variant=op.get("outcome")
-	if not valid_run_outcome(frozen,snapshot,run_id): return false
+	if not valid_run_outcome(frozen,snapshot,run_id): return _gate_fail("RUN_STATE_CHANGED")
 	_seal_run({"version":1,"binding":account_binding,"run_id":run_id},frozen)
 	return true
