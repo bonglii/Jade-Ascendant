@@ -6,6 +6,7 @@ on:
       - qa/jade-player-features-20261022
     paths:
       - 'scripts/companion/**'
+      - 'scripts/weapon/run_combat_ledger.gd'
       - 'scenes/ui/training_ground.tscn'
       - 'tests/player_features_smoke.gd'
       - 'backend/player_identity/companion*'

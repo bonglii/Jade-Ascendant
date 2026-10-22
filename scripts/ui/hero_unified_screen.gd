@@ -659,7 +659,9 @@ func _layout_sections() -> void:
  if not is_instance_valid(fixed_deck):return
  var height: float=fixed_deck.get_combined_minimum_size().y
  fixed_deck.size=Vector2(page.custom_minimum_size.x,height)
- scroll.position=Vector2(fixed_deck.position.x,fixed_deck.position.y+height+8)
+ # Maintain a four-pixel gap in landscape while preserving portrait spacing.
+ var deck_gap: float=4.0 if content.size.y<620 and content.size.x>content.size.y else 8.0
+ scroll.position=Vector2(fixed_deck.position.x,fixed_deck.position.y+height+deck_gap)
  scroll.size=Vector2(page.custom_minimum_size.x,maxf(40,nav.position.y-scroll.position.y-8))
 
 func _comparison(body: VBoxContainer,id: String) -> void:

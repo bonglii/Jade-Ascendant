@@ -98,8 +98,9 @@ func skills() -> Array[Dictionary]:
   var title: String=weapon.get_combat_display_name() if id=="spirit_sword" else Catalog.get_upgrade_display_name(id)
   rows.append({"id":id,"name":title,"level":weapon.level,"armament_id":str(weapon.get("armament_id")) if id=="spirit_sword" else ""})
  var stats: Node=player.get_node("PlayerStats")
- var health: Node=player.get_node("PlayerHealth")
- for pair: Array in [["power",stats.power_level],["attack_speed",stats.attack_speed_level],["sword_intent",stats.sword_intent_level],["movement_speed",player.movement_speed_level],["spiritual_insight",player.spiritual_insight_level],["body_refinement",health.body_refinement_level],["qi_shield",health.qi_shield_level],["iron_body",health.iron_body_level],["blood_qi",health.blood_qi_level],["sword_dao_resonance",int(stats.has_sword_dao_resonance())],["yin_yang_reversal",int(stats.has_yin_yang_reversal())],["heavenly_tribulation",int(stats.has_heavenly_tribulation())]]:
+ # Training Grounds instantiate the production actor without the level-owned PlayerHealth.
+ var health: Node=player.get_node_or_null("PlayerHealth")
+ for pair: Array in [["power",stats.power_level],["attack_speed",stats.attack_speed_level],["sword_intent",stats.sword_intent_level],["movement_speed",player.movement_speed_level],["spiritual_insight",player.spiritual_insight_level],["body_refinement",int(health.get("body_refinement_level")) if health!=null else 0],["qi_shield",int(health.get("qi_shield_level")) if health!=null else 0],["iron_body",int(health.get("iron_body_level")) if health!=null else 0],["blood_qi",int(health.get("blood_qi_level")) if health!=null else 0],["sword_dao_resonance",int(stats.has_sword_dao_resonance())],["yin_yang_reversal",int(stats.has_yin_yang_reversal())],["heavenly_tribulation",int(stats.has_heavenly_tribulation())]]:
   if int(pair[1])>0:
    var starter: Node=manager.get_weapon_by_name("Spirit Sword")
    rows.append({"id":str(pair[0]),"name":Catalog.get_upgrade_display_name(str(pair[0])),"level":int(pair[1]),"armament_id":str(starter.get("armament_id")) if str(pair[0])=="sword_dao_resonance" and starter!=null else ""})

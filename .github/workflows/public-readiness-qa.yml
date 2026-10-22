@@ -58,6 +58,6 @@ jobs:
           for runner in public_readiness_smoke public_readiness_ui_smoke; do
             timeout 60 "$godot" --headless --audio-driver Dummy --path /tmp/jade-public-qa/project --script "res://tests/$runner.gd" >"/tmp/$runner.log" 2>&1
             cat "/tmp/$runner.log"
-            if rg -n 'SCRIPT ERROR|^ERROR:' "/tmp/$runner.log"; then exit 1; fi
+            if grep -En 'SCRIPT ERROR|^ERROR:' "/tmp/$runner.log"; then exit 1; fi
           done
           python3 tests/public_readiness_metadata_export.py "$godot"

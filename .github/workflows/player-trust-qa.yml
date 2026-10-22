@@ -58,5 +58,5 @@ jobs:
           for name in player_trust_smoke public_readiness_ui_smoke; do
             timeout 60 "$godot" --headless --audio-driver Dummy --path /tmp/jade-trust-qa/project --script "res://tests/$name.gd" >"/tmp/$name.log" 2>&1
             cat "/tmp/$name.log"
-            if rg -n 'SCRIPT ERROR|^ERROR:' "/tmp/$name.log"; then exit 1; fi
+            if grep -En 'SCRIPT ERROR|^ERROR:' "/tmp/$name.log"; then exit 1; fi
           done

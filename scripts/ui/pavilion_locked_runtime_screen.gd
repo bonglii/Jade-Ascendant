@@ -44,7 +44,7 @@ var locked_watch_ad_button: Button
 var summon_controls_stack: VBoxContainer
 var locked_watch_ad_visual: TextureRect
 var locked_rates_overlay: ColorRect
-var locked_history_overlay: ColorRect
+var locked_history_overlay: Control
 var scroll_container: ScrollContainer
 var compact_forge_host: VBoxContainer
 var compact_forge_details: VBoxContainer
@@ -1040,7 +1040,7 @@ func _close_rates_overlay() -> void:
 
 
 func _show_history_overlay() -> void:
-	load("res://scripts/companion/player_journal.gd").open(self,"summons")
+	locked_history_overlay = load("res://scripts/companion/player_journal.gd").open(self,"summons")
 
 
 func _close_history_overlay() -> void:

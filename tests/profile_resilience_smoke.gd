@@ -37,6 +37,8 @@ func run() -> void:
  check(not DNS.token_owner_matches(token("old-account"),owner),"old-account callback rejected")
  check(not DNS.token_owner_matches(token(auth.uid,"other-project"),owner),"wrong project rejected")
  check(not DNS.token_owner_matches("bad.token.value",owner),"malformed token rejected")
+ # Mirror a real signed-in current profile; stale-token check must not emulate sign-out.
+ root.get_node("PlayerIdentityServerClient")._auth=auth
  var mailer: Node=root.get_node("ServerMailManager")
  mailer._owner=owner;mailer._busy=true;mailer._waiting_token=true;mailer._pending={"kind":"list","owner":owner}
  mailer._on_token(token("old-account"))
