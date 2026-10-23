@@ -241,3 +241,13 @@
 ### 2026-10-24 — CI follow-up after published polish
 - A restart must execute immediately after its save-producing fixture with the same userdata configuration. Appending an unrelated suite must never change the restart's save directory; do not assume a test is last.
 - Dispose active combat scenes and settle exit callbacks before draining QA audio. Retain all runtime error scanning and gameplay/restart assertions. An unreproduced shutdown leak has uncertain resource types; do not label audio decoding or player saves broken without evidence.
+
+### 2026-10-24 — shared chrome and skill identity
+- Compare final nav typography as well as rectangles across all five pages. Generic readability enlargement must not resize only non-Sanctuary labels; shared nav labels explicitly own their typography and geometry.
+- Artwork files being different does not prove displayed icons are different. The equipped-weapon override was incorrectly applied to both the primary attack and Sword Dao Resonance, including a duplicate resolver in Library. Keep the primary equipment identity and the synergy identity separate through one catalog resolver.
+- WIB input conversion does not rewrite dates already published. Repair only an unstarted campaign with no frozen weeks, use database time and a compare-and-swap, retain flags/rewards and preserve the current live rotation. Never clear player progress to fix a schedule.
+
+-2026-10-24: A whole textured dragon mesh can pinch its head during sharp turns. Keep the painted head rigid, bound body curvature and inspect actual compact engine renders; HP tests alone do not prove VFX quality.
+-2026-10-24: Standalone SceneTree tests must load weapon scripts after autoload initialization; eager preloads can compile before singleton identifiers exist. Corrected scoped test passes189 checks.
+
+-2026-10-24: Asset batches must be tested in the actual sparse QA-clone topology. Stage only verified manifest paths with git add --sparse; never expand the checkout or stage unrelated files. The local bare publisher simulation caught the missing flag before owner delivery.

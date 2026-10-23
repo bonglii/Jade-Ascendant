@@ -10,7 +10,7 @@ const ADVICE: Dictionary={
  "verdict":["FINISHER","Attack enemies already at 35% HP or less. The bonus is smaller against bosses and does not amplify DoT."],
  "aegis":["HIT-FREE DEFENSE","Avoid both damage and blocks for eight seconds to recover one empty Qi Shield charge. Continue starts a fresh delay."]
 }
-const WEAPON_ROLES: Dictionary={"jade_binding_chain":"CONTROL · DELAYED BURST","celestial_returning_glaive":"OUTBOUND · RETURN PATH","phoenix_war_fan":"MULTI-LANE SWEEP","void_piercer_spear":"AIMED LINE · CHARGE","heavenweaver_compass":"LOCKED MARKS · DRAGON PATH","nine_heavens_star_sword":"SWORD ART"}
+const WEAPON_ROLES: Dictionary={"jade_binding_chain":"CONTROL · DELAYED BURST","celestial_returning_glaive":"OUTBOUND · RETURN PATH","phoenix_war_fan":"MULTI-LANE SWEEP","void_piercer_spear":"AIMED LINE · CHARGE","heavenweaver_compass":"HOMING PURSUIT · NEAREST THREAT","nine_heavens_star_sword":"SWORD ART"}
 static func set_advice(id: String) -> Dictionary:
  var passive: Dictionary=Sets.get_four_piece_passive(id)
  var text: Array=ADVICE.get(str(passive.get("kind","")),["SURVIVAL FOUNDATION","Lower-rarity full sets supply HP. Choose useful individual stats while collecting a matching four-piece set."])

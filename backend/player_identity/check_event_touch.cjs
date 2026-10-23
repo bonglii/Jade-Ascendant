@@ -1,6 +1,6 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),{spawn}=require('node:child_process');
-const tests=[['event_scroll_surface_smoke.gd','EVENT_SCROLL_SURFACE'],['celestial_event_hub_smoke.gd','CELESTIAL_HUB'],['board_polish_interaction_smoke.gd','BOARD_POLISH_INTERACTION'],['player_flow_consistency_smoke.gd','PLAYER_FLOW_CONSISTENCY'],['player_direction_smoke.gd','PLAYER_DIRECTION'],['stage_records_smoke.gd','STAGE_RECORDS'],['release_polish_smoke.gd','RELEASE_POLISH']];
+const tests=[['compass_pursuit_smoke.gd','COMPASS_PURSUIT'],['interface_consistency_smoke.gd','INTERFACE_CONSISTENCY'],['event_scroll_surface_smoke.gd','EVENT_SCROLL_SURFACE'],['celestial_event_hub_smoke.gd','CELESTIAL_HUB'],['board_polish_interaction_smoke.gd','BOARD_POLISH_INTERACTION'],['player_flow_consistency_smoke.gd','PLAYER_FLOW_CONSISTENCY'],['player_direction_smoke.gd','PLAYER_DIRECTION'],['stage_records_smoke.gd','STAGE_RECORDS'],['release_polish_smoke.gd','RELEASE_POLISH']];
 const clean=s=>s.replace(/\x1b\[[0-9;]*m/g,'');
 async function runProcess(executable,args,{cwd,logs,name,marker='',idleMs=300000,totalMs=1200000,heartbeatMs=15000}={}){
  const started=Date.now(),logPath=path.join(logs,name+'.log'),metaPath=path.join(logs,name+'.json');

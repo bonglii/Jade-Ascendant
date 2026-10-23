@@ -28,7 +28,7 @@ const TEXT_WARM: Color = Color(1.0, 0.94, 0.75, 1.0)
 const TEXT_MUTED: Color = Color(0.68, 0.76, 0.75, 1.0)
 const TEXT_DISABLED: Color = Color(0.46, 0.52, 0.52, 0.78)
 
-const NAV_HEIGHT: float = 82.0
+const NAV_HEIGHT: float = 88.0
 const NAV_ICON_CENTER_Y: float = 25.0
 const NAV_LABEL_TOP: float = 47.0
 const NAV_LABEL_BOTTOM_MARGIN: float = 6.0

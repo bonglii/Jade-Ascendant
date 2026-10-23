@@ -46,7 +46,7 @@ const ICON_PATHS: Dictionary = {
 	"iron_body": "res://assets/ui/level_up/skill_art/iron_body.png",
 	"blood_qi": "res://assets/ui/level_up/skill_art/blood_qi.png",
 	"sword_intent": "res://assets/ui/level_up/skill_art/sword_intent.png",
-	"sword_dao_resonance": "res://assets/ui/level_up/skill_art/sword_dao_resonance.png",
+	"sword_dao_resonance": "res://assets/ui/level_up/skill_art/v4/sword_dao_resonance.png",
 	"yin_yang_reversal": "res://assets/ui/level_up/skill_art/yin_yang_reversal.png",
 	"heavenly_tribulation": "res://assets/ui/level_up/skill_art/heavenly_tribulation.png"
 }
@@ -178,7 +178,7 @@ static func get_related_synergies(id: String) -> Array[String]:
 
 static func get_icon_path(upgrade_id: String, armament_id: String = "") -> String:
 	# Pure resolver: actual run identity must be supplied by the caller.
-	if upgrade_id in ["spirit_sword", "sword_dao_resonance"] and not armament_id.is_empty():
+	if upgrade_id == "spirit_sword" and not armament_id.is_empty():
 		var visual: Script = load("res://scripts/ui/equipment_visual_catalog.gd")
 		var path: String = visual.get_icon_path(armament_id)
 		if not path.is_empty(): return path

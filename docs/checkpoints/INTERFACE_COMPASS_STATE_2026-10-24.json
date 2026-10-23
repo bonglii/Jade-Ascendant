@@ -1,0 +1,94 @@
+{
+  "batch": "Interface consistency, approved Compass pursuit and boss ritual arena",
+  "date_wib": "2026-10-24",
+  "base_commit": "802ff424271c0df90d9b955a189516b970a93c0e",
+  "phase": "Combined portable package validated and ready for owner installation/publish/schedule repair",
+  "work": {
+    "navigation": "Shared88px geometry and3% margins across all five tabs",
+    "skills": "Distinct generated Sword Dao Resonance icon; single shared resolver in level-up, Library and results",
+    "home": "Larger featured card,21px minimum event title,14px supporting copy,18px heading, restrained rotation fade",
+    "trials": "Owner-side guarded data repair, no Worker deployment; current weekly slot if first campaign, next weekly slot if a rotation is already active. Preserve existing weeks/progress/rewards/flags. Remote data has not been read or changed here.",
+    "compass": "Persistent jade dragon;0.45s cadence,0.25s floor, nearest-threat hysteresis, Lv3 agility, Lv5 afterimage25%, Lv7 twin distribution with shared boss budget. Actual HP-loss report/Continue, event and paid-selection guards retained.",
+    "boss_arena": "New generated jade/stone ritual dais, softly appearing floor and readable boundary; original430px radius/48 walls/clamp/boss AI retained."
+  },
+  "validation": {
+    "schedule_sql": {
+      "tests": 8,
+      "passed": 8,
+      "checks": "Compare-and-swap, duplicate audit, frozen week, concurrency, slot conflict, save retention"
+    },
+    "ui": {
+      "production_viewports": [
+        [
+          320,
+          568
+        ],
+        [
+          390,
+          844
+        ],
+        [
+          648,
+          1152
+        ]
+      ],
+      "headless_initial": 76,
+      "actual_x11_final": 91,
+      "native_swipe": 159,
+      "library": 238,
+      "runtime_errors": 0,
+      "phone_test": false
+    },
+    "commit": false,
+    "push": false,
+    "live_schedule_reset": false,
+    "aab": false,
+    "android": false,
+    "schedule_and_wib_tests": {
+      "passed": 30,
+      "failed": 0
+    },
+    "compass": {
+      "passed": 189,
+      "failed": 0,
+      "cases": "24 ten-second level1/3/5/7 \u00d7 speed1/.2 \u00d7 boss/moving/crowd, HP-applied ledger/Continue/critical/resonance/permanent50/reduced/pause/authorization/target switching/arena collisions/alpha",
+      "legacy_baseline": "24 same-condition casts from802ff424 production sources; author-only baseline fixture",
+      "renderer": "Actual X11/Mesa648x1152 and390x844; dragon silhouette corrected after inspection",
+      "phone_test": false
+    },
+    "publisher": {
+      "primitives": 14,
+      "unknown_edits_stop": true,
+      "existing_lock_preserved": true,
+      "real_commit_local_bare_push": true,
+      "same_launcher_replay_no_new_commit": true,
+      "missing_receipt_recovery": true,
+      "path_with_spaces": true,
+      "tracked_worktree_clean": true,
+      "github_push": false,
+      "windows_execution": false,
+      "profile_deploy": false,
+      "binary_game_sync": true
+    },
+    "source_preflight": "Three generated assets verified;19 current selected schedule/WIB tests passed, original30 unchanged earlier backend cases retained separately; nine production gates pass; git diff --check pass",
+    "current_selected_schedule_wib_tests": {
+      "passed": 19,
+      "failed": 0,
+      "log": "evidence/compass-arena-server.log"
+    }
+  },
+  "next_action": "Owner closes older Godot editor and runs combined launcher once; inspect real GitHub link and Trials time receipt. Once exact-SHA CI is green, run backend\\player_identity\\export_production.cmd for one new release AAB. Rerun same launcher after interruption; never reset or force push.",
+  "preview": {
+    "path": "/workspace/scratch/daf572316a73/generated_images/exec-2f68776d-4984-480a-9152-c9f8d97b2ede.png",
+    "kind": "imagegen concept mockup based on actual engine capture",
+    "gameplay_reference": "renders/compass-gameplay-reference.png",
+    "status": "Approved; runtime implemented and inspected",
+    "weapon_attack_source_changed": true
+  },
+  "delivery": {
+    "package": "Jade-Compass-Arena-Batch.zip",
+    "owner_command": "D:\\Godot\\tools\\Jade-Compass-Arena-Batch\\apply_and_publish.cmd",
+    "operation": "Install/push checkpoint branch, preserving game sync, guarded future Trials schedule repair with local backup/CAS; no native/Worker rebuild",
+    "current_actual_status": "Author package and fixtures only. Owner install/commit/push/remote reset/CI/AAB/Android pending."
+  }
+}

@@ -74,8 +74,7 @@ func _layout() -> void:
  unit=clampf(content.size.x/648.0,.49,1.65)
  if content.size.y<620 and content.size.x>content.size.y: unit=minf(unit,1.0)
  var side: float=12.0*unit
- var nav_h: float=82.0
- nav.position=Vector2(side,content.size.y-nav_h-8.0*unit);nav.size=Vector2(content.size.x-side*2,nav_h)
+ nav.fit_shared_layout()
  fixed_deck.position=Vector2(side,78.0)
  fixed_deck.size.x=content.size.x-side*2
  page.custom_minimum_size.x=content.size.x-side*2

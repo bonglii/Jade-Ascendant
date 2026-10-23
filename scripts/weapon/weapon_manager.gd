@@ -23,7 +23,7 @@ const EquipmentSetRuntime = preload("res://scripts/data/equipment_set_runtime.gd
 const TARGET_REFRESH_INTERVAL: float = 0.12
 const DEBUG_SAMPLE_INTERVAL: float = 12.0
 const CAST_COOLDOWN_FLOORS: Dictionary = {
-	"heavenweaver_compass": 1.5,
+	"heavenweaver_compass": 0.25,
 	"jade_binding_chain": 1.25,
 	"celestial_returning_glaive": 1.75,
 	"phoenix_war_fan": .9,

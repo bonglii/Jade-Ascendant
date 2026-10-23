@@ -272,7 +272,7 @@ func _refresh_liveops_badges() -> void:
   event_card.get_node("EventKind").text=tr("CELESTIAL EVENTS")+" · %d/%d"%[pool.find(key)+1,pool.size()]
   if _feature_signature!=key:
    _feature_signature=key;event_window.get_node("EventArt").texture=EventArtwork.texture_for(key)
-   event_card.modulate.a=.75;create_tween().tween_property(event_card,"modulate:a",1.0,.22)
+   event_card.modulate.a=.92;create_tween().tween_property(event_card,"modulate:a",1.0,.22)
   boss_progress.text="%d / %d"%[mini(int(info.current),int(info.total)),int(info.total)]
   feature_dot.visible=ActionDot.count(self,key)>0
   boss_reward.text=tr("REWARD READY") if feature_dot.visible else tr("CONTINUE YOUR JOURNEY")
@@ -308,10 +308,10 @@ func _layout_sanctuary() -> void:
  var nav: Control=get_parent().get_node_or_null("HubNav") as Control
  var nav_height: float=88.0
  if nav!=null:
-  nav.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-  nav.offset_left=side;nav.offset_right=-side;nav.offset_top=-nav_height-8;nav.offset_bottom=-8
+  nav.fit_shared_layout()
  var header_y: float=78.0
- var header_h: float=maxf(94,108*u)
+ var short_phone: bool=size.x<420 and size.y<700
+ var header_h: float=82.0 if short_phone else maxf(94,108*u)
  var icon_side: float=clampf(84*u,56,112)
  var icon_gap: float=maxf(8,10*u)
  _rect(settings_shortcut,Vector2(size.x-side-icon_side,header_y+4),Vector2(icon_side,icon_side))
@@ -341,10 +341,10 @@ func _layout_sanctuary() -> void:
  _rect(title_name,Vector2.ZERO,Vector2(hero_title.size.x,42*u));_font(title_name,35,true)
  _rect(title_role,Vector2(0,43*u),Vector2(hero_title.size.x,17*u));_font(title_role,12)
  var compact: bool=size.x<560
- var card_h: float=244.0 if compact else maxf(210,216*u)
- var event_h: float=maxf(166,190*u)
+ var card_h: float=176.0 if short_phone else 244.0 if compact else maxf(210,216*u)
+ var event_h: float=maxf(214,216*u)
  var shortcut_h: float=90.0 if size.x<420 else maxf(65,80*u)
- var heading_h: float=maxf(60,66*u)
+ var heading_h: float=48.0 if short_phone else maxf(60,66*u)
  var gap: float=maxf(6,9*u)
  var panel_h: float=card_h+event_h+shortcut_h+heading_h+gap*3
  var bottom: float=size.y-nav_height-20
@@ -371,10 +371,10 @@ func _layout_sanctuary() -> void:
  _rect(progress_label,Vector2(text_start+maxf(30,text_width-49),meter_y-5),Vector2(48,20));_font(progress_label,12)
  _rect(goal_hint,Vector2(text_start,meter_y+13),Vector2(text_width,38));_font(goal_hint,13)
  continue_button.text=tr("CONTINUE")+" ›" if compact else tr("CONTINUE RUN")
- var button_h: float=50.0 if compact else maxf(52,64*u)
+ var button_h: float=44.0 if short_phone else 50.0 if compact else maxf(52,64*u)
  var action_x: float=12.0 if compact else width-action_w-12*u
  if compact:
-  var button_y: float=card_h-button_h-16
+  var button_y: float=card_h-button_h-(10 if short_phone else 16)
   if continue_button.visible:
    _rect(journey_button,Vector2(action_x,button_y),Vector2((action_w-8)*.59,button_h))
    _rect(continue_button,Vector2(action_x+(action_w-8)*.59+8,button_y),Vector2((action_w-8)*.41,button_h))
@@ -383,18 +383,37 @@ func _layout_sanctuary() -> void:
   _rect(journey_button,Vector2(action_x,15*u),Vector2(action_w,button_h))
   _rect(continue_button,Vector2(action_x,card_h-button_h-12*u),Vector2(action_w,button_h))
  else:_rect(journey_button,Vector2(action_x,(card_h-button_h)*.5),Vector2(action_w,button_h))
+ if short_phone:
+  _rect(chapter_label,Vector2(text_start,8),Vector2(text_width,16))
+  _rect(realm_title,Vector2(text_start,26),Vector2(text_width,26));_font(realm_title,22,true)
+  _rect(next_path_label,Vector2(text_start,56),Vector2(text_width,18))
+  _rect(realm_progress,Vector2(text_start,80),Vector2(maxf(30,text_width-54),6))
+  _rect(progress_label,Vector2(text_start+maxf(30,text_width-49),75),Vector2(48,18))
+  _rect(goal_hint,Vector2(text_start,94),Vector2(text_width,26))
  _font_button(journey_button,20);_font_button(continue_button,17)
  var heading: Control=lower_stack.get_node("EventsHeading");heading.custom_minimum_size.y=heading_h
  var all_width: float=minf(width*.48,maxf(130,176*u))
  var caption: Label=heading.get_node("EventsCaption");_rect(caption,Vector2(3*u,0),Vector2(width-all_width-10*u,heading_h));_font(caption,20,true)
+ caption.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;caption.max_lines_visible=2
+ caption.add_theme_font_size_override("font_size",maxi(18,roundi(20*u)))
  all_events_button.text=tr("ALL EVENTS")+" ›"
  _rect(all_events_button,Vector2(width-all_width,0),Vector2(all_width,heading_h));_font_button(all_events_button,20)
- _rect(event_card.get_node("EventKind"),Vector2(34,29)*u,Vector2(width*.57,16*u));_font(event_card.get_node("EventKind"),11)
- _rect(event_card.get_node("FeaturedTitle"),Vector2(34,53)*u,Vector2(width*.56,maxf(42,56*u)));_font(event_card.get_node("FeaturedTitle"),25,true)
- _rect(boss_progress,Vector2(25*u,event_h-maxf(51,62*u)),Vector2(width*.6,18*u));_font(boss_progress,13)
- _rect(event_card.get_node("UpcomingRewardIcon"),Vector2(25*u,event_h-maxf(32,42*u)),Vector2(24,24)*u)
- _rect(boss_reward,Vector2(55*u,event_h-maxf(31,41*u)),Vector2(width*.5,22*u));_font(boss_reward,12)
- _rect(event_action,Vector2(width*.55,event_h-maxf(35,46*u)),Vector2(width*.42,maxf(22,27*u)));_font(event_action,13,true)
+ # Event copy uses phone-sized floors instead of shrinking with the portrait art.
+ var event_left: float=maxf(18,26*u)
+ var event_text_w: float=width-event_left-maxf(18,24*u)
+ var tag: Label=event_card.get_node("EventKind")
+ _rect(tag,Vector2(event_left,18),Vector2(event_text_w,22))
+ tag.add_theme_font_size_override("font_size",maxi(14,roundi(15*u)))
+ var event_title: Label=event_card.get_node("FeaturedTitle")
+ _rect(event_title,Vector2(event_left,45),Vector2(event_text_w*.85,maxf(64,64*u)))
+ event_title.add_theme_font_size_override("font_size",maxi(21,roundi(27*u)))
+ _rect(boss_progress,Vector2(event_left,event_h-91),Vector2(event_text_w,22))
+ boss_progress.add_theme_font_size_override("font_size",maxi(14,roundi(15*u)))
+ _rect(event_card.get_node("UpcomingRewardIcon"),Vector2(event_left,event_h-63),Vector2(24,24))
+ _rect(boss_reward,Vector2(event_left+31,event_h-63),Vector2(event_text_w-31,24))
+ boss_reward.add_theme_font_size_override("font_size",maxi(14,roundi(15*u)))
+ _rect(event_action,Vector2(event_left,event_h-33),Vector2(event_text_w,24))
+ event_action.add_theme_font_size_override("font_size",maxi(16,roundi(17*u)))
  var shortcut_w: float=(width-14)/3.0
  for button: Button in [seven_day_button,meditation_button,library_button]:
   var icon: Control=button.get_node("ShortcutIcon")

@@ -121,10 +121,8 @@ func _card(id: String) -> Control:
 	card.add_child(row)
 	var icon := TextureRect.new()
 	icon.custom_minimum_size = Vector2(64,64)
-	icon.texture = load("res://assets/ui/equipment/final/celestial_returning_glaive.png" if _is_glaive() and id in ["spirit_sword", "sword_dao_resonance"] else "res://assets/ui/equipment/final/jade_binding_chain.png" if _is_chain() and id in ["spirit_sword", "sword_dao_resonance"] else Catalog.ICON_PATHS[id]) as Texture2D
 	var armament: String = EquipmentManager.get_equipped_item_id(EquipmentManager.SLOT_ARMAMENT)
-	if id in ["spirit_sword", "sword_dao_resonance"] and preload("res://scripts/weapon/equipment_weapon_art.gd").ENTRIES.has(armament):
-		icon.texture = load(preload("res://scripts/ui/equipment_visual_catalog.gd").get_icon_path(armament)) as Texture2D
+	icon.texture = load(Catalog.get_icon_path(id, armament)) as Texture2D
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE

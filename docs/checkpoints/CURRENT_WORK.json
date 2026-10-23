@@ -1,6 +1,6 @@
 {
-  "batch": "Release Polish \u2014 CI follow-up",
-  "state": "docs/checkpoints/RELEASE_POLISH_CI_STATE_2026-10-24.json",
-  "base_commit": "6d2c8cd0be235ac87664481f6abd781a3b86ceb6",
-  "next_action": "Complete affected Player Release workflow. Package only three test/runner files plus state/pointer/lesson. Owner publishes minimal follow-up via one launcher, wait exact-SHA CI then export one AAB. No server deploy, native build or repeated sound polish."
+  "batch": "Interface consistency, approved Compass pursuit and boss ritual arena",
+  "base_commit": "802ff424271c0df90d9b955a189516b970a93c0e",
+  "next_action": "Owner closes older Godot editor and runs combined launcher once; inspect real GitHub link and Trials time receipt. Once exact-SHA CI is green, run backend\\player_identity\\export_production.cmd for one new release AAB. Rerun same launcher after interruption; never reset or force push.",
+  "state": "docs/checkpoints/INTERFACE_COMPASS_STATE_2026-10-24.json"
 }

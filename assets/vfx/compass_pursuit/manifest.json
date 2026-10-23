@@ -1,0 +1,14 @@
+[
+  {
+    "file": "assets/vfx/compass_pursuit/jade_dragon.png",
+    "sha256": "8e82feaefd7d3c0493befcb05c10292fd1a395345143311cf4237daf0681db63"
+  },
+  {
+    "file": "assets/world/boss_arena/jade_ritual_dais.png",
+    "sha256": "0d34821cd0ea1aed57fa99bad483e3b01730bb9aa3780b89f8c11c4769d713a5"
+  },
+  {
+    "file": "assets/ui/level_up/skill_art/v4/sword_dao_resonance.png",
+    "sha256": "7f0e876dd1c0b4572e64396650f971809ca798a89b8bedd88bd2fd44c20a9f1b"
+  }
+]

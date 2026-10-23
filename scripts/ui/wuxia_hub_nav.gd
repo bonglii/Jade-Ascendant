@@ -93,6 +93,7 @@ var pressed_cell_style := StyleBoxFlat.new()
 
 func _ready() -> void:
 	custom_minimum_size = Vector2(0.0, UiTokens.NAV_HEIGHT)
+	fit_shared_layout()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_build_shared_styles()
 	if sanctuary_style:
@@ -107,6 +108,17 @@ func _ready() -> void:
 	resized.connect(_fit_sanctuary_labels)
 	_refresh_notification_badge()
 	set_process(true)
+
+
+func fit_shared_layout() -> void:
+	# One safe-area geometry for all five tabs, independent of page content scale.
+	set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	anchor_left = 0.03
+	anchor_right = 0.97
+	offset_left = 0.0
+	offset_right = 0.0
+	offset_top = -UiTokens.NAV_HEIGHT - 10.0
+	offset_bottom = -10.0
 
 
 func _notification(what: int) -> void:
@@ -255,9 +267,8 @@ func _build_tabs() -> void:
 
 		var label := Label.new()
 		label.name = "Label"
-		if sanctuary_style:
-			label.set_meta(&"jade_mobile_readability_v2",true)
-			label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		label.set_meta(&"jade_mobile_readability_v2",true)
+		label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		label.anchor_left = 0.0
 		label.anchor_top = 0.0

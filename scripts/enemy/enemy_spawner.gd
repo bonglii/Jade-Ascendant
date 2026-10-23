@@ -719,7 +719,7 @@ func spawn_boss() -> void:
 	boss_spawned = true
 	if is_instance_valid(player):
 		var arena: Node2D=preload("res://scripts/game/boss_combat_arena.gd").new()
-		arena.player_actor=player;arena.boss_actor=boss;arena.position=(get_parent() as Node2D).to_local(player.global_position);get_parent().add_child(arena)
+		arena.accent=stage_profile.get("accent",Color(.35,.92,.72));arena.player_actor=player;arena.boss_actor=boss;arena.position=(get_parent() as Node2D).to_local(player.global_position);get_parent().add_child(arena)
 		var direction: Vector2=(boss.global_position-player.global_position).normalized()
 		if direction.is_zero_approx():direction=Vector2.RIGHT
 		boss.global_position=player.global_position+direction*minf(300,arena.RADIUS-60)
