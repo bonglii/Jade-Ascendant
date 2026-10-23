@@ -237,3 +237,7 @@
 - Godot get_meta with a null default reports an absent key. Preserve optional hit-source metadata with has_meta and a non-null fallback; scan complete combat logs even if numeric assertions pass.
 - Raw WAV/Ogg bytes must never pass through UTF-8/newline normalization in portable installers or sync checks. Hash/copy binary bytes exactly, retain backups and prove replay with a local bare remote.
 - Preserve efficient release scope: no new ad quota, speculative SSV grant, IAP gate changes or native rebuild for a GDScript/audio-only batch. New active music/SFX require source/license notices accessible in Credits.
+
+### 2026-10-24 — CI follow-up after published polish
+- A restart must execute immediately after its save-producing fixture with the same userdata configuration. Appending an unrelated suite must never change the restart's save directory; do not assume a test is last.
+- Dispose active combat scenes and settle exit callbacks before draining QA audio. Retain all runtime error scanning and gameplay/restart assertions. An unreproduced shutdown leak has uncertain resource types; do not label audio decoding or player saves broken without evidence.

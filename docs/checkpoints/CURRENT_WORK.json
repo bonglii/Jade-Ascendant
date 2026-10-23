@@ -1,6 +1,6 @@
 {
-  "batch": "Release polish: mailbox, ads, Pavilion and sound",
-  "state": "docs/checkpoints/RELEASE_POLISH_STATE_2026-10-24.json",
-  "base_commit": "9ca46e7d8498c0998a17536e5f1793fe153a074a",
-  "next_action": "Author validation complete. Run portable Release Polish publisher, wait exact-SHA CI, then existing production exporter. Check batch state for completed tests and owner-only evidence."
+  "batch": "Release Polish \u2014 CI follow-up",
+  "state": "docs/checkpoints/RELEASE_POLISH_CI_STATE_2026-10-24.json",
+  "base_commit": "6d2c8cd0be235ac87664481f6abd781a3b86ceb6",
+  "next_action": "Complete affected Player Release workflow. Package only three test/runner files plus state/pointer/lesson. Owner publishes minimal follow-up via one launcher, wait exact-SHA CI then export one AAB. No server deploy, native build or repeated sound polish."
 }

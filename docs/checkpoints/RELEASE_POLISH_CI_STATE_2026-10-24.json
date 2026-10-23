@@ -1,0 +1,39 @@
+{
+  "batch": "Release Polish \u2014 CI follow-up",
+  "base_commit": "6d2c8cd0be235ac87664481f6abd781a3b86ceb6",
+  "date_wib": "2026-10-24",
+  "phase": "author follow-up complete; affected workflow passed; awaiting owner push and exact-SHA CI",
+  "confirmed": {
+    "published_source_files": 215,
+    "remote_payload_mismatches": 0,
+    "published_ci_success": 12,
+    "published_ci_failure": 2,
+    "author_fix_commit": false,
+    "author_fix_push": false,
+    "aab": false,
+    "android": false
+  },
+  "findings": [
+    {
+      "workflow": "Player flow and event surfaces",
+      "cause": "check_stage_records assumed its save-producing suite was last. New release_polish_smoke regenerated the unique userdata configuration before the external restart.",
+      "fix": "Runner pairs restart immediately with its producing test, before later suites. Real records and restart assertions unchanged.",
+      "evidence": "stage_records84 + restart3 followed by release_polish22 passed in the actual isolated runner."
+    },
+    {
+      "workflow": "Player Release QA",
+      "cause": "CI reported 4 resources retained at combat_clarity shutdown after all66 gameplay assertions passed. Exact resource types absent in CI log; failure did not reproduce in a clean fixture plus six concurrent diagnostic samples.",
+      "fix": "Explicitly dispose combat scene, settle queued exit callbacks, then drain audio in both initial/restart test paths. Error scanner unchanged; no gameplay/audio production change.",
+      "evidence": "Full check_player_release.cjs affected workflow passed: review7/restart33, layout113, report176/restart4, records84/restart3, paid recovery15/restart30, combat66/restart6, public readiness33. No ERROR including verbose shutdown."
+    }
+  ],
+  "next_action": "Complete affected Player Release workflow. Package only three test/runner files plus state/pointer/lesson. Owner publishes minimal follow-up via one launcher, wait exact-SHA CI then export one AAB. No server deploy, native build or repeated sound polish.",
+  "validation": {
+    "paired_records_before_later_suite": "84 + restart3 + release22 passed",
+    "whole_affected_release_workflow": "PASS",
+    "production_gates": 9,
+    "author_publish": "not_available; owner portable publisher",
+    "android": "not_tested",
+    "resource_types_of_original_shutdown_leak": "unknown; six unmodified focused samples did not reproduce; explicit scene disposal is a bounded teardown correction, not a proven decoder fix"
+  }
+}

@@ -134,7 +134,7 @@ func run() -> void:
 	spawner.elite_spawned_waves = {4: true, 8: true}
 	spawner.spawn_timer = 0.13
 	check(checkpoint.save_checkpoint(), "restart fixture committed using real checkpoint writer")
-	await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
+	await finish_world()
 	print("COMBAT_CLARITY checks=", checks, " failures=", failures)
 	quit(1 if failures else 0)
 
@@ -155,6 +155,15 @@ func resume_check() -> void:
 			active = enemy
 	check(active != null and int(active.get_meta("qi_magnet_wave")) == 8, "separate process restores unfinished elite")
 	check(active != null and is_equal_approx(active.current_hp / active.max_hp, float(before.encounter_cadence.active.health_ratio)), "separate process preserves health progress")
-	await load("res://tests/qa_runtime_teardown.gd").stop_audio(self)
+	await finish_world()
 	print("COMBAT_CLARITY_RESTART checks=", checks, " failures=", failures)
 	quit(1 if failures else 0)
+
+func finish_world() -> void:
+	# Dispose the combat scene and settle its exit hooks before draining the
+	# mixer. The checkpoint is already committed before this cleanup; all
+	# gameplay and restart assertions remain active.
+	if current_scene != null:
+		current_scene.queue_free()
+	await frames()
+	await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)

@@ -82,7 +82,12 @@ async function qa(project,godot,options={}){
  }
  const selected=options.only?tests.filter(([name])=>options.only.includes(name)):tests;
  if(options.only&&selected.length!==options.only.length)throw Error("Unknown focused QA suite");
- for(const [script,marker]of selected){config();await runProcess(godot,['--headless','--audio-driver','Dummy','--path',fixture,'--script','res://tests/'+script],{cwd:root,logs,name:script,marker,idleMs:100000,totalMs:100000});}
+ for(const [script,marker]of selected){
+  config();const args=['--headless','--audio-driver','Dummy','--path',fixture,'--script','res://tests/'+script];
+  await runProcess(godot,args,{cwd:root,logs,name:script,marker,idleMs:100000,totalMs:100000});
+  const restartMarker=options.restart?.[script];
+  if(restartMarker)await runProcess(godot,[...args,'--','--resume'],{cwd:root,logs,name:script+'-restart',marker:restartMarker,idleMs:100000,totalMs:100000});
+ }
  console.log('EVENT_TOUCH_QA=PASS; REAL_SAVES=UNTOUCHED; PURCHASE=NONE');return {pass:true,tests:tests.length};
 }
 if(require.main===module)qa(process.argv[2]||path.resolve(__dirname,'../..'),process.argv[3]).catch(e=>{console.error('EVENT_TOUCH_QA_STOPPED: '+e.message);process.exitCode=1;});
