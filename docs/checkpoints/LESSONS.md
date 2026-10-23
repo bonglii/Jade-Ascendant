@@ -251,3 +251,8 @@
 -2026-10-24: Standalone SceneTree tests must load weapon scripts after autoload initialization; eager preloads can compile before singleton identifiers exist. Corrected scoped test passes189 checks.
 
 -2026-10-24: Asset batches must be tested in the actual sparse QA-clone topology. Stage only verified manifest paths with git add --sparse; never expand the checkout or stage unrelated files. The local bare publisher simulation caught the missing flag before owner delivery.
+
+###2026-10-24 — independent operational clock
+- A SELECT driven by an optional campaign table loses the server clock when the table is empty. Drive the snapshot from a clock row and LEFT JOIN campaigns; test the actual query against an empty real SQLite database. Never substitute device time.
+- An empty schedule means NO_CAMPAIGNS, not a failed connection or successful reset. Verify a read-only skip, create no event, run no repair SQL and never print RESET=PASS. Existing/frozen player progress stays unchanged.
+- Preserve the preparation command output in the PowerShell failure itself and plan-output.log; a parent subprocess may otherwise hide stdout behind a generic stderr exception.

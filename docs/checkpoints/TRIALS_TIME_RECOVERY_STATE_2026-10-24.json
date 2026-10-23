@@ -1,0 +1,53 @@
+{
+  "batch": "Trials schedule empty-snapshot recovery",
+  "date_wib": "2026-10-24",
+  "base_commit": "fdeea89e97254bac0599405536e3a375dbd1c26c",
+  "phase": "Scoped recovery package validated and ready for owner installation/publish/resume",
+  "evidence": {
+    "owner_output": "CAUSE=Missing trusted database time. No campaign lines printed by the diagnostic loop. Saved query returned zero rows.",
+    "source_cause": "The previous SELECT was driven by ht_campaigns. If it returned zero campaigns it also lost unixepoch(now), then planRepair read rows[0].server_now.",
+    "local_reproduction": "Production old query on empty SQLite table returns[]. New clock-driven LEFT JOIN returns one trusted time row with null campaign.",
+    "remote_commit": "https://github.com/bonglii/Jade-Ascendant/commit/fdeea89e97254bac0599405536e3a375dbd1c26c"
+  },
+  "changes": [
+    "Independent database clock query exported from the planner, used by the PowerShell collector.",
+    "Explicit NO_CAMPAIGNS skipped plan and verified read-only receipt; never create/enable an event or execute repair.sql for an empty schedule.",
+    "Surface/persist the original preparation error so parent launcher cannot hide its cause.",
+    "Keep future-campaign CAS, frozen-week, concurrency, reward/save, occupied-slot and idempotency protections. Legacy successful repair plans remain verifiable."
+  ],
+  "validation": {
+    "schedule_and_wib_tests": 18,
+    "failed": 0,
+    "tested": "Actual SQLite empty/normal/race snapshots, CLI prepare+verify, no repair.sql/no reset-PASS for skip, unchanged original8 guards.",
+    "nine_live_iap_gates": "preserved; checked in owner source preflight",
+    "combat_ui": "Unchanged; reuse previous189/91/159/238 evidence. No combat re-test.",
+    "windows": false,
+    "live_repair": false,
+    "new_fix_commit_push": false,
+    "native_worker_deploy": "none",
+    "aab": "No new AAB needed for this maintenance-script fix. Prior client batch export remains a separate pending step.",
+    "publisher": {
+      "primitives": 14,
+      "unknown_edits_stop": true,
+      "existing_lock_preserved": true,
+      "real_commit_local_bare_push": true,
+      "same_launcher_replay_no_new_commit": true,
+      "missing_receipt_recovery": true,
+      "path_with_spaces": true,
+      "tracked_worktree_clean": true,
+      "github_push": false,
+      "windows_execution": false,
+      "profile_deploy": false,
+      "binary_game_sync": true
+    },
+    "diff_check": "PASS"
+  },
+  "next_action": "Run the self-contained Jade-Trials-Time-Fix/fix_and_resume.cmd. It publishes the small follow-up from actualfdeea89, preserves game edits during sync, then runs only corrected schedule maintenance. Do not run the older802-based launcher after the follow-up commit.",
+  "delivery": {
+    "folder": "D:\\Godot\\tools\\Jade-Trials-Time-Fix",
+    "command": "D:\\Godot\\tools\\Jade-Trials-Time-Fix\\fix_and_resume.cmd",
+    "package": "Jade-Trials-Time-Fix.zip",
+    "source_files": 6,
+    "old_download_folder_required": false
+  }
+}

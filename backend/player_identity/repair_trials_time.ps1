@@ -22,12 +22,26 @@ try {
     $plan = Join-Path $folder 'plan.json'
     if (-not (Test-Path -LiteralPath $plan)) {
         $snapshot = Join-Path $folder 'before.json'
-        Read-Remote "SELECT c.id,c.document,c.created_at,(SELECT COUNT(*) FROM ht_weeks w WHERE w.campaign=c.id) AS materialized_weeks,unixepoch('now') AS server_now FROM ht_campaigns c ORDER BY created_at DESC" $snapshot
-        & node.exe backend/player_identity/repair_trials_time.mjs prepare $snapshot $folder $CampaignId
-        if ($LASTEXITCODE -ne 0) { throw 'Schedule plan could not be prepared. No data changed.' }
+        if (Test-Path -LiteralPath $snapshot) { Copy-Item -LiteralPath $snapshot -Destination (Join-Path $folder ('before-' + [Guid]::NewGuid().ToString('N') + '.json')) }
+        $snapshotSql = @(& node.exe backend/player_identity/repair_trials_time.mjs snapshot-query)
+        if ($LASTEXITCODE -ne 0) { throw 'Snapshot query preparation failed. No data changed.' }
+        Read-Remote ($snapshotSql -join "`n") $snapshot
+        $previous = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        try { $planOutput = @(& node.exe backend/player_identity/repair_trials_time.mjs prepare $snapshot $folder $CampaignId 2>&1); $planCode = $LASTEXITCODE }
+        finally { $ErrorActionPreference = $previous }
+        $planText = ($planOutput | ForEach-Object { $_.ToString() }) -join "`n"
+        [IO.File]::WriteAllText((Join-Path $folder 'plan-output.log'), $planText, $encoding)
+        if ($planCode -ne 0) { throw ('Schedule preparation failed: ' + $planText + '. No data changed.') }
+        Write-Output $planText
     }
     $verify = Join-Path $folder 'verify.sql'
-    if (-not (Test-Path -LiteralPath (Join-Path $folder 'done.json'))) {
+    $planData = [IO.File]::ReadAllText($plan) | ConvertFrom-Json
+    if ($planData.kind -eq 'skip' -and (Test-Path -LiteralPath (Join-Path $folder 'done.json'))) {
+        Write-Output 'TRIALS_TIME_SKIPPED=NO_CAMPAIGNS_AT_PREVIOUS_CHECK; DATABASE_WRITE=NONE; NEW_CONFIG=UNCHANGED'
+        return
+    }
+    if ($planData.kind -ne 'skip' -and -not (Test-Path -LiteralPath (Join-Path $folder 'done.json'))) {
         & npx.cmd --yes wrangler@4.151.0 d1 execute jade-iap-ledger --remote --config $config --file (Join-Path $folder 'repair.sql') --yes
         if ($LASTEXITCODE -ne 0) { throw 'Schedule write failed. Backups and plan retained; existing player progress is unchanged.' }
     }

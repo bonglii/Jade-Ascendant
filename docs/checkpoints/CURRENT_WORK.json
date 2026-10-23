@@ -1,6 +1,6 @@
 {
-  "batch": "Interface consistency, approved Compass pursuit and boss ritual arena",
-  "base_commit": "802ff424271c0df90d9b955a189516b970a93c0e",
-  "next_action": "Owner closes older Godot editor and runs combined launcher once; inspect real GitHub link and Trials time receipt. Once exact-SHA CI is green, run backend\\player_identity\\export_production.cmd for one new release AAB. Rerun same launcher after interruption; never reset or force push.",
-  "state": "docs/checkpoints/INTERFACE_COMPASS_STATE_2026-10-24.json"
+  "batch": "Trials schedule empty-snapshot recovery",
+  "base_commit": "fdeea89e97254bac0599405536e3a375dbd1c26c",
+  "state": "docs/checkpoints/TRIALS_TIME_RECOVERY_STATE_2026-10-24.json",
+  "next_action": "Run the self-contained Jade-Trials-Time-Fix/fix_and_resume.cmd. It publishes the small follow-up from actualfdeea89, preserves game edits during sync, then runs only corrected schedule maintenance. Do not run the older802-based launcher after the follow-up commit."
 }
