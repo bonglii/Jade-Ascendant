@@ -1,0 +1,77 @@
+name: Retention loop and Operations Studio
+on:
+  push:
+    branches: ['checkpoint/iap-fasttrack-20261010']
+    paths: ['backend/player_identity/**', 'scripts/data/player_goal_catalog.gd', 'scripts/ui/home_sanctuary_presenter.gd', 'scripts/ui/skill_book_screen.gd', 'tests/*retention*', 'tests/admin_dashboard_dom.cjs', 'tests/lin_yue_library_smoke.gd', 'tests/arsenal_integration_smoke.gd', 'tests/public_readiness_metadata_export.py', '.github/workflows/retention-studio-qa.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  affected-flows:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Backend, fixed WIB and production gates
+        run: |
+          node --test --test-concurrency=1 backend/player_identity/*.test.mjs
+          node backend/player_identity/production_release_contract.mjs
+      - name: Isolated full dashboard interactions
+        env:
+          TZ: America/Los_Angeles
+        run: |
+          npm install --prefix "$RUNNER_TEMP/jade-dom" --ignore-scripts --no-audit --no-fund jsdom@26.1.0
+          NODE_PATH="$RUNNER_TEMP/jade-dom/node_modules" node tests/admin_dashboard_dom.cjs "$PWD"
+      - name: Verified engine and affected game flows
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          mkdir -p /tmp/jade-retention
+          curl -fsSL --retry 3 https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip -o /tmp/jade-retention/godot.zip
+          echo 'cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4  /tmp/jade-retention/godot.zip' | sha256sum --check
+          unzip -q /tmp/jade-retention/godot.zip -d /tmp/jade-retention
+          node backend/player_identity/check_retention_dashboard.cjs "$PWD" /tmp/jade-retention/Godot_v4.7.2-stable_linux.x86_64
+          python3 tests/public_readiness_metadata_export.py /tmp/jade-retention/Godot_v4.7.2-stable_linux.x86_64
+      - name: Native mobile gesture regression
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri
+          xvfb-run -a node backend/player_identity/check_retention_dashboard.cjs "$PWD" /tmp/jade-retention/Godot_v4.7.2-stable_linux.x86_64 --native
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: retention-studio-${{ github.sha }}
+          path: |
+            .local/retention_dashboard_qa/*.log
+            .local/retention_dashboard_qa/*.json
+            .local/event_touch_qa/import.log
+          if-no-files-found: error
+          retention-days: 14
+  windows-deploy-preflight:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse and exercise target guard without deployment
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $tokens=$null; $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'backend/player_identity/deploy_studio_refresh.ps1'),[ref]$tokens,[ref]$errors) | Out-Null
+          if ($errors.Count) { throw ($errors | Out-String) }
+          if ((git rev-parse HEAD).Trim() -ne $env:GITHUB_SHA) { throw 'Unexpected CI source' }
+          git checkout -B checkpoint/iap-fasttrack-20261010
+          $config=Join-Path $PWD 'backend/player_identity/wrangler.local.toml'
+          $content='name = "jade-ascendant-player"'+"`n"+'main = "worker.mjs"'+"`n"+'database_id = "1089de95-8cdc-447d-a9e3-9e743d200cba"'
+          [IO.File]::WriteAllText($config,$content)
+          & backend/player_identity/deploy_studio_refresh.ps1 -ExpectedCommit $env:GITHUB_SHA -ValidateOnly
+          if ($LASTEXITCODE -ne 0) { throw 'Valid target dry preflight failed' }
+          [IO.File]::WriteAllText($config,$content.Replace('jade-ascendant-player','wrong-worker'))
+          & backend/player_identity/deploy_studio_refresh.ps1 -ExpectedCommit $env:GITHUB_SHA -ValidateOnly
+          if ($LASTEXITCODE -eq 0) { throw 'Wrong worker was accepted' }
+          Remove-Item -LiteralPath $config
+          Write-Host 'WINDOWS_STUDIO_PREFLIGHT=PASS; WRANGLER_NOT_INVOKED; DEPLOY=NONE'

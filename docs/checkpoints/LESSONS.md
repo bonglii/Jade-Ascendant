@@ -210,3 +210,12 @@
 - Queued Hero layout/texture work must stop after page removal, including both sides of awaited frames. Clear its pending flag without rebuilding a detached page.
 - Native first-swipe evidence must configure actual mouse-to-touch GUI emulation and dismiss the fixture's unrelated onboarding overlay. A blocked action behind FTUE is not evidence that the underlying card handled a swipe.
 - The training actor scene lacks the health child normally supplied by levels. Include the real health dependency before entering the tree, then test every skill/level control. Training must not freeze a paid run, attach mastery-trial health, or update persistent quest/achievement counters.
+
+### Retention/dashboard batch, 2026-10-23
+- A browser-local datetime input is not a WIB input. Reuse one strict offset boundary and test multiple process zones, invalid days, year boundaries and the actual form handler. Never shift an already published Unix timestamp.
+- A cosmetic redesign can increase page weight if the whole stylesheet is duplicated. Cache a content-versioned presentation-only asset and measure actual HTML bytes; preserve nonce-only page policy.
+- Tab-specific scripts previously re-wrapped nav handlers, producing duplicate reads and resetting banner drafts. Keep one lazy/coalesced view loader and test repeated presses plus edit/navigation/reopen.
+- Code-level daily availability does not mean Home actually points to it. Test actual completed manager state, the reward operation and a separate restart; production completion sync is deferred and must be awaited by the fixture.
+- Library fixtures must compare the full current active catalog, not an old56-item count. Verify every item once while preserving retired snapshots. Metadata fixtures need the current independent native proof as well as the AAR, with target/debug assertions retained.
+- Legacy combat fixtures could exit before Dummy audio drains, reporting in-use resources. Use the shared teardown; keep genuine ERROR output fatal instead of disabling the scanner.
+- The browser policy rejected the local data-URL composition preview. Do not retry through another browser surface or claim that the redesign was visually validated. Full generated-script DOM tests are behaviour evidence only.

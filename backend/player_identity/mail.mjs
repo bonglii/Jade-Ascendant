@@ -1,3 +1,4 @@
+import {studioStyle,STUDIO_STYLE_PATH} from './admin_studio_style.mjs';
 import {metricsDashboard,metricSummary} from './companion.mjs';
 import {trialsAdmin,trialsOperationsAdmin} from './heavenly_trials.mjs';
 import trialsDashboard from './heavenly_trials_dashboard.mjs';
@@ -98,7 +99,12 @@ async function inbox(db,owner,url,giftClient=false,chainClient=false,glaiveClien
 }
 export function createMailHandler({verify}={}){
  return async(request,env)=>{
-  const url=new URL(request.url),path=url.pathname,db=primary(env.PROFILE_DB);if(!db)fail(503,'service_unavailable');
+  const url=new URL(request.url),path=url.pathname;
+  if(path===STUDIO_STYLE_PATH){
+   if(!['GET','HEAD'].includes(request.method))fail(405,'method_not_allowed');
+   return new Response(request.method==='HEAD'?null:studioStyle,{headers:{'content-type':'text/css;charset=utf-8','cache-control':'public,max-age=31536000,immutable','x-content-type-options':'nosniff'}});
+  }
+  const db=primary(env.PROFILE_DB);if(!db)fail(503,'service_unavailable');
   if(path.startsWith('/admin/assets/')){await session(request,env);if(request.method!=='GET'||!/^\/admin\/assets\/[a-z0-9_]+\.png$/.test(path)||!env.ASSETS)fail(404,'not_found');return env.ASSETS.fetch(request);}
   if(path==='/admin/trials'){await session(request,env);if(request.method!=='GET')fail(405,'method_not_allowed');const nonce=randomId();return new Response(trialsDashboard.replaceAll('__NONCE__',nonce),{headers:{'content-type':'text/html;charset=utf-8','cache-control':'no-store','content-security-policy':`default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`}});}
   if(path==='/admin/insights'){await session(request,env);if(request.method!=='GET')fail(405,'method_not_allowed');const nonce=randomId();return new Response(metricsDashboard.replaceAll('__NONCE__',nonce),{headers:{'content-type':'text/html;charset=utf-8','cache-control':'no-store','content-security-policy':`default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'`}});}

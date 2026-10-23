@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
+import {adminTimeJS} from './admin_time.mjs';
 import {pavilionJS,pavilionHTML} from './pavilion_dashboard.mjs';
 import {FEATURED_CATALOG,normalizeDocument,BASE_RATES} from './pavilion.mjs';
 class Element {
@@ -12,7 +13,7 @@ class Element {
 function fixture(){
  const nodes=new Map();const $=id=>{if(!nodes.has(id))nodes.set(id,new Element());return nodes.get(id);};
  const context=vm.createContext({$,document:{createElement:tag=>new Element(tag),querySelector:()=>new Element()},catalog:FEATURED_CATALOG});
- vm.runInContext(pavilionJS,context);
+ vm.runInContext(adminTimeJS+pavilionJS,context);
  vm.runInContext("bannerState={catalog};bannerPicked=new Set(['jade_binding_chain']);bannerReview={keep:true};bannerRequest={keep:true};",context);
  return {context,$,paint(){vm.runInContext('paintBannerPicks()',context);},picked(){return vm.runInContext('[...bannerPicked]',context);}};
 }

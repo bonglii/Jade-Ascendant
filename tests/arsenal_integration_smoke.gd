@@ -64,5 +64,6 @@ func run() -> void:
   check(manager.get_node("RunCombatLedger").damage_rows().any(func(row: Dictionary):return row.id==id and row.name==w.get_combat_display_name()),"report public identity "+id)
   current_scene.queue_free();await process_frame;current_scene=null
   eq.active_run_loadout_snapshot={};root.get_node("SaveManager").delete_active_run_save("checkpoint")
+ await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
  print("ARSENAL_INTEGRATION_QA checks=",checks," failures=",failures)
  quit(1 if failures else 0)

@@ -1,4 +1,5 @@
 """Exercise the real Android preset export hook using a tiny pack, not an APK."""
+import hashlib
 import json
 import os
 import shutil
@@ -16,6 +17,13 @@ with tempfile.TemporaryDirectory(prefix="jade-metadata-") as temporary:
     native = root / "addons/JadeMonetizationNativeBridge/bin/release"
     native.mkdir(parents=True)
     shutil.copyfile(repo / "release/native/JadeMonetizationNativeBridge-production-candidate.aar", native / "JadeMonetizationNativeBridge-release.aar")
+    proof_path = repo / "docs/checkpoints/IAP_PRODUCTION_NATIVE_CANDIDATE.json"
+    proof = json.loads(proof_path.read_text())
+    candidate = repo / "release/native/JadeMonetizationNativeBridge-production-candidate.aar"
+    actual_digest = hashlib.sha256(candidate.read_bytes()).hexdigest()
+    assert proof.get("target") == "production-candidate" and actual_digest == proof["aar_sha256"], "Current native candidate must match its independent proof"
+    (root / "docs/checkpoints").mkdir(parents=True)
+    shutil.copyfile(proof_path, root / "docs/checkpoints/IAP_PRODUCTION_NATIVE_CANDIDATE.json")
     (root / "project.godot").write_text('config_version=5\n[application]\nconfig/name="Metadata fixture"\n[editor_plugins]\nenabled=PackedStringArray("res://addons/JadeReleaseMetadata/plugin.cfg")\n')
     (root / "export_presets.cfg").write_text('[preset.0]\nname="Android"\nplatform="Android"\nrunnable=false\nexport_filter="all_resources"\ninclude_filter=""\nexclude_filter=""\nexport_path=""\n[preset.0.options]\nversion/name="9.8.7"\nversion/code=987\npackage/unique_name="com.yungdevstudio.jadeascendant"\n')
     env = dict(os.environ, JADE_BUILD_SOURCE_REVISION="a" * 40)
@@ -30,5 +38,5 @@ with tempfile.TemporaryDirectory(prefix="jade-metadata-") as temporary:
     assert data["version_name"] == "9.8.7" and data["version_code"] == 987
     assert data["iap_target"] == "production" and data["debug"] is False
     assert data["source_revision"] == "a" * 40
-    assert data["native_sha256"] == "5a3679d44a9d756ba8649ea41f20df775eabf26c4260297dba68e3c0c50a071d"
+    assert data["native_sha256"] == actual_digest
 print("ANDROID_EXPORT_METADATA_HOOK=PASS; PRESET_VERSION_CODE_SOURCE_TARGET=VERIFIED; APK_BUILD=NONE")

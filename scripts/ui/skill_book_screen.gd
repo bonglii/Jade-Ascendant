@@ -63,6 +63,9 @@ func _ready() -> void:
 	if bool(get_tree().root.get_meta("library_open_builds",false)):
 		get_tree().root.remove_meta("library_open_builds");_set_mode("BUILDS")
 	else:_refresh()
+	if bool(get_tree().root.get_meta("library_open_goal",false)):
+		get_tree().root.remove_meta("library_open_goal")
+		preload("res://scripts/companion/player_journal.gd").open(self,"goal")
 func _skin(state: String) -> StyleBoxTexture:
 	var skin:=StyleBoxTexture.new();skin.texture=load("res://assets/ui/account_gate/imperial_v1/jade_button.png")
 	for edge: String in ["left","right","top","bottom"]:

@@ -215,7 +215,7 @@ func _refresh_journey() -> void:
  var cleared: int=clampi(int(progress.get("cleared_stages",0)),0,total)
  chapter_label.text=tr("CHAPTER %02d") % chapter_id if _goal.action=="journey" else tr("YOUR NEXT STEP")
  realm_title.text=tr(str(chapter.get("display_name","Jade Sanctuary"))).to_upper() if _goal.action=="journey" else tr(str(_goal.title))
- next_path_label.text=tr(str(_goal.title)) if _goal.action=="journey" else tr("PROGRESS SAVED")
+ next_path_label.text=tr(str(_goal.title)) if _goal.action=="journey" else ("LANGKAH BERIKUTNYA" if SettingsManager.language=="id" else "NEXT OBJECTIVE")
  if _goal.action=="continue":
   var menu: Node=_main_menu()
   var saved: Dictionary=menu.call("_get_continue_checkpoint_data") if menu!=null else {}
@@ -238,6 +238,8 @@ func _open_primary_goal() -> void:
   "cultivation":_open_menu_scene("res://scenes/ui/cultivation_menu.tscn")
   "trials":_open_menu_scene("res://scenes/ui/daily_quest_screen.tscn")
   "events":_open_live_popup(EVENT_CENTER_SCENE)
+  "collection":
+   get_tree().root.set_meta("library_open_goal",true);_open_menu_scene(LIBRARY_SCENE)
   "library":
    get_tree().root.set_meta("library_open_builds",true);_open_menu_scene(LIBRARY_SCENE)
 

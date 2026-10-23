@@ -1,0 +1,88 @@
+{
+  "batch": "Retention loop audit and lightweight WIB dashboard",
+  "base_commit": "1575180f0f78b0b9d1dae4774253361b3377faa5",
+  "date_wib": "2026-10-23",
+  "phase": "author source, affected validation and portable package simulation complete; owner handoff",
+  "findings": [
+    "Main mail/Pavilion/announcement schedules and timestamps depend on browser timezone; Trials already displays WIB but uses its own helpers",
+    "Dashboard repeats layered CSS, loads drafts/history on every login even in compose, and polls Trials when hidden",
+    "Home cultivation recommendation ignores affordability and can hide completed daily rewards",
+    "CI Library hardcodes56 entries while current catalog has58; release export fixture omits current native proof and uses stale hash"
+  ],
+  "scope": [
+    "Audit actual first session, daily returns, progress targets, repeat rewards, monetization and post-cap routes",
+    "Fix grounded guidance and integration defects without blanket economy changes or redoing delivered features",
+    "Unify lightweight futuristic admin presentation and all schedule inputs/displays in WIB",
+    "Close existing failed CI checks, preserve9 live gates and saves, verify affected flows",
+    "One portable apply/publish/deploy procedure with independent receipts and durable checkpoints"
+  ],
+  "status": {
+    "source_edited": true,
+    "author_tested": true,
+    "pushed": false,
+    "deployed": false,
+    "exported": false,
+    "device_tested": false,
+    "package_tested": true,
+    "owner_installed": false,
+    "committed": false,
+    "aab_exported": false,
+    "play_submitted": false
+  },
+  "next_action": "D:\\Godot\\tools\\Jade-Retention-Dashboard\\apply_publish_and_deploy.cmd; QA clone defaultqa13, game/config rootjade-ascendant. Rerun same launcher after interruption. Then exact-SHA CI and existing production export for Home changes.",
+  "completed": [
+    "Existing live dashboard sign-in composition inspected; CSS/code assets reviewed",
+    "Consolidated light CSS shell and sidebar; no UI framework, external fonts or new images",
+    "Shared strict WIB scheduling/labels in Mail, Pavilion, Announcements, Odyssey, Trials and Insights; UTC aggregation days explicitly labelled",
+    "Lazy coalesced admin view reads; draft retained when changing tabs; bounded request lifetime; hidden-tab clocks/polls throttled",
+    "Home recommendation prioritizes earned Daily/Achievement rewards and only recommends affordable cultivation",
+    "CI stale Library count replaced with actual-catalog completeness; metadata pack copies and independently verifies current native proof",
+    "Real metadata export-pack fixture PASS; no APK/AAB/native rebuild",
+    "Full generated dashboard DOM interactions21 checks PASS, no network to production",
+    "Final retention85 + separate process restart5 PASS, Home180, direction53, Library238, combat261, arsenal40; audio teardown fixes remove ERROR output",
+    "Native mobile gesture/layout122 PASS using actual first swipes",
+    "137 backend tests PASS; full DOM21 PASS; exact Android metadata export-pack PASS; existing9 gates PASS",
+    "Pinned unfinished collections now surface after core goals and open the actual existing target reader",
+    "Shared CSS is versioned/cacheable without broadening nonce CSP; page bytes measured",
+    "Actual browser rejected local preview URL; visual redesign confirmation remains explicitly unverified",
+    "Standalone installer normal commit/local-bare push, replay, receipt recovery, paths with spaces, rollback and root checks PASS",
+    "Game project fast-forward to exact commit PASS; altered reviewed source or unrelated backend edits block deploy",
+    "Existing production source9 gates unchanged; no native changes or SQL/config payload",
+    "Windows AST/ValidateOnly target preflight added to CI; no Wrangler is invoked in that job",
+    "Final explicit refresh draft preservation, pending mail-draft save fence, and notification-history coalescing verified in21 DOM checks"
+  ],
+  "validation": {
+    "backend_tests": 137,
+    "dashboard_full_script_dom": 21,
+    "timezones": [
+      "UTC",
+      "Asia/Jakarta",
+      "America/Los_Angeles",
+      "Europe/Berlin",
+      "Pacific/Auckland"
+    ],
+    "retention_loop": 85,
+    "separate_process_restart": 5,
+    "direction": 53,
+    "home": 180,
+    "library": 238,
+    "combat_polish": 261,
+    "arsenal_hits": 40,
+    "native_gesture_layout": 122,
+    "metadata_export_pack": "PASS; no APK/AAB",
+    "production_gates": 9,
+    "installer_primitives": 12,
+    "publisher_local_bare_push_resume": "PASS; no GitHub write",
+    "game_fast_forward_and_unknown_edit_stop": "PASS; local fixture",
+    "windows_deploy_preflight": "CI added, not executed here",
+    "dashboard_visual_redesign": "not confirmed; local preview denied by browser URL policy"
+  },
+  "remaining": [
+    "Owner apply/publish and exact-SHA CI",
+    "Owner exact-source Profile-only deployment through combined launcher",
+    "Final visual inspection of redesigned dashboard after deploy; browser rendering could not be confirmed here",
+    "Signed AAB/Play-installed test for changed Home guidance, then owner Play submission",
+    "Real player feedback/cohort retention; no D1/D7 guarantee from source tests"
+  ],
+  "checkpoint_library_file_id": "libfile_5c5ec08f49208191885afb93abd3c758"
+}

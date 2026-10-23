@@ -1,6 +1,6 @@
 {
-  "batch": "QA17 release UI regression closure",
-  "state": "docs/checkpoints/RELEASE_QA17_STATE_2026-10-23.json",
-  "base_commit": "14f64e4ae41c1cd69719bdc79412c43dc9a597fb",
-  "next_action": "Owner runs Jade-Release-QA17/apply_and_publish.cmd; confirm printed real commit and exact-SHA CI. Do not repeat delivered nine-feature integration. No native/backend rebuild or Worker deployment required by QA17."
+  "batch": "Retention loop audit and lightweight WIB dashboard",
+  "state": "docs/checkpoints/RETENTION_DASHBOARD_STATE_2026-10-23.json",
+  "base_commit": "1575180f0f78b0b9d1dae4774253361b3377faa5",
+  "next_action": "D:\\Godot\\tools\\Jade-Retention-Dashboard\\apply_publish_and_deploy.cmd; QA clone defaultqa13, game/config rootjade-ascendant. Rerun same launcher after interruption. Then exact-SHA CI and existing production export for Home changes."
 }

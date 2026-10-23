@@ -17,7 +17,8 @@ func run() -> void:
 	await process_frame
 	native=DisplayServer.get_name()!="headless";root.content_scale_size=Vector2i.ZERO;root.size=Vector2i(648,1152)
 	var eq: Node=root.get_node("EquipmentManager");var inv: Node=root.get_node("InventoryManager")
-	check(eq.get_item_ids().size()==56 and "astral_resonance_bell" not in eq.get_item_ids(),"56 active entries without Bell")
+	var active_ids: Array[String]=eq.get_item_ids()
+	check(active_ids.size()>=56 and "astral_resonance_bell" not in active_ids,"current active catalog preserves released entries and excludes Bell")
 	inv.item_counts["astral_resonance_bell"]=3;eq.ascension_stars["astral_resonance_bell"]=4;eq.weapon_levels["astral_resonance_bell"]=22;eq.equipped_item_ids.armament="astral_resonance_bell"
 	var legacy: Dictionary=eq.build_active_run_loadout_snapshot()
 	eq._validate_loaded_state();inv._validate_loaded_state()
@@ -34,7 +35,11 @@ func run() -> void:
 	for dims: Vector2i in [Vector2i(320,568),Vector2i(390,844),Vector2i(648,1152),Vector2i(896,504)]:
 		root.size=dims;await settle();book._set_mode("EQUIPMENT");await settle()
 		var grid: GridContainer=book._list.get_node("LibraryEquipmentGrid")
-		check(grid.columns==5 and grid.get_child_count()==56,"five columns complete "+str(dims))
+		check(grid.columns==5 and grid.get_child_count()==active_ids.size(),"five columns complete "+str(dims))
+		var rendered_ids: Array[String]=[]
+		for tile: Node in grid.get_children():rendered_ids.append(str(tile.name).trim_prefix("Relic_"))
+		rendered_ids.sort();var expected_ids: Array[String]=active_ids.duplicate();expected_ids.sort()
+		check(rendered_ids==expected_ids,"each active catalog item rendered exactly once "+str(dims))
 		check(grid.get_global_rect().end.x<=book.size.x+1,"grid fits "+str(dims))
 		book._open_equipment_detail("frost_lotus_robe");await settle()
 		var panel: Control=book._popup.get_node("LibraryDetailPanel")
@@ -84,5 +89,6 @@ func run() -> void:
 	await shot("lin-yue-combat")
 	player.get_node("PlayerHealth").die();await settle();check(current_scene.has_node("LinYueDefeatPose"),"authored defeat")
 	await create_timer(1.2,true).timeout;check(not current_scene.has_node("LinYueDefeatPose"),"bounded defeat lifetime")
+	await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
 	current_scene.queue_free();current_scene=null;await settle()
 	print("LIN_LIBRARY_QA checks=%d failures=%d native=%s"%[checks,failures,native]);quit(0 if failures==0 else 1)
