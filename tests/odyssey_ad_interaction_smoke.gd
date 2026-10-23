@@ -21,6 +21,9 @@ func check(value: bool,why: String)->void:
 func sample(owner: String,nonce: String,stage: String,used: int=0)->Dictionary:
  return {"owner_binding":owner,"server_time":1800000000,"event":{"id":"dragon-test","enabled":true,"ads_enabled":true,"starts_at":1799999900,"ends_at":1801000000},"state":{"tickets":3+used,"daily_ads":used,"day":"2027-01-15","missions":[],"milestones":[],"ad_delivery":{"configured":true,"stage":stage,"nonce":nonce,"expires_at":1800001200}}}
 func run()->void:
+ # Production now autoloads these services; avoid silently auto-renamed test doubles.
+ root.get_node("MonetizationManager").name="RealMonetizationForQA"
+ root.get_node("OdysseyClient").name="RealOdysseyForQA"
  var ads:=Ads.new();ads.name="MonetizationManager";var warm:=Warm.new();ads.provider=warm;ads.add_child(warm);root.add_child(ads)
  var client: Node=load("res://tests/fixtures/odyssey_delivery_client.gd").new();client.native=Native.new();client.name="OdysseyClient";root.add_child(client);client.set_process(false);client._binding=client.test_binding;client._setup_ads()
  var nonce: String="d".repeat(32);client.snapshot=sample(client._binding,nonce,"none");client._received_msec=Time.get_ticks_msec();client.status="connected"

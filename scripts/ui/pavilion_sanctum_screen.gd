@@ -15,6 +15,7 @@ var _sheet_guard_until: int=0
 var _banner_title: Label
 var _banner_subtitle: Label
 var _banner_notice: Label
+var _lock_notice: Label
 const SanctumStage = preload("res://scripts/ui/pavilion_sanctum_stage.gd")
 var sanctum_stage
 var sanctum_shell: PanelContainer
@@ -25,6 +26,7 @@ var _reveal_stage
 var _reveal_box: VBoxContainer
 var _phase_copy: Label
 var _result_name: Label
+var _result_details: VBoxContainer
 var _result_state: Label
 var _formation: GridContainer
 var _formation_scroll: ScrollContainer
@@ -96,6 +98,11 @@ func _refresh_focal_item() -> void:
 	_selection_tween = create_tween()
 	_selection_tween.tween_property(sanctum_stage,"modulate:a",1.0,0.22)
 func _build_featured_selector() -> void:
+	_lock_notice = _label(locked_root,"",19,GOLD)
+	_lock_notice.name = "PavilionUnlockNotice"
+	_lock_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_lock_notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_lock_notice.custom_minimum_size.y = 56
 	featured_row = HBoxContainer.new()
 	featured_row.add_theme_constant_override("separation",6)
 	locked_root.add_child(featured_row)
@@ -158,7 +165,8 @@ func _build_legendary_mandate() -> void:
 	_label(row,tr("LEGENDARY GUARANTEE"),13,GOLD).size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	legendary_value = _label(row,"",13,TEXT_MAIN)
 	legendary_value.size_flags_horizontal = Control.SIZE_SHRINK_END
-	legendary_value.custom_minimum_size.x = 56
+	legendary_value.custom_minimum_size.x = 80
+	legendary_value.autowrap_mode = TextServer.AUTOWRAP_OFF
 	legendary_bar = ProgressBar.new()
 	legendary_bar.show_percentage = false
 	legendary_bar.custom_minimum_size.y = 10
@@ -251,6 +259,11 @@ func _build_utility_rows() -> void:
 func _refresh_summon_panel() -> void:
 	_sync_banner_presentation()
 	super()
+	if is_instance_valid(_lock_notice):
+		_lock_notice.visible = not PavilionManager.is_summon_unlocked()
+		_lock_notice.text = "TERKUNCI · SELESAIKAN STAGE 1–5" if SettingsManager.language == "id" else "LOCKED · CLEAR STAGE 1–5"
+	if is_instance_valid(legendary_value):
+		legendary_value.add_theme_color_override("font_color", GOLD if not PavilionManager.has_active_legendary_pool() else TEXT_MAIN)
 	# A previously chosen target stays valid even outside the rotating featured set.
 	var saved_target: String=PavilionManager.get_wish_target_item_id()
 	if not saved_target.is_empty() and saved_target not in featured_items:
@@ -270,6 +283,20 @@ func _refresh_rewarded_seal_section() -> void:
 	_ad_hint.text = tr("%d rewarded Seals remain • 1 Seal = 1 summon") % remaining
 	if rewarded_seal_state_label != null and locked_watch_ad_button.disabled:
 		_ad_hint.text = rewarded_seal_state_label.text
+	var policy: Dictionary = MonetizationManager.get_rewarded_policy_status("pavilion_seal")
+	var cooldown: int = int(policy.get("cooldown_remaining_seconds",0))
+	if remaining <= 0:
+		locked_watch_ad_button.text = "KUOTA SIKLUS HABIS" if SettingsManager.language == "id" else "CYCLE LIMIT REACHED"
+		_ad_hint.text = "Pulih setelah 7 hari penyelesaian seluruh Daily Quest." if SettingsManager.language == "id" else "Renews after 7 days of claiming all Daily Quests."
+	elif int(policy.get("placement_claims",0)) >= int(policy.get("daily_limit",1)):
+		var seconds: int = 86400 - int(Time.get_unix_time_from_system()) % 86400
+		var clock_text: String = "%02d:%02d:%02d" % [seconds/3600,(seconds%3600)/60,seconds%60]
+		locked_watch_ad_button.text = ("IKLAN BERIKUTNYA · " if SettingsManager.language == "id" else "NEXT AD · ") + clock_text
+		_ad_hint.text = "Reset 07.00 WIB · 1 Seal = 1 summon" if SettingsManager.language == "id" else "Resets 00:00 UTC · 1 Seal = 1 summon"
+	elif cooldown > 0:
+		locked_watch_ad_button.text = ("IKLAN BERIKUTNYA · %ds" if SettingsManager.language == "id" else "NEXT AD · %ds") % cooldown
+	else:
+		locked_watch_ad_button.text = tr("WATCH AD • FREE 1× SUMMON") if not locked_watch_ad_button.disabled else ("SIAPKAN IKLAN · +1 SEAL" if SettingsManager.language == "id" else "LOADING AD · +1 SEAL")
 func _summon(count: int) -> void:
 	if _paid_reveal_busy or (summon_reveal_overlay != null and summon_reveal_overlay.visible): return
 	_paid_reveal_mode=false
@@ -313,14 +340,20 @@ func _build_summon_reveal_overlay() -> void:
 	_reveal_stage.phase_changed.connect(_on_ritual_phase)
 	_phase_copy = _label(_reveal_box,"",13,GOLD)
 	_phase_copy.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_stars_copy = _label(_reveal_box,"",23,GOLD)
+	var details := VBoxContainer.new()
+	_result_details = details
+	details.name = "SealedResultIdentity"
+	details.custom_minimum_size.y = 148
+	details.add_theme_constant_override("separation", 4)
+	_reveal_box.add_child(details)
+	_stars_copy = _label(details,"",23,GOLD)
 	_stars_copy.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
-	_result_name = _label(_reveal_box,"",26,TEXT_MAIN)
+	_result_name = _label(details,"",26,TEXT_MAIN)
 	_result_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_result_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_result_slot = _label(_reveal_box,"",13,TEXT_MUTED)
+	_result_slot = _label(details,"",13,TEXT_MUTED)
 	_result_slot.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
-	_result_state = _label(_reveal_box,"",13,JADE)
+	_result_state = _label(details,"",13,JADE)
 	_result_state.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_result_state.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_formation_scroll = ScrollContainer.new()
@@ -337,6 +370,7 @@ func _build_summon_reveal_overlay() -> void:
 	summon_reveal_action = _button(_reveal_box,tr("CONTINUE"),_advance_summon_reveal,true,GOLD)
 	summon_reveal_action.custom_minimum_size = Vector2(0,56)
 func _start_summon_reveal(result: Dictionary) -> void:
+	_hide_result_identity()
 	summon_reveal_payload = result.duplicate(true)
 	summon_reveal_entries = result.get("results",[]).duplicate(true)
 	if summon_reveal_entries.is_empty(): return
@@ -355,7 +389,7 @@ func _start_summon_reveal(result: Dictionary) -> void:
 	_result_state.text = ""
 	_stars_copy.text = ""
 	_result_slot.text = ""
-	_result_name.visible=true;_result_state.visible=true;_stars_copy.visible=true;_result_slot.visible=true;_phase_copy.visible=true
+	_phase_copy.visible=true
 	for copy: Label in [_result_name,_result_state,_stars_copy,_result_slot]: copy.modulate.a=0.0
 	_formation_background.visible = false
 	_phase_copy.text = tr("TALISMAN AWAKENS")
@@ -373,6 +407,11 @@ func _start_summon_reveal(result: Dictionary) -> void:
 	var chosen_id: String = str(entry.get("item_id",""))
 	_reveal_stage.play(_load_item_texture(chosen_id),str(entry.get("rarity","common")),EquipmentManager.get_loadout_item_star(chosen_id))
 	_fit_sanctum()
+func _hide_result_identity() -> void:
+	if _landing_tween != null: _landing_tween.kill(); _landing_tween = null
+	for copy: Label in [_result_name,_result_state,_stars_copy,_result_slot]:
+		if copy != null: copy.text = ""; copy.visible = false; copy.modulate.a = 0.0
+
 func _ritual_landed() -> void:
 	if not summon_reveal_overlay.visible: return
 	summon_reveal_busy = false
@@ -517,7 +556,14 @@ func _finish_summon_reveal(_skipped: bool = false) -> void:
 func _fit_sanctum() -> void:
 	if sanctum_stage != null:
 		sanctum_stage.custom_minimum_size.y = clampf(size.y*0.33,200,420)
-	if _reveal_stage != null: _reveal_stage.custom_minimum_size.y = clampf(size.y*0.38,140,420)
+	if _reveal_stage != null:
+		var short: bool = size.y < 600
+		_result_details.custom_minimum_size.y = 132 if short else 148
+		_result_name.add_theme_font_size_override("font_size",18 if short else 26)
+		_result_name.max_lines_visible = 2
+		_stars_copy.add_theme_font_size_override("font_size",18 if short else 23)
+		summon_reveal_action.custom_minimum_size.y = 44 if short else 56
+		_reveal_stage.custom_minimum_size.y = 56 if short else clampf(size.y*0.38,140,420)
 	if featured_row != null:
 		for button: Control in featured_row.get_children(): button.custom_minimum_size.y=90 if size.x>=600 else 74
 	if _formation != null: _formation.columns = 2
@@ -537,13 +583,14 @@ func _actual_stars(id: String) -> String:
 	var star: int = int(PavilionManager.paid_gameplay.call("item_star",id)) if _paid_reveal_mode else EquipmentManager.get_loadout_item_star(id)
 	return "★".repeat(star)+"☆".repeat(maxi(0,EquipmentManager.MAX_ASCENSION_STAR-star))
 func _begin_formation_detail(index: int) -> void:
+	_hide_result_identity()
 	_formation_detail = true
 	summon_reveal_index = index
 	_formation_scroll.visible = false
 	_formation_background.visible = false
 	_reveal_stage.visible = true
 	_result_name.text = "";_result_state.text = "";_result_slot.text = "";_stars_copy.text = ""
-	_result_name.visible=true;_result_state.visible=true;_stars_copy.visible=true;_result_slot.visible=true;_phase_copy.visible=true
+	_phase_copy.visible=true
 	for copy: Label in [_result_name,_result_state,_stars_copy,_result_slot]: copy.modulate.a=0.0
 	_phase_copy.text = tr("THE SEAL FALLS SILENT")
 	summon_reveal_counter.text = tr("PULL %d OF %d") % [index+1,summon_reveal_entries.size()]
@@ -717,16 +764,17 @@ func _apply_first_frame_polish() -> void:
 # Compact safe-area sheets shared by Rates, History and target selection.
 func _build_modal_overlay(title_text: String) -> ColorRect:
 	var host: Control=$SafeArea
-	var overlay:=ColorRect.new();overlay.name="PavilionCompactSheet";overlay.color=Color(0,.01,.016,.76);overlay.z_index=90
+	var overlay:=ColorRect.new();overlay.name="PavilionCompactSheet";overlay.color=Color(0.06,.16,.13,.14);overlay.z_index=90
 	host.add_child(overlay);overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var panel:=PanelContainer.new();panel.name="CompactPanel";panel.self_modulate.a=0;overlay.add_child(panel)
+	var panel:=PanelContainer.new();panel.name="CompactPanel";panel.modulate.a=0;overlay.add_child(panel)
 	panel.add_theme_stylebox_override("panel",_imperial_style(GOLD,true,false))
 	var root_box:=VBoxContainer.new();root_box.add_theme_constant_override("separation",10);panel.add_child(root_box)
 	var heading:=_label(root_box,title_text,20,GOLD);heading.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;heading.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
 	var sc:=ScrollContainer.new();sc.name="CompactScroll";sc.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;sc.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_AUTO;sc.follow_focus=true;sc.scroll_deadzone=8;sc.size_flags_vertical=Control.SIZE_EXPAND_FILL;root_box.add_child(sc)
 	var body:=VBoxContainer.new();body.size_flags_horizontal=Control.SIZE_EXPAND_FILL;body.size_flags_vertical=Control.SIZE_SHRINK_BEGIN;body.add_theme_constant_override("separation",10);sc.add_child(body)
 	var footer:=VBoxContainer.new();footer.name="CompactFooter";root_box.add_child(footer)
-	overlay.set_meta("content",body);overlay.set_meta("panel",panel);overlay.set_meta("scroll",sc)
+	overlay.set_meta("content",body);overlay.set_meta("panel",panel);overlay.set_meta("scroll",sc);overlay.set_meta("root_box",root_box);overlay.set_meta("footer",footer);overlay.set_meta("heading",heading)
+	panel.clip_contents = true
 	overlay.resized.connect(_queue_compact_fit.bind(overlay,panel,root_box,sc,body,footer))
 	_queue_compact_fit(overlay,panel,root_box,sc,body,footer)
 	return overlay
@@ -760,9 +808,9 @@ func _fit_compact_popup(overlay: ColorRect,panel: PanelContainer,root_box: VBoxC
 	await get_tree().process_frame
 	if not is_instance_valid(overlay) or overlay.is_queued_for_deletion() or int(overlay.get_meta("fit_generation"))!=generation:return
 	var fixed: float=root_box.get_child(0).get_combined_minimum_size().y+footer.get_combined_minimum_size().y+skin.get_minimum_size().y+20
-	var height: float=minf(overlay.size.y*.72,maxf(fixed+44,body.get_combined_minimum_size().y+fixed))
+	var height: float=overlay.size.y*.72 if bool(overlay.get_meta("target_picker",false)) else minf(overlay.size.y*.72,maxf(fixed+44,body.get_combined_minimum_size().y+fixed))
 	sc.custom_minimum_size.y=maxf(44,height-fixed)
-	panel.size=Vector2(width,height);panel.position.y=(overlay.size.y-height)*.5;panel.self_modulate.a=1
+	panel.size=Vector2(width,height);panel.position.y=(overlay.size.y-height)*.5;panel.modulate.a=1
 
 func _close_target_picker() -> void:
 	_target_epoch+=1
@@ -771,13 +819,25 @@ func _close_target_picker() -> void:
 	_target_overlay=null
 
 func _open_target_picker(category: String="") -> void:
+	if category.is_empty() and not PavilionManager.get_wish_target_item_id().is_empty():
+		var data: Dictionary = EquipmentManager.get_item_data(PavilionManager.get_wish_target_item_id())
+		category = "weapon" if str(data.get("slot","")) == "armament" else "set"
 	if summon_reveal_overlay!=null and summon_reveal_overlay.visible:return
 	if is_instance_valid(_target_overlay) and (category.is_empty() or category==_target_category):return
 	if not _admit_sheet_open():return
 	if not category.is_empty():_target_category=category
-	_close_target_picker();_close_rates_overlay();_close_history_overlay()
-	_target_overlay=_build_modal_overlay("PILIH TARGET SUMMON" if SettingsManager.language=="id" else "SUMMON TARGET")
+	_close_rates_overlay();_close_history_overlay()
+	if not is_instance_valid(_target_overlay):
+		_target_overlay=_build_modal_overlay("PILIH TARGET SUMMON" if SettingsManager.language=="id" else "SUMMON TARGET")
+		_target_overlay.set_meta("target_picker",true)
+	else:
+		_target_epoch += 1
+		for holder: Node in [_target_overlay.get_meta("content"),_target_overlay.get_meta("footer")]:
+			for child: Node in holder.get_children(): holder.remove_child(child);child.queue_free()
+		(_target_overlay.get_meta("scroll") as ScrollContainer).scroll_vertical = 0
 	var body: VBoxContainer=_target_overlay.get_meta("content")
+	var heading: Label = _target_overlay.get_meta("heading")
+	heading.text = ("TARGET SENJATA" if _target_category == "weapon" else "TARGET EQUIPMENT SET") if SettingsManager.language == "id" else ("WEAPON TARGET" if _target_category == "weapon" else "SET EQUIPMENT TARGET")
 	var tabs:=HBoxContainer.new();body.add_child(tabs)
 	_button(tabs,"SENJATA" if SettingsManager.language=="id" else "WEAPON",_open_target_picker.bind("weapon"),_target_category=="weapon",GOLD)
 	_button(tabs,"SET",_open_target_picker.bind("set"),_target_category=="set",JADE)
@@ -795,8 +855,10 @@ func _open_target_picker(category: String="") -> void:
 		button.mouse_filter=Control.MOUSE_FILTER_PASS;button.button_down.connect(_target_button_down)
 		button.size_flags_horizontal=Control.SIZE_EXPAND_FILL;button.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;button.custom_minimum_size.y=76
 		button.disabled=id not in available or SaveManager.is_progress_read_only()
-		button.icon=_load_item_texture(id);button.expand_icon=true;button.add_theme_constant_override("icon_max_width",36)
+		button.icon=_load_item_texture(id);button.expand_icon=true;button.add_theme_constant_override("icon_max_width",52)
+		button.add_theme_constant_override("h_separation",10)
 	_button(body,tr("CLOSE"),_close_target_picker,false,JADE)
+	_queue_compact_fit(_target_overlay,_target_overlay.get_meta("panel"),_target_overlay.get_meta("root_box"),_target_overlay.get_meta("scroll"),body,_target_overlay.get_meta("footer"))
 
 func _target_button_down() -> void:
 	_target_press_pos=get_global_mouse_position()

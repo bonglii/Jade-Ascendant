@@ -110,7 +110,7 @@ func _draw() -> void:
 		for aura in range(6): draw_circle(center,radius*(0.83+float(aura)*0.09),Color(tone,0.018*surge))
 		draw_arc(center,radius*0.96,-t*0.10,TAU-t*0.10,80,Color(tone,0.30+surge*0.40),2.0,true)
 	# Eased meridian sweeps and precise rune pulses flank the equipment.
-	for ring in range(3):
+	for ring in range(0 if preview_mode else 3):
 		var rotation_angle: float = t*(0.09 if ring%2==0 else -0.07)
 		var rr: float = radius*(0.72+float(ring)*0.11)
 		draw_arc(center,rr,rotation_angle,rotation_angle+TAU*0.64,72,Color(tone,0.12+surge*0.20),1.2,true)
@@ -137,14 +137,18 @@ func _draw() -> void:
 		draw_set_transform(center,angle)
 		draw_texture_rect(SEAL,Rect2(-Vector2.ONE*seal_size*0.5,Vector2.ONE*seal_size),false,Color(1,1,1,seal_alpha))
 		draw_set_transform(Vector2.ZERO)
+	if preview_mode and relic != null:
+		_draw_dragon(Rect2(center-Vector2(radius*1.18,radius*1.1),Vector2(radius*2.36,radius*2.2)),0.40)
 	if relic != null and (preview_mode or landed):
 		var reveal: float = 1.0 if preview_mode or SettingsManager.reduced_effects else smoothstep(0.0,0.32,clock-_land_clock)
 		var side: float = minf(size.x*0.76,size.y*0.71)*lerpf(0.72,1.0,reveal)
 		var lift: float = lerpf(26.0,0.0,reveal)+sin(t*1.35)*3.0
 		var halo_side: float = side*1.30
-		draw_texture_rect(HALO,Rect2(center-Vector2.ONE*halo_side*0.5,Vector2.ONE*halo_side),false,Color(tone,0.16 if not cinematic else 0.35*reveal))
+		draw_texture_rect(HALO,Rect2(center-Vector2.ONE*halo_side*0.5,Vector2.ONE*halo_side),false,Color(tone,0.66 if not cinematic else 0.48*reveal))
 		draw_set_transform(center+Vector2(0,lift),lerpf(-0.12,0,reveal))
-		draw_texture_rect(relic,Rect2(-Vector2.ONE*side*0.5,Vector2.ONE*side),false,Color(1,1,1,reveal))
+		var extent: Vector2 = relic.get_size()
+		var fitted: Vector2 = extent * (side / maxf(extent.x, extent.y))
+		draw_texture_rect(relic,Rect2(-fitted*0.5,fitted),false,Color(1,1,1,reveal))
 		draw_set_transform(Vector2.ZERO)
 		if (rarity == "legendary" or presentation_star == 5) and cinematic:
 			for ray in range(12):

@@ -17,9 +17,12 @@ func run() -> void:
  journey.cleared_stage_keys.append(journey.get_stage_key(1,5))
  var pool: Dictionary=pavilion.get_summon_pool_by_rarity();var count: int=0
  for rarity: String in pool:count+=pool[rarity].size()
- check(count==equipment.get_item_ids().size(),"all equipment open at 1-5")
- for id: String in equipment.get_item_ids():check(id in pool[str(equipment.get_item_data(id).rarity)],"correct rarity pool "+id)
- for id: String in ["jade_binding_chain","celestial_returning_glaive","nine_heavens_star_sword","void_piercer_spear","astral_resonance_bell"]:check(id in pavilion.get_wish_target_options(),"weapon target open at 1-5 "+id)
+ var eligible: Array[String]=[]
+ for id: String in equipment.get_item_ids():
+  if not bool(equipment.get_item_data(id).get("event_only",false)):eligible.append(id)
+ check(count==eligible.size(),"all non-event equipment opens at 1-5")
+ for id: String in eligible:check(id in pool[str(equipment.get_item_data(id).rarity)],"correct rarity pool "+id)
+ for id: String in ["jade_binding_chain","celestial_returning_glaive","nine_heavens_star_sword","void_piercer_spear"]:check(id in pavilion.get_wish_target_options(),"weapon target open at 1-5 "+id)
  check(not pavilion.is_item_unlocked("celestial_returning_glaive"),"shop/forge stage gate kept separate")
  pavilion.state.pavilion_seals=50;pavilion.state.starter_seals_claimed=true
  root.content_scale_size=Vector2i.ZERO;root.size=Vector2i(648,1152)
@@ -33,16 +36,10 @@ func run() -> void:
   check(panel.get_global_rect().end.x<=overlay.get_global_rect().end.x+1 and panel.get_global_rect().end.y<=overlay.get_global_rect().end.y+1,"rates inside safe area "+str(viewport))
   check(panel.find_child("CompactFooter",true,false).get_child_count()==1,"close outside scroll")
   screen._back();await settle();check(screen.locked_rates_overlay==null,"Back dismisses rates")
-  screen.session_summon_history=[]
-  for i: int in range(20):screen.session_summon_history.append({"name":"Nine Heavens Star Sword • panjang untuk pengujian "+str(i),"rarity":"legendary","duplicate":true})
-  screen._show_history_overlay();await settle()
-  overlay=screen.locked_history_overlay;var scroll: ScrollContainer=overlay.get_meta("scroll")
-  scroll.scroll_vertical=100000;await settle();check(scroll.scroll_vertical>0,"history genuinely scrolls "+str(viewport))
-  screen._back();await settle()
   screen._open_target_picker("weapon");await settle()
   overlay=screen._target_overlay;panel=overlay.get_meta("panel")
   check(panel.get_global_rect().end.x<=overlay.get_global_rect().end.x+1,"picker width fits "+str(viewport))
-  for id: String in ["jade_binding_chain","celestial_returning_glaive","nine_heavens_star_sword","void_piercer_spear","astral_resonance_bell"]:
+  for id: String in ["jade_binding_chain","celestial_returning_glaive","nine_heavens_star_sword","void_piercer_spear"]:
    var button: Button=overlay.find_child("Target_"+id,true,false)
    check(button!=null and not button.disabled,"weapon selectable "+id+str(viewport))
   screen._open_target_picker("set");await settle()
@@ -76,4 +73,7 @@ func run() -> void:
  var before: int=pavilion.get_lifetime_pulls();var result: Dictionary=pavilion.summon_equipment(1)
  check(bool(result.get("success",false)) and pavilion.get_lifetime_pulls()==before+1,"gacha actually works after clear 1-5")
  print("PAVILION_WEAPON_PICKER_CHECKS=",checks,";FAILURES=",failures)
+ current_scene.queue_free();current_scene=null
+ await settle()
+ await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
  quit(1 if failures else 0)

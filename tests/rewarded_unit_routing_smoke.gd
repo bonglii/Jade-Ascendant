@@ -50,7 +50,8 @@ func run() -> void:
  # Real release resolver with a native transport double: no live ad requests.
  var release_probe: Node = probe(); release_probe.debug_inventory=false
  release_probe._warm_all_units()
- var order: Array = Catalog.UNITS.keys()
+ var order: Array = ["general", "pavilion", "dice", "revive"]
+ check(release_probe.requests[0].id == ids.general, "launch meditation cache is warmed first")
  for i: int in range(order.size()):
   check(release_probe.requests[i].id == ids[order[i]], "actual production loader uses matching unique ID " + str(order[i]))
  release_probe.free()

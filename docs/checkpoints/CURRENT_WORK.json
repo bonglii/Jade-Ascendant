@@ -1,6 +1,6 @@
 {
-  "batch": "Close two CI harness regressions before ecosystem audit",
-  "state": "docs/checkpoints/CI_CLOSURE_STATE_2026-10-23.json",
-  "base_commit": "28f8ed6367cde8ebc17aa7638c32b0a30fb7bcb2",
-  "next_action": "Publish only this CI/checkpoint change on checkpoint branch and verify new-SHA workflows. Then resume authorized player/ecosystem audit without redoing completed features. No server deployment for this CI-only change."
+  "batch": "Release polish: mailbox, ads, Pavilion and sound",
+  "state": "docs/checkpoints/RELEASE_POLISH_STATE_2026-10-24.json",
+  "base_commit": "9ca46e7d8498c0998a17536e5f1793fe153a074a",
+  "next_action": "Author validation complete. Run portable Release Polish publisher, wait exact-SHA CI, then existing production exporter. Check batch state for completed tests and owner-only evidence."
 }

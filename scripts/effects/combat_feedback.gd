@@ -136,7 +136,11 @@ func hit(actor: Node2D, amount: float, is_critical: bool = false) -> void:
 		if SettingsManager.haptics and OS.has_feature("android"):
 			Input.vibrate_handheld(24)
 	else:
-		AudioManager.play_sfx("hit")
+		var hit_source: String = str(actor.get_meta(&"jade_audio_hit_source",""))
+		if not hit_source.is_empty() and not hit_source.begins_with("set_"):
+			AudioManager.play_weapon_impact(hit_source)
+		else:
+			AudioManager.play_sfx("hit")
 
 
 func mark_next_hit_critical(actor: Node, is_critical: bool) -> void:

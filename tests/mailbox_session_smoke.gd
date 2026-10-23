@@ -5,8 +5,9 @@ class Auth extends Node:
 class Wire extends Node:
  signal request_completed(result: int,code: int,headers: PackedStringArray,bytes: PackedByteArray)
  var sent: Array[Dictionary] = []
+ var cancelled: int = 0
  func set_tls_options(_value: TLSOptions) -> void: pass
- func cancel_request() -> void: pass
+ func cancel_request() -> void: cancelled += 1
  func request(url: String,_headers: PackedStringArray,method: int,body: String) -> Error:
   sent.append({"url":url,"method":method,"body":body});return OK
 var checks: int=0
@@ -85,6 +86,8 @@ func run() -> void:
  check(server.get_mail_ids().size()==1,"queued deletion does not hide mail before confirmation")
  server._start_next();respond(server,{"owner_binding":owner,"ok":true,"deleted_count":1})
  check(server.get_mail_ids().is_empty(),"confirmed delete clears eligible notice")
+ var requests_before: int=wire.sent.size()
+ check(server.delete_all_completed() and server._queue.is_empty() and wire.sent.size()==requests_before,"empty Delete All does not make another authenticated request")
  server._pending={"kind":"list","id":"","cursor":""};server._refreshing=true;server._incoming.clear()
  check(server._accept_page({"version":1,"server_time":int(Time.get_unix_time_from_system()),"entries":[notice],"next_cursor":""}),"old page validates after deletion")
  check(server.get_mail_ids().is_empty(),"stale list cannot resurrect confirmed deleted letter")
@@ -94,6 +97,17 @@ func run() -> void:
  server._state.cache[owner].append(notice.duplicate(true));server.mark_read(notice.id)
  respond(server,{"owner_binding":owner,"ok":true})
  check(notice.mail_id in server._pending_read_ids() and a.mail_id not in server._pending_read_ids(),"read-all confirmation preserves read intent created after request")
+ # A user action queued just after a list starts must not wait for its full timeout.
+ server._queue.clear();server._pending={};server._busy=false;server._state.cache[owner]=[b]
+ server._enqueue("list","",{});server._start_next()
+ var cancelled_before: int=wire.cancelled
+ server.claim_mail(b.id)
+ await create_timer(.30).timeout
+ check(server._pending.kind=="claim" and wire.cancelled==cancelled_before+1,"claim preempts a list queued less than 1500ms ago")
+ server._queue.clear();server._pending={"kind":"ack","id":b.id,"owner":owner};server._busy=true
+ server._queue.append({"kind":"delete_all","id":"","owner":owner});server._yield_background_read()
+ check(server._pending.kind=="ack" and wire.cancelled==cancelled_before+1,"mutation and receipt acknowledgement are never cancelled for speed")
+ server._queue.clear();server._pending={};server._busy=false
  # Auth rejection drops memory token and requests one explicit refresh only.
  server._state.cache[owner]=[b];server._enqueue("read",b.id,{"mail_id":b.mail_id});server._start_next()
  respond(server,{"error":"unauthenticated"},401);server._start_next()

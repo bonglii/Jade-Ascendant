@@ -27,7 +27,7 @@ static func copy(en: String,id: String) -> String: return id if SettingsManager.
 func _ready() -> void:
  z_index=450;process_mode=Node.PROCESS_MODE_ALWAYS;set_anchors_and_offsets_preset(PRESET_FULL_RECT)
  _owner=PlayerCompanion.account_key
- var dim:=ColorRect.new();dim.color=Color(.002,.018,.023,.87);dim.set_anchors_and_offsets_preset(PRESET_FULL_RECT);add_child(dim)
+ var dim:=ColorRect.new();dim.color=Color(.06,.16,.13,.14) if mode=="summons" else Color(.002,.018,.023,.87);dim.set_anchors_and_offsets_preset(PRESET_FULL_RECT);add_child(dim)
  _panel=PanelContainer.new();_panel.name="JournalFrame";_panel.add_theme_stylebox_override("panel",skin(22));add_child(_panel)
  var box:=VBoxContainer.new();box.add_theme_constant_override("separation",12);_panel.add_child(box)
  var row:=HBoxContainer.new();row.add_theme_constant_override("separation",8);box.add_child(row)

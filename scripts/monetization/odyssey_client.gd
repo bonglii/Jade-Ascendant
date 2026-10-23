@@ -274,7 +274,7 @@ func _show_ad() -> void:
 	provider.call("prepare_odyssey_ssv", _ad_nonce)
 	if not bool(ads.call("show_rewarded", "odyssey_roll")): ad_delivery_state="unavailable";_clear_ad_wait()
 static func _ad_poll_delay(attempt: int) -> int:
-	return [2000,2000,4000,8000,15000,30000][clampi(attempt,0,5)]
+	return [400,700,1200,2000,4000,8000,15000][clampi(attempt,0,6)]
 func _ad_earned(placement: String) -> void:
 	if placement!="odyssey_roll" or _ad_nonce.is_empty(): return
 	_ad_earned_seen=true;_ad_cancelled=false;ad_delivery_state="verifying";_save_ad_wait()

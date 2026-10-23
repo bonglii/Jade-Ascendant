@@ -23,7 +23,7 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); z_index = 200
 	_paid = PavilionManager.paid_gameplay
 	_old_back = SceneTransitionManager.back_handler; SceneTransitionManager.set_back_handler(_close)
-	var veil := ColorRect.new(); veil.color=Color(0.002,0.015,0.02,0.96); veil.mouse_filter=Control.MOUSE_FILTER_STOP
+	var veil := ColorRect.new(); veil.color=Color(0.06,0.16,0.13,0.14); veil.mouse_filter=Control.MOUSE_FILTER_STOP
 	add_child(veil); veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_panel=PanelContainer.new(); add_child(_panel)
 	var skin:=ArmoryFrame.new(); skin.selected=true; _panel.add_theme_stylebox_override("panel",skin)
@@ -39,7 +39,11 @@ func _ready() -> void:
 func _fit() -> void:
 	if not is_instance_valid(_panel): return
 	var safe: Vector2 = Vector2(maxf(220,size.x-24), maxf(120,size.y-24))
-	_panel.size=Vector2(minf(590,safe.x),minf(780,safe.y))
+	var width: float = minf(590,safe.x)
+	var skin: StyleBox = _panel.get_theme_stylebox("panel")
+	if is_instance_valid(_body): _body.custom_minimum_size.x = maxf(0,width-skin.get_minimum_size().x-10)
+	var natural: float = _body.get_combined_minimum_size().y + skin.get_minimum_size().y if is_instance_valid(_body) else 360.0
+	_panel.size=Vector2(width,minf(safe.y*.82,maxf(220,natural)))
 	_panel.position=(size-_panel.size)*0.5
 func _close() -> void:
 	if SceneTransitionManager.back_handler == Callable(self,"_close"):
@@ -107,6 +111,7 @@ func _redraw() -> void:
 		var caption:=_text(card,"★%d · ×%d"%[int(_paid.call("item_star",id)),int(_paid.call("item_count",id))],color,12)
 		caption.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE);caption.offset_top=-24;caption.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
 	_scroll.set_deferred("scroll_vertical",old_scroll)
+	_fit.call_deferred()
 func _name(id: String) -> String:
 	return str(EquipmentManager.get_item_data(id).get("display_name",id))
 func _select(id: String) -> void:
@@ -115,6 +120,13 @@ func _submit(kind: String, args: Dictionary) -> void:
 	if is_instance_valid(_paid): _paid.call("submit",kind,args)
 func _detail(busy: bool) -> void:
 	var data: Dictionary=EquipmentManager.get_item_data(_selected)
+	var artwork := TextureRect.new()
+	artwork.texture = load(Visual.get_icon_path(_selected))
+	artwork.custom_minimum_size.y = 112
+	artwork.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	artwork.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	artwork.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_body.add_child(artwork)
 	var slot: String=str(data.get("slot",""))
 	var equipped: bool=str(_paid.call("selected_slot",slot))==_selected
 	_text(_body,_name(_selected),GOLD,19)

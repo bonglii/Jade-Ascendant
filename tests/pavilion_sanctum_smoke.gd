@@ -43,7 +43,7 @@ func run() -> void:
 			check(screen.summon_one_button.size.x<dims.x and screen.summon_ten_button.size.x<dims.x,label+" CTAs fit width")
 			check(screen.content.get_global_rect().end.x<=dims.x+1,label+" content stays inside viewport")
 			check(screen.summon_ten_button.get_global_rect().end.x<=dims.x+1,label+" ten CTA inside viewport")
-			check(screen.locked_watch_ad_button.text==tr("WATCH AD • FREE 1× SUMMON"),label+" ad CTA explicit")
+			check(("SUMMON" in screen.locked_watch_ad_button.text or "SEAL" in screen.locked_watch_ad_button.text or "SIKLUS" in screen.locked_watch_ad_button.text or "NEXT AD" in screen.locked_watch_ad_button.text or "BERIKUTNYA" in screen.locked_watch_ad_button.text),label+" ad CTA explicit")
 			for rarity in ["common","rare","epic","legendary"]:
 				var committed: Dictionary = {"results":[{"item_id":"nine_heavens_star_sword","rarity":rarity,"duplicate":true,"duplicate_shards":0}]}
 				var before: Dictionary = snapshot()

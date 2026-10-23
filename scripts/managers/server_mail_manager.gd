@@ -304,7 +304,9 @@ func is_deleting_all_completed() -> bool:
 	return false
 
 func delete_all_completed() -> bool:
-	return _enqueue("delete_all","",{})
+	for id: String in get_mail_ids():
+		if can_delete_mail(id): return _enqueue("delete_all","",{})
+	return true # No eligible letters: no pointless authenticated round trip.
 
 func _enqueue(kind: String,id: String,payload: Dictionary,cursor: String = "") -> bool:
 	if _owner.is_empty() or _state.is_empty() or _auth_node == null or _queue.size() >= 64: return false
@@ -312,15 +314,30 @@ func _enqueue(kind: String,id: String,payload: Dictionary,cursor: String = "") -
 	if _busy and str(_pending.get("key","")) == key: return true
 	for item: Dictionary in _queue:
 		if str(item.get("key","")) == key: return true
-	if kind in ["claim","delete","delete_all"] and _busy and str(_pending.get("kind",""))=="list" and Time.get_ticks_msec()-_operation_started_at>=1500:
+	if kind in ["claim","delete","delete_all"] and _busy and str(_pending.get("kind","")) in ["list","read","read_all"] and Time.get_ticks_msec()-_operation_started_at>=250:
 		var interrupted: Dictionary=_pending.duplicate(true)
 		_http.cancel_request();_nonce+=1;_waiting_token=false;_busy=false;_pending={}
 		_queue.push_front(interrupted)
 	_queue.append({"kind":kind,"id":id,"payload":payload,"cursor":cursor,"key":key,"owner":_owner,"refreshed_token":false})
 	if kind == "read_all": _queue[-1].read_ids = _pending_read_ids()
+	if kind in ["claim","delete","delete_all"]:
+		get_tree().create_timer(0.25).timeout.connect(_yield_background_read)
 	call_deferred("_start_next")
 	_emit_changed()
 	return true
+
+func _yield_background_read() -> void:
+	if not _busy or str(_pending.get("kind","")) not in ["list","read","read_all"]: return
+	if _owner != _current_owner(): return
+	var waiting: bool = false
+	for item: Dictionary in _queue:
+		if str(item.kind) in ["claim","delete","delete_all"]: waiting = true; break
+	if not waiting: return
+	# Only repeat idempotent catalog/read receipts. Claims and ACKs are never cancelled.
+	var interrupted: Dictionary = _pending.duplicate(true)
+	_http.cancel_request(); _nonce += 1; _waiting_token = false; _busy = false; _pending = {}
+	_queue.push_back(interrupted)
+	_start_next()
 
 func _start_next() -> void:
 	if _busy or _queue.is_empty(): return

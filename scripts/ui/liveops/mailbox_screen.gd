@@ -711,11 +711,11 @@ func _refresh_from_authority() -> void:
 		preload("res://scripts/ui/action_ready_dot.gd").show_on(_claim_all_button,int(not _claim_all_button.disabled and _claim_batch.available()>0))
 		_claim_all_button.text="LANJUTKAN" if _claim_batch.paused else "%d/%d" % [int(_claim_batch.claimed),int(_claim_batch.total)] if _claim_batch.active else "CLAIM ALL"
 		if not str(_claim_batch.message).is_empty(): _server_status.text=str(_claim_batch.message);_server_status.tooltip_text=_server_status.text
+	var entries: Array[Dictionary] = _entries()
 	if is_instance_valid(_delete_all_button):
 		var deleting: bool = ServerMailManager.is_deleting_all_completed()
-		_delete_all_button.disabled = deleting or SaveManager.is_progress_read_only() or (is_instance_valid(_claim_batch) and _claim_batch.active)
+		_delete_all_button.disabled = deleting or SaveManager.is_progress_read_only() or (is_instance_valid(_claim_batch) and _claim_batch.active) or not entries.any(func(entry: Dictionary) -> bool: return bool(live_ops.can_delete_mail(str(entry.id))))
 		_delete_all_button.text = tr("DELETING…") if deleting else tr("DELETE ALL")
-	var entries: Array[Dictionary] = _entries()
 	var selection_found: bool = false
 	for entry: Dictionary in entries:
 		if str(entry.get("id", "")) == _selected_id:

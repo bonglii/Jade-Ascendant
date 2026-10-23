@@ -1018,7 +1018,10 @@ func _show_drop_rates_overlay() -> void:
 		locked_rates_overlay.hide();locked_rates_overlay.queue_free()
 	locked_rates_overlay = _build_modal_overlay(tr("DROP RATES & PITY RULES"))
 	var box: VBoxContainer = locked_rates_overlay.get_meta("content") as VBoxContainer
-	var rates: Array[Dictionary] = PavilionManager.get_effective_drop_rate_disclosure()
+	var unlocked: bool = PavilionManager.is_summon_unlocked()
+	if not unlocked:
+		_label(box,"TERKUNCI · Rate dasar setelah clear 1–5" if SettingsManager.language == "id" else "LOCKED · Base rates after clearing 1–5",14,GOLD)
+	var rates: Array[Dictionary] = PavilionManager.get_effective_drop_rate_disclosure() if unlocked else PavilionManager.get_base_drop_rate_disclosure()
 	for entry: Dictionary in rates:
 		var rarity: String = str(entry.get("rarity", "common")).to_upper()
 		var percent: float = float(entry.get("percent", 0.0))

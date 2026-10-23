@@ -1,0 +1,64 @@
+{
+  "batch": "Mailbox, rewarded delivery, Pavilion and complete sound refresh",
+  "date_wib": "2026-10-24",
+  "base_commit": "9ca46e7d8498c0998a17536e5f1793fe153a074a",
+  "phase": "author batch complete; portable publisher and binary-preserving sync replay validated; awaiting owner publication and client export",
+  "scope": [
+    "Mailbox claim/delete latency",
+    "Rewarded prewarm and dice grant reconciliation",
+    "All active sound cues and weapon hit identity",
+    "Pavilion cooldown and modal presentation",
+    "Target picker stable sizing and equipment-matched artwork",
+    "Premium rate-up and clear lock status",
+    "Achievement claim all",
+    "Summon animation alignment and reward secrecy"
+  ],
+  "confirmed": {
+    "isolated_worktree": true,
+    "source_changes": true,
+    "tests": [
+      "cold-import clean",
+      "mailbox44",
+      "mailbox inbox78 / four viewports / two languages",
+      "rewarded routing66",
+      "odyssey receipt/provider/interaction",
+      "target picker117",
+      "gacha701",
+      "trials406",
+      "run report176",
+      "X11 release22",
+      "X11 gesture159",
+      "four-rarity pixel proof",
+      "87WAV+4Ogg integrity",
+      "production gates9",
+      "portable publisher14 + local bare push/resume + binary-safe game sync"
+    ],
+    "commit": false,
+    "push": false,
+    "deploy": false,
+    "aab": false,
+    "android": false
+  },
+  "constraints": [
+    "Preserve nine live IAP gates and saves",
+    "SSV remains authoritative; no speculative dice grant",
+    "Shared mobile scroll policy",
+    "No duplicated redesign or unrelated features",
+    "Native rebuild only if changed native implementation requires it"
+  ],
+  "next_action": "Owner runs the portable apply_and_publish.cmd; wait for exact-SHA CI, then use existing export_production.cmd for one client AAB. No server deploy/native rebuild needed. Preserve receipts and resume the same launcher; do not repeat passed author suites without relevant source changes.",
+  "audio": {
+    "assets": 91,
+    "new_music_contexts": 4,
+    "weapon_hit_families": 8,
+    "license_attribution_in_game": true,
+    "source_recordings": "CC0 rubberduck + Vehicle; music CC0/CC-BY3"
+  },
+  "findings": [
+    "Achievement footer and batch handler excluded achievement section",
+    "Pavilion popup self_modulate hid only background, not children during two-frame layout",
+    "Landing tween persisted into next gacha identity",
+    "Background list could block a claim queued in first 1500ms",
+    "SSV poll backoff could reach 30sec; now fast bounded receipt sampling"
+  ]
+}

@@ -115,7 +115,12 @@ func _ad_clock_ms() -> int:
 func warm_rewarded_ad(placement: String = "odyssey_roll") -> void:
 	var unit: String = UnitCatalog.unit_for(placement)
 	if unit.is_empty() or (unit=="trials" and UnitCatalog.trials_unit_id.is_empty()) or _active_request_id >= 0: return
+	_warm_unit(unit)
+
+
+func _warm_unit(unit: String) -> void:
 	var slot: Dictionary = _slot(unit)
+	if slot.is_empty(): return
 	if slot.ad != null and int(slot.loaded_at) >= 0 and _ad_clock_ms() - int(slot.loaded_at) >= 55 * 60 * 1000:
 		_destroy_unit_ad(unit)
 	if _ad_clock_ms() < int(slot.retry_at): return
@@ -123,10 +128,10 @@ func warm_rewarded_ad(placement: String = "odyssey_roll") -> void:
 
 
 func _warm_all_units() -> void:
-	var configured: Array = UnitCatalog.UNITS.keys()
+	var configured: Array = ["general", "pavilion", "dice", "revive"]
 	if not UnitCatalog.trials_unit_id.is_empty(): configured.append("trials")
 	for unit: String in configured:
-		if _ad_clock_ms() >= int(_slot(unit).retry_at): _load_rewarded_ad(unit)
+		if _ad_clock_ms() >= int(_slot(unit).retry_at): _warm_unit(unit)
 
 
 func _process(_delta: float) -> void:
@@ -142,6 +147,11 @@ func _process(_delta: float) -> void:
 		if int(slot.retry_at) > 0 and _ad_clock_ms() >= int(slot.retry_at):
 			slot.retry_at = 0
 			_load_rewarded_ad(unit)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_RESUMED and _consent_gate_open and not _privacy_form_open and _ads_initialized:
+		_warm_all_units()
 
 
 func is_rewarded_showing(request_id: int) -> bool:

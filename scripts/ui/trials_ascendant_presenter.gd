@@ -205,11 +205,13 @@ func _refresh() -> void:
 	var total: int = DailyQuestManager.get_daily_quest_ids().size() if is_daily else AchievementManager.get_achievement_ids().size()
 	header_progress.text = tr("%d / %d completed") % [completed, total]
 	filters.visible = not is_daily
-	footer.visible = is_daily
+	footer.visible = true
+	completion_reward.visible = is_daily or _get_claimable_count() > 0
 	claim_all_button.disabled = _get_claimable_count() <= 0
-	claim_all_button.text = tr("CLAIM ALL · %d STONES") % _get_total_claimable_reward() if not claim_all_button.disabled else tr("NO REWARDS READY")
+	claim_all_button.text = tr("CLAIM ALL") + " · %d" % _get_claimable_count() if not claim_all_button.disabled else tr("NO REWARDS READY")
+	claim_all_button.tooltip_text = _claim_all_summary()
 	var completion: Dictionary = PavilionManager.get_daily_completion_reward_preview()
-	completion_reward.text = tr("Complete all daily trials: ") + RewardManager.get_reward_summary(completion).replace("\n"," · ") if not completion.is_empty() else tr("Daily completion bonus claimed")
+	completion_reward.text = (tr("Complete all daily trials: ") + RewardManager.get_reward_summary(completion).replace("\n"," · ") if not completion.is_empty() else tr("Daily completion bonus claimed")) if is_daily else _claim_all_summary()
 	for tab: Button in [daily_tab, achievement_tab]:
 		var selected: bool = (tab == daily_tab) == is_daily
 		for state: String in ["normal", "hover"]:
@@ -380,9 +382,17 @@ func _go_to_journey() -> void:
 	if not SceneTransitionManager.is_transitioning:
 		SceneTransitionManager.transition_menu_to("res://scenes/ui/chapter_select.tscn")
 
+func _claim_all_summary() -> String:
+	var totals: Dictionary = {}
+	for record_id: String in _get_sorted_record_ids():
+		if not _is_claimable(record_id): continue
+		var reward: Dictionary = {"spirit_stone":DailyQuestManager.get_reward(record_id)} if active_section == "daily" else AchievementManager.get_reward_data(record_id)
+		for key: String in ["spirit_stone","celestial_jade","pavilion_seal"]:
+			totals[key] = int(totals.get(key,0)) + int(reward.get(key,0))
+	return RewardManager.get_reward_summary(totals).replace("\n"," · ")
+
 func _on_claim_all_pressed() -> void:
-	if active_section == "daily":
-		super._on_claim_all_pressed()
+	super._on_claim_all_pressed()
 
 func _play_intro() -> void:
 	pass

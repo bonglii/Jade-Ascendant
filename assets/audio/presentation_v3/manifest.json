@@ -1,0 +1,635 @@
+[
+  {
+    "file": "ui_tap_01.wav",
+    "seconds": 0.11,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "6d34d7f6ed7f37bb87c8b5b95c49b5c56eabc150c3334b014a74ad5c51bcc77d"
+  },
+  {
+    "file": "ui_tap_02.wav",
+    "seconds": 0.109,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "c4c8c44279e4f1d24669242d0685d34d41d2e1d783c03c7f9fc07c568e78fd23"
+  },
+  {
+    "file": "ui_tab_01.wav",
+    "seconds": 0.14,
+    "peak_db": -1.32,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "ea1284a56398095b52dbf29630529fa85282520c3de200792c121e08d3de92d4"
+  },
+  {
+    "file": "ui_tab_02.wav",
+    "seconds": 0.138,
+    "peak_db": -1.32,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "675eff751335e69976844c655b51a330830da53f3f84ff1c91481b4223343296"
+  },
+  {
+    "file": "ui_confirm_01.wav",
+    "seconds": 0.152,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "0feac676e31d4ef77aba424dc0a8d3152873475c147e564f73feb99d6e67de3a"
+  },
+  {
+    "file": "ui_confirm_02.wav",
+    "seconds": 0.15,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "9eac7c4f31c34927f9b504dad02e81fe1e56766dc5bc9d095bde4db7338b5f51"
+  },
+  {
+    "file": "ui_back_01.wav",
+    "seconds": 0.178,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "517d01301cb550d8a1d8cf3d794a9077a0b94652ebf6cc2859eda127fe780d4c"
+  },
+  {
+    "file": "ui_back_02.wav",
+    "seconds": 0.197,
+    "peak_db": -1.32,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "964eb007c892933f846c10dac0b00a002b16fe65e8f9130d79752975c19353f0"
+  },
+  {
+    "file": "ui_locked_01.wav",
+    "seconds": 0.19,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "e24dc2ff5405b348fea13704413e9fda6c87760c65989703774a4205a738b9fe"
+  },
+  {
+    "file": "ui_locked_02.wav",
+    "seconds": 0.188,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "38a72d635ba4d461b482bbc2107a1e9e9f73869526bc4a71899dd2f7f52c634a"
+  },
+  {
+    "file": "pickup_jade_01.wav",
+    "seconds": 0.188,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "ff35b5e7ad22f44b405efd9b9c22d77f46e93b3524c88c55f6aca9c29f22f0c6"
+  },
+  {
+    "file": "pickup_jade_02.wav",
+    "seconds": 0.184,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "816827052a46f768ac5a8da7bcead4829c9305382e1b8ba0c8821b60de51d158"
+  },
+  {
+    "file": "pickup_jade_03.wav",
+    "seconds": 0.175,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "e80a159320b8dcb59f6bc9631695bb837b9ad6e45a3ce5f22829addd40ef0135"
+  },
+  {
+    "file": "claim_01.wav",
+    "seconds": 0.611,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "f0b10f6806f3ec960414cca4a4f6f66dc5471c2ebed74e34a16d6b6753505dde"
+  },
+  {
+    "file": "claim_02.wav",
+    "seconds": 0.604,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "daa2a18f205002eb1faefb5ce8446ebd4527b8188044fd0743efa8676edfceeb"
+  },
+  {
+    "file": "equip_01.wav",
+    "seconds": 0.367,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "93c11bbee2ef58f0889d36eaae726a76a2426269d408113a6a25594b7679cb71"
+  },
+  {
+    "file": "equip_02.wav",
+    "seconds": 0.387,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "704c4b04b1d744cc8b069d82c35cd66c33fca76f3b041e82c51cf3ba119cc08b"
+  },
+  {
+    "file": "sword_01.wav",
+    "seconds": 0.247,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "48399d4d5e8330c5c54dd70b7cb7c1c6b33ff728268d89f5c0d7e8f1db81c46f"
+  },
+  {
+    "file": "sword_02.wav",
+    "seconds": 0.27,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "b3008548fc2ba66e2ba13da8ef1c9223447aae569c511301d802f3882001578b"
+  },
+  {
+    "file": "fire_01.wav",
+    "seconds": 0.42,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "abc1bd5be2835f636c7c43f72c16c51406c6ca7ec64e607ce7f52e4194789a61"
+  },
+  {
+    "file": "fire_02.wav",
+    "seconds": 0.415,
+    "peak_db": -2.01,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "41b843caf56ee240a3fed38fe5e025ba813535aa9d3218ba9424a12b18c1a234"
+  },
+  {
+    "file": "fire_03.wav",
+    "seconds": 0.411,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "047e363d574926e842046e3c0ba78bdd83807643926d0dca95b617f253a35a75"
+  },
+  {
+    "file": "chain_01.wav",
+    "seconds": 0.349,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "93045dd7e32886efe9783cecb25e3cdcb2b5d46625b8e1a59bf44ffbdded402c"
+  },
+  {
+    "file": "chain_02.wav",
+    "seconds": 0.345,
+    "peak_db": -1.34,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "cb4dcf7be22c314c556fdb98926372c452e7de1a4ef2499d54e4bdc6d081f40d"
+  },
+  {
+    "file": "chain_03.wav",
+    "seconds": 0.342,
+    "peak_db": -1.36,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "6d3293ef950e0eef7f7a67f71a84f4639dc306e3833fda13373ed564ab00ae7c"
+  },
+  {
+    "file": "thunder_01.wav",
+    "seconds": 0.574,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "f26cf3c05838949d83bc120e4f28c18dbf75fede2682cc5e179cfb96553514b8"
+  },
+  {
+    "file": "thunder_02.wav",
+    "seconds": 0.571,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "3eaf860abac1ee47316c9b2177a077d1fb4377876a48278525e2e3d880fd23c3"
+  },
+  {
+    "file": "thunder_03.wav",
+    "seconds": 0.561,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "0769207a50815c8215100aaeac5770c1d128aabc5ff0b6389f6dbb81cb9cb2f4"
+  },
+  {
+    "file": "hit_01.wav",
+    "seconds": 0.2,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "0a162f946c45124ef709a2326e727048888079c5337cfe9347c95a0df4a6abe6"
+  },
+  {
+    "file": "hit_02.wav",
+    "seconds": 0.184,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "395105e8cd12f03d0f254556357d5bbefc186867bfee2b333b6857f347cdd64d"
+  },
+  {
+    "file": "hit_03.wav",
+    "seconds": 0.195,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "3373791cc7921231aca543fccdfbbe89b34fe1e36e9117bb0dad657d1a2a0f3b"
+  },
+  {
+    "file": "hurt_01.wav",
+    "seconds": 0.24,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "d6a988f08d61e56802fd0a848ed504d1aa2af8a8e4fdcf5fd0c67408afa7c07a"
+  },
+  {
+    "file": "hurt_02.wav",
+    "seconds": 0.237,
+    "peak_db": -1.32,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "a540275f96473720f6dc18782dd4294f7386c205783cf9a70236bd7c71c7a7a6"
+  },
+  {
+    "file": "death_01.wav",
+    "seconds": 0.41,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "1e5c5dd3d2cf73136ada98acd60b275782888f0c2569f5ccde141ce4cad9e7f1"
+  },
+  {
+    "file": "death_02.wav",
+    "seconds": 0.409,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "a9b9020892cc3593dd267f017645ae0517cc3ffd4d820ba8f0bc09c1de7d81ec"
+  },
+  {
+    "file": "shield_01.wav",
+    "seconds": 0.403,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "40ac70426a4aab9cb6e41558909dcb96c96d71bb5c8fbe8850588d25e0968399"
+  },
+  {
+    "file": "shield_02.wav",
+    "seconds": 0.438,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "f9d06ece5e8665debfdc6c2841cfe43e85c74dc965b152789e5c022d3bbc30c8"
+  },
+  {
+    "file": "level_01.wav",
+    "seconds": 0.736,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "5f02b283909bc26f48dfa155d2be881bdec9dddff8b96426e21b0e8c74bd87a1"
+  },
+  {
+    "file": "level_02.wav",
+    "seconds": 0.727,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "3cce1fb9fcc7862608abd19b5762309bbfb6a1eb30882d6a31aaa02083c95fa9"
+  },
+  {
+    "file": "upgrade_01.wav",
+    "seconds": 0.607,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "cb7d332c4e0fade0c47bfd9560106ee596717395b9b5e835b79ac8445cf4351c"
+  },
+  {
+    "file": "upgrade_02.wav",
+    "seconds": 0.6,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "6aec9253944f987c2835f307f73921b58e443aa97618c41b998b02e5bbed6a59"
+  },
+  {
+    "file": "victory_01.wav",
+    "seconds": 1.234,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "e698b40c1ddc08a7ce597e878c1fdd4192b4a1bf236660094ce1492f36634261"
+  },
+  {
+    "file": "victory_02.wav",
+    "seconds": 1.218,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "756696fdbe215157a142c7f7a12bacff750236e769493d242e7fe70d544ebdcb"
+  },
+  {
+    "file": "defeat_01.wav",
+    "seconds": 1.205,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "41ce0e021b25811f8d6efcb6f26b5833bb37b9d7c3ecee28f9c7e4f603e18f54"
+  },
+  {
+    "file": "defeat_02.wav",
+    "seconds": 1.19,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "d21437a9b29ce4da5cbe880ffedb6d3b5e178dee3bed5cfc1c52bac7c6ca9202"
+  },
+  {
+    "file": "boss_defeat_01.wav",
+    "seconds": 1.172,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "8d3afc7fd5bec3c54f1507f6c323475f7421b65b975ffd550bc318279dfd6f46"
+  },
+  {
+    "file": "boss_defeat_02.wav",
+    "seconds": 1.157,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "962c16a8006d1352f4fb24a24ea559008fa4ce73a1ca0ca1f6d9bc7a00878314"
+  },
+  {
+    "file": "summon_charge_01.wav",
+    "seconds": 1.04,
+    "peak_db": -2.56,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "5b5cdb9f94c4a2db72f4433879f5b4cd4751c3d5e87ca60a1c66c29bcbf3a02d"
+  },
+  {
+    "file": "summon_charge_02.wav",
+    "seconds": 1.027,
+    "peak_db": -1.66,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "c11f9ffa723ee28b16aa4256feb2e30960198ccf089c71098ae2825c362e204b"
+  },
+  {
+    "file": "summon_rare_01.wav",
+    "seconds": 0.5,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "988cffc8eec090193df78b03838369f5d938c4a325970078cd9264e9aefd51ae"
+  },
+  {
+    "file": "summon_rare_02.wav",
+    "seconds": 0.494,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "6dcaf69adb79f2ccf08971ad6a3a0ec5758bd9ca3e18637561a60d504fd3057c"
+  },
+  {
+    "file": "summon_epic_01.wav",
+    "seconds": 1.008,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "1b9ae4f5a543ab4f9c34a32879c44e6ddbe884f824fde22b929dd04f1c891c1a"
+  },
+  {
+    "file": "summon_epic_02.wav",
+    "seconds": 0.995,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "b3ac069c39fd6ebc2b9d1b14d5f9bc395f4d0f19092d5f7e41646f3b6527aed2"
+  },
+  {
+    "file": "summon_legendary_omen_01.wav",
+    "seconds": 1.56,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "65708d11bf374d524e47d4711bbc5828a8588431f21b43912d8c94ac65ee8a43"
+  },
+  {
+    "file": "summon_legendary_omen_02.wav",
+    "seconds": 1.537,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "1c81345d0c0de95cc78ac0fa6abeb2146eb42551b781afff27c261d4ad5f1961"
+  },
+  {
+    "file": "summon_legendary_reveal_01.wav",
+    "seconds": 1.351,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "a87e55955b7a26d885fe010507664d612303efa5c7e4642aad7ca8b2219745c3"
+  },
+  {
+    "file": "summon_legendary_reveal_02.wav",
+    "seconds": 1.333,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "c885e396e743c77a386b167349300126c4c53a9b484465afe70e87a247498266"
+  },
+  {
+    "file": "summon_new_01.wav",
+    "seconds": 0.41,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "89b3214ce33c83d433cbebc09f2279084112e2ef1b96935be51700295bdef125"
+  },
+  {
+    "file": "summon_new_02.wav",
+    "seconds": 0.405,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "420b4879023b494bcdd1c3ac55ca6178cff80b24aae6aeb1de1bd0364a5a8283"
+  },
+  {
+    "file": "summon_duplicate_01.wav",
+    "seconds": 0.215,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "4cf3678417bfcad517d73872a6ca55acc7b983297aa05c9597560ae996a7ccb0"
+  },
+  {
+    "file": "summon_duplicate_02.wav",
+    "seconds": 0.212,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "2f4b8fd69b0688a5f99b9b25a4293c4aa64c87b151d08ddfd9cdf3304a2b3823"
+  },
+  {
+    "file": "stage_unlock_01.wav",
+    "seconds": 0.902,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "0cd3ee8c4f8e50cc85b640d0f160393b39aa566f2bb38700b5854fec1da12ac8"
+  },
+  {
+    "file": "stage_unlock_02.wav",
+    "seconds": 0.891,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "86258b1b4839cc9c8031c5d38307ccd00e8696b70a23cb3c00de9b912f668e21"
+  },
+  {
+    "file": "purchase_success_01.wav",
+    "seconds": 0.717,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "d3d2a2269e4e53bb00a35d4af49999f5e59e980af6735f31917bbad752529fc1"
+  },
+  {
+    "file": "purchase_success_02.wav",
+    "seconds": 0.708,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "da4d9219386aa230444d1c3db26bf3c30745b35b705c68ea86e6babaf5097840"
+  },
+  {
+    "file": "phoenix_fan_01.wav",
+    "seconds": 0.72,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "e9fd1cd7d90fc97b1a4e3c6d52ab975cd9071749aab4b5825e67ab5decf700d9"
+  },
+  {
+    "file": "phoenix_fan_02.wav",
+    "seconds": 0.711,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "7b85d285d17381f62e175fee8bfd21835f4aadbf90b8c65e42683a0d075bb5b7"
+  },
+  {
+    "file": "void_thrust_01.wav",
+    "seconds": 0.387,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "46dd2bf5f5f273c482722500d72c6b37d5ed3bd6a7d78569ddb432c09221deb3"
+  },
+  {
+    "file": "void_thrust_02.wav",
+    "seconds": 0.383,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "275b627bc4ec24616f0c8edf475ee6412161fbe5abe9972b11472ee199cbdd5e"
+  },
+  {
+    "file": "astral_bell_01.wav",
+    "seconds": 0.637,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "c7c17fdb62627f805bf26e41ad2f0c69c73f2672acd5f543e854ccffecfb486e"
+  },
+  {
+    "file": "astral_bell_02.wav",
+    "seconds": 0.629,
+    "peak_db": -1.31,
+    "source": "rubberduck/80 CC0 RPG SFX + Vehicle/Tinysized; edited, layered, pitched, filtered, room tails",
+    "sha256": "d325f1a2f8a30b2502609acc79645c306954f715b7a10370514a7b5bb41d43b7"
+  },
+  {
+    "file": "impact_blade_01.wav",
+    "seconds": 0.323,
+    "peak_db": -1.31,
+    "source": "CC0 recorded-material hit family: [('sword-clash-01.wav', 0.33), ('apple-cut-01.wav', 0.62)]",
+    "sha256": "7f5fb86c6855d67bfde41f57c6f102e6cce000ebe1cec66ce83cd606a3ab73eb"
+  },
+  {
+    "file": "impact_blade_02.wav",
+    "seconds": 0.309,
+    "peak_db": -1.31,
+    "source": "CC0 recorded-material hit family: [('sword-clash-01.wav', 0.33), ('apple-cut-01.wav', 0.62)]",
+    "sha256": "ad0eeb30f5f7b2ece0994875982c60a083a5a5a7e72bc4ee8e462ef3bc59f78a"
+  },
+  {
+    "file": "impact_fire_01.wav",
+    "seconds": 0.322,
+    "peak_db": -1.31,
+    "source": "CC0 recorded-material hit family: [('spell_fire_04.ogg', 0.65), ('wood-twigs-break-01.wav', 0.2)]",
+    "sha256": "400444f13e2508b0221429161cc7f5ad8174ea3a7ad9e109774c66438475315b"
+  },
+  {
+    "file": "impact_fire_02.wav",
+    "seconds": 0.319,
+    "peak_db": -1.31,
+    "source": "CC0 recorded-material hit family: [('spell_fire_04.ogg', 0.65), ('wood-twigs-break-01.wav', 0.2)]",
+    "sha256": "f89997959c00261bef9d7ef58427c80db785f510ded4d93aa085501b2243fc25"
+  },
+  {
+    "file": "impact_thunder_01.wav",
+    "seconds": 0.322,
+    "peak_db": -1.31,
+    "source": "CC0 recorded-material hit family: [('paralyzer-discharge-01.wav', 0.65), ('metal-hammer-hit-02.wav', 0.25)]",
+    "sha256": "69924b22fd7101e4f994ea523028bde10299ae695e39eb8d63775db97b9bc9fd"
+  },
+  {
+    "file": "impact_thunder_02.wav",
+    "seconds": 0.322,
+    "peak_db": -1.31,
+    "source": "CC0 recorded-material hit family: [('paralyzer-discharge-01.wav', 0.65), ('metal-hammer-hit-02.wav', 0.25)]",
+    "sha256": "4fe97c8a4d78e61cac39aa7ecaa70c2c03c768badfc44ef6c29c7028fe2f1699"
+  },
+  {
+    "file": "impact_chain_01.wav",
+    "seconds": 0.322,
+    "peak_db": -1.31,
+    "source": "CC0 recorded-material hit family: [('chain_01.ogg', 0.7), ('metal_02.ogg', 0.23)]",
+    "sha256": "854f132e6f5b8b355cef16869fca669b03d2bc6f65eccc291e7985f1bcaafd67"
+  },
+  {
+    "file": "impact_chain_02.wav",
+    "seconds": 0.322,
+    "peak_db": -1.31,
+    "source": "CC0 recorded-material hit family: [('chain_01.ogg', 0.7), ('metal_02.ogg', 0.23)]",
+    "sha256": "4417b0b805cabdce4047cc1c898284b12a0e324eecf3fcd1f1d29301e2afaeea"
+  },
+  {
+    "file": "impact_void_01.wav",
+    "seconds": 0.321,
+    "peak_db": -1.31,
+    "source": "CC0 recorded-material hit family: [('blade_03.ogg', 0.57), ('metal_03.ogg', 0.4)]",
+    "sha256": "c3cf660a78538e0249069171e16bfc6f7778188f110ae35e7beb8dd789a10921"
+  },
+  {
+    "file": "impact_void_02.wav",
+    "seconds": 0.321,
+    "peak_db": -1.31,
+    "source": "CC0 recorded-material hit family: [('blade_03.ogg', 0.57), ('metal_03.ogg', 0.4)]",
+    "sha256": "0c09c87559003120048fde2b132c7dc2c68510f9473b2e9403533aab4aa8d9a5"
+  },
+  {
+    "file": "impact_compass_01.wav",
+    "seconds": 0.31,
+    "peak_db": -1.31,
+    "source": "CC0 recorded-material hit family: [('metal_01.ogg', 0.52), ('item_gem_03.ogg', 0.35)]",
+    "sha256": "c94fcc768a5018912a794c4f44b0c0cfc20f8a7273aca18aea3c8fcfd7c9276a"
+  },
+  {
+    "file": "impact_compass_02.wav",
+    "seconds": 0.31,
+    "peak_db": -1.31,
+    "source": "CC0 recorded-material hit family: [('metal_01.ogg', 0.52), ('item_gem_03.ogg', 0.35)]",
+    "sha256": "95a16ac0a2fbe08f249dd8de32e536e4fca0e6c3b85618c51b6ab723fd186067"
+  },
+  {
+    "file": "impact_qi_01.wav",
+    "seconds": 0.275,
+    "peak_db": -1.31,
+    "source": "CC0 recorded-material hit family: [('water-drop-02.wav', 0.65), ('item_gem_01.ogg', 0.28)]",
+    "sha256": "fa4ce63bf7ef952ad1967d1c4cbaaf0a86c10b254b1a0c4ae9f63bfaf9a1a0d0"
+  },
+  {
+    "file": "impact_qi_02.wav",
+    "seconds": 0.307,
+    "peak_db": -1.31,
+    "source": "CC0 recorded-material hit family: [('water-drop-02.wav', 0.65), ('item_gem_01.ogg', 0.28)]",
+    "sha256": "927b59b38b7dcee25e89e712ef84f24d307cb0b3fa4a6a1bcdda02c380f214d3"
+  },
+  {
+    "file": "impact_formation_01.wav",
+    "seconds": 0.324,
+    "peak_db": -1.31,
+    "source": "CC0 recorded-material hit family: [('wood_03.ogg', 0.55), ('item_stone_01.ogg', 0.35)]",
+    "sha256": "ce56b80c48ff3d0d2934325953a024ac372a003042abdb1921eae5e4b4b23e2e"
+  },
+  {
+    "file": "impact_formation_02.wav",
+    "seconds": 0.325,
+    "peak_db": -1.31,
+    "source": "CC0 recorded-material hit family: [('wood_03.ogg', 0.55), ('item_stone_01.ogg', 0.35)]",
+    "sha256": "5f08ebdb28bc550147d3c112c0f93c16abfd4d39107847d43b1f8707f8c9cd7d"
+  },
+  {
+    "file": "music_home.ogg",
+    "seconds": 22.5,
+    "source": "home.mp3",
+    "sha256": "7a79575e21f56e6cbca8928ca504c7ee9123b3a927299790cffbf36fcb845e42"
+  },
+  {
+    "file": "music_pavilion.ogg",
+    "seconds": 59.2,
+    "source": "pavilion.mp3",
+    "sha256": "50380c716cf6179777f5cc328a310a3e3434432e56bc8f185c722c81b0219fc5"
+  },
+  {
+    "file": "music_journey.ogg",
+    "seconds": 165.3,
+    "source": "journey.ogg",
+    "sha256": "dc340dc63fed941b0f89b140f7daf6eb107ff6663bfd891268ddd07f5c73d543"
+  },
+  {
+    "file": "music_boss.ogg",
+    "seconds": 68.7,
+    "source": "boss/Samurai-Nights-Demo.mp3",
+    "sha256": "dde2083d87b2989d95231609656b42e4df3b03ac1cb7ad3fbefadaeb3e2b5cac"
+  }
+]

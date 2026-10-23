@@ -75,6 +75,7 @@ func _ready() -> void:
 			+ str(licenses[license_name])
 			+ "\n\n"
 		)
+	credits.text += "\n\n" + AudioManager.CREDITS
 	inner.add_child(credits)
 
 	var back: Button = Button.new()

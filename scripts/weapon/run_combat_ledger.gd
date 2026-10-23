@@ -32,7 +32,13 @@ static func apply_hit(target: Node,amount: float,source: String) -> float:
  if not is_instance_valid(target) or not target.has_method("take_damage"):return 0.0
  # All production enemies expose current_hp. Preview fixtures may not.
  var before: Variant=target.get("current_hp")
+ var had_audio: bool=target.has_meta(&"jade_audio_hit_source")
+ var previous_audio: Variant=target.get_meta(&"jade_audio_hit_source","")
+ target.set_meta(&"jade_audio_hit_source",source)
  target.take_damage(preload("res://scripts/effects/equipment_set_combat.gd").modify_hit(target,amount,source))
+ if is_instance_valid(target):
+  if not had_audio:target.remove_meta(&"jade_audio_hit_source")
+  else:target.set_meta(&"jade_audio_hit_source",previous_audio)
  if before==null or not is_instance_valid(target):return 0.0
  var after: Variant=target.get("current_hp")
  if after==null:return 0.0

@@ -17,6 +17,7 @@ func run() -> void:
 	screen.queue_free();screen=null
 	for _frame in range(4):await process_frame
 	await create_timer(0.75).timeout
+	await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
 	quit(0 if passed else 1)
 func stage_pixels(screen: Control) -> PackedByteArray:
 	for _frame in range(4): await process_frame

@@ -315,7 +315,7 @@ func _fit_popup() -> void:
 func _popup(title: String, kind: String) -> VBoxContainer:
 	_close_modal(); _modal_kind=kind
 	modal=Control.new();modal.name="OdysseyModal";modal.z_index=20;safe.add_child(modal);modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var dim:=ColorRect.new();dim.name="JadeModalScrim";dim.color=Color(0.015,0.07,0.067,0.50);modal.add_child(dim);dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var dim:=ColorRect.new();dim.name="JadeModalScrim";dim.color=Color(0.06,0.16,0.13,0.12);modal.add_child(dim);dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_modal_panel=Panel.new();_modal_panel.name="OdysseyFlowPanel";_modal_panel.clip_contents=true;_modal_panel.add_theme_stylebox_override("panel",Flow.modal_style());modal.add_child(_modal_panel)
 	var inset:=MarginContainer.new();_modal_panel.add_child(inset);inset.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	for side: String in ["left","right"]: inset.add_theme_constant_override("margin_"+side,24)

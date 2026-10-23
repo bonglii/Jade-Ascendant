@@ -96,7 +96,7 @@ func _run() -> void:
 	await frames(8)
 	presenter._switch_section("achievement")
 	await frames(70)
-	check(not presenter.footer.visible and presenter.filters.visible, "achievement footer and filters")
+	check(presenter.footer.visible and presenter.filters.visible, "achievement bulk claim footer and filters")
 	check(presenter.achievement_card_nodes.size() == achievements.get_achievement_ids().size(), "all actual achievements retained")
 	var cached: Dictionary = presenter.achievement_card_nodes.duplicate()
 	for category: String in ["combat", "cultivation", "journey", "all"]:
@@ -109,8 +109,11 @@ func _run() -> void:
 			check(cached[record_id].visible == (category == "all" or category == group), "filter matches actual category")
 			check(cached[record_id] == presenter.achievement_card_nodes[record_id], "filter retains cached card")
 	var achievement_before: int = progression.spirit_stone
+	var achievement_due: int = achievements.get_total_claimable_reward()
 	presenter._on_claim_all_pressed()
-	check(progression.spirit_stone == achievement_before, "daily bulk claim cannot execute on achievement tab")
+	check(progression.spirit_stone == achievement_before + achievement_due, "achievement bulk claim grants its own rewards once")
+	presenter._on_claim_all_pressed()
+	check(progression.spirit_stone == achievement_before + achievement_due, "repeated achievement bulk claim cannot grant twice")
 	for viewport: Vector2i in [Vector2i(648, 1152), Vector2i(390, 844), Vector2i(320, 568), Vector2i(896, 504)]:
 		root.size = viewport
 		await frames(10)
