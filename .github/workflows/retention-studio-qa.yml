@@ -75,3 +75,5 @@ jobs:
           if ($LASTEXITCODE -eq 0) { throw 'Wrong worker was accepted' }
           Remove-Item -LiteralPath $config
           Write-Host 'WINDOWS_STUDIO_PREFLIGHT=PASS; WRANGLER_NOT_INVOKED; DEPLOY=NONE'
+          # The rejected target intentionally left LASTEXITCODE=1; all assertions above passed.
+          exit 0

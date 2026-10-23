@@ -219,3 +219,10 @@
 - Library fixtures must compare the full current active catalog, not an old56-item count. Verify every item once while preserving retired snapshots. Metadata fixtures need the current independent native proof as well as the AAR, with target/debug assertions retained.
 - Legacy combat fixtures could exit before Dummy audio drains, reporting in-use resources. Use the shared teardown; keep genuine ERROR output fatal instead of disabling the scanner.
 - The browser policy rejected the local data-URL composition preview. Do not retry through another browser surface or claim that the redesign was visually validated. Full generated-script DOM tests are behaviour evidence only.
+
+## CI closure and retained local configuration — 2026-10-23
+
+- Compile the evaluated dashboard export, including shared WIB helpers, rather than extracting JavaScript from the raw module template. Validate every inline script and keep missing/invalid scripts fatal. The raw-template regression must reproduce its original parse failure.
+- A correctly rejected negative PowerShell preflight leaves LASTEXITCODE=1. After asserting both the valid target and rejected wrong target, explicitly finish the CI step with success; GitHub otherwise forwards the expected failure. Exercise the actual workflow step with the runner exit-code trailer, a broken positive guard, and an incorrectly accepted negative guard.
+- Profile sync/deploy share the same backend scope. Preserve the exact local IAP deployment config only under the existing nine-gate/identity/refund contract; never broaden this exemption to shared authentication or runtime code. Prepare backups and merge plans before tracked-file writes. A reviewed empty-side conflict adding only the two required companion autoloads can be resolved narrowly; other settings conflicts remain explicit.
+- Owner sync and Profile deployment are already confirmed at version786759a1-e470-4fa5-ba96-1a459a9fe551. CI-only closure does not require repeating installation, migrations, native builds or deployments. Keep author evidence, Windows results, GitHub exact-SHA CI and Android/Play approval separate.

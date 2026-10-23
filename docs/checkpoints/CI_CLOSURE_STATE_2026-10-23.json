@@ -1,0 +1,56 @@
+{
+  "batch": "Close two CI harness regressions before ecosystem audit",
+  "base_commit": "28f8ed6367cde8ebc17aa7638c32b0a30fb7bcb2",
+  "date_wib": "2026-10-23",
+  "phase": "affected source and workflow validation complete; exact-SHA publication pending",
+  "failures_fixed": [
+    {
+      "workflow": "LiveOps control desk",
+      "parent_run": 39977171892,
+      "cause": "Checker compiled raw module interpolation instead of generated HTML.",
+      "fix": "Import actual dashboard export, validate all nonce inline scripts and propagate async validation failure."
+    },
+    {
+      "workflow": "Retention loop and Operations Studio",
+      "parent_run": 39977172397,
+      "cause": "Expected wrong-worker rejection left LASTEXITCODE1 forwarded by the runner.",
+      "fix": "Explicit success exit only after positive and negative assertions and cleanup."
+    }
+  ],
+  "validation": {
+    "liveops_server_tests": 209,
+    "production_gates": 9,
+    "rendered_dashboard_syntax": "PASS",
+    "actual_workflow_scenarios": 4,
+    "workflow_runtime": "PowerShell7.5.4 Linux with GitHub exit-code trailer",
+    "windows_author_execution": false,
+    "exact_sha_github_ci": "pending new commit",
+    "unaffected_parent_workflows": "15 of17 succeeded on28f8ed6; unchanged game/device suites not rerun"
+  },
+  "preserved": {
+    "runtime_ui_game_economy": true,
+    "native_and_aab": true,
+    "iap_and_local_configs": true,
+    "schema": true,
+    "main": true,
+    "deployed_profile_version": "786759a1-e470-4fa5-ba96-1a459a9fe551"
+  },
+  "status": {
+    "source_edited": true,
+    "author_tested": true,
+    "published": false,
+    "new_deploy_needed": false,
+    "aab_exported": false,
+    "android_tested": false,
+    "production_access_verified": false
+  },
+  "next_action": "Publish only this CI/checkpoint change on checkpoint branch and verify new-SHA workflows. Then resume authorized player/ecosystem audit without redoing completed features. No server deployment for this CI-only change.",
+  "next_player_audit": [
+    "First session and clear next goal",
+    "Daily/weekly loop and claim cadence",
+    "Economy and optional ad/IAP value",
+    "Event coverage and operator readiness",
+    "Save/recovery/account trust and release evidence"
+  ],
+  "external_gate": "Production access requires actual Play Console eligibility/testing evidence; code tests do not establish that."
+}

@@ -1,6 +1,6 @@
 {
-  "batch": "Retention loop audit and lightweight WIB dashboard",
-  "state": "docs/checkpoints/RETENTION_DASHBOARD_STATE_2026-10-23.json",
-  "base_commit": "1575180f0f78b0b9d1dae4774253361b3377faa5",
-  "next_action": "D:\\Godot\\tools\\Jade-Retention-Dashboard\\apply_publish_and_deploy.cmd; QA clone defaultqa13, game/config rootjade-ascendant. Rerun same launcher after interruption. Then exact-SHA CI and existing production export for Home changes."
+  "batch": "Close two CI harness regressions before ecosystem audit",
+  "state": "docs/checkpoints/CI_CLOSURE_STATE_2026-10-23.json",
+  "base_commit": "28f8ed6367cde8ebc17aa7638c32b0a30fb7bcb2",
+  "next_action": "Publish only this CI/checkpoint change on checkpoint branch and verify new-SHA workflows. Then resume authorized player/ecosystem audit without redoing completed features. No server deployment for this CI-only change."
 }
