@@ -1,0 +1,32 @@
+{
+  "batch": "CI_AUDIO_CLOSURE_2026-10-24",
+  "base": "d5b6bec2e9226b9e915c68cb52e6b9dcedffe665",
+  "previous": "docs/checkpoints/CHINESE_MUSIC_IMPORT_STATE_2026-10-24.json",
+  "remote_status": "19/21 checks passed; two fixture failures reviewed from exact-SHA logs",
+  "causes": [
+    "Release polish asserted retired V3 palette/material layers/credits after owner-approved V2 SFX and BiteMe music selection",
+    "Odyssey inventory ascension queued upgrade_01.wav and left a playback handle at immediate headless exit; all30combat checks themselves passed"
+  ],
+  "changes": [
+    "Release assertions now require actual approved music aliases, necessary cue families, retained V2 sword/no extra per-hit layers and current creator/license",
+    "Odyssey combat/inventory fixture suppresses unrelated sound playback before actions; dedicated audio and release-polish suites still exercise sound; strict runner unchanged"
+  ],
+  "validation": {
+    "release_polish": "22checks/0fail; final existing teardown retained",
+    "odyssey_combat": "30checks/0fail; no warning/error lines",
+    "economy_after_previous_stop": "767checks/0fail plus4restartchecks",
+    "existing19greenchecks": "Reused exact-SHA CI evidence; no blanket rerun",
+    "production_gates": 9
+  },
+  "stages": {
+    "source": "complete locally",
+    "commit_push": "owner portable publisher pending",
+    "exact_SHA_CI": "pending new fix commit",
+    "native": "unchanged",
+    "deploy": "none",
+    "runtime_game_changes": "none; tests/docs only",
+    "AAB": "previous client music export remains separate",
+    "Android": "no new claim"
+  },
+  "next": "Run Jade-CI-Audio-Closure/apply_and_publish.cmd; review new exact-SHA CI. Do not rebuild native or deploy Workers for a tests-only change."
+}

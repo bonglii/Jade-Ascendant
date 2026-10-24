@@ -1,5 +1,5 @@
 {
-  "state": "docs/checkpoints/CHINESE_MUSIC_IMPORT_STATE_2026-10-24.json",
-  "base": "5fc8a6fd54becd0322d129cf9396f003f33e5ff1",
-  "previous": "docs/checkpoints/CHINESE_MUSIC_STATE_2026-10-24.json"
+  "state": "docs/checkpoints/CI_AUDIO_CLOSURE_STATE_2026-10-24.json",
+  "base": "d5b6bec2e9226b9e915c68cb52e6b9dcedffe665",
+  "previous": "docs/checkpoints/CHINESE_MUSIC_IMPORT_STATE_2026-10-24.json"
 }

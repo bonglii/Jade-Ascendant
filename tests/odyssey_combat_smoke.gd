@@ -26,6 +26,12 @@ func run() -> void:
  # A regression must fail promptly, never hang the entire player-journey job.
  create_timer(30).timeout.connect(func():push_error("ODYSSEY_COMBAT_TIMEOUT");quit(1))
  await process_frame
+ # This fixture measures combat/inventory authority. Audio has its own runtime
+ # suite; bulk duplicate ascension must not enqueue an unrelated upgrade WAV.
+ var audio: Node=root.get_node("AudioManager")
+ audio.set_process(false)
+ audio.release_runtime_audio()
+ audio.backgrounded=true
  Cast=load("res://scripts/weapon/heavenweaver_compass_cast.gd")
  WeaponScript=load("res://scripts/weapon/heavenweaver_compass_weapon.gd")
  var world:=Node2D.new();root.add_child(world)

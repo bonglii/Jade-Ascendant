@@ -317,3 +317,19 @@ resource UID. The portable fix backs up and accepts only that UID-only variation
 for these two reviewed files; every import parameter/source/cache path must match.
 No broad local-file hash bypass. QA failures must print the first actual error,
 not trailing import progress; a long-output child-process regression covers this.
+
+## 2026-10-24 — audio approvals must update older release contracts too
+
+Do not retain V3 palette-size, extra impact-family or retired artist/license
+assertions after an owner-approved switch to legacy weapon SFX and new Chinese
+music. Assert actual context aliases, required cue families, deliberate silence
+for the removed per-hit layer, and the currently shipped creator/license instead.
+Do not weaken failure detection or change product audio to satisfy an old fixture.
+
+The Odyssey combat/inventory fixture emitted an unrelated upgrade WAV during
+bulk ascension. Verbose exit evidence identified upgrade_01.wav / its playback
+handle. A longer teardown sleep was not reliable and was reverted. Suppress
+unrelated audio before this non-audio fixture performs actions, as the economy
+fixture already does. Keep dedicated real audio playback tests enabled and the
+strict shared error gate unchanged. Run the previously blocked successor suite,
+reuse already-passing checks, and distinguish fixture repair from product changes.

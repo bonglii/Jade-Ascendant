@@ -106,13 +106,17 @@ func run() -> void:
  presenter._on_claim_all_pressed();await settle()
  check(after>before and root.get_node("ProgressionManager").spirit_stone==after,"repeat Claim All cannot duplicate grants")
  await capture("achievement-claim-all")
- var palette: Node=root.get_node("AudioManager")
- check(palette.MUSIC.size()==4 and palette.SFX.size()>=40,"all four music contexts and complete SFX palette use V3")
  var audio: Node=root.get_node("AudioManager")
+ var music_ok: bool=audio.MUSIC.size()==4 and audio.MUSIC.home==audio.MUSIC.pavilion and audio.MUSIC.journey==audio.MUSIC.boss
+ music_ok=music_ok and audio.MUSIC.home.resource_path.ends_with("chinese_music/lotus_pond_loop.ogg") and audio.MUSIC.journey.resource_path.ends_with("chinese_music/dragon_dance_loop.ogg")
+ for cue: String in ["ui","sword","chain","fire","thunder","claim","upgrade","victory","defeat","summon_rare","summon_epic","summon_legendary_reveal"]:
+  music_ok=music_ok and audio.SFX.has(cue) and not audio.SFX[cue].is_empty()
+ check(music_ok,"approved Chinese music aliases and complete gameplay cue families remain available")
+ var cursor_before: Dictionary=audio.variation_cursor.duplicate(true)
  for source: String in ["jade_binding_chain","void_piercer_spear","phoenix_war_fan","heavenweaver_compass"]:
-  audio.cooldown_until.erase("weapon_impact_bus");audio.play_weapon_impact(source)
- check(audio.variation_cursor.has("impact_chain") and audio.variation_cursor.has("impact_void") and audio.variation_cursor.has("impact_fire") and audio.variation_cursor.has("impact_compass"),"applied-hit sources route to distinct recorded material families")
- check("CC BY 3.0" in palette.CREDITS and "Majadroid" in palette.CREDITS,"shipped credits identify attribution and license")
+  audio.play_weapon_impact(source)
+ check(audio.variation_cursor==cursor_before and not audio.SFX.has("impact_compass") and audio.SFX.sword[0].resource_path.contains("presentation_v2"),"restored weapon palette stays active without extra per-hit layers")
+ check("BiteMe Games" in audio.CREDITS and "CC0" in audio.CREDITS and "https://bitemegames.itch.io/chinese-game-music" in audio.CREDITS,"shipped credits identify the active music creator and license")
  current_scene.queue_free();current_scene=null;await settle()
  await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
  print("RELEASE_POLISH checks=",checks," failures=",failures," renderer=",DisplayServer.get_name())
