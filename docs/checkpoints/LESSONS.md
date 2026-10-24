@@ -274,3 +274,15 @@
 - Match the existing GDScript indentation style when inserting a function. Load the production presenter in the fixture and fail promptly if it is absent; an import scan alone does not compile every scene script.
 - Compact achievement toasts need their own bounded typography and viewport clamp. Native notice tests must release scene/audio before exit; resource-in-use errors are not a passing test.
 - Catch up the exact prior Studio stage only if still pending, then apply the client delta. Recognize the reviewed parent by all committed file hashes; never infer publication from a chat claim. Preserve a valid local IAP-config exception without staging it, after all nine gates validate.
+
+## Player Comfort — 2026-10-24
+
+- Permanent Hero level and combat run level are different signals. A committed permanent EXP grant must have its own read-only celebration; coalesce multiple gained levels, never replay save loads, and clear pending display on account switch. Preserve the existing run upgrade picker.
+- Shared navbar geometry alone does not prove shared appearance: inspect the actual frame/style on all five production menus, including runtime-created Hero.
+- Godot's default gray clear color can be exposed between scenes. Keep the boot art on the persistent transition layer until the incoming frame draws; cleanup must belong to that persistent manager, not the outgoing Boot coroutine.
+- A similar login header is not proof that the deployed dashboard is stale. Inspect rendered shared navigation or a visible release marker before asserting deployment status. This batch corrected an initial inference after the live DOM proved the new eleven-tool sidebar was present.
+- Restore an approved old weapon palette instead of stacking more impact layers on a continuous weapon. One touch cue uses one asset and fixed pitch; BGM selection remains explicit owner choice.
+- A warm QA fixture still needs every changed dependency copied and its isolated userdata flag retained when project.godot changes. Missing manager updates / overwritten custom-dir config produced fixture-only failures; both were corrected before claiming runtime PASS. Exit2 is a guard rejection, never a passed test.
+
+- Strict editor import catches inherited member shadowing that plain game execution can permit; use binding_value instead of Node.owner in the new presenter. Check real module exports in dashboard tests rather than assuming every page has a default export.
+- A pending Home refresh may run after change_scene detaches the old tree; stop at the shared refresh entry before touching managers or child controls. Cover the resource-grant/menu-to-combat transition, not just static pages.

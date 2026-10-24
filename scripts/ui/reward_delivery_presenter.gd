@@ -88,6 +88,9 @@ var _wallet_visual_holds: Dictionary = {}
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_build_overlay()
+	var level_notice: Node = preload("res://scripts/ui/hero_level_notice.gd").new()
+	level_notice.name = "HeroLevelNotice"
+	add_child(level_notice)
 	_cache_authoritative_values()
 	_connect_manager_signals()
 	set_process(true)

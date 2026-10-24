@@ -69,7 +69,7 @@ const TAB_DATA: Array[Dictionary] = [
 	},
 ]
 
-@export var sanctuary_style: bool = false
+@export var sanctuary_style: bool = true
 var sanctuary_frame: StyleBoxTexture
 
 var tab_buttons: Array[Button] = []

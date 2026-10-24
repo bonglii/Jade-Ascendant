@@ -42,6 +42,15 @@ func _ready() -> void:
 		root_window.go_back_requested.connect(_on_go_back_requested)
 	DebugLogger.system(str("SceneTransitionManager aktif!"))
 
+func release_boot_cover(cover: Control) -> void:
+	await get_tree().scene_changed
+	if DisplayServer.get_name() == "headless":
+		await get_tree().process_frame
+	else:
+		await RenderingServer.frame_post_draw
+	if is_instance_valid(cover):
+		cover.queue_free()
+
 func set_back_handler(handler: Callable) -> void:
 	back_handler = handler
 

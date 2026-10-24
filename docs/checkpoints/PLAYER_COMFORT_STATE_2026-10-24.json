@@ -1,0 +1,51 @@
+{
+  "batch": "PLAYER_COMFORT_2026-10-24",
+  "effective_base": "25ee8ce92b6c3b6664ced28da1c3b157c1045c3d",
+  "phase": "Implemented and validated; final resumable owner package ready",
+  "scope": [
+    "Permanent hero level-up notice missing subscriber",
+    "Godot default clear color and gap in boot handoff",
+    "Shared navbar frame",
+    "Restore V2 weapon audio; unify one quiet UI tap; curated BGM awaits owner choice",
+    "Continuous dragon body motion, unchanged hit authority",
+    "Live dashboard sidebar confirmed present; make version visible"
+  ],
+  "done": [
+    "Read prior checkpoint and actual diff",
+    "Remote owner Home/Boss commit verified",
+    "Live dashboard markup includes new11-item Studio navigation",
+    "New Hero level presenter and actual Victory/Pause distinction",
+    "Shared five-menu ornate navbar default",
+    "Branded startup background and persistent first-frame artwork",
+    "Restored existing V2/arsenal SFX; single soft fixed-pitch tap; extra impact layer removed",
+    "Painted dragon follows previous joints with bounded turns",
+    "Detached Home refresh guard caught by new transition scenario",
+    "Five operator revision tests and visible dashboard Comfort24.10 marker",
+    "Portable publisher verified against exact latest owner25ee8ce"
+  ],
+  "stages": {
+    "source": "complete",
+    "QA": "focused author native/headless/backend passed",
+    "owner_install": "pending",
+    "commit_push": "owner pending; author did not publish this batch",
+    "live_dashboard": "new eleven-item navigation confirmed in live DOM before this batch. New Comfort24.10 marker requires the included Profile-only deploy. Login session was signed out; authenticated admin actions not attempted.",
+    "deploy": "new marker deploy pending owner authenticated Windows launcher; existing vars retained, no schema/IAP/event/push mutations",
+    "native": "unchanged",
+    "exact_SHA_Windows_CI": "required after owner push",
+    "AAB": "not exported; wait BGM choice then one combined final client AAB",
+    "Android": "not tested by author"
+  },
+  "next": "Extract Jade-Player-Comfort, close older Godot editor, run apply_publish_and_deploy.cmd. It preserves saves/config, normalpushes real commit links, syncs game, deploys Profile UI only. Choose BGM A/B before final AAB so there is no second export.",
+  "qa": {
+    "native_GUI": "60checks/0fail; actual Boot-to-entry cover, five production navbars at320x568and720x1600, coalesced permanent levels, silent load, paused production Victory result, bounded dragon joints/turns, audio cues; no runtime errors in final log",
+    "headless_standard_runner": "strict editor import and60checks passed; no ERROR lines",
+    "compass_combat": "30checks/0fail, real persistent courier moving target/range/authorization/HP-loss ledger; mechanics unchanged",
+    "dashboard": "8existing dashboard tests +5revision tests passed; DOM receipt separately recorded",
+    "production_guards": "9of9 pass",
+    "publisher": "local bare Git normal commit/push and retry, spaced paths, exact22path scope and retained unstaged valid IAP config passed. Reused14 unchanged primitive safety tests. Not a real GitHub push, Windows run or deploy.",
+    "engine_shutdown": "nonfatal RefCounted(reference_count=0) exit warnings retained; no warning-free or Android claim",
+    "reuse": "Unchanged earlier Home/boss379checks reused; no new economy/payment/native audit required"
+  },
+  "pending_owner_choice": "BGM A/B and optional single new Kenney touch. Existing unified soft V2 tap is active.",
+  "extra_fix": "Queued Home refresh returned after old scene detach; stopped before accessing tree/managers."
+}

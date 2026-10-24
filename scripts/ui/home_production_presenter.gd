@@ -763,6 +763,8 @@ func _connect_runtime_signals() -> void:
 
 
 func _refresh_all() -> void:
+	if not is_inside_tree():
+		return
 	_refresh_profile_shortcut()
 	_refresh_journey()
 	_refresh_liveops_badges()

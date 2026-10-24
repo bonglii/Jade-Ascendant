@@ -48,8 +48,20 @@ func _route_first_entry() -> void:
 	if not is_inside_tree():
 		return
 	# The branded Boot already covers loading. Do not stack a second Gate intro.
+	# Scene changes detach Boot before the next scene is ready. Keep its artwork
+	# on the existing persistent transition layer through the first new draw.
+	var cover := TextureRect.new()
+	cover.name = "BootHandoffCover"
+	cover.texture = $Background.texture
+	cover.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	cover.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	cover.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	cover.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	SceneTransitionManager.add_child(cover)
+	SceneTransitionManager.release_boot_cover(cover)
 	var change_error: Error = get_tree().change_scene_to_packed(packed)
 	if change_error != OK:
+		cover.queue_free()
 		_show_failure()
 
 func _show_failure() -> void:

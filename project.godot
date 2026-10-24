@@ -119,6 +119,8 @@ admob/rewarded_ad_unit_id="ca-app-pub-3082528078187093/8339864838"
 
 [rendering]
 
+environment/defaults/default_clear_color=Color(0.0235294, 0.105882, 0.113725, 1)
+
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="mobile"
 textures/vram_compression/import_etc2_astc=true

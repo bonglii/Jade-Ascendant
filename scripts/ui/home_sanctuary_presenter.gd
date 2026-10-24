@@ -287,7 +287,7 @@ func _refresh_liveops_badges() -> void:
  meditation_button.disabled=not unlocked
 
 func _refresh_all() -> void:
- if profile_shortcut==null:return
+ if not is_inside_tree() or profile_shortcut==null:return
  var menu: Node=_main_menu()
  checkpoint_available=menu!=null and menu.has_method("_has_checkpoint") and bool(menu.call("_has_checkpoint"))
  _refresh_profile_shortcut();_refresh_journey();_refresh_liveops_badges()

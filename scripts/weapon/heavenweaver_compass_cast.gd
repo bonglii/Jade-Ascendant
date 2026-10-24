@@ -101,8 +101,8 @@ func _physics_process(delta: float) -> void:
 			var applied: float = _hit(player, target, hit_amount, true)
 			if applied > 0.0 and combat_level >= 5:
 				if echoes.size() < 2: echoes.append({"target": weakref(target), "left": 0.12, "amount": hit_amount * 0.25})
-		if mesh_left <= 0.0: _update_dragon(head, 0.05 if SettingsManager.reduced_effects else 1.0 / 30.0, index)
-	if mesh_left <= 0.0: mesh_left = 0.05 if SettingsManager.reduced_effects else 1.0 / 30.0
+		if mesh_left <= 0.0: _update_dragon(head, 1.0 / 30.0 if SettingsManager.reduced_effects else 1.0 / 60.0, index)
+	if mesh_left <= 0.0: mesh_left = 1.0 / 30.0 if SettingsManager.reduced_effects else 1.0 / 60.0
 	for i: int in range(echoes.size() - 1, -1, -1):
 		var echo: Dictionary = echoes[i]
 		echo.left -= delta
@@ -159,13 +159,24 @@ func _update_dragon(head: Dictionary, _delta: float, index: int) -> void:
 	# Twelve textured joints form one unbroken painted body, without atlas seams.
 	var spine := PackedVector2Array()
 	var joints: int = 8 if SettingsManager.reduced_effects else 12
-	var angle: float = float(head.angle)
+	var angle: float = float(head.get("visual_angle", head.angle))
+	angle += clampf(angle_difference(angle, float(head.angle)), -6.0 * _delta, 6.0 * _delta)
+	head.visual_angle = angle
 	var at: Vector2 = head.point - Vector2.from_angle(angle) * 39.0
 	spine.append(at)
-	# Bound curvature, so strip normals cannot fold a painted head into triangles.
+	var previous: PackedVector2Array = head.spine
+	var spacing: float = 154.0 / (joints - 1)
+	var segment_angle: float = angle
 	for j: int in range(1, joints):
-		var sway: float = sin(age * 6.0 - j * 0.55 + index) * 0.65 * float(j) / joints
-		at -= Vector2.from_angle(angle + sway) * (154.0 / (joints - 1))
+		# Follow the preceding joint's trail rather than rebuilding the whole
+		# body from the newest heading. Bounded bends prevent folded UV strips.
+		var desired: float = segment_angle
+		if previous.size() == joints:
+			desired = (at - previous[j]).angle()
+		var bend: float = clampf(angle_difference(segment_angle, desired), -.34, .34)
+		var breath: float = sin(age * 3.8 - j * .48 + index) * .065 * float(j) / joints
+		segment_angle += bend * (1.0 - exp(-14.0 * _delta)) + breath
+		at -= Vector2.from_angle(segment_angle) * spacing
 		spine.append(at)
 	head.face.global_position = head.point
 	head.face.rotation = angle

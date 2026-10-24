@@ -1,6 +1,6 @@
 extends Node
 
-## Jade Ascendant Audio Identity V3 — recorded materials and contextual impacts
+## Restrained audio: restore V2 combat; one identical quiet touch cue.
 ##
 ## Goals:
 ## - every active runtime cue is routed through one coherent xianxia palette;
@@ -15,47 +15,136 @@ const MUSIC_TARGET_DB: float = -18.5
 const MUSIC_OFF_DB: float = -55.0
 
 const SFX: Dictionary = {
-	"phoenix_fan": [preload("res://assets/audio/presentation_v3/phoenix_fan_01.wav"),preload("res://assets/audio/presentation_v3/phoenix_fan_02.wav")],
-	"void_thrust": [preload("res://assets/audio/presentation_v3/void_thrust_01.wav"),preload("res://assets/audio/presentation_v3/void_thrust_02.wav")],
-	"astral_bell": [preload("res://assets/audio/presentation_v3/astral_bell_01.wav"),preload("res://assets/audio/presentation_v3/astral_bell_02.wav")],
-	"ui": [preload("res://assets/audio/presentation_v3/ui_tap_01.wav"),preload("res://assets/audio/presentation_v3/ui_tap_02.wav")],
-	"ui_tab": [preload("res://assets/audio/presentation_v3/ui_tab_01.wav"),preload("res://assets/audio/presentation_v3/ui_tab_02.wav")],
-	"ui_confirm": [preload("res://assets/audio/presentation_v3/ui_confirm_01.wav"),preload("res://assets/audio/presentation_v3/ui_confirm_02.wav")],
-	"ui_back": [preload("res://assets/audio/presentation_v3/ui_back_01.wav"),preload("res://assets/audio/presentation_v3/ui_back_02.wav")],
-	"ui_locked": [preload("res://assets/audio/presentation_v3/ui_locked_01.wav"),preload("res://assets/audio/presentation_v3/ui_locked_02.wav")],
-	"pickup": [preload("res://assets/audio/presentation_v3/pickup_jade_01.wav"),preload("res://assets/audio/presentation_v3/pickup_jade_02.wav"),preload("res://assets/audio/presentation_v3/pickup_jade_03.wav")],
-	"shield": [preload("res://assets/audio/presentation_v3/shield_01.wav"),preload("res://assets/audio/presentation_v3/shield_02.wav")],
-	"claim": [preload("res://assets/audio/presentation_v3/claim_01.wav"),preload("res://assets/audio/presentation_v3/claim_02.wav")],
-	"equip": [preload("res://assets/audio/presentation_v3/equip_01.wav"),preload("res://assets/audio/presentation_v3/equip_02.wav")],
-	"sword": [preload("res://assets/audio/presentation_v3/sword_01.wav"),preload("res://assets/audio/presentation_v3/sword_02.wav")],
-	"fire": [preload("res://assets/audio/presentation_v3/fire_01.wav"),preload("res://assets/audio/presentation_v3/fire_02.wav"),preload("res://assets/audio/presentation_v3/fire_03.wav")],
-	"thunder": [preload("res://assets/audio/presentation_v3/thunder_01.wav"),preload("res://assets/audio/presentation_v3/thunder_02.wav"),preload("res://assets/audio/presentation_v3/thunder_03.wav")],
-	"chain": [preload("res://assets/audio/presentation_v3/chain_01.wav"),preload("res://assets/audio/presentation_v3/chain_02.wav"),preload("res://assets/audio/presentation_v3/chain_03.wav")],
-	"hit": [preload("res://assets/audio/presentation_v3/hit_01.wav"),preload("res://assets/audio/presentation_v3/hit_02.wav"),preload("res://assets/audio/presentation_v3/hit_03.wav")],
-	"hurt": [preload("res://assets/audio/presentation_v3/hurt_01.wav"),preload("res://assets/audio/presentation_v3/hurt_02.wav")],
-	"death": [preload("res://assets/audio/presentation_v3/death_01.wav"),preload("res://assets/audio/presentation_v3/death_02.wav")],
-	"level": [preload("res://assets/audio/presentation_v3/level_01.wav"),preload("res://assets/audio/presentation_v3/level_02.wav")],
-	"victory": [preload("res://assets/audio/presentation_v3/victory_01.wav"),preload("res://assets/audio/presentation_v3/victory_02.wav")],
-	"defeat": [preload("res://assets/audio/presentation_v3/defeat_01.wav"),preload("res://assets/audio/presentation_v3/defeat_02.wav")],
-	"boss_defeat": [preload("res://assets/audio/presentation_v3/boss_defeat_01.wav"),preload("res://assets/audio/presentation_v3/boss_defeat_02.wav")],
-	"summon_charge": [preload("res://assets/audio/presentation_v3/summon_charge_01.wav"),preload("res://assets/audio/presentation_v3/summon_charge_02.wav")],
-	"summon_rare": [preload("res://assets/audio/presentation_v3/summon_rare_01.wav"),preload("res://assets/audio/presentation_v3/summon_rare_02.wav")],
-	"summon_epic": [preload("res://assets/audio/presentation_v3/summon_epic_01.wav"),preload("res://assets/audio/presentation_v3/summon_epic_02.wav")],
-	"summon_legendary_omen": [preload("res://assets/audio/presentation_v3/summon_legendary_omen_01.wav"),preload("res://assets/audio/presentation_v3/summon_legendary_omen_02.wav")],
-	"summon_legendary_reveal": [preload("res://assets/audio/presentation_v3/summon_legendary_reveal_01.wav"),preload("res://assets/audio/presentation_v3/summon_legendary_reveal_02.wav")],
-	"summon_new": [preload("res://assets/audio/presentation_v3/summon_new_01.wav"),preload("res://assets/audio/presentation_v3/summon_new_02.wav")],
-	"summon_duplicate": [preload("res://assets/audio/presentation_v3/summon_duplicate_01.wav"),preload("res://assets/audio/presentation_v3/summon_duplicate_02.wav")],
-	"upgrade": [preload("res://assets/audio/presentation_v3/upgrade_01.wav"),preload("res://assets/audio/presentation_v3/upgrade_02.wav")],
-	"stage_unlock": [preload("res://assets/audio/presentation_v3/stage_unlock_01.wav"),preload("res://assets/audio/presentation_v3/stage_unlock_02.wav")],
-	"purchase_success": [preload("res://assets/audio/presentation_v3/purchase_success_01.wav"),preload("res://assets/audio/presentation_v3/purchase_success_02.wav")],
-	"impact_blade": [preload("res://assets/audio/presentation_v3/impact_blade_01.wav"),preload("res://assets/audio/presentation_v3/impact_blade_02.wav")],
-	"impact_fire": [preload("res://assets/audio/presentation_v3/impact_fire_01.wav"),preload("res://assets/audio/presentation_v3/impact_fire_02.wav")],
-	"impact_thunder": [preload("res://assets/audio/presentation_v3/impact_thunder_01.wav"),preload("res://assets/audio/presentation_v3/impact_thunder_02.wav")],
-	"impact_chain": [preload("res://assets/audio/presentation_v3/impact_chain_01.wav"),preload("res://assets/audio/presentation_v3/impact_chain_02.wav")],
-	"impact_void": [preload("res://assets/audio/presentation_v3/impact_void_01.wav"),preload("res://assets/audio/presentation_v3/impact_void_02.wav")],
-	"impact_compass": [preload("res://assets/audio/presentation_v3/impact_compass_01.wav"),preload("res://assets/audio/presentation_v3/impact_compass_02.wav")],
-	"impact_qi": [preload("res://assets/audio/presentation_v3/impact_qi_01.wav"),preload("res://assets/audio/presentation_v3/impact_qi_02.wav")],
-	"impact_formation": [preload("res://assets/audio/presentation_v3/impact_formation_01.wav"),preload("res://assets/audio/presentation_v3/impact_formation_02.wav")],
+	"phoenix_fan": [preload("res://assets/audio/arsenal_20261014/phoenix_fan.wav")],
+	"void_thrust": [preload("res://assets/audio/arsenal_20261014/void_thrust.wav")],
+	"astral_bell": [preload("res://assets/audio/arsenal_20261014/astral_bell.wav")],
+	"ui": [
+		preload("res://assets/audio/presentation_v2/ui_tap_01.wav"),
+		preload("res://assets/audio/presentation_v2/ui_tap_02.wav")
+	],
+	"ui_tab": [
+		preload("res://assets/audio/presentation_v2/ui_tab_01.wav"),
+		preload("res://assets/audio/presentation_v2/ui_tab_02.wav")
+	],
+	"ui_confirm": [
+		preload("res://assets/audio/presentation_v2/ui_confirm_01.wav"),
+		preload("res://assets/audio/presentation_v2/ui_confirm_02.wav")
+	],
+	"ui_back": [
+		preload("res://assets/audio/presentation_v2/ui_back_01.wav"),
+		preload("res://assets/audio/presentation_v2/ui_back_02.wav")
+	],
+	"ui_locked": [
+		preload("res://assets/audio/presentation_v2/ui_locked_01.wav"),
+		preload("res://assets/audio/presentation_v2/ui_locked_02.wav")
+	],
+	"pickup": [
+		preload("res://assets/audio/presentation_v2/pickup_jade_01.wav"),
+		preload("res://assets/audio/presentation_v2/pickup_jade_02.wav"),
+		preload("res://assets/audio/presentation_v2/pickup_jade_03.wav")
+	],
+	"shield": [
+		preload("res://assets/audio/presentation_v2/shield_01.wav"),
+		preload("res://assets/audio/presentation_v2/shield_02.wav")
+	],
+	"claim": [
+		preload("res://assets/audio/presentation_v2/claim_01.wav"),
+		preload("res://assets/audio/presentation_v2/claim_02.wav")
+	],
+	"equip": [
+		preload("res://assets/audio/presentation_v2/equip_01.wav"),
+		preload("res://assets/audio/presentation_v2/equip_02.wav")
+	],
+	"sword": [
+		preload("res://assets/audio/presentation_v2/sword_01.wav"),
+		preload("res://assets/audio/presentation_v2/sword_02.wav")
+	],
+	"fire": [
+		preload("res://assets/audio/presentation_v2/fire_01.wav"),
+		preload("res://assets/audio/presentation_v2/fire_02.wav"),
+		preload("res://assets/audio/presentation_v2/fire_03.wav")
+	],
+	"thunder": [
+		preload("res://assets/audio/presentation_v2/thunder_01.wav"),
+		preload("res://assets/audio/presentation_v2/thunder_02.wav"),
+		preload("res://assets/audio/presentation_v2/thunder_03.wav")
+	],
+	"chain": [
+		preload("res://assets/audio/presentation_v2/chain_01.wav"),
+		preload("res://assets/audio/presentation_v2/chain_02.wav"),
+		preload("res://assets/audio/presentation_v2/chain_03.wav")
+	],
+	"hit": [
+		preload("res://assets/audio/presentation_v2/hit_01.wav"),
+		preload("res://assets/audio/presentation_v2/hit_02.wav"),
+		preload("res://assets/audio/presentation_v2/hit_03.wav")
+	],
+	"hurt": [
+		preload("res://assets/audio/presentation_v2/hurt_01.wav"),
+		preload("res://assets/audio/presentation_v2/hurt_02.wav")
+	],
+	"death": [
+		preload("res://assets/audio/presentation_v2/death_01.wav"),
+		preload("res://assets/audio/presentation_v2/death_02.wav")
+	],
+	"level": [
+		preload("res://assets/audio/presentation_v2/level_01.wav"),
+		preload("res://assets/audio/presentation_v2/level_02.wav")
+	],
+	"victory": [
+		preload("res://assets/audio/presentation_v2/victory_01.wav"),
+		preload("res://assets/audio/presentation_v2/victory_02.wav")
+	],
+	"defeat": [
+		preload("res://assets/audio/presentation_v2/defeat_01.wav"),
+		preload("res://assets/audio/presentation_v2/defeat_02.wav")
+	],
+	"boss_defeat": [
+		preload("res://assets/audio/presentation_v2/boss_defeat_01.wav"),
+		preload("res://assets/audio/presentation_v2/boss_defeat_02.wav")
+	],
+	"summon_charge": [
+		preload("res://assets/audio/presentation_v2/summon_charge_01.wav"),
+		preload("res://assets/audio/presentation_v2/summon_charge_02.wav")
+	],
+	"summon_rare": [
+		preload("res://assets/audio/presentation_v2/summon_rare_01.wav"),
+		preload("res://assets/audio/presentation_v2/summon_rare_02.wav")
+	],
+	"summon_epic": [
+		preload("res://assets/audio/presentation_v2/summon_epic_01.wav"),
+		preload("res://assets/audio/presentation_v2/summon_epic_02.wav")
+	],
+	"summon_legendary_omen": [
+		preload("res://assets/audio/presentation_v2/summon_legendary_omen_01.wav"),
+		preload("res://assets/audio/presentation_v2/summon_legendary_omen_02.wav")
+	],
+	"summon_legendary_reveal": [
+		preload("res://assets/audio/presentation_v2/summon_legendary_reveal_01.wav"),
+		preload("res://assets/audio/presentation_v2/summon_legendary_reveal_02.wav")
+	],
+	"summon_new": [
+		preload("res://assets/audio/presentation_v2/summon_new_01.wav"),
+		preload("res://assets/audio/presentation_v2/summon_new_02.wav")
+	],
+	"summon_duplicate": [
+		preload("res://assets/audio/presentation_v2/summon_duplicate_01.wav"),
+		preload("res://assets/audio/presentation_v2/summon_duplicate_02.wav")
+	],
+	# Prepared semantic cues for the Presentation Overhaul. They are intentionally
+	# routed now so screens can adopt them without another audio-architecture pass.
+	"upgrade": [
+		preload("res://assets/audio/presentation_v2/upgrade_01.wav"),
+		preload("res://assets/audio/presentation_v2/upgrade_02.wav")
+	],
+	"stage_unlock": [
+		preload("res://assets/audio/presentation_v2/stage_unlock_01.wav"),
+		preload("res://assets/audio/presentation_v2/stage_unlock_02.wav")
+	],
+	"purchase_success": [
+		preload("res://assets/audio/presentation_v2/purchase_success_01.wav"),
+		preload("res://assets/audio/presentation_v2/purchase_success_02.wav")
+	]
 }
 const MUSIC: Dictionary = {
 	"home": preload("res://assets/audio/presentation_v3/music_home.ogg"),
@@ -397,51 +486,7 @@ func _play_auto_ui_sfx(cue: String) -> void:
 
 
 func _resolve_button_sfx(button: BaseButton) -> String:
-	if bool(button.get_meta("sfx_silent", false)):
-		return ""
-
-	if button.has_meta("sfx_cue"):
-		var explicit_cue := str(button.get_meta("sfx_cue"))
-		if explicit_cue in AUTO_UI_CUES:
-			return explicit_cue
-
-	var name_key := str(button.name).to_upper()
-	var text_key := ""
-	if button is Button:
-		text_key = (button as Button).text.to_upper()
-	var identity := name_key + " " + text_key
-
-	if identity.contains("LOCKED"):
-		return "ui_locked"
-	if identity.contains("CLAIM") or identity.contains("COLLECT"):
-		return "claim"
-	if identity.contains("SUMMON"):
-		return "summon_charge"
-	if (
-		identity.contains("PURCHASE")
-		or identity.contains("BUY")
-		or identity.contains("TOP UP")
-	):
-		return "ui_confirm"
-	if (
-		identity.contains("BACK")
-		or identity.contains("HOME")
-		or identity.contains("CLOSE")
-		or identity.contains("CANCEL")
-		or identity.contains("EXIT")
-	):
-		return "ui_back"
-	if (
-		button.toggle_mode
-		or identity.contains("TAB")
-		or identity.contains("FILTER")
-		or identity.contains("SORT")
-	):
-		return "ui_tab"
-
-	# V2 deliberately restores a restrained tactile cue for normal browsing.
-	# The clips are 40-80 ms and mixed well below progression/reward events.
-	return "ui"
+	return "" if bool(button.get_meta("sfx_silent", false)) else "ui"
 
 
 func _process(_delta: float) -> void:
@@ -497,14 +542,13 @@ func set_context(next_context: String) -> void:
 
 
 ## Called only for applied weapon damage, never target selection or cast animation.
-func play_weapon_impact(source: String) -> void:
-	var now: int = Time.get_ticks_msec()
-	if now < int(cooldown_until.get("weapon_impact_bus",0)): return
-	cooldown_until["weapon_impact_bus"] = now + 85
-	var family: String = {"spirit_sword":"blade","yin_yang_blades":"blade","heavenly_sword_rain":"blade","celestial_returning_glaive":"blade","jade_binding_chain":"chain","thunder_talisman":"thunder","heavenly_lightning":"thunder","heavenly_tribulation":"thunder","fire_orb":"fire","phoenix_war_fan":"fire","void_piercer_spear":"void","astral_resonance_bell":"qi","heavenweaver_compass":"compass","eight_trigrams_formation":"formation"}.get(source,"qi")
-	play_sfx("impact_" + family)
+func play_weapon_impact(_source: String) -> void:
+	# Legacy attacks already own their cast/hit cue. Do not layer the later V3
+	# impact on every damage tick (especially the continuously striking dragon).
+	return
 
 func play_sfx(cue: String) -> void:
+	if cue in ["ui_tab", "ui_confirm", "ui_back", "ui_locked"]: cue = "ui"
 	if (
 		backgrounded
 		or (
@@ -568,6 +612,7 @@ func _play_sfx_variant(
 
 
 func _get_sfx_stream(cue: String) -> AudioStream:
+	if cue == "ui": return SFX.ui[0] as AudioStream
 	var raw_variants: Variant = SFX.get(cue, [])
 	if not (raw_variants is Array):
 		return null
@@ -620,10 +665,10 @@ func _get_sfx_cooldown_msec(cue: String) -> int:
 
 
 func _get_sfx_volume_db(cue: String) -> float:
-	if cue.begins_with("impact_"): return -12.0
+	if cue.begins_with("impact_"): return -22.0
 	match cue:
 		"ui":
-			return -17.0
+			return -22.0
 		"ui_tab":
 			return -16.0
 		"ui_confirm":
@@ -653,17 +698,17 @@ func _get_sfx_volume_db(cue: String) -> float:
 		"equip":
 			return -8.5
 		"claim":
-			return -7.0
+			return -14.0
 		"level", "upgrade":
-			return -7.0
+			return -14.0
 		"victory":
-			return -4.5
+			return -12.0
 		"defeat":
-			return -5.0
+			return -12.0
 		"boss_defeat":
-			return -4.0
+			return -12.0
 		"stage_unlock":
-			return -4.5
+			return -12.0
 		"purchase_success":
 			return -5.5
 		"summon_charge":
@@ -673,9 +718,9 @@ func _get_sfx_volume_db(cue: String) -> float:
 		"summon_epic":
 			return -6.0
 		"summon_legendary_omen":
-			return -4.0
+			return -12.0
 		"summon_legendary_reveal":
-			return -2.5
+			return -12.0
 		"summon_new":
 			return -7.5
 		"summon_duplicate":
@@ -685,6 +730,7 @@ func _get_sfx_volume_db(cue: String) -> float:
 
 
 func _get_sfx_pitch(cue: String) -> float:
+	if cue == "ui": return 1.0
 	var base_pitch := 1.0
 	match cue:
 		"ui_back":
