@@ -1,0 +1,37 @@
+{
+  "batch": "HOME_BOSS_FLOW_2026-10-24",
+  "base": "f3dc8f064ea7868c8af2d56db980624109d9d813",
+  "previous_package": "Jade-Studio-Elegance",
+  "previous_push": "User reported push; branch read verified at f3dc8f064ea7868c8af2d56db980624109d9d813 on 2026-10-24 UTC. Portable launcher verifies and reuses an exact published Studio parent, or completes embedded prior Studio stage.",
+  "scope": [
+    "stable chapter access independent of earned claims",
+    "event copy inside artwork-safe bounds",
+    "boss warning/arrival portrait ribbon using existing2D boss assets",
+    "pause/levelup above notices; notice tweens freeze during pause"
+  ],
+  "excluded": "background music intentionally deferred",
+  "phase": "Author implementation, focused runtime QA, package simulation and payload verification complete; owner launcher ready",
+  "source": "Git-backed workspace; portable payload carries every reviewed source delta",
+  "qa": {
+    "import": "pass",
+    "home_boss_native_gui": "84 checks / 0 failures on final source; actual chapter tap, Pause/Resume, pause-time freeze, compact EN/ID bounds, full/reduced effects",
+    "home_boss_headless_standard_runner": "84 checks / 0 failures; latest source",
+    "home_sanctuary_native_gui": "195 checks / 0 failures",
+    "combat_notice_layout_native_gui": "100 checks / 0 failures; includes compact achievement layout",
+    "runtime_errors": "No SCRIPT ERROR or resource-in-use ERROR after fixed teardown. Engine emits nonfatal RefCounted(reference_count=0) shutdown warnings; not claimed warning-free.",
+    "publisher": "Local bare Git simulation: clean base, exact Studio-parent reuse, retry without duplicate commits, paths with spaces, source scope, valid IAP-local config retained unstaged. Not a real GitHub push or Windows execution.",
+    "reused": "Prior Studio dashboard DOM/backend/runtime checks and 14 publisher primitive cases passed; unchanged evidence retained."
+  },
+  "stages": {
+    "owner_install": "pending",
+    "push": "pending; author push unavailable, owner launcher prints real verified commit URLs",
+    "Profile_dashboard_deploy": "Only previous authorized Studio refresh if no matching successful deploy receipt; no new client backend deployment needed",
+    "IAP_worker": "unchanged",
+    "native": "unchanged",
+    "exact_SHA_Windows_CI": "required after owner push",
+    "AAB": "not exported; one final client AAB after green exact-SHA CI",
+    "Android": "not tested by author"
+  },
+  "next": "Extract Jade-Home-Boss-Flow, close older Godot editor, run apply_publish_and_deploy.cmd from any CMD directory. It resumes reviewed stages, preserves saves/local IAP config and never force pushes. After green final-SHA CI use export_production.cmd for one AAB. Backsound remains deferred.",
+  "extra_fix": "Existing achievement toast compact text/layout overflow found by the related small-phone notice regression and corrected. No rewards/timing changed."
+}

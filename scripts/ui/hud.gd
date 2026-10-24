@@ -74,6 +74,8 @@ var _review_guide_button: Button
 func _ready() -> void:
 	boss_panel.visible = false
 	pause_overlay.visible = false
+	pause_overlay.z_index = NoticeLayout.MODAL_Z
+	level_up_panel.z_index = NoticeLayout.MODAL_Z
 	pause_button.pressed.connect(_on_pause_pressed)
 	resume_button.pressed.connect(_on_resume_pressed)
 	pause_main_menu_button.pressed.connect(_on_pause_main_menu_pressed)
@@ -625,6 +627,7 @@ func _build_encounter_banner() -> void:
 	content.add_child(_encounter_banner_top_line)
 
 	_encounter_banner_phase = Label.new()
+	_encounter_banner_phase.name = "NoticePhase"
 	_encounter_banner_phase.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_encounter_banner_phase.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_encounter_banner_phase.add_theme_font_size_override("font_size", 12)
@@ -632,6 +635,7 @@ func _build_encounter_banner() -> void:
 	content.add_child(_encounter_banner_phase)
 
 	_encounter_banner_name = Label.new()
+	_encounter_banner_name.name = "NoticeBossName"
 	_encounter_banner_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_encounter_banner_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_encounter_banner_name.max_lines_visible = 2
@@ -685,20 +689,21 @@ func _show_encounter_banner(phase_text: String, accent: Color) -> void:
 	if _encounter_banner_tween != null and _encounter_banner_tween.is_valid():
 		_encounter_banner_tween.kill()
 	_encounter_banner.modulate.a = 0.0
+	NoticeLayout.decorate(_encounter_banner, accent, boss_name_label.text)
 	NoticeLayout.settle(_encounter_banner, _encounter_banner.get_parent())
 	_encounter_banner.visible = true
 	_encounter_banner.pivot_offset = _encounter_banner.size * 0.5
 	_encounter_banner.scale = Vector2.ONE
 	_encounter_banner.modulate = Color.WHITE
 	if _is_reduced_effects_enabled():
-		var reduced_tween := create_tween()
+		var reduced_tween := create_tween().set_pause_mode(Tween.TWEEN_PAUSE_STOP)
 		reduced_tween.tween_interval(2.85)
 		reduced_tween.tween_callback(_hide_encounter_banner)
 		_encounter_banner_tween = reduced_tween
 		return
-	_encounter_banner.scale = Vector2(0.93, 0.93)
+	_encounter_banner.scale = Vector2(0.98, 0.98)
 	_encounter_banner.modulate = Color(1.0, 0.88, 0.58, 0.0)
-	_encounter_banner_tween = create_tween()
+	_encounter_banner_tween = create_tween().set_pause_mode(Tween.TWEEN_PAUSE_STOP)
 	_encounter_banner_tween.tween_property(
 		_encounter_banner,
 		"scale",
@@ -721,7 +726,7 @@ func _show_encounter_banner(phase_text: String, accent: Color) -> void:
 	_encounter_banner_tween.parallel().tween_property(
 		_encounter_banner,
 		"scale",
-		Vector2(1.035, 1.035),
+		Vector2.ONE,
 		0.22
 	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	_encounter_banner_tween.tween_callback(_hide_encounter_banner)

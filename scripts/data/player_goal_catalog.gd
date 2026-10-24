@@ -28,6 +28,18 @@ static func choose(context: Dictionary) -> Dictionary:
   return {"action":"journey","chapter":int(target.chapter),"stage":int(target.stage),"title":("TAKLUKKAN STAGE %d-%d" if indonesian else "MASTER STAGE %d-%d")%[int(target.chapter),int(target.stage)],"hint":"Menang tanpa HP berkurang. Target rekor pribadi." if indonesian else "Aim for a clear with zero HP hits. Personal record only.","button":("ULANGI %d-%d" if indonesian else "REPLAY %d-%d")%[int(target.chapter),int(target.stage)]}
  return {"action":"library","title":"MASTER YOUR BUILD","hint":"Explore set roles, independent weapons and resonances.","button":"EXPLORE BUILDS"}
 
+## The chapter card has its own stable navigation contract. Recommendations
+## remain available through Trials/event dots and the guidance readers.
+static func choose_progression(state: Dictionary) -> Dictionary:
+ if bool(state.get("read_only",false)) or bool(state.get("checkpoint",false)):return choose(state)
+ var available: Array=[]
+ for stage: Dictionary in state.get("stages",[]):
+  if not bool(stage.get("implemented",false)) or not bool(stage.get("unlocked",false)):continue
+  available.append(stage)
+  if not bool(stage.get("cleared",false)):return choose({"stages":[stage]})
+ var target: Dictionary=available[0] if not available.is_empty() else {"chapter":1,"stage":1}
+ return {"action":"journey","chapter":int(target.chapter),"stage":int(target.stage),"title":"STAGE %d-%d"%[int(target.chapter),int(target.stage)],"hint":"Pilih bab dan lanjutkan perjalananmu." if str(state.get("language","en"))=="id" else "Choose a chapter and continue your journey.","button":"ENTER JOURNEY"}
+
 static func context(root: Node, has_checkpoint: bool) -> Dictionary:
  var journey: Node=root.get_node("JourneyManager")
  var result: Dictionary={"language":root.get_node("SettingsManager").language,"read_only":root.get_node("SaveManager").is_progress_read_only(),"checkpoint":has_checkpoint,"stages":[],"daily_ready":root.get_node("DailyQuestManager").get_claimable_count(),"daily_complete":root.get_node("DailyQuestManager").get_completed_count()>=root.get_node("DailyQuestManager").get_daily_quest_ids().size()}

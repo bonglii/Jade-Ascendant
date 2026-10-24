@@ -265,3 +265,12 @@
 - A compact fixed Hero deck must reserve a usable backpack reader. Put Build Journal in the title row on short screens; keep equipped items pinned and native navigation unchanged.
 - Combat smoke fixtures must call the current persistent-courier API and fail promptly on an exception; never add a legacy runtime overload just to satisfy obsolete path-lock tests.
 - Save implemented source in durable checkpoints immediately after a stage. A plan-only checkpoint cannot recover changes lost with an author runtime reset.
+
+## Home chapter route and boss notices — 2026-10-24
+- Recommendations must not replace stable navigation. Home uses a progression-only decision; Trial/event rewards stay in their own entry points. Keep recovery protection and an independent chapter route beside a real Continue.
+- Ornament-safe bounds must include the CTA and eyebrow, not only the large title. Check long EN/ID labels at320,390,648 and720px, with actual claim-ready manager state.
+- All combat modals need a higher sibling z-order than boss notices. Stop notice tweens on global pause so reading time is preserved; verify a real Resume click for both pre-warning and arrival, with reduced effects on/off.
+- Reuse boss atlas idle art with a clipped square portrait crop inside one cell. Do not stretch a full transparent-gutter frame into a tiny unreadable portrait or use a rectangular crop as a square.
+- Match the existing GDScript indentation style when inserting a function. Load the production presenter in the fixture and fail promptly if it is absent; an import scan alone does not compile every scene script.
+- Compact achievement toasts need their own bounded typography and viewport clamp. Native notice tests must release scene/audio before exit; resource-in-use errors are not a passing test.
+- Catch up the exact prior Studio stage only if still pending, then apply the client delta. Recognize the reviewed parent by all committed file hashes; never infer publication from a chat claim. Preserve a valid local IAP-config exception without staging it, after all nine gates validate.

@@ -169,7 +169,7 @@ func _build_journey_card() -> void:
  journey_button=_button("SanctuaryJourney",_open_primary_goal,journey_card)
  _plate(journey_button,true,Color(.025,.18,.16,.99))
  journey_button.text=tr("ENTER JOURNEY")+" ›";_font_button(journey_button,19)
- continue_button=_button("SanctuaryContinue",_call_main_menu.bind("_on_continue_pressed"),journey_card)
+ continue_button=_button("SanctuaryContinue",_call_main_menu.bind("_on_journey_pressed"),journey_card)
  _plate(continue_button,true,Color(.01,.12,.14,.99));_font_button(continue_button,16)
 
 func _build_featured_event() -> void:
@@ -203,8 +203,12 @@ func _shortcut(name_value: String,texture: Texture2D,title: String,action: Calla
 func _refresh_journey() -> void:
  if journey_card==null:return
  if journey_button.button_pressed:return
- _goal=Goals.choose(Goals.context(get_tree().root,checkpoint_available))
- var chapter_id: int=int(_goal.get("chapter",JourneyManager.selected_chapter_id))
+ _goal=Goals.choose_progression(Goals.context(get_tree().root,checkpoint_available))
+ var saved: Dictionary={}
+ if _goal.action=="continue":
+  var menu: Node=_main_menu()
+  saved=menu.call("_get_continue_checkpoint_data") if menu!=null else {}
+ var chapter_id: int=int(saved.get("chapter_id",_goal.get("chapter",JourneyManager.selected_chapter_id)))
  if presented_chapter!=chapter_id:
   presented_chapter=chapter_id
   var path: String=RealmArt.get_realm_vista_path(chapter_id)
@@ -213,22 +217,20 @@ func _refresh_journey() -> void:
  var progress: Dictionary=JourneyManager.get_chapter_progress(chapter_id)
  var total: int=maxi(int(progress.get("total_stages",1)),1)
  var cleared: int=clampi(int(progress.get("cleared_stages",0)),0,total)
- chapter_label.text=tr("CHAPTER %02d") % chapter_id if _goal.action=="journey" else tr("YOUR NEXT STEP")
- realm_title.text=tr(str(chapter.get("display_name","Jade Sanctuary"))).to_upper() if _goal.action=="journey" else tr(str(_goal.title))
+ chapter_label.text=tr("CHAPTER %02d") % chapter_id
+ realm_title.text=tr(str(chapter.get("display_name","Jade Sanctuary"))).to_upper()
  next_path_label.text=tr(str(_goal.title)) if _goal.action=="journey" else ("LANGKAH BERIKUTNYA" if SettingsManager.language=="id" else "NEXT OBJECTIVE")
  if _goal.action=="continue":
-  var menu: Node=_main_menu()
-  var saved: Dictionary=menu.call("_get_continue_checkpoint_data") if menu!=null else {}
   if not saved.is_empty():next_path_label.text=tr("STAGE %d-%d")%[int(saved.get("chapter_id",JourneyManager.DEFAULT_CHAPTER_ID)),int(saved.get("stage_id",JourneyManager.DEFAULT_STAGE_ID))]
  goal_hint.text=tr(str(_goal.hint))
  progress_label.text="%d / %d"%[cleared,total];realm_progress.max_value=total;realm_progress.value=cleared
  journey_button.text=tr(str(_goal.button))+" ›"
- continue_button.visible=false
+ continue_button.visible=_goal.action=="continue"
  journey_button.disabled=SceneTransitionManager.is_transitioning
 
 func _open_primary_goal() -> void:
  if _goal.is_empty() or SceneTransitionManager.is_transitioning:return
- var current: Dictionary=Goals.choose(Goals.context(get_tree().root,checkpoint_available))
+ var current: Dictionary=Goals.choose_progression(Goals.context(get_tree().root,checkpoint_available))
  if current!=_goal:_refresh_journey();return
  match str(_goal.action):
   "journey":
@@ -372,7 +374,7 @@ func _layout_sanctuary() -> void:
  _rect(realm_progress,Vector2(text_start,meter_y),Vector2(maxf(30,text_width-54),7))
  _rect(progress_label,Vector2(text_start+maxf(30,text_width-49),meter_y-5),Vector2(48,20));_font(progress_label,12)
  _rect(goal_hint,Vector2(text_start,meter_y+13),Vector2(text_width,38));_font(goal_hint,13)
- continue_button.text=tr("CONTINUE")+" ›" if compact else tr("CONTINUE RUN")
+ continue_button.text=("BAB" if SettingsManager.language=="id" else "CHAPTERS")+" ›"
  var button_h: float=44.0 if short_phone else 50.0 if compact else maxf(52,64*u)
  var action_x: float=12.0 if compact else width-action_w-12*u
  if compact:
@@ -401,21 +403,24 @@ func _layout_sanctuary() -> void:
  all_events_button.text=tr("ALL EVENTS")+" ›"
  _rect(all_events_button,Vector2(width-all_width,0),Vector2(all_width,heading_h));_font_button(all_events_button,20)
  # Event copy uses phone-sized floors instead of shrinking with the portrait art.
- var event_left: float=maxf(18,26*u)
+ var event_left: float=maxf(18,30*u)
  var event_text_w: float=width-event_left-maxf(18,24*u)
  var tag: Label=event_card.get_node("EventKind")
- _rect(tag,Vector2(event_left,18),Vector2(event_text_w,22))
+ _rect(tag,Vector2(event_left,24),Vector2(event_text_w,22))
  tag.add_theme_font_size_override("font_size",maxi(14,roundi(15*u)))
  var event_title: Label=event_card.get_node("FeaturedTitle")
- _rect(event_title,Vector2(event_left,45),Vector2(event_text_w*.85,maxf(64,64*u)))
+ _rect(event_title,Vector2(event_left,50),Vector2(event_text_w,maxf(54,54*u)))
  event_title.add_theme_font_size_override("font_size",maxi(21,roundi(27*u)))
- _rect(boss_progress,Vector2(event_left,event_h-91),Vector2(event_text_w,22))
+ _rect(boss_progress,Vector2(event_left,event_h-106),Vector2(event_text_w,22))
  boss_progress.add_theme_font_size_override("font_size",maxi(14,roundi(15*u)))
- _rect(event_card.get_node("UpcomingRewardIcon"),Vector2(event_left,event_h-63),Vector2(24,24))
- _rect(boss_reward,Vector2(event_left+31,event_h-63),Vector2(event_text_w-31,24))
+ _rect(event_card.get_node("UpcomingRewardIcon"),Vector2(event_left,event_h-80),Vector2(24,24))
+ _rect(boss_reward,Vector2(event_left+31,event_h-80),Vector2(event_text_w-31,24))
  boss_reward.add_theme_font_size_override("font_size",maxi(14,roundi(15*u)))
- _rect(event_action,Vector2(event_left,event_h-33),Vector2(event_text_w,24))
+ _rect(event_action,Vector2(maxf(event_left,76*u+8),event_h-52),Vector2(event_text_w-maxf(0,76*u+8-event_left),26))
  event_action.add_theme_font_size_override("font_size",maxi(16,roundi(17*u)))
+ event_action.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
+ event_action.max_lines_visible=1
+ event_card.clip_contents=true
  var shortcut_w: float=(width-14)/3.0
  for button: Button in [seven_day_button,meditation_button,library_button]:
   var icon: Control=button.get_node("ShortcutIcon")

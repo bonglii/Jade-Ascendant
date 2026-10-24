@@ -83,4 +83,7 @@ func run() -> void:
  check(presenter._panel.get_rect().end.y<=safe.size.y+1,"bounded achievement copy fits phone height")
  check(root.get_node("ProgressionManager").build_progression_save_data()==before,"notice never claims or spends rewards")
  presenter._abort_sequence()
+ paused=false
+ if current_scene!=null:current_scene.queue_free();current_scene=null
+ await load("res://tests/qa_runtime_teardown.gd").stop_audio(self)
  print("COMBAT_NOTICE_CHECKS=",checks,";FAILURES=",failures);quit(1 if failures else 0)

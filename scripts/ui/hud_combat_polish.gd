@@ -300,7 +300,7 @@ func _check_boss_pre_warning() -> void:
 	for chip: Node in _warning_side_left.get_child(0).get_children():
 		if chip is ColorRect: chip.hide()
 	_apply_warning_theme(_theme_for_realm(_active_realm_id), false)
-	NoticeLayout.decorate(_warning_panel, GOLD)
+	NoticeLayout.decorate(_warning_panel, GOLD, _warning_boss_name())
 	_show_boss_warning()
 
 
@@ -374,6 +374,7 @@ func _build_pre_boss_warning() -> void:
 	center.add_child(_warning_header)
 
 	_warning_main = Label.new()
+	_warning_main.name = "NoticeWarningTitle"
 	_warning_main.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_warning_main.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_warning_main.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -658,20 +659,20 @@ func _show_boss_warning() -> void:
 	if _warning_tween != null and _warning_tween.is_valid():
 		_warning_tween.kill()
 	_warning_panel.modulate.a = 0.0
-	NoticeLayout.decorate(_warning_panel, GOLD)
+	NoticeLayout.decorate(_warning_panel, GOLD, _warning_boss_name())
 	NoticeLayout.settle(_warning_panel, _warning_panel.get_parent())
 	_warning_panel.visible = true
 	_warning_panel.scale = Vector2.ONE
 	_warning_panel.modulate = Color.WHITE
 
-	_warning_tween = _warning_panel.create_tween()
+	_warning_tween = _warning_panel.create_tween().set_pause_mode(Tween.TWEEN_PAUSE_STOP)
 	if bool(SettingsManager.reduced_effects):
 		_warning_tween.tween_interval(BOSS_PRE_WARNING_HOLD)
 		_warning_tween.tween_callback(_hide_boss_warning)
 		return
 
 	_warning_panel.pivot_offset = _warning_panel.size * 0.5
-	_warning_panel.scale = Vector2(0.90, 0.90)
+	_warning_panel.scale = Vector2(0.98, 0.98)
 	_warning_panel.modulate = Color(1.0, 1.0, 1.0, 0.0)
 	_warning_tween.tween_property(
 		_warning_panel,
@@ -684,7 +685,7 @@ func _show_boss_warning() -> void:
 		"scale",
 		Vector2.ONE,
 		0.28
-	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	_warning_tween.tween_interval(BOSS_PRE_WARNING_HOLD - 0.54)
 	_warning_tween.tween_property(
 		_warning_panel,
@@ -758,7 +759,7 @@ func _extend_boss_arrival_banner(instance_id: int) -> void:
 	banner.z_index = 60
 	# HUD owns one fade sequence. This extension only styles the existing notice.
 	_add_arrival_ornaments(banner,theme,realm_id,stage_id)
-	NoticeLayout.decorate(banner,theme.get("border",GOLD))
+	NoticeLayout.decorate(banner,theme.get("border",GOLD),str(boss.encounter_display_name))
 	NoticeLayout.fit(banner,banner.get_parent())
 
 
@@ -773,12 +774,17 @@ func _add_arrival_ornaments(banner: PanelContainer, theme: Dictionary, realm_id:
 	tag.name = "RealmTag"
 	tag.text = "%s • %s" % [str(theme.get("realm_tag", "BOSS ENCOUNTER")), str(theme.get("stage_tag", "TRIAL %d-%d") % [realm_id, maxi(stage_id,1)])]
 	tag.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_style_label(tag, 11, theme.get("subtitle", GOLD))
 	content.add_child(tag)
 	content.move_child(tag, 1)
 
+
+func _warning_boss_name() -> String:
+	var realm: int=clampi(_active_realm_id,1,5)
+	var stages: Dictionary=preload("res://scripts/data/boss_premium_catalog.gd").Chapters[realm-1].STAGES
+	return str(stages.get(_active_stage_id,{}).get("boss_name",""))
 
 func _detect_realm_id() -> int:
 	if _level_root != null and _level_root.has_method("get"):

@@ -1,4 +1,5 @@
 {
-  "state": "docs/checkpoints/STUDIO_ELEGANCE_STATE_2026-10-24.json",
-  "base": "f3dc8f064ea7868c8af2d56db980624109d9d813"
+  "state": "docs/checkpoints/HOME_BOSS_FLOW_STATE_2026-10-24.json",
+  "base": "f3dc8f064ea7868c8af2d56db980624109d9d813",
+  "previous": "docs/checkpoints/STUDIO_ELEGANCE_STATE_2026-10-24.json"
 }

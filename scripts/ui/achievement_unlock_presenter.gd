@@ -162,8 +162,9 @@ func _build_toast(safe_area: Control, data: Dictionary) -> void:
 	row.add_theme_constant_override("separation", 12)
 	margin.add_child(row)
 
+	var compact: bool = safe_area.size.x < 380.0
 	var seal: Control = TrialsRecordSealScript.new()
-	seal.custom_minimum_size = Vector2(72.0, 72.0)
+	seal.custom_minimum_size = Vector2(48.0, 48.0) if compact else Vector2(72.0, 72.0)
 	seal.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	seal.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	seal.call("configure", category, "reward_ready", false)
@@ -177,10 +178,10 @@ func _build_toast(safe_area: Control, data: Dictionary) -> void:
 
 	var eyebrow := Label.new()
 	eyebrow.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	eyebrow.max_lines_visible = 2
+	eyebrow.max_lines_visible = 1 if compact else 2
 	eyebrow.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	eyebrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	eyebrow.add_theme_font_size_override("font_size", 13)
+	eyebrow.add_theme_font_size_override("font_size", 11 if compact else 13)
 	eyebrow.add_theme_color_override("font_color", accent)
 	eyebrow.text = "ETERNAL RECORD DISCOVERED  •  %s" % category.to_upper()
 	body.add_child(eyebrow)
@@ -190,7 +191,7 @@ func _build_toast(safe_area: Control, data: Dictionary) -> void:
 	title.max_lines_visible = 2
 	title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	title.add_theme_font_size_override("font_size", 20)
+	title.add_theme_font_size_override("font_size", 18 if compact else 20)
 	title.add_theme_color_override("font_color", Color(1.0, 0.91, 0.60, 1.0))
 	title.text = str(data.get("title", _current_id))
 	body.add_child(title)
@@ -198,26 +199,26 @@ func _build_toast(safe_area: Control, data: Dictionary) -> void:
 	var description := Label.new()
 	description.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	description.custom_minimum_size = Vector2(0.0, 34.0)
-	description.add_theme_font_size_override("font_size", 14)
+	description.add_theme_font_size_override("font_size", 12 if compact else 14)
 	description.add_theme_color_override("font_color", Color(0.78, 0.86, 0.84, 1.0))
 	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	description.max_lines_visible = 3
+	description.max_lines_visible = 2 if compact else 3
 	description.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	description.text = str(data.get("description", ""))
 	body.add_child(description)
 
 	var footer := VBoxContainer.new()
 	footer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	footer.add_theme_constant_override("separation", 8)
+	footer.add_theme_constant_override("separation", 4 if compact else 8)
 	body.add_child(footer)
 
 	var reward_label := Label.new()
 	reward_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	reward_label.max_lines_visible = 2
+	reward_label.max_lines_visible = 1 if compact else 2
 	reward_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	reward_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	reward_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	reward_label.add_theme_font_size_override("font_size", 13)
+	reward_label.add_theme_font_size_override("font_size", 11 if compact else 13)
 	reward_label.add_theme_color_override("font_color", Color(1.0, 0.78, 0.28, 1.0))
 	reward_label.text = "REWARD READY  •  +%d SPIRIT STONES" % reward
 	footer.add_child(reward_label)
@@ -246,7 +247,7 @@ func _layout_toast() -> void:
 		var strip: Control = safe.get_node_or_null(node_name)
 		if strip != null and strip.visible: top = maxf(top, strip.get_rect().end.y + 16.0)
 	_panel.size.y = maxf(TOAST_HEIGHT, _panel.get_combined_minimum_size().y)
-	_panel.position = Vector2((safe.size.x-_panel.size.x)*0.5, top)
+	_panel.position = Vector2((safe.size.x-_panel.size.x)*0.5, minf(top,maxf(12.0,safe.size.y-_panel.size.y-12.0)))
 
 func _make_panel_style(accent: Color) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
