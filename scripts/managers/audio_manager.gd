@@ -10,7 +10,7 @@ extends Node
 ## - existing gameplay/save/billing call sites stay untouched;
 ## - semantic overlays add identity to revive, boss, equipment and achievement events.
 
-const AUDIO_ROOT: String = "res://assets/audio/presentation_v3/"
+const AUDIO_ROOT: String = "res://assets/audio/chinese_music/"
 const MUSIC_TARGET_DB: float = -18.5
 const MUSIC_OFF_DB: float = -55.0
 
@@ -147,21 +147,17 @@ const SFX: Dictionary = {
 	]
 }
 const MUSIC: Dictionary = {
-	"home": preload("res://assets/audio/presentation_v3/music_home.ogg"),
-	"pavilion": preload("res://assets/audio/presentation_v3/music_pavilion.ogg"),
-	"journey": preload("res://assets/audio/presentation_v3/music_journey.ogg"),
-	"boss": preload("res://assets/audio/presentation_v3/music_boss.ogg"),
+	"home": preload("res://assets/audio/chinese_music/lotus_pond_loop.ogg"),
+	"pavilion": preload("res://assets/audio/chinese_music/lotus_pond_loop.ogg"),
+	"journey": preload("res://assets/audio/chinese_music/dragon_dance_loop.ogg"),
+	"boss": preload("res://assets/audio/chinese_music/dragon_dance_loop.ogg"),
 }
-const CREDITS: String = """Music and sound design — Jade Ascendant V3
-Menu Music — wipics (CC0), https://opengameart.org/content/menu-music-2
-Liyan — elerya (CC BY 3.0), https://opengameart.org/content/liyan
-Ritual — brainiac256 (CC BY 3.0), https://opengameart.org/content/ritual
-Samurai Nights — Majadroid (CC BY 3.0), https://opengameart.org/content/samurai-nights
-Music edited/normalized/converted for this game; no endorsement implied.
-CC BY 3.0: https://creativecommons.org/licenses/by/3.0/
-80 CC0 RPG SFX — rubberduck, https://opengameart.org/content/80-cc0-rpg-sfx
-Tinysized SFX — Vehicle / Jan Schupke, https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx
-SFX edited, layered, pitched and mixed for Jade Ascendant. CC0: https://creativecommons.org/publicdomain/zero/1.0/
+const CREDITS: String = """Music — Chinese Game Music v1.0, BiteMe Games
+Lotus Pond (loop) — menu / Pavilion; Dragon Dance (loop) — Journey / boss.
+https://bitemegames.itch.io/chinese-game-music
+Creator permits commercial project use; CC0 as listed on the creator page.
+Original loop timing preserved; fixed gain and Ogg conversion for Jade Ascendant.
+Original V2 / arsenal weapon sounds and the quiet single touch cue retained.
 """
 
 # V2.1 semantic overlays deliberately reuse the curated V2 palette as layers
@@ -510,6 +506,14 @@ func set_context(next_context: String) -> void:
 		or not MUSIC.has(next_context)
 		or music_players.is_empty()
 	):
+		return
+	# Menu/Pavilion (and Journey/boss) can share one approved track.
+	# Keep playback position and any active ducking instead of restarting it.
+	if (
+		(music_players[front].playing or music_players[front].stream_paused)
+		and music_players[front].stream == MUSIC[next_context]
+	):
+		context = next_context
 		return
 	context = next_context
 	if crossfade != null and crossfade.is_valid():

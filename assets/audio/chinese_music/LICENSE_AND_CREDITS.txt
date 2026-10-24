@@ -1,0 +1,16 @@
+Chinese Game Music v1.0 — BiteMe Games
+Source: https://bitemegames.itch.io/chinese-game-music
+User supplied the original Chinese Game Music v1.0.zip.
+
+The creator page marks this pack CC0 and permits use in commercial projects
+without attribution. Do not resell the music pack itself. This game distributes
+only the two converted runtime tracks, not the original source archive.
+CC0: https://creativecommons.org/publicdomain/zero/1.0/
+
+Lotus Pond - Loop.wav -> lotus_pond_loop.ogg (all menus / Pavilion)
+Dragon Dance - Loop.wav -> dragon_dance_loop.ogg (Journey / boss combat)
+
+Original 48 kHz stereo timing preserved. Only fixed gain (-1.10 / -2.94 dB)
+and Ogg Vorbis quality 5 conversion; no loop trimming, crossfade baked into
+the files or dynamic compression. Runtime keeps the existing quiet music mix.
+See provenance.json for original archive, WAV and converted Ogg hashes.

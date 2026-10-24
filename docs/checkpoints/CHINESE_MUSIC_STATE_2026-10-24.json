@@ -1,0 +1,28 @@
+{
+  "batch": "CHINESE_MUSIC_2026-10-24",
+  "base": "920b7201bf2dfc05aa54faeeac75c7ecb6380dc5",
+  "previous": "docs/checkpoints/PLAYER_COMFORT_STATE_2026-10-24.json",
+  "scope": "Approved BiteMe Games loops; same-track playback continuity; SFX untouched",
+  "tracks": {
+    "menus_and_pavilion": "Lotus Pond - Loop",
+    "journey_and_boss": "Dragon Dance - Loop"
+  },
+  "source_archive": "Chinese Game Music v1.0.zip supplied by owner",
+  "asset_evidence": "assets/audio/chinese_music/provenance.json",
+  "processing": "48 kHz stereo, exact authored frame counts; fixed gain only, Vorbis quality5; approximately2.5MB total",
+  "validation": {
+    "real_manager": "26 playback/loop/duck/background/cleanup checks in isolated Godot4.7.2",
+    "unaffected_game_tests": "Prior PlayerComfort/HomeBoss evidence reused",
+    "production_gates": 9,
+    "portable_publisher": "See delivered package evidence; local bare simulation only"
+  },
+  "stages": {
+    "implemented": "yes",
+    "author_commit_push": "not attempted; owner portable publisher prints verified GitHub link",
+    "deployment": "none required",
+    "native": "unchanged",
+    "AAB": "pending owner export after exact-SHA CI",
+    "Android": "not tested"
+  },
+  "next": "Run music portable launcher, wait Approved Chinese music CI for its exact commit, then one final production AAB export."
+}

@@ -1,5 +1,5 @@
 {
-  "state": "docs/checkpoints/PLAYER_COMFORT_STATE_2026-10-24.json",
-  "base": "25ee8ce92b6c3b6664ced28da1c3b157c1045c3d",
-  "previous": "docs/checkpoints/HOME_BOSS_FLOW_STATE_2026-10-24.json"
+  "state": "docs/checkpoints/CHINESE_MUSIC_STATE_2026-10-24.json",
+  "base": "920b7201bf2dfc05aa54faeeac75c7ecb6380dc5",
+  "previous": "docs/checkpoints/PLAYER_COMFORT_STATE_2026-10-24.json"
 }

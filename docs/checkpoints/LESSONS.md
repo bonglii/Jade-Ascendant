@@ -286,3 +286,18 @@
 
 - Strict editor import catches inherited member shadowing that plain game execution can permit; use binding_value instead of Node.owner in the new presenter. Check real module exports in dashboard tests rather than assuming every page has a default export.
 - A pending Home refresh may run after change_scene detaches the old tree; stop at the shared refresh entry before touching managers or child controls. Cover the resource-grant/menu-to-combat transition, not just static pages.
+
+## 2026-10-24 — complete portable dependency and audio lifecycle checks
+
+The PlayerComfort archive omitted transitive profile_guard.cjs because validation
+used publish-only. Include and recursively load every runtime helper before any
+publish mutation. Exercise the complete publish + game-sync + retry path with
+local project/LESSONS/IAP config and save bytes preserved. Do not rely solely on
+syntax checks or publish-only tests. Accept retained local project bytes only
+with a completed three-way merge receipt; later unrecorded edits still stop.
+
+AudioStreamPlayer.playing becomes false while stream_paused. Same-track music
+routing must accept the currently paused stream as well, preserving its position
+and duck envelope. Validate actual playback, loop wrap and background/resume;
+matching resource paths alone does not establish continuity. Prepare raw audio
+imports before enabling autoload preloads in a clean isolated test project.

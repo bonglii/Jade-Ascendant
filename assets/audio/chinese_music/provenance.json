@@ -1,0 +1,43 @@
+{
+  "creator": "BiteMe Games",
+  "pack": "Chinese Game Music v1.0",
+  "source_url": "https://bitemegames.itch.io/chinese-game-music",
+  "archive_sha256": "95b4bc12ca27761f8787b8f5570ed2f0f9a74b90554642d6843e67c3bff8c779",
+  "processing": "Fixed gain only; Ogg Vorbis quality 5, original 48000 Hz stereo; no trim, fade, resample or dynamic compression.",
+  "tracks": [
+    {
+      "source_file": "Lotus Pond - Loop.wav",
+      "source_sha256": "b907722cc5c7e7c17148ddca372de3ac242a6855e94b69ddafd534afb2e8ed01",
+      "file": "lotus_pond_loop.ogg",
+      "sha256": "c3789f5d5949277e3535fa88aefe1f6816ffb0f7cb8532be56f3ae8bab2ea323",
+      "bytes": 1222429,
+      "frames": 3072000,
+      "source_frames": 3072000,
+      "sample_rate": 48000,
+      "duration": 64.0,
+      "gain_db": -1.1,
+      "peak_dbfs": -3.411398410797119,
+      "conversion_snr_db": 23.281404495239258,
+      "source_wrap_delta": 0.007763653993606567,
+      "ogg_wrap_delta": 0.0030095353722572327,
+      "adjacent_delta_p99": 0.03954700008034706
+    },
+    {
+      "source_file": "Dragon Dance - Loop.wav",
+      "source_sha256": "003e2b61976bd98cfccf28c81d36b855c782c6ff7e666c5a82329bdf852dd4d3",
+      "file": "dragon_dance_loop.ogg",
+      "sha256": "750fb4246798f00ec01c16359daa53b102e2700c39605fb50e447be7c95b4596",
+      "bytes": 1277982,
+      "frames": 3291425,
+      "source_frames": 3291425,
+      "sample_rate": 48000,
+      "duration": 68.57135416666667,
+      "gain_db": -2.94,
+      "peak_dbfs": -4.962065696716309,
+      "conversion_snr_db": 26.510963439941406,
+      "source_wrap_delta": 0.027100294828414917,
+      "ogg_wrap_delta": 0.02090170979499817,
+      "adjacent_delta_p99": 0.017653822898864746
+    }
+  ]
+}
