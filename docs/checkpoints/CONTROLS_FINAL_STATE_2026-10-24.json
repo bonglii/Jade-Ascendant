@@ -1,0 +1,44 @@
+{
+  "batch": "CONTROLS_FINAL_2026-10-24",
+  "base": "fa106fe416de9373fd9fdc3bb0256332f58e2d9c",
+  "prior_batch_commit": "https://github.com/bonglii/Jade-Ascendant/commit/fa106fe416de9373fd9fdc3bb0256332f58e2d9c",
+  "phase": "Source, focused runtime/native GUI and portable package QA passed; owner publish/export pending",
+  "scope": [
+    "Three device-local joystick modes: floating full-speed default, fixed full-speed, floating proportional",
+    "Small drag outside deadzone reaches full speed; pause/release/focus/multi-touch protections retained",
+    "Settings integrated into existing native scroll policy, existing size/opacity preserved, reset covers mode",
+    "Yin Yang normal orbit accelerates from0.8 to1.1 turns/s acrossLv1\u20137; non-count upgrades update existing blades",
+    "Reversal keeps1.5x speed, four-second duration,144px/172.8px orbit, shared0.5s target hit interval and ledger unchanged",
+    "Combat stats show the real Yin Yang orbit period, including temporary Reversal"
+  ],
+  "stages": {
+    "source": "implemented",
+    "qa": "PASS_author_fixtures",
+    "installed_on_owner": false,
+    "commit": false,
+    "push": false,
+    "deploy_required": false,
+    "native_rebuild_required": false,
+    "aab_export": false,
+    "android_test": false
+  },
+  "pending": [
+    "Owner run D:\\Godot\\tools\\Jade-Controls-Final\\apply_and_publish.cmd; retain actual commit URL",
+    "Wait all triggered CI on exact printed commit; close the older editor and export one new AAB",
+    "Short Android check: default full speed from short drag, fixed/proportional alternatives, stop after pause/release, fasterLv7 blades"
+  ],
+  "next": "Run the standalone owner publisher; previous mobile batch already published as fa106fe; no Worker deploy or native rebuild required.",
+  "validation": {
+    "engine": "Verified Godot4.7.2",
+    "headless_controls": 65,
+    "headless_preferences_process_restart": 2,
+    "yin_yang_actual_transitions_physics_hits_and_ledger": 86,
+    "native_gui_controls_first_swipes": 65,
+    "native_gui_preferences_restart": 2,
+    "visual_review": "EN/ID actual Settings390x844, measured320x568 layout and first native swipe on the new dropdown; existing jade theme reused",
+    "production_contract": "PASS nine existing live gates",
+    "prior_evidence": "fa106fe contains completed prior seven-point mobile batch. Unchanged render, hazard, mail and Compass evidence reused.",
+    "scope_limits": "Author isolated Linux fixtures; no owner installation, commit/push, GitHub run, AAB export or Android test claimed.",
+    "portable_package": "PASS8: complete dependency load, verified CRLF-aware baseline plan, backup/install, idempotence, unrelated-edit preservation, injected rollback, traversal rejection and no deployment"
+  }
+}

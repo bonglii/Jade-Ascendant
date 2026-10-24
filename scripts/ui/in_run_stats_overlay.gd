@@ -365,6 +365,8 @@ func _refresh_live_loadout(stats: Node) -> void:
 			_set_value(key, "LV %d" % int(weapon.get("level")))
 			var cadence: Dictionary = manager.get_cadence_snapshot(weapon)
 			var cadence_text: String = "LV %d  ·  CAST %.2fs" % [int(weapon.get("level")), float(cadence.seconds)]
+			if key == "weapon_yin_yang_blades":
+				cadence_text = "LV %d  ·  ORBIT %.2fs" % [int(weapon.get("level")), TAU / float(weapon.get_current_orbit_speed())]
 			if bool(cadence.tempo):
 				cadence_text += "  ·  TEMPO %.2f×" % float(cadence.potency)
 			_set_value(key, cadence_text)

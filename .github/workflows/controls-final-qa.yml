@@ -1,0 +1,49 @@
+name: Controls and Yin Yang tempo
+on:
+  workflow_dispatch:
+  push:
+    branches: [checkpoint/iap-fasttrack-20261010]
+    paths:
+      - 'scripts/ui/joystick_prefs.gd'
+      - 'scripts/ui/virtual_joystick.gd'
+      - 'scripts/ui/settings_screen.gd'
+      - 'scripts/ui/in_run_stats_overlay.gd'
+      - 'scripts/weapon/yin_yang_blades_weapon.gd'
+      - 'scripts/data/skill_catalog.gd'
+      - 'tests/controls_comfort_smoke.gd'
+      - 'tests/yin_yang_tempo_smoke.gd'
+      - 'tests/check_controls_final.cjs'
+      - '.github/workflows/controls-final-qa.yml'
+permissions:
+  contents: read
+jobs:
+  mobile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verified engine and nine unchanged production gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          node backend/player_identity/production_release_contract.mjs
+          mkdir -p /tmp/jade-mobile
+          curl -fsSL --retry 3 https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip -o /tmp/jade-mobile/godot.zip
+          echo 'cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4  /tmp/jade-mobile/godot.zip' | sha256sum --check
+          unzip -q /tmp/jade-mobile/godot.zip -d /tmp/jade-mobile
+      - name: Actual movement, preference restart and real Yin Yang damage
+        run: node tests/check_controls_final.cjs "$PWD" /tmp/jade-mobile/Godot_v4.7.2-stable_linux.x86_64
+      - name: Native Settings rendering and first swipe on mode dropdown
+        run: xvfb-run -a node tests/check_controls_final.cjs "$PWD" /tmp/jade-mobile/Godot_v4.7.2-stable_linux.x86_64 --gui
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: controls-final-${{ github.sha }}
+          path: |
+            .local/controls_final_qa/*.log
+          if-no-files-found: error
+          retention-days: 14

@@ -457,3 +457,28 @@ an anonymous unauthenticated reward route or erase existing admin mail.
 Keep package install/publish/sync receipts and all transitive sync dependencies
 portable; no earlier tools folder is required. A passed author fixture does not
 mean owner publish, GitHub CI, AAB export or Android testing occurred.
+
+## 2026-10-24 — controls and Yin Yang final comfort pass
+
+Full-speed joystick output normalizes direction only after the existing deadzone;
+keep proportional response as an explicit local option. Fixed mode must leave a
+visible base and reject activation away from it. Preserve release, pause, focus
+and finger ownership. A live preference reload must use the authored radii, not
+multiply the last scaled radii repeatedly. Existing two-argument saves preserve
+mode, while Reset Controls explicitly restores the new full-speed default.
+
+Orbit speed used to be constant across all seven Yin Yang levels. When adding
+level-based tempo, update existing blades even when an upgrade adds no blade;
+otherwise Lv2/4/6 silently retain old speed. Keep sixLv7 blades, hit damage,
+Reversal multipliers, real orbit radius, shared0.5s target cooldown and applied
+HP-loss ledger. Combat stats must display actual orbit duration rather than the
+initial cast cooldown. Test actual moving/stationary physics contacts, inner-gap
+safety, all upgrade transitions and temporary Reversal, not just animation counts.
+
+Mount joystick input fixtures in the real screen-space CanvasLayer. A temporary
+Control attached to the world canvas inherits the Camera2D transform and yields
+false deadzone/multi-touch failures; diagnose the actual transformed coordinates
+before modifying production input. Test Settings' first swipe directly on the new
+OptionButton in both languages. An empty label hint must not reserve a blank row.
+Retain previous unchanged batch evidence. Author fixtures and verified package
+installation are separate from owner publish, exact-SHA CI, AAB and Android tests.

@@ -1,6 +1,6 @@
 extends Control
 
-## Floating Virtual Joystick — presentation preferences only.
+## Device-local floating/fixed joystick with full-speed or proportional response.
 ## The original input action contract and activation zone are preserved.
 const ACTION_LEFT: StringName = &"ui_left"
 const ACTION_RIGHT: StringName = &"ui_right"
@@ -23,11 +23,17 @@ var movement_vector: Vector2 = Vector2.ZERO
 var floating_center: Vector2 = Vector2.ZERO
 var input_ready: bool = false
 var platform_visible: bool = false
+var control_mode: int = ControlPrefs.DEFAULT_MODE
+var _prefs_revision: int = -1
+var _authored_base_radius: float
+var _authored_knob_radius: float
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	focus_mode = Control.FOCUS_NONE
+	_authored_base_radius = base_radius
+	_authored_knob_radius = knob_radius
 	_apply_control_preferences()
 	platform_visible = _should_show_for_platform()
 	input_ready = _validate_actions()
@@ -39,15 +45,23 @@ func _ready() -> void:
 
 func _apply_control_preferences() -> void:
 	var size_factor: float = ControlPrefs.get_size_factor()
-	base_radius *= size_factor
-	knob_radius *= size_factor
+	base_radius = _authored_base_radius * size_factor
+	knob_radius = _authored_knob_radius * size_factor
 	modulate.a = ControlPrefs.get_opacity()
+	control_mode = ControlPrefs.get_mode()
+	_prefs_revision = ControlPrefs.revision
 
 func _exit_tree() -> void:
 	_release_pointer()
 	_release_actions()
 
 func _process(_delta: float) -> void:
+	if _prefs_revision != ControlPrefs.revision:
+		_release_pointer()
+		_release_actions()
+		_apply_control_preferences()
+		floating_center = _get_idle_center()
+		queue_redraw()
 	var should_be_visible: bool = (
 		platform_visible and input_ready and not get_tree().paused
 	)
@@ -132,10 +146,12 @@ func _handle_mouse_motion(event: InputEventMouseMotion) -> void:
 
 func _begin_at_viewport_position(viewport_position: Vector2) -> void:
 	var local_position: Vector2 = _viewport_to_local(viewport_position)
-	floating_center = _clamp_center_to_safe_bounds(local_position)
+	floating_center = _get_idle_center() if control_mode == ControlPrefs.Mode.FIXED_FULL else _clamp_center_to_safe_bounds(local_position)
 	raw_offset = Vector2.ZERO
 	movement_vector = Vector2.ZERO
 	_release_actions()
+	if control_mode == ControlPrefs.Mode.FIXED_FULL:
+		_update_from_viewport_position(viewport_position)
 	queue_redraw()
 
 func _update_from_viewport_position(viewport_position: Vector2) -> void:
@@ -148,7 +164,7 @@ func _update_from_viewport_position(viewport_position: Vector2) -> void:
 	if magnitude <= deadzone:
 		movement_vector = Vector2.ZERO
 	else:
-		var remapped_strength: float = inverse_lerp(deadzone, 1.0, magnitude)
+		var remapped_strength: float = inverse_lerp(deadzone, 1.0, magnitude) if control_mode == ControlPrefs.Mode.FLOATING_ANALOG else 1.0
 		movement_vector = normalized.normalized() * clampf(remapped_strength, 0.0, 1.0)
 	_apply_actions(movement_vector)
 	queue_redraw()
@@ -187,6 +203,8 @@ func _is_inside_activation_zone(viewport_position: Vector2) -> bool:
 	var local_position: Vector2 = _viewport_to_local(viewport_position)
 	var zone_width: float = size.x * activation_width_ratio
 	var zone_top: float = size.y * activation_top_ratio
+	if control_mode == ControlPrefs.Mode.FIXED_FULL and local_position.distance_to(_get_idle_center()) > base_radius * 1.5:
+		return false
 	return (
 		local_position.x >= 0.0
 		and local_position.x <= zone_width
@@ -239,7 +257,7 @@ func _validate_actions() -> bool:
 	return true
 
 func _draw() -> void:
-	if not _is_engaged():
+	if not _is_engaged() and control_mode != ControlPrefs.Mode.FIXED_FULL:
 		return
 	var center: Vector2 = floating_center
 	var outer_gold: Color = Color(0.96, 0.73, 0.18, 0.72)
@@ -248,7 +266,7 @@ func _draw() -> void:
 	var inner_fill: Color = Color(0.008, 0.09, 0.10, 0.68)
 	var knob_fill: Color = Color(0.03, 0.42, 0.36, 0.90)
 	var knob_core: Color = Color(0.15, 0.92, 0.72, 0.88)
-	# Draw only when engaged, preserving the original floating input semantics.
+	# Fixed mode leaves its thumb target visible; floating modes appear on contact.
 	draw_circle(center, base_radius + 10.0, Color(0.0, 0.0, 0.0, 0.22))
 	draw_circle(center, base_radius, base_fill)
 	draw_arc(center, base_radius, 0.0, TAU, 72, outer_gold, 2.2, true)

@@ -23,7 +23,8 @@ const BASE_BLADE_COUNT: int = 2
 const MAX_BLADE_COUNT: int = 6
 
 const BASE_ORBIT_RADIUS: float = 144.0
-const BASE_ORBIT_SPEED: float = PI
+const BASE_ORBIT_SPEED: float = TAU * 0.8
+const ORBIT_SPEED_PER_LEVEL: float = TAU * 0.05
 const HIT_INTERVAL: float = 0.5
 
 const REVERSAL_DURATION: float = 4.0
@@ -112,6 +113,8 @@ func upgrade() -> bool:
 
 	if blade_count != previous_blade_count:
 		rebuild_blades()
+	else:
+		apply_current_orbit_stats()
 
 	print_upgrade_status()
 
@@ -306,11 +309,12 @@ func get_current_damage() -> float:
 
 ## Menghasilkan orbit speed sesuai runtime state.
 func get_current_orbit_speed() -> float:
+	var normal_speed: float = BASE_ORBIT_SPEED + ORBIT_SPEED_PER_LEVEL * float(level - 1)
 	if not reversal_active:
-		return BASE_ORBIT_SPEED
+		return normal_speed
 
 	return (
-		BASE_ORBIT_SPEED
+		normal_speed
 		* REVERSAL_ORBIT_SPEED_MULTIPLIER
 	)
 

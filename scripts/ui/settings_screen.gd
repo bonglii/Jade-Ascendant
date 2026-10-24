@@ -34,6 +34,9 @@ var _backup_restore: Button
 var _connection_tick: float = 0.0
 var fps_choice: OptionButton = null
 var language_choice: OptionButton = null
+var joystick_mode_choice: OptionButton = null
+var joystick_mode_hint: Label = null
+var _control_mode_index: int = ControlPrefs.DEFAULT_MODE
 var joystick_size_choice: OptionButton = null
 var joystick_opacity_slider: HSlider = null
 var joystick_opacity_label: Label = null
@@ -62,6 +65,7 @@ var monetization_qa_sequence: int = 0
 
 
 func _ready() -> void:
+	_control_mode_index = ControlPrefs.get_mode()
 	_control_size_index = ControlPrefs.get_size_index()
 	_control_opacity = ControlPrefs.get_opacity()
 	_build_presentation_options()
@@ -90,7 +94,7 @@ func _configure_settings_scroll_gestures() -> void:
 	# vertical gestures can reach the ScrollContainer. OptionButton defaults to
 	# action-on-PRESS, which opens popups in the middle of swipes. Every dropdown
 	# in this screen instead opens only on a deliberate release.
-	for option: OptionButton in [joystick_size_choice, fps_choice, language_choice, quality_choice]:
+	for option: OptionButton in [joystick_mode_choice, joystick_size_choice, fps_choice, language_choice, quality_choice]:
 		if option == null: continue
 		option.fit_to_longest_item = false
 		option.clip_text = true
@@ -172,7 +176,7 @@ func _register_scroll_drag(viewport_position: Vector2) -> void:
 	_scroll_gesture_active = true
 	_scroll_gesture_generation += 1
 	# An already-open popup must not remain stacked above a scrolling page.
-	for option: OptionButton in [joystick_size_choice, fps_choice, language_choice, quality_choice]:
+	for option: OptionButton in [joystick_mode_choice, joystick_size_choice, fps_choice, language_choice, quality_choice]:
 		if option != null and option.get_popup().visible:
 			option.get_popup().hide()
 
@@ -263,6 +267,9 @@ func _sync_from_settings() -> void:
 		fps_choice.select(0 if SettingsManager.frame_limit == 60 else 1)
 	if language_choice != null:
 		language_choice.select(1 if SettingsManager.language == "id" else 0)
+	if joystick_mode_choice != null:
+		joystick_mode_choice.select(_control_mode_index)
+		_update_joystick_mode_hint()
 	if joystick_size_choice != null:
 		joystick_size_choice.select(_control_size_index)
 	if joystick_opacity_slider != null:
@@ -332,10 +339,24 @@ func _build_presentation_options() -> void:
 	var control_card: PanelContainer = _create_settings_card(
 		parent_box, source_card, _local("CONTROLS", "KONTROL"),
 		_local("Movement & Joystick", "Gerakan & Joystick"),
-		_local("Customize the floating movement control.", "Sesuaikan kontrol gerak mengambang.")
+		_local("Customize movement response and thumb comfort.", "Atur respons gerak dan kenyamanan ibu jari.")
 	)
 	var control_box: VBoxContainer = control_card.get_child(0) as VBoxContainer
 	_add_section_rule(control_box, AQUA)
+	_add_setting_label(control_box, _local("Movement Mode", "Mode Analog"), "")
+	joystick_mode_choice = OptionButton.new()
+	joystick_mode_choice.name = "JoystickMode"
+	for title: String in [_local("FLOATING · FULL", "DINAMIS · PENUH"), _local("FIXED · FULL", "TETAP · PENUH"), _local("PROPORTIONAL", "PROPORSIONAL")]:
+		joystick_mode_choice.add_item(title)
+	joystick_mode_choice.custom_minimum_size.y = 56.0
+	control_box.add_child(joystick_mode_choice)
+	_apply_dropdown_polish(joystick_mode_choice)
+	joystick_mode_choice.item_selected.connect(_on_joystick_mode_selected)
+	joystick_mode_hint = Label.new()
+	joystick_mode_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	joystick_mode_hint.add_theme_color_override("font_color", MUTED)
+	joystick_mode_hint.add_theme_font_size_override("font_size", 16)
+	control_box.add_child(joystick_mode_hint)
 	_add_setting_label(control_box, _local("Joystick Size", "Ukuran Joystick"),
 		_local("Choose a comfortable thumb target.", "Pilih ukuran yang nyaman untuk ibu jari."))
 	joystick_size_choice = OptionButton.new()
@@ -503,6 +524,7 @@ func _add_setting_label(box: VBoxContainer, name_text: String, hint_text: String
 	title.add_theme_font_size_override("font_size", 16)
 	title.add_theme_color_override("font_color", IVORY)
 	box.add_child(title)
+	if hint_text.is_empty(): return
 	var hint := Label.new()
 	hint.text = hint_text
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -517,6 +539,30 @@ func _add_section_rule(box: VBoxContainer, accent: Color) -> void:
 	divider.color = Color(accent.r, accent.g, accent.b, 0.50)
 	divider.custom_minimum_size.y = 2.0
 	box.add_child(divider)
+
+
+func _on_joystick_mode_selected(index: int) -> void:
+	if is_syncing_ui: return
+	if _scroll_gesture_active:
+		_sync_from_settings()
+		return
+	var error: Error = ControlPrefs.save_preferences(_control_size_index, _control_opacity, index)
+	if error == OK:
+		_control_mode_index = clampi(index, 0, 2)
+	else:
+		push_warning("SettingsScreen: joystick mode save failed: " + str(error))
+	_sync_from_settings()
+
+
+func _update_joystick_mode_hint() -> void:
+	if joystick_mode_hint == null: return
+	match _control_mode_index:
+		ControlPrefs.Mode.FIXED_FULL:
+			joystick_mode_hint.text = _local("Fixed bottom-left control. A small drag gives full speed.", "Analog tetap di kiri bawah. Geser sedikit untuk kecepatan penuh.")
+		ControlPrefs.Mode.FLOATING_ANALOG:
+			joystick_mode_hint.text = _local("Control follows your first touch. Drag farther to move faster.", "Analog muncul di sentuhan pertama. Geser lebih jauh untuk bergerak lebih cepat.")
+		_:
+			joystick_mode_hint.text = _local("Control follows your first touch. A small drag gives full speed.", "Analog muncul di sentuhan pertama. Geser sedikit untuk kecepatan penuh.")
 
 
 func _on_joystick_size_selected(index: int) -> void:
@@ -554,8 +600,9 @@ func _save_joystick_preferences(size_index: int, opacity: float) -> void:
 func _on_reset_controls_pressed() -> void:
 	if _scroll_gesture_active:
 		return
-	var save_error: Error = ControlPrefs.save_preferences(1, 1.0)
+	var save_error: Error = ControlPrefs.save_preferences(1, 1.0, ControlPrefs.DEFAULT_MODE)
 	if save_error == OK:
+		_control_mode_index = ControlPrefs.DEFAULT_MODE
 		_control_size_index = 1
 		_control_opacity = 1.0
 	else:
