@@ -43,6 +43,9 @@ var presented_chapter: int = -1
 var _featured_key: String="boss_hunt"
 var _featured_scene: String=BOSS_SCENE
 var _feature_signature: String=""
+var _feature_motion: Tween
+var _feature_pending: String=""
+var _feature_offset: float=0.0
 const EventCatalog=preload("res://scripts/ui/liveops/event_hub_catalog.gd")
 const EventArtwork=preload("res://scripts/ui/liveops/event_identity_catalog.gd")
 
@@ -266,25 +269,62 @@ func _refresh_liveops_badges() -> void:
  event_card.visible=not pool.is_empty()
  if not pool.is_empty():
   var key: String=_featured_key if event_button.button_pressed and _featured_key in pool else pool[int(Time.get_ticks_msec()/6500)%pool.size()]
-  _featured_key=key
   var map: Dictionary={"boss_hunt":"celestial_boss_hunt","pilgrimage":"jade_valley_pilgrimage","heavenly_ladder":"heavenly_ladder","treasure_hunt":"celestial_treasure_hunt","five_elements":"path_of_five_elements"}
-  _featured_scene="res://scenes/ui/heavenly_trials_screen.tscn" if key=="heavenly_trials" else "res://scenes/ui/odyssey_screen.tscn" if key=="odyssey" else str(live_ops.get_event(str(map[key])).get("scene_path",""))
+  var destination: String="res://scenes/ui/heavenly_trials_screen.tscn" if key=="heavenly_trials" else "res://scenes/ui/odyssey_screen.tscn" if key=="odyssey" else str(live_ops.get_event(str(map[key])).get("scene_path",""))
   var info: Dictionary=EventCatalog.preview(self,key) if key!="odyssey" else {"current":preload("res://scripts/data/odyssey_progress.gd").current(client.snapshot.get("state",{})),"total":preload("res://scripts/data/odyssey_progress.gd").goal(client.snapshot.get("state",{})),"reward":{}}
-  event_card.get_node("FeaturedTitle").text=EventCatalog.title(key) if key!="odyssey" else "JADE DRAGON ODYSSEY"
-  event_card.get_node("EventKind").text=tr("CELESTIAL EVENTS")+" · %d/%d"%[pool.find(key)+1,pool.size()]
-  if _feature_signature!=key:
-   _feature_signature=key;event_window.get_node("EventArt").texture=EventArtwork.texture_for(key)
-   event_card.modulate.a=.92;create_tween().tween_property(event_card,"modulate:a",1.0,.22)
-  boss_progress.text="%d / %d"%[mini(int(info.current),int(info.total)),int(info.total)]
-  feature_dot.visible=ActionDot.count(self,key)>0
-  boss_reward.text=tr("REWARD READY") if feature_dot.visible else tr("CONTINUE YOUR JOURNEY")
-  event_action.text=(tr("CLAIM REWARD") if feature_dot.visible else tr("VIEW EVENT"))+" ›"
+  _request_feature(key,destination,info,pool.find(key)+1,pool.size())
+ else:
+  _cancel_feature_motion()
  login_state.text=tr("DAY")+" %d / %d"%[live_ops.get_active_login_day_count(),live_ops.LOGIN_DAY_COUNT]
  var unlocked: bool=IdleCultivationManager.is_unlocked()
  var claim_available: bool=unlocked and IdleCultivationManager.get_claimable_units()>0
  meditation_state.text=tr("READY") if claim_available else (tr("ACCUMULATING") if unlocked else tr("CLEAR 1-1"))
  meditation_badge.visible=claim_available
  meditation_button.disabled=not unlocked
+
+func _feature_visuals() -> Array[Control]:
+ if not is_instance_valid(event_card):return []
+ return [event_window,event_card.get_node("EventKind"),event_card.get_node("FeaturedTitle"),boss_progress,event_card.get_node("UpcomingRewardIcon"),boss_reward,event_action,feature_dot]
+
+func _set_feature_offset(value: float) -> void:
+ var difference: float=value-_feature_offset
+ for visual: Control in _feature_visuals():visual.position.x+=difference
+ _feature_offset=value
+
+func _set_feature_alpha(value: float) -> void:
+ for visual: Control in _feature_visuals():visual.modulate.a=value
+
+func _cancel_feature_motion() -> void:
+ if _feature_motion!=null and _feature_motion.is_valid():_feature_motion.kill()
+ _feature_motion=null;_feature_pending=""
+ _set_feature_offset(0.0);_set_feature_alpha(1.0)
+
+func _apply_feature(key: String,destination: String,info: Dictionary,index: int,total: int) -> void:
+ _featured_key=key;_featured_scene=destination;_feature_signature=key
+ event_card.get_node("FeaturedTitle").text=EventCatalog.title(key) if key!="odyssey" else "JADE DRAGON ODYSSEY"
+ event_card.get_node("EventKind").text=tr("CELESTIAL EVENTS")+" · %d/%d"%[index,total]
+ event_window.get_node("EventArt").texture=EventArtwork.texture_for(key)
+ boss_progress.text="%d / %d"%[mini(int(info.current),int(info.total)),int(info.total)]
+ feature_dot.visible=ActionDot.count(self,key)>0
+ boss_reward.text=tr("REWARD READY") if feature_dot.visible else tr("CONTINUE YOUR JOURNEY")
+ event_action.text=(tr("CLAIM REWARD") if feature_dot.visible else tr("VIEW EVENT"))+" ›"
+ event_button.tooltip_text=event_card.get_node("FeaturedTitle").text
+
+func _request_feature(key: String,destination: String,info: Dictionary,index: int,total: int) -> void:
+ if _feature_pending==key and _feature_motion!=null and _feature_motion.is_valid():return
+ if key==_feature_signature or _feature_signature.is_empty() or SettingsManager.reduced_effects:
+  if key!=_feature_signature or SettingsManager.reduced_effects:_cancel_feature_motion()
+  _apply_feature(key,destination,info,index,total);return
+ _cancel_feature_motion();_feature_pending=key
+ _feature_motion=create_tween().set_parallel(true)
+ _feature_motion.tween_method(_set_feature_offset,0.0,-24.0,.20).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+ _feature_motion.tween_method(_set_feature_alpha,1.0,0.0,.20)
+ _feature_motion.chain().tween_callback(func():
+  if not event_button.button_pressed:_apply_feature(key,destination,info,index,total)
+  _set_feature_offset(30.0))
+ _feature_motion.chain().tween_method(_set_feature_offset,30.0,0.0,.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+ _feature_motion.parallel().tween_method(_set_feature_alpha,0.0,1.0,.38)
+ _feature_motion.chain().tween_callback(func():_feature_pending="";_feature_motion=null)
 
 func _refresh_all() -> void:
  if not is_inside_tree() or profile_shortcut==null:return
@@ -302,6 +342,7 @@ func _configure_mobile_scroll() -> void:
  pass # Release-on-tap guard already owns the one shared scroller.
 
 func _layout_sanctuary() -> void:
+ _cancel_feature_motion()
  layout_queued=false
  if lower_scroll==null or size.x<=1 or size.y<=1:return
  portrait_unit=clampf(size.x/648.0,.49,1.8)
@@ -397,7 +438,7 @@ func _layout_sanctuary() -> void:
  _font_button(journey_button,20);_font_button(continue_button,17)
  var heading: Control=lower_stack.get_node("EventsHeading");heading.custom_minimum_size.y=heading_h
  var all_width: float=minf(width*.48,maxf(130,176*u))
- var caption: Label=heading.get_node("EventsCaption");_rect(caption,Vector2(3*u,0),Vector2(width-all_width-10*u,heading_h));_font(caption,20,true)
+ var caption: Label=heading.get_node("EventsCaption");_rect(caption,Vector2(3*u,8),Vector2(width-all_width-10*u,heading_h-8));_font(caption,20,true);caption.vertical_alignment=VERTICAL_ALIGNMENT_BOTTOM
  caption.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;caption.max_lines_visible=2
  caption.add_theme_font_size_override("font_size",maxi(18,roundi(20*u)))
  all_events_button.text=tr("ALL EVENTS")+" ›"

@@ -7,7 +7,7 @@ static func desired_velocity(boss: CharacterBody2D, target: Node2D, clock: float
  if distance<1.0:return Vector2.ZERO
  var direction: Vector2=offset/distance
  var manager: Node=target.get_node_or_null("WeaponManager")
- var reachable: float=230.0
+ var reachable: float=preload("res://scripts/data/weapon_reach.gd").BOSS
  if manager!=null:reachable=minf(float(manager.maximum_attack_range),float(manager.boss_attack_range))
  # Close into actual player reach, leaving a margin for both bodies and aim refresh.
  var engage: float=maxf(48.0,minf(reachable*.76,float(boss.melee_distance)+45.0))

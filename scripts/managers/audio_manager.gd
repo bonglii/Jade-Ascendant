@@ -398,6 +398,8 @@ func _on_equipment_changed_audio(
 	_slot_id: String,
 	item_id: String
 ) -> void:
+	if int(EquipmentManager.get_meta("quiet_loadout_sync_depth",0))>0:
+		return
 	if Time.get_ticks_msec() < equipment_change_suppress_until_msec:
 		return
 	if item_id.is_empty():

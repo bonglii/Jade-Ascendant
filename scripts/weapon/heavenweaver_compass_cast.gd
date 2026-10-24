@@ -1,4 +1,5 @@
 extends Node2D
+const Reach=preload("res://scripts/data/weapon_reach.gd")
 ## One persistent courier, maximum two dragon meshes. Damage is cadence-gated,
 ## never driven by frame count or by the decorative trail. No ownership bypass.
 const DRAGON = preload("res://assets/vfx/compass_pursuit/jade_dragon.png")
@@ -23,7 +24,7 @@ var applied_total: float = 0.0
 static func living(value: Variant) -> bool:
 	return is_instance_valid(value) and value is Node2D and not value.is_queued_for_deletion() and value.is_in_group("enemy") and not bool(value.get("is_dead")) and value.has_method("take_damage")
 static func in_range(player: Node2D, enemy: Node2D) -> bool:
-	return player.global_position.distance_squared_to(enemy.global_position) <= pow(230.0 if enemy.is_in_group("boss") else 320.0, 2)
+	return Reach.contains(player,enemy)
 func configure(player: Node2D, weapon: Node) -> void:
 	player_ref = weakref(player)
 	weapon_ref = weakref(weapon)

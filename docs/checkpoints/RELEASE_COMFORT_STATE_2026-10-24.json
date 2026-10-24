@@ -1,0 +1,45 @@
+{
+  "batch": "RELEASE_COMFORT_BATCH_2026-10-24",
+  "base": "b0019c1e34e894266049db128e9fce3232241b22",
+  "phase": "author QA passed; portable delivery verification",
+  "scope": [
+    "Quiet server loadout revalidation; explicit equip feedback retained",
+    "Lower Celestial Events caption and coordinated cancellable slideshow",
+    "Pause/resume existing Odyssey and Heavenly Trials using CSRF-protected published config",
+    "Shared normal400/boss300 reach; cast geometry/travel and YinYang144 radius consistent",
+    "Milestone reward confirmation layer340 above Profile300",
+    "Optional first_open announcement policy, account-scoped saved before presentation; additive Profile schema",
+    "Shared Studio typography and font size across event pages"
+  ],
+  "validation": {
+    "godot": "4.7.2 SHA256 verified; isolated import and affected suites passed",
+    "game_suites": {
+      "release_comfort_batch": 29,
+      "ascendant_arsenal": 74,
+      "returning_glaive": 66,
+      "odyssey_combat": 30,
+      "compass_pursuit": 195
+    },
+    "dashboard_dom": 54,
+    "server_tests": 28,
+    "profile_regression": 161,
+    "gui": "Native X11 390x844 Home and real milestone claim rendered and inspected; GUI suite29 passed",
+    "followup": "Real process restart2/2 and reward action input above Profile passed",
+    "production_gates": 9,
+    "unaffected_previous": "Reuse prior approved music, payment and unrelated green CI; no broad retest"
+  },
+  "stages": {
+    "source_implemented": true,
+    "author_qa": true,
+    "owner_install": false,
+    "commit": false,
+    "push": false,
+    "profile_deploy": false,
+    "iap_deploy": "not_required",
+    "native_rebuild": "not_required",
+    "aab_export": false,
+    "android_test": false
+  },
+  "next": "Owner apply_and_publish.cmd; wait exact-SHA CI; one new client AAB with versionCode above32 using established production exporter",
+  "caveat": "First-open is per account on received active announcement, not exclusively first-ever installation. Already-read IDs remain read. No live event or message was activated by author."
+}

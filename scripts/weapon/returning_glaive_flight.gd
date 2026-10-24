@@ -1,4 +1,5 @@
 extends Node2D
+const Reach=preload("res://scripts/data/weapon_reach.gd")
 
 ## One bounded flight. Collision is swept between simulated positions, not
 ## based on rendered frames. One hit per enemy per phase, including spin.
@@ -27,8 +28,8 @@ var return_bonus_used: bool = false
 var hits: Dictionary = {}
 var trail: PackedVector2Array = PackedVector2Array()
 var hit_flashes: Array[Dictionary] = []
-var normal_range: float = 320.0
-var boss_range: float = 230.0
+var normal_range: float = Reach.NORMAL
+var boss_range: float = Reach.BOSS
 
 static func living(value: Variant) -> bool:
 	return is_instance_valid(value) and value is Node2D and not value.is_queued_for_deletion() and value.is_in_group("enemy") and not bool(value.get("is_dead")) and value.has_method("take_damage")

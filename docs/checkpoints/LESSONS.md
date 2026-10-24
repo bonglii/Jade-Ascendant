@@ -333,3 +333,72 @@ unrelated audio before this non-audio fixture performs actions, as the economy
 fixture already does. Keep dedicated real audio playback tests enabled and the
 strict shared error gate unchanged. Run the previously blocked successor suite,
 reuse already-passing checks, and distinguish fixture repair from product changes.
+
+## 2026-10-24 — connection refresh, overlay order and complete recovery
+
+Server loadout revalidation emits equipment_changed for UI/stats. Treat that as
+synchronization, not manual equip audio. Scope and restore a reentrant quiet
+context; do not suppress refresh signals or globally mute gameplay feedback.
+
+Check shared reward z-order against the actual Profile overlay (300), then
+claim a real milestone and dispatch input to its visible reward action. A popup
+existing in the tree is insufficient evidence that it is readable or clickable.
+
+Keep all weapon acquisition, cast caps and actual travel/visual extents in one
+reach contract. Validate new-edge hits and old per-cast totals together. Never
+claim a range buff from selector changes alone.
+
+An analysis-only checkpoint cannot restore unuploaded implementation bytes.
+The author runtime reset exposed this gap. Include changed source, exact base,
+launcher dependencies and evidence in every durable checkpoint before long QA.
+
+Async admin readiness must refresh after reading=false, not only while rendering
+inside an in-flight fetch. Exercise pause/resume, double click and dirty draft
+protection through actual browser DOM handlers. Keep page-local fonts consistent
+with the shared content-versioned Studio stylesheet.
+
+## 2026-10-24 — connection refresh, overlay order and complete recovery
+
+Server loadout revalidation emits equipment_changed for UI/stats. Treat that as
+synchronization, not manual equip audio. Scope and restore a reentrant quiet
+context; do not suppress refresh signals or globally mute gameplay feedback.
+
+Check shared reward z-order against the actual Profile overlay (300), then
+claim a real milestone and dispatch input to its visible reward action. A popup
+existing in the tree is insufficient evidence that it is readable or clickable.
+
+Keep all weapon acquisition, cast caps and actual travel/visual extents in one
+reach contract. Validate new-edge hits and old per-cast totals together. Never
+claim a range buff from selector changes alone.
+
+An analysis-only checkpoint cannot restore unuploaded implementation bytes.
+The author runtime reset exposed this gap. Include changed source, exact base,
+launcher dependencies and evidence in every durable checkpoint before long QA.
+
+Async admin readiness must refresh after reading=false, not only while rendering
+inside an in-flight fetch. Exercise pause/resume, double click and dirty draft
+protection through actual browser DOM handlers. Keep page-local fonts consistent
+with the shared content-versioned Studio stylesheet.
+
+## 2026-10-24 — connection refresh, overlay order and complete recovery
+
+Server loadout revalidation emits equipment_changed for UI/stats. Treat that as
+synchronization, not manual equip audio. Scope and restore a reentrant quiet
+context; do not suppress refresh signals or globally mute gameplay feedback.
+
+Check shared reward z-order against the actual Profile overlay (300), then
+claim a real milestone and dispatch input to its visible reward action. A popup
+existing in the tree is insufficient evidence that it is readable or clickable.
+
+Keep all weapon acquisition, cast caps and actual travel/visual extents in one
+reach contract. Validate new-edge hits and old per-cast totals together. Never
+claim a range buff from selector changes alone.
+
+An analysis-only checkpoint cannot restore unuploaded implementation bytes.
+The author runtime reset exposed this gap. Include changed source, exact base,
+launcher dependencies and evidence in every durable checkpoint before long QA.
+
+Async admin readiness must refresh after reading=false, not only while rendering
+inside an in-flight fetch. Exercise pause/resume, double click and dirty draft
+protection through actual browser DOM handlers. Keep page-local fonts consistent
+with the shared content-versioned Studio stylesheet.

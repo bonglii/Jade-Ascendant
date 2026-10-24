@@ -1,6 +1,7 @@
 extends CanvasLayer
 ## Plain-text broadcasts share existing mail authentication and wait for safe menus.
 var _owner: String = ""
+var _app_focused: bool=true
 var _queue: Array[Dictionary] = []
 var _current: Dictionary = {}
 var _session_seen: Dictionary = {}
@@ -38,6 +39,7 @@ func _valid_entry(value: Variant) -> bool:
 	if id.length() != 32: return false
 	for character: String in id:
 		if not "0123456789abcdef".contains(character): return false
+	if value.get("display_policy","until_read") not in ["until_read","first_open"]: return false
 	if value.get("kind") not in ["notice", "event", "maintenance"]: return false
 	for key: String in ["title", "body"]:
 		if not value.get(key) is String or str(value[key]).strip_edges().is_empty(): return false
@@ -63,6 +65,8 @@ func accept_snapshot(account_owner: String, entries: Variant, server_time: int) 
 		hide()
 	for entry: Dictionary in entries:
 		var id: String = str(entry.id)
+		if ServerMailManager.is_announcement_seen(id) and (_current.is_empty() or id!=str(_current.id)):
+			ServerMailManager.dismiss_announcement(id,_owner)
 		if not _session_seen.has(id) and not ServerMailManager.is_announcement_seen(id) and (_current.is_empty() or id != str(_current.id)):
 			_queue.append(entry.duplicate(true))
 	return true
@@ -72,7 +76,7 @@ func _now() -> int:
 
 func _blocked() -> bool:
 	var scene: Node = get_tree().current_scene
-	if scene == null or get_tree().paused or SceneTransitionManager.is_transitioning: return true
+	if not _app_focused or SaveManager.is_progress_read_only() or scene == null or get_tree().paused or SceneTransitionManager.is_transitioning: return true
 	if get_tree().get_first_node_in_group("player") != null: return true
 	if scene.scene_file_path != "res://scenes/ui/main_menu.tscn": return true
 	for node: Node in scene.find_children("*", "Control", true, false):
@@ -109,6 +113,10 @@ func _process(delta: float) -> void:
 			break
 
 func _present() -> void:
+	if _current.get("display_policy","until_read")=="first_open":
+		if not ServerMailManager.mark_announcement_presented(str(_current.id),_owner):
+			_queue.push_front(_current);_current={};_next_at=Time.get_ticks_msec()+1000;hide();return
+		_session_seen[str(_current.id)]=true
 	if not is_instance_valid(_panel): _build()
 	_title.text = str(_current.title)
 	_body.text = str(_current.body)
@@ -224,3 +232,7 @@ func _fit() -> void:
 	_margin.add_theme_constant_override("margin_bottom", 38)
 	_panel.size = desired
 	_panel.position = Vector2((area.size.x - desired.x) * 0.5, inset_top + (area.size.y - inset_top - inset_bottom - desired.y) * 0.5)
+
+func _notification(what: int) -> void:
+	if what in [NOTIFICATION_APPLICATION_PAUSED,NOTIFICATION_APPLICATION_FOCUS_OUT]:_app_focused=false
+	elif what in [NOTIFICATION_APPLICATION_RESUMED,NOTIFICATION_APPLICATION_FOCUS_IN]:_app_focused=true

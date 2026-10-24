@@ -12,11 +12,10 @@ signal weapon_attack_triggered(
 
 const EquipmentSetRuntime = preload("res://scripts/data/equipment_set_runtime.gd")
 
-## Normal enemies remain reachable at short screen distance. Boss targets
-## require a closer approach: the smallest configured boss ranged-AI radius
-## across Chapters 1-3 is 240 px, so 230 px prevents free off-screen damage.
-@export_range(120.0, 500.0, 10.0) var maximum_attack_range: float = 320.0
-@export_range(100.0, 500.0, 10.0) var boss_attack_range: float = 230.0
+const Reach=preload("res://scripts/data/weapon_reach.gd")
+## Keep ranged targets reachable; casts use the same bounded hit contract.
+@export_range(120.0,500.0,10.0) var maximum_attack_range: float=Reach.NORMAL
+@export_range(100.0,500.0,10.0) var boss_attack_range: float=Reach.BOSS
 
 ## Reuse one nearest enemy for all weapon cooldowns until this short interval
 ## expires. Retarget immediately if the cached enemy dies or leaves the radius.

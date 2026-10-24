@@ -21,6 +21,10 @@ button,input,textarea,select{font:inherit}button{cursor:pointer;min-height:44px;
 #studio .grid[data-view]>.card+.card{margin-top:0}
 .studio-nav>.nav-brand{text-decoration:none}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+
+.event-access-control{margin-bottom:20px}.event-access-control .topline{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}.event-access-control button{min-width:180px}
+body{font-family:system-ui,"Segoe UI",sans-serif;font-size:14px;line-height:1.6}
+.studio-workspace,.studio-workspace p,.studio-workspace h1,.studio-workspace h2,.studio-workspace h3,.studio-workspace strong,.studio-workspace label,.studio-workspace input,.studio-workspace textarea,.studio-workspace select,.studio-workspace button{font-family:system-ui,"Segoe UI",sans-serif}
 `;
 // Content-versioned public presentation asset. This is not an auth token.
 let styleRevision=2166136261;

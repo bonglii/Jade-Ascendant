@@ -98,10 +98,18 @@ func run() -> void:
    check(Ledger.SOURCES.has(id),"ledger source "+id)
    await clear()
   v=victim(Vector2(100,0),true)
-  var outside:=victim(Vector2(231,0),true)
+  var outside:=victim(Vector2(301,0),true)
   var c: Node=cast(id,v,7);advance(c,2.6)
-  check(outside.hits==0,"boss range230 "+id)
+  check(outside.hits==0,"boss range300 "+id)
   await clear()
+ # Actual hits at the extended edge, with unchanged per-cast damage.
+ for id: String in ["phoenix_war_fan","void_piercer_spear"]:
+  for distance: float in [295.0,390.0]:
+   v=victim(Vector2(distance,0),distance<300)
+   var extended: Node=cast(id,v,7);advance(extended,2.6)
+   check(v.hits>0,"extended range actual hit "+id+str(distance))
+   check(is_equal_approx(v.received,40*(.90 if id=="phoenix_war_fan" else 2.86)),"extended reach preserves damage "+id)
+   await clear()
  # Snapshot line can be dodged; fan central path remains a true path.
  v=victim(Vector2(160,0));var spear: Node=cast("void_piercer_spear",v,7)
  advance(spear,.20);check(v.hits==0,"spear charge has no early damage")

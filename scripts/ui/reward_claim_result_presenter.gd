@@ -425,7 +425,7 @@ func _build_result_popup(
 	_popup = Control.new()
 	_popup.name = "UnifiedRewardClaimPopup"
 	_popup.process_mode = Node.PROCESS_MODE_ALWAYS
-	_popup.z_index = 220
+	_popup.z_index = 340 # Above the Home profile sheet (300).
 	_popup.mouse_filter = Control.MOUSE_FILTER_STOP
 	scene.add_child(_popup)
 	_popup.set_anchors_and_offsets_preset(

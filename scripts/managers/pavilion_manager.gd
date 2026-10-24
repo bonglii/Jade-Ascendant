@@ -425,8 +425,12 @@ func get_celestial_jade() -> int:
 	return get_local_celestial_jade() + (int(paid_gameplay.call("paid_balance")) if is_instance_valid(paid_gameplay) else 0)
 func _paid_gameplay_changed() -> void:
 	pavilion_changed.emit()
+	# A server snapshot is not an explicit player equip action.
+	var sync_depth: int=int(EquipmentManager.get_meta("quiet_loadout_sync_depth",0))
+	EquipmentManager.set_meta("quiet_loadout_sync_depth",sync_depth+1)
 	for slot: String in EquipmentManager.get_slot_ids():
 		EquipmentManager.equipment_changed.emit(slot, EquipmentManager.get_loadout_equipped_item_id(slot))
+	EquipmentManager.set_meta("quiet_loadout_sync_depth",sync_depth)
 	if is_instance_valid(paid_gameplay) and bool(paid_gameplay.call("checkout_ready")) and not secure_purchase_authority_ready:
 		call_deferred("_refresh_secure_purchase_context")
 

@@ -82,6 +82,16 @@ func run() -> void:
     var saved: Dictionary=ledger.snapshot();ledger.restore(saved)
     check(is_equal_approx(float(ledger.totals.get("heavenweaver_compass",0)),loss),"Continue keeps damage total")
     check(ledger.skills().any(func(row: Dictionary) -> bool:return row.id=="spirit_sword" and row.armament_id=="heavenweaver_compass"),"Compass report skill identity")
+ for boss_case: bool in [false,true]:
+  clear_case();make_weapon(7);stats.attack_cooldown=1
+  var extended_target: Node2D=target(Vector2(295 if boss_case else 390,0),boss_case)
+  check(manager._is_target_attackable(extended_target),"manager reaches extended target")
+  for frame: int in 180:
+   extended_target.global_position=player.global_position+Vector2.from_angle(float(frame)*.002)*(295 if boss_case else 390)
+   tick()
+  check(total_loss()>0,"pursuit actually hits moving target at extended reach")
+  extended_target.global_position=player.global_position+Vector2(301 if boss_case else 401,0)
+  check(not manager._is_target_attackable(extended_target),"shared manager boundary remains bounded")
  clear_case();make_weapon(7);stats.attack_cooldown=1
  var first: Node2D=target(Vector2(160,0));var closer: Node2D=target(Vector2(-280,0))
  for i: int in 80:tick()

@@ -1,4 +1,5 @@
 extends SpiritSwordWeapon
+const Reach=preload("res://scripts/data/weapon_reach.gd")
 
 const Cast = preload("res://scripts/weapon/jade_binding_cast.gd")
 
@@ -20,7 +21,7 @@ func attack(player: Node2D, target: Node2D) -> void:
 	for node: Node in get_tree().get_nodes_in_group("enemy"):
 		if not Cast.living(node) or node == target: continue
 		if node.global_position.distance_to(target.global_position) > radius: continue
-		if node.global_position.distance_to(player.global_position) > (230.0 if node.is_in_group("boss") else 320.0): continue
+		if not Reach.contains(player,node): continue
 		candidates.append(node)
 	candidates.sort_custom(func(a: Node2D, b: Node2D) -> bool: return a.global_position.distance_squared_to(target.global_position) < b.global_position.distance_squared_to(target.global_position))
 	for candidate: Node2D in candidates:

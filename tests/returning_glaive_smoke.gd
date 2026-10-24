@@ -36,7 +36,7 @@ func run() -> void:
  var w: Node=WeaponScript.new();w.configure_armament("celestial_returning_glaive");p.add_child(w)
  check(w.weapon_name=="Spirit Sword" and w.get_combat_display_name()=="Celestial Returning Glaive","stable save key, distinct public identity")
  check(w.cooldown==2.1,"authored returning cadence")
- var a:=victim(Vector2(100,0));var spin:=victim(Vector2(116,0));var boss:=victim(Vector2(250,0),true)
+ var a:=victim(Vector2(100,0));var spin:=victim(Vector2(116,0));var boss:=victim(Vector2(310,0),true)
  var f: Node=flight(p,a.position)
  f._advance(.31,p,get_nodes_in_group("enemy"));check(is_equal_approx(a.amount,8),"swept outbound catches enemy skipped by a slow rendered frame")
  f._advance(.09,p,get_nodes_in_group("enemy"));check(a.count==1,"outbound overlap cannot repeat hit")
@@ -90,9 +90,9 @@ func run() -> void:
  check(is_equal_approx(close.amount,11) and outside.amount==0,"closure radius58 and35 percent base, separate from return75 percent")
  f._advance(.10,p,nodes([close,outside]));check(close.count==2,"caught ring cannot damage every frame")
  f.queue_free();await process_frame
- var unreachable:=victim(Vector2(250,0),true)
- f=flight(p,Vector2(290,0));f._sweep(Vector2(200,0),Vector2(290,0),p,nodes([unreachable]),0,.8)
- check(unreachable.amount==0,"boss reach230 enforced for swept hits")
+ var unreachable:=victim(Vector2(310,0),true)
+ f=flight(p,Vector2(290,0));f._sweep(Vector2(280,0),Vector2(340,0),p,nodes([unreachable]),0,.8)
+ check(unreachable.amount==0,"boss reach300 enforced for swept hits")
  var dead:=victim(Vector2(40,0));dead.is_dead=true
  f._sweep(Vector2.ZERO,Vector2(100,0),p,nodes([dead]),0,.8);check(dead.count==0,"dead enemy ignored")
  dead.queue_free();await process_frame

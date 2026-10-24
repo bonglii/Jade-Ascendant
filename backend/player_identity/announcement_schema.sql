@@ -17,3 +17,8 @@ CREATE TABLE IF NOT EXISTS player_announcement_reads (
  read_at INTEGER NOT NULL,
  PRIMARY KEY(announcement_id,owner_binding)
 );
+
+CREATE TABLE IF NOT EXISTS player_announcement_presentation (
+ announcement_id TEXT PRIMARY KEY REFERENCES player_announcements(id),
+ display_policy TEXT NOT NULL CHECK(display_policy IN ('until_read','first_open'))
+);

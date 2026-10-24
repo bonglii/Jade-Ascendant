@@ -22,7 +22,7 @@ const DAMAGE_PER_LEVEL: float = 3.0
 const BASE_BLADE_COUNT: int = 2
 const MAX_BLADE_COUNT: int = 6
 
-const BASE_ORBIT_RADIUS: float = 116.0
+const BASE_ORBIT_RADIUS: float = 144.0
 const BASE_ORBIT_SPEED: float = PI
 const HIT_INTERVAL: float = 0.5
 

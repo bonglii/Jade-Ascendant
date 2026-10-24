@@ -128,8 +128,9 @@ func is_announcement_seen(id: String) -> bool:
 	var ids: Variant = seen.get(_owner, [])
 	return ids is Array and id in ids
 
-func dismiss_announcement(id: String, account_owner: String) -> bool:
+func mark_announcement_presented(id: String, account_owner: String) -> bool:
 	if account_owner != _owner or account_owner.is_empty() or not _valid_id(id): return false
+	if is_announcement_seen(id): return true
 	var data: Dictionary = _state.duplicate(true)
 	var raw: Variant = data.get("announcement_seen", {})
 	var seen: Dictionary = raw.duplicate(true) if raw is Dictionary else {}
@@ -142,8 +143,12 @@ func dismiss_announcement(id: String, account_owner: String) -> bool:
 	data.announcement_seen = seen
 	var saved: bool = not data.is_empty() and bool(SaveManager.write_save_data(DOMAIN, data).get("success", false))
 	if saved: _state = data
-	_enqueue("announcement_read", id, {"announcement_id": id})
 	return saved
+
+func dismiss_announcement(id: String, account_owner: String) -> bool:
+	if not mark_announcement_presented(id,account_owner): return false
+	_enqueue("announcement_read", id, {"announcement_id": id})
+	return true
 
 func _mail_time() -> int:
 	return _server_time + maxi(0,int(float(Time.get_ticks_msec()-_observed_ticks)/1000.0)) if _server_time > 0 else 0

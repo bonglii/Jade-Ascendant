@@ -51,11 +51,11 @@ func run() -> void:
   check(is_equal_approx(courier.applied_total,10000-target.current_hp),"applied HP loss accounts for every hit/echo")
   check(courier.heads.size()==(2 if combat_level==7 else 1),"dragon milestone "+str(combat_level))
   check(courier.echoes.size()<=2 and courier.impacts.size()<=8,"bounded delayed effects")
-  target.position=Vector2(240,0)
+  target.position=Vector2(301,0)
   var hp: float=target.current_hp
   for frame: int in 60:
    courier.strike_tick(10.0,combat_level);courier._physics_process(1.0/60.0)
-  check(is_equal_approx(target.current_hp,hp),"boss beyond230px receives no hit or afterimage")
+  check(is_equal_approx(target.current_hp,hp),"boss beyond300px receives no hit or afterimage")
   client.run_authorized=false;courier._physics_process(.016)
   check(courier.is_queued_for_deletion(),"revoked authorization removes persistent courier")
   courier.free();target.free();client.run_authorized=true

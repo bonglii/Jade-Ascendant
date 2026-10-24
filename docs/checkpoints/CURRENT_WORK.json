@@ -1,5 +1,5 @@
 {
-  "state": "docs/checkpoints/CI_AUDIO_CLOSURE_STATE_2026-10-24.json",
-  "base": "d5b6bec2e9226b9e915c68cb52e6b9dcedffe665",
-  "previous": "docs/checkpoints/CHINESE_MUSIC_IMPORT_STATE_2026-10-24.json"
+  "state": "docs/checkpoints/RELEASE_COMFORT_STATE_2026-10-24.json",
+  "base": "b0019c1e34e894266049db128e9fce3232241b22",
+  "previous": "docs/checkpoints/CI_AUDIO_CLOSURE_STATE_2026-10-24.json"
 }

@@ -1,4 +1,5 @@
 extends Node2D
+const Reach=preload("res://scripts/data/weapon_reach.gd")
 ## Three separate readable mechanics share bounded bookkeeping, not attack geometry.
 const Ledger=preload("res://scripts/weapon/run_combat_ledger.gd")
 const Slow=preload("res://scripts/weapon/jade_binding_slow.gd")
@@ -6,6 +7,7 @@ const MAX_ACTIVE_CASTS: int=8
 var mode: String=""
 var level: int=1
 var amount: float=10
+var cast_reach: float=Reach.NORMAL
 var age: float=0
 var origin: Vector2
 var aim: Vector2=Vector2.RIGHT
@@ -23,6 +25,7 @@ static func living(value: Variant) -> bool:
  return is_instance_valid(value) and value is Node2D and value.is_inside_tree() and not value.is_queued_for_deletion() and value.is_in_group("enemy") and not bool(value.get("is_dead")) and value.has_method("take_damage")
 func configure(player: Node2D,target: Node2D,id: String,run_level: int,damage: float) -> void:
  mode=id;level=run_level;amount=damage;player_ref=weakref(player)
+ cast_reach=Reach.normal(player)
  origin=player.global_position;global_position=origin;aim=origin.direction_to(target.global_position)
  if aim==Vector2.ZERO:aim=Vector2.RIGHT
  z_index=7;add_to_group("ascendant_armament_cast")
@@ -58,11 +61,11 @@ func _physics_process(delta: float) -> void:
     phases_done[pulse]=true;
     if pulse==0:get_tree().root.get_node("AudioManager").play_sfx("astral_bell")
     _pulse(player,pulse)
- var lifetime: float=1.10 if mode=="phoenix_war_fan" else .78 if mode=="void_piercer_spear" else .20+(pulses-1)*.55+.65
+ var lifetime: float=maxf(1.10,cast_reach/300.0+.10) if mode=="phoenix_war_fan" else .78 if mode=="void_piercer_spear" else .20+(pulses-1)*.55+.65
  if age>=lifetime:queue_free();return
  queue_redraw()
-func reachable(enemy: Node2D,_player: Node2D) -> bool:
- return enemy.global_position.distance_squared_to(origin)<=pow(230 if enemy.is_in_group("boss") else 320,2)
+func reachable(enemy: Node2D,player: Node2D) -> bool:
+ return enemy.global_position.distance_squared_to(origin)<=pow(Reach.limit(player,enemy),2)
 func _hit(player: Node2D,enemy: Node2D,multiplier: float,resonance: bool=false) -> void:
  if not living(enemy) or not reachable(enemy,player):return
  var stats: Node=player.get("player_stats")
@@ -94,13 +97,13 @@ func _advance_fan(player: Node2D,delta: float) -> void:
    feather.hits[id]=true;fan_hits[id]=int(fan_hits.get(id,0))+1
    _hit(player,enemy,.90,bool(feather.central))
   feather.position=finish
-  if feather.hits.size()>=(2 if level>=5 else 1) or origin.distance_squared_to(finish)>320*320:feather.spent=true
+  if feather.hits.size()>=(2 if level>=5 else 1) or origin.distance_squared_to(finish)>cast_reach*cast_reach:feather.spent=true
 func _thrust(player: Node2D,multiplier: float) -> void:
  var candidates: Array[Node2D]=[]
  var width: float=18+3*int(level>=3)+3*int(level>=7)
  for node: Node in get_tree().get_nodes_in_group("enemy"):
   if not living(node) or not reachable(node,player):continue
-  var closest: Vector2=Geometry2D.get_closest_point_to_segment(node.global_position,origin,origin+aim*320)
+  var closest: Vector2=Geometry2D.get_closest_point_to_segment(node.global_position,origin,origin+aim*cast_reach)
   if closest.distance_squared_to(node.global_position)<=width*width:candidates.append(node)
  candidates.sort_custom(func(a: Node2D,b: Node2D):return a.global_position.distance_squared_to(origin)<b.global_position.distance_squared_to(origin))
  for index: int in range(mini(candidates.size(),8)):_hit(player,candidates[index],multiplier,multiplier>1)
@@ -136,22 +139,22 @@ func _draw() -> void:
  elif mode=="void_piercer_spear":
   var width: float=18+3*int(level>=3)+3*int(level>=7)
   if age<.3:
-   draw_line(Vector2.ZERO,aim*320,Color(.67,.55,1,.4),1.5,true)
-   draw_line(aim.orthogonal()*width,aim*320+aim.orthogonal()*width,Color(.81,.70,1,.12),1,true)
-   draw_line(-aim.orthogonal()*width,aim*320-aim.orthogonal()*width,Color(.81,.70,1,.12),1,true)
+   draw_line(Vector2.ZERO,aim*cast_reach,Color(.67,.55,1,.4),1.5,true)
+   draw_line(aim.orthogonal()*width,aim*cast_reach+aim.orthogonal()*width,Color(.81,.70,1,.12),1,true)
+   draw_line(-aim.orthogonal()*width,aim*cast_reach-aim.orthogonal()*width,Color(.81,.70,1,.12),1,true)
    if icon!=null:
     draw_set_transform(aim*28,aim.angle()+PI*.25)
     draw_texture_rect(icon,Rect2(-Vector2(56,56),Vector2(112,112)),false);draw_set_transform(Vector2.ZERO)
   else:
    var fade: float=clampf((.78-age)/.45,0,1)
    if icon!=null and age<.53:
-    var thrust_at: Vector2=aim*lerpf(28,230,clampf((age-.30)/.18,0,1))
+    var thrust_at: Vector2=aim*lerpf(28,cast_reach-24,clampf((age-.30)/.18,0,1))
     draw_set_transform(thrust_at,aim.angle()+PI*.25)
     draw_texture_rect(icon,Rect2(-Vector2(56,56),Vector2(112,112)),false,Color(1,1,1,fade));draw_set_transform(Vector2.ZERO)
-   if not reduced:draw_line(Vector2.ZERO,aim*320,Color(.32,.19,.70,.32*fade),width*1.4,true)
-   draw_line(Vector2.ZERO,aim*320,Color(.77,.71,1,fade),3,true)
+   if not reduced:draw_line(Vector2.ZERO,aim*cast_reach,Color(.32,.19,.70,.32*fade),width*1.4,true)
+   draw_line(Vector2.ZERO,aim*cast_reach,Color(.77,.71,1,fade),3,true)
    for index: int in range(5):
-    var at: Vector2=aim*(30+index*62)
+    var at: Vector2=aim*(30+index*(cast_reach-60)/4.0)
     draw_polyline(PackedVector2Array([at-aim*9+aim.orthogonal()*6,at+aim*6,at-aim*9-aim.orthogonal()*6]),Color(1,.87,.58,fade),1.3,true)
  else:
   if icon!=null:draw_texture_rect(icon,Rect2(Vector2(-25,12),Vector2(50,50)),false,Color(1,1,1,clampf((2.9-age)/.4,0,1)))
