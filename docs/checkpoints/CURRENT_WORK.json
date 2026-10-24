@@ -1,5 +1,5 @@
 {
-  "state": "docs/checkpoints/RELEASE_COMFORT_STATE_2026-10-24.json",
-  "base": "b0019c1e34e894266049db128e9fce3232241b22",
-  "previous": "docs/checkpoints/CI_AUDIO_CLOSURE_STATE_2026-10-24.json"
+  "state": "docs/checkpoints/COMFORT_DEPLOY_FIX_STATE_2026-10-24.json",
+  "base": "a5b7cf15a3e3165babd0305943afccbaab291eea",
+  "previous": "docs/checkpoints/RELEASE_COMFORT_STATE_2026-10-24.json"
 }

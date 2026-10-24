@@ -1,0 +1,28 @@
+{
+  "batch": "COMFORT_DEPLOY_STDERR_FIX_2026-10-24",
+  "base": "a5b7cf15a3e3165babd0305943afccbaab291eea",
+  "cause": "Windows PowerShell5 captures native stderr as ErrorRecord; Stop aborted on a harmless Wrangler D1 warning before LASTEXITCODE was inspected",
+  "scope": [
+    "Protect both captured Wrangler calls with scoped Continue and finally restoration",
+    "Preserve native exit rejection and actual version receipt; keep schema failure log",
+    "Add real Windows PowerShell5 native-stub regression to existing CI"
+  ],
+  "owner_evidence": {
+    "main_batch_commit": "a5b7cf15a3e3165babd0305943afccbaab291eea",
+    "published": true,
+    "game_sync": true,
+    "profile_deploy": "not_confirmed",
+    "schema": "unknown outcome; additive idempotent reapply allowed"
+  },
+  "stages": {
+    "source_ready": true,
+    "author_native_capture": "PASS4 exact guarded capture cases under verified PowerShell7.4.6 Linux; parse of both PS scripts passed",
+    "windows_powershell5_ci": "pending_owner_publish; complete isolated native-stub fixture added",
+    "fix_commit": false,
+    "fix_push": false,
+    "profile_deploy": false,
+    "new_native_required": false,
+    "additional_aab_for_this_script_fix": false
+  },
+  "next": "Run the self-contained Jade-Comfort-Deploy-Fix/fix_and_resume.cmd. It publishes only this deploy correction, syncs it, then resumes Profile deployment. Do not rerun the older batch launcher after the fix commit. Original client AAB export remains separate."
+}

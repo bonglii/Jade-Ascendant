@@ -402,3 +402,17 @@ Async admin readiness must refresh after reading=false, not only while rendering
 inside an in-flight fetch. Exercise pause/resume, double click and dirty draft
 protection through actual browser DOM handlers. Keep page-local fonts consistent
 with the shared content-versioned Studio stylesheet.
+
+## 2026-10-24 — PowerShell5 native stderr must not decide Wrangler success
+
+The Profile deploy script captured Wrangler stderr under ErrorActionPreference=Stop.
+Wrangler's non-fatal D1 import warning became NativeCommandError before the exit
+code was read, after owner publish and game sync had already succeeded. Both
+captured Wrangler calls now collect under a narrowly scoped Continue preference,
+record the actual native exit code immediately, and restore Stop in finally.
+Keep nonzero exit rejection and the actual Worker Version ID requirement. Save
+schema diagnostics before reporting failure. Never silence stderr globally or
+skip schema/deployment checks. Windows CI exercises stderr warning+exit0, schema
+failure, deploy failure, missing version, successful receipt resume and retry
+using isolated native command stubs; it makes no real network/deployment calls.
+This script-only correction reuses prior game/GUI/server PASS evidence.

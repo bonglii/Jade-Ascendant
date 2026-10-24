@@ -65,3 +65,8 @@ jobs:
           Remove-Item -LiteralPath $config
           $global:LASTEXITCODE=0
           Write-Host 'COMFORT_WINDOWS_PREFLIGHT=PASS; DEPLOY=NONE'
+      - name: Windows PowerShell stderr and exit-code regression
+        shell: powershell
+        run: |
+          & tests/comfort_deploy_native.ps1 -Project $PWD
+          if ($LASTEXITCODE -ne 0) { throw 'Native stderr contract failed' }

@@ -29,15 +29,29 @@ try {
     # The publisher/CI validate source before deployment. This additive schema
     # is safely repeatable after interruption and preserves all existing records.
     $schema=Join-Path $PSScriptRoot 'announcement_schema.sql'
-    $schemaLines=@(& npx.cmd --yes wrangler@4.151.0 d1 execute jade-player-identities --remote --config $config --file $schema --yes 2>&1)
-    $schemaCode=$LASTEXITCODE
+    # Windows PowerShell 5.1 wraps redirected native stderr as ErrorRecord.
+    # Wrangler uses stderr for harmless warnings too. Collect those diagnostics
+    # under Continue, then retain the real native exit code and restore Stop.
+    $previousPreference=$ErrorActionPreference
+    try {
+        $ErrorActionPreference='Continue'
+        $schemaLines=@(& npx.cmd --yes wrangler@4.151.0 d1 execute jade-player-identities --remote --config $config --file $schema --yes 2>&1)
+        $schemaCode=$LASTEXITCODE
+    } finally { $ErrorActionPreference=$previousPreference }
+    $logDir=Join-Path $project '.local/release_comfort_deploy'
+    New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+    [IO.File]::WriteAllText((Join-Path $logDir 'schema.log'),($schemaLines -join [Environment]::NewLine))
     $schemaLines | ForEach-Object { Write-Host $_ }
-    if ($schemaCode -ne 0) { throw 'Announcement presentation schema failed; no Worker deployment attempted. Rerun this same launcher.' }
+    if ($schemaCode -ne 0) { throw ('Announcement presentation schema failed (exit '+$schemaCode+'); no Worker deployment attempted. Inspect '+(Join-Path $logDir 'schema.log')) }
     Write-Host 'COMFORT_ANNOUNCEMENT_SCHEMA=PASS; EXISTING_MAIL_AND_READS=PRESERVED'
     & node backend/player_identity/build_mail_assets.mjs
     if ($LASTEXITCODE -ne 0) { throw 'Existing icon preparation failed; no deployment attempted.' }
-    $lines=@(& npx.cmd --yes wrangler@4.151.0 deploy --keep-vars --config $config 2>&1)
-    $code=$LASTEXITCODE
+    $previousPreference=$ErrorActionPreference
+    try {
+        $ErrorActionPreference='Continue'
+        $lines=@(& npx.cmd --yes wrangler@4.151.0 deploy --keep-vars --config $config 2>&1)
+        $code=$LASTEXITCODE
+    } finally { $ErrorActionPreference=$previousPreference }
     $logDir=Join-Path $project '.local/release_comfort_deploy'
     New-Item -ItemType Directory -Force -Path $logDir | Out-Null
     $output=$lines -join [Environment]::NewLine
