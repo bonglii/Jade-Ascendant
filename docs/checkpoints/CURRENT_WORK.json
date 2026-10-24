@@ -1,5 +1,5 @@
 {
-  "state": "docs/checkpoints/COMFORT_DEPLOY_FIX_STATE_2026-10-24.json",
-  "base": "a5b7cf15a3e3165babd0305943afccbaab291eea",
-  "previous": "docs/checkpoints/RELEASE_COMFORT_STATE_2026-10-24.json"
+  "state": "docs/checkpoints/COMFORT_CI_EXIT_STATE_2026-10-24.json",
+  "base": "dddaf56496b25a5aa5fb8ad3d5c6ec3d06a1c80a",
+  "previous": "docs/checkpoints/COMFORT_DEPLOY_FIX_STATE_2026-10-24.json"
 }

@@ -1,0 +1,43 @@
+{
+  "batch": "COMFORT_CI_AUDIO_EXIT_FIX_2026-10-24",
+  "base": "dddaf56496b25a5aa5fb8ad3d5c6ec3d06a1c80a",
+  "failed_run": "https://github.com/bonglii/Jade-Ascendant/actions/runs/40100529963",
+  "failed_job": 120891591400,
+  "evidence": "CI artifact confirms all74 Arsenal combat assertions passed, followed by seven audio resources still in use on exit; strict runner rejected the error",
+  "verified_prior": {
+    "other_workflows_green": 10,
+    "windows_profile_preflight": "PASS",
+    "windows_native_stderr_cases": 11,
+    "changed_backend_tests": 28,
+    "dashboard_dom": 54,
+    "ui_fixture": 29,
+    "welcome_restart": 2
+  },
+  "fix": [
+    "Drain and suppress incidental AudioManager playback before non-audio Arsenal/Glaive/Compass fixtures simulate attacks",
+    "Drain at Arsenal/Glaive exit using unchanged existing QA teardown helper",
+    "Keep production audio, all hit/damage assertions, shared error detection and audio-specific fixtures unchanged"
+  ],
+  "validation": {
+    "author_godot_suites": {
+      "arsenal": 74,
+      "glaive": 66,
+      "odyssey": 30,
+      "compass": 195
+    },
+    "strict_errors": "none after fix",
+    "arsenal_verbose_repeat": "PASS2x74; no resource/object leaks or Godot errors",
+    "portable_package": "PASS8"
+  },
+  "stages": {
+    "source_ready": true,
+    "fix_commit": false,
+    "fix_push": false,
+    "exact_sha_ci": "pending_owner_publish",
+    "deploy_required": false,
+    "native_rebuild_required": false,
+    "aab_required_for_this_fix": false,
+    "android_proof": "not_inferred"
+  },
+  "next": "Owner Jade-Comfort-CI-Exit-Fix/fix_and_publish.cmd; tests-only scoped commit/push/game sync, no deploy/export. Wait the new commit exact-SHA CI; reuse ten already-passing unrelated checks."
+}

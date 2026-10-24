@@ -416,3 +416,18 @@ skip schema/deployment checks. Windows CI exercises stderr warning+exit0, schema
 failure, deploy failure, missing version, successful receipt resume and retry
 using isolated native command stubs; it makes no real network/deployment calls.
 This script-only correction reuses prior game/GUI/server PASS evidence.
+
+## 2026-10-24 — isolate incidental audio before every non-audio combat fixture
+
+The actual dddaf564 CI artifact showed all74 Arsenal assertions passing before
+seven playback resources remained at shutdown. Local success alone had not
+excluded the timing-sensitive exit. Apply the existing Odyssey fixture policy
+also to Arsenal, Glaive and Compass: stop/drain the startup manager and suppress
+incidental SFX before accelerated casts, then drain at exit. Keep production
+AudioManager unchanged, real cast damage/boundary assertions intact, dedicated
+audio playback tests active and the shared strict Godot-error gate unchanged.
+Do not mask cleanup errors or add longer arbitrary shutdown sleeps. Verify the
+previously blocked successor suites and repeat the failing fixture with verbose
+resource diagnostics. This correction affects tests only; no deploy, native
+rebuild or extra AAB. Windows native stderr regression already passed11cases on
+the real GitHub runner; do not rework that successful deployment fix.

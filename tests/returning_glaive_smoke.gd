@@ -30,6 +30,9 @@ func nodes(values: Array) -> Array[Node]:
 func _initialize() -> void: run.call_deferred()
 func run() -> void:
  if not OS.get_user_data_dir().contains("jade_glaive_qa"):quit(2);return
+ # This fixture measures hits/authority, not playback. Prevent incidental SFX
+ # before simulated casts; the dedicated audio runtime suite stays enabled.
+ await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
  await create_timer(.3).timeout
  WeaponScript=load("res://scripts/weapon/celestial_returning_glaive_weapon.gd");Flight=load("res://scripts/weapon/returning_glaive_flight.gd")
  var p:=Player.new();p.name="player_1";var stats:=Stats.new();stats.name="PlayerStats";p.player_stats=stats;p.add_child(stats);root.add_child(p)
@@ -133,4 +136,5 @@ func run() -> void:
   preview.player_offset=60;check(preview.player_offset==60,"preview supports return-steering demonstration")
   vp.queue_free();await process_frame
  print("RETURNING_GLAIVE_CHECKS=",checks,";FAILURES=",failures)
+ await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
  quit(1 if failures else 0)

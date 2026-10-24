@@ -53,6 +53,9 @@ func clear() -> void:
 func _initialize() -> void:run.call_deferred()
 func run() -> void:
  if not OS.get_user_data_dir().contains("jade_arsenal_qa"):quit(2);return
+ # This fixture measures hits/authority, not playback. Prevent incidental SFX
+ # before simulated casts; the dedicated audio runtime suite stays enabled.
+ await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
  await process_frame
  eq=root.get_node("EquipmentManager")
  Cast=load("res://scripts/weapon/ascendant_armament_cast.gd")
@@ -149,4 +152,5 @@ func run() -> void:
  hp.is_dead=true;guard._physics_process(10);check(hp.qi_shield_charges==0,"no dead-player shield")
  equip()
  print("ASCENDANT_ARSENAL_QA checks=",checks," failures=",failures)
+ await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
  quit(1 if failures else 0)

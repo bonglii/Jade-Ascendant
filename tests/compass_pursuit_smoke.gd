@@ -50,6 +50,9 @@ func total_loss() -> float:
  return loss
 func run() -> void:
  if not OS.get_user_data_dir().contains("jade_event_touch_qa"):quit(2);return
+ # This fixture measures hits/authority, not playback. Prevent incidental SFX
+ # before simulated casts; the dedicated audio runtime suite stays enabled.
+ await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
  await frames(4)
  Compass=load("res://scripts/weapon/heavenweaver_compass_weapon.gd");Cast=load("res://scripts/weapon/heavenweaver_compass_cast.gd")
  root.get_node("GameSession").start_new_game();change_scene_to_file("res://scenes/levels/level_1.tscn");await frames(18)
