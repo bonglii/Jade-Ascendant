@@ -1,0 +1,50 @@
+name: Final mobile polish
+on:
+  workflow_dispatch:
+  push:
+    branches: [checkpoint/iap-fasttrack-20261010]
+    paths:
+      - 'scripts/ui/home_sanctuary_presenter.gd'
+      - 'scripts/ui/wuxia_hub_nav.gd'
+      - 'scripts/ui/jade_ui_tokens.gd'
+      - 'scripts/ui/liveops/**'
+      - 'scripts/managers/live_ops_manager.gd'
+      - 'scripts/world/stage_hazard.gd'
+      - 'scripts/weapon/heavenweaver_compass_cast.gd'
+      - 'tests/*final_mobile*'
+      - 'tests/server_mail_smoke.gd'
+      - '.github/workflows/final-mobile-polish-qa.yml'
+permissions:
+  contents: read
+jobs:
+  mobile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verified engine and nine unchanged production gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          node backend/player_identity/production_release_contract.mjs
+          mkdir -p /tmp/jade-mobile
+          curl -fsSL --retry 3 https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip -o /tmp/jade-mobile/godot.zip
+          echo 'cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4  /tmp/jade-mobile/godot.zip' | sha256sum --check
+          unzip -q /tmp/jade-mobile/godot.zip -d /tmp/jade-mobile
+      - name: Real logic, restart, guest server mail and combat boundaries
+        run: node tests/check_final_mobile.cjs "$PWD" /tmp/jade-mobile/Godot_v4.7.2-stable_linux.x86_64
+      - name: Native rendering and first swipe in real Home and event popups
+        run: xvfb-run -a node tests/check_final_mobile.cjs "$PWD" /tmp/jade-mobile/Godot_v4.7.2-stable_linux.x86_64 --gui
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: final-mobile-${{ github.sha }}
+          path: |
+            .local/event_touch_qa/*.log
+            .local/final_mobile_gui/*.log
+          if-no-files-found: error
+          retention-days: 14

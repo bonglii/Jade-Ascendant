@@ -358,34 +358,11 @@ const LOGIN_REWARDS: Dictionary = {
 	7: {"spirit_stone": 1000, "items": {}},
 }
 
-const MAIL_ORDER: Array[String] = [
-	"welcome_initiate",
-	"celestial_path_notice",
-]
-
-const MAIL_CATALOG: Dictionary = {
-	"welcome_initiate": {
-		"sender": "JADE SANCTUARY",
-		"title": "Welcome, Wandering Cultivator",
-		"body": (
-			"Your first steps on the immortal path have begun. "
-			+ "Accept these supplies and prepare for the trials ahead."
-		),
-		"reward": {
-			"spirit_stone": 210,
-			"items": {},
-		},
-	},
-	"celestial_path_notice": {
-		"sender": "CELESTIAL PAVILION",
-		"title": "Seven Days of Ascension",
-		"body": (
-			"Return on seven active days to unlock newcomer supplies. "
-			+ "Missed calendar days do not erase your progress."
-		),
-		"reward": {},
-	},
-}
+# Mail content/rewards are administered on the server for signed-in Google or
+# authenticated anonymous guests. Retired local read/claim ledger markers remain
+# untouched in existing saves; no automatic welcome/update grant is synthesized.
+const MAIL_ORDER: Array[String] = []
+const MAIL_CATALOG: Dictionary = {}
 
 var _active_live_popup: Control = null
 var _active_live_popup_scene: String = ""

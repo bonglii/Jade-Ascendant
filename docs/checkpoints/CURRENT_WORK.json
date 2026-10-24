@@ -1,5 +1,5 @@
 {
-  "state": "docs/checkpoints/COMFORT_CI_EXIT_STATE_2026-10-24.json",
-  "base": "dddaf56496b25a5aa5fb8ad3d5c6ec3d06a1c80a",
-  "previous": "docs/checkpoints/COMFORT_DEPLOY_FIX_STATE_2026-10-24.json"
+  "state": "docs/checkpoints/FINAL_MOBILE_STATE_2026-10-24.json",
+  "base": "445e3bf5e13976e22168ba1d3b5e193ed4344bf0",
+  "previous": "docs/checkpoints/COMFORT_CI_EXIT_STATE_2026-10-24.json"
 }

@@ -29,7 +29,7 @@ const TEXT_MUTED: Color = Color(0.68, 0.76, 0.75, 1.0)
 const TEXT_DISABLED: Color = Color(0.46, 0.52, 0.52, 0.78)
 
 const NAV_HEIGHT: float = 88.0
-const NAV_ICON_CENTER_Y: float = 25.0
+const NAV_ICON_CENTER_Y: float = NAV_HEIGHT * 0.5
 const NAV_LABEL_TOP: float = 47.0
 const NAV_LABEL_BOTTOM_MARGIN: float = 6.0
 const NAV_LABEL_FONT_SIZE: int = 12
@@ -79,4 +79,3 @@ const SUBTITLE_GLOBAL: Color = Color(0.39, 0.82, 0.91, 1.0)
 const TITLE_GLOBAL: Color = Color(0.97, 0.82, 0.45, 1.0)
 const HERO_NAME_GLOBAL: Color = Color(1.0, 0.95, 0.78, 1.0)
 const CURRENCY_GLOBAL: Color = Color(0.98, 0.82, 0.43, 1.0)
-

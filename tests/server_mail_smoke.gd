@@ -12,8 +12,9 @@ class AuthStub extends Node:
 	signal id_token_result(token: String)
 	signal id_token_error(message: String)
 	var uid: String = "server-mail-qa-user"
+	var anonymous: bool = false
 	func is_signed_in() -> bool: return true
-	func get_current_user_data() -> Dictionary: return {"uid":uid}
+	func get_current_user_data() -> Dictionary: return {"uid":uid,"isAnonymous":anonymous}
 	func get_id_token(_force: bool = false) -> void: pass
 
 func check(ok: bool,tag: String) -> void:
@@ -48,10 +49,14 @@ func run() -> void:
 	ops = root.get_node("LiveOpsManager")
 	saver = root.get_node("SaveManager")
 	native_auth = AuthStub.new()
+	if "--anonymous-guest" in OS.get_cmdline_user_args():
+		native_auth.anonymous = true
+		native_auth.uid = "server-mail-anonymous-guest"
 	root.add_child(native_auth)
 	root.get_node("PlayerIdentityServerClient")._auth = native_auth
 	mailer._auth_node = native_auth
 	owner = str(native_auth.uid).sha256_text()
+	check(root.get_node("PlayerIdentityServerClient")._current_owner()==owner,"signed Firebase user, including anonymous guest, uses authenticated owner binding")
 	mailer._owner = owner
 	mailer._queue.clear()
 	check(not mailer._state.is_empty(),"mail install ID persisted on first startup")

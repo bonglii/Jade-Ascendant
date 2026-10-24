@@ -255,13 +255,13 @@ func _build_tabs() -> void:
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.anchor_left = 0.5
-		icon.anchor_top = 0.0
+		icon.anchor_top = 0.5
 		icon.anchor_right = 0.5
-		icon.anchor_bottom = 0.0
-		icon.offset_left = -23.0
-		icon.offset_top = 3.0
-		icon.offset_right = 23.0
-		icon.offset_bottom = 49.0
+		icon.anchor_bottom = 0.5
+		icon.offset_left = -26.0
+		icon.offset_top = -26.0
+		icon.offset_right = 26.0
+		icon.offset_bottom = 26.0
 		button.add_child(icon)
 		tab_icons.append(icon)
 
@@ -318,8 +318,10 @@ func _refresh_translated_labels() -> void:
 		var key: String = str(
 			TAB_DATA[tab_index].get("label_key", "TAB")
 		)
-		tab_labels[tab_index].text = tr(key)
+		tab_labels[tab_index].text = ""
+		tab_labels[tab_index].hide()
 		tab_buttons[tab_index].tooltip_text = tr(key)
+		tab_buttons[tab_index].accessibility_name = tr(key)
 	_fit_sanctuary_labels()
 
 
@@ -389,6 +391,7 @@ func _refresh_notification_badge() -> void:
 		var dot: Panel=ActionDot.show_on(tab_buttons[index],ActionDot.count(self,sources[index]))
 		dot.anchor_left=0.5; dot.anchor_right=0.5
 		dot.offset_left=12; dot.offset_right=26
+		dot.offset_top=11; dot.offset_bottom=25
 
 
 func _on_tab_hover(

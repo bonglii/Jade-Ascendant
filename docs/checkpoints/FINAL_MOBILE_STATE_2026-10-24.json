@@ -1,0 +1,60 @@
+{
+  "batch": "FINAL_MOBILE_POLISH_2026-10-24",
+  "base": "445e3bf5e13976e22168ba1d3b5e193ed4344bf0",
+  "phase": "Source and focused native-render/behavior QA passed; standalone owner package prepared; owner publish/export pending",
+  "scope": [
+    "Fix vertical event labels in shared wrapping and focused preview markers/badges",
+    "Replace circled stage hazard reticle diamonds/ticks with existing painted danger seals; retain real boundary/timing/damage",
+    "Reduce Journey button size and group Continue/Chapters with short gap",
+    "Compact Events heading/banner spacing",
+    "Shared icon-only navbar, centered icons and same safe touch targets",
+    "Retire automatic local welcome/update-style mail; server-administered mail stays for Google and authenticated anonymous guests",
+    "Compact Compass dragon mesh/head with faster bounded attack undulation; hit/cadence/authority unchanged"
+  ],
+  "assets_reviewed": [
+    "Five actual owner phone screenshots",
+    "Painted hostile/impact cels",
+    "Current jade dragon body/head atlas",
+    "Existing Sanctuary frame/buttons/navigation icons"
+  ],
+  "stages": {
+    "source": "complete",
+    "qa": "PASS_author_fixtures",
+    "owner_install": false,
+    "commit": false,
+    "push": false,
+    "deploy_required": false,
+    "native_rebuild_required": false,
+    "aab_export": false,
+    "android_test": false
+  },
+  "pending": [
+    "Owner run the standalone publisher and retain actual GitHub link",
+    "Wait all triggered CI on exact printed commit",
+    "Close old editor; use existing production exporter once, with next unused versionCode",
+    "Short phone verification of event labels, Home spacing/nav, no auto mail and compact moving Compass"
+  ],
+  "next": "Run D:\\Godot\\tools\\Jade-Final-Mobile-Polish\\apply_and_publish.cmd; no native rebuild or Worker deploy.",
+  "validation": {
+    "engine": "Godot 4.7.2 verified archive SHA256 cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4",
+    "headless": {
+      "mobile_ui": 178,
+      "hazard_compass": 34,
+      "compass_existing_damage_and_ledger": 195,
+      "server_mail": 27,
+      "anonymous_guest_server_mail": 27,
+      "actual_process_restart_retired_mail": 3,
+      "release_comfort": 29,
+      "home_sanctuary": 195,
+      "all_five_menu_nav_consistency": 91
+    },
+    "native_gui": {
+      "mobile_ui_and_actual_first_swipes": 178,
+      "combat_warning_and_dragon": 34
+    },
+    "visual_review": "Actual 390/720 Home, Treasure Hunt and Five Elements, painted hazards and compact attacking dragon renders inspected. No new assets required.",
+    "production_contract": "PASS all9 existing gates",
+    "portable_package": "PASS8 installation/dependency/idempotence/rollback/path-safety checks",
+    "limits": "Author Linux fixtures; owner Windows exact-SHA CI, new AAB and Android smoke still pending"
+  }
+}

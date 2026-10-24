@@ -48,7 +48,7 @@ func run() -> void:
  for dims: Vector2i in [Vector2i(320,568),Vector2i(390,844),Vector2i(648,1152)]:
   root.size=dims;await frames(10);p._layout_sanctuary();await frames()
   var caption: Control=p.find_child("EventsCaption",true,false)
-  check(caption!=null and caption.position.y>=8,"caption lowered "+str(dims))
+  check(caption!=null and caption.position.y>=0 and caption.size.y>=caption.get_parent().size.y-1,"compact heading baseline "+str(dims))
   check(caption.get_rect().end.x<=caption.get_parent().size.x+1,"caption inside frame "+str(dims))
   p._request_feature("boss_hunt","boss",info,1,3);p._layout_sanctuary();check(is_zero_approx(p._feature_offset),"resize normalizes slide")
  root.get_node("SettingsManager").reduced_effects=true;p._request_feature("treasure_hunt","treasure",info,3,3)

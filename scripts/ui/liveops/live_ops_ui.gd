@@ -729,6 +729,7 @@ static func add_state_badge(
 	strong: bool = false
 ) -> Label:
 	var badge := Label.new()
+	preload("res://scripts/ui/liveops/event_identity_catalog.gd").keep_inline(badge)
 	badge.text = text_value
 	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	badge.custom_minimum_size = Vector2(96.0, 27.0)

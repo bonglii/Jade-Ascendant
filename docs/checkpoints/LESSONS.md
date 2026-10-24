@@ -431,3 +431,29 @@ previously blocked successor suites and repeat the failing fixture with verbose
 resource diagnostics. This correction affects tests only; no deploy, native
 rebuild or extra AAB. Windows native stderr regression already passed11cases on
 the real GitHub runner; do not rework that successful deployment fix.
+
+## 2026-10-24 — final phone composition and visual-only combat changes
+
+Short event markers beside an expanding spacer must reserve measured text width.
+A generic wrap pass must respect explicit inline metadata; disable autowrap only
+for those markers, not reward descriptions. Exercise the actual LiveOps popup and
+native first swipe, accounting for whether that viewport has real scroll overflow.
+A fixture mounted outside its actual popup or with the wrong native event stream
+can falsely report a gesture failure. Keep the shared mobile scroll policy intact.
+Icon-only navigation retains accessible names and identical safe touch targets;
+touch tooltips are intentionally suppressed by the shared guard.
+
+Identify a circled effect from source and artwork before replacing it: these
+screenshots showed stage hazards, not Compass attacks. Replace prototype runes
+with existing painted seals while keeping the exact danger boundary and real
+warning/hit behavior. A smaller Compass mesh/head must not shrink collision,
+range, cadence, targeting or ledger authority. Derive old spine tests from the
+visual length constant instead of hardcoding the retired154px presentation.
+
+Retiring automatic local mail removes its catalog, not historical receipts,
+balances or the authenticated server-mail path. Test actual process restart and
+both signed Google and Firebase anonymous-guest owner bindings. Do not manufacture
+an anonymous unauthenticated reward route or erase existing admin mail.
+Keep package install/publish/sync receipts and all transitive sync dependencies
+portable; no earlier tools folder is required. A passed author fixture does not
+mean owner publish, GitHub CI, AAB export or Android testing occurred.

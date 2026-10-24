@@ -469,7 +469,7 @@ func _build_compact_treasure_checkpoint(
 		9,
 		Color(GOLD.r, GOLD.g, GOLD.b, 0.74)
 	)
-	marker.autowrap_mode = TextServer.AUTOWRAP_OFF
+	EventArt.keep_inline(marker)
 
 	var title := LiveOpsUi.add_label(
 		details,
@@ -735,6 +735,7 @@ func _build_treasure_preview(
 		10,
 		GOLD
 	)
+	EventArt.keep_inline(marker)
 	marker.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
 	var spacer := Control.new()

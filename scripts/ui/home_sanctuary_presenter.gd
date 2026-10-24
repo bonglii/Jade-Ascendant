@@ -135,7 +135,7 @@ func _build_body() -> void:
  all_events_button=_button("AllEvents",_open_live_popup.bind(EVENT_CENTER_SCENE),heading)
  all_events_button.text=tr("ALL EVENTS")+" ›"
  _plate(all_events_button,true,Color(.018,.15,.14,.99))
- _font_button(all_events_button,20)
+ _font_button(all_events_button,18)
  _build_featured_event()
  shortcuts=HBoxContainer.new();shortcuts.name="SanctuaryShortcuts";shortcuts.add_theme_constant_override("separation",7)
  lower_stack.add_child(shortcuts)
@@ -384,11 +384,11 @@ func _layout_sanctuary() -> void:
  _rect(title_name,Vector2.ZERO,Vector2(hero_title.size.x,42*u));_font(title_name,35,true)
  _rect(title_role,Vector2(0,43*u),Vector2(hero_title.size.x,17*u));_font(title_role,12)
  var compact: bool=size.x<560
- var card_h: float=176.0 if short_phone else 244.0 if compact else maxf(210,216*u)
+ var card_h: float=176.0 if short_phone else 226.0 if compact else maxf(190,196*u)
  var event_h: float=maxf(214,216*u)
  var shortcut_h: float=90.0 if size.x<420 else maxf(65,80*u)
- var heading_h: float=48.0 if short_phone else maxf(60,66*u)
- var gap: float=maxf(6,9*u)
+ var heading_h: float=44.0 if short_phone else clampf(44*u,44,54)
+ var gap: float=6.0
  var panel_h: float=card_h+event_h+shortcut_h+heading_h+gap*3
  var bottom: float=size.y-nav_height-20
  var upper: float=maxf(header_y+header_h+10,bottom-panel_h)
@@ -406,17 +406,17 @@ func _layout_sanctuary() -> void:
  Art.inset_art(realm_window,maxf(10,20*u))
  Art.inset_art(event_window,maxf(10,20*u))
  var text_start: float=map_w+8*u
- var action_w: float=width-24 if compact else width*.39
+ var action_w: float=width-24 if compact else width*.36
  var text_width: float=width-text_start-18*u if compact else width-text_start-action_w-22*u
- _rect(chapter_label,Vector2(text_start,16.0 if compact else 23*u),Vector2(text_width,20));_font(chapter_label,13,true)
- _rect(realm_title,Vector2(text_start,38.0 if compact else 46*u),Vector2(text_width,48));_font(realm_title,22,true)
- _rect(next_path_label,Vector2(text_start,83.0 if compact else 100*u),Vector2(text_width,20));_font(next_path_label,13)
+ _rect(chapter_label,Vector2(text_start,16.0 if compact else 14*u),Vector2(text_width,20));_font(chapter_label,13,true)
+ _rect(realm_title,Vector2(text_start,38.0 if compact else 36*u),Vector2(text_width,48 if compact else 52*u));_font(realm_title,22,true)
+ _rect(next_path_label,Vector2(text_start,83.0 if compact else 94*u),Vector2(text_width,20));_font(next_path_label,13)
  var meter_y: float=112.0 if compact else 116*u
  _rect(realm_progress,Vector2(text_start,meter_y),Vector2(maxf(30,text_width-54),7))
  _rect(progress_label,Vector2(text_start+maxf(30,text_width-49),meter_y-5),Vector2(48,20));_font(progress_label,12)
  _rect(goal_hint,Vector2(text_start,meter_y+13),Vector2(text_width,38));_font(goal_hint,13)
  continue_button.text=("BAB" if SettingsManager.language=="id" else "CHAPTERS")+" ›"
- var button_h: float=44.0 if short_phone else 50.0 if compact else maxf(52,64*u)
+ var button_h: float=44.0 if short_phone else 46.0 if compact else maxf(44,50*u)
  var action_x: float=12.0 if compact else width-action_w-12*u
  if compact:
   var button_y: float=card_h-button_h-(10 if short_phone else 16)
@@ -425,8 +425,10 @@ func _layout_sanctuary() -> void:
    _rect(continue_button,Vector2(action_x+(action_w-8)*.59+8,button_y),Vector2((action_w-8)*.41,button_h))
   else:_rect(journey_button,Vector2(action_x,button_y),Vector2(action_w,button_h))
  elif continue_button.visible:
-  _rect(journey_button,Vector2(action_x,15*u),Vector2(action_w,button_h))
-  _rect(continue_button,Vector2(action_x,card_h-button_h-12*u),Vector2(action_w,button_h))
+  var action_gap: float=maxf(8,8*u)
+  var group_y: float=(card_h-2*button_h-action_gap)*.5
+  _rect(journey_button,Vector2(action_x,group_y),Vector2(action_w,button_h))
+  _rect(continue_button,Vector2(action_x,group_y+button_h+action_gap),Vector2(action_w,button_h))
  else:_rect(journey_button,Vector2(action_x,(card_h-button_h)*.5),Vector2(action_w,button_h))
  if short_phone:
   _rect(chapter_label,Vector2(text_start,8),Vector2(text_width,16))
@@ -435,14 +437,14 @@ func _layout_sanctuary() -> void:
   _rect(realm_progress,Vector2(text_start,80),Vector2(maxf(30,text_width-54),6))
   _rect(progress_label,Vector2(text_start+maxf(30,text_width-49),75),Vector2(48,18))
   _rect(goal_hint,Vector2(text_start,94),Vector2(text_width,26))
- _font_button(journey_button,20);_font_button(continue_button,17)
+ _font_button(journey_button,18);_font_button(continue_button,16)
  var heading: Control=lower_stack.get_node("EventsHeading");heading.custom_minimum_size.y=heading_h
  var all_width: float=minf(width*.48,maxf(130,176*u))
- var caption: Label=heading.get_node("EventsCaption");_rect(caption,Vector2(3*u,8),Vector2(width-all_width-10*u,heading_h-8));_font(caption,20,true);caption.vertical_alignment=VERTICAL_ALIGNMENT_BOTTOM
+ var caption: Label=heading.get_node("EventsCaption");_rect(caption,Vector2(3*u,0),Vector2(width-all_width-10*u,heading_h));_font(caption,20,true);caption.vertical_alignment=VERTICAL_ALIGNMENT_CENTER
  caption.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;caption.max_lines_visible=2
  caption.add_theme_font_size_override("font_size",maxi(18,roundi(20*u)))
  all_events_button.text=tr("ALL EVENTS")+" ›"
- _rect(all_events_button,Vector2(width-all_width,0),Vector2(all_width,heading_h));_font_button(all_events_button,20)
+ _rect(all_events_button,Vector2(width-all_width,0),Vector2(all_width,heading_h));_font_button(all_events_button,18)
  # Event copy uses phone-sized floors instead of shrinking with the portrait art.
  var event_left: float=maxf(18,30*u)
  var event_text_w: float=width-event_left-maxf(18,24*u)
@@ -536,6 +538,7 @@ func _font_button(button: Button,source_size: int) -> void:
  if primary and size.x<560 and is_instance_valid(continue_button) and continue_button.visible:margin=8.0
  var style: StyleBox=button.get_theme_stylebox("normal")
  style.content_margin_left=margin;style.content_margin_right=margin
+ if primary or button==all_events_button:style.content_margin_top=6;style.content_margin_bottom=6
  button.add_theme_font_override("font",Art.SERIF);button.add_theme_color_override("font_color",GOLD_BRIGHT)
  var font_size: int=maxi(16 if primary else 14,roundi(source_size*portrait_unit))
  var available: float=maxf(0,button.size.x-margin*2)

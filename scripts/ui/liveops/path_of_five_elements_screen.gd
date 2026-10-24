@@ -505,7 +505,7 @@ func _build_compact_element_trial(
 		9,
 		accent
 	)
-	marker.autowrap_mode = TextServer.AUTOWRAP_OFF
+	EventArt.keep_inline(marker)
 
 	var title := LiveOpsUi.add_label(
 		details,
@@ -849,7 +849,7 @@ func _build_compact_convergence(
 		9,
 		accent
 	)
-	marker.autowrap_mode = TextServer.AUTOWRAP_OFF
+	EventArt.keep_inline(marker)
 
 	var title := LiveOpsUi.add_label(
 		details,
@@ -959,6 +959,7 @@ func _build_element_preview(
 		10,
 		accent
 	)
+	EventArt.keep_inline(marker)
 	marker.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
 	var spacer := Control.new()

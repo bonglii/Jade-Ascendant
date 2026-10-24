@@ -7,6 +7,7 @@ extends Node2D
 ## 4 = Cinnabar Burst (Chapter 2)
 ## 5 = Starfall Seal (Chapter 3)
 ## 6 = Heavenly Rift (Chapter 3)
+const CelArt=preload("res://scripts/effects/combat_cel_art.gd")
 var hazard_kind: int = 1
 var accent: Color = Color(0.85, 0.73, 0.34)
 var radius: float = 64.0
@@ -37,6 +38,8 @@ func _ready() -> void:
 		6:
 			radius = 50.0
 			warning_duration = 0.85
+	material=CelArt.palette(_get_warning_color())
+	texture_filter=CanvasItem.TEXTURE_FILTER_LINEAR
 	queue_redraw()
 
 func _process(delta: float) -> void:
@@ -103,154 +106,20 @@ func _get_warning_color() -> Color:
 			return Color(1.0, 0.71, 0.33, 0.90)
 
 func _draw() -> void:
-	var warning: Color = _get_warning_color()
-
+	var warning: Color=_get_warning_color()
+	var reduced: bool=SettingsManager.reduced_effects
 	if impacted:
-		var fade: float = 1.0 - clampf(
-			(elapsed - warning_duration) / 0.22,
-			0.0,
-			1.0
-		)
-		draw_arc(
-			Vector2.ZERO,
-			radius,
-			0.0,
-			TAU,
-			40,
-			Color(accent, fade),
-			5.0,
-			true
-		)
-		match hazard_kind:
-			2:
-				var bolt: PackedVector2Array = PackedVector2Array([
-					Vector2(-8, -160),
-					Vector2(11, -116),
-					Vector2(-12, -72),
-					Vector2(7, -36),
-					Vector2.ZERO
-				])
-				draw_polyline(bolt, Color(0.9, 0.97, 1.0, fade), 5.0, true)
-			3:
-				draw_circle(Vector2.ZERO, radius * 0.78, Color(accent, fade * 0.18))
-				draw_arc(
-					Vector2(-8.0, 0.0), radius * 0.46, -1.15, 1.15, 24,
-					Color(1.0, 0.70, 0.72, fade), 4.0, true
-				)
-				draw_line(
-					Vector2(-32.0, 28.0), Vector2(30.0, -30.0),
-					Color(1.0, 0.68, 0.58, fade), 4.0, true
-				)
-			4:
-				draw_circle(Vector2.ZERO, radius * 0.72, Color(accent, fade * 0.20))
-				for index: int in range(4):
-					var direction: Vector2 = Vector2.RIGHT.rotated(PI * 0.5 * index)
-					draw_line(
-						direction * radius * 0.80,
-						direction * radius * 0.18,
-						Color(1.0, 0.77, 0.48, fade),
-						4.0,
-						true
-					)
-			5:
-				draw_circle(Vector2.ZERO, radius * 0.72, Color(0.54, 0.28, 0.82, fade * 0.20))
-				for index: int in range(8):
-					var direction: Vector2 = Vector2.RIGHT.rotated(TAU * float(index) / 8.0)
-					var length: float = radius * (0.92 if index % 2 == 0 else 0.62)
-					draw_line(
-						direction * radius * 0.12,
-						direction * length,
-						Color(1.0, 0.86, 0.50, fade),
-						3.5,
-						true
-					)
-			6:
-				draw_circle(Vector2.ZERO, radius * 0.70, Color(0.72, 0.18, 0.62, fade * 0.18))
-				var fracture: PackedVector2Array = PackedVector2Array([
-					Vector2(-radius * 0.22, -radius * 1.30),
-					Vector2(radius * 0.08, -radius * 0.48),
-					Vector2(-radius * 0.12, -radius * 0.08),
-					Vector2(radius * 0.18, radius * 0.38),
-					Vector2(-radius * 0.08, radius * 1.25),
-				])
-				draw_polyline(fracture, Color(1.0, 0.72, 0.48, fade), 5.0, true)
-			_:
-				draw_circle(Vector2.ZERO, radius * 0.8, Color(accent, fade * 0.22))
+		var t: float=clampf((elapsed-warning_duration)/.22,0,1)
+		var fade: float=pow(1.0-t,1.4)
+		CelArt.paint(self,"hostile",3,Vector2.ZERO,Vector2.ONE*radius*lerpf(1.3,2.0,t),t*.18,fade*(.55 if reduced else .88))
+		if hazard_kind==2 and not reduced:
+			CelArt.paint(self,"hostile",2,Vector2(0,-radius*.75),Vector2(radius*1.1,radius*2.1),0,fade)
 		return
-
-	var progress: float = clampf(elapsed / warning_duration, 0.0, 1.0)
-
-	var fill_color: Color = Color(0.8, 0.35, 0.15, 0.08)
-	if hazard_kind == 3:
-		fill_color = Color(0.66, 0.05, 0.12, 0.10)
-	elif hazard_kind == 4:
-		fill_color = Color(0.72, 0.18, 0.06, 0.09)
-	elif hazard_kind == 5:
-		fill_color = Color(0.38, 0.16, 0.62, 0.10)
-	elif hazard_kind == 6:
-		fill_color = Color(0.52, 0.08, 0.38, 0.10)
-
-	draw_circle(Vector2.ZERO, radius, fill_color)
-	draw_arc(Vector2.ZERO, radius, 0.0, TAU, 40, warning, 2.0, true)
-	draw_arc(
-		Vector2.ZERO,
-		radius + 24.0 * (1.0 - progress),
-		0.0,
-		TAU,
-		40,
-		warning,
-		1.5,
-		true
-	)
-
-	for index: int in range(4):
-		var direction: Vector2 = Vector2.RIGHT.rotated(PI * 0.5 * index)
-		var edge: Vector2 = direction * radius
-		draw_line(edge - direction * 9.0, edge + direction * 5.0, warning, 3.0, true)
-
-	match hazard_kind:
-		2:
-			draw_polyline(
-				PackedVector2Array([
-					Vector2(4, -17), Vector2(-7, 1), Vector2(5, 1), Vector2(-4, 17)
-				]),
-				warning,
-				3.0,
-				true
-			)
-		3:
-			draw_arc(Vector2(-4.0, 0.0), 19.0, -1.20, 1.20, 18, warning, 2.5, true)
-			draw_line(Vector2(-12.0, 12.0), Vector2(13.0, -13.0), warning, 2.0, true)
-		4:
-			var diamond: PackedVector2Array = PackedVector2Array([
-				Vector2(0, -18), Vector2(18, 0), Vector2(0, 18),
-				Vector2(-18, 0), Vector2(0, -18)
-			])
-			draw_polyline(diamond, warning, 2.0, true)
-			for index: int in range(4):
-				var direction: Vector2 = Vector2.RIGHT.rotated(PI * 0.5 * index)
-				draw_line(direction * 18.0, direction * 6.0, warning, 2.0, true)
-		5:
-			var star: PackedVector2Array = PackedVector2Array()
-			for index: int in range(10):
-				var angle: float = -PI * 0.5 + TAU * float(index) / 10.0
-				var star_radius: float = 19.0 if index % 2 == 0 else 8.0
-				star.append(Vector2.RIGHT.rotated(angle) * star_radius)
-			star.append(star[0])
-			draw_polyline(star, warning, 2.2, true)
-			draw_circle(Vector2.ZERO, 3.0, Color(1.0, 0.84, 0.46, 0.92))
-		6:
-			var rift: PackedVector2Array = PackedVector2Array([
-				Vector2(-7, -22), Vector2(3, -9), Vector2(-5, 0),
-				Vector2(6, 9), Vector2(-4, 22)
-			])
-			draw_polyline(rift, warning, 3.0, true)
-			draw_line(Vector2(-18, -4), Vector2(-5, 0), warning, 1.8, true)
-			draw_line(Vector2(6, 9), Vector2(19, 15), warning, 1.8, true)
-		_:
-			var seal: PackedVector2Array = PackedVector2Array([
-				Vector2(0, -19), Vector2(19, 0), Vector2(0, 19),
-				Vector2(-19, 0), Vector2(0, -19)
-			])
-			draw_polyline(seal, warning, 2.0, true)
-			draw_line(Vector2(-10, 0), Vector2(10, 0), warning, 2.0, true)
+	var progress: float=clampf(elapsed/maxf(warning_duration,.01),0,1)
+	# Painted danger seal; the thin boundary always remains the real hit radius.
+	draw_circle(Vector2.ZERO,radius,Color(warning,.055+progress*.045))
+	CelArt.paint(self,"hostile",0,Vector2.ZERO,Vector2.ONE*radius*2.0,sin(elapsed*.8)*.035,.48+progress*.32)
+	draw_arc(Vector2.ZERO,radius,0,TAU,48,Color(warning,.72+progress*.23),1.8,true)
+	if not reduced:
+		var frames: Array[int]=[6,2,7,1,4,7]
+		CelArt.paint(self,"impacts",frames[clampi(hazard_kind-1,0,5)],Vector2.ZERO,Vector2.ONE*radius*.90,0,.38+progress*.35)

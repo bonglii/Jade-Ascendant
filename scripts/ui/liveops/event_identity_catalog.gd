@@ -22,14 +22,19 @@ static func add_detail_art(parent: VBoxContainer,id: String) -> void:
 	banner.artwork=texture_for(id)
 	banner.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	parent.add_child(banner)
+static func keep_inline(label: Label) -> void:
+	label.set_meta("jade_keep_inline",true)
+	label.autowrap_mode=TextServer.AUTOWRAP_OFF
+	label.max_lines_visible=1
+
 static func wrap_mobile_controls(root: Node) -> void:
 	# Long reward/CTA text must wrap before it can enlarge a portrait container.
 	if root is Label:
 		var font_size: int=maxi(root.get_theme_font_size("font_size"),16)
 		root.add_theme_font_size_override("font_size",font_size)
 		var numeric := RegEx.new()
-		numeric.compile("^(?:#[0-9]{1,3}|(?:ASCENT|STAGE|CHAPTER|TAHAP|BAB) [0-9-]{1,8}|[0-9]+(?: *[/] *[0-9]+)?%?)$")
-		if numeric.search(root.text.strip_edges())!=null:
+		numeric.compile("^(?:#[0-9]{1,3}|(?:ASCENT|STAGE|CHAPTER|REALM|TAHAP|BAB) [0-9-]{1,8}|[0-9]+(?: *[/] *[0-9]+)?%?)$")
+		if bool(root.get_meta("jade_keep_inline",false)) or numeric.search(root.text.strip_edges())!=null:
 			root.autowrap_mode=TextServer.AUTOWRAP_OFF
 			root.custom_minimum_size.x=maxf(root.custom_minimum_size.x,root.get_theme_font("font").get_string_size(root.text,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size).x+2)
 		else:root.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
@@ -39,8 +44,8 @@ static func wrap_mobile_controls(root: Node) -> void:
 	elif root is Button:
 		var font_size: int=maxi(root.get_theme_font_size("font_size"),16)
 		var numeric := RegEx.new()
-		numeric.compile("^(?:#[0-9]{1,3}|(?:ASCENT|STAGE|CHAPTER|TAHAP|BAB) [0-9-]{1,8}|[0-9]+(?: *[/] *[0-9]+)?%?)$")
-		if numeric.search(root.text.strip_edges())!=null:
+		numeric.compile("^(?:#[0-9]{1,3}|(?:ASCENT|STAGE|CHAPTER|REALM|TAHAP|BAB) [0-9-]{1,8}|[0-9]+(?: *[/] *[0-9]+)?%?)$")
+		if bool(root.get_meta("jade_keep_inline",false)) or numeric.search(root.text.strip_edges())!=null:
 			root.autowrap_mode=TextServer.AUTOWRAP_OFF
 			root.custom_minimum_size.x=maxf(root.custom_minimum_size.x,root.get_theme_font("font").get_string_size(root.text,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size).x+2)
 		else:root.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART

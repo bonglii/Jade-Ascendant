@@ -97,7 +97,7 @@ func run() -> void:
 			if not reduced and step == 40: await capture("dragon-painted-body")
 			var spine: PackedVector2Array = head.spine
 			for j: int in range(1,spine.size()):
-				valid_shape = valid_shape and spine[j].is_finite() and absf(spine[j].distance_to(spine[j-1])-154.0/(spine.size()-1)) < .01
+				valid_shape = valid_shape and spine[j].is_finite() and absf(spine[j].distance_to(spine[j-1])-courier.DRAGON_BODY_LENGTH/(spine.size()-1)) < .01
 		check(head.spine.size() == (8 if reduced else 12),"bounded dragon joint count")
 	check(valid_shape,"dragon keeps finite continuous body spacing through reversal")
 	check(smooth_head,"dragon head turning is bounded through reversal")

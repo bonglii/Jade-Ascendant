@@ -5,6 +5,10 @@ const Reach=preload("res://scripts/data/weapon_reach.gd")
 const DRAGON = preload("res://assets/vfx/compass_pursuit/jade_dragon.png")
 const COMPASS = preload("res://assets/ui/liveops/odyssey/compass.png")
 const Ledger = preload("res://scripts/weapon/run_combat_ledger.gd")
+const DRAGON_BODY_LENGTH: float=104.0
+const DRAGON_NECK: float=27.0
+const DRAGON_HALF_WIDTH: float=27.15
+const DRAGON_HEAD_SCALE: float=.075
 const HIT_SCALE: float = 0.375
 const CONTACT_RADIUS: float = 34.0
 const REFRESH: float = 0.15
@@ -44,7 +48,7 @@ func _resize_heads(count: int, origin: Vector2) -> void:
 		face_texture.region = Rect2(1650, 0, 522, 724)
 		face_texture.filter_clip = true
 		face.texture = face_texture
-		face.scale = Vector2.ONE * 0.11
+		face.scale = Vector2.ONE * DRAGON_HEAD_SCALE
 		face.offset = Vector2(-165, 0)
 		face.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		face.modulate = mesh.modulate
@@ -163,19 +167,20 @@ func _update_dragon(head: Dictionary, _delta: float, index: int) -> void:
 	var angle: float = float(head.get("visual_angle", head.angle))
 	angle += clampf(angle_difference(angle, float(head.angle)), -6.0 * _delta, 6.0 * _delta)
 	head.visual_angle = angle
-	var at: Vector2 = head.point - Vector2.from_angle(angle) * 39.0
+	var at: Vector2 = head.point - Vector2.from_angle(angle) * DRAGON_NECK
 	spine.append(at)
 	var previous: PackedVector2Array = head.spine
-	var spacing: float = 154.0 / (joints - 1)
+	var spacing: float = DRAGON_BODY_LENGTH / (joints - 1)
 	var segment_angle: float = angle
+	var attacking: bool=living(_target(head))
 	for j: int in range(1, joints):
 		# Follow the preceding joint's trail rather than rebuilding the whole
 		# body from the newest heading. Bounded bends prevent folded UV strips.
 		var desired: float = segment_angle
 		if previous.size() == joints:
 			desired = (at - previous[j]).angle()
-		var bend: float = clampf(angle_difference(segment_angle, desired), -.34, .34)
-		var breath: float = sin(age * 3.8 - j * .48 + index) * .065 * float(j) / joints
+		var bend: float = clampf(angle_difference(segment_angle, desired), -.26, .26)
+		var breath: float=sin(age*(6.8 if attacking else 3.8)-j*.72+index)*(.080 if attacking else .04)*float(j)/joints
 		segment_angle += bend * (1.0 - exp(-14.0 * _delta)) + breath
 		at -= Vector2.from_angle(segment_angle) * spacing
 		spine.append(at)
@@ -189,7 +194,7 @@ func _update_dragon(head: Dictionary, _delta: float, index: int) -> void:
 		var tangent: Vector2 = (spine[maxi(0, j - 1)] - spine[mini(joints - 1, j + 1)]).normalized()
 		var normal: Vector2 = tangent.orthogonal()
 		for side: int in 2:
-			vertices.append(to_local(spine[j] + normal * (float(side) * 2.0 - 1.0) * 39.82))
+			vertices.append(to_local(spine[j] + normal * (float(side) * 2.0 - 1.0) * DRAGON_HALF_WIDTH))
 			uvs.append(Vector2(0.78 * (1.0 - float(j) / (joints - 1)), float(side)))
 		if j > 0:
 			var k: int = j * 2
