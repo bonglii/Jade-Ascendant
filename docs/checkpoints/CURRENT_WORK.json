@@ -1,6 +1,4 @@
 {
-  "batch": "Trials schedule empty-snapshot recovery",
-  "base_commit": "fdeea89e97254bac0599405536e3a375dbd1c26c",
-  "state": "docs/checkpoints/TRIALS_TIME_RECOVERY_STATE_2026-10-24.json",
-  "next_action": "Run the self-contained Jade-Trials-Time-Fix/fix_and_resume.cmd. It publishes the small follow-up from actualfdeea89, preserves game edits during sync, then runs only corrected schedule maintenance. Do not run the older802-based launcher after the follow-up commit."
+  "state": "docs/checkpoints/STUDIO_ELEGANCE_STATE_2026-10-24.json",
+  "base": "f3dc8f064ea7868c8af2d56db980624109d9d813"
 }

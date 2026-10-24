@@ -256,3 +256,12 @@
 - A SELECT driven by an optional campaign table loses the server clock when the table is empty. Drive the snapshot from a clock row and LEFT JOIN campaigns; test the actual query against an empty real SQLite database. Never substitute device time.
 - An empty schedule means NO_CAMPAIGNS, not a failed connection or successful reset. Verify a read-only skip, create no event, run no repair SQL and never print RESET=PASS. Existing/frozen player progress stays unchanged.
 - Preserve the preparation command output in the PowerShell failure itself and plan-output.log; a parent subprocess may otherwise hide stdout behind a generic stderr exception.
+
+## Admin Studio refinement — 2026-10-24
+- Global function names can shadow browser APIs differently from JSDOM. Rename the mail-history loader away from `history` before using the native History API; verify actual browser navigation and a deep link.
+- Feature hashes use `view-` prefixes so they cannot scroll the initial document to an unrelated form ID. Check the actual first compact render, not only DOM existence.
+- Standalone admin pages use explicit head/body boundaries; preview injection must retain the full application script and visible data-example label. DOM-only parsing is not browser visual proof.
+- Home scroll tests must inspect the effective layout after native input at the new viewport before deciding it overflows. A stale21px range that becomes0 is not a touch regression; also inspect visible child bounds. The390px case exposed a real clipped shortcut row: publish the complete authored stack minimum height before the parent sorts, rather than inventing padding or a custom gesture router. Keep real first-swipe assertions where content overflows and forbid accidental run navigation.
+- A compact fixed Hero deck must reserve a usable backpack reader. Put Build Journal in the title row on short screens; keep equipped items pinned and native navigation unchanged.
+- Combat smoke fixtures must call the current persistent-courier API and fail promptly on an exception; never add a legacy runtime overload just to satisfy obsolete path-lock tests.
+- Save implemented source in durable checkpoints immediately after a stage. A plan-only checkpoint cannot recover changes lost with an author runtime reset.

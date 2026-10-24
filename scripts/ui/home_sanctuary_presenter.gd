@@ -350,7 +350,9 @@ func _layout_sanctuary() -> void:
  var bottom: float=size.y-nav_height-20
  var upper: float=maxf(header_y+header_h+10,bottom-panel_h)
  var available: float=maxf(70,bottom-upper)
- lower_stack.custom_minimum_size.x=size.x-2*side
+ # Publish the complete authored stack height before the parent sorts. A
+ # width-only update can leave a stale no-overflow range after viewport changes.
+ lower_stack.custom_minimum_size=Vector2(size.x-2*side,panel_h)
  _rect(lower_scroll,Vector2(side,upper),Vector2(size.x-2*side,available))
  hero_title.visible=hero_title.position.y+hero_title.size.y+8<upper
  lower_stack.custom_minimum_size.x=lower_scroll.size.x

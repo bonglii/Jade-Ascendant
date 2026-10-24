@@ -7,7 +7,12 @@ try {
     $source=(& git rev-parse HEAD).Trim()
     if ($LASTEXITCODE -ne 0 -or $branch -ne 'checkpoint/iap-fasttrack-20261010' -or $source -ne $ExpectedCommit) { throw 'Source commit/branch differs. No deployment attempted.' }
     $backendEdits=@(& git diff HEAD --name-only -- backend)
-    if ($LASTEXITCODE -ne 0 -or $backendEdits.Count -gt 0) { throw 'Local server edits are preserved. Deploy only the exact reviewed backend commit.' }
+    $unknownBackendEdits=@($backendEdits | Where-Object { $_ -ne 'backend/monetization/cloudflare/wrangler.production-live.toml' })
+    if ($LASTEXITCODE -ne 0 -or $unknownBackendEdits.Count -gt 0) { throw 'Local server edits are preserved. Deploy only the exact reviewed backend commit.' }
+    # The owner may retain equivalent local IAP configuration. Validate its nine
+    # gates; never copy, overwrite or deploy that separate Worker here.
+    & node backend/player_identity/production_release_contract.mjs
+    if ($LASTEXITCODE -ne 0) { throw 'Existing nine production gates changed; deployment stopped.' }
     $receiptPath=Join-Path $project '.local/studio_refresh_deploy/receipt.json'
     if (Test-Path -LiteralPath $receiptPath) {
         $receipt=Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
@@ -24,8 +29,6 @@ try {
     $tests=@(Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.test.mjs' | ForEach-Object { $_.FullName })
     & node --test --test-concurrency=1 @tests
     if ($LASTEXITCODE -ne 0) { throw 'Profile regression failed; no deployment attempted.' }
-    & node backend/player_identity/production_release_contract.mjs
-    if ($LASTEXITCODE -ne 0) { throw 'Existing nine production gates changed; deployment stopped.' }
     & node backend/player_identity/build_mail_assets.mjs
     if ($LASTEXITCODE -ne 0) { throw 'Existing icon preparation failed; no deployment attempted.' }
     $lines=@(& npx.cmd --yes wrangler@4.151.0 deploy --keep-vars --config $config 2>&1)

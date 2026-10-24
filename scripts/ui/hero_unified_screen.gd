@@ -208,7 +208,14 @@ func _refresh_all() -> void:
  armory.pressed.connect(func() -> void: load("res://scripts/ui/paid_armory_panel.gd").open_for(content))
  if content.size.y>=620 or content.size.y>content.size.x:_build_banner()
  _build_slots();_build_resonance()
- var journal: Button=_button("JURNAL BUILD" if SettingsManager.language=="id" else "BUILD JOURNAL");journal.name="HeroJournal";page.add_child(journal);journal.pressed.connect(func():load("res://scripts/companion/player_journal.gd").open(self,"presets"))
+ var journal: Button=_button("JURNAL BUILD" if SettingsManager.language=="id" else "BUILD JOURNAL");journal.name="HeroJournal"
+ # On short viewports the journal shares the title row, freeing the pinned
+ # loadout height for an actual backpack reader without scrolling equipped gear.
+ if content.size.y<620:
+  journal.text="JURNAL" if SettingsManager.language=="id" else "JOURNAL"
+  heading.add_child(journal)
+ else:page.add_child(journal)
+ journal.pressed.connect(func():load("res://scripts/companion/player_journal.gd").open(self,"presets"))
  page=backpack
  _build_collection()
  _layout_sections.call_deferred()

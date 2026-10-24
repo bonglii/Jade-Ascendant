@@ -1,0 +1,82 @@
+{
+  "batch": "STUDIO_ELEGANCE_2026-10-24",
+  "base": "f3dc8f064ea7868c8af2d56db980624109d9d813",
+  "phase": "delivery ready; owner actions remain separate",
+  "source": [
+    "grouped sidebar and direct headings",
+    "consistent navigation on all four admin pages",
+    "context help for all main features, Odyssey, Trials, Insights",
+    "optional equipment picker collapsed; mail preview more legible",
+    "Trials empty state and Indonesian operational labels",
+    "native-safe Home stack height and short-screen Hero journal row",
+    "current Odyssey smoke API and prompt timeout",
+    "guarded local IAP-config retention during Profile-only deployment"
+  ],
+  "qa": {
+    "dashboard_dom": {
+      "checks": 25,
+      "failures": 0
+    },
+    "dashboard_WIB": {
+      "tests": 13,
+      "failures": 0
+    },
+    "profile_tests": "all unchanged passing cases reused; initial sparse-only privacy-copy failure resolved by materializing docs and rerunning its2 tests",
+    "production_gates": 9,
+    "native_x11": {
+      "premium_readiness": {
+        "checks": 160,
+        "failures": 0,
+        "hero_reader_320px": 114,
+        "hero_reader_landscape": 119
+      },
+      "release_ui_layout": {
+        "checks": 126,
+        "failures": 0,
+        "home_390px_overflow": 72,
+        "home_390px_first_swipe": 72
+      },
+      "home_sanctuary": {
+        "checks": 180,
+        "failures": 0
+      },
+      "home_stack_fix": "complete authored stack minimum fixes390px clipped shortcut row; shared native scroll policy retained"
+    },
+    "odyssey_combat": {
+      "checks": 30,
+      "failures": 0
+    },
+    "publisher": {
+      "primitives": 14,
+      "unknown_edits_stop": true,
+      "existing_lock_preserved": true,
+      "real_commit_local_bare_push": true,
+      "same_launcher_replay_no_new_commit": true,
+      "missing_receipt_recovery": true,
+      "path_with_spaces": true,
+      "tracked_worktree_clean": true,
+      "github_push": false,
+      "windows_execution": false,
+      "profile_deploy": false,
+      "binary_game_sync": true
+    }
+  },
+  "stages": {
+    "owner_install": "pending",
+    "push": "pending",
+    "profile_deploy": "pending",
+    "IAP_worker": "unchanged",
+    "native": "unchanged",
+    "AAB": "not exported",
+    "Android": "not tested",
+    "author_source": "implemented and validated",
+    "github_commit": "not created by author; owner launcher prints verified link after push"
+  },
+  "remaining": [
+    "owner install/push/profile deploy with bundled launcher",
+    "exact-SHA Windows CI",
+    "one client AAB for Hero/Home; Android confirmation"
+  ],
+  "browser": "Cloud browser desktop and compact iframe inspected. Preview uses real generated source and isolated sample data; no production writes or credentials. Prior live session inspection was read-only.",
+  "next": "Run D:\\Godot\\tools\\Jade-Studio-Elegance\\apply_publish_and_deploy.cmd. Source install/push/deploy receipts must be reported separately; no native rebuild."
+}

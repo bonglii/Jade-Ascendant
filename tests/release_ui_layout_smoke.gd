@@ -73,7 +73,16 @@ func run() -> void:
   check(area.size.y>=30,"primary action initially reachable")
   var room: float=presenter.lower_scroll.get_v_scroll_bar().max_value-presenter.lower_scroll.get_v_scroll_bar().page
   await swipe(area.get_center())
-  if room>20:check(presenter.lower_scroll.scroll_vertical>20,"primary card swipe actually scrolls on compact screen")
+  print("HOME_SWIPE size=",size," room=",room," after=",presenter.lower_scroll.scroll_vertical," area=",area," room_after=",presenter.lower_scroll.get_v_scroll_bar().max_value-presenter.lower_scroll.get_v_scroll_bar().page," scroll_rect=",presenter.lower_scroll.get_global_rect())
+  # Input can settle deferred minimum sizes. Require a real first swipe for
+  # the effective range; when content fits, verify every panel is contained.
+  var actual_room: float=presenter.lower_scroll.get_v_scroll_bar().max_value-presenter.lower_scroll.get_v_scroll_bar().page
+  if actual_room>1:check(presenter.lower_scroll.scroll_vertical>=minf(20,actual_room-1),"primary card swipe actually scrolls on compact screen")
+  else:
+   # Hidden panels can retain an old allocated VBox rectangle. Inspect the
+   # visible panels, not unused container space from the previous resolution.
+   for panel: Control in presenter.lower_stack.get_children():
+    if panel.is_visible_in_tree():check(presenter.lower_scroll.get_global_rect().grow(1).encloses(panel.get_global_rect()),"visible Home panel fits "+panel.name+str(size)+str(panel.get_global_rect()))
   check(current_scene==home and not root.get_node("SceneTransitionManager").is_transitioning,"first primary-button swipe never starts run")
  checkpoint.defeat_pending=true;save.write_save_data("checkpoint",checkpoint);await frames(10)
  check(presenter._goal.action=="journey" and presenter._goal.stage==2,"ended run yields to next available stage")

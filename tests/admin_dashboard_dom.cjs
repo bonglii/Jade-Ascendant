@@ -30,6 +30,7 @@ const root=path.resolve(process.argv[2]||path.join(__dirname,'..')),wait=()=>new
  }
  const w=make(main,'/admin');await wait();
  check(!w.document.getElementById('studio').hidden,'session opens studio');
+ check(w.document.querySelectorAll('#help-steps li').length===4&&!w.document.getElementById('view-help').open,'mail guidance is available without obscuring editor');
  check(requests.length===1&&requests[0].path.endsWith('/session'),'login reads only one session; hidden admin sections make no requests');
  check(w.document.querySelector('.metrics').hidden,'unloaded history counters do not appear as empty compose metrics');
  if(process.env.JADE_ADMIN_RENDER_HTML){
@@ -60,8 +61,11 @@ const root=path.resolve(process.argv[2]||path.join(__dirname,'..')),wait=()=>new
  check(!requests.some(x=>x.method==='POST'&&!x.path.endsWith('/preview')),'opening tabs and preview never publish or grant');
  for(let i=0;i<8;i++)$('save-draft').click();await wait();check(requests.filter(x=>x.path==='/admin/api/drafts/save').length===1,'save-draft spam creates only one pending write');
  nav('history').click();await wait();check(requests.filter(x=>x.path==='/admin/api/history').length===1,'history loads on demand');
+ const deep=make(main,'/admin#history');await wait();check(!deep.document.querySelector('[data-view=history]').hidden&&deep.document.querySelector('[data-view=compose]').hidden,'a cross-feature link opens the intended tab');
  const t=make(trials,'/admin/trials');await wait();
  check(!t.document.getElementById('publish').disabled,'Trials session/readiness opens editor');
+ check(t.document.getElementById('live-state').textContent==='BELUM ADA ROTASI'&&!t.document.getElementById('enabled').checked,'empty live state cannot be confused with an active new draft');
+ check(t.document.getElementById('timeline').textContent.includes('Belum ada jadwal'),'empty calendar gives the admin a next action');
  check(t.document.getElementById('start').value.endsWith('04:00'),'Trials proposes Monday04 WIB automatically');
  t.document.getElementById('start').value='2026-10-26T04:00';t.document.getElementById('start').dispatchEvent(new t.Event('change'));
  check(t.document.getElementById('utc').textContent.includes('2026-10-25T21:00:00.000Z'),'Trials preview converts WIB to actual Sunday UTC');

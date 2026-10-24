@@ -44,7 +44,7 @@ func run() -> void:
   check(hero.grid.columns==5,"five columns "+str(viewport))
   check(hero.scroll.position.y>=deck.position.y+deck.size.y,"backpack begins below pinned deck")
   check(hero.scroll.get_global_rect().end.y<=hero.nav.get_global_rect().position.y,"backpack fits above navigation")
-  check(hero.scroll.size.y>=80,"usable backpack viewport "+str(viewport))
+  check(hero.scroll.size.y>=110,"usable backpack viewport "+str(viewport))
   check(bounds(deck.get_global_rect(),Rect2(Vector2.ZERO,Vector2(viewport))),"pinned deck fits "+str(viewport))
   check(hero.filter_menu.size.x>40 and hero.filter_menu.get_global_rect().end.x<viewport.x,"phone dropdown fits")
   hero.scroll.scroll_vertical=10000;await frames()
