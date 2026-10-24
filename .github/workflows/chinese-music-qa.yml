@@ -23,6 +23,7 @@ jobs:
           curl -fsSL --retry 3 https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip -o "$RUNNER_TEMP/jade-audio/godot.zip"
           echo "cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4  $RUNNER_TEMP/jade-audio/godot.zip" | sha256sum --check
           unzip -q "$RUNNER_TEMP/jade-audio/godot.zip" -d "$RUNNER_TEMP/jade-audio"
+          node --test backend/player_identity/check_event_touch_error.test.cjs
           node tests/chinese_music_qa.cjs "$RUNNER_TEMP/jade-audio/Godot_v4.7.2-stable_linux.x86_64"
           node backend/player_identity/production_release_contract.mjs
       - uses: actions/upload-artifact@v4

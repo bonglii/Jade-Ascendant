@@ -301,3 +301,19 @@ routing must accept the currently paused stream as well, preserving its position
 and duck envelope. Validate actual playback, loop wrap and background/resume;
 matching resource paths alone does not establish continuity. Prepare raw audio
 imports before enabling autoload preloads in a clean isolated test project.
+
+## 2026-10-24 — test the first checkout, not a bootstrapped audio fixture
+
+The Chinese music suite imported raw resources before enabling autoloads; this
+hid missing committed .ogg.import files. Exact-SHA CI artifact12555831453 showed
+both new preloads failed during first autoload parsing and four shared release
+jobs stopped at that same root cause. Ship Godot-generated importer sidecars and
+copy them into the isolated fixture. Run one strict import with autoloads enabled
+from the beginning and verify the shared full-project fixture from an empty cache.
+Do not dismiss first-import errors as harmless or turn off the strict error gate.
+
+A normal owner editor may have generated those sidecars already with another
+resource UID. The portable fix backs up and accepts only that UID-only variation
+for these two reviewed files; every import parameter/source/cache path must match.
+No broad local-file hash bypass. QA failures must print the first actual error,
+not trailing import progress; a long-output child-process regression covers this.

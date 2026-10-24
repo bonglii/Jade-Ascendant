@@ -30,7 +30,8 @@ async function runProcess(executable,args,{cwd,logs,name,marker='',idleMs=300000
  const metadata={name,executable,args,elapsed_ms:Date.now()-started,exit_code:result.code,signal:result.signal,process_error:childError?{code:childError.code,message:childError.message}:null,reason,output_bytes:outputBytes,last_output:lastLine,log:logPath};
  fs.writeFileSync(metaPath,JSON.stringify(metadata,null,2)+'\n');
  if(reason||childError||result.code!==0||errorLines||marker&&!text.includes(marker)){
-  console.error((errorLines||tail).slice(-3000));
+  const firstError=text.search(/SCRIPT ERROR|Parse Error|ERROR:/);
+  console.error(firstError>=0?text.slice(firstError,firstError+3000):(errorLines||tail).slice(-3000));
   throw Error(reason+'; elapsed '+Math.round(metadata.elapsed_ms/1000)+'s; logs: '+logPath+' and '+metaPath+'; retry retains import cache');
  }
  if(marker)console.log(text.split(/\r?\n/).find(line=>line.startsWith(marker)));

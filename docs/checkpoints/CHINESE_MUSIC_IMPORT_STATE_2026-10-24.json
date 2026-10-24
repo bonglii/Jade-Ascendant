@@ -1,0 +1,31 @@
+{
+  "batch": "CHINESE_MUSIC_IMPORT_CLOSURE_2026-10-24",
+  "base": "5fc8a6fd54becd0322d129cf9396f003f33e5ff1",
+  "previous": "docs/checkpoints/CHINESE_MUSIC_STATE_2026-10-24.json",
+  "problem": "Fresh full-project import failed because two new Ogg sidecars were omitted; isolated test had hidden this by preparing assets first.",
+  "fix": [
+    "Two Godot4.7.2-generated .ogg.import files included",
+    "One strict fresh-cache isolated import with all actual sidecars and autoloads enabled",
+    "Source QA rejects absent/mismatched sidecars",
+    "Shared runner prints first actual error rather than trailing progress"
+  ],
+  "validation": {
+    "actual_failed_ci_artifact": 12555831453,
+    "full_shared_fixture": "Fresh 3349-file import passed in24.6s; source saves isolated",
+    "current_player_comfort": "60checks/0fail",
+    "real_audio_manager": "26checks/0fail; first import and playback clean",
+    "regressions": "2 actual child-process tests: long error output and omitted metadata",
+    "production_guards": 9,
+    "other_gameplay": "Previous unaffected evidence reused; no new phone claim"
+  },
+  "stages": {
+    "source": "complete locally",
+    "commit_push": "owner portable publisher pending",
+    "exact_SHA_CI": "pending after fix push",
+    "deploy": "none required",
+    "native": "unchanged",
+    "AAB": "not exported",
+    "Android": "not tested"
+  },
+  "next": "Run Jade-Music-Import-Fix/apply_and_publish.cmd; wait exact-SHA CI; then one final production AAB."
+}
