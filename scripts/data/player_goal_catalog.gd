@@ -1,30 +1,30 @@
 extends RefCounted
 ## Read-only guidance. Opening Home must never select a stage, grant a reward or start a run.
-static func choose(context: Dictionary) -> Dictionary:
- if bool(context.get("read_only",false)):return {"action":"recovery","title":"ACCOUNT RECOVERY","hint":"Open Settings to review your saved progress.","button":"OPEN SETTINGS"}
- if bool(context.get("checkpoint",false)):return {"action":"continue","title":"YOUR RUN IS SAVED","hint":"Resume with the same skills and equipment.","button":"CONTINUE RUN"}
- if int(context.get("daily_ready",0))+int(context.get("achievement_ready",0))>0:return {"action":"trials","title":"TRIAL REWARDS READY","hint":"Collect earned Daily and Achievement rewards.","button":"CLAIM TRIALS"}
- for stage: Dictionary in context.get("stages",[]):
+static func choose(goal_state: Dictionary) -> Dictionary:
+ if bool(goal_state.get("read_only",false)):return {"action":"recovery","title":"ACCOUNT RECOVERY","hint":"Open Settings to review your saved progress.","button":"OPEN SETTINGS"}
+ if bool(goal_state.get("checkpoint",false)):return {"action":"continue","title":"YOUR RUN IS SAVED","hint":"Resume with the same skills and equipment.","button":"CONTINUE RUN"}
+ if int(goal_state.get("daily_ready",0))+int(goal_state.get("achievement_ready",0))>0:return {"action":"trials","title":"TRIAL REWARDS READY","hint":"Collect earned Daily and Achievement rewards.","button":"CLAIM TRIALS"}
+ for stage: Dictionary in goal_state.get("stages",[]):
   if not bool(stage.get("implemented",false)) or not bool(stage.get("unlocked",false)) or bool(stage.get("cleared",false)):continue
   var chapter: int=int(stage.chapter);var number: int=int(stage.stage)
   var hint: String="First-clear rewards available."
   if chapter==1 and number==1:hint="Unlock Spirit Meditation and the first refinement guide."
   elif chapter==1 and number==5:hint="Unlock the Pavilion equipment collection."
   return {"action":"journey","chapter":chapter,"stage":number,"title":"NEXT · STAGE %d-%d"%[chapter,number],"hint":hint,"button":"PLAY %d-%d"%[chapter,number]}
- if bool(context.get("mastery_choice",false)):return {"action":"cultivation","title":"CHOOSE YOUR DAO","hint":"A maxed cultivation path has a mastery choice ready.","button":"CHOOSE MASTERY"}
- if bool(context.get("trial_ready",false)) and not bool(context.get("trial_complete",false)):return {"action":"cultivation","title":"GOLDEN CORE TRIAL","hint":"Defeat the 1-5 guardian with at most 3 HP hits.","button":"VIEW TRIBULATION"}
- if int(context.get("event_ready",0))>0:return {"action":"events","title":"EVENT REWARDS READY","hint":"Collect the milestones you have already earned.","button":"VIEW EVENTS"}
- if not bool(context.get("cultivation_maxed",false)) and bool(context.get("cultivation_affordable",true)):return {"action":"cultivation","title":"STRENGTHEN YOUR DAO","hint":"Develop your permanent paths and unlock mastery.","button":"OPEN CULTIVATION"}
+ if bool(goal_state.get("mastery_choice",false)):return {"action":"cultivation","title":"CHOOSE YOUR DAO","hint":"A maxed cultivation path has a mastery choice ready.","button":"CHOOSE MASTERY"}
+ if bool(goal_state.get("trial_ready",false)) and not bool(goal_state.get("trial_complete",false)):return {"action":"cultivation","title":"GOLDEN CORE TRIAL","hint":"Defeat the 1-5 guardian with at most 3 HP hits.","button":"VIEW TRIBULATION"}
+ if int(goal_state.get("event_ready",0))>0:return {"action":"events","title":"EVENT REWARDS READY","hint":"Collect the milestones you have already earned.","button":"VIEW EVENTS"}
+ if not bool(goal_state.get("cultivation_maxed",false)) and bool(goal_state.get("cultivation_affordable",true)):return {"action":"cultivation","title":"STRENGTHEN YOUR DAO","hint":"Develop your permanent paths and unlock mastery.","button":"OPEN CULTIVATION"}
 
- if not bool(context.get("daily_complete",false)):return {"action":"trials","title":"TODAY'S DISCIPLINES","hint":"Complete all daily trials for %d Celestial Jade."%int(context.get("daily_completion_jade",20)),"button":"VIEW DAILY TRIALS"}
+ if not bool(goal_state.get("daily_complete",false)):return {"action":"trials","title":"TODAY'S DISCIPLINES","hint":"Complete all daily trials for %d Celestial Jade."%int(goal_state.get("daily_completion_jade",20)),"button":"VIEW DAILY TRIALS"}
 
- var collection: Dictionary=context.get("collection",{})
+ var collection: Dictionary=goal_state.get("collection",{})
  if int(collection.get("total",0))>int(collection.get("owned",0)):
-  var indonesian: bool=context.get("language","")=="id"
+  var indonesian: bool=goal_state.get("language","")=="id"
   return {"action":"collection","title":"TARGET KOLEKSI" if indonesian else "YOUR COLLECTION TARGET","hint":("%d / %d bagian dimiliki. Lihat relik yang belum terkumpul." if indonesian else "%d / %d pieces owned. Track the relics still missing.")%[int(collection.owned),int(collection.total)],"button":"LIHAT TARGET" if indonesian else "VIEW TARGET"}
- var target: Dictionary=context.get("record_target",{})
+ var target: Dictionary=goal_state.get("record_target",{})
  if not target.is_empty():
-  var indonesian: bool=context.get("language","")=="id"
+  var indonesian: bool=goal_state.get("language","")=="id"
   return {"action":"journey","chapter":int(target.chapter),"stage":int(target.stage),"title":("TAKLUKKAN STAGE %d-%d" if indonesian else "MASTER STAGE %d-%d")%[int(target.chapter),int(target.stage)],"hint":"Menang tanpa HP berkurang. Target rekor pribadi." if indonesian else "Aim for a clear with zero HP hits. Personal record only.","button":("ULANGI %d-%d" if indonesian else "REPLAY %d-%d")%[int(target.chapter),int(target.stage)]}
  return {"action":"library","title":"MASTER YOUR BUILD","hint":"Explore set roles, independent weapons and resonances.","button":"EXPLORE BUILDS"}
 

@@ -25,7 +25,7 @@ export function createProductionWorkerV2({base=candidate,verifyIdentity=verifyFi
   if(url.pathname==='/health'&&request.method==='GET')return reply(200,{service:'jade-iap',gameplay_contract:2,release_enabled:active});
   if(!active)return reply(503,{error:'real_money_locked'});
   if(url.pathname==='/internal/updates')return updatePushRoute(request,env);
-  if(['/internal/trials/config','/internal/trials/operations','/v1/heavenly-trials/ssv'].includes(url.pathname))return trialsRoute(request,env,ctx);
+  if(['/internal/trials/config','/internal/trials/operations','/internal/trials/calendar','/v1/heavenly-trials/ssv'].includes(url.pathname))return trialsRoute(request,env,ctx);
   if(['/internal/odyssey/config','/v1/odyssey/ssv'].includes(url.pathname))return odysseyRoute(request,env,ctx);
   // RTDN uses its own trusted Google service identity, never a player token.
   if(url.pathname==='/v1/rtdn/voids')return base.fetch(request,env,ctx);

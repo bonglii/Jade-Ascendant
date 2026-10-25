@@ -88,7 +88,11 @@ func _build() -> void:
 func _process(delta: float) -> void:
  _elapsed+=delta
  if _elapsed>=1:_elapsed=0;_refresh()
+var _disabled_exit: bool=false
 func _refresh() -> void:
+ if client!=null and client.status=="connected" and client.snapshot.has("campaign") and not client.event_enabled():
+  if not _disabled_exit:_disabled_exit=true;call_deferred("_leave_disabled_event")
+  return
  if not is_instance_valid(_entry):return
  var data: Dictionary=client.snapshot if client!=null else {};var week: Variant=data.get("week")
  var available: bool=client!=null and bool(client.call("is_available"));var busy: bool=client==null or bool(client.call("mutation_busy"))
@@ -96,7 +100,7 @@ func _refresh() -> void:
  if week is Dictionary:
   _refresh_portrait(_selected,int(week.stage))
   var rule: Array=RULES.get(str(week.theme),RULES.jade_wind);_title.text=str(rule[0]);find_child("WeekEyebrow",true,false).text="WEEK %02d · ASCENSION"%[int(week.index)+1];_rule.text=rule[1]
-  var left: int=maxi(0,int(week.ends_at)-int(client.call("server_time")));_time.text="RESETS MON 04:00 WIB  ·  %dd %02dh LEFT"%[left/86400,(left%86400)/3600]
+  var left: int=maxi(0,int(week.ends_at)-int(client.call("server_time")));_time.text="RESETS MON 04:00 WIB  ·  %dd %02dh LEFT"%[int(float(left)/86400.0),int(float(left%86400)/3600.0)]
  else:_time.text="WEEKLY RESET · MONDAY 04:00 WIB"
  for tier: int in range(1,4):
   var progress: Dictionary={}
@@ -118,7 +122,7 @@ func _refresh_portrait(tier: int,stage: int) -> void:
  var portrait: TextureRect=find_child("WeeklyBossPortrait",true,false)
  var atlas: Texture2D=load("res://assets/enemy/boss_2d/atlas_"+key+".png")
  if atlas==null:return
- var cell:=Vector2i(atlas.get_width()/6,atlas.get_height()/6)
+ var cell:=Vector2i(int(float(atlas.get_width())/6.0),int(float(atlas.get_height())/6.0))
  var idle:=Rect2i(0,cell.y,cell.x,cell.y)
  var used: Rect2i=atlas.get_image().get_region(idle).get_used_rect()
  var tile:=AtlasTexture.new();tile.atlas=atlas;tile.region=Rect2(used.position+idle.position,used.size);tile.filter_clip=true
@@ -161,8 +165,8 @@ func _open_rewards() -> void:
  var body: VBoxContainer=_modal_body(heading,"rewards")
  if not outcome.is_empty():
   if client!=null and client.mutation_busy():body.add_child(_label("Securing result with the server…",16,Style.JADE))
-  var seconds: int=int(outcome.get("time_ms",0))/1000
-  body.add_child(_label("TIER %d · %02d:%02d"%[int(outcome.tier),seconds/60,seconds%60],18,Style.GOLD))
+  var seconds: int=int(float(outcome.get("time_ms",0))/1000.0)
+  body.add_child(_label("TIER %d · %02d:%02d"%[int(outcome.tier),int(float(seconds)/60.0),seconds%60],18,Style.GOLD))
   if not bool(outcome.get("won",false)):body.add_child(_label("Your Journey is safe. Return for another free attempt.",17,Style.TEXT))
  body.add_child(_label("CLEAR · SURVIVOR · UNTOUCHED",16,Style.GOLD))
  body.add_child(_label("Medals celebrate your best run. Every clear earns the same tier reward, once per week.",16))
@@ -170,7 +174,7 @@ func _open_rewards() -> void:
  if client==null:return
  for row: Dictionary in client.snapshot.get("progress",[]):
   var medals: String="CLEAR"+(" · SURVIVOR" if int(row.survivor)==1 else "")+(" · UNTOUCHED" if int(row.untouched)==1 else "")
-  body.add_child(_label("TIER %d  ·  %02d:%02d\n%s"%[int(row.tier),int(row.best_ms)/60000,(int(row.best_ms)/1000)%60,medals],17,Style.CREAM))
+  body.add_child(_label("TIER %d  ·  %02d:%02d\n%s"%[int(row.tier),int(float(row.best_ms)/60000.0),(int(float(row.best_ms)/1000.0))%60,medals],17,Style.CREAM))
  var claim: Button=_button(body,"CLAIM EARNED REWARDS",_claim,true);claim.disabled=client.mutation_busy() or int(client.call("ready_count"))==0
  body.add_child(_label("Delivered securely to your mailbox. Optional ads add Stones only.",14,Style.MUTED))
  if bool(client.snapshot.get("ads_ready",false)):
@@ -217,7 +221,7 @@ func _open_shop() -> void:
  if client!=null and int(client.snapshot.get("bonus_seals",0))>0:
   _button(body,"PAVILION · %d SEALS"%int(client.snapshot.bonus_seals),_bonus_summon)
 func _buy() -> void:
- if client==null or client.mutation_busy():return
+ if client==null or not client.is_available() or not bool(client.snapshot.get("shop_ready",false)) or client.mutation_busy():return
  var pavilion: Node=get_node_or_null("/root/PavilionManager")
  if pavilion!=null and pavilion.call("purchase_iap","heavenly_trials_support_550"):
   var buy: Button=find_child("TrialsCheckout",true,false)
@@ -226,6 +230,9 @@ func _bonus_summon() -> void:
  if _navigating:return
  _navigating=true
  SceneTransitionManager.transition_to("res://scenes/ui/pavilion_screen.tscn",{"title":"CELESTIAL PAVILION","subtitle":"Use your bonus Seal"})
+func _leave_disabled_event() -> void:
+ _close_modal()
+ _back()
 func _back() -> void:
  if is_instance_valid(_modal):_close_modal();return
  if _navigating:return

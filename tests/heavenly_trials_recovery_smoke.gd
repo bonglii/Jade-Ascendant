@@ -23,7 +23,7 @@ func run() -> void:
  create_timer(60).timeout.connect(func():quit(1));await settle(20)
  var transport: Node=load("res://tests/fixtures/heavenly_trials_transport.gd").new();root.add_child(transport);transport.set_process(false);transport._owner=transport.simulated_binding
  var bridge:=Bridge.new();root.add_child(bridge);transport.test_bridge=bridge
- var now: int=int(Time.get_unix_time_from_system());var snapshot: Dictionary={"version":1,"owner_binding":transport.simulated_binding,"server_time":now,"week":{"id":"ht_qa_0","ends_at":now+1000},"campaign":{"enabled":true},"progress":[],"previous_progress":[]}
+ var now: int=int(Time.get_unix_time_from_system());var snapshot: Dictionary={"version":1,"owner_binding":transport.simulated_binding,"server_time":now,"week":{"id":"ht_qa_0","starts_at":now-60,"ends_at":now+1000},"campaign":{"enabled":true,"ads_enabled":true,"shop_enabled":true},"progress":[],"previous_progress":[]}
  transport.snapshot=snapshot;transport._received=Time.get_ticks_msec()
  if FileAccess.file_exists(transport._path()):DirAccess.remove_absolute(transport._path())
  check(transport.refresh(),"read dispatches")

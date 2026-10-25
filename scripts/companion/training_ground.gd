@@ -97,7 +97,7 @@ func _process(delta: float) -> void:
  elapsed+=delta
  player.position=player.position.clamp(Vector2(72,330),Vector2(576,920))
  for i: int in range(targets.size()):
-  if is_instance_valid(targets[i]):targets[i].position=Vector2(240+i*80+sin(elapsed*1.4+float(i))*55 if moving else 240+i*80,450+sin(elapsed+float(i))*35 if moving else 450)
+  if is_instance_valid(targets[i]):targets[i].position=Vector2(240+i*80+sin(elapsed*1.4+float(i))*55 if moving else float(240+i*80),450+sin(elapsed+float(i))*35 if moving else 450.0)
  _readout_timer-=delta
  if _readout_timer>0:return
  _readout_timer=.15

@@ -268,7 +268,7 @@ func _refresh_liveops_badges() -> void:
  var pool: Array[String]=claim_choices if not claim_choices.is_empty() else choices
  event_card.visible=not pool.is_empty()
  if not pool.is_empty():
-  var key: String=_featured_key if event_button.button_pressed and _featured_key in pool else pool[int(Time.get_ticks_msec()/6500)%pool.size()]
+  var key: String=_featured_key if event_button.button_pressed and _featured_key in pool else pool[int(float(Time.get_ticks_msec())/6500.0)%pool.size()]
   var map: Dictionary={"boss_hunt":"celestial_boss_hunt","pilgrimage":"jade_valley_pilgrimage","heavenly_ladder":"heavenly_ladder","treasure_hunt":"celestial_treasure_hunt","five_elements":"path_of_five_elements"}
   var destination: String="res://scenes/ui/heavenly_trials_screen.tscn" if key=="heavenly_trials" else "res://scenes/ui/odyssey_screen.tscn" if key=="odyssey" else str(live_ops.get_event(str(map[key])).get("scene_path",""))
   var info: Dictionary=EventCatalog.preview(self,key) if key!="odyssey" else {"current":preload("res://scripts/data/odyssey_progress.gd").current(client.snapshot.get("state",{})),"total":preload("res://scripts/data/odyssey_progress.gd").goal(client.snapshot.get("state",{})),"reward":{}}
@@ -409,7 +409,7 @@ func _layout_sanctuary() -> void:
  var action_w: float=width-24 if compact else width*.36
  var text_width: float=width-text_start-18*u if compact else width-text_start-action_w-22*u
  _rect(chapter_label,Vector2(text_start,16.0 if compact else 14*u),Vector2(text_width,20));_font(chapter_label,13,true)
- _rect(realm_title,Vector2(text_start,38.0 if compact else 36*u),Vector2(text_width,48 if compact else 52*u));_font(realm_title,22,true)
+ _rect(realm_title,Vector2(text_start,38.0 if compact else 36*u),Vector2(text_width,48.0 if compact else 52.0*u));_font(realm_title,22,true)
  _rect(next_path_label,Vector2(text_start,83.0 if compact else 94*u),Vector2(text_width,20));_font(next_path_label,13)
  var meter_y: float=112.0 if compact else 116*u
  _rect(realm_progress,Vector2(text_start,meter_y),Vector2(maxf(30,text_width-54),7))

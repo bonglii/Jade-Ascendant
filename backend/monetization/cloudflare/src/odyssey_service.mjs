@@ -1,3 +1,4 @@
+import {slotGuard} from './event_calendar.mjs';
 import {flowTransition,flowState,BOARD_REWARDS} from './odyssey_flow_rules.mjs';
 import {utcDay} from './odyssey_rules.mjs';
 import {reconcileTopupBonus,bonusSummary} from './odyssey_purchase_bonus.mjs';
@@ -12,7 +13,22 @@ const id=()=>crypto.randomUUID().replaceAll('-','');
 const primary=db=>db.withSession?db.withSession('first-primary'):db;
 export const account=uid=>{if(typeof uid!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(uid))reject('invalid_identity',401);return sha(uid);};
 export async function currentEvent(db){const r=await primary(db).prepare('SELECT document FROM odyssey_events ORDER BY created_at DESC,id DESC LIMIT 1').first();return r?JSON.parse(r.document):null;}
-export async function publishEvent(db,input,time){const e=definition(input),old=await db.prepare('SELECT document FROM odyssey_events WHERE id=?').bind(e.id).first();if(old){const original=JSON.parse(old.document);if(JSON.stringify({...original,enabled:e.enabled,ads_enabled:e.ads_enabled,purchases_enabled:e.purchases_enabled})!==JSON.stringify(e))reject('published_event_immutable');await db.prepare('UPDATE odyssey_events SET document=? WHERE id=?').bind(JSON.stringify(e),e.id).run();}else{if(e.starts_at<time-60||e.starts_at>time+90*86400)reject('invalid_schedule',400);const previous=await currentEvent(db);if(previous&&previous.ends_at+3*86400>time)reject('previous_season_not_finished');await db.prepare("INSERT INTO odyssey_events SELECT ?,?,? WHERE NOT EXISTS(SELECT 1 FROM odyssey_events WHERE json_extract(document,'$.ends_at')+259200>?)").bind(e.id,JSON.stringify(e),time,time).run();const created=await db.prepare('SELECT document FROM odyssey_events WHERE id=?').bind(e.id).first();if(!created)reject('previous_season_not_finished');}return e;}
+export async function publishEvent(db,input,time){
+ const e=definition(input),old=await db.prepare('SELECT document FROM odyssey_events WHERE id=?').bind(e.id).first();
+ const guard=await slotGuard(db,'odyssey',e,time),document=JSON.stringify(e);
+ if(old){
+  const original=JSON.parse(old.document);
+  if(JSON.stringify({...original,enabled:e.enabled,ads_enabled:e.ads_enabled,purchases_enabled:e.purchases_enabled})!==document)reject('published_event_immutable');
+  await db.prepare('UPDATE odyssey_events SET document=? WHERE id=? AND '+guard.sql).bind(document,e.id,...guard.args).run();
+ }else{
+  if(e.starts_at<time-60||e.starts_at>time+90*86400)reject('invalid_schedule',400);
+  const previous=await currentEvent(db);if(previous&&previous.ends_at+3*86400>time)reject('previous_season_not_finished');
+  await db.prepare("INSERT INTO odyssey_events SELECT ?,?,? WHERE NOT EXISTS(SELECT 1 FROM odyssey_events WHERE json_extract(document,'$.ends_at')+259200>?) AND "+guard.sql).bind(e.id,document,time,time,...guard.args).run();
+ }
+ const saved=await db.prepare('SELECT document FROM odyssey_events WHERE id=?').bind(e.id).first();
+ if(saved?.document!==document)reject('event_schedule_conflict');
+ return e;
+}
 async function paidEligible(db,owner,time){const key='u1:'+owner;await assertNoRefundHoldRC5({db,owner:key});await assertVerifiedPlayCreditRC14(db,key);const c=await primary(db).prepare("SELECT watermark_ms FROM iap_play_void_cursor_v1 WHERE cursor_name='voided_inapp'").first();if(!integer(c?.watermark_ms,time*1000-7200000,time*1000+60000))reject('refund_monitor_stale',503);}
 const paidGuard="NOT EXISTS(SELECT 1 FROM iap_refund_account_holds_v1 WHERE owner_key=? AND status='held') AND EXISTS(SELECT 1 FROM iap_play_void_cursor_v1 WHERE cursor_name='voided_inapp' AND watermark_ms BETWEEN ? AND ?) AND EXISTS(SELECT 1 FROM iap_wallet_events_v1 WHERE owner_key=? AND event_kind='play_credit')";
 export function service(db,{now=()=>Math.floor(Date.now()/1000),rng,economy=1,adConfigured=true,compassGrant=async()=>({authorized:false,stage:'not_checked'})}={}){
@@ -101,10 +117,13 @@ export async function creditAd(db,rawQuery,env,{keys=getKeys,now=()=>Date.now()}
  const verified=verifyGoogleSsv(rawQuery,{trustedGoogleKeys:await keys(),expectedAdUnit:env.ODYSSEY_AD_UNIT,expectedCustomData:nonce,expectedRewardAmount:1,expectedRewardItem:env.ODYSSEY_AD_REWARD_ITEM,nowMs:now(),maxAgeMs:1200000});
  const existing=await primary(db).prepare('SELECT intent_id FROM odyssey_ad_receipts WHERE transaction_id=?').bind(verified.transactionId).first();if(existing){if(existing.intent_id!==nonce)reject('ad_receipt_conflict');return {credited:true};}
  const stamp=Math.floor(now()/1000),r=await db.prepare('SELECT document FROM odyssey_events WHERE id=?').bind(intent.event_id).first();const event=r?JSON.parse(r.document):null;
- if(!event?.enabled||!event.ads_enabled||stamp>=event.ends_at||stamp>intent.expires_at||intent.consumed_at||verified.timestampMs<intent.created_at*1000-1000)reject('ad_intent_expired');
+ if(!event||stamp>=event.ends_at||stamp>intent.expires_at||intent.consumed_at||verified.timestampMs<intent.created_at*1000-1000)reject('ad_intent_expired');
  for(let attempt=0;attempt<3;attempt++){
   const player=await primary(db).prepare('SELECT state,revision FROM odyssey_players WHERE event_id=? AND owner=?').bind(intent.event_id,intent.owner).first();if(!player)reject('invalid_ad_intent');
-  const s=transition(JSON.parse(player.state),{kind:'sync'},event,stamp).state;if(s.daily_ads>=LIMITS.ads_daily)reject('ad_limit');s.daily_ads++;s.tickets++;s.notice='Verified ad · +1 travel die';
+  const stored=JSON.parse(player.state);
+  // A signed receipt for a previously issued intent remains recoverable after
+  // pause. Do not mint a new daily allowance while the event is disabled.
+  const s=event.enabled?transition(stored,{kind:'sync'},event,stamp).state:stored;if(s.daily_ads>=LIMITS.ads_daily)reject('ad_limit');s.daily_ads++;s.tickets++;s.notice='Verified ad · +1 travel die';
   try{await db.batch([
    db.prepare('UPDATE odyssey_players SET revision=CASE WHEN revision=? THEN revision+1 ELSE -1 END,state=? WHERE event_id=? AND owner=?').bind(player.revision,JSON.stringify(s),intent.event_id,intent.owner),
    db.prepare('INSERT INTO odyssey_ad_receipts VALUES(?,?,?)').bind(verified.transactionId,nonce,stamp),

@@ -1,3 +1,4 @@
+import {slotGuard,readCalendar} from './event_calendar.mjs';
 import {trialsOperations} from './heavenly_trials_operations.mjs';
 import {createHash,timingSafeEqual} from 'node:crypto';
 import {boundedBody,json} from './odyssey_http.mjs';
@@ -28,14 +29,14 @@ export async function publish(db,input,now){
   const fixed={...old,enabled:next.enabled,ads_enabled:next.ads_enabled,shop_enabled:next.shop_enabled};
   if(JSON.stringify(definition(fixed))!==JSON.stringify(next))fail('published_rotation_immutable');
  }else if(next.starts_at<now-WEEK+1||next.starts_at>now+90*86400)fail('invalid_schedule');
- const document=JSON.stringify(next);
+ const document=JSON.stringify(next),guard=await slotGuard(db,'trials',next,now);
  // A single weekly rotation wins a reset slot, including concurrent publishes.
  await db.batch([
-  db.prepare("INSERT INTO ht_campaigns SELECT ?,?,? WHERE EXISTS(SELECT 1 FROM ht_campaigns WHERE id=?) OR NOT EXISTS(SELECT 1 FROM ht_campaigns WHERE CAST(json_extract(document,'$.starts_at') AS INTEGER)=? AND id<>?) ON CONFLICT(id) DO UPDATE SET document=excluded.document").bind(next.id,document,now,next.id,next.starts_at,next.id),
+  db.prepare("INSERT INTO ht_campaigns SELECT ?,?,? WHERE (EXISTS(SELECT 1 FROM ht_campaigns WHERE id=?) OR NOT EXISTS(SELECT 1 FROM ht_campaigns WHERE CAST(json_extract(document,'$.starts_at') AS INTEGER)=? AND id<>?)) AND "+guard.sql+" ON CONFLICT(id) DO UPDATE SET document=excluded.document").bind(next.id,document,now,next.id,next.starts_at,next.id,...guard.args),
   db.prepare("INSERT INTO ht_audit(campaign,action,document,created_at) SELECT ?,'publish',?,? WHERE EXISTS(SELECT 1 FROM ht_campaigns WHERE id=? AND document=?)").bind(next.id,document,now,next.id,document)
  ]);
  const saved=await db.prepare('SELECT document FROM ht_campaigns WHERE id=?').bind(next.id).first();
- if(!saved||saved.document!==document)fail('schedule_slot_occupied');
+ if(!saved||saved.document!==document){const conflict=await db.prepare('SELECT 1 AS conflict WHERE NOT ('+guard.sql+')').bind(...guard.args).first();fail(conflict?'event_schedule_conflict':'schedule_slot_occupied');}
  return next;
 }
 export async function weekFor(db,campaign,now,offset=0){
@@ -67,7 +68,7 @@ async function grants(db,owner,week,tiers){const steps=await grantSteps(db,owner
 export function trialsService(database,{now=()=>Math.floor(Date.now()/1000),unlock=eligibility,env={}}={}){
  const db=primary(database);
  async function read(uid){
-  const owner=account(uid),stamp=now(),campaign=await currentCampaign(db,stamp),week=await weekFor(db,campaign,stamp);
+  const owner=account(uid),stamp=now(),campaign=await currentCampaign(db,stamp),week=campaign?.enabled?await weekFor(db,campaign,stamp):null;
   await db.prepare("UPDATE ht_sessions SET status='abandoned' WHERE owner=? AND status='running' AND expires_at<?").bind(owner,stamp).run();
   const tier=await unlock(env,owner),progress=week?(await db.prepare('SELECT * FROM ht_progress WHERE owner=? AND week=? ORDER BY tier').bind(owner,week.id).all()).results:[];
   const previousRow=await db.prepare('SELECT w.document FROM ht_weeks w JOIN ht_progress p ON p.week=w.id WHERE p.owner=? AND p.clears>0 AND p.claimed=0 AND w.id<>? AND w.ends_at>=? AND w.starts_at<? ORDER BY w.starts_at DESC LIMIT 1').bind(owner,week?.id||'',stamp-GRACE,stamp).first();
@@ -78,14 +79,14 @@ export function trialsService(database,{now=()=>Math.floor(Date.now()/1000),unlo
   if(week)await reconcilePack(db,owner,week,stamp);
   let pack=false;if(week)pack=!!await db.prepare('SELECT event_key FROM ht_purchase_bonus WHERE owner=? AND week=?').bind(owner,week.id).first();
   const bonus_seals=await trialSealBalance(db,owner);
-  return {bonus_seals,version:1,owner_binding:owner,server_time:stamp,campaign,week,unlock_tier:tier,progress,previous,previous_progress:previousProgress,session,ad,pack_claimed:pack,ad_unit:env.TRIALS_AD_UNIT||'',ads_ready:!!campaign?.ads_enabled&&/^ca-app-pub-\d{16}\/\d{10}$/.test(env.TRIALS_AD_UNIT||'')&&!!env.TRIALS_AD_REWARD_ITEM,shop_ready:!!campaign?.shop_enabled,pack_product:PACK};
+  return {bonus_seals,version:1,owner_binding:owner,server_time:stamp,campaign,week,unlock_tier:tier,progress,previous,previous_progress:previousProgress,session,ad,pack_claimed:pack,ad_unit:env.TRIALS_AD_UNIT||'',ads_ready:!!campaign?.enabled&&!!campaign?.ads_enabled&&/^ca-app-pub-\d{16}\/\d{10}$/.test(env.TRIALS_AD_UNIT||'')&&!!env.TRIALS_AD_REWARD_ITEM,shop_ready:!!campaign?.enabled&&!!campaign?.shop_enabled,pack_product:PACK};
  }
  async function execute(uid,input){
   if(!exact(input,['request_id','week_id','action'])||!/^[a-f0-9]{32}$/.test(input.request_id)||!/^ht_[a-z0-9_-]{3,64}$/.test(input.week_id)||!input.action?.kind)fail('invalid_request',400);
   const owner=account(uid),stamp=now(),fingerprint=sha(JSON.stringify(input));
   const old=await db.prepare('SELECT * FROM ht_actions WHERE owner=? AND request_id=?').bind(owner,input.request_id).first();
   if(old){if(old.fingerprint!==fingerprint)fail('request_reused');return read(uid);}
-  const campaign=await currentCampaign(db,stamp),current=await weekFor(db,campaign,stamp),row=await db.prepare('SELECT document FROM ht_weeks WHERE id=?').bind(input.week_id).first();
+  const campaign=await currentCampaign(db,stamp),current=campaign?.enabled?await weekFor(db,campaign,stamp):null,row=await db.prepare('SELECT document FROM ht_weeks WHERE id=?').bind(input.week_id).first();
   if(!row)fail('week_not_found');const week=JSON.parse(row.document),a=input.action,steps=[db.prepare('INSERT INTO ht_actions VALUES(?,?,?,?)').bind(owner,input.request_id,fingerprint,'{}')];
   const active=campaign?.enabled&&week.campaign===campaign.id&&week.id===current?.id&&stamp>=week.starts_at&&stamp<week.ends_at;
   if(a.kind==='start'){
@@ -149,9 +150,10 @@ export async function settleTrials(env){
 export async function trialsRoute(request,env,ctx,uid){
  try{
   const url=new URL(request.url),stamp=Math.floor(Date.now()/1000);
-  if(['/internal/trials/config','/internal/trials/operations'].includes(url.pathname)){
+  if(['/internal/trials/config','/internal/trials/operations','/internal/trials/calendar'].includes(url.pathname)){
    const expected=env.ODYSSEY_ADMIN_KEY||'',actual=request.headers.get('x-odyssey-key')||'';
    if(!/^[a-f0-9]{64}$/.test(expected)||!/^[a-f0-9]{64}$/.test(actual)||!timingSafeEqual(Buffer.from(expected),Buffer.from(actual)))return json(403,{error:'forbidden'});
+   if(url.pathname==='/internal/trials/calendar')return request.method==='GET'?json(200,await readCalendar(env.DB,stamp)):json(405,{error:'method_not_allowed'});
    if(url.pathname==='/internal/trials/operations')return request.method==='GET'?json(200,await trialsOperations(env.DB,env,{now:stamp})):json(405,{error:'method_not_allowed'});
    if(request.method==='GET')return json(200,{campaign:await currentCampaign(env.DB),server_time:stamp});
    if(request.method==='POST')return json(200,{campaign:await publish(env.DB,await boundedBody(request),stamp),server_time:stamp});

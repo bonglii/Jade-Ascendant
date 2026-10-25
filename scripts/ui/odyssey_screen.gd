@@ -218,7 +218,15 @@ func _update_time() -> void:
 	if not bool(event.enabled): countdown.text="EVENT PAUSED"; return
 	if now<int(event.starts_at): countdown.text="STARTS IN %dH %dM" % [int(float(int(event.starts_at)-now)/3600.0),int(float((int(event.starts_at)-now)%3600)/60.0)]; return
 	countdown.text="%d DAYS %dH REMAINING" % [maxi(0,int(float(remaining)/86400.0)),maxi(0,int(float(remaining%86400)/3600.0))] if remaining>0 else "JOURNEY CLOSED · CLAIM MILESTONES"
+func _event_enabled() -> bool:
+	return client!=null and client.snapshot.get("event") is Dictionary and bool(client.snapshot.event.get("enabled",false))
+func _event_active() -> bool:
+	return _event_enabled() and client.server_time()>=int(client.snapshot.event.get("starts_at",0)) and client.server_time()<int(client.snapshot.event.get("ends_at",0))
+var _disabled_exit: bool=false
 func _refresh() -> void:
+	if client!=null and client.status=="connected" and client.snapshot.has("event") and not _event_enabled():
+		if not _disabled_exit:_disabled_exit=true;call_deferred("_leave_disabled_event")
+		return
 	if client == null: return
 	if client.status=="connected": _retry_count=0; _retry_at=Time.get_ticks_msec()+4000
 	_update_mission_handles()
@@ -252,11 +260,11 @@ func _refresh() -> void:
 	ad.disabled = _mutating() or _ad_pending() or client.snapshot.get("state",{}).get("ad_delivery",client.snapshot.get("ad_delivery",{})).get("configured",true)==false or not _confirmed_view() or travelling or not active or not bool(event.get("ads_enabled",false)) or int(state.get("daily_ads",0)) >= 2
 	ad.text = "VERIFIKASI HADIAH…" if _ad_pending() else "+1 DIE · AD %d/2" % int(state.get("daily_ads",0))
 	_refresh_ad_control()
-	buy.disabled = travelling
+	buy.disabled = travelling or not _event_enabled()
 	for i: int in range(milestones.size()):
 		var n: int = [24,48,72][i]; var claimed: bool = n in state.get("milestones",[])
-		milestones[i].text = "%d · %s" % [int(n/6) if lap_mode else n, "CLAIMED" if claimed else "CLAIM" if _journey_ready(state,n) else "2 SEALS" if n==24 else "3 SEALS" if n==48 else "COMPASS"]
-		milestones[i].disabled = travelling
+		milestones[i].text = "%d · %s" % [int(float(n)/6.0) if lap_mode else n, "CLAIMED" if claimed else "CLAIM" if _journey_ready(state,n) else "2 SEALS" if n==24 else "3 SEALS" if n==48 else "COMPASS"]
+		milestones[i].disabled = travelling or not _event_enabled()
 		ActionDot.show_on(milestones[i],int(claim_open and not claimed and count>=n))
 	notice.text = str(state.get("notice","Connect Google to begin your journey.")) if client.status in ["connected","sending_action","refreshing"] else {"NETWORK_UNAVAILABLE":"Connection interrupted. Retrying automatically; progress is saved.","ENDPOINT_POLICY_REJECTED":"App update required. Install the latest Play build.","native_update_required":"App update required. Install the latest Play build.","ACCOUNT_HELD":"A refunded purchase requires review. Contact support.","BACKEND_NOT_READY":"Server is preparing the event. Please retry shortly."}.get(str(client.status),str(client.status).replace("_"," ").capitalize())
 	if client.busy and client.status=="sending_action": notice.text="MENGIRIM AKSI…"
@@ -454,7 +462,7 @@ func _refresh_shop_products(_products: Variant = null) -> void:
 		entry.dice_amount.visible = included
 		entry.dice_amount.text = "+%d" % int(offer.get("dice",0))
 		entry.eligibility.text = tr("Bonus dadu sudah diklaim · pembelian ini hanya Jade") if bool(offer.get("claimed",false)) else tr("+%d bonus dadu · sekali per season") % int(offer.get("dice",0)) if active_bonus else tr("Bonus dadu belum terkonfirmasi · paket ini hanya Jade")
-		entry.button.disabled = _shop_busy or price.is_empty() or not bool(readiness.ready) or not PavilionManager.is_iap_purchase_supported(str(entry.product_id))
+		entry.button.disabled = not _event_active() or not bool(client.snapshot.event.get("purchases_enabled",false)) or _shop_busy or price.is_empty() or not bool(readiness.ready) or not PavilionManager.is_iap_purchase_supported(str(entry.product_id))
 		entry.button.set_meta("jade_shop_price",price)
 		entry.button.text = tr("MEMPROSES…") if _shop_busy and _shop_product == str(entry.product_id) else _price_caption(entry.button,price)
 	if is_instance_valid(_shop_message) and not bool(readiness.ready):
@@ -480,7 +488,7 @@ func _price_caption(action: Button,price: String) -> String:
 	return display
 
 func _purchase_shop_pack(product_id: String) -> void:
-	if _shop_busy: return
+	if _shop_busy or client==null or not _event_active() or not bool(client.snapshot.event.get("purchases_enabled",false)): return
 	var product: Dictionary = PavilionManager.get_iap_store_products().get(product_id,{})
 	if int(product.get("price_amount_micros",0)) <= 0 or str(product.get("formatted_price","")).is_empty() or not PavilionManager.is_iap_purchase_supported(product_id): return
 	_shop_busy = true; _shop_product = product_id
@@ -520,7 +528,7 @@ func _journey_rewards() -> void:
 	var meter:=ProgressBar.new();meter.max_value=goal;meter.value=mini(count,goal);meter.custom_minimum_size.y=12;meter.show_percentage=false;body.add_child(meter)
 	for n: int in [24,48,72]:
 		var card:=Flow.card();body.add_child(card);var content:=VBoxContainer.new();content.add_theme_constant_override("separation",8);card.add_child(content)
-		content.add_child(Flow.text("%d %s" % [int(n/6) if lap_mode else n,"PUTARAN" if lap_mode else "PERJALANAN"],21,true))
+		content.add_child(Flow.text("%d %s" % [int(float(n)/6.0) if lap_mode else n,"PUTARAN" if lap_mode else "PERJALANAN"],21,true))
 		var row:=HBoxContainer.new();row.add_theme_constant_override("separation",8);content.add_child(row);row.add_child(_icon(COMPASS if n==72 else preload("res://assets/ui/shared/resources/pavilion_seal_premium.png"),64));row.add_child(Flow.text("Heavenweaver Compass
 ★★★★★" if n==72 else "2 Pavilion Seals" if n==24 else "3 Seals + 500 Stones",19))
 		var claimed: bool=n in state.get("milestones",[])
@@ -575,6 +583,11 @@ func _ceremony() -> void:
 	body.add_child(label("★★★★★  HEAVENWEAVER COMPASS\nSecured in Mail. Claim its attachment to equip your new armament.",20))
 	body.add_child(button("RETURN TO THE ATLAS",_close_modal))
 
+func _leave_disabled_event() -> void:
+	_close_modal()
+	var live: Node=get_node_or_null("/root/LiveOpsManager")
+	if live!=null and live.get("_active_live_popup")==self:live.close_live_popup()
+	else:_back()
 func _back() -> void:
 	if is_instance_valid(modal): _close_modal(); return
 	if not SceneTransitionManager.is_transitioning:

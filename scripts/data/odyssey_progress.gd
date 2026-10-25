@@ -3,7 +3,7 @@ extends RefCounted
 static func lap_mode(state: Dictionary) -> bool:return int(state.get("journey_laps_version",0))==2
 static func current(state: Dictionary) -> int:return int(state.get("laps",0)) if lap_mode(state) else int(state.get("rolls",0))
 static func goal(state: Dictionary) -> int:return 12 if lap_mode(state) else 72
-static func threshold(state: Dictionary,reward_id: int) -> int:return int(reward_id/6) if lap_mode(state) else reward_id
+static func threshold(state: Dictionary,reward_id: int) -> int:return int(float(reward_id)/6.0) if lap_mode(state) else reward_id
 static func ready(state: Dictionary,reward_id: int) -> bool:
  return current(state)>=threshold(state,reward_id) or (lap_mode(state) and int(state.get("journey_legacy_rolls",0))>=reward_id)
 

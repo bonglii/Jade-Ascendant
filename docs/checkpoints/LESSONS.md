@@ -482,3 +482,21 @@ before modifying production input. Test Settings' first swipe directly on the ne
 OptionButton in both languages. An empty label hint must not reserve a blank row.
 Retain previous unchanged batch evidence. Author fixtures and verified package
 installation are separate from owner publish, exact-SHA CI, AAB and Android tests.
+
+## Event operations — 2026-10-25
+
+- Orbit tests must derive real production radius; preserve actual collision and damage assertions when a range upgrade lands. Drain fixture audio instead of masking engine errors.
+- Scope event dashboard CSS to its own main content. Never override shared nav typography; keep login hidden until an actual expired session is confirmed. Network uncertainty offers retry.
+- A calendar endpoint needs a test through the production router, not just its service function. Shared dashboard reads coalesce; a successful save queues one fresh read without replacing the draft.
+- Put cross-event schedule exclusion inside the SQL write, including the initially empty-table race. Use trusted database time and compare-and-swap documents; never rewrite frozen player weeks.
+- Event OFF blocks new actions but preserves earned outboxes, paid recovery and valid previously issued signed ad intents. Paused receipt delivery must not mint daily allowances.
+- Foreground prewarming is read-only while a durable action/ad intent is pending. Do not replay mutations just because a shorter refresh interval elapsed.
+- A mock-root UI test is not a production-autoload fixture. Verify actual event popup closure and button stability with the real clients; do not change production contracts to satisfy unrelated mock managers.
+- Save source and completed evidence durably before long packaging work. Resume from exact artifacts and receipts, not assumed previous tool folders.
+
+### Release warning follow-up — 2026-10-25
+
+- Make intentional integer truncation explicit at clock/atlas/milestone boundaries; preserve the original positive-integer result instead of suppressing the warning. Keep ternary branches the same numeric type.
+- Avoid built-in names seed/exp, the existing context method name, and same-scope captions declarations. Initialize both optional Compass targets to null before selection.
+- Compile all production scripts under the six reported warning categories as errors. Use Script.can_instantiate after loading; forcing reload of scripts with live autoload instances creates an invalid audit. A zero process exit alone is not proof: the shared gate must also reject every SCRIPT ERROR/ERROR line.
+- Welcome toast remains a preview pending user design approval. Proposed rule: nickname from the game profile, first successful connection only once per process launch; no reconnect/app-resume repeats or connection sound.

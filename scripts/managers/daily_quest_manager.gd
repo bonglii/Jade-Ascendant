@@ -537,9 +537,9 @@ func _pick_quests_for_date(date_key: String) -> Array[String]:
 
 func _expand_daily_records() -> void:
 	if active_quest_ids.size()!=3:return
-	var seed: Array[String]=_pick_quests_for_date(active_date_key)
+	var quest_candidates: Array[String]=_pick_quests_for_date(active_date_key)
 	for category: String in ["combat","progression","journey"]:
-		for id: String in seed:
+		for id: String in quest_candidates:
 			if str(DAILY_QUESTS[id].category)==category and id not in active_quest_ids:active_quest_ids.append(id);break
 	_initialize_progress_entries()
 

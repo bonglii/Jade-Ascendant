@@ -137,7 +137,7 @@ func _draw() -> void:
  var cell: Vector2=tile_size(); var center:=Vector2(size.x*0.5,TOP+cell.y*3)
  for i: int in range(20): _tile(i)
  var temple: float=minf(cell.x*3.75,cell.y*3.75)
- var breathing: float=0 if Art.reduced(self) else sin(_age*1.5)*1.5
+ var breathing: float=0.0 if Art.reduced(self) else sin(_age*1.5)*1.5
  if not Art.reduced(self): draw_texture_rect(HALO,Rect2(center-Vector2.ONE*temple*.49-Vector2(0,temple*.15),Vector2.ONE*temple*.98),false,Color(.65,.95,.8,.13))
  draw_texture_rect(TEMPLE,Rect2(center-Vector2(temple*0.5,temple*0.69+breathing),Vector2.ONE*temple),false)
  var info:=Rect2(Vector2(center.x-cell.x*1.78,center.y+cell.y*1.03),Vector2(cell.x*3.56,cell.y*0.96))

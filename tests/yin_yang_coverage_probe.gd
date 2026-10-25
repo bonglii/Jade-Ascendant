@@ -9,6 +9,7 @@ func check(ok: bool,label: String) -> void:
 func _initialize() -> void: run.call_deferred()
 func run() -> void:
 	if not OS.get_user_data_dir().contains("jade_yin_coverage_qa"):quit(2);return
+	await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
 	await process_frame
 	root.get_node("GameSession").start_new_game();change_scene_to_file("res://scenes/levels/level_1.tscn");await create_timer(.3,true).timeout
 	current_scene.get_node("HUD/ScreenRoot/HUDSafeArea/TutorialOverlay")._on_skip_pressed();paused=false
@@ -23,7 +24,9 @@ func run() -> void:
 			w.level=1 if variant=="wide_lv1" else 7;w.apply_level_stats()
 			if variant=="legacy_control":w.blade_count=5
 			w.rebuild_blades();w.hit_cooldowns.clear()
-			for blade: Node2D in w.blades:blade.orbit_radius=80.0 if variant=="legacy_control" else 116.0
+			for blade: Node2D in w.blades:
+				blade.orbit_radius=80.0 if variant=="legacy_control" else w.BASE_ORBIT_RADIUS
+				if variant=="legacy_control":blade.orbit_speed=PI
 			var enemies: Array[Node2D]=[]
 			for index: int in range(6):
 				var enemy: Node2D=load("res://scenes/enemy/enemy_1.tscn").instantiate();enemy.max_hp=100000;current_scene.add_child(enemy);enemy.set_physics_process(false)
@@ -32,7 +35,7 @@ func run() -> void:
 			for enemy: Node2D in enemies:start.append(enemy.current_hp)
 			for tick: int in range(120):
 				var angle: float=tick*.007 if layout=="moving_group" else 0.0
-				var radius: float=55.0 if layout=="inner_gap" else 116.0
+				var radius: float=55.0 if layout=="inner_gap" else w.BASE_ORBIT_RADIUS
 				for index: int in range(enemies.size()):
 					enemies[index].global_position=player.get_node("CombatOrigin").global_position+Vector2.RIGHT.rotated(angle+index*TAU/enemies.size())*radius
 				w.update_hit_cooldowns(1.0/60.0)
@@ -50,7 +53,7 @@ func run() -> void:
 	# Large boss collider at the real outer orbit, with production hit handling.
 	w.level=7;w.apply_level_stats();w.rebuild_blades();w.hit_cooldowns.clear()
 	var boss: Node2D=load("res://scenes/enemy/boss_1.tscn").instantiate();boss.max_hp=100000;current_scene.add_child(boss);boss.set_physics_process(false);boss.set_process(false)
-	boss.global_position=player.get_node("CombatOrigin").global_position+Vector2(116,0)
+	boss.global_position=player.get_node("CombatOrigin").global_position+Vector2(w.BASE_ORBIT_RADIUS,0)
 	var boss_before: float=boss.current_hp
 	for tick: int in range(120):
 		w.update_hit_cooldowns(1.0/60.0);await physics_frame
@@ -59,6 +62,6 @@ func run() -> void:
 	check(boss_loss>0 and boss_loss<=w.damage/.5*2.0*1.10,"actual boss hit loss bounded by shared interval")
 	boss.queue_free();await process_frame
 	var result: Dictionary={"scope":"2-second production physics overlap and applied HP-loss fixture; 6 ordinary stationary/moving targets, no critical/passive/progression bonuses. Legacy control manually sets 5 blades/80px; not full-run/phone DPS.","rows":rows,"checks":checks,"failures":failures}
-	var file=FileAccess.open("/tmp/jade-qa/yin-yang-coverage.json",FileAccess.WRITE);file.store_string(JSON.stringify(result,"\t"));file.close()
+	var file=FileAccess.open(OS.get_environment("JADE_YIN_REPORT") if not OS.get_environment("JADE_YIN_REPORT").is_empty() else "user://yin-yang-coverage.json",FileAccess.WRITE);file.store_string(JSON.stringify(result,"\t"));file.close()
 	print("YIN_COVERAGE_QA checks=",checks," failures=",failures," rows=",JSON.stringify(rows))
-	w.clear_blades();current_scene.queue_free();current_scene=null;await process_frame;quit(1 if failures else 0)
+	w.clear_blades();current_scene.queue_free();current_scene=null;await process_frame;await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self);quit(1 if failures else 0)

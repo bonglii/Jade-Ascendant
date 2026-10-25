@@ -38,5 +38,5 @@ static func merge(records: Dictionary, key: String, run_id: String, run: Diction
  next[key]={"clears":mini(1000000,int(old.get("clears",0))+1),"best_ms":mini(int(old.get("best_ms",MAX_TIME)),int(run.time_ms)),"survivor":bool(old.get("survivor",false)) or (run.complete and run.deaths==0),"untouched":bool(old.get("untouched",false)) or (run.complete and run.deaths==0 and run.hits==0),"last":run.duplicate(true),"last_id":run_id}
  return next
 static func clock(milliseconds: int) -> String:
- var seconds: int=maxi(0,milliseconds)/1000
- return "%02d:%02d.%01d"%[seconds/60,seconds%60,(milliseconds%1000)/100]
+ var seconds: int=int(float(maxi(0,milliseconds))/1000.0)
+ return "%02d:%02d.%01d"%[int(float(seconds)/60.0),seconds%60,int(float(milliseconds%1000)/100.0)]

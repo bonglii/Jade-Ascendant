@@ -1,0 +1,69 @@
+name: Event operations and Studio
+on:
+  workflow_dispatch:
+  push:
+    branches: [checkpoint/iap-fasttrack-20261010]
+    paths: ['backend/player_identity/**', 'backend/monetization/cloudflare/src/event_calendar.mjs', 'backend/monetization/cloudflare/src/worker_paid_production_v2.mjs', 'backend/monetization/cloudflare/src/odyssey_service.mjs', 'backend/monetization/cloudflare/src/heavenly_trials.mjs', 'scripts/**', 'tests/event_*', 'tests/check_event_operations.cjs', 'tests/check_release_warnings.cjs', 'tests/release_warning_audit.gd', '.github/workflows/event-operations-qa.yml']
+permissions:
+  contents: read
+jobs:
+  focused:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Calendar concurrency, safe repair, auth and existing event regressions
+        run: |
+          node backend/player_identity/production_release_contract.mjs
+          node --test --test-concurrency=1 backend/player_identity/event_calendar.test.mjs backend/player_identity/mail.test.mjs backend/player_identity/heavenly_trials.test.mjs backend/player_identity/odyssey_dashboard.test.mjs backend/player_identity/liveops_dashboard_syntax.test.mjs backend/player_identity/liveops_control_release.test.mjs backend/monetization/cloudflare/heavenly_trials.test.mjs backend/monetization/cloudflare/tests/heavenly_trials_operations.test.mjs backend/monetization/cloudflare/tests/odyssey_ad_delivery.test.mjs backend/monetization/cloudflare/tests/odyssey_wire.test.mjs
+      - name: No login flash and consistent Studio navigation
+        run: |
+          npm install --prefix "$RUNNER_TEMP/jade-dom" --ignore-scripts --no-audit --no-fund jsdom@26.1.0
+          NODE_PATH="$RUNNER_TEMP/jade-dom/node_modules" node tests/event_operations_dashboard.cjs
+          NODE_PATH="$RUNNER_TEMP/jade-dom/node_modules" node tests/release_comfort_dashboard.cjs
+      - name: Verified engine, disabled-event UI and recovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          mkdir -p /tmp/jade-ops
+          curl -fsSL --retry 3 https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip -o /tmp/jade-ops/godot.zip
+          echo 'cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4  /tmp/jade-ops/godot.zip' | sha256sum --check
+          unzip -q /tmp/jade-ops/godot.zip -d /tmp/jade-ops
+          node tests/check_event_operations.cjs "$PWD" /tmp/jade-ops/Godot_v4.7.2-stable_linux.x86_64
+          node tests/check_release_warnings.cjs "$PWD" /tmp/jade-ops/Godot_v4.7.2-stable_linux.x86_64
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: event-operations-${{ github.sha }}
+          path: .local/event_operations_qa/*.*
+          if-no-files-found: error
+          retention-days: 14
+  windows-preflight:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Parse Windows PowerShell and verify exact target without deployment
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $file=Join-Path $PWD 'backend/player_identity/deploy_event_operations.ps1'
+          $tokens=$null; $errors=$null
+          [void][Management.Automation.Language.Parser]::ParseFile($file,[ref]$tokens,[ref]$errors)
+          if ($errors.Count) { throw ($errors | Out-String) }
+          git checkout -B checkpoint/iap-fasttrack-20261010
+          $config=Join-Path $PWD 'backend/player_identity/wrangler.local.toml'
+          [IO.File]::WriteAllText($config,('name = "jade-ascendant-player"'+"`n"+'main = "worker.mjs"'+"`n"+'database_id = "1089de95-8cdc-447d-a9e3-9e743d200cba"'))
+          & $file -ExpectedCommit $env:GITHUB_SHA -ValidateOnly
+          if ($LASTEXITCODE -ne 0) { throw 'Expected exact target validation failed' }
+          & $file -ExpectedCommit ('0'*40) -ValidateOnly
+          if ($LASTEXITCODE -eq 0) { throw 'Wrong commit was accepted' }
+          Remove-Item -LiteralPath $config
+          $global:LASTEXITCODE=0
+          Write-Host 'EVENT_OPERATIONS_WINDOWS_PREFLIGHT=PASS; DEPLOY=NONE; SCHEDULE_WRITE=NONE'

@@ -33,8 +33,8 @@ static func apply(hud: Node) -> void:
     if item != null:
      item.reparent(journey)
      item.size_flags_horizontal = Control.SIZE_EXPAND_FILL if node_name != "PauseButton" else Control.SIZE_SHRINK_END
-   var exp: Control = status.get_node_or_null("EXPGroup") if status != null else null
-   if exp != null: exp.custom_minimum_size.x = 0
+   var exp_group: Control = status.get_node_or_null("EXPGroup") if status != null else null
+   if exp_group != null: exp_group.custom_minimum_size.x = 0
   for label: Label in top.find_children("*","Label",true,false):
    label.custom_minimum_size.x = 0
    label.add_theme_font_size_override("font_size",17 if label.name != "LevelLabel" else 20)
@@ -70,7 +70,7 @@ static func boss_layout_by_id(boss_id: int,safe_id: int) -> void:
  boss_layout(boss,safe)
 static func boss_layout(boss: Control, safe: Control) -> void:
  var top: Control = safe.get_node_or_null("TopHUD")
- var y: float = top.get_rect().end.y + 10 if top != null else 150
+ var y: float = top.get_rect().end.y + 10 if top != null else 150.0
  boss.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
  boss.position = Vector2(12,y)
  boss.size.x = maxf(220,safe.size.x-24)

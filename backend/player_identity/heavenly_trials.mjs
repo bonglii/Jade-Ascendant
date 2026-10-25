@@ -28,3 +28,9 @@ export async function trialsOperationsAdmin(request,env){
  if(!env.ODYSSEY_IAP||!/^[a-f0-9]{64}$/.test(env.ODYSSEY_ADMIN_KEY||''))return reply(503,{error:'trials_bridge_not_configured'});
  return env.ODYSSEY_IAP.fetch('https://jade-ascendant-iap.jade-ascendant-studio.workers.dev/internal/trials/operations',{method:'GET',headers:{'x-odyssey-key':env.ODYSSEY_ADMIN_KEY}});
 }
+
+export async function eventCalendarAdmin(request,env){
+ if(request.method!=='GET')return reply(405,{error:'method_not_allowed'});
+ if(!env.ODYSSEY_IAP||!/^[a-f0-9]{64}$/.test(env.ODYSSEY_ADMIN_KEY||''))return reply(503,{error:'trials_bridge_not_configured'});
+ return env.ODYSSEY_IAP.fetch('https://jade-ascendant-iap.jade-ascendant-studio.workers.dev/internal/trials/calendar',{method:'GET',headers:{'x-odyssey-key':env.ODYSSEY_ADMIN_KEY}});
+}

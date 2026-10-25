@@ -123,8 +123,8 @@ func _target(head: Dictionary) -> Node2D:
 	return head.target.get_ref() as Node2D if head.target != null else null
 func _refresh_targets(player: Node2D) -> void:
 	# One shared O(n) selection pass; two nearest threats, no per-frame sort.
-	var nearest: Node2D
-	var second: Node2D
+	var nearest: Node2D = null
+	var second: Node2D = null
 	var distance: float = INF
 	var next_distance: float = INF
 	for enemy: Node in get_tree().get_nodes_in_group("enemy"):

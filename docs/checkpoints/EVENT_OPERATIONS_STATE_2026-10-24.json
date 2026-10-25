@@ -1,0 +1,59 @@
+{
+  "batch": "EVENT_OPERATIONS_2026-10-24",
+  "base": "6bef21d8a6387144d134bb96d4769d922eef9658",
+  "phase": "Event Operations plus requested warning follow-up locally complete; welcome notification preview only",
+  "requested": [
+    "Disabled server event hides from Home/hub and prevents new event actions, ads and event shop while preserving saves/earned receipts",
+    "Inspect actual live schedules; repair overlaps/time only if present; no event creation, no progress/reward reset",
+    "Make Odyssey typography/sidebar/layout consistent with main Studio",
+    "Do not flash login while checking a valid session"
+  ],
+  "validation": {
+    "owner_base_ci": "12 workflows:11success,1CombatCel failure; exact run40108275007",
+    "red_cause": "Legacy CombatCel expects116px while production radius144px. Reproduced15failures locally.",
+    "combat_recovery": "PASS88 CombatCel +12 actual overlap/boss coverage +176run-report +261skill polish, strict shared Godot error gate retained",
+    "dashboard_existing_dom": "PASS54",
+    "dashboard_source": "PASS13",
+    "browser": "Cloud opened real /admin but has no signed-in session; no live schedule or authenticated preview was read. User screenshots inspected locally.",
+    "event_existing_server": "PASS24",
+    "event_calendar": "PASS10 including actual production router auth/method/gate test and Profile fixed proxy",
+    "dashboard_existing_dom_with_guide": "PASS56",
+    "dashboard_session_startup": "PASS17 session startup and coalesced post-save calendar refresh",
+    "affected_server_regressions": "PASS75 and PASS44 affected server/paused receipt suites; see distinct evidence logs",
+    "client_runtime": "PASS18 OFF real UI +8prewarm +49Trials +22recovery, strict shared runner",
+    "ci_wait": "PASS8 exact-SHA gate fixtures; actual new commit CI awaits owner push",
+    "ci_server_exact_command": "PASS104; no failures or skipped tests",
+    "portable_package": "PASS10 including upgrade from exact previous installed payload, unknown edit protection, idempotence, rollback, traversal, dependencies and CI deploy order",
+    "release_warning_audit": "PASS357production scripts with six warning categories treated as errors;16clock/milestone boundary checks",
+    "warning_compass_regression": "PASS195 actual moving/crowd/boss targeting, applied damage ledger, range, pause and authority checks",
+    "remote_branch_observed": "6bef21d8a6387144d134bb96d4769d922eef9658 on2026-10-25; no author push"
+  },
+  "stages": {
+    "source": "complete",
+    "qa": "local_pass",
+    "owner_install": false,
+    "commit": false,
+    "push": false,
+    "profile_deploy": false,
+    "iap_deploy": false,
+    "schedule_repair": "not_run_remote",
+    "native_rebuild_required": false,
+    "android_test": false,
+    "new_client_aab_required": true,
+    "portable_package": "validated",
+    "remote_ci": "not_run_until_owner_push",
+    "aab_export": false
+  },
+  "pending": [
+    "Owner: extract Jade-Event-Operations and run apply_publish_and_deploy.cmd; it installs/publishes/syncs, waits exact-SHA CI and deploys both existing Workers",
+    "Launcher reads actual live calendar and conditionally repairs only overlapping unfrozen time; protected frozen overlap is left unchanged for admin pause",
+    "After batch PASS: export ONE new client AAB and run a brief Android check of OFF visibility/dashboard navigation"
+  ],
+  "next": "Owner launch D:/Godot/tools/Jade-Event-Operations/apply_publish_and_deploy.cmd. Resume this same launcher after interruption; no reinstallation from older packages.",
+  "warning_followup": {
+    "files": 15,
+    "toast_implemented": false,
+    "toast_preview": "Jade/gold compact top toast; sample nickname Lin Yue; slide in/out, ~3seconds, silent, once per app launch after successful connection; actual first-ever welcome wording can differ from returning welcome",
+    "next": "User reviews generated preview; implement only after approval"
+  }
+}

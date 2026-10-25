@@ -199,7 +199,7 @@ func capture_defeat_report() -> void:
 	var text: Dictionary = preload("res://scripts/data/run_review.gd").advice(review, SettingsManager.language)
 	_review_title.text = text.title
 	_review_body.text = text.body
-	var clock: String = "%02d:%02d" % [int(review.seconds) / 60, int(review.seconds) % 60]
+	var clock: String = "%02d:%02d" % [int(float(review.seconds) / 60.0), int(review.seconds) % 60]
 	_review_facts.text = "WAVE %d · LV.%d · %s" % [int(review.wave), int(review.level), clock]
 	if bool(review.metrics_complete):
 		_review_facts.text += ("\nHIT KE HP %d" if id else "\nHP HITS %d") % int(review.hits)

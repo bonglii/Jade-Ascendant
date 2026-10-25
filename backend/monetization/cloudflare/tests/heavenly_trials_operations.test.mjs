@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync,readdirSync} from 'node:fs';
 import {trialsOperations,previewRotation,campaignState,adConfiguration} from '../src/heavenly_trials_operations.mjs';
-import {publish,weekFor,trialsRoute} from '../src/heavenly_trials.mjs';
+import {publish,weekFor,trialsRoute,trialsService} from '../src/heavenly_trials.mjs';
 import {createProductionWorkerV2,PRODUCTION_GATES_V2} from '../src/worker_paid_production_v2.mjs';
 const start=1792357200,WEEK=604800,key='a'.repeat(64);
 const campaign=(extra={})=>({id:'trials-one',starts_at:start,enabled:true,ads_enabled:false,shop_enabled:false,themes:['jade_wind','scarlet_rite','starfall','froststep','sunforge'],reward:{celestial_jade:40,pavilion_seal:1,spirit_stone:600},...extra});
@@ -44,3 +44,5 @@ test('ad diagnostics remain consistent with the four live client placements',()=
  assert.equal(units.length,4);
  for(const unit of units)assert.equal(adConfiguration({...env(),TRIALS_AD_UNIT:unit}).reason,'shared_unit');
 });
+
+test('disabled campaign hides ad/shop readiness without materializing a fresh week',async()=>{const f=fixture();try{await publish(f.db,campaign({enabled:false,ads_enabled:true,shop_enabled:true}),start);const data=await trialsService(f.db,{now:()=>start+WEEK,unlock:async()=>0}).read('alice');assert.equal(data.week,null);assert.equal(data.ads_ready,false);assert.equal(data.shop_ready,false);assert.equal(f.db.sql.prepare('SELECT COUNT(*) n FROM ht_weeks').get().n,0);}finally{f.close()}});

@@ -290,7 +290,7 @@ func _refresh_rewarded_seal_section() -> void:
 		_ad_hint.text = "Pulih setelah 7 hari penyelesaian seluruh Daily Quest." if SettingsManager.language == "id" else "Renews after 7 days of claiming all Daily Quests."
 	elif int(policy.get("placement_claims",0)) >= int(policy.get("daily_limit",1)):
 		var seconds: int = 86400 - int(Time.get_unix_time_from_system()) % 86400
-		var clock_text: String = "%02d:%02d:%02d" % [seconds/3600,(seconds%3600)/60,seconds%60]
+		var clock_text: String = "%02d:%02d:%02d" % [int(float(seconds)/3600.0),int(float(seconds%3600)/60.0),seconds%60]
 		locked_watch_ad_button.text = ("IKLAN BERIKUTNYA · " if SettingsManager.language == "id" else "NEXT AD · ") + clock_text
 		_ad_hint.text = "Reset 07.00 WIB · 1 Seal = 1 summon" if SettingsManager.language == "id" else "Resets 00:00 UTC · 1 Seal = 1 summon"
 	elif cooldown > 0:
@@ -563,7 +563,7 @@ func _fit_sanctum() -> void:
 		_result_name.max_lines_visible = 2
 		_stars_copy.add_theme_font_size_override("font_size",18 if short else 23)
 		summon_reveal_action.custom_minimum_size.y = 44 if short else 56
-		_reveal_stage.custom_minimum_size.y = 56 if short else clampf(size.y*0.38,140,420)
+		_reveal_stage.custom_minimum_size.y = 56.0 if short else clampf(size.y*0.38,140,420)
 	if featured_row != null:
 		for button: Control in featured_row.get_children(): button.custom_minimum_size.y=90 if size.x>=600 else 74
 	if _formation != null: _formation.columns = 2

@@ -37,6 +37,13 @@ func server_time() -> int:
 	return int(snapshot.get("server_time", 0)) + floori(float(maxi(0, Time.get_ticks_msec() - _received_msec)) / 1000.0)
 
 
+func event_enabled() -> bool:
+	var event: Variant=snapshot.get("event")
+	return event is Dictionary and bool(event.get("enabled",false))
+
+func event_active() -> bool:
+	return event_enabled() and server_time()>=int(snapshot.event.get("starts_at",0)) and server_time()<int(snapshot.event.get("ends_at",0))
+
 func purchase_bonus_active() -> bool:
 	var event: Variant=snapshot.get("event")
 	return not snapshot.is_empty() and event is Dictionary and bool(event.get("enabled",false)) and bool(event.get("purchases_enabled",false)) and server_time()>=int(event.get("starts_at",0)) and server_time()<int(event.get("ends_at",0)) and bool(snapshot.get("purchase_bonus",{}).get("active",false))
@@ -119,9 +126,9 @@ func _prewarm_if_due() -> void:
 	if not _can_prewarm() or _backgrounded or busy or _binding.length() != 64: return
 	if Time.get_ticks_msec() < _warm_next_at: return
 	if get_tree().get_first_node_in_group("player") != null: return
-	_warm_next_at = Time.get_ticks_msec() + 30000
-	if ad_waiting(): return
-	if not snapshot.is_empty() and Time.get_ticks_msec() - _received_msec < 180000: return
+	_warm_next_at = Time.get_ticks_msec() + 15000
+	if ad_waiting() or not _pending().is_empty(): return
+	if not snapshot.is_empty() and Time.get_ticks_msec() - _received_msec < 15000: return
 	refresh()
 
 func _process(_delta: float) -> void:
@@ -157,7 +164,7 @@ func refresh() -> bool:
 	if pending.has("error"): status = "recovery_required"; changed.emit(); return false
 	return _dispatch(pending)
 func submit(action: Dictionary) -> bool:
-	if busy or snapshot.get("event") == null or not _pending().is_empty() or _binding != _live_binding(): return false
+	if busy or not event_enabled() or snapshot.get("event") == null or not _pending().is_empty() or _binding != _live_binding(): return false
 	if _bridge() == null: status = "native_update_required"; changed.emit(); return false
 	var command: Dictionary = canonical_command({"event_id": snapshot.event.id, "request_id": Crypto.new().generate_random_bytes(16).hex_encode(), "revision": snapshot.get("revision", 0), "action": action.duplicate(true)})
 	if command.is_empty(): status = "invalid_command"; changed.emit(); return false
@@ -230,7 +237,7 @@ func _load_prepared_ad() -> void:
 	var data: Variant=JSON.parse_string(file.get_as_text())
 	if data is Dictionary and data.get("owner")==_binding and _matches(data.get("nonce"),"^[a-f0-9]{32}$") and _whole(data.get("expires_at"),1,4102444800):_prepared_ad=data
 func _prepared_ad_valid() -> bool:
-	return not _prepared_ad.is_empty() and _prepared_ad.get("owner")==_live_binding() and _prepared_ad.get("event_id")==snapshot.get("event",{}).get("id") and _prepared_ad.get("day")==snapshot.get("state",{}).get("day") and int(_prepared_ad.get("expires_at",0))>_ad_now()+15
+	return event_active() and not _prepared_ad.is_empty() and _prepared_ad.get("owner")==_live_binding() and _prepared_ad.get("event_id")==snapshot.get("event",{}).get("id") and _prepared_ad.get("day")==snapshot.get("state",{}).get("day") and int(_prepared_ad.get("expires_at",0))>_ad_now()+15
 func _activate_prepared_ad() -> bool:
 	if not _prepared_ad_valid():return false
 	_ad_before=int(snapshot.get("state",{}).get("daily_ads",0));_ad_day=str(snapshot.get("state",{}).get("day",""))
@@ -239,6 +246,7 @@ func _activate_prepared_ad() -> bool:
 	if not _save_ad_wait():ad_delivery_state="journal_failed";_ad_nonce="";changed.emit();return false
 	_show_ad();changed.emit();return true
 func _prepare_ad_if_due() -> void:
+	if not event_active():return
 	if not _can_prewarm() or _backgrounded or busy or ad_waiting() or _binding.length()!=64 or snapshot.is_empty() or Time.get_ticks_msec()<_ad_prepare_next:return
 	if get_tree().get_first_node_in_group("player")!=null or not _pending().is_empty():return
 	if _prepared_ad_valid():return
@@ -250,6 +258,7 @@ func _prepare_ad_if_due() -> void:
 	_ad_prepare_next=Time.get_ticks_msec()+60000;_ad_open_requested=false
 	submit({"kind":"ad_intent"})
 func watch_ad() -> bool:
+	if not event_active() or not bool(snapshot.event.get("ads_enabled",false)):return false
 	if busy and _command.get("action",{}).get("kind")=="ad_intent":_ad_open_requested=true;ad_delivery_state="preparing";changed.emit();return true
 	var ads: Node = get_node_or_null("/root/MonetizationManager")
 	if ad_waiting(): return false
@@ -267,6 +276,7 @@ func watch_ad() -> bool:
 	if not sent: ad_delivery_state="unavailable";changed.emit()
 	return sent
 func _show_ad() -> void:
+	if not event_active():_ad_open_requested=false;return
 	var ads: Node = get_node_or_null("/root/MonetizationManager")
 	if ads == null: return
 	var provider: Node = ads.get("provider")

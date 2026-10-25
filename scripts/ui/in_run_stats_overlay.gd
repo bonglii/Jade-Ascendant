@@ -221,8 +221,8 @@ func _refresh_language() -> void:
 	description.text = _text("Your active build. Combat is paused.", "Build aktifmu. Combat dijeda.")
 	note.text = _text("CAST: cast interval. TEMPO: cast potency.\nOrbit/formation use separate hit timers.", "CAST: jeda cast. TEMPO: kekuatan cast.\nOrbit/formasi punya jeda hit sendiri.")
 	for section: Label in _sections:
-		var captions: Array = section.get_meta("combat_captions")
-		section.text = _text(str(captions[0]), str(captions[1]))
+		var section_captions: Array = section.get_meta("combat_captions")
+		section.text = _text(str(section_captions[0]), str(section_captions[1]))
 	var captions: Dictionary = {
 		"hp": ["CURRENT HP", "HP SAAT INI"], "shield": ["QI SHIELD CHARGES", "MUATAN QI SHIELD"],
 		"body_refinement": ["BODY REFINEMENT", "BODY REFINEMENT"], "power": ["POWER MULTIPLIER", "PENGALI POWER"],

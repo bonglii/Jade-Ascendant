@@ -16,6 +16,7 @@ func settle() -> void:
 	for i: int in range(3):await process_frame
 func run() -> void:
 	if not OS.get_user_data_dir().contains("jade_combat_cel_qa"):quit(2);return
+	await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
 	await process_frame
 	root.get_node("GameSession").start_new_game()
 	change_scene_to_file("res://scenes/levels/level_1.tscn");await create_timer(.3,true).timeout
@@ -36,7 +37,7 @@ func run() -> void:
 		for blade: Node2D in w.blades:
 			blade.set_physics_process(false)
 			var center: Vector2=player.get_node("CombatOrigin").position
-			check(is_equal_approx(blade.position.distance_to(center),116),"first visible frame already on wide orbit")
+			check(is_equal_approx(blade.position.distance_to(center),w.BASE_ORBIT_RADIUS),"first visible frame already on wide orbit")
 			check(not blade.aura_ring.visible and blade.get_node("CollisionShape2D").shape.radius==10,"no polygon halo; real hitbox unchanged")
 	check(w.blades.filter(func(b: Node2D):return b.polarity==&"yin").size()==3,"3 Yin + 3 Yang")
 	w.blades[0].orbit_angle=1.3;w.rebuild_blades()
@@ -45,7 +46,7 @@ func run() -> void:
 	await settle()
 	for blade: Node2D in w.blades:blade.set_physics_process(false)
 	var enemy: Node2D=load("res://scenes/enemy/enemy_1.tscn").instantiate();enemy.max_hp=100000;current_scene.add_child(enemy);enemy.set_physics_process(false)
-	enemy.global_position=player.global_position+Vector2(116,0)
+	enemy.global_position=player.global_position+Vector2(w.BASE_ORBIT_RADIUS,0)
 	var before: float=enemy.current_hp
 	w.damage_target(enemy);var after: float=enemy.current_hp
 	for blade: Node2D in w.blades:w._on_blade_body_contacted(enemy)
@@ -98,4 +99,4 @@ func run() -> void:
 			var texture: AtlasTexture=Art.frame(kit,index)
 			check(texture.filter_clip and texture.region.size==Vector2(256,256),"isolated source component "+kit+str(index))
 	print("COMBAT_CEL_QA checks=",checks," failures=",failures)
-	current_scene.queue_free();current_scene=null;await settle();quit(1 if failures else 0)
+	current_scene.queue_free();current_scene=null;await settle();await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self);quit(1 if failures else 0)
