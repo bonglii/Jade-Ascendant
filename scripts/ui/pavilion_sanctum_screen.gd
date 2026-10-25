@@ -5,6 +5,8 @@ var _trial_seal_button: Button
 var _paid_status: Label
 var _paid_buttons: Array[Button] = []
 var _paid_reveal_busy: bool = false
+var _queued_paid_intent: Dictionary = {}
+var _intent_flush_scheduled: bool = false
 var _paid_reveal_mode: bool = false
 var _target_press_pos: Vector2
 var _target_scroll_start: int=0
@@ -215,21 +217,70 @@ func _refresh_paid_summons() -> void:
 	if is_instance_valid(_trial_seal_button):
 		_trial_seal_button.visible=bonus>0
 		_trial_seal_button.text="BONUS SEAL · %d AVAILABLE"%bonus
-		_trial_seal_button.disabled=paid==null or not paid.is_verified_ready() or paid.busy or not PavilionManager.is_summon_unlocked() or _paid_reveal_busy or (is_instance_valid(summon_reveal_overlay) and summon_reveal_overlay.visible)
+		_trial_seal_button.disabled=SaveManager.is_progress_read_only() or SaveManager.has_pending_transaction() or paid==null or not paid.is_verified_ready() or (paid.busy and not paid.verified_read_in_flight()) or paid.mutation_pending() or not PavilionManager.is_summon_unlocked() or _paid_reveal_busy or (is_instance_valid(summon_reveal_overlay) and summon_reveal_overlay.visible)
 	for i: int in range(_paid_buttons.size()):
-		_paid_buttons[i].disabled=paid==null or not bool(paid.call("can_summon",1 if i==0 else 10)) or not PavilionManager.is_summon_unlocked() or _paid_reveal_busy or (is_instance_valid(summon_reveal_overlay) and summon_reveal_overlay.visible)
+		_paid_buttons[i].disabled=SaveManager.is_progress_read_only() or SaveManager.has_pending_transaction() or paid==null or not (bool(paid.call("can_summon",1 if i==0 else 10)) or bool(paid.call("can_queue_summon_after_read",1 if i==0 else 10))) or not PavilionManager.is_summon_unlocked() or _paid_reveal_busy or (is_instance_valid(summon_reveal_overlay) and summon_reveal_overlay.visible)
+	# Only an explicit summon/reveal holds this page's other summon actions.
+	var revealing: bool=is_instance_valid(summon_reveal_overlay) and summon_reveal_overlay.visible
+	if is_instance_valid(summon_one_button): summon_one_button.disabled=_paid_reveal_busy or revealing or not PavilionManager.can_summon(1)
+	if is_instance_valid(summon_ten_button): summon_ten_button.disabled=_paid_reveal_busy or revealing or not PavilionManager.can_summon(10)
+	if not _queued_paid_intent.is_empty() and not _intent_flush_scheduled and (paid==null or not paid.busy or str(paid.snapshot.get("account_binding",""))!=str(_queued_paid_intent.binding)):
+		_intent_flush_scheduled=true
+		_flush_paid_intent.call_deferred()
+
+func _queue_paid_after_read(count: int, seal: bool=false) -> bool:
+	var paid: Node=PavilionManager.paid_gameplay
+	if paid==null or not paid.verified_read_in_flight() or SaveManager.is_progress_read_only() or SaveManager.has_pending_transaction() or SceneTransitionManager.is_transitioning: return false
+	if not seal and not paid.can_queue_summon_after_read(count): return false
+	if seal:
+		var trials: Node=get_node_or_null("/root/HeavenlyTrialsClient")
+		if count!=1 or trials==null or int(trials.snapshot.get("bonus_seals",0))<1: return false
+	_queued_paid_intent={"count":count,"seal":seal,"binding":str(paid.snapshot.account_binding)}
+	_paid_reveal_busy=true
+	_set_status("MENYIAPKAN SUMMON…" if SettingsManager.language=="id" else "PREPARING SUMMON…",GOLD)
+	_refresh_paid_summons()
+	return true
+
+func _flush_paid_intent() -> void:
+	_intent_flush_scheduled=false
+	if not is_inside_tree() or is_queued_for_deletion() or _queued_paid_intent.is_empty(): return
+	var paid: Node=PavilionManager.paid_gameplay
+	if paid==null or not paid.is_verified_ready() or str(paid.snapshot.get("account_binding",""))!=str(_queued_paid_intent.binding) or paid.mutation_pending() or SceneTransitionManager.is_transitioning or SaveManager.is_progress_read_only() or SaveManager.has_pending_transaction():
+		_queued_paid_intent.clear()
+		_paid_reveal_busy=false
+		_set_status("STATUS BERUBAH · COBA SUMMON LAGI" if SettingsManager.language=="id" else "STATUS CHANGED · TAP SUMMON AGAIN",GOLD)
+		_refresh_paid_summons()
+		return
+	if paid.busy: return
+	if not bool(_queued_paid_intent.seal) and not paid.can_summon(int(_queued_paid_intent.count)):
+		_queued_paid_intent.clear()
+		_paid_reveal_busy=false
+		_set_status("JADE BERUBAH · SALDO BELUM CUKUP" if SettingsManager.language=="id" else "BALANCE CHANGED · NOT ENOUGH JADE",GOLD)
+		_refresh_paid_summons()
+		return
+	# This is still just one unsent UI intent. The manager now checks the NEW
+	# balance/revision and persists its usual unique command before any spend.
+	var intent: Dictionary=_queued_paid_intent.duplicate()
+	_queued_paid_intent.clear()
+	_paid_reveal_busy=false
+	if bool(intent.seal): _summon_trial_seal()
+	else: _summon_paid(int(intent.count))
+
 func _summon_trial_seal() -> void:
 	if _paid_reveal_busy or (is_instance_valid(summon_reveal_overlay) and summon_reveal_overlay.visible): return
+	if _queue_paid_after_read(1,true): return
 	_paid_reveal_busy=true;_refresh_paid_summons()
 	if not PavilionManager.request_paid_summon(1,true):
 		_paid_reveal_busy=false;_set_status("Connect to recover your bonus Seal.",GOLD);_refresh_paid_summons()
 
 func _summon_paid(count: int) -> void:
 	if _paid_reveal_busy or (is_instance_valid(summon_reveal_overlay) and summon_reveal_overlay.visible): return
+	if _queue_paid_after_read(count): return
 	_paid_reveal_busy=true;_refresh_paid_summons()
 	if not PavilionManager.request_paid_summon(count):
 		_paid_reveal_busy=false;_set_status("Connect or recover your pending server request.",GOLD);_refresh_paid_summons()
 func _on_paid_summon_finished(result: Dictionary) -> void:
+	if not _queued_paid_intent.is_empty(): return # Read completion is not a summon receipt.
 	if not _paid_reveal_busy: return
 	_paid_reveal_busy=false
 	if bool(result.get("success",false)) and result.get("operation",{}).get("kind") in ["summon","seal_summon"]:

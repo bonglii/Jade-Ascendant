@@ -1,0 +1,40 @@
+{
+  "batch": "GEAR_SUMMON_ACCOUNT_2026-10-25",
+  "base": "06a7b39fba78b0fb1a3dfdfb31f549c8d222d5cc",
+  "phase": "Client implementation, focused QA and portable delivery complete; owner publish/sync/exact-SHA CI then ONE AAB",
+  "prior_confirmed": "Owner GAME_SYNC and WELCOME_TOAST_CI/BATCH PASS on06a7 (8workflows); prior AAB not yet exported",
+  "scope": [
+    "Explain armor/accessory star-only versus permanent weapon level+stars, preserve approved balance",
+    "Stop background paid-wallet reads briefly disabling local summon; serialize one explicit paid summon intent behind verified refresh",
+    "Briefly document real local save/Google backup/server UID behavior without introducing account migration"
+  ],
+  "findings": {
+    "gear": "Screenshot Celestial Aegis Boots correctly has star ascension only; permanent level cap method returns0for non-armament per approved agreement",
+    "summon": "Pavilion.can_summon rejects ANY paid_gameplay.busy; paid background polling sets busy true every60sec; verified reads serialize with actual writes",
+    "save": "Local permanent progression shared by installation; Google changes do not automatically switch it. Backup tied to Google binding, mismatched local owner cannot auto-backup to another account. Server UID unique per verified Google identity via DB UNIQUE; paid wallet/items are account-owned."
+  },
+  "stages": {
+    "source": "complete",
+    "qa": "local_pass",
+    "package": "validated",
+    "commit": false,
+    "push": false,
+    "worker_deploy": "not_required",
+    "native_rebuild": "not_required",
+    "aab_export": false,
+    "android_test": false
+  },
+  "next": "Extract Jade-Gear-Summon-Clarity and run D:/Godot/tools/Jade-Gear-Summon-Clarity/apply_and_publish.cmd. It prints the actual GitHub commit, syncs the game and waits CI. Then export ONE AAB. Do not repeat welcome/event deploy; no Worker/native/schema change.",
+  "previous_state": "docs/checkpoints/CONNECTION_WELCOME_STATE_2026-10-25.json",
+  "validation": {
+    "baseline": "Actual original PavilionManager from06a7 reproduced local_summon_ready=false while only read_busy=true",
+    "targeted": "PASS29 final gear/summon checks; includes holding competing local reveal after explicit queued action while ordinary reads keep buttons available",
+    "paid_core_regression": "PASS56 existing paid_gameplay_v2 checks; unique commands/journal/ownership protections retained",
+    "identity_backup": "PASS26 existing identity and progress-backup Node tests; no live mutations or new save partitioning",
+    "phone": "not_tested",
+    "strict_compilation": "PASS358 production scripts under six warning categories as errors +16clock/milestone boundary checks",
+    "package": "PASS9 installer/dependency/rollback/idempotence/unknown-edit/path/CI-order fixtures",
+    "ci_gate": "PASS8 exact-SHA gate fixtures; real new commit CI awaits owner push",
+    "production_contract": "PASS9 existing live IAP guards, unchanged"
+  }
+}

@@ -525,13 +525,17 @@ func _show_detail(id: String,force: bool=false) -> void:
  _paragraph(body,str(data.get("rarity","common")).to_upper()+"  •  "+SLOT_NAMES[maxi(SLOTS.find(str(data.get("slot",""))),0)],15,JADE)
  _paragraph(body,_stars(star),24,GOLD)
  detail_values.stars=body.get_child(body.get_child_count()-1)
- _paragraph(body,Visual.get_stat_summary(effective),18)
- detail_values.stats=body.get_child(body.get_child_count()-1)
- _comparison(body,id)
  var weapon: bool=str(data.get("slot",""))=="armament"
  if weapon:
   _paragraph(body,"LEVEL WEAPON %d / %d • +%d%% damage weapon"%[EquipmentManager.get_item_weapon_level(id),EquipmentManager.get_weapon_level_cap(id),roundi((EquipmentManager.get_weapon_level_multiplier(id)-1)*100)],17,JADE)
   detail_values.level=body.get_child(body.get_child_count()-1)
+ else:
+  _paragraph(body,"PENINGKATAN: BINTANG DARI DUPLIKAT\nLevel permanen hanya untuk senjata." if SettingsManager.language=="id" else "UPGRADE: STARS FROM IDENTICAL DUPLICATES\nPermanent levels are for weapons only.",14,JADE)
+  body.get_child(body.get_child_count()-1).name="UpgradePathLabel"
+ _paragraph(body,Visual.get_stat_summary(effective),18)
+ detail_values.stats=body.get_child(body.get_child_count()-1)
+ _comparison(body,id)
+ if weapon:
   _paragraph(body,"Weapon berdiri sendiri, tidak dihitung sebagai bagian set. Level permanen ini berbeda dari refinement Lv.1–7 selama run.",14)
  else:
   var set_id: String=Sets.get_set_id_for_item(id)

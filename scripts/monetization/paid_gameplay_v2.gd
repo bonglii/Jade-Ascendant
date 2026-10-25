@@ -112,6 +112,14 @@ func item_star(item_id: String, runtime: bool = false) -> int:
 	if item_count(item_id) <= 0: return 0
 	var star: int = int(snapshot.stars.get(item_id, 1))
 	return mini(star, int(_run_stars.get(item_id, 1))) if runtime and _run_started else star
+func mutation_pending() -> bool:
+	# A durable or currently dispatched mutation must still serialize local grants.
+	return not _command.is_empty() or not _read_pending().is_empty()
+func verified_read_in_flight() -> bool:
+	return busy and _command.is_empty() and is_verified_ready() and _read_pending().is_empty()
+func can_queue_summon_after_read(count: int) -> bool:
+	# UI intent only. submit() still requires idle, current verified state/revision.
+	return count in [1,10] and verified_read_in_flight() and paid_balance() >= (100 if count == 1 else 900)
 func can_summon(count: int) -> bool:
 	return count in [1, 10] and is_verified_ready() and not busy and _read_pending().is_empty() and paid_balance() >= (100 if count == 1 else 900)
 static func local_catalog_hash() -> String:

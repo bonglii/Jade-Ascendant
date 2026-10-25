@@ -2104,8 +2104,8 @@ func _sanitize_wish_target() -> void:
 
 func can_summon(pull_count: int, payment_method: String = PAYMENT_AUTO) -> bool:
 	last_error = ""
-	if is_instance_valid(paid_gameplay) and bool(paid_gameplay.get("busy")):
-		last_error = "Wait for server verification."
+	if summon_delivery_active or (is_instance_valid(paid_gameplay) and bool(paid_gameplay.call("mutation_pending"))):
+		last_error = "Wait for the pending summon transaction."
 		return false
 	if SaveManager.is_progress_read_only():
 		last_error = "Restart the game to recover a pending save."

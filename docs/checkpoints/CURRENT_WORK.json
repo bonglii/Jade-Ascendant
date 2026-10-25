@@ -1,5 +1,5 @@
 {
-  "state": "docs/checkpoints/CONNECTION_WELCOME_STATE_2026-10-25.json",
-  "base": "bdf602fe7a0e9fc895ba7581fede3168d64734e9",
-  "previous": "docs/checkpoints/EVENT_OPERATIONS_STATE_2026-10-24.json"
+  "state": "docs/checkpoints/GEAR_SUMMON_ACCOUNT_STATE_2026-10-25.json",
+  "base": "06a7b39fba78b0fb1a3dfdfb31f549c8d222d5cc",
+  "previous": "docs/checkpoints/CONNECTION_WELCOME_STATE_2026-10-25.json"
 }

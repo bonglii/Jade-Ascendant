@@ -507,3 +507,11 @@ installation are separate from owner publish, exact-SHA CI, AAB and Android test
 - Delay behind loading/modals and background focus; respect safe area/reduced effects. Decorations ignore every mouse/touch event; test a real GUI tap to the underlying button. No connection sound, full-screen shade, server request or save flag is needed.
 - Profile smoke still expected eight permanent domains from the old migration era. Pin the actual existing nine-domain registry including cultivation_mastery; do not modify saves to satisfy an obsolete assertion. Drain fixture audio before and after non-audio tests rather than ignoring engine exit errors.
 - Recheck remote HEAD before preparing delivery. Event Operations landed as bdf602f with all21Actions successful; stack this client-only addition on that commit and do not republish/deploy the old batch.
+
+## Gear / summon / account clarity — 2026-10-25
+
+- A paid-wallet background read is not a spend. Do not use a blanket busy flag to disable independent local summons. Actual submitted or journalled mutations still serialize economy actions.
+- A tap during a fresh verified read may retain one unsent UI intent only. Validate the latest account, balance, lease and save state after the read; then use the unchanged authoritative submit/journal path. Cancel unsent intent on account/verification/navigation changes; never create a charge from a stale tap or swallow a real pending receipt.
+- Preserve the approved gear progression: permanent levels for weapons, identical-duplicate star ascension for all equipment. Explain armor/accessory star-only progression near the top of the popup instead of inventing additional stats/costs.
+- Distinguish installation-local progress, Google-owned backup, display nickname and server account UID/wallet. Backup isolation alone does not implement automatic full local-save switching between accounts.
+- Avoid built-in identifiers for helper FUNCTIONS as well as variables: a new test helper named seed resolved to Godot's global seed() despite its intended signature. Rename it and let the strict error gate catch parsing failures before any package is delivered.
