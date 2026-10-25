@@ -1,5 +1,5 @@
 {
-  "state": "docs/checkpoints/EVENT_OPERATIONS_STATE_2026-10-24.json",
-  "base": "6bef21d8a6387144d134bb96d4769d922eef9658",
-  "previous": "docs/checkpoints/CONTROLS_FINAL_STATE_2026-10-24.json"
+  "state": "docs/checkpoints/CONNECTION_WELCOME_STATE_2026-10-25.json",
+  "base": "bdf602fe7a0e9fc895ba7581fede3168d64734e9",
+  "previous": "docs/checkpoints/EVENT_OPERATIONS_STATE_2026-10-24.json"
 }

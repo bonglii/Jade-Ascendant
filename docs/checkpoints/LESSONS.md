@@ -500,3 +500,10 @@ installation are separate from owner publish, exact-SHA CI, AAB and Android test
 - Avoid built-in names seed/exp, the existing context method name, and same-scope captions declarations. Initialize both optional Compass targets to null before selection.
 - Compile all production scripts under the six reported warning categories as errors. Use Script.can_instantiate after loading; forcing reload of scripts with live autoload instances creates an invalid audit. A zero process exit alone is not proof: the shared gate must also reject every SCRIPT ERROR/ERROR line.
 - Welcome toast remains a preview pending user design approval. Proposed rule: nickname from the game profile, first successful connection only once per process launch; no reconnect/app-resume repeats or connection sound.
+
+## Approved welcome toast — 2026-10-25
+
+- Keep the once-only flag in a persistent process-lifetime node, not menu/account/reconnect handlers or a saved preference. Attach to the existing identity manager; do not add an unnecessary project autoload. Require acknowledged server identity, connected status and the actual game nickname.
+- Delay behind loading/modals and background focus; respect safe area/reduced effects. Decorations ignore every mouse/touch event; test a real GUI tap to the underlying button. No connection sound, full-screen shade, server request or save flag is needed.
+- Profile smoke still expected eight permanent domains from the old migration era. Pin the actual existing nine-domain registry including cultivation_mastery; do not modify saves to satisfy an obsolete assertion. Drain fixture audio before and after non-audio tests rather than ignoring engine exit errors.
+- Recheck remote HEAD before preparing delivery. Event Operations landed as bdf602f with all21Actions successful; stack this client-only addition on that commit and do not republish/deploy the old batch.

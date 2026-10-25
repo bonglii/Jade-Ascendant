@@ -32,6 +32,7 @@ func run() -> void:
 		push_error("Use an isolated jade_profile_qa XDG_DATA_HOME before startup")
 		quit(2)
 		return
+	await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
 	await create_timer(0.5).timeout
 	identity = root.get_node("PlayerIdentityManager")
 	saves = root.get_node("SaveManager")
@@ -41,7 +42,7 @@ func run() -> void:
 	check(uid.length() == 18,"alphanumeric local device ID")
 	check(not bool(snapshot.server_registered),"local UID never claims server registration")
 	check(bool(saves.audit_save_architecture().valid),"save registry valid")
-	check(saves.get_save_domain_ids_for_scope("permanent").size() == 8,"locked eight-domain cloud contract preserved")
+	check(saves.get_save_domain_ids_for_scope("permanent") == ["achievements","cultivation_mastery","daily_quests","equipment","idle_cultivation","inventory","journey","pavilion","progression"],"existing permanent registry including mastery preserved; profile remains local")
 	check(saves.get_save_scope("player_profile") == "local_profile","isolated local profile scope")
 	if "--seed-legacy" in OS.get_cmdline_user_args():
 		var file := FileAccess.open(saves.get_save_path("progression"),FileAccess.WRITE)
@@ -51,7 +52,7 @@ func run() -> void:
 		for suffix: String in ["",".backup",".tmp",".rollback"]:
 			var path: String = saves.get_save_path("player_profile")+suffix
 			if FileAccess.file_exists(path): DirAccess.remove_absolute(path)
-		finish()
+		await finish()
 		return
 	if "--legacy" in OS.get_cmdline_user_args():
 		var progression: Node = root.get_node("ProgressionManager")
@@ -59,14 +60,14 @@ func run() -> void:
 		check(progression.vitality_level == 4 and progression.sword_power_level == 3 and progression.swift_qi_level == 2,"legacy upgrades preserved")
 		check(root.get_node("InventoryManager").get_item_count("refinement_shard") == 17,"existing inventory preserved")
 		check(FileAccess.file_exists(saves.get_save_path("player_profile")),"new profile added alongside legacy saves")
-		finish()
+		await finish()
 		return
 	if "--restart" in OS.get_cmdline_user_args():
 		var marker := ConfigFile.new()
 		check(marker.load(MARKER) == OK,"restart marker")
 		check(uid == str(marker.get_value("qa","uid","")),"UID survives actual process restart")
 		check(str(snapshot.display_name) == str(marker.get_value("qa","name","")),"name survives actual process restart")
-		finish()
+		await finish()
 		return
 	var initial_hashes: Dictionary = disk_hashes()
 	check(identity._compact_uid("JA-00010203-04050607-08090A0B-0C0D0E0F") == "JA-000G-40R4-0M30-E209","independent base32 encoding vector")
@@ -205,8 +206,9 @@ func run() -> void:
 	current_scene = null
 	await process_frame
 	await process_frame
-	finish()
+	await finish()
 
 func finish() -> void:
+	await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
 	print("PLAYER_PROFILE_QA checks=%d failures=%d" % [checks,failures])
 	quit(0 if failures == 0 else 1)

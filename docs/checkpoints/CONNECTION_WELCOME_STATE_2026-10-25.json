@@ -1,0 +1,36 @@
+{
+  "batch": "CONNECTION_WELCOME_2026-10-25",
+  "base": "bdf602fe7a0e9fc895ba7581fede3168d64734e9",
+  "phase": "Implementation, focused QA and client-only package complete; owner publish/sync/exact-SHA CI then AAB",
+  "scope": [
+    "Approved jade/gold welcome toast with actual player nickname, once per app launch after verified profile connection",
+    "Silent, compact, 3second hold with smooth entry/exit; safe area, long names, touch pass-through, reduced effects, startup modal/background deferral",
+    "Correct stale profile test domain expectation and drain its incidental audio; no save schema changes"
+  ],
+  "validation": {
+    "welcome": "PASS39 checks in each of two actual processes sharing isolated saves",
+    "profile": "PASS537 actual UID/name/migration/corruption/read-only/profile UI checks, strict exit gate",
+    "warnings": "PASS358production script compile under six warning categories as errors +16boundary checks",
+    "compass_reused": "PASS195; unchanged production combat inputs",
+    "parent_ci": "21/21Actions successful on exact bdf602fe7a0e9fc895ba7581fede3168d64734e9, fetched GitHub metadata",
+    "runtime_inputs": "Every tracked scripts/scenes/assets/addons/release/project file in new worktree byte-matches tested source; new welcome files copied exactly",
+    "graphical_preview": "Concept approved; native screenshot attempt unavailable because virtual display could not create local listener. No native screenshot or phone validation claimed. Actual Control layout at360/405/648 and native GUI input passed.",
+    "portable_package": "PASS9 complete dependencies, CRLF baseline, atomic install/backup, idempotence, unknown edit, late mismatch, rollback, traversal, no Worker deployment",
+    "ci_gate": "PASS8 exact-SHA gate fixtures; required Event operations and Studio + all triggered runs without red"
+  },
+  "stages": {
+    "source": "complete",
+    "local_qa": "pass",
+    "package": "validated",
+    "owner_install": false,
+    "commit": false,
+    "push": false,
+    "exact_sha_ci": "await_owner_push",
+    "worker_deploy": "not_required",
+    "native_rebuild": "not_required",
+    "aab_export": false,
+    "android_test": false
+  },
+  "next": "Extract Jade-Welcome-Toast and run D:/Godot/tools/Jade-Welcome-Toast/apply_and_publish.cmd. It prints the actual commit link, syncs game and waits exact-SHA CI. Then export ONE AAB through existing exporter; no Worker deploy/native rebuild.",
+  "previous_state": "docs/checkpoints/EVENT_OPERATIONS_STATE_2026-10-24.json"
+}

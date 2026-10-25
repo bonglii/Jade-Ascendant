@@ -19,6 +19,9 @@ var _server_status: String = "pending"
 
 func _ready() -> void:
 	refresh_profile()
+	var welcome: CanvasLayer = preload("res://scripts/ui/connection_welcome_toast.gd").new()
+	welcome.name = "ConnectionWelcomeToast"
+	add_child(welcome)
 
 func get_profile_snapshot() -> Dictionary:
 	var bindings: Dictionary = _state.get("server_bindings",{})

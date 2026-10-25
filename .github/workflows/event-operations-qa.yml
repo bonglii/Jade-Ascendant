@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [checkpoint/iap-fasttrack-20261010]
-    paths: ['backend/player_identity/**', 'backend/monetization/cloudflare/src/event_calendar.mjs', 'backend/monetization/cloudflare/src/worker_paid_production_v2.mjs', 'backend/monetization/cloudflare/src/odyssey_service.mjs', 'backend/monetization/cloudflare/src/heavenly_trials.mjs', 'scripts/**', 'tests/event_*', 'tests/check_event_operations.cjs', 'tests/check_release_warnings.cjs', 'tests/release_warning_audit.gd', '.github/workflows/event-operations-qa.yml']
+    paths: ['backend/player_identity/**', 'backend/monetization/cloudflare/src/event_calendar.mjs', 'backend/monetization/cloudflare/src/worker_paid_production_v2.mjs', 'backend/monetization/cloudflare/src/odyssey_service.mjs', 'backend/monetization/cloudflare/src/heavenly_trials.mjs', 'scripts/**', 'tests/event_*', 'tests/check_event_operations.cjs', 'tests/check_release_warnings.cjs', 'tests/release_warning_audit.gd', 'tests/check_connection_welcome.cjs', 'tests/connection_welcome_smoke.gd', '.github/workflows/event-operations-qa.yml']
 permissions:
   contents: read
 jobs:
@@ -35,6 +35,7 @@ jobs:
           unzip -q /tmp/jade-ops/godot.zip -d /tmp/jade-ops
           node tests/check_event_operations.cjs "$PWD" /tmp/jade-ops/Godot_v4.7.2-stable_linux.x86_64
           node tests/check_release_warnings.cjs "$PWD" /tmp/jade-ops/Godot_v4.7.2-stable_linux.x86_64
+          node tests/check_connection_welcome.cjs "$PWD" /tmp/jade-ops/Godot_v4.7.2-stable_linux.x86_64
       - uses: actions/upload-artifact@v4
         if: always()
         with:
