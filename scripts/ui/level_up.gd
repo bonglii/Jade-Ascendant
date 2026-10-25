@@ -234,7 +234,7 @@ func _update_level_up_congratulation() -> void:
 		eyebrow.text = "SELAMAT! LEVEL NAIK" if SettingsManager.language == "id" else "CONGRATULATIONS!"
 	var subtitle: Label = find_child("Subtitle", true, false) as Label
 	if subtitle != null:
-		subtitle.text = "Kultivasimu meningkat. Pilih satu insight." if SettingsManager.language == "id" else "Your cultivation grows. Choose one insight."
+		subtitle.text = "HP penuh. Pilih satu skill." if SettingsManager.language == "id" else "HP restored. Choose one skill."
 
 
 func is_upgrade_available(upgrade_id: String) -> bool:

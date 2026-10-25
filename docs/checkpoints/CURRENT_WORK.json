@@ -1,5 +1,5 @@
 {
-  "state": "docs/checkpoints/HOME_DRAGON_RELEASE_STATE_2026-10-25.json",
-  "base": "026276b311dff2f9fc144350447b4c43f835bf8d",
-  "previous": "docs/checkpoints/GEAR_SUMMON_ACCOUNT_STATE_2026-10-25.json"
+  "state": "docs/checkpoints/LEVEL_UP_FULL_HEAL_STATE_2026-10-25.json",
+  "base": "106448c4768ef79460de777c55f1b0c5e0c7b7ef",
+  "previous": "docs/checkpoints/HOME_DRAGON_RELEASE_STATE_2026-10-25.json"
 }

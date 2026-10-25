@@ -87,7 +87,7 @@ func run() -> void:
  checkpoint.defeat_pending=true;save.write_save_data("checkpoint",checkpoint);await frames(10)
  check(presenter._goal.action=="journey" and presenter._goal.stage==2,"ended run yields to next available stage")
  save._transaction_fault=true;presenter._refresh_all();await frames()
- check(presenter._goal.action=="recovery" and presenter.journey_button.text.contains(tr("OPEN SETTINGS")),"recovery blocks Continue and stage start")
+ check(presenter._goal.action=="recovery" and presenter._goal.button=="OPEN SETTINGS" and presenter.journey_button.text=="REVIEW SAVE ›" and not presenter.continue_button.visible,"short recovery caption still routes to Settings and blocks Continue/stage start")
  save._transaction_fault=false
  # All journal modes use the shared scroll reader; inspect actual compact cards.
  change_scene_to_file("res://scenes/ui/skill_book_screen.tscn");await frames(15)

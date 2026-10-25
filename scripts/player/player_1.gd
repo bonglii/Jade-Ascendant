@@ -170,38 +170,27 @@ func get_experience_multiplier() -> float:
 	)
 
 func level_up() -> void:
+	var health: PlayerHealth = get_node_or_null("PlayerHealth") as PlayerHealth
+	if health == null or health.is_dead:
+		return
+	var hud: Node = get_parent().get_node("HUD")
+	# Extra EXP waits behind the current choice rather than replacing it.
+	if hud.level_up_panel.visible:
+		return
 	level += 1
 	experience -= experience_to_next_level
-	experience_to_next_level = int(
-		experience_to_next_level * 1.2
-	)
+	experience_to_next_level = int(experience_to_next_level * 1.2)
+	# Universal run recovery; normal health signals update HUD and hit metrics.
+	# Loading an existing checkpoint does not call this method.
+	health.heal(health.max_health)
 	level_changed.emit(level)
-	_apply_level_up_equipment_recovery()
 	CombatFeedback.pulse(global_position, "level")
 	AudioManager.play_sfx("level")
-
 	DebugLogger.system(str("LEVEL UP!"))
 	DebugLogger.system(str("Level: ", level))
 	DebugLogger.system(str("EXP berikutnya: ", experience_to_next_level))
-
-	var hud: Node = get_parent().get_node("HUD")
 	hud.level_up_panel.show_level_up()
 
-
-func _apply_level_up_equipment_recovery() -> void:
-	var heal_amount: float = EquipmentSetRuntime.get_capped_combined_secondary_bonus(
-		"level_up_heal_flat",
-		4.0
-	)
-	if heal_amount <= 0.0:
-		return
-	var health: PlayerHealth = get_node_or_null("PlayerHealth") as PlayerHealth
-	if health == null:
-		return
-	health.heal(heal_amount)
-	DebugLogger.progression(
-		"Equipment Level Recovery: +%.1f HP" % heal_amount
-	)
 
 func add_experience(amount: int) -> void:
 	var final_experience: float = (

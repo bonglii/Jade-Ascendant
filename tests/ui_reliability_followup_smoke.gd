@@ -66,7 +66,8 @@ func run() -> void:
   root.size=viewport;await frames(16)
   for continuation: bool in [false,true]:
    presenter.continue_button.visible=continuation;presenter._layout_sanctuary();await frames(3)
-   check(presenter.journey_button.text==tr(str(presenter._goal.button))+" ›","contextual primary goal copy retained without truncation")
+   var short_action: Dictionary={"continue":"CONTINUE", "recovery":"REVIEW SAVE", "journey":"CHAPTERS"}
+   check(presenter.journey_button.text==str(short_action.get(str(presenter._goal.action),"UNKNOWN"))+" ›","approved short primary caption preserves the contextual action")
    for button: Button in [presenter.journey_button,presenter.continue_button,presenter.all_events_button]:
     if not button.visible:continue
     check(fits_text(button),"complete CTA "+str(button.name)+" "+str(viewport))

@@ -919,6 +919,11 @@ func _refresh_profile_sheet() -> void:
 	)
 
 	var has_signature_stat: bool = _has_profile_signature_stat(stats)
+	_add_profile_stat_row(
+		tr("LEVEL-UP RECOVERY"),
+		"HP PENUH" if SettingsManager.language == "id" else "FULL HP",
+		"Setiap naik level saat combat." if SettingsManager.language == "id" else "Every combat level-up."
+	)
 	if has_signature_stat:
 		_add_profile_section_title(tr("SIGNATURE EFFECTS"))
 		if float(stats["attack_cooldown_reduction"]) > 0.0001:
@@ -940,12 +945,6 @@ func _refresh_profile_sheet() -> void:
 				tr("STARTING QI SHIELD"),
 				"+%d" % int(round(float(stats["starting_shield_charges"]))),
 				tr("Fresh runs begin with this many shield charges.")
-			)
-		if float(stats["level_up_heal"]) > 0.0001:
-			_add_profile_stat_row(
-				tr("LEVEL-UP RECOVERY"),
-				"+%.1f HP" % float(stats["level_up_heal"]),
-				tr("Healing received whenever run level increases.")
 			)
 		if float(stats["blood_qi_heal_bonus"]) > 0.0001:
 			_add_profile_stat_row(
@@ -1304,7 +1303,6 @@ func _has_profile_signature_stat(stats: Dictionary) -> bool:
 		"attack_cooldown_reduction",
 		"pickup_radius_bonus",
 		"starting_shield_charges",
-		"level_up_heal",
 		"blood_qi_heal_bonus",
 		"moving_damage_bonus",
 		"stationary_damage_bonus",

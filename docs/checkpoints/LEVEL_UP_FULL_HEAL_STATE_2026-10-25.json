@@ -1,0 +1,36 @@
+{
+  "batch": "LEVEL_UP_FULL_HEAL_2026-10-25",
+  "base": "106448c4768ef79460de777c55f1b0c5e0c7b7ef",
+  "phase": "Full-heal implementation, prior CI caption corrections and portable delivery locally validated; owner handoff",
+  "scope": [
+    "Full HP on each earned combat level-up without special equipment",
+    "Preserve one choice per level and queue surplus EXP without replacing open choices",
+    "Keep wounded Continue HP, death/revive boundaries and incoming-damage history",
+    "Correct legacy item/profile copy without rebalance, save migration or new popup"
+  ],
+  "stages": {
+    "source": "complete",
+    "qa": "local_pass",
+    "package": "validated",
+    "published": false,
+    "worker_deploy": "finish previous Profile policy only if exact public content still differs; IAP unchanged",
+    "native": "unchanged",
+    "aab": "one_new_client_after_owner_publish",
+    "android": "not_tested"
+  },
+  "next": "Extract Jade-Level-Up-Full-Heal and run apply_and_publish.cmd. Owner publish/new exact-SHA CI then verify/complete pending Profile policy only. After LEVEL_HEAL_BATCH=PASS, one final AAB and brief injured-player level-up check before Console.",
+  "validation": {
+    "healing": "20 real-scene checks PASS; actual EXP, surplus choices, full current maximum, HUD, no-hit metrics and wounded checkpoint",
+    "restart": "4 checks PASS; separate-process wounded Continue and no late-EXP revive",
+    "strict": "358 production scripts and16 boundary checks PASS; six warning categories as errors",
+    "old_ci_text": "Exact106448c logs: ui_reliability long-caption assertion and release_ui old recovery caption caused3red workflows; production Event operations is green",
+    "ui_regression": "949 checks PASS after retaining all text fit/native controls with approved short captions",
+    "previous_policy": "Read-only current public policy still old; original launcher blocked deployment behind the three red CI workflows",
+    "native_regression": "129 native GUI recovery/first-swipe/layout checks PASS",
+    "legacy_fixture_warning": "Whole-tree GUI teardown emits17 ObjectDB objects; no SCRIPT ERROR; not evidence of a sustained Android leak",
+    "portable": "9 install/dependency/rollback/idempotence/safe-scope checks PASS",
+    "ci_gate": "8 exact-SHA workflow gate fixtures PASS",
+    "policy_resume": "7 fixtures PASS: already-current skips, confirmed mismatch completes Profile stage, transport/version errors stop, missing receipt/markers reject"
+  },
+  "delivery": "Jade-Level-Up-Full-Heal.zip"
+}

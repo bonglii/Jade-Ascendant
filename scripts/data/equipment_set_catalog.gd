@@ -124,7 +124,7 @@ const TIER_DESCRIPTIONS: Dictionary = {
 		2: "+4 Max HP",
 		3: "+2% Movement",
 		4: "+0.10 Blood Qi healing",
-		5: "+0.75 Level-up healing"
+		5: "Level-up: full HP for all builds"
 	},
 	"mistbound_disciple": {
 		2: "+2% Movement",
@@ -135,7 +135,7 @@ const TIER_DESCRIPTIONS: Dictionary = {
 	"moon_seal": {
 		2: "+2.5% EXP",
 		3: "+1% Critical chance",
-		4: "+0.5 Level-up healing",
+		4: "Level-up: full HP for all builds",
 		5: "+1.5% EXP • +0.5% Critical chance"
 	},
 	"crimson_shadow": {
@@ -154,7 +154,7 @@ const TIER_DESCRIPTIONS: Dictionary = {
 		2: "+5 Max HP",
 		3: "+1 Starting Qi Shield",
 		4: "+0.10 Blood Qi healing",
-		5: "+0.75 Level-up healing"
+		5: "Level-up: full HP for all builds"
 	},
 	"stillwater_mirror": {
 		2: "+1% Critical chance",
