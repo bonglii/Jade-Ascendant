@@ -133,7 +133,7 @@ func _build_body() -> void:
  var heading:=Control.new();heading.name="EventsHeading";heading.custom_minimum_size.y=28;lower_stack.add_child(heading)
  var caption:=_copy(heading,tr("CELESTIAL EVENTS"),19,GOLD_BRIGHT,true);caption.name="EventsCaption"
  all_events_button=_button("AllEvents",_open_live_popup.bind(EVENT_CENTER_SCENE),heading)
- all_events_button.text=tr("ALL EVENTS")+" ›"
+ all_events_button.text=("SEMUA" if SettingsManager.language=="id" else "ALL EVENTS")+" ›"
  _plate(all_events_button,true,Color(.018,.15,.14,.99))
  _font_button(all_events_button,18)
  _build_featured_event()
@@ -212,6 +212,7 @@ func _refresh_journey() -> void:
   var menu: Node=_main_menu()
   saved=menu.call("_get_continue_checkpoint_data") if menu!=null else {}
  var chapter_id: int=int(saved.get("chapter_id",_goal.get("chapter",JourneyManager.selected_chapter_id)))
+ if _goal.action=="continue":chapter_id=int(saved.get("chapter_id",JourneyManager.DEFAULT_CHAPTER_ID))
  if presented_chapter!=chapter_id:
   presented_chapter=chapter_id
   var path: String=RealmArt.get_realm_vista_path(chapter_id)
@@ -220,16 +221,37 @@ func _refresh_journey() -> void:
  var progress: Dictionary=JourneyManager.get_chapter_progress(chapter_id)
  var total: int=maxi(int(progress.get("total_stages",1)),1)
  var cleared: int=clampi(int(progress.get("cleared_stages",0)),0,total)
- chapter_label.text=tr("CHAPTER %02d") % chapter_id
- realm_title.text=tr(str(chapter.get("display_name","Jade Sanctuary"))).to_upper()
- next_path_label.text=tr(str(_goal.title)) if _goal.action=="journey" else ("LANGKAH BERIKUTNYA" if SettingsManager.language=="id" else "NEXT OBJECTIVE")
- if _goal.action=="continue":
-  if not saved.is_empty():next_path_label.text=tr("STAGE %d-%d")%[int(saved.get("chapter_id",JourneyManager.DEFAULT_CHAPTER_ID)),int(saved.get("stage_id",JourneyManager.DEFAULT_STAGE_ID))]
- goal_hint.text=tr(str(_goal.hint))
+ var stage: int=int(saved.get("stage_id",_goal.get("stage",JourneyManager.selected_stage_id)))
+ if _goal.action=="continue" and saved.has("stage_id")==false:stage=JourneyManager.DEFAULT_STAGE_ID
+ next_path_label.text=tr("STAGE %d-%d")%[chapter_id,stage]
+ chapter_label.text=("BAB %02d" if SettingsManager.language=="id" else "CHAPTER %02d")%chapter_id+" · %d-%d"%[chapter_id,stage]
+ realm_title.text=tr(str(chapter.get("display_name","Jade Sanctuary")))
+ _fit_realm_copy()
+ # One identity row, realm title and clear meter. Explanations stay in the
+ # destination screen; only recovery needs a warning on this card.
+ next_path_label.hide()
+ goal_hint.visible=_goal.action=="recovery"
+ goal_hint.text="Periksa progres tersimpan di Pengaturan." if SettingsManager.language=="id" else "Review saved progress in Settings."
+ realm_progress.visible=not goal_hint.visible;progress_label.visible=not goal_hint.visible
  progress_label.text="%d / %d"%[cleared,total];realm_progress.max_value=total;realm_progress.value=cleared
- journey_button.text=tr(str(_goal.button))+" ›"
+ journey_button.text=_journey_caption()+" ›"
  continue_button.visible=_goal.action=="continue"
  journey_button.disabled=SceneTransitionManager.is_transitioning
+
+func _journey_caption() -> String:
+ var indonesian: bool=SettingsManager.language=="id"
+ match str(_goal.get("action","journey")):
+  "continue":return "LANJUT" if indonesian else "CONTINUE"
+  "recovery":return "PERIKSA SAVE" if indonesian else "REVIEW SAVE"
+ return "PILIH BAB" if indonesian else "CHAPTERS"
+
+func _fit_realm_copy() -> void:
+ if not is_instance_valid(realm_title) or realm_title.size.x<=1:return
+ var pixels: int=maxi(16,roundi(22*portrait_unit))
+ var font: Font=realm_title.get_theme_font("font")
+ realm_title.add_theme_font_size_override("font_size",pixels)
+ while pixels>16 and (realm_title.get_line_count()>2 or font.get_height(pixels)*mini(2,realm_title.get_line_count())>realm_title.size.y):
+  pixels-=1;realm_title.add_theme_font_size_override("font_size",pixels)
 
 func _open_primary_goal() -> void:
  if _goal.is_empty() or SceneTransitionManager.is_transitioning:return
@@ -302,12 +324,14 @@ func _cancel_feature_motion() -> void:
 func _apply_feature(key: String,destination: String,info: Dictionary,index: int,total: int) -> void:
  _featured_key=key;_featured_scene=destination;_feature_signature=key
  event_card.get_node("FeaturedTitle").text=EventCatalog.title(key) if key!="odyssey" else "JADE DRAGON ODYSSEY"
- event_card.get_node("EventKind").text=tr("CELESTIAL EVENTS")+" · %d/%d"%[index,total]
+ event_card.get_node("EventKind").text="EVENT %d/%d"%[index,total]
  event_window.get_node("EventArt").texture=EventArtwork.texture_for(key)
  boss_progress.text="%d / %d"%[mini(int(info.current),int(info.total)),int(info.total)]
  feature_dot.visible=ActionDot.count(self,key)>0
- boss_reward.text=tr("REWARD READY") if feature_dot.visible else tr("CONTINUE YOUR JOURNEY")
- event_action.text=(tr("CLAIM REWARD") if feature_dot.visible else tr("VIEW EVENT"))+" ›"
+ boss_reward.text="HADIAH SIAP" if SettingsManager.language=="id" else "REWARD READY"
+ boss_reward.visible=feature_dot.visible
+ event_card.get_node("UpcomingRewardIcon").visible=feature_dot.visible
+ event_action.text=(("AMBIL" if feature_dot.visible else "BUKA EVENT") if SettingsManager.language=="id" else ("CLAIM" if feature_dot.visible else "VIEW EVENT"))+" ›"
  event_button.tooltip_text=event_card.get_node("FeaturedTitle").text
 
 func _request_feature(key: String,destination: String,info: Dictionary,index: int,total: int) -> void:
@@ -384,7 +408,7 @@ func _layout_sanctuary() -> void:
  _rect(title_name,Vector2.ZERO,Vector2(hero_title.size.x,42*u));_font(title_name,35,true)
  _rect(title_role,Vector2(0,43*u),Vector2(hero_title.size.x,17*u));_font(title_role,12)
  var compact: bool=size.x<560
- var card_h: float=176.0 if short_phone else 226.0 if compact else maxf(190,196*u)
+ var card_h: float=166.0 if short_phone else 184.0 if compact else maxf(162,162*u)
  var event_h: float=maxf(214,216*u)
  var shortcut_h: float=90.0 if size.x<420 else maxf(65,80*u)
  var heading_h: float=44.0 if short_phone else clampf(44*u,44,54)
@@ -408,13 +432,14 @@ func _layout_sanctuary() -> void:
  var text_start: float=map_w+8*u
  var action_w: float=width-24 if compact else width*.36
  var text_width: float=width-text_start-18*u if compact else width-text_start-action_w-22*u
- _rect(chapter_label,Vector2(text_start,16.0 if compact else 14*u),Vector2(text_width,20));_font(chapter_label,13,true)
- _rect(realm_title,Vector2(text_start,38.0 if compact else 36*u),Vector2(text_width,48.0 if compact else 52.0*u));_font(realm_title,22,true)
+ var identity_y: float=22.0 if compact else 24*u
+ _rect(chapter_label,Vector2(text_start,identity_y),Vector2(text_width,20));_font(chapter_label,13,true)
+ _rect(realm_title,Vector2(text_start,identity_y+23),Vector2(text_width,52.0 if compact else 52*u));_font(realm_title,22,true)
  _rect(next_path_label,Vector2(text_start,83.0 if compact else 94*u),Vector2(text_width,20));_font(next_path_label,13)
- var meter_y: float=112.0 if compact else 116*u
+ var meter_y: float=108.0 if compact else card_h-40*u
  _rect(realm_progress,Vector2(text_start,meter_y),Vector2(maxf(30,text_width-54),7))
  _rect(progress_label,Vector2(text_start+maxf(30,text_width-49),meter_y-5),Vector2(48,20));_font(progress_label,12)
- _rect(goal_hint,Vector2(text_start,meter_y+13),Vector2(text_width,38));_font(goal_hint,13)
+ _rect(goal_hint,Vector2(text_start,meter_y-10),Vector2(text_width,34));_font(goal_hint,13)
  continue_button.text=("BAB" if SettingsManager.language=="id" else "CHAPTERS")+" ›"
  var button_h: float=44.0 if short_phone else 46.0 if compact else maxf(44,50*u)
  var action_x: float=12.0 if compact else width-action_w-12*u
@@ -431,22 +456,22 @@ func _layout_sanctuary() -> void:
   _rect(continue_button,Vector2(action_x,group_y+button_h+action_gap),Vector2(action_w,button_h))
  else:_rect(journey_button,Vector2(action_x,(card_h-button_h)*.5),Vector2(action_w,button_h))
  if short_phone:
-  _rect(chapter_label,Vector2(text_start,8),Vector2(text_width,16))
-  _rect(realm_title,Vector2(text_start,26),Vector2(text_width,26));_font(realm_title,22,true)
-  _rect(next_path_label,Vector2(text_start,56),Vector2(text_width,18))
-  _rect(realm_progress,Vector2(text_start,80),Vector2(maxf(30,text_width-54),6))
-  _rect(progress_label,Vector2(text_start+maxf(30,text_width-49),75),Vector2(48,18))
-  _rect(goal_hint,Vector2(text_start,94),Vector2(text_width,26))
+  _rect(chapter_label,Vector2(text_start,20),Vector2(text_width,16))
+  _rect(realm_title,Vector2(text_start,39),Vector2(text_width,42));_font(realm_title,22,true)
+  _rect(realm_progress,Vector2(text_start,96),Vector2(maxf(30,text_width-54),6))
+  _rect(progress_label,Vector2(text_start+maxf(30,text_width-49),91),Vector2(48,18))
+  _rect(goal_hint,Vector2(text_start,80),Vector2(text_width,28))
+ _fit_realm_copy()
  _font_button(journey_button,18);_font_button(continue_button,16)
  var heading: Control=lower_stack.get_node("EventsHeading");heading.custom_minimum_size.y=heading_h
  var all_width: float=minf(width*.48,maxf(130,176*u))
  var caption: Label=heading.get_node("EventsCaption");_rect(caption,Vector2(3*u,0),Vector2(width-all_width-10*u,heading_h));_font(caption,20,true);caption.vertical_alignment=VERTICAL_ALIGNMENT_CENTER
  caption.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;caption.max_lines_visible=2
  caption.add_theme_font_size_override("font_size",maxi(18,roundi(20*u)))
- all_events_button.text=tr("ALL EVENTS")+" ›"
+ all_events_button.text=("SEMUA" if SettingsManager.language=="id" else "ALL EVENTS")+" ›"
  _rect(all_events_button,Vector2(width-all_width,0),Vector2(all_width,heading_h));_font_button(all_events_button,18)
  # Event copy uses phone-sized floors instead of shrinking with the portrait art.
- var event_left: float=maxf(18,30*u)
+ var event_left: float=maxf(22,40*u)
  var event_text_w: float=width-event_left-maxf(18,24*u)
  var tag: Label=event_card.get_node("EventKind")
  _rect(tag,Vector2(event_left,24),Vector2(event_text_w,22))

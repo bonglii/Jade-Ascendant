@@ -101,7 +101,7 @@ func run() -> void:
 		check(head.spine.size() == (8 if reduced else 12),"bounded dragon joint count")
 	check(valid_shape,"dragon keeps finite continuous body spacing through reversal")
 	check(smooth_head,"dragon head turning is bounded through reversal")
-	for head: Dictionary in courier.heads: head.mesh.mesh = null; head.face.texture = null
+	for head: Dictionary in courier.heads: head.mesh.mesh = null
 	world.free()
 	var journey: Node = root.get_node("JourneyManager")
 	journey.select_stage(1,1)

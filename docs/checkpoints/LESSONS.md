@@ -515,3 +515,11 @@ installation are separate from owner publish, exact-SHA CI, AAB and Android test
 - Preserve the approved gear progression: permanent levels for weapons, identical-duplicate star ascension for all equipment. Explain armor/accessory star-only progression near the top of the popup instead of inventing additional stats/costs.
 - Distinguish installation-local progress, Google-owned backup, display nickname and server account UID/wallet. Backup isolation alone does not implement automatic full local-save switching between accounts.
 - Avoid built-in identifiers for helper FUNCTIONS as well as variables: a new test helper named seed resolved to Godot's global seed() despite its intended signature. Rename it and let the strict error gate catch parsing failures before any package is delivered.
+
+## Home / dragon / release consistency — 2026-10-25
+
+- A label rectangle inside a card is not enough: inspect rendered text against painted rails/corners. Keep chapter/stage identity once, remove repeated instructions, retain separate Continue and Chapters routes and readable recovery guidance. Measure all authored names in both languages on compact screens.
+- A rigid cropped head over a UV body strip can expose an abrupt neck even if their rectangles overlap. Use the full existing painting in one mesh with one shared neck edge and monotonic UVs; keep bounded joint count, turn rate, authority, targeting and damage unchanged.
+- SceneTree test scripts must load attack scripts that depend on autoload globals after the runtime initializes. A top-level preload produced an EquipmentManager compile failure in the first fixture; the strict error gate caught it and the fixture was corrected before delivery.
+- Keep the Play handoff current with real server purchases, optional nine-domain backup, FCM notifications and placement-specific signed ad rewards. Generated public policy copies must match; verify exact served content after the Profile-only deployment. A 200 response with an obsolete policy is not a successful update.
+- Reuse actual baseline CI/device receipts. Repository export templates can carry old version numbers while the owner exports newer local presets; verify the actual AAB/support metadata instead of overwriting owner version/signing settings.

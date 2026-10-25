@@ -68,7 +68,7 @@ func run() -> void:
     var length: float=0
     for index: int in range(1,head.spine.size()):length+=head.spine[index-1].distance_to(head.spine[index])
     check(length>90 and length<115,"dragon body is visibly shorter in real mesh")
-    check(head.face.scale.x*head.face.texture.get_height()<60,"dragon head follows compact body scale")
+    check(cast.DRAGON_HALF_WIDTH*2<60 and not head.has("face"),"compact head/body share one seamless textured mesh")
    if frame==25:await capture("compact-compass-attack-a")
    else:await capture("compact-compass-attack-b")
   await frames(1)

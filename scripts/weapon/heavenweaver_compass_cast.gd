@@ -9,6 +9,8 @@ const DRAGON_BODY_LENGTH: float=104.0
 const DRAGON_NECK: float=27.0
 const DRAGON_HALF_WIDTH: float=27.15
 const DRAGON_HEAD_SCALE: float=.075
+const DRAGON_NECK_U: float=1650.0/2172.0
+const DRAGON_HEAD_LENGTH: float=522.0*DRAGON_HEAD_SCALE
 const HIT_SCALE: float = 0.375
 const CONTACT_RADIUS: float = 34.0
 const REFRESH: float = 0.15
@@ -42,22 +44,10 @@ func _resize_heads(count: int, origin: Vector2) -> void:
 		mesh.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		mesh.modulate = Color(0.68, 1.0, 1.0) if heads.size() == 1 else Color.WHITE
 		add_child(mesh)
-		var face := Sprite2D.new()
-		var face_texture := AtlasTexture.new()
-		face_texture.atlas = DRAGON
-		face_texture.region = Rect2(1650, 0, 522, 724)
-		face_texture.filter_clip = true
-		face.texture = face_texture
-		face.scale = Vector2.ONE * DRAGON_HEAD_SCALE
-		face.offset = Vector2(-165, 0)
-		face.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-		face.modulate = mesh.modulate
-		add_child(face)
-		heads.append({"point": origin + Vector2(22, -28), "angle": 0.0, "target": null, "spine": PackedVector2Array(), "mesh": mesh, "face": face, "spent": true})
+		heads.append({"point": origin + Vector2(22, -28), "angle": 0.0, "target": null, "spine": PackedVector2Array(), "mesh": mesh, "spent": true})
 	while heads.size() > count:
 		var removed: Dictionary = heads.pop_back()
 		removed.mesh.queue_free()
-		removed.face.queue_free()
 func strike_tick(damage: float, weapon_level: int) -> void:
 	if not _authorized(): return
 	combat_level = weapon_level
@@ -184,18 +174,23 @@ func _update_dragon(head: Dictionary, _delta: float, index: int) -> void:
 		segment_angle += bend * (1.0 - exp(-14.0 * _delta)) + breath
 		at -= Vector2.from_angle(segment_angle) * spacing
 		spine.append(at)
-	head.face.global_position = head.point
-	head.face.rotation = angle
 	head.spine = spine
+	# The rigid face and flexible body share ONE neck edge and the full texture.
+	# Separate cropped sprites previously exposed a square cut during turns.
+	var direction: Vector2=Vector2.from_angle(angle)
+	var centers:=PackedVector2Array([spine[0]+direction*DRAGON_HEAD_LENGTH,spine[0]+direction*DRAGON_HEAD_LENGTH*.5])
+	centers.append_array(spine)
+	var texture_u:=PackedFloat32Array([1.0,lerpf(DRAGON_NECK_U,1.0,.5)])
+	for j: int in joints:texture_u.append(DRAGON_NECK_U*(1.0-float(j)/(joints-1)))
 	var vertices := PackedVector2Array()
 	var uvs := PackedVector2Array()
 	var indices := PackedInt32Array()
-	for j: int in joints:
-		var tangent: Vector2 = (spine[maxi(0, j - 1)] - spine[mini(joints - 1, j + 1)]).normalized()
+	for j: int in centers.size():
+		var tangent: Vector2 = direction if j<=2 else (centers[j-1]-centers[mini(centers.size()-1,j+1)]).normalized()
 		var normal: Vector2 = tangent.orthogonal()
 		for side: int in 2:
-			vertices.append(to_local(spine[j] + normal * (float(side) * 2.0 - 1.0) * DRAGON_HALF_WIDTH))
-			uvs.append(Vector2(0.78 * (1.0 - float(j) / (joints - 1)), float(side)))
+			vertices.append(to_local(centers[j] + normal * (float(side) * 2.0 - 1.0) * DRAGON_HALF_WIDTH))
+			uvs.append(Vector2(texture_u[j], float(side)))
 		if j > 0:
 			var k: int = j * 2
 			indices.append_array(PackedInt32Array([k - 2, k - 1, k, k - 1, k + 1, k]))

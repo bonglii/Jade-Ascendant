@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [checkpoint/iap-fasttrack-20261010]
-    paths: ['backend/player_identity/**', 'backend/monetization/cloudflare/src/event_calendar.mjs', 'backend/monetization/cloudflare/src/worker_paid_production_v2.mjs', 'backend/monetization/cloudflare/src/odyssey_service.mjs', 'backend/monetization/cloudflare/src/heavenly_trials.mjs', 'scripts/**', 'tests/event_*', 'tests/check_event_operations.cjs', 'tests/check_release_warnings.cjs', 'tests/release_warning_audit.gd', 'tests/check_connection_welcome.cjs', 'tests/connection_welcome_smoke.gd', 'tests/check_gear_summon_reliability.cjs', 'tests/gear_summon_reliability_smoke.gd', '.github/workflows/event-operations-qa.yml']
+    paths: ['backend/player_identity/**', 'backend/monetization/cloudflare/src/event_calendar.mjs', 'backend/monetization/cloudflare/src/worker_paid_production_v2.mjs', 'backend/monetization/cloudflare/src/odyssey_service.mjs', 'backend/monetization/cloudflare/src/heavenly_trials.mjs', 'scripts/**', 'tests/event_*', 'tests/check_event_operations.cjs', 'tests/check_release_warnings.cjs', 'tests/release_warning_audit.gd', 'tests/check_connection_welcome.cjs', 'tests/connection_welcome_smoke.gd', 'tests/check_gear_summon_reliability.cjs', 'tests/gear_summon_reliability_smoke.gd', 'tests/check_home_dragon_release.cjs', 'tests/home_dragon_release_smoke.gd', '.github/workflows/event-operations-qa.yml']
 permissions:
   contents: read
 jobs:
@@ -37,6 +37,7 @@ jobs:
           node tests/check_release_warnings.cjs "$PWD" /tmp/jade-ops/Godot_v4.7.2-stable_linux.x86_64
           node tests/check_connection_welcome.cjs "$PWD" /tmp/jade-ops/Godot_v4.7.2-stable_linux.x86_64
           node tests/check_gear_summon_reliability.cjs "$PWD" /tmp/jade-ops/Godot_v4.7.2-stable_linux.x86_64
+          node tests/check_home_dragon_release.cjs "$PWD" /tmp/jade-ops/Godot_v4.7.2-stable_linux.x86_64
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -66,6 +67,15 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Expected exact target validation failed' }
           & $file -ExpectedCommit ('0'*40) -ValidateOnly
           if ($LASTEXITCODE -eq 0) { throw 'Wrong commit was accepted' }
+          $policy=Join-Path $PWD 'backend/player_identity/deploy_release_policy.ps1'
+          $tokens=$null; $errors=$null
+          [void][Management.Automation.Language.Parser]::ParseFile($policy,[ref]$tokens,[ref]$errors)
+          if ($errors.Count) { throw ($errors | Out-String) }
+          [IO.File]::AppendAllText($config,("`n"+'binding = "PROFILE_DB"'))
+          & $policy -ExpectedCommit $env:GITHUB_SHA -ValidateOnly
+          if ($LASTEXITCODE -ne 0) { throw 'Policy profile preflight failed' }
+          & $policy -ExpectedCommit ('0'*40) -ValidateOnly
+          if ($LASTEXITCODE -eq 0) { throw 'Policy accepted wrong commit' }
           Remove-Item -LiteralPath $config
           $global:LASTEXITCODE=0
           Write-Host 'EVENT_OPERATIONS_WINDOWS_PREFLIGHT=PASS; DEPLOY=NONE; SCHEDULE_WRITE=NONE'

@@ -1,0 +1,39 @@
+{
+  "batch": "HOME_DRAGON_RELEASE_2026-10-25",
+  "base": "026276b311dff2f9fc144350447b4c43f835bf8d",
+  "phase": "Portable delivery ready; author implementation and local validation complete; owner publish/CI/Profile deploy/AAB remain separate",
+  "findings": {
+    "screenshots": "Chapter includes repeated stage/instruction text; Compass hard face/body seam",
+    "root_cause": "Two textured surfaces have separate neck boundaries; replace with one full-UV mesh sharing a single neck edge",
+    "release": "Owner previous package is actually pushed; owner reports AAB exported. Do not repeat prior batch. Audit release documentation found obsolete no-server/no-cloud-save statements; correct to current behavior before handoff.",
+    "policy": "Current public policy misses FCM/device topic and signed event ad delivery; source disclosure corrected, Profile-only deploy pending owner"
+  },
+  "stages": {
+    "source": "complete",
+    "qa": "local_pass",
+    "package": "validated_ready_for_owner",
+    "published": false,
+    "native": "unchanged",
+    "server_deploy": "owner_profile_policy_only_pending",
+    "aab": "one_new_final_client_required_after_owner_publish"
+  },
+  "next": "Owner run Jade-Home-Dragon-Release/apply_and_publish.cmd; it publishes actual commit URL, syncs game, waits exact-SHA CI and deploys/verifies Profile policy only. Then one final AAB; brief phone test and Play Console review.",
+  "validation": {
+    "home_dragon_fixture": "1092 final checks PASS including real translated and earned-claim states",
+    "compass": "195 checks PASS actual moving-target damage and authority",
+    "mobile_surface": "178 checks PASS native first swipe and event surface",
+    "home_navigation": "195 checks PASS actual routes and checkpoint preservation",
+    "combat_visual": "34 checks PASS actual twin dragon combat",
+    "comfort": "60 checks PASS existing bounded turn/body behavior",
+    "strict": "358 scripts +16 checks PASS under six warning categories as errors",
+    "policy_gates": "5 tests PASS; full Profile regression running",
+    "native": "48 source inputs + candidate AAR digest match",
+    "baseline_ci": "12 workflows success on026276b",
+    "phone": "not_tested_this_batch",
+    "profile_regression": "PASS171 Profile service Node tests, no failures/skips",
+    "package": "10 portable preflight/rollback/idempotence/dependency/CI-before-deploy checks PASS",
+    "ci_gate": "8 exact-SHA required-workflow gate scenarios PASS",
+    "visual": "Rendered Home en/id on390/720 and full-mesh dragon turns inspected; 1092 final-copy fixture checks also cover earned Claim and actual translated names"
+  },
+  "delivery": "Jade-Home-Dragon-Release.zip"
+}

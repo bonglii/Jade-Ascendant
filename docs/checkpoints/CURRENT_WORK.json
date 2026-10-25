@@ -1,5 +1,5 @@
 {
-  "state": "docs/checkpoints/GEAR_SUMMON_ACCOUNT_STATE_2026-10-25.json",
-  "base": "06a7b39fba78b0fb1a3dfdfb31f549c8d222d5cc",
-  "previous": "docs/checkpoints/CONNECTION_WELCOME_STATE_2026-10-25.json"
+  "state": "docs/checkpoints/HOME_DRAGON_RELEASE_STATE_2026-10-25.json",
+  "base": "026276b311dff2f9fc144350447b4c43f835bf8d",
+  "previous": "docs/checkpoints/GEAR_SUMMON_ACCOUNT_STATE_2026-10-25.json"
 }

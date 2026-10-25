@@ -44,7 +44,7 @@ func run() -> void:
  print("HOME_SANCTUARY_FIXTURE_READY_MS=",Time.get_ticks_msec()-started)
  var home: Node=current_scene
  var presenter: Node=home.get_node("HomeUI/HomeProductionOverlay")
- check(presenter.checkpoint_available and presenter._goal.action=="continue" and presenter.journey_button.text.contains(tr("CONTINUE RUN")),"validated checkpoint becomes the primary Continue action")
+ check(presenter.checkpoint_available and presenter._goal.action=="continue" and presenter.journey_button.text.contains("CONTINUE" if root.get_node("SettingsManager").language!="id" else "LANJUT"),"validated checkpoint becomes the primary Continue action")
  check(presenter.next_path_label.text.contains("1-2"),"Continue identifies the saved stage")
  check(presenter.realm_progress.value==2,"actual clear count")
  check(presenter.profile_exp.value==progress.get_hero_progress_ratio(),"actual hero progress")

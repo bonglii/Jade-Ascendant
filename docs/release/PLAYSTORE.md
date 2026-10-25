@@ -1,149 +1,40 @@
-# Jade Ascendant — Google Play release checklist
+# Jade Ascendant — current Play release handoff
 
-Dokumen ini adalah checklist source/release saat ini. Jawaban final Play Console tetap
-harus diverifikasi oleh publisher terhadap **exact AAB yang diunggah** dan konfigurasi
-live Console pada saat rilis.
+Updated 25 October 2026. This replaces the obsolete offline-only/no-server/no-backup checklist. Read the current checkpoint and exact AAB evidence first; repository template versions are not the version installed through Play.
 
-## 1. Current Android identity
+## Established release flow
 
-- Engine: Godot 4.7.2
-- Package: `com.yungdevstudio.jadeascendant`
-- Version: `1.0.4`
-- Version code: `4`
-- Portrait
-- minSdk 24
-- targetSdk 36
-- arm64-v8a
-- Gradle build enabled
-- INTERNET permission enabled
-- VIBRATE permission enabled
+1. Apply the latest portable batch; wait for every triggered workflow on the printed exact Git SHA to pass.
+2. Close older Godot windows. Use `backend\player_identity\export_production.cmd` so the approved native candidate and source metadata are installed for the export session. Keep the terminal open and close that editor after exporting. If interrupted, run `recover_production_export.cmd` before another export; never erase its receipt manually.
+3. Set the next unused Play version code in that editor and export a signed release AAB with **Export With Debug unchecked**. Do not replace the owner's local signing/version/export presets from a historical repository sample.
+4. Upload that AAB. Confirm package `com.yungdevstudio.jadeascendant`, its actual version code, source SHA/native target in Settings support, Play App Signing identity and SDK/manifest findings.
+5. Briefly verify the affected feature on the Play-installed build, saved progress after restart, ads and reward delivery. Reuse already-passed unchanged payment evidence; do not make repeat real-money purchases merely to satisfy an old checklist.
+6. Review Console setup, pre-launch report and actual track eligibility. This source audit does not grant production access or replace Google review. Where the 12-tester requirement applies, it is **closed testing**, with 12 opted-in testers continuously for 14 days; an internal email list is insufficient. Retain actual feedback and fixes, not invented test reports.
 
-Jangan gunakan dokumen lama yang menyebut build offline-only, INTERNET disabled, tanpa
-ads, tanpa billing, atau tanpa account.
+## Current account, save and payment behavior
 
-## 2. Canonical local release flow
+- Guest play and optional Google/Firebase sign-in exist. Permanent ordinary progression is stored locally by installation. Changing Google accounts does not automatically switch all local progression.
+- Optional account-owned Cloud backup covers nine permanent domains, with explicit first save/restore, revisions and protected automatic updates. Run checkpoints and device settings are not part of it. Do not promise automatic cross-device continuation of an active run.
+- Public UID belongs to the verified server account; nickname is display metadata. Paid Jade, paid gear, event authority and purchase recovery are server-owned, not restored by editing a local backup.
+- Six Jade consumables use live Google Play product details. The production backend verifies purchases, credits idempotently, recovers interrupted delivery and reconciles Play voids/refunds. Pending/failed checkout must not grant Jade. Preserve all nine existing live protection gates; a refund hold is not solved by disabling them.
+- Real non-tester purchase and restart were already reported successful by the owner. That evidence is distinct from a new AAB's build identity and new device observations.
 
-1. `PERIKSA_GAME.bat`
-2. `PERIKSA_ANDROID.bat`
-3. review/update publisher values melalui `SIAPKAN_RILIS.bat`
-4. pastikan privacy policy yang dipublikasikan sama dengan build truth
-5. `BUAT_AAB.bat`
-6. verifikasi report/artifact AAB
-7. upload ke Internal testing lebih dulu
-8. jalankan `docs/release/DEVICE_QA.md` pada build yang sama
+## Ads, notifications and public pages
 
-Build helper/preflight tidak menggantikan Play review atau device QA.
+- Optional rewarded ads use separate Dice, Pavilion, Revive and General placements with applicable UMP consent. Rewards follow the actual placement's local or server-signed verification path; SDK callbacks alone do not authorize server-owned Dice/Trials bonuses.
+- Android update notifications use an installation preference and FCM topic subscription after permission. Do not claim a notification was delivered merely because the dashboard accepted a send.
+- Privacy policy: https://jade-ascendant-player.jade-ascendant-studio.workers.dev/privacy-policy.html
+- Account deletion: https://jade-ascendant-player.jade-ascendant-studio.workers.dev/account-deletion.html
+- Support: yungdevstudio@gmail.com. Deletion is a verified support request, not an instant erase button. Check that both public pages work without an admin login and reflect the current generated policy before submitting their URLs.
+- Optional telemetry remains subject to its existing rollout gate. Do not enable it as part of this cosmetic batch.
 
-## 3. Account / Firebase Authentication
+## Console facts the owner still verifies
 
-Current game:
-- Google Sign-In opsional;
-- Guest mode tersedia;
-- tidak ada forced authentication;
-- Google Login adalah identity boundary, bukan Cloud Save;
-- login/sign-out tidak boleh mengganti gameplay save lokal.
+Store listing/screenshots, target audience, content rating, ads declaration, Data safety (including actual Ads/Firebase/FCM SDK flows), App access/reviewer instructions, privacy/deletion URLs, country/device availability, IAP availability, signing identity and policy/pre-launch warnings. Use the uploaded AAB and current live Console; do not copy answers from obsolete local-only documentation.
 
-Sebelum release:
-- package Firebase harus sama dengan package AAB;
-- signing SHA yang relevan harus terdaftar;
-- Google provider harus aktif;
-- real-device sign-in, restored session, sign-out, dan Guest fallback harus diuji;
-- privacy policy dan Data safety harus sesuai exact SDK/data flow.
+Official references:
+- https://support.google.com/googleplay/android-developer/answer/14151465
+- https://support.google.com/googleplay/android-developer/answer/9859348
+- https://firebase.google.com/docs/cloud-messaging/topic-messaging
 
-## 4. Ads / consent
-
-Current game:
-- Google Mobile Ads terintegrasi;
-- rewarded ads bersifat opsional;
-- Google UMP menyediakan applicable privacy choices;
-- monetization debug diagnostics hanya untuk debug/test path yang memang diizinkan.
-
-Sebelum release:
-- verifikasi production AdMob app/ad-unit configuration;
-- verifikasi UMP/consent behavior pada region/device yang relevan;
-- verifikasi reward hanya diberikan setelah completion;
-- cancel/failure/no-fill tidak boleh memberi reward.
-
-## 5. Google Play Billing
-
-Production-shaped billing provider aktif untuk enam Celestial Jade consumable:
-- `jade_pouch_100`
-- `jade_pouch_550`
-- `jade_pouch_1200`
-- `jade_pouch_2500`
-- `jade_pouch_6500`
-- `jade_pouch_14000`
-
-Current client behavior:
-- harga uang berasal dari Google Play product details;
-- PENDING tidak memberi reward;
-- consumable difinalisasi setelah local reward/save berhasil;
-- interrupted purchase dapat dipulihkan melalui Restore Purchases;
-- exact purchase-token replay dilindungi secara lokal dari double grant.
-
-Security limitation:
-- production server-side purchase-token verification dengan Google Play Developer API
-  **belum terintegrasi**;
-- jangan menyebut purchase flow server-authoritative atau server-verified.
-
-Publisher wajib memverifikasi product status, pricing, tester eligibility, dan purchase
-behavior di live Play Console / license-test environment.
-
-## 6. Privacy / Data safety
-
-Privacy policy harus konsisten dengan build:
-- local gameplay save;
-- optional Google Sign-In + Guest;
-- Google Login tidak membackup gameplay;
-- Cloud Save tidak tersedia;
-- optional rewarded ads + UMP;
-- Google Play Billing;
-- support email handling;
-- Google/Firebase/Ads/Billing processing mengikuti service yang relevan.
-
-Jangan menyalin jawaban Data safety dari dokumen historis. Isi berdasarkan exact final
-AAB, SDK yang benar-benar terkandung di bundle, konfigurasi live, dan praktik publisher.
-
-## 7. Cloud claims
-
-Production Cloud Save/restore tetap disabled/fail-closed. Store listing, reviewer notes,
-screenshots, dan support copy tidak boleh menjanjikan:
-- cloud backup;
-- account-based gameplay recovery;
-- automatic restore;
-- cloud-wins;
-- server-authoritative economy.
-
-## 8. Live Play Console verification
-
-Publisher harus memeriksa langsung, karena nilai ini tidak bisa dipastikan hanya dari
-repository:
-- App access / reviewer instructions;
-- Ads declaration;
-- Data safety;
-- Content rating;
-- Target audience / children-related settings;
-- IAP product activation/pricing/availability;
-- privacy-policy URL;
-- country/device availability;
-- testing-track requirements;
-- policy warnings;
-- Play App Signing identity;
-- exact manifest/SDK findings dari uploaded AAB.
-
-Jangan hard-code jawaban Console yang belum diverifikasi.
-
-## 9. Release evidence before production
-
-Minimum:
-- exact Git SHA dicatat;
-- required CI pada SHA tersebut green;
-- AAB bertanda tangan berhasil;
-- artifact SHA-256 dicatat;
-- Internal testing install berhasil;
-- device QA matrix terisi;
-- Google/Guest boundary diuji;
-- rewarded ads + UMP diuji;
-- billing purchase/PENDING/recovery diuji;
-- privacy/store copy cocok dengan shipped build;
-- Cloud Save tetap fail-closed kecuali ada approval eksplisit terpisah.
+No source-only audit can guarantee zero bugs, production approval or a release date.
