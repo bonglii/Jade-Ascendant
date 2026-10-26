@@ -1,0 +1,44 @@
+name: Tester reliability / wallet, summons and mobile surfaces
+on:
+  workflow_dispatch:
+  push:
+    branches: ['checkpoint/iap-fasttrack-20261010', 'fix/tester-reliability-20261026']
+    paths: ['scripts/**', 'assets/ui/journey/stage_art/**', 'tests/**', 'backend/**', '.github/workflows/tester-reliability-qa.yml']
+permissions:
+  contents: read
+jobs:
+  tester-batch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verified official engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          mkdir -p /tmp/jade-tester-engine
+          curl -fsSL --retry 3 https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip -o /tmp/jade-tester-engine/godot.zip
+          echo 'cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4  /tmp/jade-tester-engine/godot.zip' | sha256sum --check
+          unzip -q /tmp/jade-tester-engine/godot.zip -d /tmp/jade-tester-engine
+          chmod +x /tmp/jade-tester-engine/Godot_v4.7.2-stable_linux.x86_64
+      - name: Current production guards, credits, save isolation and responsive layouts
+        run: node backend/player_identity/check_tester_reliability.cjs "$PWD" /tmp/jade-tester-engine/Godot_v4.7.2-stable_linux.x86_64
+      - name: Real renderer, hidden-result pixel proof and native first swipes
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri
+          xvfb-run -a node backend/player_identity/check_tester_reliability.cjs "$PWD" /tmp/jade-tester-engine/Godot_v4.7.2-stable_linux.x86_64 --native
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tester-reliability-${{ github.sha }}
+          path: |
+            .local/tester_reliability_qa/*.log
+            .local/tester_reliability_qa/*.json
+            .local/event_touch_qa/import.log

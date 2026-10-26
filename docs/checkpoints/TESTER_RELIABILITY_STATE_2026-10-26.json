@@ -1,0 +1,158 @@
+{
+  "batch": "TESTER_RELIABILITY_2026-10-26",
+  "base": "8654ad52c8237f2cb8832b77c2f5adefe1b2d219",
+  "branch": "fix/tester-reliability-20261026",
+  "phase": "R2 ready: original five-resource audio shutdown reproduced and corrected in the UI fixture. Two strict verbose repeats and the complete owner-equivalent Linux headless/backend runner passed. Owner Windows publish/CI/deploy/export remain separate.",
+  "video": "paused; approved advertising files untouched",
+  "scope": {
+    "01_wallet_consistency": "identified: paid_balance returns zero on transient invalidation; separate read-only last-confirmed display from spend authority",
+    "02_formation_spacing": "identified: fixed148px result details reserves empty formation space",
+    "03_realm_thumbnails": "inspect all25 stage artworks, replace inappropriate flat thumbnails only",
+    "04_server_readiness": "audit and coalesce startup/authenticated reads; keep mutations verified",
+    "05_iap_mode": "official Google docs verified: closed-test membership differs from license testing; preserve production gates",
+    "06_crowd_performance": "profile bounded actual runtime before/after; Linux fixture is not Snapdragon680 proof",
+    "07_economy": "audit future income/cost ratios; never fake displayed balances or retroactively erase earned currency",
+    "08_reveal_secrecy": "screenshot shows result rarity in phase copy before disclosure; gate identity/copy until reveal",
+    "09_reveal_motion": "upgrade timing/presentation using inspected current assets",
+    "10_compass_body_spam": "identified: every attack emits pooled common blue player release cue",
+    "11_seal_priority": "inspect partial10-pull payment and ambiguous ad quota vs owned-Seal labels; atomic debits only",
+    "12_first_topup": "half base amounts, first purchase double per pack; legacy purchases retain promised amounts, server idempotency/refund guards",
+    "13_banner_swipe": "use existing shared touch policy and presenter; horizontal swipe must not activate event or break vertical scroll",
+    "14_library_popups": "identified: fixed500px/.68 viewport height on short content; content-sized bounded scrollable detail"
+  },
+  "stages": {
+    "implementation": "complete",
+    "local_qa": "passed_current_backend_and_headless_runtime",
+    "installed": false,
+    "committed": false,
+    "pushed": false,
+    "deployed": false,
+    "exported": false,
+    "android_tested": false,
+    "package": "ready_verified"
+  },
+  "next": "Owner extracts Jade-Tester-Reliability-R2.zip to its named tools folder and runs its apply_and_publish.cmd. Continue from existing stage receipts; no reset/clean, no native rebuild or feature reinstallation.",
+  "decisions": {
+    "topup": "Six new Play SKU aliases reuse stable internal/native journal IDs. Legacy quantities are immutable. Base half, one server-controlled first bonus per account/pack, computed inside existing D1 batch. No schema migration or AAR change. Activate new products only after backend deployment.",
+    "economy": "Preserve balances and existing earned rewards; audit real inflows versus costs before changing grind.",
+    "network": "Coalesce warm reads, prefetch Pavilion banner at boot; keep all authentication, TLS, pending-action recovery and mutation verification."
+  },
+  "qa": {
+    "current_backend": {
+      "tests": 583,
+      "failures": 0
+    },
+    "tester_reliability": {
+      "checks": 28,
+      "failures": 0
+    },
+    "surface_input_headless": {
+      "checks": 15,
+      "failures": 0
+    },
+    "server_wallet": {
+      "checks": 33,
+      "failures": 0
+    },
+    "compass_pursuit": {
+      "checks": 195,
+      "failures": 0
+    },
+    "prior_gacha_regression": {
+      "checks": 741,
+      "failures": 0
+    },
+    "prior_crowd_regression": {
+      "checks": 278,
+      "failures": 0
+    },
+    "paid_gameplay": {
+      "checks": 58,
+      "failures": 0,
+      "strict_warning_policy": true
+    },
+    "native_render": "not_run; Xvfb setup auto-review rejected system-directory/TCP side effects; stopped; native CI prepared",
+    "historical_full_scan": {
+      "passed": 765,
+      "preexisting_failure_names": 27,
+      "new_failure_names": 0
+    },
+    "heavenly_trials": {
+      "checks": 49,
+      "failures": 0
+    },
+    "odyssey_prewarm": {
+      "checks": 8,
+      "failures": 0
+    },
+    "installer_unit_tests": {
+      "tests": 6,
+      "failures": 0
+    },
+    "native_inputs_modified": [],
+    "whole_package_install": {
+      "files": 49,
+      "first_apply_changed": 49,
+      "repeat_changed": 0,
+      "preserved": [
+        "owner source edits",
+        "version35 configuration",
+        "export/signing settings",
+        "HEAD",
+        "unrelated staged changes",
+        "lessons",
+        "previous checkpoint"
+      ],
+      "publish": false,
+      "deploy": false,
+      "save_opened": false
+    }
+  },
+  "owner_actions": [
+    "Run the self-contained apply_and_publish.cmd. Its receipt records install, QA, scoped commit/push, exact-SHA native CI and Worker deployment separately.",
+    "After deployment, create/activate six new Play top-up SKUs with the existing prices; legacy checkout remains usable until ProductDetails returns each new SKU.",
+    "Close the older editor; export one new AAB using the existing production launcher. Preserve current owner version/signing/export settings.",
+    "Short phone checks, especially one crowded wave on Snapdragon680. No new live cash purchase or Android FPS result is claimed."
+  ],
+  "owner_report": {
+    "stage": "surface fixture reached; overall batch QA stopped before publishing",
+    "error": "5 resources still in use at exit",
+    "receipt": "user-provided GODOT_ERROR log; no remote publication/deployment inferred"
+  },
+  "qa_exit_r2": {
+    "cause": "Fixture-only incidental claim/summon/menu playback left AudioStream and playback references alive in Dummy mixer on exit. Fifteen input/layout/mesh assertions passed before the strict runner correctly rejected shutdown.",
+    "reproduced_before": {
+      "checks": 15,
+      "assertion_failures": 0,
+      "audio_resources_still_in_use": 5,
+      "object_instances_leaked": 10
+    },
+    "fix": [
+      "Drain/suppress AudioManager before opening menus, using the existing test-only teardown helper.",
+      "Keep strict error detection and all fifteen assertions. Enable verbose output for precise future resource paths."
+    ],
+    "surface_verbose_repeats": {
+      "runs": 2,
+      "checks_each": 15,
+      "failures": 0,
+      "godot_errors": 0,
+      "resource_or_object_leaks": 0
+    },
+    "combined_runner": {
+      "pass": true,
+      "current_backend_tests": 583,
+      "current_backend_failures": 0,
+      "godot_suites": 9,
+      "godot_checks": 1405,
+      "strict_godot_errors": 0,
+      "native_gui": false,
+      "phone_tested": false,
+      "log": ".local/tester_reliability_qa/*.log"
+    },
+    "production_audio": "unchanged",
+    "native": "unchanged",
+    "save_and_balance_changes": "none from R2",
+    "next": "Owner extracts Jade-Tester-Reliability-R2.zip to its named tools folder and runs its apply_and_publish.cmd. Continue from existing stage receipts; no reset/clean, no native rebuild or feature reinstallation.",
+    "portable_resume": "Self-contained R2 contains all 49 original manifest paths; the four corrected files use the previously delivered payload as merge base. Original download folder is not required; import cache, stage receipts and backups retained."
+  }
+}

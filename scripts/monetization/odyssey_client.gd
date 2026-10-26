@@ -128,7 +128,7 @@ func _prewarm_if_due() -> void:
 	if get_tree().get_first_node_in_group("player") != null: return
 	_warm_next_at = Time.get_ticks_msec() + 15000
 	if ad_waiting() or not _pending().is_empty(): return
-	if not snapshot.is_empty() and Time.get_ticks_msec() - _received_msec < 15000: return
+	if not snapshot.is_empty() and Time.get_ticks_msec() - _received_msec < 30000: return
 	refresh()
 
 func _process(_delta: float) -> void:
@@ -162,6 +162,7 @@ func refresh() -> bool:
 	if _binding.length() != 64: status = "google_sign_in_required"; changed.emit(); return false
 	var pending: Dictionary = _pending()
 	if pending.has("error"): status = "recovery_required"; changed.emit(); return false
+	if pending.is_empty() and not snapshot.is_empty() and Time.get_ticks_msec()-_received_msec<15000 and not ad_waiting(): return true
 	return _dispatch(pending)
 func submit(action: Dictionary) -> bool:
 	if busy or not event_enabled() or snapshot.get("event") == null or not _pending().is_empty() or _binding != _live_binding(): return false

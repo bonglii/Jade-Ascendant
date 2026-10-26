@@ -46,6 +46,10 @@ var _feature_signature: String=""
 var _feature_motion: Tween
 var _feature_pending: String=""
 var _feature_offset: float=0.0
+var _feature_choices: Array[String]=[]
+var _feature_manual_key: String=""
+var _feature_manual_until: int=0
+var _feature_direction: float=1.0
 const EventCatalog=preload("res://scripts/ui/liveops/event_hub_catalog.gd")
 const EventArtwork=preload("res://scripts/ui/liveops/event_identity_catalog.gd")
 
@@ -287,10 +291,12 @@ func _refresh_liveops_badges() -> void:
  if client!=null and client.server_time()>=int(event.get("starts_at",0)) and preload("res://scripts/data/odyssey_progress.gd").visible(event,client.snapshot.get("state",{}),client.server_time()):
   choices.push_front("odyssey")
   if ActionDot.count(self,"odyssey")>0:claim_choices.push_front("odyssey")
- var pool: Array[String]=claim_choices if not claim_choices.is_empty() else choices
+ _feature_choices=choices
+ var manual: bool=Time.get_ticks_msec()<_feature_manual_until and _feature_manual_key in choices
+ var pool: Array[String]=choices if manual else (claim_choices if not claim_choices.is_empty() else choices)
  event_card.visible=not pool.is_empty()
  if not pool.is_empty():
-  var key: String=_featured_key if event_button.button_pressed and _featured_key in pool else pool[int(float(Time.get_ticks_msec())/6500.0)%pool.size()]
+  var key: String=_feature_manual_key if manual else (_featured_key if event_button.button_pressed and _featured_key in pool else pool[int(float(Time.get_ticks_msec())/6500.0)%pool.size()])
   var map: Dictionary={"boss_hunt":"celestial_boss_hunt","pilgrimage":"jade_valley_pilgrimage","heavenly_ladder":"heavenly_ladder","treasure_hunt":"celestial_treasure_hunt","five_elements":"path_of_five_elements"}
   var destination: String="res://scenes/ui/heavenly_trials_screen.tscn" if key=="heavenly_trials" else "res://scenes/ui/odyssey_screen.tscn" if key=="odyssey" else str(live_ops.get_event(str(map[key])).get("scene_path",""))
   var info: Dictionary=EventCatalog.preview(self,key) if key!="odyssey" else {"current":preload("res://scripts/data/odyssey_progress.gd").current(client.snapshot.get("state",{})),"total":preload("res://scripts/data/odyssey_progress.gd").goal(client.snapshot.get("state",{})),"reward":{}}
@@ -341,12 +347,12 @@ func _request_feature(key: String,destination: String,info: Dictionary,index: in
   _apply_feature(key,destination,info,index,total);return
  _cancel_feature_motion();_feature_pending=key
  _feature_motion=create_tween().set_parallel(true)
- _feature_motion.tween_method(_set_feature_offset,0.0,-24.0,.20).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+ _feature_motion.tween_method(_set_feature_offset,0.0,-24.0*_feature_direction,.20).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
  _feature_motion.tween_method(_set_feature_alpha,1.0,0.0,.20)
  _feature_motion.chain().tween_callback(func():
-  if not event_button.button_pressed:_apply_feature(key,destination,info,index,total)
-  _set_feature_offset(30.0))
- _feature_motion.chain().tween_method(_set_feature_offset,30.0,0.0,.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+  if not event_button.button_pressed or (key==_feature_manual_key and Time.get_ticks_msec()<_feature_manual_until):_apply_feature(key,destination,info,index,total)
+  _set_feature_offset(30.0*_feature_direction))
+ _feature_motion.chain().tween_method(_set_feature_offset,30.0*_feature_direction,0.0,.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
  _feature_motion.parallel().tween_method(_set_feature_alpha,0.0,1.0,.38)
  _feature_motion.chain().tween_callback(func():_feature_pending="";_feature_motion=null)
 
@@ -522,6 +528,8 @@ func _button(name_value: String,action: Callable,parent: Node=null) -> Button:
 
 func _capture_press(button: Button) -> void:
  button.set_meta("sanctuary_dragged",false)
+ button.set_meta("sanctuary_delta",Vector2.ZERO)
+ button.set_meta("sanctuary_swiped",false)
  button.set_meta("sanctuary_distance",0.0)
  button.set_meta("sanctuary_scroll",lower_scroll.scroll_vertical if is_instance_valid(lower_scroll) else 0)
  button.set_meta("sanctuary_pointer",get_global_mouse_position())
@@ -531,6 +539,22 @@ func _track_gesture(event: InputEvent, button: Button) -> void:
   var distance: float=float(button.get_meta("sanctuary_distance",0.0))+event.relative.length()
   button.set_meta("sanctuary_distance",distance)
   if distance>=14:button.set_meta("sanctuary_dragged",true)
+  if button==event_button and not bool(button.get_meta("sanctuary_swiped",false)):
+   var motion: Vector2=button.get_meta("sanctuary_delta",Vector2.ZERO)+event.relative
+   button.set_meta("sanctuary_delta",motion)
+   if absf(motion.x)>=36.0 and absf(motion.x)>absf(motion.y)*1.4:
+    button.set_meta("sanctuary_swiped",true)
+    _swipe_feature(1 if motion.x<0.0 else -1)
+    button.accept_event()
+
+func _swipe_feature(direction: int) -> void:
+ if _feature_choices.size()<2:return
+ var current: String=_feature_pending if _feature_pending in _feature_choices else _featured_key
+ var index: int=_feature_choices.find(current)
+ _feature_manual_key=_feature_choices[posmod(index+direction,_feature_choices.size())]
+ _feature_manual_until=Time.get_ticks_msec()+10000
+ _feature_direction=float(direction)
+ _refresh_liveops_badges()
 
 func _activate(action: Callable,button: Button) -> void:
  if SceneTransitionManager.is_transitioning or bool(button.get_meta("sanctuary_dragged",false)):return

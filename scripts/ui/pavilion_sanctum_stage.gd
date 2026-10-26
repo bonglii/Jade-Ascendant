@@ -79,7 +79,7 @@ func _process(delta: float) -> void:
 	if SettingsManager.reduced_effects: return
 	clock += delta
 	_tick += delta
-	if _tick >= 1.0/30.0:
+	if playing or (landed and clock - _land_clock < 0.55) or _tick >= 1.0/30.0:
 		_tick = 0.0
 		queue_redraw()
 func _draw_backdrop(rect: Rect2, zoom: float = 1.0, alpha: float = 1.0) -> void:
@@ -107,6 +107,8 @@ func _draw() -> void:
 		_draw_backdrop(Rect2(Vector2.ZERO,size),camera_zoom)
 		draw_rect(Rect2(Vector2.ZERO,size),Color(0.0,0.045,0.04,0.15 if not cinematic else 0.24*(1.0-surge)))
 	if cinematic:
+		var glow_side: float = radius * (2.0 + surge * 0.3)
+		draw_texture_rect(HALO,Rect2(center-Vector2.ONE*glow_side*0.5,Vector2.ONE*glow_side),false,Color(tone,0.28*surge))
 		for aura in range(6): draw_circle(center,radius*(0.83+float(aura)*0.09),Color(tone,0.018*surge))
 		draw_arc(center,radius*0.96,-t*0.10,TAU-t*0.10,80,Color(tone,0.30+surge*0.40),2.0,true)
 	# Eased meridian sweeps and precise rune pulses flank the equipment.
@@ -140,12 +142,12 @@ func _draw() -> void:
 	if preview_mode and relic != null:
 		_draw_dragon(Rect2(center-Vector2(radius*1.18,radius*1.1),Vector2(radius*2.36,radius*2.2)),0.40)
 	if relic != null and (preview_mode or landed):
-		var reveal: float = 1.0 if preview_mode or SettingsManager.reduced_effects else smoothstep(0.0,0.32,clock-_land_clock)
-		var side: float = minf(size.x*0.76,size.y*0.71)*lerpf(0.72,1.0,reveal)
-		var lift: float = lerpf(26.0,0.0,reveal)+sin(t*1.35)*3.0
+		var reveal: float = 1.0 if preview_mode or SettingsManager.reduced_effects else smoothstep(0.0,0.48,clock-_land_clock)
+		var side: float = minf(size.x*0.76,size.y*0.71)*lerpf(0.88,1.0,reveal)
+		var lift: float = lerpf(12.0,0.0,reveal)+sin(t*1.35)*3.0
 		var halo_side: float = side*1.30
 		draw_texture_rect(HALO,Rect2(center-Vector2.ONE*halo_side*0.5,Vector2.ONE*halo_side),false,Color(tone,0.66 if not cinematic else 0.48*reveal))
-		draw_set_transform(center+Vector2(0,lift),lerpf(-0.12,0,reveal))
+		draw_set_transform(center+Vector2(0,lift),lerpf(-0.035,0,reveal))
 		var extent: Vector2 = relic.get_size()
 		var fitted: Vector2 = extent * (side / maxf(extent.x, extent.y))
 		draw_texture_rect(relic,Rect2(-fitted*0.5,fitted),false,Color(1,1,1,reveal))

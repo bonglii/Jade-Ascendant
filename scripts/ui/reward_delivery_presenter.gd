@@ -153,7 +153,7 @@ func _cache_authoritative_values() -> void:
 		int(InventoryManager.get_item_count(InventoryManager.REFINEMENT_SHARD)),
 		0
 	)
-	_last_celestial_jade = maxi(int(PavilionManager.get_celestial_jade()), 0)
+	_last_celestial_jade = maxi(int(PavilionManager.get_local_celestial_jade()), 0)
 	_last_pavilion_seal = maxi(int(PavilionManager.get_pavilion_seals()), 0)
 	_last_hero_exp_total = maxi(
 		int(ProgressionManager.hero_experience_total),
@@ -257,7 +257,7 @@ func _on_item_added(
 
 
 func _on_pavilion_changed() -> void:
-	var current_jade: int = maxi(int(PavilionManager.get_celestial_jade()), 0)
+	var current_jade: int = maxi(int(PavilionManager.get_local_celestial_jade()), 0)
 	var current_seals: int = maxi(int(PavilionManager.get_pavilion_seals()), 0)
 	var source := _capture_source()
 	var claim_all: bool = _source_is_claim_all(source)
@@ -290,7 +290,7 @@ func _poll_fallback_resource_gains() -> void:
 		int(InventoryManager.get_item_count(InventoryManager.REFINEMENT_SHARD)),
 		0
 	)
-	var current_jade: int = maxi(int(PavilionManager.get_celestial_jade()), 0)
+	var current_jade: int = maxi(int(PavilionManager.get_local_celestial_jade()), 0)
 	var current_seal: int = maxi(int(PavilionManager.get_pavilion_seals()), 0)
 	var current_hero_exp: int = maxi(
 		int(ProgressionManager.hero_experience_total),
@@ -867,7 +867,7 @@ func _authoritative_wallet_value(resource_key: String) -> int:
 				0
 			)
 		KEY_CELESTIAL_JADE:
-			return maxi(int(PavilionManager.get_celestial_jade()), 0)
+			return maxi(int(PavilionManager.get_local_celestial_jade()), 0)
 		KEY_PAVILION_SEAL:
 			return maxi(int(PavilionManager.get_pavilion_seals()), 0)
 		_:

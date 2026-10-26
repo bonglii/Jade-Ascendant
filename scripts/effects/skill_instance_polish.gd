@@ -7,6 +7,7 @@ var age: float = 0.0
 var refresh_left: float = 0.0
 var registered: bool = false
 static func install(instance: Node2D, id: String) -> void:
+ if id in ["yin_yang_blades","heavenly_sword_rain"]: return # Dedicated authored cels already own all visuals.
  if active_instances >= MAX_INSTANCES or instance.has_node("SkillInstancePolish"): return
  var fx: Node2D = (load("res://scripts/effects/skill_instance_polish.gd") as GDScript).new()
  fx.name = "SkillInstancePolish";fx.skill_id = id

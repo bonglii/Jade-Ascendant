@@ -457,7 +457,7 @@ func _refresh_shop_products(_products: Variant = null) -> void:
 			if str(latest.product_id) == str(entry.product_id): offer = latest; break
 		var active_bonus: bool = client != null and client.purchase_bonus_active() and not bool(offer.get("bonus_unknown",false))
 		var included: bool = active_bonus and not bool(offer.get("claimed",false)) and int(offer.get("dice",0)) > 0
-		entry.title.text = "%d Celestial Jade" % int(offer.jade)
+		entry.title.text = "%d Celestial Jade" % int(PavilionManager.get_iap_product_data(str(offer.product_id)).get("celestial_jade",offer.jade))
 		entry.dice_icon.visible = included
 		entry.dice_amount.visible = included
 		entry.dice_amount.text = "+%d" % int(offer.get("dice",0))

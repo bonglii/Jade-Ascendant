@@ -4,6 +4,8 @@ extends Node2D
 const ActorPresentation = preload("res://scripts/effects/actor_presentation.gd")
 const CelArt = preload("res://scripts/effects/combat_cel_art.gd")
 const WEAPON_IMPACT_CAPACITY: int = 32
+const CROWDED_ENEMY_COUNT: int = 80
+var _redraw_left: float = 0.0
 var weapon_impacts: Array[Dictionary] = []
 var weapon_impact_cursor: int = 0
 const POOL_SIZE: int = 96
@@ -58,7 +60,7 @@ func weapon_impact(point: Vector2, source: String) -> void:
 		active_scene = get_tree().current_scene
 	# Applied HP loss already verified by RunCombatLedger. Fixed ring buffer,
 	# no timers/tweens/nodes per hit and no extra camera shake.
-	weapon_impact_cursor = (weapon_impact_cursor + 1) % (12 if SettingsManager.reduced_effects else WEAPON_IMPACT_CAPACITY)
+	weapon_impact_cursor = (weapon_impact_cursor + 1) % (12 if SettingsManager.reduced_effects else 16 if _crowded() else WEAPON_IMPACT_CAPACITY)
 	var entry: Dictionary = weapon_impacts[weapon_impact_cursor]
 	entry.clear()
 	entry.merge({"position":point,"index":CelArt.hit_index(source),"left":0.26,"duration":0.26})
@@ -265,8 +267,12 @@ func impulse(strength: float) -> void:
 func _activate_feedback() -> void:
 	feedback_active = true
 
+func _crowded() -> bool:
+	return get_tree().get_node_count_in_group(&"enemy") >= CROWDED_ENEMY_COUNT
+
 func _next_effect() -> Dictionary:
-	var capacity: int = 32 if SettingsManager.reduced_effects else POOL_SIZE
+	# Bounded cosmetic overdraw only. HP loss, ledger totals and critical rolls already happened.
+	var capacity: int = 32 if SettingsManager.reduced_effects else 48 if _crowded() else POOL_SIZE
 	effect_cursor = (effect_cursor + 1) % capacity
 	var entry: Dictionary = effects[effect_cursor]
 	entry.clear()
@@ -340,9 +346,11 @@ func _process(delta: float) -> void:
 		if impulse_left > 0.0:
 			has_active_feedback = true
 
-	# Active effects still redraw exactly as before. The final active frame also
-	# redraws once after all lifetimes reach zero so expired visuals are cleared.
-	queue_redraw()
+	# Keep game/camera timers full-rate; only dense cosmetic text/impact draws use 30 Hz.
+	_redraw_left -= delta
+	if not has_active_feedback or not _crowded() or _redraw_left <= 0.0:
+		queue_redraw()
+		_redraw_left = 1.0 / 30.0
 	feedback_active = has_active_feedback
 
 func _reset_feedback() -> void:

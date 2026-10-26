@@ -8,6 +8,7 @@ var collected: bool = false
 var attracted: bool = false
 var age: float = 0.0
 var check_left: float = 0.0
+var _visual_left: float = 0.0
 var player: Node2D
 var sprite: AnimatedSprite2D
 var magnet_radius: float = 52.0
@@ -44,13 +45,17 @@ func _ready() -> void:
 	if sprite != null:
 		sprite.play(&"idle")
 	age = float(get_instance_id() % 80) * 0.1
+	_visual_left = float(get_instance_id() % 5) / 150.0
 
 func _physics_process(delta: float) -> void:
 	if collected or not is_instance_valid(player):
 		return
 	age += delta
-	if sprite != null:
-		sprite.position.y = sin(age * 3.0) * 1.2
+	_visual_left -= delta
+	if _visual_left <= 0.0:
+		_visual_left = 1.0 / 30.0
+		if sprite != null and get_viewport_rect().grow(32.0).has_point(get_global_transform_with_canvas().origin):
+			sprite.position.y = sin(age * 3.0) * 1.2
 	check_left -= delta
 	if not attracted and check_left <= 0.0:
 		check_left = 0.12

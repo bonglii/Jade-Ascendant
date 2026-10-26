@@ -65,7 +65,9 @@ func _on_weapon_attack_triggered(
 	weapon_name: String,
 	target_position: Vector2
 ) -> void:
-	if _effects.is_empty():
+	# The Compass is a continuous pursuing dragon, not a repeated body cast.
+	# Its own authored dragon/halo carries the attack; suppress the generic blue pulse.
+	if weapon_name == "Heavenweaver Compass" or _effects.is_empty():
 		return
 
 	var release_direction: Vector2 = global_position.direction_to(

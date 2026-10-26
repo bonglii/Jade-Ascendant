@@ -98,6 +98,10 @@ func is_verified_ready() -> bool:
 	return _fresh() and snapshot.get("state", "") == "ready"
 func paid_balance() -> int:
 	return int(snapshot.get("wallet", {}).get("balance", 0)) if _fresh() else 0
+func verified_wallet_display() -> Dictionary:
+	# Read-only observation. A cached display is never checkout/summon authority.
+	if not _fresh(): return {}
+	return {"balance": int(snapshot.wallet.balance), "revision": int(snapshot.wallet.revision), "observed_msec": maxi(0, _expires - 120000)}
 func checkout_ready() -> bool:
 	return _fresh() and snapshot.get("state", "") in ["ready", "unfunded"] and not busy and _read_pending().is_empty()
 func item_count(item_id: String) -> int:

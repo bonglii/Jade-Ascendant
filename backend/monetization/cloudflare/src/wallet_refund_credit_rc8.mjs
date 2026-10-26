@@ -57,9 +57,15 @@ export async function assertRefundCreditEligibleRC8({db, ownerKey, eventKey, now
  * This prevents event INSERT surviving a concurrent void or held-account write.
  * D1's batch() must be transactional; never split this into separate run()s.
  */
-export function makeProtectedCreditUpdateRC8({db, ownerKey, eventKey, delta, nowMs = Date.now()}) {
+export function makeProtectedCreditUpdateRC8({db, ownerKey, eventKey, delta, storedEventDelta = false, nowMs = Date.now()}) {
   const voidKey = requireCreditInputs({ownerKey,eventKey,delta,nowMs});
   if (!db || typeof db.prepare !== 'function') fail('refund_gate_unavailable');
+  // First-top-up delta is computed by the preceding INSERT in this SAME batch.
+  // It is never supplied by Android and preserves the existing refund/hold gate.
+  const amount = storedEventDelta
+    ? "(SELECT e.delta FROM iap_wallet_events_v1 e WHERE e.event_key=? AND e.owner_key=? AND e.event_kind='play_credit')"
+    : '?';
+  const creditArgs = storedEventDelta ? [eventKey,ownerKey] : [delta];
   return db.prepare(`UPDATE iap_wallet_accounts_v1 SET
     balance = CASE WHEN
       EXISTS (SELECT 1 FROM iap_play_void_cursor_v1 c
@@ -67,7 +73,7 @@ export function makeProtectedCreditUpdateRC8({db, ownerKey, eventKey, delta, now
       AND NOT EXISTS (SELECT 1 FROM iap_play_void_events_v1 v WHERE v.token_key=?)
       AND NOT EXISTS (SELECT 1 FROM iap_refund_account_holds_v1 h
         WHERE h.owner_key=iap_wallet_accounts_v1.owner_key AND h.status='held')
-      THEN balance + ? ELSE -1 END,
+      THEN balance + ${amount} ELSE -1 END,
     revision = revision + 1 WHERE owner_key=?`
-  ).bind(nowMs - FRESH_WINDOW_MS, nowMs + FUTURE_SKEW_MS, voidKey, delta, ownerKey);
+  ).bind(nowMs - FRESH_WINDOW_MS, nowMs + FUTURE_SKEW_MS, voidKey, ...creditArgs, ownerKey);
 }

@@ -175,8 +175,8 @@ function requireLedgerRecord(record, purchaseToken, uid) {
   const byPlay = productByPlayId(record.playProductId);
   if (!byInternal || !byPlay
       || byInternal.internalProductId !== byPlay.internalProductId
-      || byInternal.playProductId !== record.playProductId
-      || byInternal.celestialJade !== record.celestialJade) {
+      || byPlay.playProductId !== record.playProductId
+      || byPlay.celestialJade !== record.celestialJade) {
     throw new PurchaseAuthorityError("internal", "Purchase ledger product binding is invalid.");
   }
   return record;

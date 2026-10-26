@@ -38,7 +38,10 @@ func run()->void:
  var payload:String=JSON.stringify({"hybrid_policy_version":1,"paid_wallet":{"currency":"celestial_jade","authority":"server","balance":100,"revision":1},"local_wallet_authority":"device_only_untrusted","legacy_wallet_migration":"requires_explicit_reconciliation"})
  manager._on_server_wallet_v2(id,true,"WALLET_SNAPSHOT_READ_ONLY",payload)
  check(manager.get_server_jade_view().balance==100,"actual manager publishes server balance")
- check(manager.get_celestial_jade()==local_before,"no fabricated local grant")
+ check(manager.get_local_celestial_jade()==local_before,"verified display does not fabricate a local grant")
+ check(manager.get_celestial_jade()==local_before+100,"all menu totals include last confirmed paid balance")
+ manager._server_jade._confirmed_at=-120001
+ check(manager.get_celestial_jade()==local_before+100,"stale network cannot erase last confirmed display")
  manager.request_server_jade_snapshot();id=bridge.reads[-1];manager.test_owner="b"
  manager._on_server_wallet_v2(id,true,"WALLET_SNAPSHOT_READ_ONLY",payload)
  check(manager.get_server_jade_view().balance==-1,"late account response rejected")

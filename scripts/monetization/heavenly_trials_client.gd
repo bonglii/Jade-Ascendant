@@ -68,6 +68,7 @@ func refresh() -> bool:
  if busy or _owner!=_binding() or _owner.length()!=64:return false
  var pending: Dictionary=_pending()
  if pending.has("error"):status="recovery_required";changed.emit();return false
+ if pending.is_empty() and not snapshot.is_empty() and Time.get_ticks_msec()-_received<20000 and _ad_pending.is_empty():return true
  return _dispatch(pending)
 func action(kind: String,args: Dictionary={},week_id: String="") -> bool:
  if not event_enabled() and kind not in ["finish","abandon"]:return false
@@ -110,7 +111,7 @@ func _result(request_id: String,success: bool,result_status: String,payload: Str
   return
  var data: Variant=JSON.parse_string(payload)
  if not valid_snapshot(data,_owner):status="invalid_server_response";changed.emit();return
- snapshot=data;_received=Time.get_ticks_msec();status="connected";_next_read=_received+20000
+ snapshot=data;_received=Time.get_ticks_msec();status="connected";_next_read=_received+60000
  if not _command.is_empty():DirAccess.remove_absolute(_path())
  _command={}
  _sync_ad(data)

@@ -1,7 +1,7 @@
 /**
- * Stage-only, not connected to the deployed Worker or the game client.
+ * Server-internal wallet adapter used by the explicit production entrypoint.
  *
- * Wallet M1: atomic, idempotent, per-Firebase-UID D1 wallet.
+ * Atomic, idempotent, per-Firebase-UID D1 wallet, including versioned top-ups.
  * IMPORTANT: the caller MUST have verified Firebase Auth + App Check, and
  * MUST call creditVerifiedPurchase only with the returned authorizePurchase
  * grant (after Google Play verification & consume). Never expose raw credit or
@@ -10,7 +10,7 @@
  */
 import { createHash } from 'node:crypto';
 import { assertRefundCreditEligibleRC8, makeProtectedCreditUpdateRC8 } from './wallet_refund_credit_rc8.mjs';
-import { PURCHASE_CONTRACT_VERSION, productByInternalId } from '../../src/product_catalog.mjs';
+import { PURCHASE_CONTRACT_VERSION, productByInternalId, firstTopupProduct } from '../../src/product_catalog.mjs';
 
 const UID = /^[A-Za-z0-9_-]{1,128}$/;
 const GRANT_ID = /^iapv1:[a-f0-9]{64}$/;
@@ -42,11 +42,13 @@ function creditEvent(grant) {
     throw new WalletError('invalid_grant');
   }
   const product = productByInternalId(grant.internal_product_id);
-  if (!product || product.celestialJade !== grant.celestial_jade) {
+  const offer = firstTopupProduct(grant.internal_product_id);
+  const firstTopup = offer !== null && offer.celestialJade === grant.celestial_jade;
+  if (!product || (!firstTopup && product.celestialJade !== grant.celestial_jade)) {
     throw new WalletError('invalid_product_amount');
   }
   return { eventKey: grant.grant_id, kind: 'play_credit', itemKey: product.internalProductId,
-    delta: product.celestialJade };
+    delta: grant.celestial_jade, ...(firstTopup ? {firstTopup: offer} : {}) };
 }
 
 function internalSpendEvent({ spendId, intent, jadeCost }) {
@@ -72,7 +74,8 @@ function selectEvent(db, eventKey) {
 
 function verifiedEventMatches(row, ownerKey, event) {
   return row && row.owner_key === ownerKey && row.event_kind === event.kind
-    && row.item_key === event.itemKey && row.delta === event.delta;
+    && row.item_key === event.itemKey && (row.delta === event.delta
+      || (event.firstTopup && row.delta === event.delta + event.firstTopup.firstTopupBonus));
 }
 
 export function createD1Wallet(d1) {
@@ -106,11 +109,21 @@ export function createD1Wallet(d1) {
     try {
       await d1.batch([
         d1.prepare('INSERT OR IGNORE INTO iap_wallet_accounts_v1 (owner_key, balance, revision) VALUES (?, 0, 0)').bind(ownerKey),
-        d1.prepare('INSERT INTO iap_wallet_events_v1 (event_key, owner_key, event_kind, item_key, delta) VALUES (?, ?, ?, ?, ?)')
-          .bind(event.eventKey, ownerKey, event.kind, event.itemKey, event.delta),
+        (event.firstTopup
+          ? d1.prepare(`INSERT INTO iap_wallet_events_v1 (event_key,owner_key,event_kind,item_key,delta)
+              SELECT ?,?,'play_credit',?,? + CASE WHEN NOT EXISTS (
+                SELECT 1 FROM iap_wallet_events_v1 e JOIN iap_purchase_ledger_v1 p
+                  ON p.token_key='playtoken:'||substr(e.event_key,7)
+                WHERE e.owner_key=? AND e.event_kind='play_credit' AND e.item_key=?
+                  AND json_extract(p.record_json,'$.playProductId')=?
+              ) THEN ? ELSE 0 END`)
+              .bind(event.eventKey,ownerKey,event.itemKey,event.delta,ownerKey,event.itemKey,
+                event.firstTopup.playProductId,event.firstTopup.firstTopupBonus)
+          : d1.prepare('INSERT INTO iap_wallet_events_v1 (event_key, owner_key, event_kind, item_key, delta) VALUES (?, ?, ?, ?, ?)')
+              .bind(event.eventKey, ownerKey, event.kind, event.itemKey, event.delta)),
         (event.kind === 'play_credit'
           ? makeProtectedCreditUpdateRC8({
-              db: d1, ownerKey, eventKey: event.eventKey, delta: event.delta,
+              db: d1, ownerKey, eventKey: event.eventKey, delta: event.delta, storedEventDelta: Boolean(event.firstTopup),
             })
           : d1.prepare('UPDATE iap_wallet_accounts_v1 SET balance = balance + ?, revision = revision + 1 WHERE owner_key = ?')
               .bind(event.delta, ownerKey)),

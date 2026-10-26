@@ -14,7 +14,7 @@ func accept(owner: String, view: Dictionary, now: int) -> bool:
  if not whole(view.get("balance"),0,9007199254740991) or not whole(view.get("revision"),0,9007199254740991):return false
  var revision: int=int(view.revision);var balance: int=int(view.balance)
  if revision<_revision or revision==_revision and _balance>=0 and balance!=_balance:return false
- _balance=balance;_revision=revision;_confirmed_at=now;_status="verified"
+ _balance=balance;_revision=revision;_confirmed_at=maxi(_confirmed_at,now);_status="verified"
  return true
 func unavailable() -> void:_status="unavailable"
 func snapshot(now: int) -> Dictionary:

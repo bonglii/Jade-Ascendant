@@ -42,6 +42,14 @@ const PLAY_PRODUCT_ID_BY_INTERNAL: Dictionary = {
 	"jade_treasury_6500": "jade_pouch_6500",
 	"jade_ascendant_14000": "jade_pouch_14000",
 }
+const PLAY_TOPUP_V2_BY_INTERNAL: Dictionary = {
+	"jade_pouch_100": "jade_topup_50_v2",
+	"jade_satchel_550": "jade_topup_275_v2",
+	"jade_casket_1200": "jade_topup_600_v2",
+	"jade_vault_2500": "jade_topup_1250_v2",
+	"jade_treasury_6500": "jade_topup_3250_v2",
+	"jade_ascendant_14000": "jade_topup_7000_v2",
+}
 const INTERNAL_PRODUCT_ID_BY_PLAY: Dictionary = {
 	"heavenly_trials_support_550": "heavenly_trials_support_550",
 	"jade_pouch_100": "jade_pouch_100",
@@ -180,6 +188,8 @@ func _to_play_product_id(product_id: String) -> String:
 
 
 func _to_internal_product_id(product_id: String) -> String:
+	for id: String in PLAY_TOPUP_V2_BY_INTERNAL:
+		if PLAY_TOPUP_V2_BY_INTERNAL[id] == product_id: return id
 	return str(
 		INTERNAL_PRODUCT_ID_BY_PLAY.get(product_id, product_id)
 	)
@@ -194,6 +204,7 @@ func _supported_ids() -> PackedStringArray:
 		if play_product_id.is_empty() or ids.has(play_product_id):
 			continue
 		ids.append(play_product_id)
+	for id: String in PLAY_TOPUP_V2_BY_INTERNAL.values(): ids.append(id)
 	ids.sort()
 	return ids
 
@@ -302,7 +313,9 @@ func _on_product_details(response: Dictionary) -> void:
 			if raw is Dictionary:
 				var item := _normalize_product(raw as Dictionary)
 				if not item.is_empty():
-					next_products[str(item["product_id"])] = item
+					var id: String = str(item.product_id)
+					if not next_products.has(id) or str(item.play_product_id).ends_with("_v2"):
+						next_products[id] = item
 	store_products = next_products
 	var qa_positive: int = 0
 	for qa_product: Dictionary in store_products.values():

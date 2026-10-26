@@ -9,7 +9,7 @@ import { createHash } from 'node:crypto';
 import { InvalidIdentity, verifyFirebaseHeaders } from './jwt_verify.mjs';
 import { createD1Wallet } from './d1_wallet.mjs';
 import { ensureCanonicalAccountAfterVerifiedCreditRC12 } from './canonical_onboarding_rc12.mjs';
-import { productByInternalId, PURCHASE_CONTRACT_VERSION } from '../../src/product_catalog.mjs';
+import { productByPlayId, PURCHASE_CONTRACT_VERSION } from '../../src/product_catalog.mjs';
 
 const UID = /^[A-Za-z0-9_-]{1,128}$/;
 const TOKEN_KEY = /^playtoken:[a-f0-9]{64}$/;
@@ -72,11 +72,11 @@ function grantFromLedger(row, uid) {
     'internalProductId','playProductId','celestialJade','state'];
   if(fields.some(x=>!Object.hasOwn(record,x))) fail('invalid_server_purchase');
   const fingerprint=row.token_key.slice('playtoken:'.length);
-  const product=productByInternalId(record.internalProductId);
+  const product=productByPlayId(record.playProductId);
   if(record.contractVersion!==PURCHASE_CONTRACT_VERSION || record.state!=='grant_ready' ||
     record.tokenKey!==row.token_key || record.grantId!=='iapv1:'+fingerprint ||
     record.ownerUid!==uid || record.ownerBinding!==sha(uid) ||
-    !product || product.playProductId!==record.playProductId ||
+    !product || product.internalProductId!==record.internalProductId || product.playProductId!==record.playProductId ||
     product.celestialJade!==record.celestialJade ||
     !Number.isSafeInteger(record.celestialJade) || record.celestialJade<=0)
       fail('invalid_server_purchase');

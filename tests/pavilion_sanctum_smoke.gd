@@ -53,7 +53,8 @@ func run() -> void:
 				screen._reveal_stage.elapsed=screen._reveal_stage.duration*0.99
 				screen._reveal_stage._process(0)
 				check(screen._reveal_stage.relic==null and screen._result_name.text.is_empty(),label+" identity hidden even at ninety-nine percent "+rarity)
-				check(screen._phase_copy.text.begins_with(tr(rarity.capitalize()).to_upper()),label+" actual rarity hint "+rarity)
+				check(not screen._phase_copy.text.contains(rarity.to_upper()),label+" no early rarity text "+rarity)
+				check(screen._reveal_stage.rarity==rarity,label+" rarity VFX remains distinct "+rarity)
 				screen._show_history_overlay()
 				check(screen.locked_history_overlay==null,label+" history blocked while cinematic open")
 				screen._reveal_stage.set_process(true)

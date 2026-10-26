@@ -180,28 +180,35 @@ func _update_dragon(head: Dictionary, _delta: float, index: int) -> void:
 	var direction: Vector2=Vector2.from_angle(angle)
 	var centers:=PackedVector2Array([spine[0]+direction*DRAGON_HEAD_LENGTH,spine[0]+direction*DRAGON_HEAD_LENGTH*.5])
 	centers.append_array(spine)
-	var texture_u:=PackedFloat32Array([1.0,lerpf(DRAGON_NECK_U,1.0,.5)])
-	for j: int in joints:texture_u.append(DRAGON_NECK_U*(1.0-float(j)/(joints-1)))
 	var vertices := PackedVector2Array()
-	var uvs := PackedVector2Array()
-	var indices := PackedInt32Array()
+	var bounds := Rect2(to_local(centers[0]),Vector2.ZERO)
 	for j: int in centers.size():
 		var tangent: Vector2 = direction if j<=2 else (centers[j-1]-centers[mini(centers.size()-1,j+1)]).normalized()
 		var normal: Vector2 = tangent.orthogonal()
 		for side: int in 2:
-			vertices.append(to_local(centers[j] + normal * (float(side) * 2.0 - 1.0) * DRAGON_HALF_WIDTH))
-			uvs.append(Vector2(texture_u[j], float(side)))
-		if j > 0:
-			var k: int = j * 2
-			indices.append_array(PackedInt32Array([k - 2, k - 1, k, k - 1, k + 1, k]))
-	var arrays: Array = []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = vertices
-	arrays[Mesh.ARRAY_TEX_UV] = uvs
-	arrays[Mesh.ARRAY_INDEX] = indices
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	head.mesh.mesh = mesh
+			var point: Vector2=to_local(centers[j]+normal*(float(side)*2.0-1.0)*DRAGON_HALF_WIDTH)
+			vertices.append(point);bounds=bounds.expand(point)
+	var mesh: ArrayMesh=head.get("resource") as ArrayMesh
+	if mesh==null:
+		mesh=ArrayMesh.new();head.resource=mesh;head.mesh.mesh=mesh
+	if int(head.get("vertex_count",0))!=vertices.size():
+		var texture_u:=PackedFloat32Array([1.0,lerpf(DRAGON_NECK_U,1.0,.5)])
+		for j: int in joints:texture_u.append(DRAGON_NECK_U*(1.0-float(j)/(joints-1)))
+		var uvs:=PackedVector2Array();var indices:=PackedInt32Array()
+		for j: int in centers.size():
+			uvs.append(Vector2(texture_u[j],0));uvs.append(Vector2(texture_u[j],1))
+			if j>0:
+				var k: int=j*2
+				indices.append_array(PackedInt32Array([k-2,k-1,k,k-1,k+1,k]))
+		var arrays: Array=[];arrays.resize(Mesh.ARRAY_MAX)
+		arrays[Mesh.ARRAY_VERTEX]=vertices;arrays[Mesh.ARRAY_TEX_UV]=uvs;arrays[Mesh.ARRAY_INDEX]=indices
+		mesh.clear_surfaces()
+		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays,[],{},Mesh.ARRAY_FLAG_USE_DYNAMIC_UPDATE)
+		head.vertex_count=vertices.size()
+	else:
+		mesh.surface_update_vertex_region(0,0,vertices.to_byte_array())
+	# Buffer updates do not recalculate bounds: keep culling accurate as the dragon pursues moving enemies.
+	mesh.custom_aabb=AABB(Vector3(bounds.position.x,bounds.position.y,-1),Vector3(bounds.size.x,bounds.size.y,2))
 func _draw() -> void:
 	for head: Dictionary in heads:
 		var target: Node2D = _target(head)

@@ -135,6 +135,7 @@ func _update_player_hurt_tint() -> void:
 
 
 func _update_non_player_presentation() -> void:
+	if not premium_boss and not get_viewport_rect().grow(80.0).has_point(get_global_transform_with_canvas().origin): return
 	if bool(get_parent().get_meta("frame_driven_boss",false)):
 		# Painted 2D frames own pose; generic gait/breath squash must never compete.
 		var boss_hurt_flash: float = hurt_left / HURT_DURATION * (0.12 if SettingsManager.reduced_effects else 0.5)

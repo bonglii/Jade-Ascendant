@@ -17,12 +17,12 @@ export async function reconcileTopupBonus(db,event,owner,time,eligible){
  const cutoff=Math.max(cfg.activated_at,event.starts_at),key='u1:'+owner;
  for(let attempt=0;attempt<2;attempt++){
   const known=new Set((await claims(db,event,owner)).map(x=>x.product_id));
-  const rows=(await db.prepare(`SELECT MIN(e.event_key) AS event_key,e.item_key,MIN(e.delta) AS delta FROM iap_wallet_events_v1 e
+  const rows=(await db.prepare(`SELECT chosen.event_key,chosen.item_key,chosen.delta FROM iap_wallet_events_v1 chosen WHERE chosen.event_key IN (SELECT MIN(e.event_key) FROM iap_wallet_events_v1 e
    LEFT JOIN iap_play_void_events_v1 v ON v.token_key='playtoken:'||substr(e.event_key,7)
    WHERE e.owner_key=? AND e.event_kind='play_credit' AND e.created_at>=datetime(?,'unixepoch') AND e.created_at<datetime(?,'unixepoch')
-   AND v.token_key IS NULL AND ((e.item_key='jade_pouch_100' AND e.delta=100) OR (e.item_key='jade_satchel_550' AND e.delta=550) OR (e.item_key='jade_casket_1200' AND e.delta=1200) OR (e.item_key='jade_vault_2500' AND e.delta=2500) OR (e.item_key='jade_treasury_6500' AND e.delta=6500) OR (e.item_key='jade_ascendant_14000' AND e.delta=14000)) GROUP BY e.item_key`).bind(key,cutoff,event.ends_at).all()).results;
+   AND v.token_key IS NULL AND ((e.item_key='jade_pouch_100' AND e.delta IN (100,50)) OR (e.item_key='jade_satchel_550' AND e.delta IN (550,275)) OR (e.item_key='jade_casket_1200' AND e.delta IN (1200,600)) OR (e.item_key='jade_vault_2500' AND e.delta IN (2500,1250)) OR (e.item_key='jade_treasury_6500' AND e.delta IN (6500,3250)) OR (e.item_key='jade_ascendant_14000' AND e.delta IN (14000,7000))) GROUP BY e.item_key)`).bind(key,cutoff,event.ends_at).all()).results;
   const awards=[];
-  for(const row of rows){const pack=TOPUP_BONUSES.find(x=>x.product_id===row.item_key);if(pack&&!known.has(pack.product_id)&&row.delta===pack.jade){awards.push({...pack,event_key:row.event_key});known.add(pack.product_id);}}
+  for(const row of rows){const pack=TOPUP_BONUSES.find(x=>x.product_id===row.item_key);if(pack&&!known.has(pack.product_id)&&(row.delta===pack.jade||row.delta===pack.jade/2)){awards.push({...pack,jade:row.delta,event_key:row.event_key});known.add(pack.product_id);}}
   if(!awards.length)return;
   await eligible();
   await db.prepare('INSERT OR IGNORE INTO odyssey_players(event_id,owner,state) VALUES(?,?,?)').bind(event.id,owner,JSON.stringify(initial())).run();

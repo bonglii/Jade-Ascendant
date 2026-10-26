@@ -18,9 +18,11 @@ func _ready() -> void:
 	_http.max_redirects=0
 	add_child(_http)
 	_http.request_completed.connect(_response)
+	call_deferred("refresh")
 func _process(_delta: float) -> void:
 	if _expires_ticks>0 and Time.get_ticks_msec()>=_expires_ticks:
 		_banner.clear();_expires_ticks=0;configuration_changed.emit()
+	if OS.has_feature("android") and not get_tree().paused and get_tree().get_first_node_in_group("player")==null and Time.get_ticks_msec()>=_refresh_ticks: refresh()
 	if _view!=null:
 		var view: Variant=_view.get_ref()
 		if is_instance_valid(view) and view.is_inside_tree() and Time.get_ticks_msec()>=_refresh_ticks: refresh()

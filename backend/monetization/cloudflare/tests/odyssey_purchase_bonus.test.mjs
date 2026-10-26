@@ -41,3 +41,16 @@ test('v3 service returns verified bonuses and preserves them during daily sync a
 test('legacy v1/v2 read paths work without bonus schema and keep their original prices',async()=>{const f=fixture();f.raw.exec('DROP TABLE odyssey_purchase_bonuses;DROP TABLE odyssey_bonus_config;');for(const economy of [1,2]){const out=await service(f.db,{economy,now:()=>time}).read('alice');assert.equal(out.purchase_bonus,undefined);assert.equal(out.limits.price_one,economy===1?25:10);}});
 test('an account hold prevents reading or playing previously granted bonus dice',async()=>{const f=fixture();f.credit();const api=service(f.db,{economy:3,now:()=>time});const first=await api.read('alice');f.raw.prepare('INSERT INTO iap_refund_account_holds_v1 VALUES(?,?)').run('u1:'+owner,'held');await assert.rejects(api.read('alice'),e=>e.code==='paid_account_on_hold');await assert.rejects(api.execute('alice',{event_id:event.id,request_id:'c'.repeat(32),revision:first.revision,action:{kind:'roll'}}),e=>e.code==='paid_account_on_hold');assert.equal(f.state().rolls,0);});
 test('promotion disabled during commit rolls back every bonus receipt',async()=>{const f=fixture();f.credit();f.hook(()=>f.raw.exec('UPDATE odyssey_bonus_config SET enabled=0'));await assert.rejects(f.run());assert.equal(f.claims(),0);assert.equal(f.state().tickets,0);});
+
+test('mixed legacy/first and half-base purchases keep receipt key and amount from the same event',async()=>{
+ const f=fixture();const first=f.credit(0,{delta:100});f.credit(0,{delta:50});
+ await f.run();assert.equal(f.state().tickets,1);assert.equal(f.claims(),1);
+ const receipt=f.raw.prepare('SELECT credit_event_key FROM odyssey_purchase_bonuses').get();assert.equal(receipt.credit_event_key,first);
+ await f.run();assert.equal(f.state().tickets,1);
+});
+test('all six halved base packs retain their existing one-per-season dice bonus',async()=>{
+ const f=fixture();for(let i=0;i<6;i++)f.credit(i,{delta:TOPUP_BONUSES[i].jade/2});
+ await f.run();assert.equal(f.state().tickets,45);assert.equal(f.claims(),6);
+ for(let i=0;i<6;i++)f.credit(i,{delta:TOPUP_BONUSES[i].jade});
+ await f.run();assert.equal(f.state().tickets,45);assert.equal(f.claims(),6);
+});

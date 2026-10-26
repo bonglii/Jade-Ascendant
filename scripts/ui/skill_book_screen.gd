@@ -4,6 +4,10 @@ const Visual=preload("res://scripts/ui/equipment_visual_catalog.gd")
 const Sets=preload("res://scripts/data/equipment_set_catalog.gd")
 const BuildGuide=preload("res://scripts/data/build_guidance_catalog.gd")
 const ArchiveFont=preload("res://assets/ui/library/fonts/archive_serif.ttf")
+var _detail_panel: PanelContainer
+var _detail_scroll: ScrollContainer
+var _detail_content: Control
+var _detail_header: HBoxContainer
 var _mode: String="EQUIPMENT"
 var _rarity: String="ALL"
 var _filters: HBoxContainer
@@ -159,12 +163,42 @@ func _open_equipment_detail(id: String) -> void:
 		c.add_child(_label("GACHA COLLECTION: Opens after clear 1-5. Shop/forge requirements are separate.",14,Color(.68,.90,.80)))
 	_open_popup(str(d.display_name),c)
 func _open_popup(title: String,content: Control) -> void:
-	_close_popup();_popup=Control.new();_popup.name="LibraryDetail";add_child(_popup);_popup.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var dim:=ColorRect.new();dim.color=Color(0,.008,.014,.72);_popup.add_child(dim);dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);dim.gui_input.connect(func(event: InputEvent):if event is InputEventMouseButton and event.pressed:_close_popup())
-	var panel:=PanelContainer.new();panel.name="LibraryDetailPanel";panel.add_theme_stylebox_override("panel",Ui.make_panel_style(Color(.003,.026,.034,.99),Color(.84,.66,.32),12));_popup.add_child(panel)
-	var width: float=minf(520,size.x-32);var height: float=minf(500,size.y*.68);panel.position=(size-Vector2(width,height))*.5;panel.size=Vector2(width,height)
-	var body:=VBoxContainer.new();panel.add_child(body);var top:=HBoxContainer.new();body.add_child(top);top.add_child(_label(title,20,Color(.99,.85,.48)));var close:=_button("×");close.custom_minimum_size.x=44;close.pressed.connect(_close_popup);top.add_child(close)
-	var scroll:=ScrollContainer.new();scroll.name="LibraryDescriptionScroll";scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL;scroll.scroll_deadzone=8;body.add_child(scroll);content.size_flags_horizontal=Control.SIZE_EXPAND_FILL;content.custom_minimum_size.x=width-panel.get_theme_stylebox("panel").get_minimum_size().x-12;scroll.add_child(content)
+	_close_popup()
+	_popup=Control.new();_popup.name="LibraryDetail";add_child(_popup);_popup.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var dim:=ColorRect.new();dim.color=Color(0,.008,.014,.72);_popup.add_child(dim);dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.gui_input.connect(func(event: InputEvent):if event is InputEventMouseButton and event.pressed:_close_popup())
+	_detail_panel=PanelContainer.new();_detail_panel.name="LibraryDetailPanel";_detail_panel.modulate.a=0.0
+	_detail_panel.add_theme_stylebox_override("panel",Ui.make_panel_style(Color(.003,.026,.034,.99),Color(.84,.66,.32),12));_popup.add_child(_detail_panel)
+	var body:=VBoxContainer.new();body.add_theme_constant_override("separation",8);_detail_panel.add_child(body)
+	_detail_header=HBoxContainer.new();body.add_child(_detail_header)
+	var heading:=_label(title,20,Color(.99,.85,.48));heading.size_flags_horizontal=Control.SIZE_EXPAND_FILL;heading.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;_detail_header.add_child(heading)
+	var close:=_button("×");close.custom_minimum_size=Vector2(44,44);close.pressed.connect(_close_popup);_detail_header.add_child(close)
+	_detail_scroll=ScrollContainer.new();_detail_scroll.name="LibraryDescriptionScroll";_detail_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;_detail_scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL;_detail_scroll.scroll_deadzone=8;body.add_child(_detail_scroll)
+	_detail_content=content;content.size_flags_horizontal=Control.SIZE_EXPAND_FILL;content.size_flags_vertical=Control.SIZE_SHRINK_BEGIN;_detail_scroll.add_child(content)
+	if not resized.is_connected(_fit_detail_popup):resized.connect(_fit_detail_popup)
+	_fit_detail_popup()
+
+func _fit_detail_popup() -> void:
+	if not is_instance_valid(_popup) or not is_instance_valid(_detail_panel):return
+	var width: float=minf(520,size.x-32)
+	var skin: StyleBox=_detail_panel.get_theme_stylebox("panel")
+	_detail_content.custom_minimum_size.x=maxf(1,width-skin.get_minimum_size().x-12)
+	_detail_panel.size=Vector2(width,minf(520,size.y*.75))
+	call_deferred("_finish_detail_popup_fit")
+
+func _finish_detail_popup_fit() -> void:
+	var expected: PanelContainer=_detail_panel
+	# Wrapped labels invalidate container minima after sorting. Let those native
+	# passes settle while transparent, then reveal the final compact panel once.
+	for _pass: int in range(3):
+		await get_tree().process_frame
+		if not is_instance_valid(_popup) or not is_instance_valid(expected) or expected!=_detail_panel:return
+		var width: float=minf(520,size.x-32)
+		var skin: StyleBox=expected.get_theme_stylebox("panel")
+		var wanted: float=_detail_content.get_combined_minimum_size().y+maxf(44,_detail_header.get_combined_minimum_size().y)+skin.get_minimum_size().y+12
+		var height: float=clampf(wanted,150,minf(520,size.y*.75))
+		expected.size=Vector2(width,height);expected.position=(size-expected.size)*.5
+	expected.modulate.a=1.0
 func _close_popup() -> void:
 	if is_instance_valid(_popup):remove_child(_popup);_popup.queue_free()
 	_popup=null

@@ -323,7 +323,7 @@ func _create_card(id: String) -> Dictionary:
 	reward.add_child(reward_line)
 	var product: Dictionary = _catalog.get(id, {})
 	var jade_amount: int = int(product.get("celestial_jade", 0))
-	_add_icon_amount(reward_line, JADE_ICON, _thousands(jade_amount))
+	var reward_count: Label = _add_icon_amount(reward_line, JADE_ICON, _thousands(jade_amount))
 
 	var price := _label("LOADING PRICE...", 12, QUIET)
 	price.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -349,11 +349,12 @@ func _create_card(id: String) -> Dictionary:
 		"art": art,
 		"reward": reward,
 		"reward_line": reward_line,
+		"reward_count": reward_count,
 		"price": price,
 		"action": action,
 	}
 
-func _add_icon_amount(parent: HBoxContainer, texture: Texture2D, amount: String) -> void:
+func _add_icon_amount(parent: HBoxContainer, texture: Texture2D, amount: String) -> Label:
 	var pair := HBoxContainer.new()
 	pair.add_theme_constant_override("separation", 3)
 	pair.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -368,6 +369,7 @@ func _add_icon_amount(parent: HBoxContainer, texture: Texture2D, amount: String)
 	var count := _label("×" + amount, 12, IVORY)
 	count.autowrap_mode = TextServer.AUTOWRAP_OFF
 	pair.add_child(count)
+	return count
 
 func _art_for(id: String) -> Texture2D:
 	match id:
@@ -830,9 +832,13 @@ func _update_balance_subtitle() -> void:
 
 
 func _refresh_storefront() -> void:
+	_catalog = PavilionManager.get_iap_product_catalog()
 	for product_id: String in _cards_by_id:
 		var entry: Dictionary=_cards_by_id[product_id]
 		entry.badge.text="LARGEST PACK" if product_id=="jade_ascendant_14000" else "CELESTIAL JADE"
+		entry.reward_count.text="×"+_thousands(int(_catalog.get(product_id,{}).get("celestial_jade",0)))
+		if int(_catalog.get(product_id,{}).get("first_topup_bonus",0))>0:
+			entry.description.text="First purchase ×2 · once per pack per account."
 	var odyssey: Node=get_node_or_null("/root/OdysseyClient")
 	if odyssey!=null:
 		var bonus: Dictionary=odyssey.snapshot.get("purchase_bonus",{})
@@ -946,6 +952,9 @@ func _update_details() -> void:
 				if str(offer.product_id)==_selected_id:
 					body="%d Celestial Jade + %d bonus travel dice. Once per pack per season. Bonus follows server verification; reopen the Odyssey to collect. Max 152 journeys; unused dice expire." % [jade_count,int(offer.dice)] if not bool(offer.claimed) else "%d Celestial Jade. This pack's seasonal dice bonus has already been claimed." % jade_count
 					break
+	var first_bonus: int = int(product.get("first_topup_bonus",0))
+	if first_bonus > 0:
+		body += "\nBase: %d Jade. First purchase of this pack: +%d Jade (%d total), once per account. Later purchases: %d Jade. The server checks eligibility; restore never repeats the bonus." % [jade_count,first_bonus,jade_count+first_bonus,jade_count]
 	var delivery: Dictionary = PavilionManager.get_paid_delivery_readiness()
 	if not bool(delivery.ready):
 		if str(delivery.get("reason", "")) == "account_held": body += "\nA refunded or reversed purchase requires account review. Purchases are unavailable until the refund is reconciled. Contact support with your public UID."

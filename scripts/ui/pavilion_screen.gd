@@ -1576,6 +1576,9 @@ func _summon_button_text(pull_count: int) -> String:
 	var seal_cost := int(cost.get("pavilion_seal", 0))
 	var jade_cost := int(cost.get("celestial_jade", 0))
 	var action: String = tr("SUMMON ×%d") % pull_count
+	var payment: Dictionary = PavilionManager.preview_summon_payment(pull_count)
+	if str(payment.get("method", "")) == PavilionManager.PAYMENT_MIXED:
+		return action + "\n%d SEALS + %d JADE" % [int(payment.pavilion_seal), int(payment.celestial_jade)]
 	if seal_cost > 0 and PavilionManager.get_pavilion_seals() >= seal_cost:
 		return action + "\n" + (tr("%d PAVILION SEAL%s") % [seal_cost, "" if seal_cost == 1 else "S"])
 	var cost_line: String = tr("%d CELESTIAL JADE") % jade_cost
@@ -1603,6 +1606,8 @@ func _summon(pull_count: int) -> void:
 	var payment_copy: String = tr("%d Celestial Jade") % payment_amount
 	if payment_method == PavilionManager.PAYMENT_SEAL:
 		payment_copy = tr("%d Pavilion Seal%s") % [payment_amount, "" if payment_amount == 1 else "s"]
+	elif payment_method == PavilionManager.PAYMENT_MIXED:
+		payment_copy = "%d Pavilion Seals + %d Celestial Jade" % [int(result.get("payment_seals", 0)), int(result.get("payment_jade", 0))]
 	var message: String = tr("Summon complete • %s") % payment_copy
 	var shards_gained: int = int(result.get("refinement_shards_gained", 0))
 	if shards_gained > 0:

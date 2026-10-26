@@ -50,6 +50,10 @@ func _ready() -> void:
 	_fit_sanctum()
 	PavilionManager.banner_client.configuration_changed.connect(_banner_updated)
 	PavilionManager.banner_client.watch(self)
+	PavilionManager.server_jade_recovery_changed.connect(_on_wallet_display_changed)
+
+func _on_wallet_display_changed(_view: Dictionary) -> void:
+	_refresh_paid_summons()
 func _build_title_and_banner() -> void:
 	_banner_title = _label(locked_root,tr("JADE PAVILION"),26,GOLD)
 	var title: Label = _banner_title
@@ -208,10 +212,16 @@ func _build_paid_summons() -> void:
 	_refresh_paid_summons()
 func _refresh_paid_summons() -> void:
 	if not is_instance_valid(_paid_status): return
+	_sync_wallet_balances()
+	var owns_seals: bool=PavilionManager.get_pavilion_seals()>0
+	_paid_status.visible=not owns_seals
+	if not _paid_buttons.is_empty():_paid_buttons[0].get_parent().visible=not owns_seals
 	var paid: Node=PavilionManager.paid_gameplay
 	var view: Dictionary=paid.get("snapshot") if is_instance_valid(paid) else {}
 	var pity: Dictionary=view.get("pity",{})
-	_paid_status.text="SERVER STANDARD · %d PAID JADE\n60%% Common · 29%% Rare · 9%% Epic · 2%% Legendary\nSeparate pity: %d/10 · %d/30 · %d/50"%[int(paid.call("paid_balance")) if paid!=null else 0,int(pity.get("rare_plus",0)),int(pity.get("epic_plus",0)),int(pity.get("legendary",0))]
+	var wallet_view: Dictionary=PavilionManager.get_server_jade_view()
+	var paid_copy: String=_format_count(int(wallet_view.balance)) if int(wallet_view.get("balance",-1))>=0 else "…"
+	_paid_status.text="TOP-UP BALANCE · %s JADE\n60%% Common · 29%% Rare · 9%% Epic · 2%% Legendary\nSeparate pity: %d/10 · %d/30 · %d/50"%[paid_copy,int(pity.get("rare_plus",0)),int(pity.get("epic_plus",0)),int(pity.get("legendary",0))]
 	var trials: Node=get_node_or_null("/root/HeavenlyTrialsClient")
 	var bonus: int=int(trials.snapshot.get("bonus_seals",0)) if trials!=null else 0
 	if is_instance_valid(_trial_seal_button):
@@ -231,7 +241,7 @@ func _refresh_paid_summons() -> void:
 func _queue_paid_after_read(count: int, seal: bool=false) -> bool:
 	var paid: Node=PavilionManager.paid_gameplay
 	if paid==null or not paid.verified_read_in_flight() or SaveManager.is_progress_read_only() or SaveManager.has_pending_transaction() or SceneTransitionManager.is_transitioning: return false
-	if not seal and not paid.can_queue_summon_after_read(count): return false
+	if not seal and (PavilionManager.get_pavilion_seals()>0 or not paid.can_queue_summon_after_read(count)): return false
 	if seal:
 		var trials: Node=get_node_or_null("/root/HeavenlyTrialsClient")
 		if count!=1 or trials==null or int(trials.snapshot.get("bonus_seals",0))<1: return false
@@ -274,6 +284,9 @@ func _summon_trial_seal() -> void:
 		_paid_reveal_busy=false;_set_status("Connect to recover your bonus Seal.",GOLD);_refresh_paid_summons()
 
 func _summon_paid(count: int) -> void:
+	if PavilionManager.get_pavilion_seals()>0:
+		_summon(count)
+		return
 	if _paid_reveal_busy or (is_instance_valid(summon_reveal_overlay) and summon_reveal_overlay.visible): return
 	if _queue_paid_after_read(count): return
 	_paid_reveal_busy=true;_refresh_paid_summons()
@@ -331,7 +344,7 @@ func _refresh_rewarded_seal_section() -> void:
 	super()
 	if _ad_hint == null: return
 	var remaining: int = PavilionManager.get_rewarded_ad_claims_remaining()
-	_ad_hint.text = tr("%d rewarded Seals remain • 1 Seal = 1 summon") % remaining
+	_ad_hint.text = tr("Ads available: %d • Reward: +1 Seal each") % remaining
 	if rewarded_seal_state_label != null and locked_watch_ad_button.disabled:
 		_ad_hint.text = rewarded_seal_state_label.text
 	var policy: Dictionary = MonetizationManager.get_rewarded_policy_status("pavilion_seal")
@@ -348,6 +361,10 @@ func _refresh_rewarded_seal_section() -> void:
 		locked_watch_ad_button.text = ("IKLAN BERIKUTNYA · %ds" if SettingsManager.language == "id" else "NEXT AD · %ds") % cooldown
 	else:
 		locked_watch_ad_button.text = tr("WATCH AD • FREE 1× SUMMON") if not locked_watch_ad_button.disabled else ("SIAPKAN IKLAN · +1 SEAL" if SettingsManager.language == "id" else "LOADING AD · +1 SEAL")
+func _render_summon_result(_result: Dictionary) -> void:
+	# This screen owns a sealed reveal; never paint plaintext legacy results below it.
+	if is_instance_valid(summon_result_box): summon_result_box.visible = false
+
 func _summon(count: int) -> void:
 	if _paid_reveal_busy or (summon_reveal_overlay != null and summon_reveal_overlay.visible): return
 	_paid_reveal_mode=false
@@ -609,7 +626,7 @@ func _fit_sanctum() -> void:
 		sanctum_stage.custom_minimum_size.y = clampf(size.y*0.33,200,420)
 	if _reveal_stage != null:
 		var short: bool = size.y < 600
-		_result_details.custom_minimum_size.y = 132 if short else 148
+		_result_details.custom_minimum_size.y = 0 if _formation_mode and not _formation_detail else (96 if short else 112)
 		_result_name.add_theme_font_size_override("font_size",18 if short else 26)
 		_result_name.max_lines_visible = 2
 		_stars_copy.add_theme_font_size_override("font_size",18 if short else 23)
@@ -697,9 +714,9 @@ func _on_relic_impact() -> void:
 	_play_reveal_item_feedback(_reveal_stage.rarity,bool(_cinematic_entry.get("duplicate",false)))
 
 func _on_ritual_phase(message: String) -> void:
-	var hinted: bool = _reveal_stage.elapsed/_reveal_stage.duration >= 0.18
-	_phase_copy.text = tr(_reveal_stage.rarity.capitalize()).to_upper()+" • "+tr(message) if hinted else tr(message)
-	_phase_copy.add_theme_color_override("font_color",EquipmentVisualCatalog.get_rarity_color(_reveal_stage.rarity) if hinted else TEXT_MUTED)
+	# Omen color may hint at quality; plaintext rarity/identity belongs to the result.
+	_phase_copy.text = tr(message)
+	_phase_copy.add_theme_color_override("font_color", TEXT_MUTED)
 func _install_palace_background() -> void:
 	if palace_background != null and is_instance_valid(palace_background): return
 	var legacy: Control = get_node_or_null("Backdrop")

@@ -82,6 +82,7 @@ const MEDITATION_REWARD: int = 20
 const PAYMENT_AUTO: String = "auto"
 const PAYMENT_SEAL: String = "seal"
 const PAYMENT_JADE: String = "jade"
+const PAYMENT_MIXED: String = "mixed"
 
 const COSMETICS: Dictionary = {
 	"plain": {
@@ -422,7 +423,8 @@ func _save_state() -> bool:
 func get_local_celestial_jade() -> int:
 	return maxi(int(state.get("celestial_jade", 0)), 0)
 func get_celestial_jade() -> int:
-	return get_local_celestial_jade() + (int(paid_gameplay.call("paid_balance")) if is_instance_valid(paid_gameplay) else 0)
+	var wallet: Dictionary = get_server_jade_view()
+	return get_local_celestial_jade() + maxi(0, int(wallet.get("balance", -1)))
 func _paid_gameplay_changed() -> void:
 	pavilion_changed.emit()
 	# A server snapshot is not an explicit player equip action.
@@ -439,12 +441,14 @@ func _live_server_jade_owner() -> String:
 	return GoogleAccountManager.get_monetization_account_binding()
 
 func get_server_jade_view() -> Dictionary:
-	_server_jade.bind_owner(_live_server_jade_owner())
+	var account_binding: String = _live_server_jade_owner()
+	_server_jade.bind_owner(account_binding)
+	if is_instance_valid(paid_gameplay):
+		var observed: Dictionary = paid_gameplay.verified_wallet_display()
+		if not observed.is_empty():
+			_server_jade.accept(account_binding, {"status": "ready", "balance": observed.balance, "revision": observed.revision}, int(observed.observed_msec))
 	var view: Dictionary=_server_jade.snapshot(Time.get_ticks_msec())
 	view["available_local"]=get_local_celestial_jade()
-	if is_instance_valid(paid_gameplay) and bool(paid_gameplay.call("is_verified_ready")):
-		view["balance"]=int(paid_gameplay.call("paid_balance"))
-		view["confirmed"]=true
 	view["last_purchase_stage"]=_last_purchase_stage
 	view["account_ref"]=_live_server_jade_owner().substr(0,12)
 	view["read_stage"]=_server_read_stage
@@ -1129,11 +1133,17 @@ func _commit_currency_grant(
 
 
 func get_iap_product_catalog() -> Dictionary:
-	return EconomyCatalog.get_iap_products()
+	var products: Dictionary = EconomyCatalog.get_iap_products()
+	for id: String in products:
+		if str(billing_store_products.get(id,{}).get("play_product_id","")).begins_with("jade_topup_"):
+			var base: int = floori(float(products[id].get("celestial_jade",0)) * 0.5)
+			products[id]["celestial_jade"] = base
+			products[id]["first_topup_bonus"] = base
+	return products
 
 
 func get_iap_product_data(product_id: String) -> Dictionary:
-	return EconomyCatalog.get_iap_product(product_id)
+	return get_iap_product_catalog().get(product_id,{}).duplicate(true)
 
 
 func has_claimed_one_time_product(product_id: String) -> bool:
@@ -2133,6 +2143,9 @@ func can_summon(pull_count: int, payment_method: String = PAYMENT_AUTO) -> bool:
 
 
 func request_paid_summon(pull_count: int,use_trial_seal: bool=false) -> bool:
+	if not use_trial_seal and get_pavilion_seals()>0:
+		last_error="Use your available Pavilion Seals first."
+		return false
 	if summon_delivery_active or not is_instance_valid(paid_gameplay) or not is_summon_unlocked(): return false
 	if use_trial_seal:
 		var trials: Node=get_node_or_null("/root/HeavenlyTrialsClient")
@@ -2163,10 +2176,8 @@ func summon_equipment(
 	var payment: Dictionary = _resolve_summon_payment(pull_count, payment_method)
 	if payment.is_empty(): return _summon_failure("Payment is unavailable.")
 	var next_state: Dictionary = state.duplicate(true)
-	if str(payment.get("method", "")) == PAYMENT_SEAL:
-		next_state["pavilion_seals"] = get_pavilion_seals() - int(payment["amount"])
-	else:
-		next_state["celestial_jade"] = get_local_celestial_jade() - int(payment["amount"])
+	next_state["pavilion_seals"] = get_pavilion_seals() - int(payment.get("pavilion_seal", 0))
+	next_state["celestial_jade"] = get_local_celestial_jade() - int(payment.get("celestial_jade", 0))
 
 	var pool: Dictionary = get_summon_pool_by_rarity()
 	var rates_snapshot: Dictionary = get_effective_drop_rates_basis_points()
@@ -2267,6 +2278,8 @@ func summon_equipment(
 		"pull_count": pull_count,
 		"payment_method": str(payment.get("method", "")),
 		"payment_amount": int(payment.get("amount", 0)),
+		"payment_seals": int(payment.get("pavilion_seal", 0)),
+		"payment_jade": int(payment.get("celestial_jade", 0)),
 		"results": pull_results,
 		"refinement_shards_gained": maxi(next_shards - previous_shards, 0),
 		"pity": get_summon_pity_status(),
@@ -2284,13 +2297,22 @@ func _resolve_summon_payment(pull_count: int, payment_method: String) -> Diction
 	var jade_cost: int = int(cost.get(EconomyCatalog.CURRENCY_CELESTIAL_JADE, 0))
 	if payment_method in [PAYMENT_AUTO, PAYMENT_SEAL]:
 		if get_pavilion_seals() >= seal_cost:
-			return {"method": PAYMENT_SEAL, "amount": seal_cost}
+			return {"method": PAYMENT_SEAL, "amount": seal_cost, "pavilion_seal": seal_cost, "celestial_jade": 0}
 		if payment_method == PAYMENT_SEAL:
 			return {}
+		var used_seals: int = mini(get_pavilion_seals(), seal_cost)
+		if used_seals > 0:
+			var remaining_jade: int = ceili(float(jade_cost) * float(seal_cost - used_seals) / float(seal_cost))
+			if get_local_celestial_jade() < remaining_jade: return {}
+			return {"method": PAYMENT_MIXED, "amount": remaining_jade, "pavilion_seal": used_seals, "celestial_jade": remaining_jade}
 	if payment_method in [PAYMENT_AUTO, PAYMENT_JADE]:
 		if get_local_celestial_jade() >= jade_cost:
-			return {"method": PAYMENT_JADE, "amount": jade_cost}
+			return {"method": PAYMENT_JADE, "amount": jade_cost, "pavilion_seal": 0, "celestial_jade": jade_cost}
 	return {}
+
+
+func preview_summon_payment(pull_count: int) -> Dictionary:
+	return _resolve_summon_payment(pull_count, PAYMENT_AUTO).duplicate(true)
 
 
 func _roll_rarity(next_state: Dictionary, pool: Dictionary, rates_snapshot: Dictionary = {}) -> Dictionary:

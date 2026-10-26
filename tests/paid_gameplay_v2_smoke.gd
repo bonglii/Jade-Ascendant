@@ -100,7 +100,13 @@ func run() -> void:
   panel.call("_close");await process_frame
  host.free()
  var local_jade: int=pavilion.get_local_celestial_jade()
- check(pavilion.get_celestial_jade()==local_jade+1500,"combined display")
+ check(pavilion.get_celestial_jade()==local_jade,"unbound paid fixture cannot leak another account wallet")
+ var wallet_fixture: Node=load("res://tests/fixtures/server_jade_manager.gd").new();root.add_child(wallet_fixture)
+ wallet_fixture.test_owner="a".repeat(64);wallet_fixture.state.celestial_jade=local_jade;wallet_fixture.paid_gameplay=manager
+ check(wallet_fixture.get_celestial_jade()==local_jade+1500,"owner-bound combined display")
+ wallet_fixture._server_jade.accept("a".repeat(64),{"status":"ready","balance":1400,"revision":99},Time.get_ticks_msec())
+ check(wallet_fixture.get_celestial_jade()==local_jade+1400,"an older fresh snapshot cannot replace a newer confirmed wallet revision")
+ wallet_fixture.free()
  check(pavilion._save_state(),"isolated local save writes")
  var saved: Dictionary=saver.read_save_data("pavilion")
  check(saved.get("data",{}).get("celestial_jade",-1)==local_jade,"paid wallet excluded from local save")

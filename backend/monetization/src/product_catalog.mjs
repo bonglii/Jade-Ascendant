@@ -35,9 +35,19 @@ const PRODUCTS = Object.freeze({
   }),
 });
 
+export const FIRST_TOPUP_PRODUCTS = Object.freeze(Object.values(PRODUCTS)
+  .filter(product => product.internalProductId !== "heavenly_trials_support_550")
+  .map(product => Object.freeze({internalProductId: product.internalProductId,
+    playProductId: `jade_topup_${product.celestialJade / 2}_v2`,
+    celestialJade: product.celestialJade / 2, firstTopupBonus: product.celestialJade / 2})));
+
 const BY_PLAY_ID = Object.freeze(Object.fromEntries(
-  Object.values(PRODUCTS).map(product => [product.playProductId, product]),
+  [...Object.values(PRODUCTS), ...FIRST_TOPUP_PRODUCTS].map(product => [product.playProductId, product]),
 ));
+export function firstTopupProduct(internalId) {
+  const product = FIRST_TOPUP_PRODUCTS.find(p => p.internalProductId === internalId);
+  return product ? {...product} : null;
+}
 
 export function listProducts() {
   return Object.values(PRODUCTS).map(product => ({ ...product }));

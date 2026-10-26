@@ -142,6 +142,7 @@
 ### Expected subprocess failures in PowerShell CI
 - A successful negative test must exit 0 explicitly after checking the expected child failure. Otherwise Windows PowerShell retains the child LASTEXITCODE=1 when the test is called with &, and CI reports failure even after every assertion passes. Validate the caller invocation used by the workflow, not only a fresh powershell -File process.
 
+
 ## 2026-10-18 — Branding delivery
 
 - Inkscape can exit successfully while an embedded PNG referenced with SVG2 href renders blank. Use compatible xlink:href and inspect actual exported pixels, dimensions and transparency.
@@ -149,6 +150,7 @@
 - Branding installers must merge only logo/splash keys in project.godot and export_presets.cfg; preserve local Android version, signing and release settings. Verify all package/source hashes before writing and retain backups. Never delete a Git lock automatically.
 
 - Branding R2: Android export preset counts and indices differ after editor saves. Discover Android presets by platform, update only existing Android targets, and test single/reindexed presets plus mixed desktop targets. Never require preset.1.options from the build machine.
+
 
 ## 2026-10-18 — Warning cleanup
 
@@ -202,6 +204,269 @@
 ## 2026-10-18 — Portable Odyssey continuation
 - Resume a source batch from its installed project and a durable scoped manifest. Do not require the original extracted download folder to still exist. Support moved/nested packages and a completely missing package; test all three before delivery.
 
+### Odyssey admin scheduling and native export (2026-10-18)
+- Admin schedules must use an explicit local timezone (WIB / UTC+7), convert automatically to UTC, and preview start/end before publishing. Preserve original timestamp seconds and rewards when changing access on an existing season.
+- Building a native candidate does not install it into a manually opened Godot editor. Native-dependent release exports must use the editor owned by export_production.cmd; distinguish source/build verification from verification of the final Play-installed package.
+
+### Odyssey recovered-command integer boundary (2026-10-18)
+- Godot JSON.parse_string decodes JSON numbers as float. A fresh revision 1 serializes as 1, but a recovered journal serializes it as 1.0 unless canonicalized. The strict Android command contract rejects that Double before transport.
+- Validate and canonicalize the complete command both when reading the durable journal and immediately before native dispatch. Restore only finite, exact integer values within protocol bounds; reject fractions, strings, booleans, unknown fields and unsupported actions. Preserve the same request ID and pending journal until authoritative confirmation.
+- Protocol tests must run a real Godot write/read/dispatch round trip for every action, not only construct integer-valued JVM JSON fixtures.
+
+## 2026-10-18 — Odyssey phone readability
+- A full-width diamond board can still make tiles and icons tiny. Inspect at phone scale, use the available height and enlarge the playable tiles/token rather than only the central decoration.
+- A header icon minimum is not a maximum in an HBox: use vertical shrink/center so a 52px badge cannot stretch to its siblings. Verify enlarged token bounds at every corner.
+- Use artwork designed for small square tiles instead of squeezing a wide ornate panel into them; verify the actual game render.
+- An int cast around integer division does not remove Godot's warning. Divide explicitly as float, then truncate intentional countdown units; promote integer_division to an error in the fixture.
+- Presentation-only follow-ups reuse a matching verified native candidate and do not redeploy unchanged servers. Require the new presentation revision in the actual AAB.
+
+## 2026-10-18 — Opt-in update notifications
+- Notification permission, FCM subscription and Google account login are separate. Never prompt at startup or during combat/tutorial/dialogs; explain first, honor Not now, and keep Settings opt-out available. Disable SDK auto-init until opt-in and permission.
+- Use actual installed dependency versions/API when implementing native helpers. Compile against SDK 36 and real Firebase classes; do not infer callback availability from newer docs. Use unique script constants instead of names such as Panel that shadow native Godot classes.
+- Accept only bounded release text and a newer version code; fix the notification destination to the official Play listing. Keep opted-out/current/expired/duplicate messages silent. No token logs or token database are needed for public update topics.
+- Firebase acceptance is not a device delivery count. Persist the external-send boundary; an uncertain send must not be automatically duplicated. A validate_only probe checks API/IAM without notifying players.
+- A native addition requires a new verified candidate and final AAB manifest/DEX checks, not only a GDScript flag. Include manifest/resources in source provenance. Combine concurrent UI changes before the single export.
+
+
+## 2026-10-18 — Android notification JNI capability detection
+
+- Incident: notification service and POST_NOTIFICATIONS were present in Play-installed 1.0.13, but Settings showed unavailable. The manager discarded the JNI singleton after Object.has_method returned false.
+- Prevention: do not use Object.has_method as capability detection for Android JNI singletons. Call the verified release contract; gate compatibility through the pinned native proof/export checks. Use explicit version/capability methods if compatibility negotiation is needed.
+- Test gap: RefCounted test doubles expose methods through normal reflection, which does not model JNI introspection. Keep the JNI reflection regression guard alongside UI permission-flow tests.
+- Check related guards when touching other native integrations; never remove purchase security gates as part of a notification repair.
+- Device delivery remains unverified until the fixed Play build is installed and a dashboard message is received.
+
+
+## 2026-10-19 — Reconcile a refunded credit before releasing checkout
+
+- Incident: production health and Billing were ready, but the account had a Play void hold. A refunded jade_pouch_100 had already credited 100 Jade. A generic CHECKOUT PAUSED label and discarded native ACCOUNT_HELD status hid the cause.
+- Prevention: distinguish release configuration, wallet balance, account hold, and request progress. Preserve safe native error categories in support output. Do not infer checkout readiness from health or product lookup alone.
+- Recovery: append an audited compensating debit; never erase the original purchase/credit or merely flip hold status. Match the exact reviewed refund, credit, wallet revision and hold revision; apply settlement and release atomically. Insufficient funds or changed evidence stop the repair.
+- Replay: an immutable settlement prevents the old cron from re-holding the same resolved void. New voids and manual/chargeback holds remain effective. Re-running a case must never debit twice.
+- Packaging: call Wrangler through Node argv for SQL/JSON; do not pass JSON-bearing SQL through npx.cmd quoting. Pin the real production resource, preserve native proof, and combine client fixes into one release export.
+
+
+## 2026-10-19 — Exercise the event endpoint through the real native transport
+
+- Incident: Odyssey sent /v2/odyssey while TrustedIapHttps allowed only /v1/. The rejected local URL was mislabeled NETWORK_UNAVAILABLE before any HTTPS request. Prevention: include exact event routes in the fixed-host policy and test real TLS GET/POST through TrustedIapHttps, plus rejection of arbitrary version paths, subpaths, queries and redirects. Preserve TLS validation, SNI, fixed hosts and no automatic POST retry.
+- Presentation: an unavailable snapshot must not masquerade as an unscheduled event. Keep shop access available offline, but show bonus promises only with a connected, active server promotion. Preserve uncertain command IDs for recovery.
+- Letter bounds: fixed-size artwork needs a bounded reading viewport. Long title/body copy scrolls inside the ornament, while the action stays fixed. Top-level PanelContainer minimum-size expansion can exceed a short viewport during wrapping; use a fixed Panel shell for the announcement. Do not set clip_text on wrapping Labels: Godot then reports near-zero content height and can suppress scrolling. Clip the reading viewport instead.
+- Promotion authority: reuse the six existing Play SKUs and actual localized prices. Dice bonuses come only from verified immutable play_credit evidence after the deployment cutoff, once per event/account/pack, with atomic revision/refund/event/config guards. Replays, restores, duplicate purchases and credit races must not grant twice. Old versions retain their v1/v2 contracts.
+- Firebase: an accepted OAuth credential does not prove FCM API enablement or messaging IAM permission. Return safe machine categories for SERVICE_DISABLED and permission denial, never raw Google bodies. The target project needs fcm.googleapis.com and roles/firebasecloudmessaging.admin (cloudmessaging.messages.create). Configuration checks use validate_only and never broadcast.
+- Delivery: one native rebuild is required for a transport policy change. Pin source/AAR/proof, stamp odyssey_shop_protocol=3, verify final AAB DEX and metadata, and retain per-manifest workflow stages on interruption. Never overwrite local signing/export settings or claim a phone/production check from an isolated fixture.
+
+## 2026-10-19 — Odyssey flow, arena and Claim All
+
+- Separate confirmed connection state from action-pending UI. Reusing the Firebase SDK App Check cache is scoped to the exact event v4 route and approved non-checkout commands; payment/receipt paths retain their token policy. Preserve TLS, UID checks, expiry, signed verification and exact request journals. Never grant rewards optimistically to hide latency.
+- A movable event arena must verify a bounded input trace against the same integer simulation on client/server. Test parity, elapsed time, invalid/truncated/extra inputs, deadline, old-client bypass and idempotent rewards. Telegraph the complete hitbox, including the full beam band.
+- Fixed-height popup limits require a plain Panel plus a scrolling body; a PanelContainer can expand with content. Check four portrait/short-wide sizes, sticky footer, native button minimums and joystick/retreat overlap. Keep floor art behind custom-drawn VFX.
+- Test normal dice timing with reduced-effects disabled. The reduced-effects fast path is intentional. Fixture settings and autoload signatures must match the behavior being tested; do not change production timing to satisfy an incorrectly configured fixture.
+- Claim All coordinates existing atomic mail receipts one at a time, pauses uncertain claims, cancels on account switch and suppresses only its exact source's repeated presentation. Summaries use actual applied grants and preserve top-level Jade/Pavilion Seals when merging rewards. Never sum requested-but-unapplied rewards or regrant while presenting a summary.
+- Package manifests compare normalized text and binary hashes, allow already-installed files, and refuse unrelated edits before writing anything. Reuse completed package stages; do not rerun Firebase setup, old migrations or unrelated fixes for a JSON-only event update. Native-source changes require a newly pinned build and one owned release AAB export.
+
+## 2026-10-19 — QA formatted-resource collection
+
+The Windows Odyssey QA collector treated load("res://.../primary_%s.svg" % state) as a literal file. The local placeholder fixture masked that error. Fix the collector, not the production assets: expand format-token and concatenated-prefix references to actual existing variants, keep recursive static dependencies and fail on genuinely missing files or empty matches. Add collector regression tests using real variant filenames (never fabricate a primary_%s.svg placeholder). Include paths with spaces, zero-padded frame names, repeated/cyclic references, explicit stubs and traversal rejection. This repair changes only the package QA helper and this lesson; preserve installed game/native code and resume at the failed QA stage.
+
+## 2026-10-19 — Real Odyssey UI render and AdMob recovery
+
+- The previous headless tests checked panel bounds but missed atlas background bands and nine-patch ornaments drawing over labels. Review an actual Godot render with the real atlas, font, icon and actor assets; separately check every card's content. Trim the actual painted frame bounds (not only regular atlas cell gutters). Bake UI frame images once; downsample button frames uniformly before nine-slicing so corner ornaments fit the destination height. Do not pass a square frame's oversized corners into a short button. Give text safe padding and dedicated full-width actions.
+- A background GET is not a disconnection or a mutation. Keep browsing and confirmed presentation stable; queue one intentional tap during a read, fence real mutations, and separate ad availability/delivery status from global event connection state. An unavailable ad must not disable the rest of the event. Test repeated read cycles rather than one happy-path action only.
+- The AdMob Google key source still used an unbound native fetch and redirect:error after the Firebase/Play paths were fixed. Workerd adapters must use fetch.call(globalThis,...), supported manual redirects and explicit rejection of 3xx. Audit sibling Google fetch adapters when repairing this class of error. Warm/validate trusted keys before allowing ad playback, preserve the fixed Google URL, cache expiry and signed verification. Add a receiver-sensitive regression test.
+- SDK earned/closed callbacks cannot authorize an event die. Persist the account-scoped intent before playback, recover it after restart, poll with backoff until server receipt/expiry, stop on the matching receipt, and show pending/failed delivery honestly. Do not count SDK playback as server event quota. Preserve other ad placements' caps/cooldowns. Retry a verified SSV write against the latest revision after a CAS race; immutable transaction and intent receipts still prevent double credit.
+- Local fixture/render passes do not establish a real AdMob callback or phone delivery. Name that remaining boundary; never invent credit for a historical ad without a verified receipt. Preserve existing remote vars during Worker deploy, since AdMob labels/IDs may be configured outside the checked-in file. No native rebuild is required when only GDScript/server code changes and the existing native proof remains valid.
+
+## 2026-10-19 — Odyssey closed native response contract
+
+- Root JSON fields are NOT additive in OdysseyContractV1: the installed Android bridge has a strict root allowlist. The previous repair incorrectly assumed ad_delivery could be added there, causing INVALID_SERVER_RESPONSE before Godot received a payload. Server-only and stubbed Godot tests missed this boundary. Reproduce against the original compiled Kotlin validator, then test the actual HTTP serialization plus fresh and persisted action replays. Do not claim cross-runtime compatibility without crossing the runtime boundary.
+- Carry optional delivery presentation under the existing extensible state object. Normalize only at the HTTP boundary, preserving action fingerprint, stored response, wallet/reward state and idempotency. Never delete a pending action or disable a validator just to hide an invalid response. Existing app builds keep their authoritative daily-count fallback; updated source reads the exact nested receipt. A server compatibility hotfix does not require an AAB or a native rebuild.
+
+## 2026-10-19 — Rewarded ad interaction and end-to-end feedback
+
+- SDK availability, server intent authorization, SDK earned, signed server credit, and a visible foreground reward notice are distinct states. Keep them explicit; never grant or announce credit from SDK earned alone. Start bounded receipt polling on earned rather than waiting for dismissal plus 8–15 second backoff. Hold the confirmed notice until the SDK is dismissed and the app is foreground; consume it only once for the matching owner/nonce.
+- Existing proactive SDK loading does not make an ad permanently ready: age cached ads before playback, respect retry/consent gates, show loading/cooldown/quota labels, and prevent a third video after two server-confirmed daily rewards. A fixed 90 second manager timeout can drop valid long-video callbacks. Preserve a still-showing SDK request with a bounded ten-minute watchdog; keep other placements' daily caps and cooldowns unchanged.
+- SSV options previously supplied empty user_id. If Google includes that optional parameter, strict nonempty parsing rejects an otherwise valid signed callback. For new event playback use the opaque nonce, never account identity; for installed clients accept an empty optional user_id while verifying the original signed bytes, required fields, nonce ownership and reward binding unchanged. This is a compatibility defect, not proof of a particular historical ad's failure without live logs.
+- Audit the actual pressed handler, not only the enabled appearance. Roll and legacy counters must queue one intentional action during a background read, consistently with mission, route and exchange controls. Preserve one global queued tap and duplicate-write fencing. Test actual pressed signals, queued release, completed claims, SDK close ordering, account switching and confirmed-only notifications.
+- Creating an autowrapped PanelContainer with zero initial width can grow a toast to a huge initial height. Set its usable width/height before mounting, then settle its minimum height before the fade. Inspect a real asset render at narrow phone width, not only horizontal bounds. Exercise the actual AdMob GDScript adapter/SDK wrappers with explicit native doubles; the previous provider stub hid callback/watchdog/SSV-option mistakes.
+
+## 2026-10-20 — Premium reliability and event delivery
+
+- SSV fixtures must include Google's documented callback wire representation, not only the SDK's configured full ad-unit ID. Verify untouched signed bytes first, normalize only the trusted unit comparison, and retain exact owner/amount/label/nonce/receipt fences. SDK earned is not server credit.
+- Prepare bounded notice width/wrapping before showing it. One presenter owns each reveal tween; a deferred decorator must not reset/replay it. A panel can retain an obsolete minimum height after text reflow, so settle from minimum-size changes and inspect first rendered frames.
+- Reward copy must cover every committed currency, including separately granted daily-completion bonuses. Merge rapid manual claims into one result and disclose the exact applied amounts.
+- Bulk mail transport retains a stable receipt per letter and owner/installation lease. Batch only the network envelope, protect pending gifts from deletion, and never announce delete success merely because a request was queued.
+- Read the atlas decoration before changing content margins. Natural-height popups still need space for actual flowers/corners; viewport bounds alone do not prove text fits the paper.
+- Event shops show current localized Play prices, exact current contents and consumed-bonus eligibility in place. Do not redirect a price button to a different menu or invent rupiah prices.
+- Resume from immutable base commit plus persisted changed files/test evidence. Record deployment stages separately; do not repeat completed IAP deploy after a profile-only failure. Keep render fixtures sequential with distinct output ownership so overlapping runs cannot corrupt evidence.
+
+## 2026-10-20 — Rewarded unit separation
+
+- Bedakan App ID (~) dari ad-unit ID (/). Simpan pemetaan eksplisit per fungsi: dice, pavilion, revive, general; jangan fallback diam-diam ke satu unit.
+- Unit baru STANDARD rewarded; partner bidding hanya untuk mediasi pihak ketiga. SSV endpoint Odyssey khusus dice, jangan dipasang pada semua unit baru tanpa protokol/verifier yang sesuai.
+- Jumlah reward harian, jumlah video dalam ad pod, dan durasi menuju reward adalah tiga pengaturan berbeda. Jangan mengklaim batas satu menit dari frequency capping. Jangan menjanjikan perubahan AdMob dashboard dari kode.
+- Satu consent dan fullscreen lock, cache/load generation/retry per unit. Fence callback yang datang setelah consent berubah, timeout, dismissal, atau pergantian akun. Gunakan test ID saat pengembangan.
+- Sebutkan batas yang benar: legacy Pavilion 1/hari dan 7/siklus belum otomatis menjadi contoh 2/hari. SDK earned bukan signed SSV; dice tetap menunggu receipt server.
+- Paket baru harus menerima baseline serta paket predecessor yang sudah terpasang, mempertahankan kerja lokal lain, dan bisa dilanjutkan tanpa export/build/deploy berulang. Jangan jalankan installer lama setelah paket baru.
+
+## 2026-10-20 — Node ready signal shadow warning
+
+- Jangan gunakan identifier lokal `ready` pada turunan Node. Node sudah mempunyai signal `ready`; gunakan `unit_ready`, `ad_ready`, atau `claim_available` sesuai konteks. Kunci dictionary/API `ready` tetap sama.
+- Periksa juga pola yang sama di status iklan, mission, dan provider. Tidak perlu mengubah nama lokal pada RefCounted jika tidak mewarisi signal itu.
+- Runtime test yang lolos belum memastikan panel warning editor bersih. Jalankan QA terisolasi dengan `gdscript/warnings/shadowed_variable_base_class=2`; buktikan control fixture `var ready` ditolak. Jangan menonaktifkan warning pada project pemain.
+- Koreksi paket yang sudah dipasang harus menerima checksum versi sebelumnya, menyesuaikan dependency yang ikut berubah, dan mempertahankan catatan deploy selesai agar tidak mengulang deployment karena rename lokal saja.
+
+## 2026-10-20 — Mailbox session, startup cache and unread ownership
+
+- HTTPRequest creates fresh HTTP transactions that cannot be assumed to reuse a TCP/TLS connection. For mailbox bursts use a verified reusable HTTPClient session; preserve hostname/SNI and certificate verification on DNS-derived IP routes. Never force client_unsafe or follow redirects with credentials.
+- Preparing data after login and reusing a fresh snapshot avoids making every page open a network barrier. Socket closure, network change, expiry and account switch still need reconnect/revalidation; do not promise permanent startup-only internet.
+- Cache signed ID tokens only in memory, bound by owner and expiry with a safety buffer. Cache TTL is not signature verification; backend must verify every request. Clear token and cancel queued work on account change/401.
+- Cosmetic read receipts must not lock Claim, and background pages must not delay claim/ACK/delete batches. Monetary delivery remains server-confirmed, journaled and protected per letter. Never automatically replay an uncertain POST merely to hide latency.
+- Inbox opens without selecting or reading a letter. Only a validated tap opens and marks that letter read; swipe does not. Keep the unread dot inside its card/scroll clipping rather than a global canvas layer. Keep external dictionary/API keys unchanged.
+- Read status can update locally because it has no economic value; persist owner-bound pending intents and reconcile later. Merge monotonic read state so old pages cannot resurrect a dot. Confirmed delete targets must not reappear from an already in-flight page. read_all must preserve read intents created after the request started.
+- Test actual HTTPClient/TLS reuse, closed sockets, body limits, timeout and rejection of an untrusted certificate. A negative TLS control is expected to emit its specific handshake diagnostic; do not suppress arbitrary errors. Update legacy layout checks to open the now-hidden reader before asserting its rendered padding. Use typed-array clear() in fixtures and a watchdog so test errors cannot hang indefinitely.
+- New event prewarm is READ only: never replay stored roll/ad/payment commands or launch rewarded ads at startup. Keep installed native candidate and live payment gates unchanged when only GDScript changed; do not redeploy unchanged Workers for this client-only batch.
+
+## 2026-10-20 — Board polish, closed native responses and attention ownership
+
+- Before adding response fields, inspect and test the installed native bridge's closed envelope. Board metadata, like ad delivery metadata, belongs under the allowed state envelope at the HTTP boundary. Preserve stored replay bytes and authentication checks; never relax an allowlist to hide a compatibility failure.
+- Readiness must come from each reward authority, not button captions or a permanent daily decoration. Keep stale daily counters, disabled seasons, claim grace and claimed markers distinct. Audit parent navigation and the action itself; reuse dots inside normal control stacking, without elevated canvas layers that can penetrate popups.
+- Generated RGB UI atlases can contain a rectangular matte even when their ornament looks transparent on a dark preview. Inspect the real popup render and its buttons. Prefer the project's existing transparent material frame where it eliminates the matte coherently.
+- Guard the opening operation, not only the button. Repeated calls must not recreate a picker or sheet; also audit category switching, rates/history and other entry points. Hide closing sheets immediately and invalidate stale selection callbacks.
+- Use authored high-resolution character sources when a board pawn outgrows the combat atlas. Pack separate cells with transparent gutters and aligned feet; do not animate legs with a second procedural offset over authored steps. Reserve headroom in the actual board layout.
+- Movement and landing locks must be deterministic across frame rates and rounding at duration boundaries. Carry timing overshoot into the landing wait and emit completion once.
+- Remove a custom notification education screen only by preserving the native permission/preference boundary and previous opt-out. Do not turn a denied permission into a recurring startup request.
+- When a presentation revision changes, update export metadata detection and the AAB verifier together before packaging. Validate the exact installed native candidate; a GDScript-only permission-flow change does not itself justify rebuilding Gradle.
+- Independent QA processes must use distinct user-data directories. Keep fixture guard names in the launcher synchronized with the actual fixture scripts, and run save-writing fixtures sequentially.
+
+## 2026-10-20 — Approved Celestial hub and complete event indicators
+
+- Match the approved composition against actual Godot phone renders. Wrapping labels inside an HBox report near-zero minimum width: timer pills and ready counts must explicitly remain single-line, otherwise they can expand a featured card vertically even when its outer bounds pass a layout test.
+- Use one red-dot component and the owning manager's claim state everywhere. All Events aggregates every destination in its hub, including Daily Trials and Pavilion free claims. Visiting a screen, ad availability or a shop offer is not a claim. Five Elements Convergence is a separate final claim after the five trial rewards, so it must keep its dot until its own marker is present.
+- Read-only hub previews must use the actual reward schema (spirit_stone and pavilion_seal), catalog constants and existing claim markers. A concept illustration is not authority to invent reward amounts or reset progression.
+- Reuse resident rows during refresh, filters, resize and translation. A whole-row hit target and a decorative arrow must have only one navigation handler; allow existing audio feedback handlers in tests. Reject scroll releases and repeated navigation at the operation boundary.
+- Godot has a native Skin class. Name presentation helpers HubStyle instead and validate enabled warnings before delivery. Keep the legacy event-identity QA entry point aligned with the approved hub rather than checking removed chrome.
+- The final delivery combines board changes and the approved hub, accepts both the original base and an already-installed preceding board package, and checks a dedicated hub revision in exported AAB metadata. One owned export supplies the combined build.
+
+## 2026-10-20 — Owner-managed production config preflight
+
+- A deployment config hash mismatch does not establish that its runtime settings are wrong. The reported local configuration passed the existing nine-gate production contract. Do not demand a byte-identical copy of a user-managed config or replace it with a packaged example.
+- Before installation, validate the existing Worker/database/Firebase/refund/payment boundaries through the pinned, hash-verified production contract, plus the Odyssey profile service binding. Keep immutable source dependency hashes enforced. Never execute an unverified modified validator to bypass the mismatch.
+- Preserve the local config bytes and keep the file outside the installation/staging payload. Recheck the contract at workflow stage boundaries. Reject wrong DB, staging targets, disabled/unreviewed gates, wrong cron and missing/duplicate/wrong profile bindings before any installation writes.
+- Test BOM/CRLF, account routing/comments/local vars, untouched config bytes, a changed validator, all-target preflight and exact retries. Keep append-only lesson sections independent so a preceding installed package can resume without duplicating or conflicting with its earlier sections.
+
+## 2026-10-20 — Git-aware package whitespace validation
+
+- Checking trailing spaces line by line misses added blank lines at EOF. Validate the actual package diff with git diff --check, including new files and the repository .gitattributes EOL rules, before delivery. Repeat the check after staging in an isolated Git fixture.
+- For a verified whitespace-only source correction plus append-only lessons, retain the completed QA/native stages only after checking the exact preceding manifest and every installed source digest. Do not carry publish/deploy/export success across a repair or bypass the normal Git whitespace gate.
+
+## 2026-10-20 — Compile every modified script and open event details
+
+- Seven Days and Five Elements used the ActionDot alias without declaring its preload. Declare the shared dependency in each file that uses the alias; scan all uses, not only the reported line.
+- An editor import and a passing hub/board fixture do not guarantee that an unopened detail script compiles. Explicitly load every modified GDScript and require can_instantiate(), fail on any parser/runtime error, then instantiate every affected detail screen.
+- Verify actual ready and claimed badges on all seven login cards, the selected action and final Convergence after five trial claims. Include repeat refresh, two languages and small phone widths. Keep these checks in the delivered QA launcher.
+- A parser fix invalidates the earlier QA completion. Run the targeted compile/detail suite after repairing installed sources before reusing unchanged earlier coverage; retain native/deploy receipts only when their inputs are unchanged.
+
+## 2026-10-20 — Enforce portable recovery without the download folder
+
+- The 2026-10-18 portable-continuation rule was not enforced by the ActionDot repair: it called realpath on a hardcoded tools package before checking the installed project. Reconstruct a scoped workflow from verified installed sources and bundled repair/runtime files instead. Never require an earlier extracted download folder.
+- Verify every unchanged installed payload digest, accept only known pre/post repair variants for changed scripts, merge lesson sections without losing local notes, and retain the live config validation. Stop on real source conflicts before writing.
+- Store reconstructed payload, manifest and launcher under the project's .local directory. Read the known workflow journals to preserve valid native/deploy receipts; prior QA predating the new detail tests must trigger those tests before publish/export.
+- Test with the old package absent, moved and nested; repeat the repair and inject a changed source. A passing test with the original folder still present does not verify portable recovery.
+
+## 2026-10-20 — Godot-saved SpriteFrames are not a code conflict
+
+- The uploaded diff reconstructed exactly to Git blob c82045c686aa3e3cdd764d931271abc311b41a61. Godot added SpriteFrames/texture UIDs, reordered local resource blocks and animation records, formatted the frame dictionaries and serialized loop true as enum value 1. The frame references, regions, durations, atlas paths and speeds were unchanged.
+- A byte-identical runtime-asset requirement rejected this normal editor save. Author the pawn resource in the verified Godot-saved representation, recognize the exact preceding resource as an update preimage, and preserve an already matching local saved file. Do not disable code/config validation or accept arbitrary resource changes.
+- Compare the old authored resource and actual editor-saved resource through Godot: eight animations, 64 frame durations/regions, atlas paths resolved from UID, clip settings, speeds and loop mode. Keep atlas-gutter validation in both targeted and full QA so formatting acceptance does not mask an animation regression.
+- Godot's runtime ResourceSaver can omit UIDs that the editor writes. Hash the exact saved animation graph while normalizing only UID attributes on SpriteFrames/Texture2D header lines for this single approved asset. Apply the same approval function in recovery, installer, stage checks and scoped publisher; preserve valid local UID bytes. Never normalize animation values or authorize this rule for scripts/other assets.
+
+## 2026-10-20 — Native first-swipe and alpha gates
+
+- A layout test or a direct scroll-value assignment does not prove a phone gesture works. Route one shared policy to current and runtime-added ScrollContainers, then send native drag events starting on artwork, card padding and real buttons. Verify scrolling and absence of accidental navigation/claims. Preserve intentional custom input, text entry, sliders and nested scrollers.
+- Do not disable and later restore every button during a swipe; that flickers and can restore stale server eligibility. Use the engine's scroll-begin press cancellation and release-mode actions.
+- A frame that looks transparent against a dark viewer may be fully opaque. Inspect alpha and render over a contrasting background before claiming black matte is removed. Check the complete header/close control and both rounded edges at narrow phone widths.
+- New GDScript aliases must not shadow engine classes (for example Material); run changed-script compilation with shadow warnings promoted before packaging.
+- Resource.duplicate() does not preserve non-stored custom StyleBox properties. Adjust freshly created unique state styles in place, and verify their textures in every state before checking the final native render.
+- Cold-import QA must run through the exact shipped runner before delivery. A short fixed import deadline and deletion of a failed fixture make slow Windows imports restart from zero. Retain the isolated cache, stream logs, report exit/timeout metadata, and test interruption/retry without weakening pass criteria.
+
+## 2026-10-21 — Player flow and consistency batch
+
+- User screenshots can identify an input tooltip rather than a painted border. Inspect the actual layer before replacing assets; suppress mobile tooltips even if a refresh sets tooltip_text after initial setup.
+- A Journey lap is not a die roll. Keep roll counters for die animation/daily missions, lap counters for visible journeys, immutable reward IDs for receipts, and preserve earned legacy claims. Check reachability under the existing season cap before choosing thresholds.
+- Prewarm signed ad intents only while idle; displaying an ad always needs a player tap. Prepared nonces stay installation-local and account-bound; never share/recycle an outstanding nonce across devices to save a request. SDK callbacks still cannot grant dice.
+- Clear explicit Play cancellation/failure presentation state before notifying its UI. Do not clear an uncertain purchase or bypass verification to shorten a wait.
+- Background catalogue reads may be safely preempted for a user mutation, but uncertain POSTs may not be replayed without their existing receipt/request identity. Run at most four independent mail reservations concurrently, each with its own primary session and per-letter guards.
+- Label wrapping changes HBox minimum widths. Numeric stage markers must reserve their measured width and stay on one line. A 2px horizontal ColorRect rule also needs vertical SHRINK_CENTER or it stretches into a block.
+- Keep Texture2D references alive outside _draw. Loading into a short-lived local and dropping the last reference can render an empty/white rectangle after the texture RID is freed.
+- Inspect new and returning-player flows at narrow widths. The older onboarding card had a fixed 520px minimum; make it responsive and test the actual first-run overlay.
+- Never use a local named ready in a Node subclass; cold imports alone do not compile every lazily loaded Home presentation. Instantiate Home and the actual event entry points in the focused regression.
+- Fault-injection tests must distinguish expected malformed save data from engine-level binary decoding errors. Use a valid serialized non-Dictionary to exercise controlled backup recovery while keeping the delivered QA runner strict about real Godot errors.
+- Shared formatting helpers must compile and run for both Label and Button branches. A copied font measurement used a branch-local variable in Button, causing all dependent event pages to fail; keep strict script-error detection and execute real popup entry points after formatting changes.
+- Premium reward sentences cannot share a narrow horizontal action row with a claim button. Use currency icons and non-wrapping amounts, stack the action for premium records, and validate actual 320/390px layouts. Disabled informational buttons must ignore pointer input so native first-swipe scrolling works over their surface.
+
+## 2026-10-21 — Player direction, receipts and build audit
+
+- A next-stage hint must skip cleared, locked and unimplemented stages across realms. Opening a hub is read-only; an explicit tap owns any selection/transition, and Continue/recovery take precedence.
+- Display receipts are not an economic authority. Record only post-commit reward events, isolate account caches, bound/read-validate them, and keep them separate from cloud-save and paid ledgers. Repeat-stage source IDs are reused legitimately; do not deduplicate different successful grants solely by source ID.
+- Audit tools must share the production cost function and exclude event-only/retired items from normal-pool simulations. Old test expectations for retired fragments must follow their existing stone conversion, not restore a removed currency.
+- Preserve a GDScript file's indentation style when appending code. Node locals such as owner shadow engine properties under strict warnings; choose explicit names. Exercise lazily loaded Home/profile/Library pages, not only cold import.
+- A decorative frame's scaling and a wrapping reward list need visual verification. Keep the receipt panel at fixed phone-safe bounds, put the long list in its own constrained scroll region, and reserve natural width for Home progress counters.
+- Economy fixtures may mute unrelated semantic SFX during bulk mutations to avoid Dummy-driver playback shutdown leaks; this does not replace audio validation. Do not suppress gameplay/script errors or mark a failed run as passed.
+- Save a durable source checkpoint before a long batch and update it with actual evidence. A restored tool workspace is not evidence that a new commit, deploy, export or phone test occurred.
+
+## Personal records — 2026-10-21
+
+- Follow each existing GDScript file's indentation when inserting functions. The first author import caught mixed spaces/tabs before delivery; normalize the inserted block, then run a real fixture import.
+- SceneTree test scripts must load autoload-dependent UI at runtime, after managers initialize. A constant preload caused an early JourneyManager resolution failure in the first fixture; loading the production panel after startup avoids treating a fixture bootstrap defect as a game defect.
+- A death-signal test invokes the real GameOver handler. Restore fixture GameOver state before testing a later victory; do not weaken the production guard against victory after death.
+- Optional replay statistics need legacy/JSON canonicalization and bounded values. Never infer untouched/survivor medals from an old checkpoint's missing counters, and never count a boss killing blow before its take_damage call has returned.
+- Include every new source directory, including scripts/weapon, in a portable package's allowed-path validation and exercise the full manifest in installer regression before delivery. A valid source update must not fail at the user's machine because the author reused an older narrower path allowlist.
+
+- Resolve a QA script's actual success marker before invoking a reusable runner. Preserve a completed exit0/error-free test log if only the author wrapper marker is wrong; verify the real marker and run dependent restart checks, rather than rerunning unchanged combat.
+
+## Heavenly Trials — 2026-10-21
+
+- Checkpoint JSON changes Variant integer/vector types. Preserve runtime checkpoint types in a bounded, hash-checked Variant envelope with object decoding disabled; keep it separate from Journey and test an actual save/load round trip.
+- Optional rewarded inventory needs coverage across configuration, cache creation, warmup and SDK load guards. Updating only the placement table leaves the new unit unable to load. Verify the actual provider with a fake SDK ad and a dedicated nonce.
+- Natural-width numbers and short selection labels prevent currency amounts and selected-state text wrapping vertically at 320px. A logic pass does not replace inspecting actual renders. Long modal content uses the shared scroll policy.
+- Native product-count assertions must retain the exact existing six products while adding only the dedicated authorized SKU. Do not change paid equipment catalog hashes or relax unknown-product checks.
+- Root editor import can auto-rewrite project.godot and activate addon downloads. Run author QA in an isolated fixture with editor plugins disabled; preserve the player's project configuration.
+- Durable v1 preserved the initial integration, but later polish was briefly lost when the temporary workspace reset. Persist each completed stage's source and test evidence, and keep recovery scripts idempotent or explicitly one-shot. Never claim later edits are included in an older checkpoint.
+
+Boss Continue must restore phase logic together with health. A low-HP boss left in phase1 can reject damage at the phase threshold. Validate by reopening the actual scene and defeating the authored boss, and include the final applied hit in the damage report. Localized prices must never wrap through a button skin; keep price and BUY separate when the minimum phone width is narrow.
+
+## LiveOps control desk — 2026-10-22
+
+- A future campaign needs a selectable history/calendar: loading only the current rotation makes a successfully scheduled next campaign look lost. Status refresh must preserve an unsaved draft.
+- One client-supported weekly rotation means one new campaign per reset slot. Enforce that inside the database write, not only with a separate preflight query; two concurrent admin requests must not publish conflicting schedules. Existing published rotations must remain pausable.
+- Operational reads must be safe under SQLite query_only and must not create weeks, mail or grants. Configured ad IDs and published backend products are not evidence of real AdMob delivery or Play Console availability.
+- Wrangler deploy normally deletes dashboard-only vars that are absent from its config file. Preserve them with the verified --keep-vars flag on current live deployers; secrets and normal source-declared gates remain separate. Check the related active launchers so another workflow cannot silently remove a dedicated ad-unit setting.
+
+## Player Journey reliability — 2026-10-22
+
+- Compass from a real admin-mail grant was equipable locally but combat only recognized Odyssey milestone72. Recognize acknowledged account-owned admin receipts through a fixed authenticated Profile service proof; exclude close-without-reward and event outbox receipts so refunds retain their existing authority. Never mint a second item, fake a milestone, remove a hold or accept local inventory as proof.
+- One generic verification popup incorrectly told users to change accounts for network, App Check, recovery and item-authorization failures. Carry the actual failure category to a shared responsive modal and the allowlisted support summary. Show a masked email suffix only for a proven binding mismatch and a previously recorded local hint; legacy unknown hints stay explicitly unknown.
+- StageSelect erased the old checkpoint and started a new Journey before asynchronous run gates finished. Delay replacement and Journey creation until the real entitlement gates accept the new run. Verify failure with a sentinel checkpoint, unchanged hub scene and no phantom run, plus the existing two-process paid Continue suite.
+- Account copy said cloud backup was inactive despite the implemented backup manager. Read the manager's current state; never equate sign-in with automatic restore or auto-backup approval.
+- GDScript preloaded UI scripts can form an autoload initialization cycle. Resolve their runtime services by node path and test a fresh --script launch, not only editor import. All modifications within an existing GDScript file retain its indentation style.
+
+- A selected stage label still clipped on the shortest actual software render despite headless geometry passing. Fit initial focus to the real plate bottom plus inset and reserve enough map-canvas bottom space for expanded font metrics; require both actual rendering and a selected-title containment assertion.
+
+## Combat clarity, 22 October 2026
+
+- A saved wave number is not the complete spawn schedule: omitting completed elite slots permits an elite to repeat on Continue. Preserve bounded optional cadence plus unfinished health separately from permanent reward ownership; loading must emit no kill or grant event.
+- A generic cooldown multiplier is not a weapon cast interval. Readouts and previews share the real request/floor/TEMPO calculation, including mastery conditions; preview never mutates timers or RNG.
+- Fixtures for a live numeric preview must initialize every production dependency (including PlayerStats). Standalone SceneTree scripts load autoload-dependent helpers after autoload initialization, not at compile time. Restart fixtures use their own declared restart argument.
+- A first-swipe assertion must begin at a known scroll origin. Reopening a remembered list at its bottom cannot establish that swiping is broken. Keep native input and actual layout/render checks; do not substitute direct scroll assignment for the gesture assertion.
+- Deferred calls must carry stable instance IDs/weak references, not typed Nodes that may be freed before argument conversion. A null check inside the callee is too late when conversion itself fails. Test an actual boss that spawns and dies in the same frame; related phase and layout callbacks need the same protection.
+- Texture margins on a StyleBoxTexture also provide default container content margins. An additional inner MarginContainer can double the inset and force a footer outside a narrow frame. Set the frame’s content margins explicitly and assert the actual legend bounds in software rendering.
+
+## 2026-10-22 — HP restoration and compact defeat review
+
+- Reproduced: restoring the combat ledger before wounded checkpoint HP emitted counted the restoration as another hit. Restore the ledger after HP, synchronize its baseline, and verify a real separate-process Continue. Incoming loss counts applied HP only; shields, healing and overkill cannot inflate it. Old snapshots stay valid and unknown historical totals must remain unknown.
+- Every exit from the revive window must wait for a pending verified revive. Guard both UI and manager; use the existing idempotent finalization rather than a second reward route.
+- An initial input pilot walked into crowds and died early. That was control-policy evidence, not a balance defect. Correct the pilot, retain the initial result as harness history, and do not tune production HP/damage to make an automated controller win.
+- A layout can pass viewport bounds and still hide its useful information. The first actual 320px render showed four fixed actions crowding out the defeat summary. Move contextual Hero review into the reader, lead with facts/advice, and inspect the revised render plus native swipe cancellation.
 ## Release QA17 — 2026-10-23
 
 - Reconcile the actual checkpoint SHA and cross-chat CI first. The nine-feature batch is already71f6753; its older recovery ZIP is not the current source.
@@ -530,3 +795,18 @@ installation are separate from owner publish, exact-SHA CI, AAB and Android test
 - Accumulate same-frame surplus EXP while a level-choice panel is open. Resolve each earned level through the existing post-choice queue, never replace an active choice or heal again for the same level.
 - Full recovery supersedes the old small gear-specific level-heal benefit. Preserve saved item/catalog keys for compatibility, correct the explanatory copy and retain other stats/costs; do not silently add a shield or unrelated balance mechanic.
 - The previous Home batch shortened visible captions but missed two older assertions that still expected the long wording. Actual106448c CI logs show those two stale expectations caused three red workflows. Assert the approved short captions AND their unchanged semantic action/recovery protection; retain all fit/native-swipe tests. Query exact-SHA CI proactively before handoff instead of treating a successful push as green/deployed evidence.
+
+### Tester reliability and complete local evidence — 2026-10-26
+- Keep a last-confirmed wallet **display** separate from the fresh snapshot that authorizes spending. Do not overwrite a newer cached revision with an older fresh view, and do not turn a wallet sync into a reward notification.
+- Seal priority must cover both the local and server-paid buttons. Ad opportunities are not owned currency; label the quota clearly. Partial ten-pull payments must commit both deductions and their items together.
+- Never silently halve an existing Play SKU's promised reward. Version the Play product, preserve stable native journal aliases, pin replay/repair to the recorded SKU, and compute any first bonus inside the credit transaction.
+- Wrapped UI labels can invalidate minimum sizes after container sorting. Measure after those passes and reveal the settled panel once; checking a requested size alone misses a real oversized panel.
+- Verify the actual diff after a multi-file edit; an incomplete tool edit was observed in this batch. Use checked transforms and inspect each changed file before checkpointing.
+- Headless layout/input evidence is not GPU rendering or Android performance evidence. A local Xvfb attempt was automatically rejected for system-directory/TCP side effects; stop that route and use the existing native/CI environment. Never ask the user to change system permissions for an avoidable QA setup.
+- Run the strict warning policy as well as runtime checks before packaging. `Node.owner` is a native property; use `account_binding` for wallet identity locals instead of shadowing it.
+- When a product can credit different amounts, select the receipt key and amount from the same ledger row. Independent MIN(key)/MIN(amount) values can describe different purchases and break a downstream event bonus.
+
+### Tester surface fixture audio exit — 2026-10-26
+- Reproduced the owner's exact five leaked resources with verbose output: claim/summon WAV playbacks and menu Ogg, after all fifteen UI/input assertions passed. A terminal PASS marker or zero exit code alone must not pass QA.
+- A non-audio fixture must drain/suppress incidental playback before opening menus or invoking reward/summon cues, using the existing test-only helper. Draining only at exit can race the Dummy mixer. Keep production audio and audio-specific tests enabled.
+- Run verbose strict teardown repeats and one owner-equivalent combined runner before handing off this correction. Keep resource errors fatal and retain imported caches/backups rather than restarting installation or deleting data.

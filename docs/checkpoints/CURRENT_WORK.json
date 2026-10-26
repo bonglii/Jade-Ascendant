@@ -1,5 +1,5 @@
 {
-  "state": "docs/checkpoints/LEVEL_UP_FULL_HEAL_STATE_2026-10-25.json",
-  "base": "106448c4768ef79460de777c55f1b0c5e0c7b7ef",
-  "previous": "docs/checkpoints/HOME_DRAGON_RELEASE_STATE_2026-10-25.json"
+  "state": "docs/checkpoints/TESTER_RELIABILITY_STATE_2026-10-26.json",
+  "base": "8654ad52c8237f2cb8832b77c2f5adefe1b2d219",
+  "previous": "docs/checkpoints/LEVEL_UP_FULL_HEAL_STATE_2026-10-25.json"
 }
