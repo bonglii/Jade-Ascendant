@@ -1,8 +1,7 @@
 {
-  "state": "docs/checkpoints/PLAYER_REVIEW_STATE_2026-11-02.json",
-  "base": "a5d2bf42586067ef1ef4d6460b7a4d291f9b869b",
-  "previous": "docs/checkpoints/CONNECTION_COMBAT_STATE_2026-11-01.json",
-  "revision": "DESKTOP_PILOT_REVIEW_20261102",
-  "publication_state": "docs/checkpoints/OWNER_SOURCE_SYNC_STATE_2026-11-02.json",
-  "source_branch": "work/player-8-10-20261027"
+  "state": "docs/checkpoints/PLAYER_CONTENT_BATCH_2026-11-02.json",
+  "base": "75578e09ef3f5ff2756a1d877d8e4f82c73751be",
+  "previous": "docs/checkpoints/PLAYER_REVIEW_STATE_2026-11-02.json",
+  "revision": "PLAYER_CONTENT_ALL18_IN_PROGRESS",
+  "source_branch": "work/player-review-batch-20261102"
 }

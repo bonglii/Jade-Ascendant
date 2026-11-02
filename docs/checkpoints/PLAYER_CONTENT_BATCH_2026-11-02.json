@@ -1,0 +1,125 @@
+{
+  "batch": "PLAYER_REVIEW_CONTENT_20261102",
+  "phase": "INSPECTING_IMPLEMENTATION_IN_PROGRESS",
+  "base_commit": "75578e09ef3f5ff2756a1d877d8e4f82c73751be",
+  "source_branch": "work/player-review-batch-20261102",
+  "user_authorization": "All 18 consolidated recommendations plus observed runtime fixes, one cumulative batch, theme-consistent assets. User instruction 2026-11-02.",
+  "scope": [
+    {
+      "id": 1,
+      "name": "Akurasi hadiah Trials",
+      "status": "PENDING"
+    },
+    {
+      "id": 2,
+      "name": "Iklan tidak tersedia",
+      "status": "PENDING"
+    },
+    {
+      "id": 3,
+      "name": "Saran setelah kalah",
+      "status": "PENDING"
+    },
+    {
+      "id": 4,
+      "name": "Daily lebih ringan",
+      "status": "PENDING"
+    },
+    {
+      "id": 5,
+      "name": "Panduan build dan bahasa",
+      "status": "PENDING"
+    },
+    {
+      "id": 6,
+      "name": "Perjelas Practice",
+      "status": "PENDING"
+    },
+    {
+      "id": 7,
+      "name": "Latihan boss",
+      "status": "PENDING"
+    },
+    {
+      "id": 8,
+      "name": "Side-stage Pertahanan Segel",
+      "status": "PENDING"
+    },
+    {
+      "id": 9,
+      "name": "Fragmen cerita realm",
+      "status": "PENDING"
+    },
+    {
+      "id": 10,
+      "name": "Pilihan risiko Heavenly Trials",
+      "status": "PENDING"
+    },
+    {
+      "id": 11,
+      "name": "Altar dengan pilihan berkah",
+      "status": "PENDING"
+    },
+    {
+      "id": 12,
+      "name": "Prioritas target encounter",
+      "status": "PENDING"
+    },
+    {
+      "id": 13,
+      "name": "Misi teknik senjata",
+      "status": "PENDING"
+    },
+    {
+      "id": 14,
+      "name": "Ujian build seragam",
+      "status": "PENDING"
+    },
+    {
+      "id": 15,
+      "name": "Perbandingan dua run",
+      "status": "PENDING"
+    },
+    {
+      "id": 16,
+      "name": "Boss gauntlet singkat",
+      "status": "PENDING"
+    },
+    {
+      "id": 17,
+      "name": "Kontrol keterbacaan combat",
+      "status": "PENDING"
+    },
+    {
+      "id": 18,
+      "name": "Cabang skill dalam run",
+      "status": "PENDING"
+    }
+  ],
+  "runtime_fixes": [
+    "stale Forge/aura guidance",
+    "first entry Stage 0-0",
+    "bilingual copy",
+    "total build Practice label",
+    "onboarding/nav readability"
+  ],
+  "design_constraints": [
+    "reuse jade/bronze/scroll art and current approved sprites",
+    "preserve saves, Continue, paid ownership and nine production gates",
+    "extra personal challenges have no additional currency rewards",
+    "Trials risk is optional personal difficulty with unchanged server reward; never reinterpret frozen sessions",
+    "new content extends Practice/Chronicles/Jade Oath; no duplicate mastery economy",
+    "main/production deployment unchanged; no automatic AdMob re-enable"
+  ],
+  "validation": {
+    "source_base": "VERIFIED_GITHUB_REF_AND_CLONE",
+    "engine": "4.7.2 exact archive SHA verified",
+    "implementation": "IN_PROGRESS",
+    "author_qa": "NOT_RUN",
+    "windows": "NOT_INSTALLED_NEW_BATCH",
+    "aab": "NOT_EXPORTED_NEW_BATCH",
+    "phone": "NOT_TESTED_NEW_BATCH",
+    "deploy": "NOT_RUN"
+  },
+  "next_action": "Inspect runtime/source and implement all scoped items; verify production combat, save isolation and narrow bilingual UI before cumulative delivery."
+}
