@@ -2,6 +2,6 @@
   "state": "docs/checkpoints/PLAYER_CONTENT_BATCH_2026-11-02.json",
   "base": "75578e09ef3f5ff2756a1d877d8e4f82c73751be",
   "previous": "docs/checkpoints/PLAYER_REVIEW_STATE_2026-11-02.json",
-  "revision": "PLAYER_CONTENT_ALL18_IN_PROGRESS",
+  "revision": "PLAYER_CONTENT_ENVIRONMENT_INTERRUPTED_FINAL_DELIVERY_PENDING",
   "source_branch": "work/player-review-batch-20261102"
 }

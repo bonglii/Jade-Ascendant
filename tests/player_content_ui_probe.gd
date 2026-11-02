@@ -24,7 +24,7 @@ func _process(_delta: float) -> bool:
 func apply(command: Dictionary) -> void:
  var settings: Node=root.get_node("SettingsManager")
  if command.has("language"):settings.set_presentation("language",str(command.language))
- if command.has("width"):DisplayServer.window_set_size(Vector2i(int(command.width),int(command.height)))
+ if command.has("width"):root.size=Vector2i(int(command.width),int(command.height))
  if command.get("dismiss_guide",false) and current_scene!=null:
   for candidate: Node in current_scene.find_children("*","Control",true,false):
    if candidate.has_method("_finish_onboarding"):candidate._finish_onboarding()
@@ -71,7 +71,7 @@ func apply(command: Dictionary) -> void:
  if command.has("capture"):
   await RenderingServer.frame_post_draw
   var path: String=OS.get_environment("JADE_UI_CAPTURE_DIR").path_join(str(command.capture)+".png")
-  var metadata: Dictionary={"fixture":true,"window":DisplayServer.window_get_size(),"viewport":root.get_visible_rect().size,"scrolls":[],"option_popup_open":false}
+  var metadata: Dictionary={"fixture":true,"window":DisplayServer.window_get_size(),"root_size":root.size,"viewport":root.get_visible_rect().size,"scrolls":[],"option_popup_open":false}
   for scroll: ScrollContainer in current_scene.find_children("*","ScrollContainer",true,false):
    if scroll.is_visible_in_tree():metadata.scrolls.append({"name":scroll.name,"position":scroll.scroll_vertical,"maximum":scroll.get_v_scroll_bar().max_value,"page":scroll.get_v_scroll_bar().page})
   for option: OptionButton in current_scene.find_children("*","OptionButton",true,false):
@@ -80,7 +80,9 @@ func apply(command: Dictionary) -> void:
   for control: Control in current_scene.find_children("*","Control",true,false):
    if control.is_visible_in_tree() and (control is OptionButton or control.name in ["PracticeStart","OnboardingSkipButton"]):metadata.controls.append({"name":control.name,"rect":control.get_global_rect(),"screen":control.get_global_transform_with_canvas().origin})
   var proof:=FileAccess.open(path.trim_suffix(".png")+".json",FileAccess.WRITE);proof.store_string(JSON.stringify(metadata,"  "));proof.close()
-  var error: Error=root.get_texture().get_image().save_png(path)
+  var captured: Image=root.get_texture().get_image()
+  if captured.get_size()!=root.size:push_error("UI_CAPTURE_DIMENSION_MISMATCH")
+  var error: Error=captured.save_png(path)
   print("UI_CAPTURE ",command.capture," error=",error," viewport=",root.get_visible_rect().size)
  if command.get("quit",false):
   paused=false;await load("res://tests/qa_runtime_teardown.gd").stop_audio(self);quit();return

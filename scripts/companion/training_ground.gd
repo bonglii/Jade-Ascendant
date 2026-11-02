@@ -262,6 +262,10 @@ func _finish(outcome: String,completed: bool=false) -> void:
  if completed:PlayerCompanion.record_drill(mode,ATTACKS[_skills.selected],clampi(roundi(elapsed*1000),1,180000),_outgoing,_owner)
  _status.text=outcome;_start_button.text=Sheet.copy("TRY AGAIN","COBA LAGI");_start_button.disabled=false
 func _fit_arena() -> void:
+ var accepts_input: bool=_running and (_setup==null or not _setup.visible) and not get_tree().paused
+ if _joystick.is_processing_input()!=accepts_input:
+  _joystick.set_process_input(accepts_input)
+  if not accepts_input:_joystick._release_pointer();_joystick._release_actions()
  var view: Vector2=get_viewport_rect().size;var top: float=minf(_panel.get_global_rect().end.y+10,maxf(100,view.y-240))
  _joystick.offset_top=top;_joystick.offset_bottom=-128
  var zoom_value: float=clampf(minf((view.x-32)/504.0,(view.y-top-140)/590.0),.12,1.2)

@@ -67,13 +67,18 @@ func run() -> void:
  if court==null or not court.has_method("record_practice_hit"):quit(1);return
  check(court._safe.get_parent_control()!=null,"training safe area has a real full-screen Control parent")
  check(not court._running and court.elapsed==0,"test begins deliberately without advancing clock")
+ check(not court._joystick.is_processing_input(),"idle training joystick leaves menu input available")
  court._start();await create_timer(1.2).timeout
+ check(court._joystick.is_processing_input(),"running training restores movement input")
  var ledger: Node=court.player.get_node("WeaponManager/RunCombatLedger")
  var actual: float=0
  for amount: Variant in ledger.totals.values():actual+=float(amount)
  check(actual>0,"production auto-attack applies actual HP loss")
  evidence.dummy_damage=actual
- court._finish("FIXTURE STOP")
+ court._finish("FIXTURE STOP");court._configure();await frames(3)
+ check(not court._joystick.is_processing_input() and court._setup.visible,"setup disables movement capture behind native scroller")
+ court._back();await frames(2)
+ check(not court._setup.visible and current_scene==court,"setup Back preserves training scene")
  var manager: Node=court.player.get_node("WeaponManager")
  var damage: GDScript=load("res://scripts/weapon/run_combat_ledger.gd")
  var actor:=Target.new();court.add_child(actor)
@@ -130,6 +135,27 @@ func run() -> void:
  for index: int in range(3):
   court.player.position=court._seal.location;court._process(8.1)
  check(court._seals==3 and not court._running,"seal challenge reuses three complete eight-second oath states")
+ # Explicit completion fixtures use real actors/HP ledger; these are not full human clears.
+ court._select_mode(6);await frames(8);court._start();await frames(3)
+ var gauntlet_health: Node=court.player.get_node("PlayerHealth");gauntlet_health.current_health=77
+ for round_index: int in range(3):
+  var guardian: Node=court._boss
+  check(is_instance_valid(guardian) and court._boss_round==round_index+1,"gauntlet spawns ordered real guardian %d"%(round_index+1))
+  if is_instance_valid(guardian):
+   damage.apply_hit(guardian,100000,"spirit_sword")
+   if is_instance_valid(guardian) and not guardian.is_dead:
+    guardian.update_phase_transition_timer(guardian.phase_transition_invulnerability+.1)
+    damage.apply_hit(guardian,100000,"spirit_sword")
+   await frames(4)
+  check(is_equal_approx(gauntlet_health.current_health,77),"gauntlet HP carries without round refill %d"%(round_index+1))
+ check(not court._running and court._boss_round==3 and court._outcome.contains("COMPLETE"),"three real guardian deaths complete gauntlet")
+ court._select_mode(3);await frames(8);court._start();await frames(2)
+ for target: Node2D in court.targets:
+  for hit_index: int in range(2):damage.apply_hit(target,10,"spirit_sword")
+ court._process(.01)
+ check(not court._running and court._outcome.contains("DEMONSTRATED"),"technique requires three targets and applied-hit count before recording")
+ court._select_mode(4);await frames(8);court._start();court._process(60.01)
+ check(not court._running and court._outcome.contains("COMPLETE"),"fixed-kit survival completion records no extra reward")
  # Account and permanent domain safety.
  check(progression.build_progression_save_data()==before_progress,"training never mutates currency, cultivation or hero XP")
  check(daily.build_save_data()==before_daily,"training never advances daily progress or claims")

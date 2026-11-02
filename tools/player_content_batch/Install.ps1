@@ -53,11 +53,16 @@ function Write-Atomic([string]$Path, [byte[]]$Bytes) {
     Plain-Path $Path
     [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($Path)) | Out-Null
     $temporary = $Path + '.jade-content-' + [Guid]::NewGuid().ToString('N') + '.tmp'
+    $prior = $Path + '.jade-prior-' + [Guid]::NewGuid().ToString('N') + '.bak'
+    $replaced = $false
     try {
         [IO.File]::WriteAllBytes($temporary, $Bytes)
-        if (Test-Path -LiteralPath $Path) { [IO.File]::Replace($temporary, $Path, $null) }
+        if (Test-Path -LiteralPath $Path) { [IO.File]::Replace($temporary, $Path, $prior); $replaced = $true }
         else { [IO.File]::Move($temporary, $Path) }
-    } finally { if (Test-Path -LiteralPath $temporary) { [IO.File]::Delete($temporary) } }
+    } finally {
+        if (Test-Path -LiteralPath $temporary) { [IO.File]::Delete($temporary) }
+        if ($replaced -and (Test-Path -LiteralPath $prior)) { [IO.File]::Delete($prior) }
+    }
 }
 $sourceApplied = $false
 $written = New-Object Collections.Generic.List[object]
@@ -69,6 +74,8 @@ try {
     $psBinary = (Get-Process -Id $PID).Path
     $top = Run-Child $git @('rev-parse', '--show-toplevel') $project
     if ($top.Code -ne 0 -or [IO.Path]::GetFullPath($top.Out.Trim()).TrimEnd([char]92,[char]47) -ne [IO.Path]::GetFullPath($project).TrimEnd([char]92,[char]47)) { throw 'Project must be the actual Git repository root.' }
+    $head = Run-Child $git @('rev-parse','HEAD') $project
+    if ($head.Code -ne 0) { throw 'Committed project baseline is required.' }
     $branch = Run-Child $git @('branch','--show-current') $project
     if ($branch.Code -ne 0 -or $branch.Out.Trim() -in @('main','master','production')) { throw 'Use the existing authorized work branch. Main/production is protected.' }
     $exporter = Join-Path $project 'backend/player_identity/export_production.ps1'
@@ -96,8 +103,12 @@ try {
                 $recognized = $false
                 foreach ($base in $entry.bases) { if ((Text-Hash $before) -eq [string]$base.sha256) { $recognized = $true; break } }
                 if (-not $recognized) {
+                    $committed = Run-Child $git @('show',($head.Out.Trim() + ':' + $relative)) $project
+                    $committedHash = if ($committed.Code -eq 0) { Text-Hash ($committed.Out.TrimStart([char]0xFEFF).Replace("`r`n","`n")) } else { '' }
+                    $ancestors = @($entry.bases | Where-Object { $_.sha256 -eq $committedHash })
+                    if ($ancestors.Count -ne 1) { throw ('Unrecognized committed ancestor; zero source writes: ' + $relative + '. Retain local changes for review.') }
                     $mergedOk = $false
-                    foreach ($base in $entry.bases) {
+                    foreach ($base in $ancestors) {
                         $basePath = Join-Path $package ([string]$base.file)
                         $baseText = Read-Text $basePath
                         if ((Text-Hash $baseText) -ne [string]$base.sha256) { throw ('Baseline hash mismatch: ' + $relative) }
