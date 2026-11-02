@@ -1,8 +1,8 @@
 {
-  "state": "docs/checkpoints/CONNECTION_COMBAT_STATE_2026-11-01.json",
-  "base": "Owner report 2026-11-01 + installed 8-10 R2 native features + Player Six Fixes R4",
-  "previous": "docs/checkpoints/PLAYER_SIX_FIXES_R4_STATE_2026-10-31.json",
-  "revision": "CONNECTION_COMBAT_R2_OWNER_NATIVE_20261101",
+  "state": "docs/checkpoints/PLAYER_REVIEW_STATE_2026-11-02.json",
+  "base": "a5d2bf42586067ef1ef4d6460b7a4d291f9b869b",
+  "previous": "docs/checkpoints/CONNECTION_COMBAT_STATE_2026-11-01.json",
+  "revision": "DESKTOP_PILOT_REVIEW_20261102",
   "publication_state": "docs/checkpoints/OWNER_SOURCE_SYNC_STATE_2026-11-02.json",
   "source_branch": "work/player-8-10-20261027"
 }

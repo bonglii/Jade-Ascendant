@@ -3,7 +3,7 @@
   "repository": "bonglii/Jade-Ascendant",
   "source_branch": "work/player-8-10-20261027",
   "base_commit": "057ed76f186940374d2cabe1ecb307a0114d3106",
-  "snapshot_identity": "Use the Git commit containing this file; verify the remote branch points to it.",
+  "snapshot_identity": "Game source is owner source_commit a5d2bf42586067ef1ef4d6460b7a4d291f9b869b; later docs-only checkpoint commits do not change the reviewed game.",
   "native_candidate_sha256": "2171f13f36cf8d90988fd20248f879653104625c8481b91d3fb0a4303fb098ea",
   "native_provenance_inputs": 52,
   "windows_r2": {
@@ -14,7 +14,14 @@
   "aab": "UNCONFIRMED",
   "phone_test": "UNCONFIRMED",
   "admob_mitigation": "NOT_APPLIED",
-  "publishing": "Source snapshot only. Push result and verified SHA are printed by push_latest.cmd and retained in .local/owner_source_publish/receipt.json.",
+  "publishing": {
+    "status": "PUSHED_REMOTE_VERIFIED",
+    "source_commit": "a5d2bf42586067ef1ef4d6460b7a4d291f9b869b",
+    "fresh_checkout_verified": true,
+    "tracked_files": 4689,
+    "native_contract": "PASS_52_INPUTS",
+    "ci": "NO_RUNS_RETURNED_FOR_SOURCE_SHA"
+  },
   "retained_head_files": [
     "docs/AUDIO_PRESENTATION_BIBLE.md",
     "docs/D1_COMPATIBILITY_FIX_NOTES.md",
@@ -53,5 +60,5 @@
     "firestore-debug.log",
     "powershell.exe.disabled"
   ],
-  "next_action": "After remote SHA verification, use this branch/commit as the source for a fresh checkout and gameplay review. Check exact-SHA CI separately; no deployment or export is performed by this launcher."
+  "next_action": "Continue from PLAYER_REVIEW_STATE_2026-11-02.json. Owner source publication and fresh checkout are verified; keep CI, deploy, AAB and phone receipts separate."
 }

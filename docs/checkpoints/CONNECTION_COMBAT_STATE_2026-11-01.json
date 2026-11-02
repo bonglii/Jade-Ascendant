@@ -1,6 +1,6 @@
 {
   "batch": "PLAYER_CONNECTION_COMBAT_20261101",
-  "phase": "R2_READY_FOR_OWNER_WINDOWS_QA",
+  "phase": "OWNER_WINDOWS_PASS_SOURCE_PUBLISHED",
   "base_commit": "8654ad52c8237f2cb8832b77c2f5adefe1b2d219",
   "base_overlay": "Exact uploaded owner conflict files + hash-matched installed 8-10 R2 native source + R4 gameplay/UI",
   "previous_windows_qa": "R4_PASS_CONFIRMED_BY_OWNER",
@@ -82,22 +82,24 @@
     },
     "exporter_verify_only": "PASS_52_INPUTS_NO_EXPORT",
     "powershell_parser": "PASS_3_FILES",
-    "windows": "NOT_TESTED_R2",
+    "windows": "PASS_OWNER_REPORTED_2026-11-02",
     "phone": "NOT_TESTED_R2",
     "live_server_latency": "NOT_MEASURED",
     "live_billing_ads": "NOT_TESTED"
   },
-  "installed_owner": false,
-  "committed": false,
-  "pushed": false,
+  "installed_owner": true,
+  "committed": true,
+  "pushed": true,
   "deployed": false,
   "exported": false,
-  "next_action": "Extract the R2 ZIP in a fresh folder; run apply_and_test.cmd, verify R2 revision and Windows PASS; only then use the production export launcher and test the closed build on phone.",
+  "next_action": "Continue from PLAYER_REVIEW_STATE_2026-11-02.json. Source is published; no recovery/reinstall is needed merely because the session resumes. AAB and phone status remain unconfirmed.",
   "installer_revision": "CONNECTION_COMBAT_R2_OWNER_NATIVE_20261101",
   "previous_owner_attempt": {
     "installer": "R1",
     "status": "STOPPED_PREFLIGHT",
     "conflicts": 4,
     "source_writes": 0
-  }
+  },
+  "owner_source_commit": "a5d2bf42586067ef1ef4d6460b7a4d291f9b869b",
+  "owner_source_branch": "work/player-8-10-20261027"
 }

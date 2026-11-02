@@ -1,0 +1,242 @@
+{
+  "batch": "PLAYER_REVIEW_DESKTOP_20261102",
+  "phase": "DESKTOP_PILOT_AND_REVIEW_COMPLETE_WITH_LIMITS",
+  "source_commit": "a5d2bf42586067ef1ef4d6460b7a4d291f9b869b",
+  "source_branch": "work/player-8-10-20261027",
+  "github_publication": "PASS_REMOTE_REF_AND_FRESH_CLONE_VERIFIED",
+  "tracked_files": 4689,
+  "native_contract": "PASS",
+  "native_inputs": 52,
+  "native_sha256": "2171f13f36cf8d90988fd20248f879653104625c8481b91d3fb0a4303fb098ea",
+  "missing_scope_files": [],
+  "retained_docs_tools": 30,
+  "local_debris_committed": false,
+  "engine": "4.7.2.stable.official.ed1daf0bf",
+  "engine_archive_sha256": "cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4",
+  "runtime": "Linux Xvfb TCP; Mesa software OpenGL; compatibility renderer; Dummy audio; 405x860 window",
+  "input": "Actual X11 mouse/keyboard events via xdotool; manual observed choices plus scripted WASD loops selecting first offered upgrade; pauses for observation",
+  "save_isolation": "Fresh XDG_DATA_HOME in author workspace; owner Windows saves not used",
+  "play_attempt": {
+    "stage": "1-1",
+    "outcome": "defeat",
+    "wave": 5,
+    "level": 9,
+    "game_time_seconds": 68,
+    "hp_hits": 41,
+    "hp_loss": 396,
+    "damage_total": 1379,
+    "damage_by_source": {
+      "Spirit Sword": 948,
+      "Fire Orb": 431,
+      "Eight Trigrams Formation": 0
+    },
+    "defeat_reward_stones": 20,
+    "defeat_hero_exp": 10,
+    "daily_claim_stones": 60,
+    "wallet_after_claims": 80
+  },
+  "other_ui_observed": [
+    "Guest entry",
+    "Home and first guide",
+    "Realm and stage navigation",
+    "Five-step combat tutorial",
+    "Level-up choices and HP restoration",
+    "Defeat and Return Home",
+    "Settings English/Indonesian selection",
+    "Library Equipment/Builds",
+    "Chronicles and first story reader",
+    "Cultivator Journal",
+    "Training static targets / Spirit Sword plus Fire Orb",
+    "Hero first guide",
+    "Pavilion locked state and guide",
+    "Daily quests and Claim All"
+  ],
+  "windows_r2": "PASS_OWNER_REPORTED_PREVIOUSLY",
+  "phone_r2": "UNCONFIRMED",
+  "aab_r2": "UNCONFIRMED",
+  "deployment": "NOT_RUN",
+  "admob_mitigation": "NOT_APPLIED",
+  "ci_source_sha": "NO_RUNS_RETURNED; workflows use branch filters; no success claimed",
+  "limits": [
+    "No phone touch/heat/battery/FPS claim",
+    "No human retention or difficulty study",
+    "No boss/later-chapter play completed",
+    "No real billing, ad impression, signed reward or live weekly event tested",
+    "No audio mix assessment with Dummy driver",
+    "No game source or economy changed by this review"
+  ],
+  "findings": [
+    {
+      "id": "R01",
+      "priority": "P2",
+      "kind": "observed_gui",
+      "title": "Panduan masih mengarahkan ke Forge dan aura kosmetik",
+      "evidence": [
+        "03_guide2.png",
+        "40_pavilion_guide.png"
+      ],
+      "source": "scripts/ui/mobile_safe_area.gd",
+      "suggestion": "Sesuaikan panduan dengan fitur dan nama tombol yang aktif. Teks Forge/aura yang ditahan menyesatkan pemain baru."
+    },
+    {
+      "id": "R02",
+      "priority": "P2",
+      "kind": "observed_gui_and_source",
+      "title": "Loading trial pertama menampilkan Stage 0-0",
+      "evidence": [
+        "07_trial_intro.png"
+      ],
+      "source": "scripts/ui/stage_select.gd:752",
+      "suggestion": "Gunakan identitas stage yang dipilih untuk teks loading; pertahankan aktivasi run setelah gate diterima."
+    },
+    {
+      "id": "R03",
+      "priority": "P2",
+      "kind": "observed_gui",
+      "title": "Bahasa Indonesia masih bercampur Inggris di Builds, panduan dan sebagian Pavilion/daily",
+      "evidence": [
+        "32_builds_id.png",
+        "40_pavilion_guide.png",
+        "41_pavilion_locked_id.png",
+        "42_daily_id.png"
+      ],
+      "suggestion": "Lokalkan uraian dan pesan tindakan secara utuh, sambil mempertahankan nama khas item/realm."
+    },
+    {
+      "id": "R04",
+      "priority": "P2",
+      "kind": "observed_gui_design",
+      "title": "Angka Practice adalah total build, label belum menyatakan total",
+      "evidence": [
+        "38_training_fire_orb.png"
+      ],
+      "measurement": {
+        "elapsed_seconds_approx": 5.2,
+        "total_damage": 90,
+        "spirit_sword_damage": 50,
+        "fire_orb_damage": 40,
+        "displayed_dps": 17
+      },
+      "suggestion": "Beri label total damage/DPS build dan pertahankan rincian sumber yang sudah ada."
+    },
+    {
+      "id": "R05",
+      "priority": "P2",
+      "kind": "source_contract_only",
+      "title": "Preview hadiah Trials tetap sementara grant memakai reward minggu",
+      "source": [
+        "scripts/ui/liveops/heavenly_trials_screen.gd:81",
+        "scripts/ui/liveops/heavenly_trials_screen.gd:175",
+        "scripts/ui/liveops/heavenly_trials_screen.gd:185",
+        "backend/monetization/cloudflare/src/heavenly_trials.mjs"
+      ],
+      "suggestion": "Ambil preview dan bonus Stones dari snapshot minggu yang tepat. Perbedaan hadiah live belum diuji."
+    },
+    {
+      "id": "R06",
+      "priority": "design_followup",
+      "kind": "observed_gui_design",
+      "title": "Kepadatan panduan dan keterbacaan navigasi perlu uji pemain",
+      "evidence": [
+        "04_home_ready.png",
+        "08_tutorial.png",
+        "39_hero_guide.png",
+        "41_pavilion_locked_id.png"
+      ],
+      "suggestion": "Ringkas panduan pertama dan perkuat caption navigasi. Skip sudah tersedia; beban onboarding dan keterbacaan adalah penilaian desain, bukan hasil studi pemain."
+    }
+  ],
+  "previous_18_recommendations": [
+    [
+      1,
+      "Akurasi hadiah Trials",
+      "Tetap perlu diperbaiki berdasarkan source a5; event live belum diuji."
+    ],
+    [
+      2,
+      "Iklan tidak tersedia",
+      "Revive unavailable bekerja di Linux. Pesan availability/kuota Pavilion tetap perlu diperjelas. Mitigasi produksi AdMob belum diterapkan."
+    ],
+    [
+      3,
+      "Saran setelah kalah",
+      "Sudah ada dan terlihat bekerja: hit, HP loss, damage per sumber, Review Hero. Pengayaan khusus boss tetap usulan; boss belum dicapai."
+    ],
+    [
+      4,
+      "Daily lebih ringan",
+      "Terlihat 2/6 selesai; dua quest hari ini meminta 3 dan 4 clear. Waktu/beban pemain belum diukur; audit budget sebelum perubahan."
+    ],
+    [
+      5,
+      "Panduan build dan bahasa",
+      "Campuran bahasa terkonfirmasi saat language=id. Panduan role pada pilihan skill sudah ada."
+    ],
+    [
+      6,
+      "Perjelas Practice",
+      "Teramati total damage menggabungkan Spirit Sword dan Fire Orb. Klarifikasi label, bukan menganggap hitungan damage salah."
+    ],
+    [
+      7,
+      "Latihan boss",
+      "Practice dummy sudah berjalan. Tambahkan satu boss yang sudah ditemui sebagai perluasan berikutnya."
+    ],
+    [
+      8,
+      "Side-stage Pertahanan Segel",
+      "Objektif Jade Oath sudah ada di source, terkunci setelah 1-3; belum dimainkan. Side-stage singkat adalah perluasan, bukan mengulang fondasi itu."
+    ],
+    [
+      9,
+      "Fragmen cerita realm",
+      "Sudah ada 11 Chronicles; Sumpah pertama dibuka dan dibaca dalam bahasa Indonesia. Usulan direvisi menjadi pengembangan cerita existing."
+    ],
+    [
+      10,
+      "Pilihan risiko Heavenly Trials",
+      "Rotasi dan ruleset 2 sudah ada. Pilihan risiko per entry masih konsep tambahan; sesi live belum dimainkan."
+    ],
+    [
+      11,
+      "Altar dengan pilihan berkah",
+      "Konsep lanjutan; bedakan dari objektif kosmetik Jade Oath. Perlu desain tradeoff dan balance."
+    ],
+    [
+      12,
+      "Prioritas target encounter",
+      "R4 sudah menambah pola/role musuh. Support enemy dan interaksi target tetap konsep; chapter lanjut belum dimainkan."
+    ],
+    [
+      13,
+      "Misi teknik senjata",
+      "Perluas mastery/panduan existing dengan tantangan penggunaan mekanik senjata; bukan sistem mastery baru."
+    ],
+    [
+      14,
+      "Ujian build seragam",
+      "Konsep mode terisolasi atau preset Practice; tidak mengubah kepemilikan gear atau proteksi IAP."
+    ],
+    [
+      15,
+      "Perbandingan dua run",
+      "Riwayat dan share run sudah ada. Tampilan perbandingan dua run masih usulan; prioritas konten yang relatif terarah."
+    ],
+    [
+      16,
+      "Boss gauntlet singkat",
+      "Konsep konten nanti. Bukan bukti bahwa mode ini dibutuhkan dari satu percobaan awal."
+    ],
+    [
+      17,
+      "Kontrol keterbacaan combat",
+      "Reduced Effects, shake, damage numbers, joystick, dan 30/60 FPS sudah tersedia. Pemisahan intensitas VFX player adalah penyempurnaan."
+    ],
+    [
+      18,
+      "Cabang skill dalam run",
+      "Konsep besar dengan beban balance. Milestone dan synergy existing tidak dibuat ulang."
+    ]
+  ],
+  "next_action": "Choose a repair/content scope from this consolidated review. Fix stale guide/loading metadata/mixed language and reward preview before broad content expansion; consider boss Practice and two-run comparison next. AAB/device confirmation remains separate."
+}
