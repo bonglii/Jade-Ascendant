@@ -1,6 +1,6 @@
 {
   "batch": "PLAYER_REVIEW_CONTENT_20261102",
-  "phase": "IMPLEMENTED_GUI_AND_EXTENDED_QA_PENDING",
+  "phase": "INSTALLER_AND_FINAL_PRESENTATION_QA_IN_PROGRESS",
   "base_commit": "75578e09ef3f5ff2756a1d877d8e4f82c73751be",
   "source_branch": "work/player-review-batch-20261102",
   "user_authorization": "All 18 consolidated recommendations plus observed runtime fixes, one cumulative batch, theme-consistent assets. User instruction 2026-11-02.",
@@ -117,20 +117,35 @@
     "implementation": "IN_PROGRESS",
     "author_qa": {
       "focused_runtime": {
-        "checks": 67,
-        "failures": 0,
-        "host": "Linux Godot 4.7.2 headless production fixtures"
+        "checks": 85,
+        "failures": 0
+      },
+      "direction": {
+        "checks": 54,
+        "failures": 0
+      },
+      "trials_recovery": {
+        "checks": 27,
+        "failures": 0
+      },
+      "combat_clarity": {
+        "checks": 66,
+        "failures": 0
+      },
+      "combat_restart": {
+        "checks": 6,
+        "failures": 0
       },
       "native_contract": "PASS_52_UNCHANGED_INPUTS_MATCHING_AAR",
-      "gui": "PENDING",
-      "extended_regressions": "PENDING"
+      "native_gui": "28 court renders complete; supporting menus and native gesture review in progress; Linux Xvfb/Mesa, not phone",
+      "installer": "PowerShell parsed; transactional fixtures pending"
     },
     "windows": "NOT_INSTALLED_NEW_BATCH",
     "aab": "NOT_EXPORTED_NEW_BATCH",
     "phone": "NOT_TESTED_NEW_BATCH",
     "deploy": "NOT_RUN"
   },
-  "next_action": "Complete bilingual compact/tall native GUI review with first-swipe checks, focused regressions and safe cumulative Windows installer QA; fix findings before final delivery.",
+  "next_action": "Finish supporting-menu native renders/swipes and installer transaction fixtures, fix any findings, then publish final source and save one cumulative ZIP. Never label current checkpoint a delivered Windows/device build.",
   "implementation_notes": [
     "Seven isolated training modes use production actors and applied-HP-loss ledger.",
     "Run comparison and local technique records use existing account-isolated companion store.",

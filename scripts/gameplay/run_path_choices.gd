@@ -5,6 +5,7 @@ const Sheet=preload("res://scripts/companion/player_journal.gd")
 var _modal: CanvasLayer
 var _left: float=1.0
 var _key: String=""
+var _previous_back: Callable
 func _ready() -> void:
 	process_mode=Node.PROCESS_MODE_ALWAYS
 func _process(delta: float) -> void:
@@ -41,7 +42,7 @@ func _offer(key: String,title: String,choices: Array) -> void:
 	var panel:=PanelContainer.new();panel.add_theme_stylebox_override("panel",Sheet.skin(18));panel.custom_minimum_size=Vector2(minf(520,get_viewport().get_visible_rect().size.x-32),0);center.add_child(panel)
 	var body:=VBoxContainer.new();body.add_theme_constant_override("separation",12);panel.add_child(body)
 	body.add_child(Sheet.label(title,22,Sheet.GOLD))
-	body.add_child(Sheet.label(Sheet.copy("This run only · chosen once · Continue keeps your choice. Set DoT is unchanged.","Hanya run ini · satu pilihan · Continue menyimpan pilihanmu. DoT set tetap."),15))
+	body.add_child(Sheet.label(Sheet.copy("This run only · chosen once · Continue keeps your choice. Set DoT ticks receive no additional path/boon multiplier.","Hanya run ini · satu pilihan · Continue menyimpan pilihanmu. Tick DoT set tidak dikalikan ulang oleh cabang/berkah."),15))
 	var scroll:=ScrollContainer.new();scroll.custom_minimum_size.y=minf(340,get_viewport().get_visible_rect().size.y*.46);body.add_child(scroll)
 	var list:=VBoxContainer.new();list.size_flags_horizontal=Control.SIZE_EXPAND_FILL;list.add_theme_constant_override("separation",12);scroll.add_child(list)
 	for choice: Array in choices:
@@ -49,6 +50,8 @@ func _offer(key: String,title: String,choices: Array) -> void:
 		action.name="Path_"+str(choice[0]);action.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;action.custom_minimum_size.y=76;list.add_child(action)
 	preload("res://scripts/ui/mobile_scroll_policy.gd").configure(scroll)
 	preload("res://scripts/ui/mobile_scroll_policy.gd").prepare_tree(root)
+	_previous_back=SceneTransitionManager.back_handler
+	SceneTransitionManager.set_back_handler(_cancel)
 	get_tree().paused=true
 func _pick(value: String) -> void:
 	if not is_instance_valid(_modal):return
@@ -56,9 +59,16 @@ func _pick(value: String) -> void:
 	if _key=="boon":manager.run_paths.boon=value
 	else:manager.run_paths.arts[_key]=value
 	manager.run_paths=Policy.clean(manager.run_paths)
+	_restore_back()
 	_modal.queue_free();_modal=null
 	get_tree().paused=false
 	var checkpoint: Node=manager.get_parent().get_parent().get_node_or_null("CheckPointManager")
 	if checkpoint!=null:checkpoint.save_checkpoint()
+func _cancel() -> void:
+	if is_instance_valid(_modal):_pick("none" if _key=="boon" else "balanced")
+func _restore_back() -> void:
+	if is_instance_valid(SceneTransitionManager) and SceneTransitionManager.back_handler==Callable(self,"_cancel"):
+		SceneTransitionManager.set_back_handler(_previous_back)
 func _exit_tree() -> void:
+	_restore_back()
 	if is_instance_valid(_modal):get_tree().paused=false

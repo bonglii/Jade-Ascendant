@@ -54,6 +54,9 @@ func run() -> void:
  check(not provider.rewarded_available("heavenly_trials_bonus"),"unconfigured optional unit safely unavailable")
  check(not provider.configure_trials_unit(str(units.UNITS.dice.id)),"cannot reuse dice unit")
  check(provider.configure_trials_unit("ca-app-pub-3082528078187093/1111111111"),"dedicated owner unit config accepted")
+ var held_ads: bool=bool(ProjectSettings.get_setting("monetization/ads_suspended",true))
+ provider.warm_rewarded_ad("heavenly_trials_bonus");check(provider.loads==0,"production suspension prevents an SDK load")
+ ProjectSettings.set_setting("monetization/ads_suspended",false) # Disposable fake-loader fixture; never saved.
  provider.warm_rewarded_ad("heavenly_trials_bonus");check(provider.loads==1,"new optional unit actually enters SDK load path")
  check(provider.requests[0].id.ends_with("/1111111111"),"load uses dedicated unit, no fallback")
  var ad:=FakeAd.new();provider._on_rewarded_loaded(ad,provider._load_epoch,"trials",provider._slot("trials").generation)
@@ -72,6 +75,7 @@ func run() -> void:
  var v2_action: Dictionary=JSON.parse_string(bridge.requests.back().body).action
  check(v2_action.size()==3 and v2_action.supported_ruleset==2,"only an explicit v2 week sends the signed capability")
  DirAccess.remove_absolute(transport._path())
+ ProjectSettings.set_setting("monetization/ads_suspended",held_ads)
  provider.free();bridge.free();transport.free();units.trials_unit_id=""
  await process_frame
  var factory: GDScript=load("res://addons/admob/internal/mock/mock_admob_factory.gd")

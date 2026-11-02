@@ -180,6 +180,7 @@ func _runs() -> void:
   var content: VBoxContainer=card("%d-%d · %s"%[int(row.chapter),int(row.stage),str(row.outcome).to_upper()],_date(int(row.time))+" · %02d:%02d · Lv.%d"%[int(float(facts.seconds)/60),int(facts.seconds)%60,int(facts.level)])
   content.add_child(label(_slot_names(row.get("slots",{})),13,JADE))
   for damage: Dictionary in facts.get("damage",[]):content.add_child(label(str(damage.name)+" · "+preload("res://scripts/ui/readable_numbers.gd").compact(roundi(float(damage.damage))),14))
+  if facts.has("run_paths"):content.add_child(label(_path_summary(facts.run_paths),13,JADE))
   var skills: PackedStringArray=[]
   for skill: Dictionary in facts.get("skills",[]):skills.append(str(skill.name)+" Lv."+str(skill.level))
   content.add_child(label(" · ".join(skills),13))
@@ -251,6 +252,7 @@ func _compare_runs() -> void:
  for side: int in range(2):
   var row: Dictionary=[a,b][side];var facts: Dictionary=row.facts
   var detail: VBoxContainer=card("RUN "+("A" if side==0 else "B"),_slot_names(row.get("slots",{})))
+  if facts.has("run_paths"):detail.add_child(label(_path_summary(facts.run_paths),14,JADE))
   for damage: Dictionary in facts.get("damage",[]):detail.add_child(label(str(damage.name)+" · "+str(roundi(float(damage.damage))),14,JADE))
  _body.add_child(button(copy("BACK TO RUNS","KEMBALI KE RUN"),_redraw));_scroll.scroll_vertical=0;Scroll.prepare_tree(_scroll)
 func _drills() -> void:
@@ -260,3 +262,12 @@ func _drills() -> void:
   var record: Dictionary=PlayerCompanion.state.get("drills",{}).get("technique:"+catalog.ARTS[index],{})
   card(catalog.NAMES[index],copy("Not demonstrated yet","Belum dibuktikan") if record.is_empty() else copy("DEMONSTRATED · %.1fs","TERBUKTI · %.1f dtk")%(float(record.time_ms)/1000.0))
  _body.add_child(button(copy("ENTER TRAINING COURT","MASUK PELATARAN LATIHAN"),_practice))
+
+func _path_summary(raw: Dictionary) -> String:
+ var paths: Dictionary=preload("res://scripts/data/run_path_policy.gd").clean(raw)
+ var parts: PackedStringArray=[]
+ for art: String in paths.arts:
+  var choice: String=str(paths.arts[art])
+  parts.append(preload("res://scripts/data/skill_catalog.gd").get_upgrade_display_name(art)+" · "+({"focus":copy("Guardian Focus","Fokus Penjaga"),"sweep":copy("Valley Sweep","Sapuan Lembah"),"balanced":copy("Balanced","Seimbang")}.get(choice,choice)))
+ if paths.boon in ["ember","wind"]:parts.append(copy("Altar: ","Altar: ")+({"ember":copy("Ember","Bara"),"wind":copy("Wind","Angin")}[paths.boon]))
+ return "\n".join(parts) if not parts.is_empty() else copy("Balanced path · no altar boon","Jalur seimbang · tanpa berkah altar")

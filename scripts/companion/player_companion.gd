@@ -248,8 +248,8 @@ func _metric(kind: String, chapter: int, stage: int, seconds: int=0,event_key: S
  while next.metrics.size()>METRIC_QUEUE_MAX: next.metrics.pop_front()
  commit(next)
 
-func record_drill(mode: String,art: String,time_ms: int,damage: float) -> bool:
- if account_key!=live_owner() or time_ms<1 or time_ms>180000 or not is_finite(damage) or damage<0:return false
+func record_drill(mode: String,art: String,time_ms: int,damage: float,expected_owner: String) -> bool:
+ if expected_owner!=account_key or account_key!=live_owner() or time_ms<1 or time_ms>180000 or not is_finite(damage) or damage<0:return false
  if mode not in ["dummy","boss","seal","technique","standard","priority","gauntlet"] or art not in preload("res://scripts/data/run_path_policy.gd").ARTS:return false
  var next: Dictionary=state.duplicate(true)
  if not next.has("drills"):next.drills={}

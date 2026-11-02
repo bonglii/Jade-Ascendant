@@ -50,13 +50,14 @@ func _ready() -> void:
   if ("1-%d"%stage) in PlayerCompanion.state.seen_bosses or JourneyManager.is_stage_cleared(1,stage):_known.append(stage)
  if not _known.is_empty():_selected_boss=_known[0]
  var requested_boss: int=int(get_tree().root.get_meta("practice_boss",0))
- get_tree().root.remove_meta("practice_boss")
+ if get_tree().root.has_meta("practice_boss"):get_tree().root.remove_meta("practice_boss")
  if requested_boss in _known:mode="boss";_selected_boss=requested_boss
  _camera=Camera2D.new();_camera.position=Vector2(324,576);add_child(_camera)
  var background:=CanvasLayer.new();background.layer=-10;add_child(background)
  var art:=TextureRect.new();art.texture=load("res://assets/ui/cultivation/cultivation_inner_sea_sanctum_v6.png");art.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;art.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_COVERED;art.modulate=Color(.32,.43,.41);art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);art.mouse_filter=Control.MOUSE_FILTER_IGNORE;background.add_child(art)
  var hud:=CanvasLayer.new();hud.layer=10;add_child(hud)
- _safe=Control.new();_safe.set_script(preload("res://scripts/ui/mobile_safe_area.gd"));hud.add_child(_safe);_safe.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);_safe.mouse_filter=Control.MOUSE_FILTER_IGNORE
+ var screen_root:=Control.new();screen_root.name="TrainingScreenRoot";screen_root.mouse_filter=Control.MOUSE_FILTER_IGNORE;screen_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);hud.add_child(screen_root)
+ _safe=Control.new();_safe.name="TrainingSafeArea";_safe.set_script(preload("res://scripts/ui/mobile_safe_area.gd"));screen_root.add_child(_safe);_safe.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);_safe.mouse_filter=Control.MOUSE_FILTER_IGNORE
  var margin:=MarginContainer.new();margin.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
  for side: String in ["left","right","top","bottom"]:margin.add_theme_constant_override("margin_"+side,12)
  _safe.add_child(margin);_panel=PanelContainer.new();_panel.add_theme_stylebox_override("panel",Sheet.skin(12));margin.add_child(_panel)
@@ -120,6 +121,7 @@ func _reset() -> void:
  if _resetting:return
  _resetting=true;_rebuild.call_deferred()
 func _rebuild() -> void:
+ _start_button.text=Sheet.copy("START","MULAI")
  _running=false;_outcome="";_hits.clear();_boss_round=0;_boss=null;_seals=0;elapsed=0;_readout_timer=0;_spawn_left=0;_spawn_index=0;_outgoing=0
  for child: Node in get_children():
   if child is Node2D and child!=_camera:remove_child(child);child.queue_free()
@@ -154,7 +156,7 @@ func _refresh_instructions() -> void:
   "seal":Sheet.copy("75s · charge three Jade Oath seals for 8s each while avoiding enemies.","75 dtk · isi tiga segel Jade Oath masing-masing 8 dtk sambil menghindari musuh."),
   "technique":Sheet.copy("60s · fixed kit Lv.5 · hit three targets using the selected art.","60 dtk · kit tetap Lv.5 · hantam tiga target memakai art pilihan."),
   "standard":Sheet.copy("60s · fixed 100 HP, base power/tempo, chosen art Lv.3. No gear or mastery.","60 dtk · tetap 100 HP, power/tempo dasar, art Lv.3. Tanpa gear atau mastery."),
-  "priority":Sheet.copy("60s · destroy the jade ward bearer. Nearby enemies take 35% less direct damage while protected.","60 dtk · hancurkan pembawa pelindung giok. Musuh dekat menerima 35% lebih sedikit damage langsung selama terlindungi."),
+  "priority":Sheet.copy("60s · destroy the jade ward bearer. Nearby enemies take 35% less damage while protected.","60 dtk · hancurkan pembawa pelindung giok. Musuh dekat menerima 35% lebih sedikit damage selama terlindungi."),
   "gauntlet":Sheet.copy("180s · three known guardians in sequence. HP carries between fights.","180 dtk · tiga penjaga dikenal secara berurutan. HP dibawa antar pertarungan.")}
  _hint.text=descriptions[mode];_status.text=Sheet.copy("READY · START WHEN PREPARED","SIAP · MULAI SAAT SUDAH SIAP")
  _start_button.disabled=(mode=="boss" and _known.is_empty()) or (mode=="gauntlet" and not [1,2,3].all(func(stage: int):return stage in _known))
@@ -169,7 +171,8 @@ func _enemy(point: Vector2,hostile: bool=true) -> Node2D:
  target.position=point;target.collision_layer=2;target.collision_mask=0;add_child(target);return target
 func _start() -> void:
  if _resetting or _start_button.disabled or _running:return
- if not _outcome.is_empty():_reset();return
+ if not _outcome.is_empty():
+  _resetting=true;_retry.call_deferred();return
  _running=true;_start_button.disabled=true;_freeze_actors(false)
  if mode in ["boss","gauntlet"]:_spawn_boss(_selected_boss if mode=="boss" else 1)
  if mode=="seal":_next_seal()
@@ -177,6 +180,8 @@ func _start() -> void:
   var bearer: Node2D=_enemy(Vector2(324,420));bearer.name="JadeWardBearer";bearer.max_hp=90.0;bearer.current_hp=90.0;bearer.speed=0.0;bearer.modulate=Color(.55,1,.78)
   var ward: Node2D=preload("res://scripts/gameplay/training_support_ward.gd").new();bearer.add_child(ward)
   for i: int in range(4):_enemy(Vector2(204+i*80,480))
+func _retry() -> void:
+ _rebuild();_start()
 func _spawn_boss(stage: int) -> void:
  _boss_round+=1
  var actor: Node2D=load("res://scenes/enemy/boss_1.tscn").instantiate();actor.configure_encounter(JourneyManager.get_stage_data(1,stage));actor.position=Vector2(324,410);actor.motion_mode=CharacterBody2D.MOTION_MODE_FLOATING;actor.collision_layer=2;actor.collision_mask=0;add_child(actor);_boss=actor
@@ -247,11 +252,15 @@ func _readout() -> void:
  _report.text="\n".join(lines)
  var hp: Node=player.get_node("PlayerHealth")
  if _running:_status.text="HP %d/%d · %.1fs%s"%[roundi(hp.current_health),roundi(hp.max_health),elapsed," · %d/3 · %.1f/8s"%[_seals,_seal.charge] if mode=="seal" else ""]
+ if _running and is_instance_valid(_boss):
+  _status.text+=" · BOSS %d%%"%ceili(100.0*_boss.current_hp/maxf(1.0,_boss.max_hp))
+  if mode=="gauntlet":_status.text+=" · %d/3"%_boss_round
 func _finish(outcome: String,completed: bool=false) -> void:
  if not _running:return
+ if PlayerCompanion.account_key!=_owner:_back();return
  _running=false;_outcome=outcome;_readout();_freeze_actors(true);player.get_node("WeaponManager/RunCombatLedger").frozen=true
- if completed:PlayerCompanion.record_drill(mode,ATTACKS[_skills.selected],maxi(1,roundi(elapsed*1000)),_outgoing)
- _status.text=outcome;_start_button.disabled=true
+ if completed:PlayerCompanion.record_drill(mode,ATTACKS[_skills.selected],clampi(roundi(elapsed*1000),1,180000),_outgoing,_owner)
+ _status.text=outcome;_start_button.text=Sheet.copy("TRY AGAIN","COBA LAGI");_start_button.disabled=false
 func _fit_arena() -> void:
  var view: Vector2=get_viewport_rect().size;var top: float=minf(_panel.get_global_rect().end.y+10,maxf(100,view.y-240))
  _joystick.offset_top=top;_joystick.offset_bottom=-128

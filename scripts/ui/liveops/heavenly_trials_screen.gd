@@ -53,7 +53,8 @@ func _rewards_row(parent: Node,reward: Dictionary) -> void:
   var amount: Label=_label(str(int(reward[key])),20,Style.CREAM);amount.autowrap_mode=TextServer.AUTOWRAP_OFF;group.add_child(amount)
 func _build() -> void:
  var background:=TextureRect.new();background.texture=ART;background.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;background.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_COVERED;background.set_anchors_and_offsets_preset(PRESET_FULL_RECT);background.mouse_filter=MOUSE_FILTER_IGNORE;background.modulate=Color(.32,.45,.39);add_child(background)
- var margin: MarginContainer=_margin(self,20);margin.set_anchors_and_offsets_preset(PRESET_FULL_RECT)
+ var safe:=Control.new();safe.name="TrialsSafeArea";safe.set_script(preload("res://scripts/ui/mobile_safe_area.gd"));safe.set_anchors_and_offsets_preset(PRESET_FULL_RECT);add_child(safe)
+ var margin: MarginContainer=_margin(safe,20);margin.set_anchors_and_offsets_preset(PRESET_FULL_RECT)
  var body:=VBoxContainer.new();body.add_theme_constant_override("separation",14);margin.add_child(body)
  var header:=HBoxContainer.new();header.add_theme_constant_override("separation",12);body.add_child(header)
  var back: Button=_button(header,"‹",_back);back.custom_minimum_size=Vector2(48,48);back.size_flags_vertical=SIZE_SHRINK_CENTER;back.add_theme_font_size_override("font_size",30)

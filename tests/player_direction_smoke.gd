@@ -19,6 +19,8 @@ func run() -> void:
  if not OS.get_user_data_dir().contains("jade_event_touch_qa"):quit(2);return
  create_timer(85).timeout.connect(func():quit(1))
  await settle()
+ Input.set_emulate_touch_from_mouse(true)
+ check(DisplayServer.is_touchscreen_available(),"desktop fixture uses the engine touchscreen hint")
  var context: Dictionary={"stages":[{"chapter":1,"stage":6,"implemented":true,"unlocked":true,"cleared":true},{"chapter":2,"stage":1,"implemented":true,"unlocked":true,"cleared":false},{"chapter":3,"stage":1,"implemented":false,"unlocked":true,"cleared":false}]}
  check(Goals.choose(context).get("chapter")==2,"recommend first available uncleared stage after a completed chapter")
  context.checkpoint=true;check(Goals.choose(context).action=="continue","saved run precedes all new objectives")
@@ -71,6 +73,11 @@ func run() -> void:
  current_scene=null;library.free();await settle()
  var home: Control=load("res://scenes/ui/main_menu.tscn").instantiate();root.add_child(home);current_scene=home;await settle(28)
  check(home.find_child("NextGoalHint",true,false)!=null,"production Home renders a real next-step hint")
+ var guide: Control=home.find_child("JadeOnboardingOverlay",true,false)
+ if guide!=null:
+  for candidate: Node in home.find_children("*","Control",true,false):
+   if candidate.has_method("_finish_onboarding"):candidate._finish_onboarding()
+  await settle() # The history button is only reachable after the real first-visit guide closes.
  var presenter: Node=root.get_node("RewardClaimResultPresenter");presenter._sync_receipt_owner()
  for i: int in range(20):presenter.receipt_journal.record("QA REWARD","fixture-display-%d"%i,{"spirit_stone":i+1,"celestial_jade":20,"pavilion_seal":1},stamp+i*4)
  presenter._on_reward_granted("stage_clear","chapter_1_stage_1_repeat",{"spirit_stone":3})

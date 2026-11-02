@@ -60,10 +60,12 @@ func run() -> void:
  var before_daily: Dictionary=daily.build_save_data().duplicate(true)
  var before_equipment: Dictionary=equipment.build_equipment_save_data().duplicate(true)
  var before_mastery: Dictionary=mastery.state.duplicate(true)
+ var before_achievements: Dictionary=root.get_node("AchievementManager").get("achievement_progress").duplicate(true) if root.get_node("AchievementManager").get("achievement_progress") is Dictionary else {}
  change_scene_to_file("res://scenes/ui/training_ground.tscn");await frames(18)
  var court: Node=current_scene
  check(court!=null and court.has_method("record_practice_hit"),"real training scene loads")
  if court==null or not court.has_method("record_practice_hit"):quit(1);return
+ check(court._safe.get_parent_control()!=null,"training safe area has a real full-screen Control parent")
  check(not court._running and court.elapsed==0,"test begins deliberately without advancing clock")
  court._start();await create_timer(1.2).timeout
  var ledger: Node=court.player.get_node("WeaponManager/RunCombatLedger")
@@ -83,11 +85,19 @@ func run() -> void:
  actor.current_hp=100;manager.run_paths={"arts":{"spirit_sword":"sweep"},"boon":"ember"}
  var combined: float=damage.apply_hit(actor,10,"spirit_sword")
  check(is_equal_approx(combined,10.08),"sweep/ember damage compose once")
+ for source: String in Paths.ARTS:
+  actor.remove_from_group("boss");actor.current_hp=100;manager.run_paths={"arts":{source:"focus"},"boon":"none"}
+  check(is_equal_approx(damage.apply_hit(actor,10,source),9.0),"direct art normal-target tradeoff "+source)
+  actor.add_to_group("boss");actor.current_hp=100
+  check(is_equal_approx(damage.apply_hit(actor,10,source),12.0),"direct art boss-target tradeoff "+source)
+ check(is_equal_approx(Paths.multiplier({"arts":{"spirit_sword":"focus"},"boon":"ember"},"set_bleed",true),1.0),"set ticks are not multiplied a second time")
  actor.queue_free();await frames(2)
  var chooser: Node=manager.get_node("RunPathChoices")
  chooser._offer("boon","ALTAR FIXTURE",[["wind","WIND"]]);check(paused,"choice owns pause")
  chooser._pick("wind");check(not paused and manager.run_paths.boon=="wind","choice commits once and releases pause")
  check(is_equal_approx(Paths.movement(manager.run_paths),1.1),"wind movement tradeoff bounded")
+ chooser._offer("spirit_sword","BRANCH FIXTURE",[["focus","FOCUS"]]);chooser._cancel()
+ check(not paused and current_scene==court and manager.run_paths.arts.spirit_sword=="balanced","Back chooses the unchanged path and preserves the scene")
  # Real boss scene with production attack/HP contract; fixture killing hit only tests completion ordering.
  court._select_mode(1);await frames(8);court._start();await frames(8)
  check(is_instance_valid(court._boss),"encountered guardian is playable")
@@ -100,6 +110,10 @@ func run() -> void:
  court._select_mode(4);await frames(8)
  check(equipment.practice_items.is_empty() and court.get_meta("standard_kit"),"fixed kit isolates gear and mastery")
  check(is_equal_approx(court.player.get_node("PlayerStats").power_multiplier,1.0) and court.player.get_node("PlayerHealth").max_health==100,"fixed power and 100 HP")
+ court.set_meta("trials_personal_risk",2)
+ var fixed_health: Node=court.player.get_node("PlayerHealth");fixed_health.take_damage(10.0)
+ check(is_equal_approx(fixed_health.current_health,88.5),"risk-two incoming damage applies once after the normal guard")
+ court.remove_meta("trials_personal_risk")
  court._start();await frames(5);court._finish("FIXTURE STOP")
  court._select_mode(5);await frames(8);court._start();await frames(20)
  var bearer: Node=court.get_node_or_null("JadeWardBearer")
@@ -120,8 +134,10 @@ func run() -> void:
  check(progression.build_progression_save_data()==before_progress,"training never mutates currency, cultivation or hero XP")
  check(daily.build_save_data()==before_daily,"training never advances daily progress or claims")
  check(equipment.build_equipment_save_data()==before_equipment,"actual gear/stars/levels remain unchanged")
+ check((root.get_node("AchievementManager").get("achievement_progress") if root.get_node("AchievementManager").get("achievement_progress") is Dictionary else {})==before_achievements,"training never advances achievement progress")
  check(mastery.state==before_mastery,"training never awards or freezes mastery progression")
  var client: Node=root.get_node("HeavenlyTrialsClient")
+ check(not companion.record_drill("dummy","spirit_sword",1000,1.0,"stale-owner"),"a stale practice owner cannot write another account record")
  var old_owner: String=client._owner;client._owner="a".repeat(64)
  check(client._save_personal_risk("fixture-session",2) and client.personal_risk("fixture-session")==2,"personal risk survives durable local read")
  check(client.personal_risk("other-session")==0,"risk cannot cross sessions")

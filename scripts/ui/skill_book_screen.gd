@@ -53,7 +53,7 @@ func _ready() -> void:
 	_rarity_picker.get_popup().add_theme_stylebox_override("panel",Ui.make_panel_style(Color(.003,.03,.039,.99),Color(.83,.66,.32),10))
 	_rarity_picker.item_selected.connect(func(index: int):_rarity=["ALL","common","rare","epic","legendary"][index];_refresh())
 	count_row.add_child(_rarity_picker)
-	var scroll:=ScrollContainer.new();scroll.name="SkillBookScroll";scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL;scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;scroll.scroll_deadzone=8;body.add_child(scroll)
+	var scroll:=ScrollContainer.new();scroll.name="SkillBookScroll";scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL;scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;scroll.scroll_deadzone=8;body.add_child(scroll);preload("res://scripts/ui/mobile_scroll_policy.gd").configure(scroll)
 	scroll.get_v_scroll_bar().modulate=Color(.46,.64,.57,.5)
 	_list=VBoxContainer.new();_list.name="SkillBookEntries";_list.size_flags_horizontal=Control.SIZE_EXPAND_FILL;_list.add_theme_constant_override("separation",10);scroll.add_child(_list)
 	_summary=PanelContainer.new();_summary.name="LibrarySelection";_summary.add_theme_stylebox_override("panel",Ui.make_panel_style(Color(.004,.027,.034,.99),Color(.84,.66,.32),12));body.add_child(_summary)
@@ -92,6 +92,7 @@ func _build_filters() -> void:
 	for category: String in categories:
 		var b:=_button(category);b.custom_minimum_size.y=38;b.add_theme_font_size_override("font_size",11 if size.x<400 else 14);b.size_flags_horizontal=Control.SIZE_EXPAND_FILL;b.pressed.connect(_set_filter.bind(category));_filters.add_child(b);_filter_buttons[category]=b
 func _refresh() -> void:
+	call_deferred("_prepare_library_scroll")
 	_filters.visible = _mode != "CHRONICLES"
 	_summary.visible=_mode=="EQUIPMENT" and _filter!="SETS"
 	_rarity_picker.visible=_summary.visible
@@ -253,6 +254,7 @@ func _refresh_builds() -> void:
 	_count.text=tr("%d BUILD GUIDES")%shown
 	if shown==0:_list.add_child(_label("NO MATCHING BUILDS",18,Color(.77,.85,.8)))
 	for category: String in _filter_buttons:_filter_buttons[category].add_theme_color_override("font_color",Color(1,.87,.44) if category==_filter else Color(.75,.85,.8))
+	preload("res://scripts/ui/mobile_scroll_policy.gd").prepare_tree(_list)
 
 func _refresh_chronicles() -> void:
 	for child: Node in _list.get_children():
@@ -279,4 +281,10 @@ func _refresh_chronicles() -> void:
 		if available and entry.id=="verdant_oath_fragment":card.add_child(_label("KEEPER OF THE OATH · "+("Badge kosmetik" if SettingsManager.language=="id" else "Cosmetic badge"),13,Color("ead19a")))
 		shown += 1
 	_count.text = ("%d kisah · bisa dibaca ulang" if SettingsManager.language=="id" else "%d stories · read again anytime")%shown
+	preload("res://scripts/ui/mobile_scroll_policy.gd").prepare_tree(_list)
+
+func _prepare_library_scroll() -> void:
+	if not is_inside_tree() or not is_instance_valid(_list):return
+	var scroll: Node=_list.get_parent()
+	if scroll is ScrollContainer:preload("res://scripts/ui/mobile_scroll_policy.gd").configure(scroll)
 	preload("res://scripts/ui/mobile_scroll_policy.gd").prepare_tree(_list)
