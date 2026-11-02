@@ -6,6 +6,13 @@ class HeavenlyTrialsContractV1Test {
  private val id="a".repeat(32)
  private fun cmd(action:String)=JSONObject().put("request_id",id).put("week_id","ht_trials-one_0").put("action",JSONObject(action)).toString()
  private fun snapshot()=JSONObject(javaClass.classLoader!!.getResourceAsStream("heavenly_trials_snapshot_v1.json")!!.bufferedReader().use{it.readText()})
+ @Test fun rulesetCapabilityIsBoundedAndOnlyForStart(){
+  assertNotNull(HeavenlyTrialsContractV1.commandOrNull(id,cmd("""{"kind":"start","tier":1,"supported_ruleset":2}""")))
+  for(value in listOf("0","3","2.5","true","\"2\""))assertNull(HeavenlyTrialsContractV1.commandOrNull(id,cmd("""{"kind":"start","tier":1,"supported_ruleset":$value}""")))
+  assertNull(HeavenlyTrialsContractV1.commandOrNull(id,cmd("""{"kind":"ad_intent","tier":1,"supported_ruleset":2}""")))
+  val v2=snapshot();v2.getJSONObject("week").put("ruleset_version",2);assertNotNull(HeavenlyTrialsContractV1.canonicalOrNull(v2,"alice"))
+  v2.getJSONObject("week").put("ruleset_version",3);assertNull(HeavenlyTrialsContractV1.canonicalOrNull(v2,"alice"))
+ }
  @Test fun onlyBoundedServerActions(){
   for(a in listOf("""{"kind":"start","tier":1}""","""{"kind":"claim_all"}""","""{"kind":"ad_intent","tier":3}""","""{"kind":"pack_reconcile"}"""))assertNotNull(HeavenlyTrialsContractV1.commandOrNull(id,cmd(a)))
   for(a in listOf("""{"kind":"start","tier":4}""","""{"kind":"start","tier":1.5}""","""{"kind":"claim_all","jade":500}""","""{"kind":"ad_success"}"""))assertNull(HeavenlyTrialsContractV1.commandOrNull(id,cmd(a)))

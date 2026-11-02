@@ -1,0 +1,43 @@
+name: Pavilion focused UI
+on:
+  push:
+    branches: ['feat/pavilion-focus-20261028']
+    paths: ['scripts/**', 'scenes/ui/pavilion_screen.tscn', 'tests/**', 'backend/player_identity/check_pavilion_focus.cjs', '.github/workflows/pavilion-focus-qa.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pavilion:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verified official engine
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/jade-pavilion-engine
+          curl -fsSL --retry 3 https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip -o /tmp/jade-pavilion-engine/godot.zip
+          echo 'cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4  /tmp/jade-pavilion-engine/godot.zip' | sha256sum --check
+          unzip -q /tmp/jade-pavilion-engine/godot.zip -d /tmp/jade-pavilion-engine
+          chmod +x /tmp/jade-pavilion-engine/Godot_v4.7.2-stable_linux.x86_64
+      - name: Production guards and isolated UI / economy regressions
+        run: |
+          node backend/player_identity/production_release_contract.mjs
+          node backend/player_identity/check_pavilion_focus.cjs "$PWD" /tmp/jade-pavilion-engine/Godot_v4.7.2-stable_linux.x86_64
+      - name: Native GUI swipes and actual rendered screens on disposable runner
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri
+          xvfb-run -a -s '-screen 0 1280x1600x24 -nolisten tcp' node backend/player_identity/check_pavilion_focus.cjs "$PWD" /tmp/jade-pavilion-engine/Godot_v4.7.2-stable_linux.x86_64 --native
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pavilion-focus-${{ github.sha }}
+          path: |
+            .local/pavilion_focus_qa/**
+            .local/event_touch_qa/import.log

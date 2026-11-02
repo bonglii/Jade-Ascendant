@@ -1,0 +1,53 @@
+{
+  "batch": "PAVILION_FOCUS_2026-10-28",
+  "base": "057ed76f186940374d2cabe1ecb307a0114d3106",
+  "branch": "feat/pavilion-focus-20261028",
+  "previous": "docs/checkpoints/TESTER_RELIABILITY_STATE_2026-10-26.json",
+  "phase": "Implementation complete; portable installer and headless compatibility passed; Windows native render and phone checks remain separate",
+  "approved": "User approved preview, then the developer/player recommendations, and requested implementation with explanation.",
+  "scope": [
+    "Summon/Forge/Aura tabs",
+    "Separate earned and paid summon presentation",
+    "Preserve regular-Seal-first policy",
+    "Explicit target/Fate confirmation",
+    "Equipment benefits after actual reveal",
+    "Existing Spirit Stone forging",
+    "Read-only hero aura preview and matching cosmetic drawing",
+    "Daily meditation sheet"
+  ],
+  "preserved": [
+    "Nine live payment gates",
+    "Native bridge and exporter",
+    "Backend and prices",
+    "Save schema and balances",
+    "Pity/target/grant authority"
+  ],
+  "stages": {
+    "implemented": true,
+    "local_qa": "1016 core checks plus 28 unchanged tester checks; zero failures",
+    "installed_on_owner": false,
+    "committed": true,
+    "pushed": false,
+    "deployed": false,
+    "exported": false,
+    "android_tested": false,
+    "commit_scope": "local_only",
+    "package": "ready_verified_portable"
+  },
+  "next": "Owner extracts Jade-Pavilion-Redesign.zip and runs apply_and_test.cmd. Native Windows results and screenshots are recorded separately; export/phone test follow only after that succeeds. No remote publication is claimed.",
+  "native_gui": "Not available in author executor; owner Windows native fixture provided",
+  "github_write": "HTTP403 integration access; no remote branch/commit/push or CI receipt",
+  "validation": {
+    "production_gates": 9,
+    "core_checks": 1016,
+    "core_failures": 0,
+    "additional_unchanged_tester_checks": 28,
+    "main_compatibility_checks": 1016,
+    "main_compatibility_failures": 0,
+    "installer_tests": 6,
+    "installer_failures": 0,
+    "native_gui": "not_run_environment_denied_Unix_sockets",
+    "windows": "pending_owner_apply_and_test",
+    "phone": "not_tested"
+  }
+}

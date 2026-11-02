@@ -1,0 +1,41 @@
+{
+  "batch": "PAVILION_LAYOUT_REPAIR_2026-10-28",
+  "phase": "Repair source, primary review evidence and safe cumulative installer ready",
+  "source_base": "057ed76f186940374d2cabe1ecb307a0114d3106",
+  "pavilion_package": "libfile_4d32b8d241648191a92bdace0ce7a4d3 v1",
+  "aura_package": "libfile_7d59ab4b51248191a7b8fb43d8b6f843 v2",
+  "finding": "Wrapped SHRINK_END button shrinks to 8px and grows to 192px; wrapping disabled on Daily, More and target controls",
+  "validation": {
+    "old_layout_regression": "confirmed FAIL on old source",
+    "full_production_layout": "64 checks PASS",
+    "safe_area": "10 checks PASS",
+    "full_pages_and_gestures_headless": "55 checks PASS",
+    "existing_focused_actions": "66 checks PASS",
+    "installer": "13 cases PASS",
+    "native_script_parse": "PASS",
+    "nine_production_gates": "PASS",
+    "review_images": "reviewed full Summon, paid, Forge and Aura composition; reconstructed from engine rectangles and native text metrics",
+    "native_windows": "NOT_RUN_IN_AUTHOR_ENVIRONMENT",
+    "android": "NOT_TESTED",
+    "unchanged_aura_model": "previous 58-check PASS reused"
+  },
+  "next": "Apply this repair package on the owner Windows project; require PAVILION_REPAIR_WINDOWS_QA=PASS before manual export. User is the second/manual reviewer. Do not reapply earlier feature batches.",
+  "changed": [
+    "natural-width compact actions",
+    "ASCII overflow caption",
+    "full-screen/read-only layout contract",
+    "native gesture source visibility and selection checks",
+    "native image-readback validation",
+    "resumable diagnostic runner"
+  ],
+  "stages": {
+    "implemented": true,
+    "owner_installed": false,
+    "committed": false,
+    "pushed": false,
+    "published": false,
+    "exported": false,
+    "phone_tested": false
+  },
+  "native_error_scope": "Owner provided the terminal STOPPED summary, not its first error line; exact old native failure cause unconfirmed. New runner provides FIRST_ERROR.txt and requires genuine native GUI/image/gesture evidence."
+}

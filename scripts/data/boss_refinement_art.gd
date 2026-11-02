@@ -31,7 +31,7 @@ static func install(boss: Node) -> bool:
     frames.add_frame(name_value,tile)
  var sprite: AnimatedSprite2D=boss.get_node("AnimatedSprite2D")
  sprite.sprite_frames=frames;sprite.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
- var size: float=160.0 if int(profile.stage)>=5 else 140.0
+ var size: float=128.0 if int(profile.stage)>=5 else 112.0
  boss.set_meta("boss_visible_height",size)
  # Transparent safety gutters must not shrink the boss's visible body.
  var idle_rect:=atlas.get_image().get_region(Rect2i(0,int(height),int(width),int(height))).get_used_rect()

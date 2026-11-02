@@ -50,7 +50,7 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func _draw() -> void:
-	if profile.is_empty(): return
+	if profile.is_empty() or profile.get("theme", "") in ["frostveil", "solar_nirvana"]: return
 	var tint: Color = profile.accent
 	var center: Vector2 = sprite.position+Vector2(0,-10)
 	var reduced: bool = SettingsManager.reduced_effects

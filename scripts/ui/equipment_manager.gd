@@ -174,7 +174,95 @@ func _paid_selected_v2(slot: String, runtime: bool = false) -> String:
 func _paid_star_v2(item_id: String, runtime: bool = false) -> int:
 	var paid: Node = _paid_v2()
 	return int(paid.call("item_star", item_id, runtime)) if paid != null else 0
+# One presentation list; verified account ownership remains in its original ledger.
+var _backpack_pending_equip: Dictionary = {}
+func get_backpack_item_ids() -> Array[String]:
+	var ids: Array[String] = InventoryManager.get_owned_item_ids()
+	var paid: Node = _paid_v2()
+	if paid != null and paid.is_verified_ready():
+		for id: String in paid.snapshot.get("inventory", {}):
+			if has_item_definition(id) and paid.item_count(id) > 0 and id not in ids: ids.append(id)
+	ids.sort()
+	return ids
+
+func get_backpack_item_count(item_id: String) -> int:
+	var paid: Node = _paid_v2()
+	return InventoryManager.get_item_count(item_id) + (paid.item_count(item_id) if paid != null else 0)
+
+func owns_backpack_item(item_id: String) -> bool:
+	return get_backpack_item_count(item_id) > 0
+
+func _backpack_uses_paid(item_id: String) -> bool:
+	var paid: Node = _paid_v2()
+	if paid == null or paid.item_count(item_id) <= 0: return false
+	if not InventoryManager.owns_item(item_id): return true
+	var slot: String = str(get_item_data(item_id).get("slot", ""))
+	if _paid_selected_v2(slot) == item_id: return true
+	if str(equipped_item_ids.get(slot, "")) == item_id: return false
+	var local_star: int = clampi(int(ascension_stars.get(item_id, 1)), 1, 5)
+	var paid_star: int = paid.item_star(item_id)
+	return paid_star > local_star or (paid_star == local_star and paid.item_count(item_id) > InventoryManager.get_item_count(item_id))
+
+func get_backpack_item_star(item_id: String) -> int:
+	return _paid_star_v2(item_id) if _backpack_uses_paid(item_id) else get_loadout_item_star(item_id)
+
+func get_backpack_refine_copies(item_id: String) -> int:
+	var paid: Node = _paid_v2()
+	return maxi((paid.item_count(item_id) if _backpack_uses_paid(item_id) else InventoryManager.get_item_count(item_id)) - 1, 0)
+
+func can_ascend_backpack_item(item_id: String) -> bool:
+	if not can_modify_equipment(): return false
+	return get_backpack_item_star(item_id) < 5 and get_backpack_refine_copies(item_id) > 0 if _backpack_uses_paid(item_id) else can_ascend_item(item_id)
+
+func ascend_backpack_item(item_id: String) -> bool:
+	if not can_ascend_backpack_item(item_id): return false
+	return bool(_paid_v2().submit("refine", {"item_id":item_id})) if _backpack_uses_paid(item_id) else ascend_item(item_id)
+
+func equip_backpack_item(item_id: String) -> bool:
+	if not can_modify_equipment() or not owns_backpack_item(item_id) or not has_item_definition(item_id): return false
+	var slot: String = str(get_item_data(item_id).get("slot", ""))
+	var paid: Node = _paid_v2()
+	if _backpack_uses_paid(item_id): return bool(paid.submit("equip", {"slot":slot, "item_id":item_id}))
+	if not _paid_selected_v2(slot).is_empty(): return _clear_paid_then_equip(slot, item_id)
+	return equip_item(item_id)
+
+func unequip_backpack_slot(slot: String) -> bool:
+	if not can_modify_equipment(): return false
+	if not _paid_selected_v2(slot).is_empty(): return _clear_paid_then_equip(slot, "")
+	return unequip_slot(slot)
+
+func _clear_paid_then_equip(slot: String, item_id: String) -> bool:
+	var paid: Node = _paid_v2()
+	if paid == null or not paid.is_verified_ready() or not _backpack_pending_equip.is_empty(): return false
+	if not paid.finished.is_connected(_finish_backpack_equip): paid.finished.connect(_finish_backpack_equip)
+	var account_key: String = GoogleAccountManager.get_monetization_account_binding()
+	if not paid.submit("equip", {"slot":slot, "item_id":""}): return false
+	_backpack_pending_equip = {"slot":slot, "item_id":item_id, "owner":account_key, "request_id":str(paid.get("_request_id"))}
+	return true
+
+func _finish_backpack_equip(result: Dictionary) -> void:
+	if _backpack_pending_equip.is_empty(): return
+	var intent: Dictionary = _backpack_pending_equip.duplicate()
+	if str(intent.owner) != GoogleAccountManager.get_monetization_account_binding():
+		_backpack_pending_equip.clear(); return
+	if not bool(result.get("success", false)):
+		if result.get("operation", {}).get("request_id", "") == intent.request_id:
+			_backpack_pending_equip.clear(); signal_backpack_changed()
+		return # Same paid request may recover after a transport timeout.
+	var operation: Dictionary = result.get("operation", {})
+	if operation.get("request_id", "") != intent.request_id: return
+	_backpack_pending_equip.clear()
+	var paid: Node = _paid_v2()
+	if paid == null or not paid.is_verified_ready() or not _paid_selected_v2(str(intent.slot)).is_empty(): return
+	if str(intent.item_id).is_empty(): unequip_slot(str(intent.slot))
+	else: equip_item(str(intent.item_id))
+	signal_backpack_changed()
+
+func signal_backpack_changed() -> void:
+	equipment_changed.emit("", "")
+
 func can_modify_equipment() -> bool:
+	if not _backpack_pending_equip.is_empty(): return false
 	var paid: Node = _paid_v2()
 	if paid != null and bool(paid.get("busy")): return false
 	# A checkpoint no longer seals the hub. Hub edits are permanent NEXT RUN
@@ -255,6 +343,7 @@ func get_equipped_item_data(slot_id: String) -> Dictionary:
 	return get_loadout_equipped_item_data(slot_id)
 
 func get_loadout_item_star(item_id: String) -> int:
+	if not InventoryManager.owns_item(item_id) and _paid_star_v2(item_id) > 0: return _paid_star_v2(item_id)
 	if has_item_definition(item_id) and _paid_selected_v2(str(get_item_data(item_id).get("slot", ""))) == item_id:
 		return _paid_star_v2(item_id)
 	if not has_item_definition(item_id):
@@ -473,7 +562,26 @@ func unequip_slot(slot_id: String) -> bool:
 	))
 	return true
 
+# Synchronous AoE scope only. No frame-spanning cache, RNG or combat condition is frozen.
+var _combat_batch_depth: int = 0
+var _combat_batch_items: Array[Dictionary] = []
+func begin_combat_batch() -> void:
+	if _combat_batch_depth == 0:
+		_combat_batch_items.clear()
+		var use_runtime: bool = _has_gameplay_player() or _should_use_active_run_loadout() or _using_paid_runtime_rc6()
+		for slot: String in get_slot_ids():
+			_combat_batch_items.append(get_runtime_equipped_item_data(slot) if use_runtime else get_loadout_equipped_item_data(slot))
+	_combat_batch_depth += 1
+
+func end_combat_batch() -> void:
+	_combat_batch_depth = maxi(0, _combat_batch_depth - 1)
+	if _combat_batch_depth == 0: _combat_batch_items.clear()
+
 func _get_stat_total(stat_id: String, use_runtime: bool) -> float:
+	if _combat_batch_depth > 0:
+		var cached_total: float = 0.0
+		for item: Dictionary in _combat_batch_items: cached_total += float(item.get(stat_id, 0.0))
+		return cached_total
 	use_runtime = use_runtime or _has_gameplay_player()
 	var total_bonus: float = 0.0
 	for slot_id in get_slot_ids():

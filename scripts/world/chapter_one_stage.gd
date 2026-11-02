@@ -30,6 +30,10 @@ func _enter_tree() -> void:
 		_apply_shared_chapter_ground()
 
 func _ready() -> void:
+	if stage_id == 3 and not has_method("finish_heavenly_trial"):
+		var oath := preload("res://scripts/gameplay/jade_oath.gd").new()
+		oath.name = "JadeOath"
+		add_child(oath)
 	player = get_node("player_1") as Node2D
 	wave_manager = get_node("WaveManager")
 	# Chapter 1 trials 1-1..1-5 share a single authored battlefield.

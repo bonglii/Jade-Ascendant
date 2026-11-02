@@ -222,7 +222,7 @@ func _refresh_journey() -> void:
   var path: String=RealmArt.get_realm_vista_path(chapter_id)
   realm_vista.texture=load(path) as Texture2D if not path.is_empty() else Art.BACKGROUND
  var chapter: Dictionary=JourneyManager.get_chapter_data(chapter_id)
- var progress: Dictionary=JourneyManager.get_chapter_progress(chapter_id)
+ var progress: Dictionary=JourneyManager.get_active_chapter_progress(chapter_id)
  var total: int=maxi(int(progress.get("total_stages",1)),1)
  var cleared: int=clampi(int(progress.get("cleared_stages",0)),0,total)
  var stage: int=int(saved.get("stage_id",_goal.get("stage",JourneyManager.selected_stage_id)))

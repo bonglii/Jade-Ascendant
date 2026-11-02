@@ -13,6 +13,9 @@ func _write_checkpoint_data(save_data: Dictionary) -> bool:
  if client==null or bool(arena.get("ended")):return false
  normalized.chapter_id=int(client.launch_session.tier);normalized.stage_id=int(arena.get("stage_id"))
  normalized.trials_session=str(client.launch_session.id)
+ normalized.trials_ruleset=int(arena.ruleset_version)
+ normalized.trials_hazard_left=float(arena._hazard_left)
+ normalized.trials_pattern=arena.pattern_checkpoint()
  normalized.trials_elapsed=float(arena.get("elapsed"))
  normalized.trials_boss_hp=float(arena.call("boss_health"))
  normalized.trials_boss_phase=bool(arena.call("boss_phase"))
@@ -23,7 +26,7 @@ func _read_runtime_checkpoint() -> Dictionary:
  return {"success":not data.is_empty(),"data":data,"source_version":SAVE_VERSION}
 func _restore_journey_identity(save_data: Dictionary) -> bool:
  var client: Node=_client()
- return client!=null and save_data.get("trials_session")==client.launch_session.get("id")
+ return client!=null and save_data.get("trials_session")==client.launch_session.get("id") and int(save_data.get("trials_ruleset",1))==int(get_parent().ruleset_version)
 func delete_checkpoint() -> bool:
  var client: Node=_client()
  return client!=null and bool(client.call("delete_trial_checkpoint"))

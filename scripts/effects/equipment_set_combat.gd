@@ -9,14 +9,7 @@ static func active_passive() -> Dictionary:
   _cached_key=key;_cached_passive=Catalog.get_active_passive(ids)
  return _cached_passive
 static func equipped_ids() -> Array[String]:
- var result: Array[String]=[]
- var tree: SceneTree=Engine.get_main_loop() as SceneTree
- var manager: Node=tree.root.get_node_or_null("EquipmentManager") if tree!=null else null
- if manager!=null:
-  for slot: String in manager.get_slot_ids():
-   var id: String=manager.get_equipped_item_id(slot)
-   if not id.is_empty():result.append(id)
- return result
+ return preload("res://scripts/data/equipment_set_runtime.gd").get_equipped_item_ids()
 static func modify_hit(target: Node,amount: float,source: String) -> float:
  if source.begins_with("set_"):return amount
  var passive: Dictionary=active_passive()

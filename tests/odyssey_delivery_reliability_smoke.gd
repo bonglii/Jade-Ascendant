@@ -6,11 +6,14 @@ class Provider extends Node:
  func rewarded_available(_placement: String)->bool: return true
 class Store extends RefCounted:
  func save_state(_value: Dictionary)->bool: return true
+var checks: int=0
+var failures: int=0
 func _initialize()->void: call_deferred("run")
 func check(value: bool,reason: String)->void:
- if not value: push_error(reason);quit(1)
+ checks+=1
+ if not value: failures+=1;push_error(reason)
 func data(owner: String,nonce: String,stage: String,tickets: int=3)->Dictionary:
- var out: Dictionary={"owner_binding":owner,"server_time":1800000000,"event":{"id":"dragon-test","enabled":true,"purchases_enabled":true,"starts_at":1799999900,"ends_at":1801000000},"state":{"tickets":tickets,"daily_ads":1 if stage=="credited" else 0,"day":"2027-01-15","missions":[],"milestones":[]},"ad_delivery":{"configured":true,"nonce":nonce,"stage":stage,"expires_at":1800001200},"purchase_bonus":{"active":true}}
+ var out: Dictionary={"owner_binding":owner,"server_time":1800000000,"event":{"id":"dragon-test","enabled":true,"ads_enabled":true,"purchases_enabled":true,"starts_at":1799999900,"ends_at":1801000000},"state":{"tickets":tickets,"daily_ads":1 if stage=="credited" else 0,"day":"2027-01-15","missions":[],"milestones":[]},"ad_delivery":{"configured":true,"nonce":nonce,"stage":stage,"expires_at":1800001200},"purchase_bonus":{"active":true}}
  out.state.ad_delivery=out.ad_delivery
  out.erase("ad_delivery")
  return out
@@ -53,5 +56,5 @@ func run()->void:
  restored._ad_nonce=nonce;restored._ad_expires_at=1800001200;restored._save_ad_wait();restored.test_binding="f".repeat(64);restored._process(0)
  check(not restored.ad_waiting(),"Account switch must not leak another owner's ad wait")
  client._clear_ad_wait();client.queue_free();restored.queue_free();await process_frame
- print("ODYSSEY_DELIVERY_RELIABILITY=PASS; NO_LOCAL_GRANT; RECEIPT_MATCH; RESTART_RECOVERY; READ_ONLY_POLL; BONUS_STABILITY; ACCOUNT_FENCE")
- quit()
+ print("ODYSSEY_DELIVERY_RELIABILITY=%s; checks=%d failures=%d; NO_LOCAL_GRANT; RECEIPT_MATCH; RESTART_RECOVERY; READ_ONLY_POLL; BONUS_STABILITY; ACCOUNT_FENCE"%["PASS" if failures==0 else "FAIL",checks,failures])
+ call_deferred("quit",1 if failures else 0)

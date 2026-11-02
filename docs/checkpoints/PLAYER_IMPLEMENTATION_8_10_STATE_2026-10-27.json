@@ -1,0 +1,111 @@
+{
+  "batch": "PLAYER_IMPLEMENTATION_8_10_2026-10-27",
+  "base_commit": "057ed76f186940374d2cabe1ecb307a0114d3106",
+  "parent_package": "Jade-Player-Batch-1-7.zip",
+  "parent_package_sha256": "b5718303c5cbd3351401b8759a4dfc8dc25e5103c12928b2c25419468b1cfa44",
+  "approved_design": "docs/design/player-8-10/DESAIN.md",
+  "branch": "work/player-8-10-20261027",
+  "phase": "R2_bridge_fix_qa_pass_owner_install_pending",
+  "owner_1_7_test_complete": true,
+  "receipts": {
+    "implemented": true,
+    "local_qa": true,
+    "installed": false,
+    "committed": false,
+    "pushed": false,
+    "deployed": false,
+    "exported": false,
+    "android_tested": false,
+    "packaged": true
+  },
+  "scope": {
+    "08": "Optional replay1-3 ritual + versioned Heavenly Trials pattern expansion",
+    "09": "11 bilingual Chronicle entries, gates, Library and stage/Victory entry points",
+    "10": "same-run share snapshots, card preview/PNG and native Android export/share capability"
+  },
+  "constraints": [
+    "No main/commit/push/deploy without explicit authorization.",
+    "Preserve saves, legacy records, 9 live payment gates and production native bridge protections.",
+    "No live campaign activation or reward changes.",
+    "Combine implementation before focused QA; reuse prior unchanged PASS evidence."
+  ],
+  "next": "Use full R2 ZIP in a new folder and run apply_and_check.cmd. Installed owner bridge is preserved; candidate/export pins remain enforced.",
+  "modules": [
+    "optional_oath_checkpoint_and_atomic_cosmetic",
+    "11_bilingual_chronicles_and_reader",
+    "same_run_PNG_renderer_and_native_export_source",
+    "Trials_v2_patterns_and_capability_source"
+  ],
+  "validation": {
+    "engine": "Godot 4.7.2 headless",
+    "runtime_checks": 282,
+    "suites": {
+      "new_objective_story_share": 199,
+      "weekly_v1_v2_continue": 57,
+      "recovery_wire_and_account_binding": 26
+    },
+    "server_tests": 20,
+    "native_jvm_test_executions": 242,
+    "native_source_inputs": 50,
+    "installer_tests": 6,
+    "production_config": "PASS",
+    "production_gates": 9,
+    "native_compile": "PASS",
+    "candidate_sha256": "11de7b6d70d27f7bc7df277fadc07afe03e166d7b4a95b6351f1575a72e8b557",
+    "expected_negative_transaction_rejections": 1,
+    "unexpected_runtime_errors": 0,
+    "runtime_exit_leaks": 0,
+    "png_formats": [
+      [
+        1080,
+        1350
+      ],
+      [
+        1080,
+        1920
+      ]
+    ],
+    "layouts": [
+      "id/en 320x568",
+      "id/en 360x800"
+    ],
+    "limits": [
+      "No Android device save/share/gesture/performance receipt",
+      "No GPU render or real-audio proof",
+      "No Windows installer execution or AAB export",
+      "No backend deployment or v2 rotation activation"
+    ],
+    "installer_integration": "PASS on a disposable Linux clone; 60 writes then zero on rerun; main/staging/local edit preserved"
+  },
+  "preserved": [
+    "Owner-tested 1\u20137 reused; no wholesale repeat",
+    "Journey saves and legacy partial metrics",
+    "9 live IAP gates and locked installed bridge",
+    "Exact legacy v1 start payload until backend rollout",
+    "Frozen v1/v2 week/session/checkpoint rules"
+  ],
+  "revision": "R2",
+  "owner_install_report": "PLAYER_8_10_STOPPED: Installed locked bridge changed; no automatic overwrite",
+  "bridge_fix": {
+    "cause": "Source installer incorrectly required one historical locked AAR hash",
+    "policy": "Preserve the installed owner bridge as opaque bytes; only verified candidate becomes the export input",
+    "native_candidate_reused": true,
+    "native_candidate_sha256": "11de7b6d70d27f7bc7df277fadc07afe03e166d7b4a95b6351f1575a72e8b557",
+    "core_node_tests": 9,
+    "powershell_overlay_checks": 40,
+    "powershell_overlay_cases": 14,
+    "integration": "PASS: delivered R1 reproduction/upgrade and fresh tested-1\u20137 installation",
+    "owner_installed": false,
+    "windows_tested": false,
+    "aab_exported": false,
+    "qa_preservation_cache": "PASS with mocked callback; actual gameplay was not repeated",
+    "powershell_entrypoints": "VerifyOnly and RecoverOnly PASS on Linux",
+    "production_gates": 9,
+    "reused_evidence": {
+      "gameplay_checks": 282,
+      "server_tests": 20,
+      "native_jvm_tests": 242,
+      "native_source_inputs": 50
+    }
+  }
+}

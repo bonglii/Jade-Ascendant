@@ -5,7 +5,7 @@ class_name YinYangBladesWeapon
 ## Persistent weapon yang menciptakan beberapa spiritual blade
 ## dan menggerakkannya mengelilingi Player.
 ##
-## Weapon mengontrol progression, damage, shared hit cooldown,
+## Weapon mengontrol progression, damage, cooldown per blade/target,
 ## serta runtime state Yin-Yang Reversal.
 ## Blade individual hanya mengontrol orbit
 ## serta mendeteksi body yang bersentuhan.
@@ -183,7 +183,7 @@ func rebuild_blades() -> void:
 		)
 
 		blade.body_contacted.connect(
-			_on_blade_body_contacted
+			_on_blade_body_contacted.bind(blade.get_instance_id())
 		)
 
 		blades.append(blade)
@@ -207,7 +207,7 @@ func _exit_tree() -> void:
 	clear_blades()
 
 ## Memproses permintaan damage dari blade.
-func damage_target(target: Node) -> void:
+func damage_target(target: Node, blade_id: int = 0) -> void:
 	if target == null:
 		return
 
@@ -221,8 +221,8 @@ func damage_target(target: Node) -> void:
 		return
 
 	var target_id: int = target.get_instance_id()
-
-	if hit_cooldowns.has(target_id):
+	var blade_hits: Dictionary = hit_cooldowns.get(blade_id, {})
+	if blade_hits.has(target_id):
 		return
 
 	var damage_before_player_stats: float = (
@@ -237,7 +237,8 @@ func damage_target(target: Node) -> void:
 
 	preload("res://scripts/weapon/run_combat_ledger.gd").apply_hit(target,final_damage,"yin_yang_blades")
 
-	hit_cooldowns[target_id] = HIT_INTERVAL
+	blade_hits[target_id] = HIT_INTERVAL
+	hit_cooldowns[blade_id] = blade_hits
 
 	DebugLogger.combat(
 		"Yin-Yang Blade Hit | Damage: %.1f"
@@ -348,15 +349,17 @@ func apply_current_orbit_stats() -> void:
 			reversal_active
 		)
 
-## Memperbarui cooldown damage setiap target.
+## Repeated physics overlap cannot multiply one blade's hit. Different blades
+## keep independent target cooldowns and can land in the same physics tick.
 func update_hit_cooldowns(delta: float) -> void:
-	var target_ids: Array = hit_cooldowns.keys()
-
-	for target_id in target_ids:
-		hit_cooldowns[target_id] -= delta
-
-		if hit_cooldowns[target_id] <= 0.0:
-			hit_cooldowns.erase(target_id)
+	for blade_id: int in hit_cooldowns.keys():
+		var blade_hits: Dictionary = hit_cooldowns[blade_id]
+		for target_id: int in blade_hits.keys():
+			blade_hits[target_id] -= delta
+			if blade_hits[target_id] <= 0.0:
+				blade_hits.erase(target_id)
+		if blade_hits.is_empty():
+			hit_cooldowns.erase(blade_id)
 
 ## Menghapus seluruh blade orbit yang sedang aktif.
 func clear_blades() -> void:
@@ -366,6 +369,7 @@ func clear_blades() -> void:
 			blade.queue_free()
 
 	blades.clear()
+	hit_cooldowns.clear()
 
 ## Menampilkan status progression setelah upgrade.
 func print_upgrade_status() -> void:
@@ -391,5 +395,5 @@ func _on_qi_shield_blocked(
 	activate_reversal()
 
 ## Menerima body yang sedang bersentuhan dengan blade.
-func _on_blade_body_contacted(body: Node) -> void:
-	damage_target(body)
+func _on_blade_body_contacted(body: Node, blade_id: int = 0) -> void:
+	damage_target(body, blade_id)

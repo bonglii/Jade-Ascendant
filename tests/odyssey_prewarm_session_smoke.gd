@@ -18,19 +18,22 @@ func run() -> void:
  check(client.refresh_if_stale() and client.dispatches.size()==1,"opening a fresh event uses existing snapshot")
  client._warm_next_at=0;client._prewarm_if_due()
  check(client.dispatches.size()==1,"background warmup respects snapshot TTL")
- client._received_msec=Time.get_ticks_msec()-180001;client._warm_next_at=0;client.pending_command={"action":{"kind":"ad_intent"}}
- client._prewarm_if_due();check(client.dispatches.size()==1,"startup never replays pending ad intent or opens ad")
- client.pending_command={"action":{"kind":"roll"}};client._warm_next_at=0;client._prewarm_if_due()
- check(client.dispatches.size()==1,"startup never submits saved mutation")
- client.pending_command={};client._backgrounded=true;client._warm_next_at=0;client._prewarm_if_due()
- check(client.dispatches.size()==1,"no background network warmup while app is suspended")
+ client._received_msec=Time.get_ticks_msec()-180001;client._warm_next_at=0
+ client.pending_command={"event_id":"dragon-test","request_id":"a".repeat(32),"revision":3,"action":{"kind":"ad_intent"}}
+ var saved: Dictionary=client.pending_command.duplicate(true)
+ client._prewarm_if_due()
+ check(client.dispatches.size()==2 and client.dispatches[-1]==saved,"startup recovers the exact existing ad-intent ID without opening an SDK ad")
+ client.busy=false;client.pending_command.action={"kind":"roll"};saved=client.pending_command.duplicate(true);client._warm_next_at=0;client._prewarm_if_due()
+ check(client.dispatches.size()==3 and client.dispatches[-1]==saved,"startup recovers an existing durable mutation without generating a new command")
+ client.busy=false;client.pending_command={};client._backgrounded=true;client._warm_next_at=0;client._prewarm_if_due()
+ check(client.dispatches.size()==3,"no background network warmup while app is suspended")
  client._backgrounded=false;client._warm_next_at=0;client._prewarm_if_due()
- check(client.dispatches.size()==2 and client.dispatches[-1].is_empty(),"stale snapshot refresh remains read-only")
+ check(client.dispatches.size()==4 and client.dispatches[-1].is_empty(),"stale snapshot refresh remains read-only when no recovery exists")
  client.live_binding="new_owner".sha256_text();client._process(0.0)
  check(client.snapshot.is_empty() and not client.busy,"account change clears previous event snapshot")
  client.queue_free();existing.name="OdysseyClient";await process_frame
  await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self)
  if current_scene!=null:current_scene.queue_free();current_scene=null
  for index: int in 4:await process_frame
- print("ODYSSEY_PREWARM_SESSION checks=",checks," failures=",failures,"; READ_ONLY; ADS=NONE; PURCHASE=NONE")
+ print("ODYSSEY_PREWARM_SESSION checks=",checks," failures=",failures,"; EXACT_RECOVERY; ADS=NONE; PURCHASE=NONE")
  call_deferred("quit",1 if failures else 0)

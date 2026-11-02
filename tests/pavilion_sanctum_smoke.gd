@@ -39,7 +39,7 @@ func run() -> void:
 			if screen.has_node("JadeOnboardingOverlay"):screen.get_node("JadeOnboardingOverlay").visible=false
 			var label: String = str(dims)+" "+locale
 			check(screen.sanctum_stage.size.x>100,label+" native stage visible")
-			check(screen.featured_row.get_child_count()==5,label+" five selectable targets")
+			check(screen.find_child("BrowseWishTargets",true,false)!=null,label+" complete target picker remains accessible")
 			check(screen.summon_one_button.size.x<dims.x and screen.summon_ten_button.size.x<dims.x,label+" CTAs fit width")
 			check(screen.content.get_global_rect().end.x<=dims.x+1,label+" content stays inside viewport")
 			check(screen.summon_ten_button.get_global_rect().end.x<=dims.x+1,label+" ten CTA inside viewport")

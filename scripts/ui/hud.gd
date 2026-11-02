@@ -408,7 +408,7 @@ func _present_level_up_breakthrough() -> void:
 		breakthrough_label.add_theme_color_override("font_color", accent)
 	if divider != null:
 		divider.color = Color(accent.r, accent.g, accent.b, 0.62)
-	if _is_reduced_effects_enabled():
+	if _is_reduced_effects_enabled() or level_up_panel.continuing_queue:
 		if title != null:
 			title.modulate = Color.WHITE
 		return
@@ -770,12 +770,20 @@ func _on_pause_pressed() -> void:
 func _on_resume_pressed() -> void:
 	if SceneTransitionManager.is_transitioning:
 		return
+	if checkpoint_manager != null and checkpoint_manager.is_victory_complete():
+		return
 	_reset_pause_overlay_presentation()
 	pause_overlay.visible = false
 	get_tree().paused = false
 
 func _on_pause_main_menu_pressed() -> void:
 	if SceneTransitionManager.is_transitioning:
+		return
+	if checkpoint_manager != null and checkpoint_manager.is_victory_complete():
+		# Reuse the result's exit instead of saving the defeated boss again.
+		var result: Node = get_parent().get_node_or_null("VictoryUI")
+		if result != null and result.has_method("_on_main_menu_pressed"):
+			result.call("_on_main_menu_pressed")
 		return
 	if checkpoint_manager == null:
 		push_error("HUD: CheckPointManager tidak tersedia saat kembali ke Home.")

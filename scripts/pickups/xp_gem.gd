@@ -39,6 +39,7 @@ func _ready() -> void:
 			if pickup != self and is_instance_valid(pickup) and not pickup.is_queued_for_deletion() and not bool(pickup.get("collected")):
 				pickup.set("experience_value", int(pickup.get("experience_value")) + experience_value)
 				collected = true
+				remove_from_group("qi_pickup")
 				queue_free()
 				return
 	sprite = get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
@@ -78,12 +79,19 @@ func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
 		_collect(body)
 
-func _collect(body: Node2D) -> void:
+func collect_for_boss_entry(target: Node2D) -> bool:
+	if collected or is_queued_for_deletion() or not is_instance_valid(target) or not target.is_in_group("player"):
+		return false
+	_collect(target, false)
+	return collected
+
+func _collect(body: Node2D, feedback: bool = true) -> void:
 	if collected:
 		return
 	collected = true
 	remove_from_group("qi_pickup")
-	AudioManager.play_sfx("pickup")
-	CombatFeedback.pulse(global_position, "pickup")
+	if feedback:
+		AudioManager.play_sfx("pickup")
+		CombatFeedback.pulse(global_position, "pickup")
 	body.add_experience(experience_value)
 	queue_free()

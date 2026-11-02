@@ -8,6 +8,7 @@ extends Node
 ## grant API. The current shipping OfflineProvider does not grant paid currency.
 
 var paid_gameplay: Node
+const AURA_FEATURE_ENABLED: bool = false
 const PaidGameplayV2 = preload("res://scripts/monetization/paid_gameplay_v2.gd")
 var banner_client: Node
 const BannerClient = preload("res://scripts/managers/pavilion_banner_client.gd")
@@ -2454,6 +2455,8 @@ func get_equipment_forge_cost(item_id: String) -> int:
 ## Forging retains its unlocks/ownership gate and uses the retired material
 ## exchange rate for Stone pricing. Legacy boolean selects the forge route.
 func acquire_equipment(item_id: String, use_shards: bool = false) -> bool:
+	last_error = "Forging has been removed. Obtain equipment through Summon or rewards."
+	if use_shards: return false
 	last_error = ""
 	if SaveManager.is_progress_read_only():
 		last_error = "Restart the game to recover a pending save."
@@ -2465,7 +2468,7 @@ func acquire_equipment(item_id: String, use_shards: bool = false) -> bool:
 		return false
 	var item: Dictionary = EquipmentManager.get_item_data(item_id)
 	if not use_shards and not can_buy_equipment_with_stones(item_id):
-		last_error = "Epic and Legendary equipment use Summon or Spirit Stone forging."
+		last_error = "Epic and Legendary equipment use Summon or rewards."
 		return false
 	var price: int = (
 		get_equipment_forge_cost(item_id)
@@ -2546,6 +2549,8 @@ func is_cosmetic_unlocked(cosmetic_id: String) -> bool:
 
 
 func acquire_cosmetic(cosmetic_id: String) -> bool:
+	if not is_aura_feature_enabled():
+		return false
 	last_error = ""
 	if not COSMETICS.has(cosmetic_id):
 		return false
@@ -2607,6 +2612,8 @@ func acquire_cosmetic(cosmetic_id: String) -> bool:
 
 
 func select_cosmetic(cosmetic_id: String) -> bool:
+	if not is_aura_feature_enabled():
+		return false
 	last_error = ""
 	if SaveManager.is_progress_read_only():
 		last_error = "Restart the game to recover a pending save."
@@ -2637,3 +2644,7 @@ func select_cosmetic(cosmetic_id: String) -> bool:
 
 func get_cosmetic_id() -> String:
 	return str(state.get("cosmetic_id", "plain"))
+
+func is_aura_feature_enabled() -> bool:
+	# Keep ownership/selection in the save while the feature is held for a future release.
+	return AURA_FEATURE_ENABLED

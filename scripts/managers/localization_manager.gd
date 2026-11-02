@@ -831,4 +831,6 @@ func _enter_tree() -> void:
 	translation.locale = "id"
 	for message in INDONESIAN:
 		translation.add_message(str(message), str(INDONESIAN[message]))
+	for message: String in preload("res://scripts/data/player_flow_copy.gd").INDONESIAN:
+		translation.add_message(message, preload("res://scripts/data/player_flow_copy.gd").INDONESIAN[message])
 	TranslationServer.add_translation(translation)

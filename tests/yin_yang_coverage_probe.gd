@@ -43,7 +43,7 @@ func run() -> void:
 			var total: float=0
 			for index: int in range(enemies.size()):total+=start[index]-enemies[index].current_hp
 			rows.append({"variant":variant,"layout":layout,"targets":6,"seconds":2.0,"actual_hp_loss":total,"aggregate_dps":total/2.0})
-			check(total>=0 and total<=6*w.damage/0.5*2.0*1.10,"bounded shared damage "+variant+layout)
+			check(total>=0 and total<=6*w.blade_count*w.damage/0.5*2.0*1.10,"bounded damage per blade and target "+variant+layout)
 			for enemy: Node2D in enemies:enemy.queue_free()
 			await process_frame
 	var outer: Array[Dictionary]=rows.filter(func(r: Dictionary):return r.variant=="wide_lv7" and r.layout=="outer_group")
@@ -59,7 +59,7 @@ func run() -> void:
 		w.update_hit_cooldowns(1.0/60.0);await physics_frame
 	var boss_loss: float=boss_before-boss.current_hp
 	rows.append({"variant":"wide_lv7","layout":"production_boss_1","targets":1,"seconds":2.0,"actual_hp_loss":boss_loss,"aggregate_dps":boss_loss/2.0})
-	check(boss_loss>0 and boss_loss<=w.damage/.5*2.0*1.10,"actual boss hit loss bounded by shared interval")
+	check(boss_loss>0 and boss_loss<=w.damage*w.blade_count/.5*2.0*1.10,"actual boss hit loss bounded by each blade interval")
 	boss.queue_free();await process_frame
 	var result: Dictionary={"scope":"2-second production physics overlap and applied HP-loss fixture; 6 ordinary stationary/moving targets, no critical/passive/progression bonuses. Legacy control manually sets 5 blades/80px; not full-run/phone DPS.","rows":rows,"checks":checks,"failures":failures}
 	var file=FileAccess.open(OS.get_environment("JADE_YIN_REPORT") if not OS.get_environment("JADE_YIN_REPORT").is_empty() else "user://yin-yang-coverage.json",FileAccess.WRITE);file.store_string(JSON.stringify(result,"\t"));file.close()

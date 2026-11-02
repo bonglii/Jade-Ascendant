@@ -30,3 +30,36 @@ const adEnv={TRIALS_AD_UNIT:'ca-app-pub-3082528078187093/1111111111',TRIALS_AD_R
 async function intentFor(f){await win(f);await f.api.execute('alice',cmd('claim_all'));await publish(f.db,{...campaign(),ads_enabled:true},start+30);const api=trialsService(f.db,{now:()=>start+30,unlock:async()=>3,env:adEnv});return {api,out:await api.execute('alice',cmd('ad_intent',{tier:1}))};}
 test('dedicated signed SSV grants Stones only once and rejects wrong binding or signature',async()=>{const f=fixture();try{const {api,out}=await intentFor(f);for(const change of [{ad_unit:'wrong'},{reward_item:'Jade'},{reward_amount:'2'}]){const c=signedAd(out.ad.id,start+30,change);await assert.rejects(creditTrialAd(f.db,c.query,adEnv,c))}const c=signedAd(out.ad.id,start+30),wrong=signedAd(out.ad.id,start+30);await assert.rejects(creditTrialAd(f.db,c.query,adEnv,{...c,getKeys:wrong.getKeys}));await creditTrialAd(f.db,c.query,adEnv,c);await creditTrialAd(f.db,c.query,adEnv,c);const rewards=f.db.sql.prepare('SELECT reward FROM odyssey_outbox').all().map(x=>JSON.parse(x.reward));assert.equal(rewards.length,2);for(const [name,total] of [['celestial_jade',40],['pavilion_seal',1],['spirit_stone',1200]])assert.equal(rewards.reduce((n,r)=>n+(r[name]||0),0),total);await assert.rejects(api.execute('alice',cmd('ad_intent',{tier:1})),/bonus_not_available/)}finally{f.close()}});
 test('expired ad intent cannot be consumed or create a reward',async()=>{const f=fixture();try{const {out}=await intentFor(f),c=signedAd(out.ad.id,start+1231);await assert.rejects(creditTrialAd(f.db,c.query,adEnv,c),/ad_expired/);assert.equal(f.db.sql.prepare('SELECT consumed_at FROM ht_ads').get().consumed_at,0);assert.equal(f.db.sql.prepare('SELECT COUNT(*) n FROM odyssey_outbox').get().n,1)}finally{f.close()}});
+
+test('v2 rules are explicit, immutable, and legacy config remains byte compatible',async()=>{
+ const f=fixture();try{
+  assert.deepEqual(definition(campaign()),campaign());
+  assert.deepEqual(definition({...campaign(),ruleset_version:1}),campaign());
+  for(const version of [0,3,1.5,'2',true,null]){if(version===null)continue;assert.throws(()=>definition({...campaign(),ruleset_version:version}),/unsupported_ruleset/)}
+  const v2={...campaign(),ruleset_version:2};await publish(f.db,v2,start);
+  const w=await weekFor(f.db,v2,start);assert.equal(w.ruleset_version,2);
+  await assert.rejects(publish(f.db,{...v2,ruleset_version:1},start),/published_rotation_immutable/);
+  const paused=await publish(f.db,{...v2,enabled:false},start);assert.equal(paused.ruleset_version,2);
+ }finally{f.close()}
+});
+test('v2 start requires a signed bounded client capability and retries stay idempotent',async()=>{
+ const f=fixture();try{
+  await publish(f.db,{...campaign(),ruleset_version:2},start);
+  await assert.rejects(f.api.execute('alice',cmd('start',{tier:1})),/client_update_required/);
+  await assert.rejects(f.api.execute('alice',cmd('start',{tier:1,supported_ruleset:1})),/client_update_required/);
+  for(const supported_ruleset of [0,3,'2',true])await assert.rejects(f.api.execute('alice',cmd('start',{tier:1,supported_ruleset})),/client_update_required/);
+  const command=cmd('start',{tier:1,supported_ruleset:2}),one=await f.api.execute('alice',command),two=await f.api.execute('alice',command);
+  assert.equal(one.session.id,two.session.id);assert.equal(one.session.week_config.ruleset_version,2);
+  f.time(start+30);const finish=cmd('finish',{session_id:one.session.id,won:true,time_ms:30000,hits:0,deaths:0,damage:1000});
+  await f.api.execute('alice',finish);await f.api.execute('alice',finish);await f.api.execute('alice',cmd('claim_all'));
+  const rewards=f.db.sql.prepare('SELECT reward FROM odyssey_outbox').all().map(x=>JSON.parse(x.reward));
+  assert.equal(rewards.length,1);assert.equal(rewards[0].celestial_jade,40);assert.equal(rewards[0].pavilion_seal,1);assert.equal(rewards[0].spirit_stone,600);
+ }finally{f.close()}
+});
+test('a v1 session survives a v2 campaign reset with its original frozen geometry',async()=>{
+ const f=fixture();try{
+  await publish(f.db,campaign(),start);f.time(start+604790);const session=(await f.api.execute('alice',cmd('start',{tier:1}))).session;await publish(f.db,{...campaign(),id:'trials-two',starts_at:start+604800,ruleset_version:2},start);
+  f.time(start+604801);const state=await f.api.read('alice');assert.equal(state.week.ruleset_version,2);
+  assert.equal(state.session.id,session.id);assert.equal(state.session.week_config.ruleset_version??1,1);
+ }finally{f.close()}
+});

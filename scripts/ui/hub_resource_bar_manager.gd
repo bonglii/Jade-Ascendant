@@ -50,6 +50,7 @@ var _stone_value: Label = null
 var _shard_value: Label = null
 var _jade_value: Label = null
 var _seal_value: Label = null
+var _paid_jade_value: Label = null
 var _refresh_elapsed: float = 0.0
 
 
@@ -102,6 +103,7 @@ func _clear_binding() -> void:
 	_shard_value = null
 	_jade_value = null
 	_seal_value = null
+	_paid_jade_value = null
 
 
 func _install_resource_bar(scene_root: Node, scene_path: String) -> void:
@@ -163,6 +165,9 @@ func _install_resource_bar(scene_root: Node, scene_path: String) -> void:
 		CELESTIAL_JADE_ICON,
 		tr("Celestial Jade")
 	)
+	_paid_jade_value = _add_resource_cell(row, CELESTIAL_JADE_ICON, "Paid Celestial Jade")
+	_paid_jade_value.name = "PaidJadeValue"
+	_jade_value.name = "FreeJadeValue"
 	_seal_value = _add_resource_cell(
 		row,
 		PAVILION_SEAL_ICON,
@@ -198,7 +203,7 @@ func _add_resource_cell(
 	cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cell.alignment = BoxContainer.ALIGNMENT_CENTER
-	cell.add_theme_constant_override("separation", 4)
+	cell.add_theme_constant_override("separation", 3)
 	cell.tooltip_text = tooltip_value
 	parent_row.add_child(cell)
 
@@ -234,12 +239,13 @@ func _cache_value_labels() -> void:
 	if not is_instance_valid(_resource_bar):
 		return
 	var row := _resource_bar.get_node_or_null("ResourceRow") as HBoxContainer
-	if row == null or row.get_child_count() < 3:
+	if row == null or row.get_child_count() < 4:
 		return
 	_stone_value = _cell_value_label(row.get_child(0))
 	_shard_value = null
 	_jade_value = _cell_value_label(row.get_child(1))
-	_seal_value = _cell_value_label(row.get_child(2))
+	_paid_jade_value = _cell_value_label(row.get_child(2))
+	_seal_value = _cell_value_label(row.get_child(3))
 
 
 func _cell_value_label(cell_node: Node) -> Label:
@@ -263,15 +269,19 @@ func _sync_values() -> void:
 			)
 		)
 	if _jade_value != null:
-		_jade_value.text = _format_count(PavilionManager.get_celestial_jade())
+		_jade_value.text = ("GRATIS" if SettingsManager.language == "id" else "FREE") + "\n" + _format_count(PavilionManager.get_local_celestial_jade())
+	if _paid_jade_value != null:
+		var view: Dictionary = PavilionManager.get_server_jade_view()
+		_paid_jade_value.text = "PAID\n" + (_format_count(int(view.balance)) if int(view.get("balance", -1)) >= 0 else "…")
 	if _seal_value != null:
 		_seal_value.text = _format_count(PavilionManager.get_pavilion_seals())
 
-	for index: int in range(3):
-		var button: Button=_resource_bar.get_node_or_null("WalletSource%d"%index)
+	for index: int in range(4):
+		var button: Button = _resource_bar.get_node_or_null("WalletSource%d" % index)
 		if button != null:
-			var full_amount: int=[ProgressionManager.spirit_stone,PavilionManager.get_celestial_jade(),PavilionManager.get_pavilion_seals()][index]
-			button.tooltip_text=tr(["Spirit Stone","Celestial Jade","Pavilion Seal"][index])+" · "+str(full_amount)
+			var paid_view: Dictionary = PavilionManager.get_server_jade_view()
+			var amounts: Array = [ProgressionManager.spirit_stone, PavilionManager.get_local_celestial_jade(), paid_view.get("balance", -1), PavilionManager.get_pavilion_seals()]
+			button.tooltip_text = ["Spirit Stone", "Free Celestial Jade", "Paid Celestial Jade", "Pavilion Seal"][index] + " · " + (str(amounts[index]) if int(amounts[index]) >= 0 else "…")
 	_layout_sanctuary_wallet()
 
 func _enforce_bound_scene_layout() -> void:
@@ -426,7 +436,7 @@ func _install_sanctuary_wallet(scene_root: Node) -> void:
 	bar.move_child(glass, 0)
 	var border: Control = art.frame(bar)
 	bar.move_child(border, 1)
-	for index: int in range(3):
+	for index: int in range(4):
 		var button := Button.new()
 		button.name = "WalletSource%d" % index
 		button.set_meta(&"jade_mobile_readability_v2",true)
@@ -436,17 +446,17 @@ func _install_sanctuary_wallet(scene_root: Node) -> void:
 		var empty := StyleBoxEmpty.new()
 		for state: String in ["normal", "hover", "pressed", "focus"]: button.add_theme_stylebox_override(state, empty)
 		bar.add_child(button)
-		button.tooltip_text = tr(["Spirit Stone", "Celestial Jade", "Pavilion Seal"][index])
+		button.tooltip_text = tr(["Spirit Stone", "Free Celestial Jade", "Paid Celestial Jade", "Pavilion Seal"][index])
 		button.pressed.connect(_on_sanctuary_currency_source.bind(scene_root.get_instance_id(), index))
 		var cell: HBoxContainer = bar.get_node("ResourceRow").get_child(index)
 		var reserve := Control.new()
 		reserve.name = "PlusReserve"
 		reserve.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		reserve.custom_minimum_size.x = 24
+		reserve.custom_minimum_size.x = 0
 		cell.add_child(reserve)
 		var plus := Label.new()
 		plus.name = "Plus"
-		plus.text = "+"
+		plus.text = ""
 		plus.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		plus.add_theme_color_override("font_color",Color(.95,.79,.4))
 		plus.set_meta(&"jade_mobile_readability_v2",true)
@@ -461,13 +471,13 @@ func _install_sanctuary_wallet(scene_root: Node) -> void:
 func _layout_sanctuary_wallet() -> void:
 	if not is_instance_valid(_resource_bar): return
 	var row: HBoxContainer = _resource_bar.get_node_or_null("ResourceRow") as HBoxContainer
-	if row == null or row.get_child_count()!=3: return
+	if row == null or row.get_child_count()!=4: return
 	var unit: float = clampf(_resource_bar.size.x / 610.0,.49,1.8)
-	for index: int in range(3):
+	for index: int in range(4):
 		var cell: HBoxContainer = row.get_child(index) as HBoxContainer
-		cell.add_theme_constant_override("separation", 4)
+		cell.add_theme_constant_override("separation", 3)
 		var icon: TextureRect = cell.get_child(0)
-		icon.custom_minimum_size = Vector2.ONE*clampf(34*unit,26,40)
+		icon.custom_minimum_size = Vector2.ONE*clampf(26*unit,18,32)
 		icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		var value: Label = _cell_value_label(cell)
 		if value != null:
@@ -476,9 +486,9 @@ func _layout_sanctuary_wallet() -> void:
 			value.custom_minimum_size.x = 16
 			value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			value.set_meta(&"jade_mobile_readability_v2",true)
-			var font_size: int = roundi(clampf(24*unit,16,26))
-			var available: float = maxf(20,cell.size.x-icon.custom_minimum_size.x-32)
-			while font_size>14 and value.get_theme_font("font").get_string_size(value.text,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size).x>available:font_size-=1
+			var font_size: int = roundi(clampf((18 if index in [1, 2] else 24)*unit,13 if index in [1, 2] else 14,22))
+			var available: float = maxf(20,cell.size.x-icon.custom_minimum_size.x-7)
+			while font_size>11 and value.get_theme_font("font").get_string_size(value.text.get_slice("\n",0),HORIZONTAL_ALIGNMENT_LEFT,-1,font_size).x>available:font_size-=1
 			value.add_theme_font_size_override("font_size",font_size)
 		var button: Button = _resource_bar.get_node_or_null("WalletSource%d"%index) as Button
 		if button == null: continue
@@ -495,7 +505,7 @@ func _on_sanctuary_currency_source(scene_id: int, index: int) -> void:
 	if scene == null or scene.get_instance_id()!=scene_id or SceneTransitionManager.is_transitioning: return
 	var button: Button = _resource_bar.get_node_or_null("WalletSource%d"%index) as Button if is_instance_valid(_resource_bar) else null
 	if button != null and bool(button.get_meta("jade_scroll_cancelled",false)): return
-	if index == 1:
+	if index in [1, 2]:
 		var live_ops: Node=get_node_or_null("/root/LiveOpsManager")
 		if live_ops!=null:live_ops.open_live_popup(TREASURY_SCENE)
 		return

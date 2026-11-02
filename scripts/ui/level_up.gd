@@ -5,6 +5,7 @@ const OWNED_UPGRADE_WEIGHT: float = 2.5
 var _choice_rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 const SkillCatalog = preload("res://scripts/data/skill_catalog.gd")
+const BuildGuidance = preload("res://scripts/data/skill_build_guidance.gd")
 
 ## Level Up
 ## Mengelola pilihan upgrade saat Player naik level.
@@ -82,6 +83,9 @@ var weapon_manager: Variant = null
 
 var upgrade_buttons: Array[Button] = []
 var selection_locked: bool = false
+var continuing_queue: bool = false
+var _choice_generation: int = 0
+var _m7d_request_generation: int = -1
 var _m7d_button: Button = null
 var _m7d_request_grant_id: String = ""
 var _m7d_request_day: String = ""
@@ -167,15 +171,18 @@ func find_upgrade_buttons() -> void:
 			button.pressed.connect(pressed_callable)
 
 
-func show_level_up() -> void:
+func show_level_up(continue_queue: bool = false) -> void:
 	if player == null:
 		return
 
+	_choice_generation += 1
+	continuing_queue = continue_queue
 	selection_locked = false
 	generate_upgrades()
 
 	if current_upgrades.is_empty():
 		DebugLogger.system(str("Tidak ada upgrade yang tersedia."))
+		get_tree().paused = false
 		return
 
 	_update_level_up_congratulation()
@@ -226,6 +233,9 @@ func _pick_weighted_upgrades(candidates: Array[String], count: int) -> Array[Str
 	return WeightedUpgradeChoices.pick(candidates, weights, count, _choice_rng)
 
 
+func refresh_pending_count() -> void:
+	_update_level_up_congratulation()
+
 func _update_level_up_congratulation() -> void:
 	var level_value: int = maxi(1, int(player.level))
 	breakthrough_level_label.text = "LV. %d → %d" % [maxi(1, level_value - 1), level_value]
@@ -234,7 +244,11 @@ func _update_level_up_congratulation() -> void:
 		eyebrow.text = "SELAMAT! LEVEL NAIK" if SettingsManager.language == "id" else "CONGRATULATIONS!"
 	var subtitle: Label = find_child("Subtitle", true, false) as Label
 	if subtitle != null:
-		subtitle.text = "HP penuh. Pilih satu skill." if SettingsManager.language == "id" else "HP restored. Choose one skill."
+		var count: int = 1 + player.get_pending_level_up_count()
+		if count > 1:
+			subtitle.text = ("HP penuh • %d pilihan tersisa" if SettingsManager.language == "id" else "HP restored • %d choices left") % count
+		else:
+			subtitle.text = "HP penuh. Pilih satu skill." if SettingsManager.language == "id" else "HP restored. Choose one skill."
 
 
 func is_upgrade_available(upgrade_id: String) -> bool:
@@ -821,11 +835,19 @@ func apply_eight_trigrams_formation_upgrade() -> void:
 
 
 func close_level_up() -> void:
+	_choice_generation += 1
 	hide()
 	current_upgrades.clear()
 	selection_locked = false
-	get_tree().paused = false
-	player.call_deferred("resolve_pending_level_up")
+	# Keep combat paused through consecutive choices. No extra heal/level or RNG
+	# is performed here; the production player resolver owns each earned level.
+	var queued: bool = player.get_pending_level_up_count() > 0 and not player_health.is_dead
+	var checkpoint: Node = player.get_parent().get_node_or_null("CheckPointManager")
+	if checkpoint != null and checkpoint.is_victory_complete():
+		return
+	get_tree().paused = queued
+	if queued:
+		player.call_deferred("resolve_pending_level_up", true)
 
 
 
@@ -840,6 +862,7 @@ func _on_upgrade_button_pressed(button_index: int) -> void:
 		return
 
 	selection_locked = true
+	var generation: int = _choice_generation
 	var upgrade_id: String = current_upgrades[button_index]
 	_play_upgrade_selection_sfx()
 
@@ -852,6 +875,7 @@ func _on_upgrade_button_pressed(button_index: int) -> void:
 
 	var accent: Color = _get_choice_border_accent(upgrade_id, _get_choice_visual_state(upgrade_id))
 	var tween: Tween = create_tween()
+	var duration: float = 0.06 if player.get_pending_level_up_count() > 0 else 0.11
 	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	tween.set_trans(Tween.TRANS_QUAD)
 	tween.set_ease(Tween.EASE_OUT)
@@ -861,18 +885,18 @@ func _on_upgrade_button_pressed(button_index: int) -> void:
 		if not button.visible:
 			continue
 		if i == button_index:
-			tween.parallel().tween_property(button, "scale", Vector2(1.025, 1.025), 0.11)
+			tween.parallel().tween_property(button, "scale", Vector2(1.025, 1.025), duration)
 			tween.parallel().tween_property(
 				button,
 				"modulate",
 				Color(1.0 + accent.r * 0.08, 1.0 + accent.g * 0.05, 1.0 + accent.b * 0.04, 1.0),
-				0.11
+				duration
 			)
 		else:
-			tween.parallel().tween_property(button, "modulate", Color(0.36, 0.42, 0.40, 1.0), 0.11)
+			tween.parallel().tween_property(button, "modulate", Color(0.36, 0.42, 0.40, 1.0), duration)
 
 	await tween.finished
-	if is_inside_tree() and visible:
+	if is_inside_tree() and visible and generation == _choice_generation:
 		apply_upgrade(upgrade_id)
 
 func _polish_header() -> void:
@@ -1626,7 +1650,18 @@ func _set_premium_card_text(button: Button, upgrade_id: String) -> void:
 	if effect != null:
 		effect.text = _get_card_effect_text(upgrade_id)
 	if description != null:
-		description.text = get_upgrade_description(upgrade_id)
+		description.text = get_build_guidance(upgrade_id)
+
+func get_build_guidance(upgrade_id: String) -> String:
+	var levels: Dictionary = {}
+	for skill: String in SkillCatalog.UPGRADE_IDS:
+		levels[skill] = _get_current_weapon_level(skill) if skill in WEAPON_UPGRADE_IDS else _get_passive_level(skill)
+	levels.sword_dao_resonance = 1 if player_stats.has_sword_dao_resonance() else 0
+	levels.yin_yang_reversal = 1 if player_stats.has_yin_yang_reversal() else 0
+	levels.heavenly_tribulation = 1 if player_stats.has_heavenly_tribulation() else 0
+	var starter: Variant = weapon_manager.get_weapon_by_name("Spirit Sword")
+	var armament: String = str(starter.get("armament_id")) if starter != null else ""
+	return BuildGuidance.hint(upgrade_id, levels, armament, SettingsManager.language == "id")
 
 
 func _get_card_effect_text(upgrade_id: String) -> String:
@@ -1740,11 +1775,12 @@ func _make_card_style(
 
 
 func _queue_special_choice_pulse() -> void:
-	if _reduced_effects_enabled():
+	if _reduced_effects_enabled() or continuing_queue:
 		return
 
+	var generation: int = _choice_generation
 	await get_tree().create_timer(0.38, true, false, true).timeout
-	if not is_inside_tree() or not visible:
+	if not is_inside_tree() or not visible or generation != _choice_generation:
 		return
 
 	for i in range(min(current_upgrades.size(), upgrade_buttons.size())):
@@ -1895,6 +1931,7 @@ func _m7d_on_pressed() -> void:
 	_m7d_request_grant_id = str(MonetizationManager.active_grant_id)
 	_m7d_request_day = claim_day
 	_m7d_request_run_id = run_id
+	_m7d_request_generation = _choice_generation
 	_m7d_original_choices = current_upgrades.duplicate()
 	_m7d_future_choices = choices.duplicate()
 	selection_locked = true
@@ -1912,6 +1949,7 @@ func _m7d_on_sdk_reward(placement: String, grant_id: String) -> void:
 		or not selection_locked
 		or current_upgrades != _m7d_original_choices
 		or JourneyManager.m7d_run_id != _m7d_request_run_id
+		or _m7d_request_generation != _choice_generation
 	):
 		_m7d_publish(false, "REROLL NOT APPLIED")
 		_m7d_clear_request()
@@ -1942,6 +1980,7 @@ func _m7d_on_sdk_reward(placement: String, grant_id: String) -> void:
 		_m7d_clear_request()
 		return
 	current_upgrades = _m7d_future_choices.duplicate()
+	_choice_generation += 1
 	selection_locked = false
 	update_buttons()
 	_refresh_choice_visual_colors()
@@ -1969,6 +2008,7 @@ func _m7d_clear_request() -> void:
 	_m7d_request_grant_id = ""
 	_m7d_request_day = ""
 	_m7d_request_run_id = ""
+	_m7d_request_generation = -1
 	_m7d_original_choices.clear()
 	_m7d_future_choices.clear()
 	selection_locked = false

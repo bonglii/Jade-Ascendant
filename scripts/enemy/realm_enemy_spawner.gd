@@ -28,7 +28,10 @@ func apply_stage_enemy_identity(entity: Node, archetype_id: int, is_elite: bool 
 		return
 	# The base EnemySpawner calls this BEFORE difficulty HP/speed are assigned
 	# and before _ready. Realm-only script swaps cannot discard scaled stats.
-	if not is_elite and archetype_id == 4:
+	if not is_elite and archetype_id == 5:
+		entity.set_script(preload("res://scripts/enemy/realm_assassin_enemy.gd"))
+		entity.set("realm_id", int(stage_profile.get("realm_id", 4)))
+	elif not is_elite and archetype_id == 4:
 		entity.set_script(RealmCastEnemyScript)
 	elif not is_elite and archetype_id == 6:
 		entity.set_script(RealmGuardianEnemyScript)
@@ -47,6 +50,7 @@ func apply_stage_enemy_identity(entity: Node, archetype_id: int, is_elite: bool 
 			str(stage_profile.get("enemy_visual_set", "frostveil"))
 		)
 	_apply_realm_combat_profile(entity, archetype_id, is_elite)
+	preload("res://scripts/enemy/realm_actor_finish.gd").install(entity, int(stage_profile.get("realm_id", 4)), archetype_id + (6 if is_elite else 0))
 
 
 func _apply_realm_combat_profile(entity: Node, archetype_id: int, is_elite: bool) -> void:

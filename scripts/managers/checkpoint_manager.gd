@@ -93,7 +93,19 @@ func _load_continue() -> void:
 			get_tree().paused = false
 			get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
 
+func is_victory_complete() -> bool:
+	var arena: Node = get_parent()
+	if arena == null or arena.has_method("finish_heavenly_trial"):
+		# Trials owns its separate pending-command/Continue lifecycle.
+		return false
+	var victory: Node = arena.get_node_or_null("VictoryManager")
+	return victory != null and bool(victory.get("victory_processed"))
+
 func save_checkpoint() -> bool:
+	# A delayed pause, wave or activation callback must never recreate a run
+	# after the atomic victory reward already marked its checkpoint as ended.
+	if is_queued_for_deletion() or is_victory_complete():
+		return false
 	if player == null:
 		push_error(str("ERROR: Player tidak ditemukan!"))
 		return false
@@ -151,6 +163,9 @@ func save_checkpoint() -> bool:
 
 	save_data["wave"] = wave_manager.current_wave
 	save_data["wave_timer"] = wave_manager.wave_timer
+	var oath: Node = get_parent().get_node_or_null("JadeOath")
+	if oath != null:
+		save_data["jade_oath"] = oath.state.snapshot()
 	save_data["run_combat_report"] = weapon_manager.get_node("RunCombatLedger").snapshot()
 	var magnet_spawner: Node = get_parent().get_node_or_null("EnemySpawner")
 	if magnet_spawner != null:
@@ -510,6 +525,8 @@ func has_checkpoint() -> bool:
 	return SaveManager.has_save_file("checkpoint")
 
 func _write_checkpoint_data(save_data: Dictionary) -> bool:
+	if is_queued_for_deletion() or is_victory_complete():
+		return false
 	var normalized_data: Dictionary = normalize_checkpoint_save_data(save_data)
 	if normalized_data.is_empty():
 		DebugLogger.system("Checkpoint: write ditolak karena payload tidak valid.")
@@ -893,6 +910,9 @@ func load_checkpoint() -> bool:
 	# Restoring wounded HP is not a new hit. Restore metrics only after the
 	# health baseline and its HUD notification have been applied.
 	weapon_manager.get_node("RunCombatLedger").restore(save_data.get("run_combat_report", {}))
+	var oath: Node = get_parent().get_node_or_null("JadeOath")
+	if oath != null:
+		oath.restore(save_data.get("jade_oath", {}))
 
 	if save_data.has("power_level"):
 		player_stats.power_level = save_data["power_level"]

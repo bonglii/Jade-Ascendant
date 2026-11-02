@@ -26,6 +26,7 @@ const MenuResourcePrewarmScript = preload(
 )
 
 var continue_game: bool = false
+var jade_oath_requested: bool = false
 var _lifecycle_checkpoint_in_progress: bool = false
 
 
@@ -169,10 +170,12 @@ func checkpoint_active_run_for_background() -> bool:
 
 
 func start_new_game() -> void:
+	jade_oath_requested = false
 	continue_game = false
 
 
 func continue_saved_game() -> void:
+	jade_oath_requested = false
 	continue_game = true
 
 

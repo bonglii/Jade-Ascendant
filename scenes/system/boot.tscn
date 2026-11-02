@@ -1,11 +1,11 @@
-[gd_scene load_steps=5 format=3 uid="uid://beg1mfloe4due"]
+[gd_scene format=3 uid="uid://beg1mfloe4due"]
 
-[ext_resource type="Script" path="res://scripts/system/boot.gd" id="1_script"]
-[ext_resource type="Script" path="res://scripts/system/brand_opening.gd" id="2_brand"]
-[ext_resource type="Texture2D" path="res://assets/branding/boot_backdrop.png" id="3_backdrop"]
-[ext_resource type="Texture2D" path="res://assets/branding/title_lockup.png" id="4_logo"]
+[ext_resource type="Script" uid="uid://dg4ksqb3wovoi" path="res://scripts/system/boot.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://cc1yq7hbnxjlu" path="res://scripts/system/brand_opening.gd" id="2_brand"]
+[ext_resource type="Texture2D" uid="uid://cq18r3mpnmn3i" path="res://assets/branding/boot_backdrop.png" id="3_backdrop"]
+[ext_resource type="Texture2D" uid="uid://b4msjgttxu6wh" path="res://assets/branding/title_lockup.png" id="4_logo"]
 
-[node name="Boot" type="Control"]
+[node name="Boot" type="Control" unique_id=26007248]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -14,7 +14,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_script")
 
-[node name="Background" type="TextureRect" parent="."]
+[node name="Background" type="TextureRect" parent="." unique_id=1581473221]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -26,7 +26,7 @@ texture = ExtResource("3_backdrop")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="Presentation" type="Control" parent="."]
+[node name="Presentation" type="Control" parent="." unique_id=98703557]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -36,30 +36,28 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("2_brand")
 
-[node name="Lockup" type="TextureRect" parent="Presentation"]
+[node name="Lockup" type="TextureRect" parent="Presentation" unique_id=1123379676]
 layout_mode = 0
 mouse_filter = 2
 texture = ExtResource("4_logo")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Status" type="Label" parent="Presentation"]
+[node name="Status" type="Label" parent="Presentation" unique_id=1633320917]
 layout_mode = 0
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.65, 0.77, 0.72, 1)
 theme_override_font_sizes/font_size = 16
 text = "Opening your journey..."
 horizontal_alignment = 1
 
-[node name="Studio" type="Label" parent="Presentation"]
+[node name="Studio" type="Label" parent="Presentation" unique_id=33405351]
 layout_mode = 0
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.72, 0.65, 0.45, 0.8)
 theme_override_font_sizes/font_size = 13
 text = "Y U N G   D E V   S T U D I O"
 horizontal_alignment = 1
 
-[node name="Retry" type="Button" parent="Presentation"]
+[node name="Retry" type="Button" parent="Presentation" unique_id=1362889028]
 visible = false
 layout_mode = 0
 text = "TRY AGAIN"

@@ -5,6 +5,7 @@ const MAX_TIME: int=86400000
 static func whole(value: Variant, low: int, high: int) -> bool:
  return (value is int or value is float) and is_finite(float(value)) and float(value)==floorf(float(value)) and value>=low and value<=high
 static func valid_run(value: Variant) -> bool:
+ if value is Dictionary and value.has("oath_completed") and not value.oath_completed is bool:return false
  if not value is Dictionary or not whole(value.get("time_ms"),1,MAX_TIME) or not value.get("complete") is bool or not value.get("damage_complete") is bool:return false
  if not whole(value.get("hits"),0,1000000) or not whole(value.get("deaths"),0,1000000):return false
  if not value.get("skills") is Array or value.skills.size()>32 or not value.get("damage") is Dictionary or value.damage.size()>16:return false

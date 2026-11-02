@@ -52,11 +52,11 @@ func _persist(command: Dictionary) -> bool:
  return error==OK and DirAccess.rename_absolute(_path()+".tmp",_path())==OK
 func _notification(what: int) -> void:
  if what==NOTIFICATION_APPLICATION_PAUSED:_backgrounded=true
- elif what==NOTIFICATION_APPLICATION_RESUMED:_backgrounded=false;_next_read=Time.get_ticks_msec()+1000
+ elif what==NOTIFICATION_APPLICATION_RESUMED:_backgrounded=false;_next_read=Time.get_ticks_msec()
 func _process(_delta: float) -> void:
  var current: String=_binding()
  if current!=_owner:
-  _owner=current;snapshot={};last_result={};busy=false;_request="";_command={};launching=false;launch_session={};_ad_pending="";_ad_poll_until=0;_requested_ad=false;ad_status="idle";_next_read=Time.get_ticks_msec()+1500;status="preparing";_load_ad_wait();changed.emit()
+  _owner=current;snapshot={};last_result={};busy=false;_request="";_command={};launching=false;launch_session={};_ad_pending="";_ad_poll_until=0;_requested_ad=false;ad_status="idle";_next_read=Time.get_ticks_msec();status="preparing";_load_ad_wait();changed.emit()
  if busy and Time.get_ticks_msec()>_deadline:busy=false;status="retrying";_next_read=Time.get_ticks_msec()+5000;changed.emit()
  if not busy and not _backgrounded and _owner.length()==64 and Time.get_ticks_msec()>=_next_read and get_tree().get_first_node_in_group("player")==null:
   _next_read=Time.get_ticks_msec()+20000;refresh()
@@ -71,6 +71,10 @@ func refresh() -> bool:
  if pending.is_empty() and not snapshot.is_empty() and Time.get_ticks_msec()-_received<20000 and _ad_pending.is_empty():return true
  return _dispatch(pending)
 func action(kind: String,args: Dictionary={},week_id: String="") -> bool:
+ if kind=="start":
+  args=args.duplicate(true);args.erase("supported_ruleset")
+  # Keep the live v1 wire shape valid before any backend rollout.
+  if preload("res://scripts/data/trial_ruleset_policy.gd").version(snapshot.get("week"))==2:args["supported_ruleset"]=2
  if not event_enabled() and kind not in ["finish","abandon"]:return false
  if (busy and not _command.is_empty()) or _owner!=_binding() or snapshot.is_empty() or not _pending().is_empty():return false
  var week: Variant=snapshot.get("week")
@@ -111,6 +115,7 @@ func _result(request_id: String,success: bool,result_status: String,payload: Str
   return
  var data: Variant=JSON.parse_string(payload)
  if not valid_snapshot(data,_owner):status="invalid_server_response";changed.emit();return
+ if kind=="finish" and not last_result.is_empty() and last_result.get("_display_request")==request_id:last_result["committed"]=true
  snapshot=data;_received=Time.get_ticks_msec();status="connected";_next_read=_received+60000
  if not _command.is_empty():DirAccess.remove_absolute(_path())
  _command={}
@@ -163,7 +168,10 @@ func delete_trial_checkpoint() -> bool:
  return not FileAccess.file_exists(_checkpoint_path()) or DirAccess.remove_absolute(_checkpoint_path())==OK
 func launch(continuing: bool) -> bool:
  if not is_available() or launching or busy or not snapshot.get("session") is Dictionary or SaveManager.has_save_file("checkpoint") or SaveManager.is_progress_read_only():return false
+ var frozen_config: Dictionary=preload("res://scripts/data/trial_ruleset_policy.gd").session_config(snapshot.session,snapshot)
+ if frozen_config.is_empty():status="saved_rules_unavailable";changed.emit();return false
  launch_session=snapshot.session.duplicate(true)
+ launch_session["week_config"]=frozen_config
  if continuing and checkpoint_data().is_empty():status="saved_attempt_unavailable";changed.emit();return false
  if continuing:EquipmentManager.active_run_loadout_snapshot=checkpoint_data().get("trials_loadout",{}).duplicate(true)
  else:EquipmentManager.active_run_loadout_snapshot=EquipmentManager.build_active_run_loadout_snapshot()

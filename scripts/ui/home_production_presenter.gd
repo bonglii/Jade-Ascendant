@@ -773,7 +773,7 @@ func _refresh_all() -> void:
 func _refresh_journey() -> void:
 	var chapter_id := int(JourneyManager.selected_chapter_id)
 	var chapter: Dictionary = JourneyManager.get_chapter_data(chapter_id)
-	var progress: Dictionary = JourneyManager.get_chapter_progress(chapter_id)
+	var progress: Dictionary = JourneyManager.get_active_chapter_progress(chapter_id)
 	var cleared := int(progress.get("cleared_stages", 0))
 	var total := maxi(int(progress.get("total_stages", 5)), 1)
 

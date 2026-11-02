@@ -484,6 +484,10 @@ func _get_attack_presentation_theme() -> String:
 func _ready() -> void:
 	_apply_encounter_presentation()
 	RefinedArt.install(self)
+	if not collision_shape.has_node("ContactFootprint"):
+		var footprint:=preload("res://scripts/enemy/boss_contact_footprint.gd").new()
+		footprint.name="ContactFootprint"
+		collision_shape.add_child(footprint)
 	set_meta("premium_boss_presentation",not PremiumCatalog.get_profile(encounter_display_name).is_empty())
 	CombatFeedback.register_actor(self)
 	if not PremiumCatalog.get_profile(encounter_display_name).is_empty():

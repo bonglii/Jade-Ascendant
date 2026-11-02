@@ -17,7 +17,7 @@ static func on_hit(enemy: Node2D, amount: float) -> void:
  if not enemy.is_in_group("enemy") or enemy.is_queued_for_deletion(): return
  if bool(enemy.get("is_dead")) or float(enemy.get("current_hp"))<=0.0: return
  if enemy.get_tree().get_first_node_in_group("player")==null: return
- var passive: Dictionary=Catalog.get_active_passive(Runtime.get_equipped_item_ids())
+ var passive: Dictionary=preload("res://scripts/effects/equipment_set_combat.gd").active_passive()
  if str(passive.get("kind","")) not in ["poison","bleed","burn"]: return
  var amount_per_tick: float=amount*float(passive.ratio)*(0.5 if enemy.is_in_group("boss") else 1.0)
  var existing: Node=enemy.get_node_or_null("EquipmentSetStatus")
@@ -25,7 +25,7 @@ static func on_hit(enemy: Node2D, amount: float) -> void:
   if not existing.is_queued_for_deletion() and str(existing.kind)==str(passive.kind) and int(existing.ticks_left)>0:
    existing.tick_damage=maxf(float(existing.tick_damage),amount_per_tick)
   return
- if enemy.get_tree().get_nodes_in_group("equipment_set_status").size()>=MAX_STATUSES: return
+ if enemy.get_tree().get_node_count_in_group("equipment_set_status")>=MAX_STATUSES: return
  var status: Node2D=load("res://scripts/effects/equipment_set_status.gd").new()
  status.name="EquipmentSetStatus"
  status.kind=str(passive.kind);status.tint=passive.color
@@ -44,7 +44,7 @@ func _physics_process(delta: float) -> void:
   queue_free();return
  clock+=delta;age+=delta
  if clock>=1.0:
-  if str(Catalog.get_active_passive(Runtime.get_equipped_item_ids()).get("kind",""))!=kind:
+  if str(preload("res://scripts/effects/equipment_set_combat.gd").active_passive().get("kind",""))!=kind:
    queue_free();return
   clock-=1.0;ticks_left-=1
   enemy.set_meta(DOT_META,true)

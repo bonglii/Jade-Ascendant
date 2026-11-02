@@ -93,7 +93,7 @@ try {
         $trialsTests=Join-Path $build ('bridge/build/test-results/test'+$variant+'UnitTest/TEST-com.yungdevstudio.jadeascendant.monetizationbridge.HeavenlyTrialsContractV1Test.xml')
         if (-not (Test-Path -LiteralPath $trialsTests)) { throw 'Heavenly Trials native tests missing.' }
         [xml]$trialsResult=Get-Content -LiteralPath $trialsTests -Raw
-        if ([int]$trialsResult.testsuite.tests -lt 5 -or [int]$trialsResult.testsuite.failures -ne 0 -or [int]$trialsResult.testsuite.errors -ne 0 -or [int]$trialsResult.testsuite.skipped -ne 0) { throw 'Heavenly Trials native tests failed.' }
+        if ([int]$trialsResult.testsuite.tests -lt 6 -or [int]$trialsResult.testsuite.failures -ne 0 -or [int]$trialsResult.testsuite.errors -ne 0 -or [int]$trialsResult.testsuite.skipped -ne 0) { throw 'Heavenly Trials native tests failed.' }
     }
     $inputs = @{}
     $inputFiles = @(Get-ChildItem -LiteralPath (Join-Path $build 'bridge/src') -Recurse -Filter '*.kt' -File)
@@ -108,7 +108,7 @@ try {
     Copy-Item -LiteralPath $outputs[0].FullName -Destination $destination
     $receipt = @{version=1; target='production-candidate'; installed=$false; deployed=$false; inputs=$inputs;
         aar_sha256=(Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant();
-        compiled_utc=[DateTime]::UtcNow.ToString('o'); jvm_test_executions=$tests; heavenly_trials_protocol=1; update_notifications=1; odyssey_shop_protocol=4; odyssey_flow_revision=4;
+        compiled_utc=[DateTime]::UtcNow.ToString('o'); jvm_test_executions=$tests; heavenly_trials_protocol=1; heavenly_trials_ruleset=2; run_card_export=1; update_notifications=1; odyssey_shop_protocol=4; odyssey_flow_revision=4;
         evidence='COMPILE_JVM_JNI_PLAY_INTEGRITY_PROVIDER_ONLY_NOT_LIVE_PLAY'}
     [IO.File]::WriteAllText((Join-Path $work 'receipt.json'),($receipt | ConvertTo-Json -Depth 5),(New-Object Text.UTF8Encoding($false)))
     [IO.File]::WriteAllText((Join-Path $work 'compiled-flags.txt'),$flags)

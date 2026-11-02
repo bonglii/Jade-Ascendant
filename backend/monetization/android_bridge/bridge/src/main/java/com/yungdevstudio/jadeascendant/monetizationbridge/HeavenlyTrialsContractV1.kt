@@ -14,13 +14,16 @@ internal object HeavenlyTrialsContractV1 {
   val c=JSONObject(raw);require(keys(c)==setOf("request_id","week_id","action")&&c.getString("request_id")==requestId&&week.matches(c.getString("week_id")))
   val a=c.getJSONObject("action");val kind=a.getString("kind")
   val extra=when(kind){"start","ad_intent"->setOf("tier");"finish"->setOf("session_id","won","time_ms","hits","deaths","damage");"abandon"->setOf("session_id");"claim_all","pack_reconcile"->emptySet();else->error("kind")}
-  require(keys(a)==setOf("kind")+extra)
+  val capability=if(kind=="start"&&a.has("supported_ruleset"))setOf("supported_ruleset") else emptySet()
+  require(keys(a)==setOf("kind")+extra+capability)
+  if(a.has("supported_ruleset"))require(whole(a.opt("supported_ruleset"),1,2))
   if(a.has("tier"))require(whole(a.opt("tier"),1,3))
   if(a.has("session_id"))require(validId(a.getString("session_id")))
   if(kind=="finish"){require(a.opt("won") is Boolean&&whole(a.opt("time_ms"),0,900000)&&whole(a.opt("hits"),0,100000)&&whole(a.opt("deaths"),0,100)&&whole(a.opt("damage"),0,1000000000))}
   c.toString()
  }catch(_:Exception){null}
  private fun checkWeek(w:JSONObject){
+  if(w.has("ruleset_version"))require(whole(w.opt("ruleset_version"),1,2))
   require(week.matches(w.getString("id"))&&w.getString("theme") in themes&&whole(w.opt("stage"),1,5)&&whole(w.opt("index")))
   require(whole(w.opt("starts_at"))&&w.getLong("ends_at")==w.getLong("starts_at")+604800)
   val r=w.getJSONObject("reward");require(keys(r)==setOf("celestial_jade","pavilion_seal","spirit_stone"))

@@ -135,7 +135,7 @@ func _goal_name(id: String) -> String:return Sets.get_display_name(id.trim_prefi
 func _acquisition(id: String) -> String:
  var item: Dictionary=EquipmentManager.get_item_data(id)
  if item.get("event_only",false):return copy("Jade Dragon Odyssey: 12 full laps, milestone claim and Mail. Admin gifts can also establish ownership.","Jade Dragon Odyssey: 12 putaran, klaim milestone lalu Mail. Hadiah admin juga dapat memberi kepemilikan.")
- return copy("Pavilion after clear 1-5. Shop/Forge unlock: ","Paviliun setelah clear 1-5. Buka Shop/Forge: ")+str(item.get("requires_chapter",1))+"-"+str(item.get("requires_stage",1))
+ return copy("Pavilion Summon after clear 1-5. Stage requirement: ","Summon Paviliun setelah clear 1-5. Syarat stage: ")+str(item.get("requires_chapter",1))+"-"+str(item.get("requires_stage",1))
 func _bosses() -> void:
  _body.add_child(label(copy("Encounter a guardian to reveal its archive. Earlier stage clears also unlock their entries.","Temui penjaga untuk membuka arsipnya. Stage yang pernah diselesaikan juga membuka entri."),14))
  for chapter: int in range(1,6):

@@ -562,7 +562,7 @@ func _build_result_popup(
 	_body.add_child(divider)
 
 	var heading := Label.new()
-	heading.text = tr("TERSIMPAN DI KOLEKSI")
+	heading.text = tr("SAVED TO YOUR PROGRESS")
 	heading.horizontal_alignment = (
 		HORIZONTAL_ALIGNMENT_CENTER
 	)

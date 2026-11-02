@@ -117,5 +117,29 @@ func run() -> void:
   await process_frame
  if current_scene!=null:current_scene.free();current_scene=null
  await settle(5)
+ # v2 uses the same account checkpoint and retains a partially applied pattern.
+ var v2week: Dictionary=week.duplicate(true);v2week.id="ht_qa_v2_0";v2week.ruleset_version=2;v2week.theme="starfall"
+ client.snapshot.week=v2week
+ client.snapshot.session={"id":"d".repeat(32),"week":v2week.id,"tier":1,"started_at":now,"expires_at":now+850,"week_config":v2week.duplicate(true)}
+ client.launch_session=client.snapshot.session.duplicate(true);root.get_node("GameSession").continue_game=false
+ check(change_scene_to_file("res://scenes/levels/heavenly_trials.tscn")==OK,"v2 launches the actual independent weekly arena")
+ await settle(12)
+ var v2arena: Node=current_scene
+ check(v2arena.ruleset_version==2,"actual weekly arena reads the frozen session version")
+ var pattern: Node2D=load("res://scripts/game/heavenly_trial_rule_v2.gd").new();pattern.theme_id="starfall";pattern.clock=1.3;pattern.hit_mask=1;pattern.position=v2arena.get_node("player_1").position+Vector2(100,0);v2arena.add_child(pattern)
+ v2arena._hazard_left=4.0
+ check(v2arena.get_node("CheckPointManager").save_checkpoint(),"v2 checkpoint saves through the ordinary isolated Trials transport")
+ var v2saved: Dictionary=client.checkpoint_data()
+ check(int(v2saved.get("trials_ruleset",0))==2 and int(v2saved.get("trials_pattern",{}).get("hit",0))==1,"v2 checkpoint retains version and one-hit pattern state")
+ current_scene.free();current_scene=null;await settle(3)
+ client.launch_session=client.snapshot.session.duplicate(true);root.get_node("GameSession").continue_game=true
+ change_scene_to_file("res://scenes/levels/heavenly_trials.tscn");await settle(12)
+ v2arena=current_scene
+ var patterns: Array=get_nodes_in_group("heavenly_pattern")
+ check(v2arena.ruleset_version==2 and patterns.size()==1 and patterns[0].hit_mask==1,"v2 Continue restores one exact pattern without a duplicate hit reset")
+ check(v2arena._hazard_left<4.0 and v2arena._hazard_left>2.0,"v2 Continue retains the hazard cadence instead of restarting its window")
+ paused=true;var frozen_clock: float=patterns[0].clock;await settle(5);check(patterns[0].clock==frozen_clock,"real pause stops the restored v2 pattern");paused=false
+ check(journey.build_save_data()==before,"v2 Continue never mutates Journey progress")
+ current_scene.free();current_scene=null;await settle(5)
  print("HEAVENLY_TRIALS checks=",checks," failures=",failures)
  await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self);quit(1 if failures else 0)

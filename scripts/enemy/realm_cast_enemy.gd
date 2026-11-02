@@ -23,3 +23,8 @@ func _spawn_qi_explosion_at(target_position: Vector2) -> void:
 		return
 	world.add_child(explosion)
 	explosion.global_position = target_position
+
+func spawn_telegraph() -> void:
+	# Each chapter now uses an independent snapshot sequence, not III's ring or II's trident.
+	var id: String = "rime_corridor" if presentation_theme == &"frostveil" else "cinder_trail"
+	preload("res://scripts/enemy/realm_attack_sequence.gd").launch(get_tree().current_scene, id, global_position, cast_target_position, explosion_damage, self, false)

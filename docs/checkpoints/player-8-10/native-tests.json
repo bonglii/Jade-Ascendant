@@ -1,0 +1,294 @@
+{
+  "suites": [
+    {
+      "variant": "Debug",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.OdysseyContractV1Test",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "95eb2741ca9709a7dcc04551dce555caac8c9186f3856db86a2db5b0dd8a7955"
+    },
+    {
+      "variant": "Debug",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.TrustedIapHttpsTest",
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "dbe25562f5acb14c38c069689a466924ac4f95faafd050b1bdeefcc6ef343584"
+    },
+    {
+      "variant": "Debug",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.EventAppCheckPolicyTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "b8ad6f4b548cd5818e162997bffa34c601df80647fcdc6ffdd00cef84cbcc520"
+    },
+    {
+      "variant": "Debug",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.OdysseyPurchaseBonusTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "05a4889e37eae0752417ba00dd7a820814aa82338d9c51722b4024ddc57120cf"
+    },
+    {
+      "variant": "Debug",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.PaidPurchaseReceiptContractM14Test",
+      "tests": 19,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "1a9f7a8662196f5aa913d057f879023b6445a69f430d8483e15e31ca5be2e690"
+    },
+    {
+      "variant": "Debug",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.PaidEntitlementsContractRCTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "bfc1882082fb0edb2b5d4b6650e2b6a311f04f306f95cfe327c157c80c123479"
+    },
+    {
+      "variant": "Debug",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.PaidSummonRecoveryContractM12Test",
+      "tests": 16,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "44879525e5471962d9ddb8d7e911f0d9b4fdcbf03d3c5a12e41de5191c1fd88e"
+    },
+    {
+      "variant": "Debug",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.HeavenlyTrialsContractV1Test",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "482c6caa5446a0e41cb3ea02f0f7bafe927d218a95a31dba43506ab3dee2564b"
+    },
+    {
+      "variant": "Debug",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.PendingPaidPurchaseRecordTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "0a4e7da758b7f222cf97049f7096cf4b75cdb17d6871a066e48319bfb94fcdff"
+    },
+    {
+      "variant": "Debug",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.PaidGameplayContractV2Test",
+      "tests": 12,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "4812d6f11cec4102155b1a16f0f24106f5389167b95caf09a48b90f7edbd086e"
+    },
+    {
+      "variant": "Debug",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.SecurePurchaseGrantContractTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "22b0873c7865f27c35fb98ce8c1a50c8a7b4b77130b0b67262f2380ec33d9029"
+    },
+    {
+      "variant": "Debug",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.PaidWalletViewContractM8Test",
+      "tests": 12,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "8686ba3053405288df8a9041ddd8452af3e6326d878af7fb0427c878110a9119"
+    },
+    {
+      "variant": "Debug",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.PaidSummonCommitContractRC4Test",
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "380612c1d7b1a6811933526ef14c96eac6f7a9bc50f5626b245e81fd51dc2c61"
+    },
+    {
+      "variant": "Debug",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.IapTransportPolicyTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "8571ea0fbd21b7ea01a660ec4a34b49647d4def2c2d4b378d53b48ef8f354889"
+    },
+    {
+      "variant": "Debug",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.UpdateMessageContractV1Test",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "fcf6b137eb906c7855a51996828bce75083dd24ca1dcd586880fa3af720db416"
+    },
+    {
+      "variant": "Debug",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.OdysseyFlowContractTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "3a76d51b5f07346c86e038aa3ae78c98d56d1da886112d555ad23fa0931f3eec"
+    },
+    {
+      "variant": "Release",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.OdysseyContractV1Test",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "0500e114ea557d2c7e98e174416a07b3da126f5258fbcf2de6577021ffbfcabc"
+    },
+    {
+      "variant": "Release",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.TrustedIapHttpsTest",
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "bdaa7320730bd5b905a0f1e3970d68d265fe47cee05e8f7d823f818c9a25d898"
+    },
+    {
+      "variant": "Release",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.EventAppCheckPolicyTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "974b038f1b425dca734d87ab6f262eab8c1f915306d80f63ec24dc38d1e4c18a"
+    },
+    {
+      "variant": "Release",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.OdysseyPurchaseBonusTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "6c43767bdb9807fe6092b29e6b4b5d3ae9bd5aff8447356869966aa2c075f877"
+    },
+    {
+      "variant": "Release",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.PaidPurchaseReceiptContractM14Test",
+      "tests": 19,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "8665a0e0adc4fcf2f42b9c3aecde2639cd882c766e0c05fd159008bcb6f1fede"
+    },
+    {
+      "variant": "Release",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.PaidEntitlementsContractRCTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "b22311224f18f4695f613a0d2bc02159cfb0b8cde461b5b19c151b7adfe94696"
+    },
+    {
+      "variant": "Release",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.PaidSummonRecoveryContractM12Test",
+      "tests": 16,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "2da79f048176237d0d9e85acacdfb116688a117d8994442187bb3bb9ef7b1bb0"
+    },
+    {
+      "variant": "Release",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.HeavenlyTrialsContractV1Test",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "3502c7c65ec0601a6659111ae65ba499b99692dee3405d9dfe409b89d9c12a73"
+    },
+    {
+      "variant": "Release",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.PendingPaidPurchaseRecordTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "d64612db37e84dd3ab1e2716555626a6d0a40797ced0013eaa5717b14db0d4a0"
+    },
+    {
+      "variant": "Release",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.PaidGameplayContractV2Test",
+      "tests": 12,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "83fa6ba3251154d24961185b04687f95fafe6ef10c19dd690b510ca8dd8eaa4f"
+    },
+    {
+      "variant": "Release",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.SecurePurchaseGrantContractTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "5dd1c20264beeb8dc081bad21422640d7b7699c5b351cfe36d15907f2a8ea27e"
+    },
+    {
+      "variant": "Release",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.PaidWalletViewContractM8Test",
+      "tests": 12,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "e4f8ee1597763b10f9762f5ca7232c7a19e37da2796b92e8d253668ccb94183c"
+    },
+    {
+      "variant": "Release",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.PaidSummonCommitContractRC4Test",
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "8efeae900f45921733f6d84af78c24b46eff08d6c1d22d647f9ea2e6f941386b"
+    },
+    {
+      "variant": "Release",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.IapTransportPolicyTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "63c6ee47dcdce9be1abdf98ef1f5e5f86be71ac0f655068ff1e124e92a7252a3"
+    },
+    {
+      "variant": "Release",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.UpdateMessageContractV1Test",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "ed05912f9e06de2199f54743e7b0e90667b15fb7221101185bbee3ebe4403927"
+    },
+    {
+      "variant": "Release",
+      "suite": "com.yungdevstudio.jadeascendant.monetizationbridge.OdysseyFlowContractTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "29b4dd49eda1bacc86129b314e2ed7911d12860a4a9f922e071ace0cb9421b2d"
+    }
+  ],
+  "test_executions": 242,
+  "android_device_tested": false
+}

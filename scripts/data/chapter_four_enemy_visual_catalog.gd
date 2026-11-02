@@ -5,9 +5,9 @@ const VISUAL_SET_ID: StringName = &"frostveil"
 
 const ENEMIES: Dictionary = {
 	1: {"display_name": "Frostveil Blade Disciple", "sprite_frames_path": "res://assets/enemy/chapter4/enemy_1_frostveil_blade_disciple_spriteframes.tres"},
-	2: {"display_name": "Mirror Script Adept", "sprite_frames_path": "res://assets/enemy/chapter4/enemy_2_mirror_script_adept_spriteframes.tres", "projectile_frames_path": "res://assets/enemy/chapter4/frostveil_talisman_projectile_spriteframes.tres", "attack_pattern": &"predictive_pair", "predictive_lead_time": 0.26, "pair_angle_degrees": 8.0, "spread_angle_degrees": 14.0},
+	2: {"display_name": "Mirror Script Adept", "sprite_frames_path": "res://assets/enemy/chapter4/enemy_2_mirror_script_adept_spriteframes.tres", "projectile_frames_path": "res://assets/enemy/chapter4/frostveil_talisman_projectile_spriteframes.tres", "attack_pattern": &"mirror_bracket", "predictive_lead_time": 0.26, "pair_angle_degrees": 8.0, "spread_angle_degrees": 14.0},
 	3: {"display_name": "Frostfang Pursuer", "sprite_frames_path": "res://assets/enemy/chapter4/enemy_3_frostfang_pursuer_spriteframes.tres", "movement_pattern": &"sky_weave", "frenzy_threshold": 0.44, "frenzy_speed_multiplier": 1.26, "weave_strength": 0.34, "weave_frequency": 4.1},
-	4: {"display_name": "Hoarfrost Array Sage", "sprite_frames_path": "res://assets/enemy/chapter4/enemy_4_hoarfrost_array_sage_spriteframes.tres", "cast_pattern": &"constellation_ring", "pattern_spacing": 78.0, "presentation_theme": VISUAL_SET_ID},
+	4: {"display_name": "Hoarfrost Array Sage", "sprite_frames_path": "res://assets/enemy/chapter4/enemy_4_hoarfrost_array_sage_spriteframes.tres", "cast_pattern": &"rime_corridor", "pattern_spacing": 78.0, "presentation_theme": VISUAL_SET_ID},
 	5: {"display_name": "Rimeveil Assassin", "sprite_frames_path": "res://assets/enemy/chapter4/enemy_5_rimeveil_assassin_spriteframes.tres"},
 	6: {"display_name": "Glacier Ward Golem", "sprite_frames_path": "res://assets/enemy/chapter4/enemy_6_glacier_ward_golem_spriteframes.tres", "presentation_theme": VISUAL_SET_ID},
 }

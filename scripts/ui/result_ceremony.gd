@@ -250,6 +250,22 @@ func capture_run_report() -> void:
 		_record_summary.text=str(labels.get(victory.record_result,""))
 		if victory.record_result!="unavailable":_record_summary.text+=" · "+preload("res://scripts/data/stage_record_book.gd").clock(int(victory.record_report.get("time_ms",0)))
 		_record_summary.show()
+	if victory != null and not victory.share_snapshot.is_empty() and _body.get_node_or_null("ShareVictoryRun") == null:
+		var share := Button.new()
+		share.name = "ShareVictoryRun"
+		share.text = "KARTU RUN  ›" if SettingsManager.language=="id" else "RUN CARD  ›"
+		style_button(share,"navy")
+		share.pressed.connect(func():preload("res://scripts/ui/run_share_panel.gd").open(_host.get_node("ColorRect"),victory.share_snapshot))
+		_body.add_child(share)
+	if victory != null and not victory.story_entry_id.is_empty() and _body.get_node_or_null("VictoryChronicle") == null:
+		if victory.story_entry_id=="verdant_oath_fragment":_body.add_child(_report_label("KEEPER OF THE OATH",Color("ead19a"),16))
+		var story := Button.new()
+		story.name = "VictoryChronicle"
+		story.text = "BACA KISAH TERBUKA  ›" if SettingsManager.language=="id" else "READ UNLOCKED STORY  ›"
+		style_button(story,"navy")
+		story.pressed.connect(func():preload("res://scripts/ui/chronicle_reader.gd").open(_host.get_node("ColorRect"),victory.story_entry_id))
+		_body.add_child(story)
+	preload("res://scripts/ui/mobile_scroll_policy.gd").prepare_tree(_body)
 	_refresh_report_rows()
 
 func _report_label(text: String,color: Color,font_size: int=15) -> Label:

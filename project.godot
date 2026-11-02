@@ -19,12 +19,11 @@ config/name="jade-ascendant"
 run/main_scene="res://scenes/system/boot.tscn"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.7", "Mobile")
+boot_splash/bg_color=Color(0.0235294, 0.105882, 0.113725, 1)
+boot_splash/stretch_mode=0
+boot_splash/image="res://assets/branding/boot_seal.png"
 config/icon="res://assets/branding/launcher_192.png"
 
-boot_splash/image="res://assets/branding/boot_seal.png"
-boot_splash/bg_color=Color(0.0235294, 0.105882, 0.113725, 1)
-boot_splash/fullsize=false
-boot_splash/use_filter=true
 [autoload]
 
 DebugLogger="*res://scripts/debug/DebugLogger.gd"
@@ -54,8 +53,8 @@ Firebase="*uid://bfps2e72dlnwq"
 ProgressBackupManager="*res://scripts/managers/progress_backup_manager.gd"
 PlayerCompanion="*res://scripts/companion/player_companion.gd"
 CompanionNetwork="*res://scripts/companion/companion_network.gd"
-
 OdysseyClient="*res://scripts/monetization/odyssey_client.gd"
+
 [display]
 
 window/size/viewport_width=648
@@ -119,9 +118,8 @@ admob/rewarded_ad_unit_id="ca-app-pub-3082528078187093/8339864838"
 
 [rendering]
 
-environment/defaults/default_clear_color=Color(0.0235294, 0.105882, 0.113725, 1)
-
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="mobile"
 textures/vram_compression/import_etc2_astc=true
+environment/defaults/default_clear_color=Color(0.0235294, 0.105882, 0.113725, 1)
 2d/snap/snap_2d_transforms_to_pixel=true

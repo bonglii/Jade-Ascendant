@@ -24,9 +24,9 @@ func run() -> void:
  var transport: Node=load("res://tests/fixtures/heavenly_trials_transport.gd").new();root.add_child(transport);transport.set_process(false);transport._owner=transport.simulated_binding
  var bridge:=Bridge.new();root.add_child(bridge);transport.test_bridge=bridge
  var now: int=int(Time.get_unix_time_from_system());var snapshot: Dictionary={"version":1,"owner_binding":transport.simulated_binding,"server_time":now,"week":{"id":"ht_qa_0","starts_at":now-60,"ends_at":now+1000},"campaign":{"enabled":true,"ads_enabled":true,"shop_enabled":true},"progress":[],"previous_progress":[]}
- transport.snapshot=snapshot;transport._received=Time.get_ticks_msec()
+ transport.snapshot=snapshot;transport._received=Time.get_ticks_msec()-21000
  if FileAccess.file_exists(transport._path()):DirAccess.remove_absolute(transport._path())
- check(transport.refresh(),"read dispatches")
+ check(transport.refresh() and bridge.requests.size()==1 and transport.busy,"expired cached read really dispatches before queuing the action")
  var read_id: String=transport._request
  check(transport.action("claim_all"),"explicit action queues behind background read")
  var pending: Dictionary=transport._pending();check(not pending.is_empty(),"queued action is durable before dispatch")
@@ -60,6 +60,18 @@ func run() -> void:
  provider.prepare_trials_ssv("d".repeat(32));provider.show_rewarded(7,"heavenly_trials_bonus")
  check(ad.shown==1 and str(ad.verification.get("custom_data","")).length()==32,"only trial nonce goes into Trial ad")
  check(provider._trials_ssv_nonce.is_empty() and provider._odyssey_ssv_nonce.is_empty(),"nonce is consumed and never leaks to another placement")
+ # A new client must keep working against the live legacy v1 server.
+ transport._owner=transport.simulated_binding;transport.snapshot=snapshot;transport.busy=false;transport._command={}
+ if FileAccess.file_exists(transport._path()):DirAccess.remove_absolute(transport._path())
+ check(transport.action("start",{"tier":1}),"upgraded client can journal a legacy v1 start")
+ var legacy_action: Dictionary=JSON.parse_string(bridge.requests.back().body).action
+ check(legacy_action.size()==2 and legacy_action.kind=="start" and legacy_action.tier==1,"v1 start preserves the exact old-server wire shape")
+ transport.busy=false;transport._command={};DirAccess.remove_absolute(transport._path())
+ transport.snapshot.week["ruleset_version"]=2
+ check(transport.action("start",{"tier":1}),"upgraded client can journal an explicit v2 start")
+ var v2_action: Dictionary=JSON.parse_string(bridge.requests.back().body).action
+ check(v2_action.size()==3 and v2_action.supported_ruleset==2,"only an explicit v2 week sends the signed capability")
+ DirAccess.remove_absolute(transport._path())
  provider.free();bridge.free();transport.free();units.trials_unit_id=""
  await process_frame
  var factory: GDScript=load("res://addons/admob/internal/mock/mock_admob_factory.gd")

@@ -37,8 +37,8 @@ func _ready() -> void:
 	var seal:=_label("JADE ARCHIVES",13,Color(.97,.80,.43));seal.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;top.add_child(seal)
 	body.add_child(_label("LIBRARY",30,Color(1,.88,.55)))
 	var journal: Button=_button("JURNAL KULTIVATOR" if SettingsManager.language=="id" else "CULTIVATOR JOURNAL");journal.name="LibraryJournal";body.add_child(journal);journal.pressed.connect(func():load("res://scripts/companion/player_journal.gd").open(self))
-	var tabs:=HBoxContainer.new();body.add_child(tabs)
-	for value: String in ["EQUIPMENT","SKILLS","BUILDS"]:
+	var tabs:=GridContainer.new();tabs.columns=2;body.add_child(tabs)
+	for value: String in ["EQUIPMENT","SKILLS","BUILDS","CHRONICLES"]:
 		var tab:=_button(value);tab.name="LibraryTab"+value;tab.size_flags_horizontal=Control.SIZE_EXPAND_FILL;tab.pressed.connect(_set_mode.bind(value));tabs.add_child(tab);_tabs[value]=tab
 	_search=LineEdit.new();_search.name="SkillBookSearch";_search.placeholder_text="Search the archives…";_search.custom_minimum_size.y=44
 	_search.add_theme_font_size_override("font_size",16)
@@ -92,9 +92,11 @@ func _build_filters() -> void:
 	for category: String in categories:
 		var b:=_button(category);b.custom_minimum_size.y=38;b.add_theme_font_size_override("font_size",11 if size.x<400 else 14);b.size_flags_horizontal=Control.SIZE_EXPAND_FILL;b.pressed.connect(_set_filter.bind(category));_filters.add_child(b);_filter_buttons[category]=b
 func _refresh() -> void:
+	_filters.visible = _mode != "CHRONICLES"
 	_summary.visible=_mode=="EQUIPMENT" and _filter!="SETS"
 	_rarity_picker.visible=_summary.visible
 	for tab: String in _tabs:_tabs[tab].add_theme_color_override("font_color",Color(1,.87,.44) if tab==_mode else Color(.72,.83,.79))
+	if _mode=="CHRONICLES":_refresh_chronicles();return
 	if _mode=="BUILDS":_refresh_builds();return
 	if _mode=="SKILLS":super._refresh();return
 	for child: Node in _list.get_children():_list.remove_child(child);child.queue_free()
@@ -249,3 +251,30 @@ func _refresh_builds() -> void:
 	_count.text="%d BUILD GUIDES"%shown
 	if shown==0:_list.add_child(_label("NO MATCHING BUILDS",18,Color(.77,.85,.8)))
 	for category: String in _filter_buttons:_filter_buttons[category].add_theme_color_override("font_color",Color(1,.87,.44) if category==_filter else Color(.75,.85,.8))
+
+func _refresh_chronicles() -> void:
+	for child: Node in _list.get_children():
+		_list.remove_child(child)
+		child.queue_free()
+	var catalog = preload("res://scripts/data/chronicle_catalog.gd")
+	var query: String = _search.text.strip_edges().to_lower()
+	var shown: int = 0
+	for entry: Dictionary in catalog.ENTRIES:
+		var title: String = catalog.copy(entry,"title",SettingsManager.language)
+		if not query.is_empty() and not (title+" "+str(entry.realm)).to_lower().contains(query):
+			continue
+		var available: bool = catalog.unlocked(entry,JourneyManager.cleared_stage_keys,JourneyManager.cosmetic_badges)
+		var card := VBoxContainer.new()
+		_list.add_child(card)
+		card.add_child(_label(str(entry.realm).to_upper(),12,Color("80c3a7")))
+		var read := _button(title + ("  ›" if available else "  ·  🔒"))
+		read.name = "Chronicle_"+str(entry.id)
+		read.disabled = not available
+		read.pressed.connect(func():preload("res://scripts/ui/chronicle_reader.gd").open(self,str(entry.id)))
+		card.add_child(read)
+		var hint: String = catalog.copy(entry,"line",SettingsManager.language) if available else (("Pulihkan Sumpah Giok di replay 1-3, lalu menang." if SettingsManager.language=="id" else "Restore the Jade Oath in a 1-3 replay, then win.") if entry.id=="verdant_oath_fragment" else (("Selesaikan stage %s." if SettingsManager.language=="id" else "Clear stage %s.")%str(entry.get("requires",""))))
+		card.add_child(_label(hint,14,Color("b5c9bd")))
+		if available and entry.id=="verdant_oath_fragment":card.add_child(_label("KEEPER OF THE OATH · "+("Badge kosmetik" if SettingsManager.language=="id" else "Cosmetic badge"),13,Color("ead19a")))
+		shown += 1
+	_count.text = ("%d kisah · bisa dibaca ulang" if SettingsManager.language=="id" else "%d stories · read again anytime")%shown
+	preload("res://scripts/ui/mobile_scroll_policy.gd").prepare_tree(_list)

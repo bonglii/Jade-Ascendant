@@ -810,3 +810,96 @@ installation are separate from owner publish, exact-SHA CI, AAB and Android test
 - Reproduced the owner's exact five leaked resources with verbose output: claim/summon WAV playbacks and menu Ogg, after all fifteen UI/input assertions passed. A terminal PASS marker or zero exit code alone must not pass QA.
 - A non-audio fixture must drain/suppress incidental playback before opening menus or invoking reward/summon cues, using the existing test-only helper. Draining only at exit can race the Dummy mixer. Keep production audio and audio-specific tests enabled.
 - Run verbose strict teardown repeats and one owner-equivalent combined runner before handing off this correction. Keep resource errors fatal and retain imported caches/backups rather than restarting installation or deleting data.
+
+
+## Player-review input driver — 2026-10-26
+
+- A review driver must preserve the game-owned pause state across observer snapshots. Forcing unpause at each command would let simulation run under tutorial/level-up overlays and cannot establish player difficulty. Preserve the prior pause state; discard pilot input evidence and use a fresh isolated save after correcting the driver.
+- Native local socket creation is blocked in this author environment. Do not repeat system-package installation or claim headless execution proves graphics, phone input, audio, FPS or human retention.
+
+## Player follow-up 1–7 — 2026-10-26
+
+- A successful Victory exit does not prove that all checkpoint writers are terminal-safe. Reproduce a late save explicitly, guard both public and low-level writers, and retain unfinished-run and revivable defeat snapshots. Trials owns its separate pending-command lifecycle.
+- Keep current campaign membership separate from the canonical save catalog. Hidden legacy stages must not block current targets; earned/claimed legacy records and their credit remain intact.
+- First-win equipment guidance must inspect actual owned equipment and current Cultivation affordability. An empty backpack is a valid new-player state, not an available equipment upgrade. Explaining it must not consume the tutorial needed after the first equipment arrives.
+- SceneTree entry scripts must dynamically load autoload-dependent runtime helpers after initialization. The first test fixture repeated an unsafe top-level preload; load the real helper at runtime instead. Victory tests also need the actual spawned boss/reward identity, not an unconfigured victory callback.
+- A synthetic direct-to-combat fixture skipped the production Home initialization order. Phase-isolated probes had clean exits until the first cold threaded Home transition; visiting real Home before combat removed all ten zero-reference RefCounted exit reports. Preserve the leak/error gate and the real launch order rather than accepting a PASS marker alone.
+- Read-only synergy copy must not roll choices, overstate prerequisite progress or advertise an already acquired resonance. Bind delayed selection/pulse/ad callbacks to the current choice generation; keep EXP thresholds, per-level full heals and verified-ad quota/nonce checks authoritative.
+
+### Player 8–10 integration — 2026-10-27
+- Bound import workers in disposable QA fixtures. The unconstrained editor import aborted in this host; two workers completed using the existing cache.
+- Gesture fixtures must enable mouse-to-touch emulation before asserting native ScrollContainer drags. A desktop mouse-only fixture cannot establish Android drag behavior.
+- Rasterize font glyphs before reading their cached metrics. Compose text using shaped widths; raw FontFile kerning values are FreeType fixed units and produced visible gaps.
+- New optional/story copy overflowed the narrow stage panel. Keep Start outside its native detail scroller and verify its actual screen rectangle at 320×568.
+- The legacy recovery fixture seeded a fresh 20-second cache and then assumed refresh dispatched a read. Expire that fixture cache explicitly and assert the in-flight read before testing a queued command.
+- Capability negotiation must preserve the exact live v1 start payload until the backend rollout. Send the new signed capability only when the served week explicitly requires v2; test both wire shapes.
+
+### Bridge baseline compatibility — 2026-10-27, batch 8–10 R2
+- Do not require an installed production bridge to equal a historical locked build. A source-only installer never writes that AAR: snapshot its real hash, preserve it, and check the invariant through installation/QA.
+- The export candidate remains independently pinned to binary, all 50 native inputs, flags and helper source. The pre-existing bridge is an opaque owner file, never promoted to trusted candidate merely because installation succeeds.
+- Export recovery records the actual original hash, verifies its owned backup and restores exact bytes after success/failure. Keep a receipt/backup if another process changed the release slot. Test legacy receipts and distinct installed builds before delivering an installer.
+- Keep package input paths separate from loop-local baseline paths; validate the complete R2 build against the immutable delivered R1 archive before calling it ready. Integration fixtures must contain the delivered R1 bytes, not an earlier author draft.
+
+### Pavilion focused UI — 2026-10-28
+- Inspect the active inheritance chain. Forge/Aura were intentionally parked in fast_first_frame; restore them only under the user's explicit redesign approval and reuse the existing acquisition and cosmetic managers.
+- A separate paid-mode action must never silently become a local-Seal summon. Keep the manager's Seal-first rule and explain its disabled paid action in the UI.
+- New result benefits and navigation are sealed identity too: clear them before charge and reveal them only after the existing cinematic boundary.
+- A GUI fixture must dismiss the genuine post-forge reward receipt before testing a later swipe. Otherwise the receipt correctly intercepts input; do not weaken the scroll assertion or bypass the global policy.
+- Review indentation in context after inserting assertions into a nested GDScript loop. Parse errors remain fatal; reuse the import cache and rerun only the changed focused suite.
+- Local native rendering remained unavailable: a private abstract-only authenticated X server avoided the prior filesystem/TCP effects, but this executor disallowed Unix sockets. Stop this setup route. Use the shipped Windows native fixture; never count headless input/layout checks as native render or phone proof.
+- GitHub create-branch returned integration HTTP403. Do not claim commit/push or a remote CI PASS. Deliver a hashed, three-way portable installer with owner backups and separate stage receipts.
+
+### Aura polish and feature audit — 2026-10-28
+- Restore the owner's confirmed Pavilion source from its verified package before making incremental changes. A sparse source worktree is sufficient for focused model QA; it is not a full native game fixture.
+- Draw the same pooled geometry in world and preview. Match the real body's 1.12 scale, -3 offset, material and per-frame idle durations; inspecting the atlas alone does not establish the live transform.
+- Keep a recognisable static aura in reduced-effects mode. Pause hidden previews, avoid physics processing and frame-by-frame node allocation, and keep cosmetics out of hit geometry and the economy.
+- Exporting production points gives a faithful geometry preview, but Canvas antialiasing and shader differences must be disclosed. Headless model results are not native GPU or Android frame-time evidence.
+- Audit existing Library, training, presets, goals and weekly Trials before suggesting features. Separate concrete source gaps from device playtest hypotheses.
+- Use a separate aura installation receipt. Preserve the owner's prior Pavilion QA receipt, native bridge, signing/export configuration and local edits. Do not retry denied GitHub writes or unavailable native rendering routes.
+
+### Pavilion primary review — 2026-10-28
+- The user reported real vertical frame strips and excessive empty space. Actual Godot reproduction showed a wrapped SHRINK_END button collapsing to its style margins: Daily became 28 px wide/204 px high; the target action became 28 px wide/319 px high. Disable wrapping only on compact natural-width actions; preserve wrapping on filling cards and multiline costs.
+- The previous aura-only preview and the old 35-check interaction scenario could pass while the whole Pavilion was visibly broken. Primary review must cover the production scene composition and text fit, not only isolated art or a PASS count. The new layout contract demonstrably fails the old source.
+- Review Summon, paid mode, Forge, Aura and their actual popup implementations, both languages, compact/tall phones and safe insets before handoff. The user is the second reviewer, not the first visual test.
+- Native/phone results remain separate from headless engine geometry, reconstructed previews and input fixtures. The owner's STOPPED tail does not include its first underlying error, so do not invent an exact native failure cause. Preserve logs, expose FIRST_ERROR.txt, require fresh native evidence and validate captured images are nonempty.
+- Use a visible intersection of the genuine aura button for the first swipe and verify it neither spends nor changes selection. Never replace native gesture verification with assigned scroll values.
+- New test code initially used a conditional untyped Array as Array[Vector2i], causing a fixture runtime error, and assumed every sheet stored panel metadata. Correctly handle typed construction and the existing PlayerJournal hierarchy; parse/runtime failures are fatal, not production fixes.
+- Preserve passing evidence for unchanged aura/economy inputs. Cache completed UI phases only against complete source/config/tool/engine fingerprints, retain import caches, and invalidate after a source change.
+- Installer self-review caught an unsafe alternate-base shortcut: when one alternate equals the new payload, any owner file can appear to merge cleanly and leave an old/conflicting component unchanged. Select the nearest credible source baseline first, refuse unrelated/ambiguous source and then perform the three-way merge. Cover original Pavilion, aura v1/v2, annotated upgrades and whole-component conflicts in tests.
+- Native rendering is unavailable in this author environment; browser installation did not complete because network approval was cancelled. Do not claim GPU verification or retry denied setup via alternate download routes. Keep the native gate explicit in the owner runner.
+
+### Player six fixes — 2026-10-29
+
+- A paid refresh override must not synchronously call the summon-panel method that invokes it. Primary engine QA caught recursion; connect the paid `changed` signal to the guarded page refresh instead.
+- Copy a pending asynchronous intent before clearing its dictionary; clearing an aliased dictionary also clears the callback arguments. Primary action QA caught and fixed the replacement-equip receipt path.
+- Tests that launch separate engine processes need separate user profiles and sequential use of one fixture config. An interrupted mixed-profile attempt is not accepted evidence.
+- Count layout correctness, actual damage parity, CPU fixtures, native GPU and Android separately. Review the whole paid/earned picker and backpack, not only isolated assets.
+
+### Player six QA isolation — 2026-10-31
+
+- Native GUI starts CompanionNetwork's optional public agenda request; its headless guard does not isolate a native UI test. Use a fixture-only service override for both native UI and native combat.
+- Keep production HTTPS certificate checks and the runner's rejection of all Godot errors intact. Functional assertions with failures=0 are not a clean native PASS when a TLS error is also present.
+- Resume legacy headless phases only after verifying the old checker backup, complete prior fingerprint and unchanged headless inputs. Never migrate a native PASS across a native fixture change.
+- Node orchestration fixtures do not establish a real Windows/GPU or Android PASS. Preserve the owner launcher and separate those stages in checkpoints.
+
+### Connection and combat — 2026-11-01
+
+- Legitimate simultaneous projectiles need a cooldown keyed by emitter and target. A shared enemy-only cooldown silently dropped Yin-Yang's second blade. Verify actual HP loss and the run ledger, including two Spirit Swords aimed at one boss; visual counts alone cannot establish damage.
+- Boss-entry collection must retain the normal per-gem XP rounding. Remove merged/deleted pickups from their group immediately, and collect in one bounded pass with one feedback pulse. Test a same-frame overflow field as well as ordinary distant gems.
+- Cache event discovery metadata separately from authoritative progress, wallets and grants. Reject foreign/expired previews; preserve the exact durable request ID during recovery. A cached event card cannot authorize a roll or payment.
+- Inspect native GPU captures as well as geometry. The new connecting badge exposed a 320px ribbon overflow; narrow badges now stack, and filters must pass actual font-width checks in both languages. Duplicating a scripted style resource can drop non-exported skin fields; preserve its initialized material. Inspect scripted _get_minimum_size too: this skin imposed 28px despite narrower margins. A local filter subclass supplies the reviewed 16px minimum without changing other buttons.
+- Freeze the actor spawned by a boss-entry-only test before fixture teardown. Leaving its AI alive while clearing current_scene can create orphan attacks and a misleading resource error. Keep every Godot error fatal; repair fixture lifecycle instead of suppressing it.
+- Native source, compiled candidate, provenance and exporter pins form one reviewed unit. Validate all 50 source inputs before installation and roll the entire plan back on failure. Preserve the installed locked bridge and unfinished export recovery records.
+
+### Connection native owner baseline repair — 2026-11-01
+
+- R1 incorrectly treated Git main plus the UI R4 overlay as the whole installed owner baseline. The uploaded report showed an already-installed 8-10 R2 native build with run-card export, Trials ruleset 2, and a v2 reversible exporter. A UI PASS never establishes a matching native baseline. Read the actual owner provenance and exporter policy before building or packaging a native change.
+- Recover changed source only from hash-matched prior deliverables or owner uploads. All 50 owner native inputs were reconstructed and verified; the repair changes only the existing bridge scheduling input and adds two dispatcher inputs. The resulting 52-input candidate preserves all 49 other owner native inputs and the existing JNI run-card method.
+- Reproduce the original four conflicts with the exact uploaded bytes, then run the corrected installer on the same fixture. Test owner BOM/CRLF, independent edits, unknown binaries/sources, active recovery and write failure. Exact reviewed binary alternates are accepted; unknown candidates still stop before any source write.
+- Preserve the owner's v2 exporter: snapshot the actual installed bridge and restore those exact bytes. A fixed historical installed hash would undo the earlier repair. Keep the reviewed overlay helper pinned and retain its active-recovery guard; never solve this conflict by removing provenance checks or forcing a binary overwrite.
+- Retain owner Odyssey read coalescing and the 30-second background TTL, while ensuring a pending durable command is recovered with its original ID even when a snapshot is fresh. Focused QA is labelled separately from a complete Windows/GUI pass. Reuse the unchanged combat evidence without presenting it as a fresh R2 full-run or phone test.
+
+
+## Owner source publisher — 2026-11-02
+
+A literal credential-shaped sample in a self-published test triggered the scanner during author QA. Construct synthetic credential samples at runtime and keep the publication guard enabled. Preserve unrelated index work and recovery markers; retain omitted documentation/build tools in the Git tree; declare push PASS only after the remote ref equals the committed snapshot.

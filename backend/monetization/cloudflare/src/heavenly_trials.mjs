@@ -15,12 +15,13 @@ const fail=(code,status=409)=>{throw Object.assign(Error(code),{code,status});};
 const exact=(o,keys)=>o&&typeof o==='object'&&!Array.isArray(o)&&Object.keys(o).sort().join(',')===[...keys].sort().join(',');
 const primary=db=>db.withSession?db.withSession('first-primary'):db;
 export function definition(input){
- if(!exact(input,['id','starts_at','enabled','ads_enabled','shop_enabled','themes','reward']))fail('invalid_config',400);
+ if(!exact(input,['id','starts_at','enabled','ads_enabled','shop_enabled','themes','reward',...(Object.hasOwn(input,'ruleset_version')?['ruleset_version']:[])]))fail('invalid_config',400);
+ if(!whole(input.ruleset_version??1,1,2))fail('unsupported_ruleset',400);
  if(!/^[a-z0-9_-]{3,40}$/.test(input.id)||!whole(input.starts_at,1700000000,4102444800)||((input.starts_at+3*86400+3*3600)%WEEK)!==0)fail('start_must_be_monday_0400_wib',400);
  for(const key of ['enabled','ads_enabled','shop_enabled'])if(typeof input[key]!=='boolean')fail('invalid_config',400);
  if(!Array.isArray(input.themes)||input.themes.length!==5||new Set(input.themes).size!==5||input.themes.some(x=>!THEMES.includes(x)))fail('invalid_themes',400);
  if(!exact(input.reward,['celestial_jade','pavilion_seal','spirit_stone'])||!whole(input.reward.celestial_jade,0,40)||!whole(input.reward.pavilion_seal,0,1)||!whole(input.reward.spirit_stone,0,600))fail('reward_budget_exceeded',400);
- return {id:input.id,starts_at:input.starts_at,enabled:input.enabled,ads_enabled:input.ads_enabled,shop_enabled:input.shop_enabled,themes:[...input.themes],reward:{celestial_jade:input.reward.celestial_jade,pavilion_seal:input.reward.pavilion_seal,spirit_stone:input.reward.spirit_stone}};
+ return {...((input.ruleset_version??1)===2?{ruleset_version:2}:{}),id:input.id,starts_at:input.starts_at,enabled:input.enabled,ads_enabled:input.ads_enabled,shop_enabled:input.shop_enabled,themes:[...input.themes],reward:{celestial_jade:input.reward.celestial_jade,pavilion_seal:input.reward.pavilion_seal,spirit_stone:input.reward.spirit_stone}};
 }
 export async function currentCampaign(db,now=Math.floor(Date.now()/1000)){const row=await primary(db).prepare("SELECT document FROM ht_campaigns ORDER BY CASE WHEN json_extract(document,'$.starts_at')<=? THEN 0 ELSE 1 END,CASE WHEN json_extract(document,'$.starts_at')<=? THEN -json_extract(document,'$.starts_at') ELSE json_extract(document,'$.starts_at') END LIMIT 1").bind(now,now).first();return row?JSON.parse(row.document):null;}
 export async function publish(db,input,now){
@@ -43,7 +44,7 @@ export async function weekFor(db,campaign,now,offset=0){
  if(!campaign||now<campaign.starts_at)return null;
  const index=Math.floor((now-campaign.starts_at)/WEEK)+offset;if(index<0)return null;
  const starts_at=campaign.starts_at+index*WEEK,id='ht_'+campaign.id+'_'+index;
- const document={id,campaign:campaign.id,index,theme:campaign.themes[index%5],stage:(index+4)%5+1,starts_at,ends_at:starts_at+WEEK,reward:campaign.reward};
+ const document={...((campaign.ruleset_version??1)===2?{ruleset_version:2}:{}),id,campaign:campaign.id,index,theme:campaign.themes[index%5],stage:(index+4)%5+1,starts_at,ends_at:starts_at+WEEK,reward:campaign.reward};
  await db.prepare('INSERT OR IGNORE INTO ht_weeks VALUES(?,?,?,?,?)').bind(id,campaign.id,JSON.stringify(document),starts_at,starts_at+WEEK).run();
  return JSON.parse((await db.prepare('SELECT document FROM ht_weeks WHERE id=?').bind(id).first()).document);
 }
@@ -90,7 +91,8 @@ export function trialsService(database,{now=()=>Math.floor(Date.now()/1000),unlo
   if(!row)fail('week_not_found');const week=JSON.parse(row.document),a=input.action,steps=[db.prepare('INSERT INTO ht_actions VALUES(?,?,?,?)').bind(owner,input.request_id,fingerprint,'{}')];
   const active=campaign?.enabled&&week.campaign===campaign.id&&week.id===current?.id&&stamp>=week.starts_at&&stamp<week.ends_at;
   if(a.kind==='start'){
-   if(!exact(a,['kind','tier'])||!whole(a.tier,1,3)||!active)fail('trial_not_available');
+   if(!exact(a,['kind','tier',...(Object.hasOwn(a,'supported_ruleset')?['supported_ruleset']:[])])||!whole(a.tier,1,3)||!active)fail('trial_not_available');
+   if(!whole(a.supported_ruleset??1,1,2)||(a.supported_ruleset??1)<(week.ruleset_version??1))fail('client_update_required');
    if(a.tier>await unlock(env,owner))fail('tier_locked');
    await db.prepare("UPDATE ht_sessions SET status='abandoned' WHERE owner=? AND status='running' AND expires_at<?").bind(owner,stamp).run();
    const activeSession=await db.prepare("SELECT id FROM ht_sessions WHERE owner=? AND status='running'").bind(owner).first();

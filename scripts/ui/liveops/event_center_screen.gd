@@ -5,6 +5,10 @@ const Catalog=preload("res://scripts/ui/liveops/event_hub_catalog.gd")
 const HubStyle=preload("res://scripts/ui/liveops/event_hub_style.gd")
 const EventArt=preload("res://scripts/ui/liveops/event_identity_catalog.gd")
 const LiveOpsUi=preload("res://scripts/ui/liveops/live_ops_ui.gd")
+class CompactFilterSurface:
+ extends "res://scripts/ui/liveops/event_jade_surface.gd"
+ # Keep the initialized jade skin; only this short filter row uses 8px padding.
+ func _get_minimum_size() -> Vector2:return Vector2(16,20)
 const HUB_REVISION: int=1
 const HERO: Texture2D=preload("res://assets/ui/liveops/event_center_v2/odyssey_hero.png")
 const ICONS: Dictionary={"spirit_stone":preload("res://assets/ui/shared/resources/spirit_stone_premium.png"),"celestial_jade":preload("res://assets/ui/shared/resources/celestial_jade_premium.png"),"pavilion_seal":preload("res://assets/ui/shared/resources/pavilion_seal_premium.png"),"compass":preload("res://assets/ui/liveops/odyssey/compass.png")}
@@ -34,6 +38,7 @@ var _hero_meter: ProgressBar
 var _section_title: Label
 var _ready_count: Label
 var _hero_rewards: HBoxContainer
+var _hero_ribbon: GridContainer
 var _hero_actions: GridContainer
 var _activity_handles: Dictionary={}
 var _filters: Dictionary={}
@@ -89,7 +94,11 @@ func _build() -> void:
  _close_button.add_theme_font_size_override("font_size",27);HubStyle.button(_close_button);heading.add_child(_close_button);_close_button.pressed.connect(_back)
  var filter_row:=HBoxContainer.new();filter_row.add_theme_constant_override("separation",8);body.add_child(filter_row)
  for key: String in ["all","limited","progress"]:
-  var tab:=Button.new();tab.name="Filter_"+key;tab.custom_minimum_size.y=44;tab.size_flags_horizontal=Control.SIZE_EXPAND_FILL;tab.add_theme_font_size_override("font_size",15);HubStyle.button(tab)
+  var tab:=Button.new();tab.name="Filter_"+key;tab.autowrap_mode=TextServer.AUTOWRAP_OFF;tab.custom_minimum_size.y=44;tab.size_flags_horizontal=Control.SIZE_EXPAND_FILL;tab.add_theme_font_size_override("font_size",15);HubStyle.button(tab);tab.autowrap_mode=TextServer.AUTOWRAP_OFF
+  for style_name: String in ["normal","hover","pressed","disabled"]:
+   var original_skin: StyleBox=tab.get_theme_stylebox(style_name)
+   var tab_skin:=CompactFilterSurface.new();tab_skin.texture=original_skin.get("texture");tab_skin.modulate_color=original_skin.get("modulate_color");tab_skin.corner=Vector2(12,12)
+   tab_skin.content_margin_left=8;tab_skin.content_margin_right=8;tab_skin.content_margin_top=10;tab_skin.content_margin_bottom=10;tab.add_theme_stylebox_override(style_name,tab_skin)
   filter_row.add_child(tab);_filters[key]=tab;tab.pressed.connect(_set_filter.bind(key))
  _scroll=ScrollContainer.new();_scroll.name="EventList";_scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL
  _scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;_scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_SHOW_NEVER;_scroll.follow_focus=false
@@ -109,10 +118,9 @@ func _build_hero(parent: Node) -> void:
  var fade:=GradientTexture2D.new();fade.gradient=gradient;fade.fill_from=Vector2(.5,0);fade.fill_to=Vector2(.5,1)
  var veil: TextureRect=_texture(fade);veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);_hero_stage.add_child(veil)
  var stack:=VBoxContainer.new();stack.add_theme_constant_override("separation",8);_margin(_hero_stage,18).add_child(stack)
- var ribbon:=HBoxContainer.new();ribbon.add_theme_constant_override("separation",8);stack.add_child(ribbon)
- _hero_tag=_label("",12,HubStyle.CREAM);_hero_tag.autowrap_mode=TextServer.AUTOWRAP_OFF;_hero_tag.size_flags_horizontal=Control.SIZE_EXPAND_FILL;_margin(_pill(ribbon),6).add_child(_hero_tag)
- var ribbon_space:=Control.new();ribbon_space.mouse_filter=Control.MOUSE_FILTER_IGNORE;ribbon_space.size_flags_horizontal=Control.SIZE_EXPAND_FILL;ribbon.add_child(ribbon_space)
- _event_status=_label("",13,HubStyle.JADE);_event_status.autowrap_mode=TextServer.AUTOWRAP_OFF;_event_status.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;_margin(_pill(ribbon),6).add_child(_event_status)
+ _hero_ribbon=GridContainer.new();_hero_ribbon.columns=2;_hero_ribbon.add_theme_constant_override("h_separation",8);_hero_ribbon.add_theme_constant_override("v_separation",6);stack.add_child(_hero_ribbon)
+ _hero_tag=_label("",12,HubStyle.CREAM);_hero_tag.autowrap_mode=TextServer.AUTOWRAP_OFF;_hero_tag.size_flags_horizontal=Control.SIZE_EXPAND_FILL;_margin(_pill(_hero_ribbon),6).add_child(_hero_tag)
+ _event_status=_label("",13,HubStyle.JADE);_event_status.autowrap_mode=TextServer.AUTOWRAP_OFF;_event_status.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;_margin(_pill(_hero_ribbon),6).add_child(_event_status)
  _hero_title=_label("Jade Dragon\nOdyssey",38,HubStyle.CREAM,true);stack.add_child(_hero_title)
  _hero_description=_label("",15,HubStyle.TEXT);_hero_description.custom_minimum_size.x=0;stack.add_child(_hero_description)
  var space:=Control.new();space.mouse_filter=Control.MOUSE_FILTER_IGNORE;space.custom_minimum_size.y=65;space.size_flags_vertical=Control.SIZE_EXPAND_FILL;stack.add_child(space)
@@ -176,14 +184,20 @@ func _reward_text(reward: Dictionary) -> String:
 func _refresh_odyssey() -> void:
  var client: Node=get_node_or_null("/root/OdysseyClient");var snapshot: Dictionary=client.snapshot if client!=null else {}
  var event: Dictionary=snapshot.get("event",{}) if snapshot.get("event") is Dictionary else {};var state: Dictionary=snapshot.get("state",{})
+ var preview: Dictionary=client.get_event_preview() if client!=null and event.is_empty() and client.status!="connected" else {}
  var now: float=client.server_time() if client!=null else 0.0
  _hero_tag.text=Catalog.copy("LIMITED EVENT","EVENT TERBATAS");_hero_description.text=Catalog.copy("Roll the dice. Explore the celestial isles.","Lempar dadu. Jelajahi kepulauan surgawi.")
  _hero_rewards.get_parent().get_node("JourneyRewardsCaption").text=Catalog.copy("EVENT REWARDS","HADIAH EVENT")
  var laps: bool=int(state.get("journey_laps_version",0))==2;var goal: int=12 if laps else 72;var completed: int=int(state.get("laps",0)) if laps else int(state.get("rolls",0))
  _event_progress.text="%d / %d %s"%[mini(completed,goal),goal,Catalog.copy("laps","putaran") if laps else Catalog.copy("journeys","perjalanan")];_hero_meter.max_value=goal;_hero_meter.value=mini(completed,goal)
- _hero_stage.visible=_filter!="progress" and preload("res://scripts/data/odyssey_progress.gd").visible(event,state,int(now))
+ _hero_stage.visible=_filter!="progress" and (not preview.is_empty() or preload("res://scripts/data/odyssey_progress.gd").visible(event,state,int(now)))
  _hero_action.text=Catalog.copy("CONTINUE JOURNEY","LANJUTKAN PERJALANAN") if not event.is_empty() and bool(event.get("enabled",false)) and now>=float(event.get("starts_at",0)) and now<float(event.get("ends_at",0)) else Catalog.copy("VIEW EVENT","LIHAT EVENT")
  _event_status.text=_odyssey_status(event,now)
+ _hero_meter.visible=preview.is_empty()
+ if not preview.is_empty():
+  _event_progress.text=Catalog.copy("Syncing your journey…","Menyinkronkan perjalananmu…")
+  _event_status.text=Catalog.copy("CONNECTING","MENGHUBUNGKAN")
+  _hero_action.text=Catalog.copy("VIEW EVENT","LIHAT EVENT")
  ActionDot.show_on(_hero_action,ActionDot.count(self,"odyssey"))
 func _odyssey_status(event: Dictionary,now: float) -> String:
  if event.is_empty():return Catalog.copy("AWAITING SEASON","MENUNGGU MUSIM")
@@ -206,8 +220,9 @@ func _set_filter(key: String) -> void:
 func _fit_layout() -> void:
  if not is_instance_valid(_popup):return
  var popup_size:=Vector2(minf(maxf(size.x-16,280),760),maxf(size.y-20,240))
- _popup.size=popup_size;_popup.position=(size-popup_size)*.5
  var compact: bool=popup_size.x<430
+ _hero_ribbon.columns=1 if popup_size.x<350 else 2
+ for tab: Button in _filters.values():tab.add_theme_font_size_override("font_size",12 if popup_size.x<350 else 15)
  _header_title.add_theme_font_size_override("font_size",23 if compact else 32)
  _subtitle.add_theme_font_size_override("font_size",13 if compact else 15)
  _hero_title.add_theme_font_size_override("font_size",29 if compact else 38)
@@ -220,6 +235,13 @@ func _fit_layout() -> void:
   item.status.add_theme_font_size_override("font_size",13 if compact else 14)
   item.reward.add_theme_font_size_override("font_size",13)
   item.card.custom_minimum_size.y=132 if compact else 148
+ # Text/style minimum sizes settle after font and column changes. Apply bounds
+ # afterwards so a longer localized filter cannot retain the previous width.
+ _place_popup.call_deferred()
+func _place_popup() -> void:
+ if not is_instance_valid(_popup):return
+ _popup.size=Vector2(minf(maxf(size.x-16,280),760),maxf(size.y-20,240))
+ _popup.position=(size-_popup.size)*.5
 func _wire_navigation_button(button: Button,id: String) -> void:
  button.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE;button.keep_pressed_outside=false;button.mouse_filter=Control.MOUSE_FILTER_PASS
  button.button_down.connect(_record_button_down.bind(id));button.pressed.connect(_open_destination.bind(id))

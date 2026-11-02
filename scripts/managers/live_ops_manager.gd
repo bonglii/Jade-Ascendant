@@ -269,7 +269,7 @@ const HEAVENLY_LADDER_MILESTONES: Dictionary = {
 	},
 	"ascendant_summit": {
 		"title": "ASCENDANT SUMMIT",
-		"required_clears": 26,
+		"required_clears": 25,
 		"reward": {"spirit_stone": 700, "items": {}},
 	},
 }
@@ -1301,10 +1301,7 @@ func get_heavenly_ladder_milestone_ids() -> Array[String]:
 
 
 func get_heavenly_ladder_total_stage_count() -> int:
-	var total: int = 0
-	for chapter_id: int in JourneyManager.get_chapter_ids():
-		total += JourneyManager.get_stage_ids(chapter_id).size()
-	return total
+	return JourneyManager.get_active_stage_count()
 
 
 func get_heavenly_ladder_cleared_stage_count() -> int:
@@ -1313,7 +1310,9 @@ func get_heavenly_ladder_cleared_stage_count() -> int:
 		for stage_id: int in JourneyManager.get_stage_ids(chapter_id):
 			if JourneyManager.is_stage_cleared(chapter_id, stage_id):
 				cleared += 1
-	return cleared
+	# Earlier saves keep earned credit for the legacy trial. The current public
+	# target is bounded by the stages a new player can actually enter.
+	return mini(cleared, get_heavenly_ladder_total_stage_count())
 
 
 func get_heavenly_ladder_milestone(milestone_id: String) -> Dictionary:
@@ -1431,7 +1430,7 @@ func is_treasure_hunt_cache_unlocked(cache_id: String) -> bool:
 		return false
 	var cache: Dictionary = TREASURE_HUNT_CACHES[cache_id]
 	var chapter_id: int = int(cache.get("chapter_id", 0))
-	var stage_ids: Array = JourneyManager.get_stage_ids(chapter_id)
+	var stage_ids: Array = JourneyManager.get_active_stage_ids(chapter_id)
 	if stage_ids.is_empty():
 		return false
 	for stage_id: int in stage_ids:

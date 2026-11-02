@@ -1,0 +1,43 @@
+{
+  "batch": "AURA_POLISH_2026-10-28",
+  "base": "a444cbae4f8ba617a6137f1a7cbf46dbc9deab1b",
+  "upstream_base": "057ed76f186940374d2cabe1ecb307a0114d3106",
+  "inherited_pavilion_package_sha256": "7e586abf3483163945136e933733286dfdb1e4b5568bb25f96d8f5c54cb02308",
+  "previous": "docs/checkpoints/PAVILION_FOCUS_STATE_2026-10-28.json",
+  "phase": "Source and offline preview ready; feature audit complete; incremental installer passed eight cases",
+  "scope": [
+    "four distinct cosmetic silhouettes",
+    "pooled geometry",
+    "shared world/preview model",
+    "actual duration-aware idle and body transform",
+    "static reduced-effects variant",
+    "read-only full-feature audit"
+  ],
+  "inherited_owner_receipt": {
+    "pavilion_source_installed": true,
+    "pavilion_windows_qa": "user-reported PASS",
+    "aura_polish_windows_qa": "not_run",
+    "phone_tested": false
+  },
+  "validation": {
+    "aura_model_checks": 50,
+    "failures": 0,
+    "production_gates": 9,
+    "native_ui": "prepared_not_run",
+    "android": "not_tested",
+    "native_integration_parse": "pass",
+    "installer_cases": 8,
+    "installer_failures": 0,
+    "offline_preview": "visually inspected; H264 240 frames decoded without errors"
+  },
+  "stages": {
+    "implemented": true,
+    "installed_on_owner": false,
+    "committed": true,
+    "pushed": false,
+    "deployed": false,
+    "exported": false,
+    "phone_tested": false
+  },
+  "next": "Run apply_and_test.cmd on the owner Windows project. Require a fresh AURA_WINDOWS_QA=PASS before manual export, then check actual HP combat and four aura previews. All other feature-audit suggestions remain proposals."
+}

@@ -169,17 +169,21 @@ func get_experience_multiplier() -> float:
 		* (1.10 if m7c2_qi_focus_active else 1.0)
 	)
 
-func level_up() -> void:
+func level_up(continue_queue: bool = false) -> void:
 	var health: PlayerHealth = get_node_or_null("PlayerHealth") as PlayerHealth
 	if health == null or health.is_dead:
+		return
+	var checkpoint: Node = get_parent().get_node_or_null("CheckPointManager")
+	if checkpoint != null and bool(checkpoint.call("is_victory_complete")):
 		return
 	var hud: Node = get_parent().get_node("HUD")
 	# Extra EXP waits behind the current choice rather than replacing it.
 	if hud.level_up_panel.visible:
+		hud.level_up_panel.refresh_pending_count()
 		return
 	level += 1
 	experience -= experience_to_next_level
-	experience_to_next_level = int(experience_to_next_level * 1.2)
+	experience_to_next_level = next_experience_threshold(experience_to_next_level)
 	# Universal run recovery; normal health signals update HUD and hit metrics.
 	# Loading an existing checkpoint does not call this method.
 	health.heal(health.max_health)
@@ -189,7 +193,7 @@ func level_up() -> void:
 	DebugLogger.system(str("LEVEL UP!"))
 	DebugLogger.system(str("Level: ", level))
 	DebugLogger.system(str("EXP berikutnya: ", experience_to_next_level))
-	hud.level_up_panel.show_level_up()
+	hud.level_up_panel.show_level_up(continue_queue)
 
 
 func add_experience(amount: int) -> void:
@@ -216,9 +220,29 @@ func add_experience(amount: int) -> void:
 	if experience >= experience_to_next_level:
 		level_up()
 
-func resolve_pending_level_up() -> void:
-	if not get_tree().paused and experience >= experience_to_next_level:
-		level_up()
+static func next_experience_threshold(current: int) -> int:
+	return int(current * 1.2)
+
+## Display only. The real EXP/level/heal/choice is still applied one at a time.
+func get_pending_level_up_count() -> int:
+	var remaining: int = experience
+	var threshold: int = experience_to_next_level
+	var count: int = 0
+	while threshold > 0 and remaining >= threshold and count < 99:
+		remaining -= threshold
+		threshold = next_experience_threshold(threshold)
+		count += 1
+	return count
+
+func resolve_pending_level_up(continue_queue: bool = false) -> void:
+	if experience < experience_to_next_level:
+		return
+	if get_tree().paused and not continue_queue:
+		return
+	var hud: Node = get_parent().get_node_or_null("HUD")
+	if hud == null or hud.level_up_panel.visible:
+		return
+	level_up(continue_queue)
 
 func request_hurt_pose() -> void:
 	locomotion.react_to_hit()

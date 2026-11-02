@@ -1,0 +1,38 @@
+{
+  "batch": "PLAYER_SIX_FIXES_20261029",
+  "revision": "R4_NATIVE_QA_ISOLATION_20261031",
+  "base_artifact": "Jade-Perbaikan-6-Batch-R3.zip",
+  "base_artifact_sha256": "8db762aba72415486df84b1ffb3f3534aeff4f596263877be5e5c5e7183a9147",
+  "scope": [
+    "native-only CompanionNetwork offline fixture",
+    "preserve authenticated unchanged R3 headless phase passes",
+    "retain all six feature fixes and owner Hero localization/mobile scroll"
+  ],
+  "owner_report": {
+    "phase": "native-ui",
+    "functional_checks": 115,
+    "functional_failures": 0,
+    "native_gui": true,
+    "phase_result": "FAILED_GODOT_ERROR_TLS",
+    "phone": "NOT_TESTED"
+  },
+  "author_validation": {
+    "installer_cases": 20,
+    "qa_driver_cases": 20,
+    "failures": 0,
+    "alternate_base_pairs": 23,
+    "scope": "Node/Linux fixtures and source review; synthetic child logs, original strict process checker",
+    "godot": "NOT_RUN_R4",
+    "native_windows": "NOT_RUN_R4",
+    "powershell": "NOT_RUN_R4",
+    "android": "NOT_TESTED"
+  },
+  "installed": false,
+  "committed": false,
+  "pushed": false,
+  "deployed": false,
+  "exported": false,
+  "windows_native": "NOT_RUN_R4",
+  "android": "NOT_TESTED",
+  "next_action": "Finish targeted runner/installer validation; run apply_and_test.cmd on owner Windows and require PLAYER_SIX_WINDOWS_QA=PASS before manual export."
+}

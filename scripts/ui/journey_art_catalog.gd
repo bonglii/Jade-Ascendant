@@ -83,12 +83,9 @@ const NODE_SEALS: Dictionary = {
 	},
 }
 
-## Temporary compatibility boundary while the historical Stage 1-6 save identity
-## is retired. Production presentation is locked to five trials per Realm.
-## Remove this override only after the legacy save migration/cleanup pass lands.
-const PRESENTATION_STAGE_IDS: Dictionary = {
-	1: [1, 2, 3, 4, 5],
-}
+## Current campaign presentation follows CampaignStagePolicy. The historical
+## Stage 1-6 identity remains in the manager-owned catalog for existing saves.
+
 
 const STAGE_PRESENTATION_OVERRIDES: Dictionary = {
 	1: {
@@ -119,15 +116,7 @@ static func get_node_seal_path(chapter_id: int, state: String) -> String:
 
 
 static func get_presentation_stage_ids(chapter_id: int, canonical_ids: Array) -> Array:
-	if not PRESENTATION_STAGE_IDS.has(chapter_id):
-		return canonical_ids.duplicate()
-	var allowed: Array = PRESENTATION_STAGE_IDS.get(chapter_id, [])
-	var result: Array = []
-	for raw_stage_id: Variant in canonical_ids:
-		var stage_id: int = int(raw_stage_id)
-		if stage_id in allowed:
-			result.append(stage_id)
-	return result
+	return preload("res://scripts/data/campaign_stage_policy.gd").active_ids(chapter_id, canonical_ids)
 
 
 static func apply_stage_presentation(

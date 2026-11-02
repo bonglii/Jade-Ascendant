@@ -1,12 +1,32 @@
 [gd_resource type="SpriteFrames" format=3 uid="uid://pvotww8mfkmk"]
-[ext_resource type="Texture2D" path="res://assets/effects/combat_cels/blades.png" id="1"]
-[sub_resource type="AtlasTexture" id="Yin"]
-atlas = ExtResource("1")
-region = Rect2(256, 0, 256, 256)
-filter_clip = true
+
+[ext_resource type="Texture2D" uid="uid://d0auhaemohtev" path="res://assets/effects/combat_cels/blades.png" id="1"]
+
 [sub_resource type="AtlasTexture" id="Yang"]
 atlas = ExtResource("1")
 region = Rect2(0, 256, 256, 256)
 filter_clip = true
+
+[sub_resource type="AtlasTexture" id="Yin"]
+atlas = ExtResource("1")
+region = Rect2(256, 0, 256, 256)
+filter_clip = true
+
 [resource]
-animations = [{"frames": [{"duration": 1.0, "texture": SubResource("Yin")}], "loop": true, "name": &"yin", "speed": 1.0}, {"frames": [{"duration": 1.0, "texture": SubResource("Yang")}], "loop": true, "name": &"yang", "speed": 1.0}]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Yang")
+}],
+"loop": 1,
+"name": &"yang",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Yin")
+}],
+"loop": 1,
+"name": &"yin",
+"speed": 1.0
+}]

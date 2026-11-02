@@ -46,11 +46,11 @@ const ACHIEVEMENTS: Dictionary = {
 	"stage_1_5_clear":{"title":"Celestial Gatebreaker","description":"Clear Stage 1-5: Sovereign's Celestial Gate.","category":"journey","target":1,"reward":150},
 	"stage_1_6_clear":{"title":"Heart of Verdant Heaven","description":"Clear Stage 1-6 and defeat the Ascended Sovereign.","category":"journey","target":1,"reward":250},
 	"chapter_one_master":{"title":"Sovereign Gate Conqueror","description":"Clear the first five Chapter 1 trials.","category":"journey","target":5,"reward":300},
-	"verdant_heaven_ascendant":{"title":"Verdant Heaven Ascendant","description":"Clear all six Verdant Qi Valley trials.","category":"journey","target":6,"reward":450},
+	"verdant_heaven_ascendant":{"title":"Verdant Heaven Ascendant","description":"Clear all five active Verdant Qi Valley trials.","category":"journey","target":5,"reward":450},
 	"chapter_two_master":{"title":"Crimson Moon Conqueror","description":"Clear all five Chapter 2 trials.","category":"journey","target":5,"reward":450},
 	"chapter_three_master":{"title":"Ascendant of Nine Heavens","description":"Clear all five Chapter 3 trials.","category":"journey","target":5,"reward":650},
 	"jade_ascendant":{"title":"Jade Ascendant","description":"Clear fifteen unique journey stages.","category":"journey","target":15,"reward":900},
-	"journey_complete_16":{"title":"Heaven-Treading Ascendant","description":"Clear all sixteen current journey stages.","category":"journey","target":16,"reward":1100},
+	"journey_complete_16":{"title":"Heaven-Treading Ascendant","description":"Clear sixteen unique journey stages.","category":"journey","target":16,"reward":1100},
 	"trial_veteran_5":{"title":"Five Trials Tempered","description":"Complete 5 stages, including repeats.","category":"journey","target":5,"reward":80},
 	"trial_veteran_10":{"title":"Ten Trials Tempered","description":"Complete 10 stages, including repeats.","category":"journey","target":10,"reward":140},
 	"trial_veteran_30":{"title":"Thirty Trials Tempered","description":"Complete 30 stages, including repeats.","category":"journey","target":30,"reward":300},
@@ -284,6 +284,10 @@ func _on_cultivation_upgraded(
 func get_achievement_ids() -> Array[String]:
 	var achievement_ids: Array[String] = []
 	for raw_id in ACHIEVEMENTS.keys():
+		# Keep the retired trial and its earned/claimed records for old saves,
+		# without advertising an unreachable objective to a new campaign.
+		if str(raw_id) == "stage_1_6_clear" and get_progress(str(raw_id)) == 0 and not is_unlocked(str(raw_id)) and not is_claimed(str(raw_id)):
+			continue
 		achievement_ids.append(str(raw_id))
 	achievement_ids.sort()
 	return achievement_ids

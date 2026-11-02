@@ -32,6 +32,8 @@ var _backgrounded: bool = false
 var _prepared_ad: Dictionary={}
 var _ad_open_requested: bool=false
 var _ad_prepare_next: int=0
+var _event_preview: Dictionary={}
+var _warm_failures: int=0
 
 func server_time() -> int:
 	return int(snapshot.get("server_time", 0)) + floori(float(maxi(0, Time.get_ticks_msec() - _received_msec)) / 1000.0)
@@ -113,7 +115,7 @@ func _bridge() -> Object:
 	return native
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_PAUSED: _backgrounded = true
-	elif what == NOTIFICATION_APPLICATION_RESUMED: _backgrounded = false; _warm_next_at = Time.get_ticks_msec() + 1500
+	elif what == NOTIFICATION_APPLICATION_RESUMED: _backgrounded = false; _warm_next_at = Time.get_ticks_msec()
 
 func _can_prewarm() -> bool:
 	return is_inside_tree() and name == "OdysseyClient" and get_parent() == get_tree().root
@@ -122,14 +124,60 @@ func refresh_if_stale(max_age_ms: int = 60000) -> bool:
 	if _binding == _live_binding() and not snapshot.is_empty() and Time.get_ticks_msec() - _received_msec < max_age_ms: return true
 	return refresh()
 
+func _preview_path() -> String:
+	return "user://odyssey_event_preview_"+_binding+".json" if _binding.length()==64 else ""
+
+func _load_event_preview() -> void:
+	_event_preview={}
+	var path: String=_preview_path()
+	if path.is_empty() or not FileAccess.file_exists(path) or FileAccess.get_file_as_bytes(path).size()>1024:return
+	var data: Variant=JSON.parse_string(FileAccess.get_file_as_string(path))
+	if not data is Dictionary or data.size()!=4 or data.get("version")!=1 or data.get("binding")!=_binding or not data.get("event") is Dictionary:return
+	var event: Dictionary=data.event
+	if event.size()!=4 or not _matches(event.get("id"),"^[a-z0-9_-]{3,48}$") or event.get("enabled")!=true:return
+	for value: Variant in [data.get("observed_unix"),event.get("starts_at"),event.get("ends_at")]:
+		if not _whole(value,1,4102444800):return
+	if int(event.ends_at)<=int(event.starts_at):return
+	_event_preview=data
+
+func get_event_preview() -> Dictionary:
+	# Discovery text only. No wallet, progress, rewards or action gate reads this cache.
+	if _binding!=_live_binding() or _event_preview.is_empty():return {}
+	var now: int=int(Time.get_unix_time_from_system())
+	var age: int=now-int(_event_preview.observed_unix)
+	var event: Dictionary=_event_preview.event
+	if age<0 or age>900 or now<int(event.starts_at) or now>=int(event.ends_at):return {}
+	return event.duplicate(true)
+
+func _store_event_preview() -> void:
+	_event_preview={}
+	var path: String=_preview_path()
+	if path.is_empty():return
+	var event: Variant=snapshot.get("event")
+	if not event is Dictionary or event.get("enabled")!=true or not _matches(event.get("id"),"^[a-z0-9_-]{3,48}$"):
+		if FileAccess.file_exists(path):DirAccess.remove_absolute(path)
+		return
+	_event_preview={"version":1,"binding":_binding,"observed_unix":int(Time.get_unix_time_from_system()),"event":{"id":str(event.id),"enabled":true,"starts_at":int(event.get("starts_at",0)),"ends_at":int(event.get("ends_at",0))}}
+	var file:=FileAccess.open(path+".tmp",FileAccess.WRITE)
+	if file==null:return
+	file.store_string(JSON.stringify(_event_preview));file.flush()
+	var error: Error=file.get_error();file.close()
+	if error==OK:DirAccess.rename_absolute(path+".tmp",path)
+
 func _prewarm_if_due() -> void:
 	if not _can_prewarm() or _backgrounded or busy or _binding.length() != 64: return
 	if Time.get_ticks_msec() < _warm_next_at: return
 	if get_tree().get_first_node_in_group("player") != null: return
 	_warm_next_at = Time.get_ticks_msec() + 15000
-	if ad_waiting() or not _pending().is_empty(): return
-	if not snapshot.is_empty() and Time.get_ticks_msec() - _received_msec < 30000: return
-	refresh()
+	if ad_waiting(): return
+	if not snapshot.is_empty() and Time.get_ticks_msec() - _received_msec < 30000 and _pending().is_empty(): return
+	# refresh() recovers the exact durable request when one exists. A pending
+	# command must not leave the event hidden until the player can somehow open it.
+	if refresh():
+		_warm_failures=0
+	else:
+		_warm_failures=mini(_warm_failures+1,4)
+		_warm_next_at=Time.get_ticks_msec()+mini(500*(1<<(_warm_failures-1)),5000)
 
 func _process(_delta: float) -> void:
 	var live: String = _live_binding()
@@ -138,7 +186,9 @@ func _process(_delta: float) -> void:
 		_prepared_ad={};_ad_open_requested=false;_ad_prepare_next=0
 		_load_ad_wait()
 		_load_prepared_ad()
-		_warm_next_at = Time.get_ticks_msec() + 1500
+		_load_event_preview()
+		_warm_failures=0
+		_warm_next_at = Time.get_ticks_msec()
 		status = "account_changed"; changed.emit()
 	_prewarm_if_due()
 	_prepare_ad_if_due()
@@ -159,6 +209,7 @@ func refresh() -> bool:
 		_prepared_ad={};_ad_open_requested=false;_ad_prepare_next=0
 		_load_ad_wait()
 		_load_prepared_ad()
+		_load_event_preview()
 	if _binding.length() != 64: status = "google_sign_in_required"; changed.emit(); return false
 	var pending: Dictionary = _pending()
 	if pending.has("error"): status = "recovery_required"; changed.emit(); return false
@@ -198,6 +249,7 @@ func _on_result(request_id: String, success: bool, result_status: String, payloa
 			for value: Variant in data.get("state",{}).get(field,[]): normalized.append(int(value))
 			data.state[field]=normalized
 		snapshot = data; _received_msec = Time.get_ticks_msec(); _command = {}; status = "connected"
+		_store_event_preview()
 		if action == "arena_finish":
 			var arena_path: String="user://odyssey_arena_"+_binding+".json"
 			if FileAccess.file_exists(arena_path): DirAccess.remove_absolute(arena_path)

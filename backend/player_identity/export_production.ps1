@@ -5,8 +5,10 @@ param(
     [switch]$VerifyOnly
 )
 $ErrorActionPreference = 'Stop'
-$candidateHash = '74c737b46bf2b9de1b8bdb2f29747f8f11cd6da1d5d402f9002ead048d055df5'
-$lockedHash = '8f466fb8738413f95813b1aa0bd11d102716cf26a84298ea7d12af8a4adb60b8'
+$candidateHash = '2171f13f36cf8d90988fd20248f879653104625c8481b91d3fb0a4303fb098ea'
+$previousCandidateHash = '11de7b6d70d27f7bc7df277fadc07afe03e166d7b4a95b6351f1575a72e8b557'
+$priorConnectionCandidateHash = 'a4db0c183df6bdb3c0deac64b10916c1b15d2db1f420d12b1011f37283d4bc21'
+$historicalCandidateHash = '74c737b46bf2b9de1b8bdb2f29747f8f11cd6da1d5d402f9002ead048d055df5'
 $lockStream = $null
 $markerWritten = $false
 $nodeOptions = $env:NODE_OPTIONS
@@ -27,20 +29,9 @@ function AssertEditorClosed {
     if ($running.Count -gt 0) { throw 'Close all Godot editor/game windows, then retry this launcher. No running process is terminated.' }
 }
 function RestoreRelease([string]$MarkerPath) {
-    $state = [IO.File]::ReadAllText($MarkerPath) | ConvertFrom-Json
-    if ($state.original_hash -ne $lockedHash -or $state.candidate_hash -ne $candidateHash) { throw 'Unrecognized recovery receipt. Backup retained.' }
-    if ($state.project -ne $repo -or $state.release_path -ne $release) { throw 'Recovery project mismatch. Backup retained.' }
-    $allowedBackupRoot = $sessionRoot.TrimEnd('\') + '\'
-    $backupPath = [IO.Path]::GetFullPath([string]$state.backup_path)
-    if (-not $backupPath.StartsWith($allowedBackupRoot,[StringComparison]::OrdinalIgnoreCase)) { throw 'Recovery backup outside session directory.' }
-    if ((HashFile $backupPath) -ne $lockedHash) { throw 'Recovery backup hash mismatch. Nothing overwritten.' }
-    $current = HashFile $release
-    if ($current -ne $candidateHash -and $current -ne $lockedHash) { throw 'Release AAR changed outside this session. Nothing overwritten; backup retained.' }
-    if ($current -ne $lockedHash) { Copy-Item -LiteralPath $backupPath -Destination $release -Force }
-    if ((HashFile $release) -ne $lockedHash) { throw 'Release restore verification failed. Backup retained.' }
-    Remove-Item -LiteralPath $MarkerPath
-    Write-Host 'ORIGINAL_RELEASE_RESTORED=PASS; DEBUG_AAR_AND_NATIVE_RECEIPTS=UNCHANGED'
+    Restore-JadeNativeOverlay -Project $repo -Release $release -SessionRoot $sessionRoot -Marker $MarkerPath -CandidateHashes @($candidateHash,$previousCandidateHash,$priorConnectionCandidateHash,$historicalCandidateHash)
 }
+
 try {
     $repo = (Resolve-Path -LiteralPath $Project).Path
     if (-not (Test-Path -LiteralPath (Join-Path $repo 'project.godot'))) { throw 'Godot project not found.' }
@@ -49,28 +40,31 @@ try {
     New-Item -ItemType Directory -Path $sessionRoot -Force | Out-Null
     $lockStream = [IO.File]::Open((Join-Path $sessionRoot 'session.lock'),[IO.FileMode]::OpenOrCreate,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None)
     $marker = Join-Path $sessionRoot 'active.json'
+    $overlayHelper = Join-Path $PSScriptRoot 'production_native_overlay.ps1'
+    if ((TextHash $overlayHelper) -ne 'ddebc683ae50ef49191e8935bef80a159a2dad1a878d1da03ad544fad6173b6a') { throw 'Native overlay helper changed.' }
+    . $overlayHelper
     AssertEditorClosed
     if ($RecoverOnly) {
         if (Test-Path -LiteralPath $marker) { RestoreRelease $marker }
-        elseif ((HashFile $release) -eq $lockedHash) { Write-Host 'RECOVERY_NOT_NEEDED; ORIGINAL_RELEASE_ALREADY_INSTALLED' }
-        else { throw 'Release differs and there is no owned recovery receipt. Nothing overwritten.' }
+        else { Write-Host ('RECOVERY_NOT_NEEDED; EXISTING_RELEASE_UNCHANGED; SHA256=' + (HashFile $release)) }
         $resultCode = 0
     } else {
         if (Test-Path -LiteralPath $marker) { throw 'An interrupted export session exists. Run recover_production_export.cmd first.' }
         $proofPath = Join-Path $repo 'docs/checkpoints/IAP_PRODUCTION_NATIVE_CANDIDATE.json'
-        if ((TextHash $proofPath) -ne '140f91f58a1335991f9603c022666956171aa94d52b284e3261dc969e3cd61f7') { throw 'Candidate provenance changed.' }
+        if ((TextHash $proofPath) -ne 'ff0dadb7aee521fbc5d71d5de62ca948c12567b0cc68d1aa4211ac389c0f9596') { throw 'Candidate provenance changed.' }
         $proof = [IO.File]::ReadAllText($proofPath) | ConvertFrom-Json
         $candidate = Join-Path $repo 'release/native/JadeMonetizationNativeBridge-production-candidate.aar'
         if ($proof.target -ne 'production-candidate' -or $proof.aar_sha256 -ne $candidateHash -or (HashFile $candidate) -ne $candidateHash) { throw 'Candidate AAR hash/target mismatch.' }
         $inputs = @($proof.inputs.PSObject.Properties)
-        if ($inputs.Count -ne 48) { throw 'Candidate source inventory incomplete.' }
+        if ($inputs.Count -ne 52) { throw 'Candidate source inventory incomplete.' }
         foreach ($inputFile in $inputs) {
             $sourcePath = Join-Path $repo $inputFile.Name
             if (-not (Test-Path -LiteralPath $sourcePath) -or (TextHash $sourcePath) -ne $inputFile.Value) { throw ('Candidate source differs: ' + $inputFile.Name + '. Nothing installed.') }
         }
-        if ((HashFile $release) -ne $lockedHash) { throw 'Installed release is not the expected verified locked AAR. Nothing overwritten.' }
+        # The existing bridge is not an input to the new AAB. Snapshot it for exact restoration.
+        $originalHash = HashFile $release
         if (-not [IO.File]::ReadAllText((Join-Path $repo 'project.godot')).Contains('res://addons/JadeReleaseMetadata/plugin.cfg')) { throw 'Release metadata export plugin is not enabled in project.godot.' }
-        Write-Host 'CANDIDATE_SOURCE_AND_BINARY=PASS; INPUTS=48; APP_CHECK=PLAY_INTEGRITY; TARGET=PRODUCTION'
+        Write-Host 'CANDIDATE_SOURCE_AND_BINARY=PASS; INPUTS=52; APP_CHECK=PLAY_INTEGRITY; TARGET=PRODUCTION'
         if ($VerifyOnly) {
             Write-Host 'PRODUCTION_EXPORT_PREFLIGHT=PASS; INSTALLED=NONE; NETWORK=NONE'
             $resultCode = 0
@@ -96,16 +90,8 @@ try {
         if ($LASTEXITCODE -ne 0) { throw 'Production backend check failed. No AAR was changed.' }
         $env:NODE_OPTIONS = $nodeOptions
         AssertEditorClosed
-        $session = Join-Path $sessionRoot ([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssZ') + '-' + [Guid]::NewGuid().ToString('N'))
-        New-Item -ItemType Directory -Path $session -Force | Out-Null
-        $backup = Join-Path $session 'original-release.aar'
-        Copy-Item -LiteralPath $release -Destination $backup
-        if ((HashFile $backup) -ne $lockedHash) { throw 'Backup verification failed.' }
-        $state = @{ project=$repo; release_path=$release; backup_path=$backup; original_hash=$lockedHash; candidate_hash=$candidateHash; started_utc=[DateTime]::UtcNow.ToString('o') }
-        [IO.File]::WriteAllText($marker,($state | ConvertTo-Json),(New-Object Text.UTF8Encoding($false)))
         $markerWritten = $true
-        Copy-Item -LiteralPath $candidate -Destination $release -Force
-        if ((HashFile $release) -ne $candidateHash) { throw 'Candidate installation verification failed.' }
+        $state = Start-JadeNativeOverlay -Project $repo -Release $release -Candidate $candidate -SessionRoot $sessionRoot -Marker $marker -OriginalHash $originalHash -CandidateHash $candidateHash
         Write-Host 'PRODUCTION_EXPORT_SESSION=READY'
         Write-Host 'In this editor: export Android RELEASE, with Export With Debug unchecked.'
         Write-Host 'Use your normal AAB/version settings. Upload via your Play internal test track.'
@@ -126,7 +112,7 @@ try {
 } finally {
     $env:JADE_BUILD_SOURCE_REVISION = $sourceRevision
     $env:NODE_OPTIONS = $nodeOptions
-    if ($markerWritten) {
+    if ($markerWritten -and (Test-Path -LiteralPath $marker)) {
         try { AssertEditorClosed; RestoreRelease $marker }
         catch { Write-Error ('Restore pending: ' + $_.Exception.Message + '. Close Godot and run recover_production_export.cmd.') -ErrorAction Continue; $resultCode = 1 }
     }

@@ -79,13 +79,27 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
     private val ioExecutor = Executors.newSingleThreadExecutor { job ->
         Thread(job, "jade-iap-cloudflare-transport").apply { isDaemon = true }
     }
+    // Paid/event/trial reads each have their own AtomicBoolean single-flight guard.
+    // At most these three reads can run here; purchase and recovery order is retained.
+    private val foregroundReadExecutor = Executors.newFixedThreadPool(3) { job ->
+        Thread(job, "JadeForegroundRead").apply { isDaemon = true }
+    }
+    private val signedRequestDispatcher = ForegroundReadDispatcher(ioExecutor, foregroundReadExecutor)
     private val pendingPaid by lazy { PendingPaidPurchaseStore(FirebaseApp.getInstance().applicationContext) }
     private var updateActivity: java.lang.ref.WeakReference<Activity>? = null
     @Volatile private var appCheckInitialized: Boolean = false
 
+    @UsedByGodot
+    fun exportRunCardV1(requestId: String, pngPath: String, share: Boolean) {
+        RunCardExportV1.export(activity, requestId, pngPath, share) { success, code ->
+            runOnHostThread { emitSignal("runCardExportResultV1",requestId,success,code) }
+        }
+    }
+
     override fun getPluginName() = BuildConfig.GODOT_PLUGIN_NAME
 
     override fun getPluginSignals(): MutableSet<SignalInfo> = mutableSetOf(
+        SignalInfo("runCardExportResultV1", String::class.java, Boolean::class.javaObjectType, String::class.java),
         SignalInfo("heavenlyTrialsResultV1", String::class.java, Boolean::class.javaObjectType, String::class.java, String::class.java),
         SignalInfo("odysseyResultV1", String::class.java, Boolean::class.javaObjectType, String::class.java, String::class.java),
         SignalInfo("paidGameplayResultV2", String::class.java, Boolean::class.javaObjectType, String::class.java, String::class.java),
@@ -808,7 +822,7 @@ class JadeMonetizationNativeBridge(godot: Godot) : GodotPlugin(godot) {
                                     val appToken = if (appTask.isSuccessful) appTask.result?.token else null
                                     if (!isSameUser(uid)) { finish(false, "ACCOUNT_CHANGED"); return@checkListener }
                                     if (appToken.isNullOrBlank()) { finish(false, "APP_CHECK_UNAVAILABLE"); return@checkListener }
-                                    ioExecutor.execute ioTask@{
+                                    signedRequestDispatcher.execute(endpoint, method, body, BuildConfig.JADE_IAP_WORKER_BASE_URL) ioTask@{
                                         if (finished.get()) return@ioTask
                                         val result = requestOverHttpsRC6(endpoint, method, body, idToken, appToken, canonical)
                                         if (!isSameUser(uid)) finish(false, "ACCOUNT_CHANGED")

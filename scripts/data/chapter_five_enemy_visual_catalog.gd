@@ -5,9 +5,9 @@ const VISUAL_SET_ID: StringName = &"solar_nirvana"
 
 const ENEMIES: Dictionary = {
 	1: {"display_name": "Sunbound Blade Disciple", "sprite_frames_path": "res://assets/enemy/chapter5/enemy_1_sunbound_blade_disciple_spriteframes.tres"},
-	2: {"display_name": "Gilded Flame Talismanist", "sprite_frames_path": "res://assets/enemy/chapter5/enemy_2_gilded_flame_talismanist_spriteframes.tres", "projectile_frames_path": "res://assets/enemy/chapter5/solar_nirvana_talisman_projectile_spriteframes.tres", "attack_pattern": &"spread_three", "predictive_lead_time": 0.26, "pair_angle_degrees": 8.0, "spread_angle_degrees": 14.0},
+	2: {"display_name": "Gilded Flame Talismanist", "sprite_frames_path": "res://assets/enemy/chapter5/enemy_2_gilded_flame_talismanist_spriteframes.tres", "projectile_frames_path": "res://assets/enemy/chapter5/solar_nirvana_talisman_projectile_spriteframes.tres", "attack_pattern": &"ember_stagger", "predictive_lead_time": 0.26, "pair_angle_degrees": 8.0, "spread_angle_degrees": 14.0},
 	3: {"display_name": "Ashwing Pursuer", "sprite_frames_path": "res://assets/enemy/chapter5/enemy_3_ashwing_pursuer_spriteframes.tres", "movement_pattern": &"blood_frenzy", "frenzy_threshold": 0.44, "frenzy_speed_multiplier": 1.26, "weave_strength": 0.34, "weave_frequency": 4.1},
-	4: {"display_name": "Solar Array Priest", "sprite_frames_path": "res://assets/enemy/chapter5/enemy_4_solar_array_priest_spriteframes.tres", "cast_pattern": &"scarlet_trident", "pattern_spacing": 78.0, "presentation_theme": VISUAL_SET_ID},
+	4: {"display_name": "Solar Array Priest", "sprite_frames_path": "res://assets/enemy/chapter5/enemy_4_solar_array_priest_spriteframes.tres", "cast_pattern": &"cinder_trail", "pattern_spacing": 78.0, "presentation_theme": VISUAL_SET_ID},
 	5: {"display_name": "Cinderveil Assassin", "sprite_frames_path": "res://assets/enemy/chapter5/enemy_5_cinderveil_assassin_spriteframes.tres"},
 	6: {"display_name": "Bronze Furnace Guardian", "sprite_frames_path": "res://assets/enemy/chapter5/enemy_6_bronze_furnace_guardian_spriteframes.tres", "presentation_theme": VISUAL_SET_ID},
 }

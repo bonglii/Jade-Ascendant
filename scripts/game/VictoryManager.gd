@@ -9,6 +9,8 @@ var victory_processed: bool = false
 var current_boss_reward_source_id: String = ""
 var record_result: String = ""
 var record_report: Dictionary = {}
+var share_snapshot: Dictionary = {}
+var story_entry_id: String = ""
 
 
 @onready var enemy_spawner: Node = (
@@ -278,11 +280,16 @@ func grant_victory_reward(stage_completion: Dictionary) -> bool:
 			stage_id,
 			was_first_clear
 		)
+	var domains: Dictionary = RewardManager.get_run_end_domains()
+	var oath: Node = get_parent().get_node_or_null("JadeOath")
+	var oath_won: bool = oath != null and oath.state.phase == "pending" and int(stage_completion.get("chapter_id",0)) == 1 and int(stage_completion.get("stage_id",0)) == 3
+	if oath_won and not "keeper_of_the_oath" in domains.journey.get("cosmetic_badges",[]):
+		domains.journey.cosmetic_badges.append("keeper_of_the_oath")
 	var grant_result := RewardManager.grant_reward(
 		RewardManager.SOURCE_STAGE_CLEAR,
 		source_id,
 		reward_data,
-		RewardManager.get_run_end_domains()
+		domains
 	)
 	var reward_granted := bool(
 		grant_result.get("success", false)
@@ -293,6 +300,11 @@ func grant_victory_reward(stage_completion: Dictionary) -> bool:
 			+ str(grant_result.get("error", "unknown error"))
 		)
 		return false
+	if bool(stage_completion.get("completed",false)) and int(stage_completion.get("stage_id",0)) == 5:
+		story_entry_id = str(preload("res://scripts/data/chronicle_catalog.gd").for_chapter(int(stage_completion.chapter_id),"clear").get("id",""))
+	if oath_won:
+		story_entry_id = "verdant_oath_fragment"
+		JourneyManager.cosmetic_badges = domains.journey.cosmetic_badges.duplicate()
 	var spirit_stone_amount := int(
 		reward_data.get(
 			RewardManager.REWARD_KEY_SPIRIT_STONE,
@@ -321,7 +333,10 @@ func _capture_personal_record(completion: Dictionary, run_id: String) -> void:
 	var skills: Array=[]
 	for skill: Dictionary in ledger.skills():skills.append({"id":skill.id,"level":skill.level,"armament_id":skill.get("armament_id","")})
 	record_report={"time_ms":maxi(1,roundi(elapsed*1000)),"hits":ledger.hp_hits,"deaths":ledger.deaths,"complete":ledger.metrics_complete,"damage_complete":not ledger.partial,"skills":skills,"damage":damage}
+	var oath: Node=get_parent().get_node_or_null("JadeOath")
+	record_report["oath_completed"]=oath!=null and oath.state.phase=="pending" and "keeper_of_the_oath" in JourneyManager.cosmetic_badges
 	var chapter: int=int(completion.chapter_id);var stage: int=int(completion.stage_id)
+	share_snapshot = preload("res://scripts/data/run_share_snapshot.gd").journey(chapter,stage,str(JourneyManager.get_stage_data(chapter,stage).get("display_name","")),record_report)
 	var old: Dictionary=JourneyManager.stage_records.get(JourneyManager.get_stage_key(chapter,stage),{})
 	if JourneyManager.record_stage_clear(chapter,stage,run_id,record_report):
 		record_result="first" if old.is_empty() else ("best" if record_report.time_ms<int(old.best_ms) else "saved")

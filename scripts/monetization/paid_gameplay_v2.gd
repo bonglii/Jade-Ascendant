@@ -51,6 +51,8 @@ func _setup() -> void:
 	_identity_changed(false)
 func _identity_changed(_ready_identity: bool) -> void:
 	var live: String = _live_binding()
+	if live == _binding and _fresh() and _read_pending().is_empty():
+		return
 	if live != _binding:
 		_binding = live
 		_request_id = ""
@@ -209,6 +211,10 @@ func refresh() -> bool:
 	var pending: Dictionary = _read_pending()
 	if pending.has("error"): _invalidate("recovery_required"); return false
 	return _dispatch(pending)
+func refresh_if_stale(max_age_ms: int = 15000) -> bool:
+	if _fresh() and _read_pending().is_empty() and Time.get_ticks_msec() - (_expires - 120000) < max_age_ms:
+		return true
+	return refresh()
 func submit(kind: String, extra: Dictionary = {}) -> bool:
 	if busy or not _read_pending().is_empty() or _binding != _live_binding(): return false
 	if kind != "initialize" and not is_verified_ready(): return false

@@ -9,8 +9,8 @@ const BossArt = preload("res://scripts/data/realm_boss_visual_catalog.gd")
 const RealmSpell = preload("res://scripts/enemy/realm_boss_telegraph.gd")
 
 const SIGNATURES: Dictionary = {
-	4: ["frost_fork", "mirror_cross", "lotus_bloom", "bell_toll", "frost_crown"],
-	5: ["sun_pillar", "forge_cross", "phoenix_wings", "eclipse_wheel", "nine_suns"]
+	4: ["frost_pincer", "mirror_labyrinth", "lotus_undertow", "whiteout_chimes", "absolute_zero_procession"],
+	5: ["solar_cascade", "molten_anvil", "rebirth_dive", "eclipse_procession", "solar_coronation"]
 }
 
 var errors: Array[String] = []

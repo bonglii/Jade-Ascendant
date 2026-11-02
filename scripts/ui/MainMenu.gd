@@ -158,7 +158,7 @@ func _refresh_home() -> void:
 	_refresh_hero_level_profile()
 	var chapter_id: int = JourneyManager.selected_chapter_id
 	var chapter: Dictionary = JourneyManager.get_chapter_data(chapter_id)
-	var progress: Dictionary = JourneyManager.get_chapter_progress(chapter_id)
+	var progress: Dictionary = JourneyManager.get_active_chapter_progress(chapter_id)
 	var cleared: int = int(progress.get("cleared_stages", 0))
 	var total: int = maxi(int(progress.get("total_stages", 5)), 1)
 	var chapter_complete: bool = cleared >= total

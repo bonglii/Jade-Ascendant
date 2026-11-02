@@ -76,6 +76,10 @@ func _refresh() -> void:
   for medal: Array in [[true,_copy("CLEAR","CLEAR")],[record.survivor,_copy("SURVIVOR · no death / revive","SURVIVOR · tanpa mati / revive")],[record.untouched,_copy("UNTOUCHED · no HP lost","UNTOUCHED · tanpa HP berkurang")]]:
    badges.add_child(_label(("✓ " if medal[0] else "○ ")+str(medal[1]),14,JADE if medal[0] else Color("8c9d96")))
   var last: Dictionary=record.last
+  var share:=Button.new();share.name="ShareStageRecord_%d_%d"%[chapter,stage];share.text=_copy("RUN CARD  ›","KARTU RUN  ›");share.custom_minimum_size.y=44;share.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE
+  var snapshot: Dictionary=preload("res://scripts/data/run_share_snapshot.gd").journey(chapter,stage,str(JourneyManager.get_stage_data(chapter,stage).get("display_name","")),last)
+  share.pressed.connect(func():preload("res://scripts/ui/run_share_panel.gd").open(self,snapshot))
+  content.add_child(share)
   var metrics: String=_copy("%d HP hits · %d deaths","%d hit HP · %d kematian")%[int(last.hits),int(last.deaths)] if last.complete else _copy("HP record incomplete · legacy Continue","Catatan HP belum lengkap · Continue lama")
   content.add_child(_label(_copy("LAST %s · ","TERAKHIR %s · ")%Book.clock(int(last.time_ms))+metrics,14,Color("b3c4ba")))
   var total: int=0

@@ -410,6 +410,10 @@ func _apply_damage_pulse() -> void:
 	if not player_stats.has_method("calculate_damage"):
 		return
 
+	# Project immutable equipment once for this synchronous pulse. Conditions,
+	# per-target critical rolls, set effects, kills and ledger still run per hit.
+	EquipmentManager.begin_combat_batch()
+	preload("res://scripts/data/equipment_set_runtime.gd").begin_combat_batch()
 	for body in get_overlapping_bodies():
 		if body == null:
 			continue
@@ -424,3 +428,5 @@ func _apply_damage_pulse() -> void:
 			)
 		)
 		preload("res://scripts/weapon/run_combat_ledger.gd").apply_hit(body,final_damage,"eight_trigrams_formation")
+	preload("res://scripts/data/equipment_set_runtime.gd").end_combat_batch()
+	EquipmentManager.end_combat_batch()

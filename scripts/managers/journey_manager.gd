@@ -23,6 +23,7 @@ const ChapterTwoCatalog = preload("res://scripts/data/chapter_two_catalog.gd")
 const ChapterThreeCatalog = preload("res://scripts/data/chapter_three_catalog.gd")
 const ChapterFourCatalog = preload("res://scripts/data/chapter_four_catalog.gd")
 const ChapterFiveCatalog = preload("res://scripts/data/chapter_five_catalog.gd")
+const CampaignStagePolicy = preload("res://scripts/data/campaign_stage_policy.gd")
 const CHAPTERS := {
 	1: {
 		"display_name": "Verdant Qi Valley",
@@ -56,6 +57,7 @@ var unlocked_stage_keys: Array = []
 var cleared_stage_keys: Array = []
 var m7d_run_id: String = ""
 var stage_records: Dictionary = {}
+var cosmetic_badges: Array = []
 const RecordBook=preload("res://scripts/data/stage_record_book.gd")
 
 func record_stage_clear(chapter: int, stage: int, run_id: String, report: Dictionary) -> bool:
@@ -113,6 +115,27 @@ func is_chapter_unlocked(chapter_id: int) -> bool:
 		if is_stage_unlocked(chapter_id, stage_id):
 			return true
 	return false
+
+## UI and current campaign goals use this view. Canonical IDs above deliberately
+## retain legacy stages for save ownership, recovery, records and existing income.
+func get_active_stage_ids(chapter_id: int) -> Array:
+	return CampaignStagePolicy.active_ids(chapter_id, get_stage_ids(chapter_id))
+
+func get_active_stage_count() -> int:
+	var total: int = 0
+	for chapter_id: int in get_chapter_ids():
+		total += get_active_stage_ids(chapter_id).size()
+	return total
+
+func get_active_chapter_progress(chapter_id: int) -> Dictionary:
+	var progress: Dictionary = {"total_stages": 0, "unlocked_stages": 0, "cleared_stages": 0}
+	for stage_id: int in get_active_stage_ids(chapter_id):
+		progress.total_stages += 1
+		if is_stage_unlocked(chapter_id, stage_id):
+			progress.unlocked_stages += 1
+		if is_stage_cleared(chapter_id, stage_id):
+			progress.cleared_stages += 1
+	return progress
 
 func get_chapter_progress(chapter_id: int) -> Dictionary:
 	var progress := {
@@ -389,6 +412,10 @@ func _load_progress() -> void:
 	for chapter: int in get_chapter_ids():
 		for stage: int in get_stage_ids(chapter):known.append(get_stage_key(chapter,stage))
 	stage_records=RecordBook.clean(save_data.get("stage_records",{}),known)
+	cosmetic_badges = []
+	var raw_badges: Variant = save_data.get("cosmetic_badges",[])
+	if raw_badges is Array and "keeper_of_the_oath" in raw_badges:
+		cosmetic_badges.append("keeper_of_the_oath")
 
 func build_save_data() -> Dictionary:
 	return {
@@ -400,7 +427,8 @@ func build_save_data() -> Dictionary:
 		"unlocked_stage_keys": unlocked_stage_keys.duplicate(),
 		"cleared_stage_keys": cleared_stage_keys.duplicate(),
 		"m7d_run_id": m7d_run_id,
-		"stage_records": stage_records.duplicate(true)
+		"stage_records": stage_records.duplicate(true),
+		"cosmetic_badges": cosmetic_badges.duplicate()
 	}
 
 

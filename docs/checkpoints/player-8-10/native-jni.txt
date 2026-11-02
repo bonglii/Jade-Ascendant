@@ -1,0 +1,43 @@
+Compiled from "JadeMonetizationNativeBridge.kt"
+public final class com.yungdevstudio.jadeascendant.monetizationbridge.JadeMonetizationNativeBridge extends org.godotengine.godot.plugin.GodotPlugin {
+  public static final com.yungdevstudio.jadeascendant.monetizationbridge.JadeMonetizationNativeBridge$Companion Companion;
+  public com.yungdevstudio.jadeascendant.monetizationbridge.JadeMonetizationNativeBridge(org.godotengine.godot.Godot);
+  public final java.lang.String getIapNetworkRoute();
+  public final void exportRunCardV1(java.lang.String, java.lang.String, boolean);
+  public java.lang.String getPluginName();
+  public java.util.Set<org.godotengine.godot.plugin.SignalInfo> getPluginSignals();
+  public android.view.View onMainCreate(android.app.Activity);
+  public final java.lang.String getUpdateNotificationStatus();
+  public final boolean setUpdateNotificationsEnabled(boolean);
+  public final void deferUpdateNotifications();
+  public final void openUpdateNotificationSettings();
+  public final boolean isSecurePurchaseTransportConfigured();
+  public final void authorizePurchase(java.lang.String);
+  public final boolean isProductionIapCandidateEnabled();
+  public final boolean isSandboxIapCreditEnabled();
+  public final boolean isPaidWalletPurchaseV2TransportConfigured();
+  public final java.lang.String getPendingPaidPurchaseProductV2();
+  public final void resumePendingPaidPurchaseV2(java.lang.String);
+  public final void authorizeDurablePaidWalletPurchaseV2(java.lang.String, java.lang.String);
+  public final void authorizePaidWalletPurchaseV2(java.lang.String);
+  public final void refreshPaidWalletSnapshot();
+  public final void refreshPaidEntitlements();
+  public final void recoverPaidSummon(java.lang.String);
+  public final boolean isPaidSummonTransportConfigured();
+  public final void commitPaidSummon(java.lang.String, int);
+  public final int getPaidRunContractVersionV2();
+  public final boolean isPaidGameplayV2Configured();
+  public final void requestPaidGameplayV2(java.lang.String, java.lang.String);
+  public final void requestOdysseyV1(java.lang.String, java.lang.String);
+  public final void requestHeavenlyTrialsV1(java.lang.String, java.lang.String);
+  public final boolean isPaidLoadoutReadConfigured();
+  public final void refreshPaidLoadout();
+  public final boolean isPaidLoadoutWriteConfigured();
+  public final void updatePaidLoadout(java.lang.String, long, long, java.lang.String);
+  public final void refreshPaidSummonHistoryIndex();
+  public final boolean isVerifiedPurchaseRepairTransportConfigured();
+  public final void repairVerifiedPlayPurchases();
+  public final boolean isPaidWalletRecoveryReadConfigured();
+  public final void refreshPaidWalletSnapshotV2(java.lang.String);
+  public final void repairVerifiedPlayPurchasesV2(java.lang.String);
+}

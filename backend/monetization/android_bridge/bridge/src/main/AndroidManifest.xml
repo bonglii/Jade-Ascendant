@@ -3,6 +3,10 @@
     <queries><package android:name="com.android.vending" /></queries>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application>
+        <activity android:name=".JadeRunCardSaveActivity" android:exported="false" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <provider android:name=".JadeRunCardProvider" android:authorities="${applicationId}.jade_run_cards" android:exported="false" android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/jade_run_card_paths" />
+        </provider>
         <meta-data android:name="firebase_messaging_auto_init_enabled" android:value="false" />
         <meta-data android:name="firebase_analytics_collection_enabled" android:value="false" />
         <activity android:name=".JadeNotificationPermissionActivity" android:exported="false" android:theme="@android:style/Theme.Translucent.NoTitleBar" />

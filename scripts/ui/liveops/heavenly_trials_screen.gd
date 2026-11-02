@@ -99,7 +99,7 @@ func _refresh() -> void:
  var unlocked: int=int(data.get("unlock_tier",0))
  if week is Dictionary:
   _refresh_portrait(_selected,int(week.stage))
-  var rule: Array=RULES.get(str(week.theme),RULES.jade_wind);_title.text=str(rule[0]);find_child("WeekEyebrow",true,false).text="WEEK %02d · ASCENSION"%[int(week.index)+1];_rule.text=rule[1]
+  var rule: Array=RULES.get(str(week.theme),RULES.jade_wind);_title.text=str(rule[0]);find_child("WeekEyebrow",true,false).text="WEEK %02d · ASCENSION"%[int(week.index)+1];_rule.text=rule[1]+"\n"+preload("res://scripts/data/trial_counterplay.gd").hint(str(week.theme),int(week.get("ruleset_version",1)),SettingsManager.language)
   var left: int=maxi(0,int(week.ends_at)-int(client.call("server_time")));_time.text="RESETS MON 04:00 WIB  ·  %dd %02dh LEFT"%[int(float(left)/86400.0),int(float(left%86400)/3600.0)]
  else:_time.text="WEEKLY RESET · MONDAY 04:00 WIB"
  for tier: int in range(1,4):
@@ -167,6 +167,8 @@ func _open_rewards() -> void:
   if client!=null and client.mutation_busy():body.add_child(_label("Securing result with the server…",16,Style.JADE))
   var seconds: int=int(float(outcome.get("time_ms",0))/1000.0)
   body.add_child(_label("TIER %d · %02d:%02d"%[int(outcome.tier),int(float(seconds)/60.0),seconds%60],18,Style.GOLD))
+  var card: Dictionary=preload("res://scripts/data/run_share_snapshot.gd").trials(outcome)
+  if not card.is_empty():_button(body,"KARTU RUN  ›" if SettingsManager.language=="id" else "RUN CARD  ›",func():preload("res://scripts/ui/run_share_panel.gd").open(self,card))
   if not bool(outcome.get("won",false)):body.add_child(_label("Your Journey is safe. Return for another free attempt.",17,Style.TEXT))
  body.add_child(_label("CLEAR · SURVIVOR · UNTOUCHED",16,Style.GOLD))
  body.add_child(_label("Medals celebrate your best run. Every clear earns the same tier reward, once per week.",16))

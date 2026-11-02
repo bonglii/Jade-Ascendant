@@ -1,0 +1,43 @@
+{
+  "batch": "PLAYER_SIX_FIXES_2026-10-29",
+  "phase": "AUTHOR_SOURCE_AND_REVIEW_READY",
+  "source_base": "057ed76f186940374d2cabe1ecb307a0114d3106 + Pavilion Redesign v1 + Pavilion Repair v2",
+  "scope": [
+    "separate wallet paid/free",
+    "Eight Trigram crowded CPU",
+    "unified Hero backpack",
+    "remove Forge",
+    "chapter4/5 bespoke patterns and presentation",
+    "paid target picker"
+  ],
+  "validation": {
+    "UI": "265 actual full-scene checks PASS; two locales/five sizes; final same-source run confirmed before disconnect",
+    "combat": "402 actual-runtime checks PASS; retained raw log",
+    "paid_compatibility": "58 PASS before disconnect; raw log not retained",
+    "paid_backend": "37 PASS; retained raw log",
+    "nine_gates": "PASS; refreshed read-only configuration check",
+    "native_script_parse": "PASS after recovery",
+    "installer": "12 cases PASS after recovery",
+    "visual_review": "full layout and mapped 30-pattern reconstructions reviewed; not native screenshots",
+    "trigram_CPU": "120 overlapping enemies; initial median47.8ms ->5.1ms; critical/set parity fixture batched7.9-13.2ms vs96.5-158.3ms unbatched",
+    "Windows_native": "NOT_RUN",
+    "Android": "NOT_TESTED"
+  },
+  "remaining": [
+    "owner apply_and_test.cmd",
+    "genuine Windows native GUI/GPU QA",
+    "manual export",
+    "Android playtest"
+  ],
+  "stages": {
+    "implemented": true,
+    "owner_installed": false,
+    "committed": false,
+    "pushed": false,
+    "deployed": false,
+    "exported": false,
+    "phone_tested": false
+  },
+  "resume": "Use this final package and matching receipts. Do not repeat passed author core tests. On owner machine run apply_and_test.cmd once; qa_only.cmd resumes a failed QA without reinstalling. Native Windows/Android, push/deploy/export remain separate unconfirmed stages.",
+  "implemented": true
+}

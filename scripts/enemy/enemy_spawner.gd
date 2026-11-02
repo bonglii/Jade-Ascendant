@@ -699,6 +699,20 @@ func clear_enemy_attacks() -> void:
 	)
 
 ## Spawn Boss dan menghentikan normal enemy spawning pada Wave 10.
+func collect_boss_entry_crystals() -> int:
+	if not is_instance_valid(player) or not player.has_method("add_experience"):
+		return 0
+	var count: int = 0
+	# One bounded snapshot. Each gem keeps the normal XP multiplier/rounding and
+	# repeat-contact guard; only sound/VFX are batched to avoid 160 simultaneous bursts.
+	for shard: Node in get_tree().get_nodes_in_group("qi_pickup"):
+		if is_instance_valid(shard) and shard.has_method("collect_for_boss_entry") and shard.collect_for_boss_entry(player):
+			count += 1
+	if count > 0:
+		AudioManager.play_sfx("pickup")
+		CombatFeedback.pulse(player.global_position, "level")
+	return count
+
 func spawn_boss() -> void:
 	if boss_spawned:
 		return
@@ -708,6 +722,7 @@ func spawn_boss() -> void:
 
 	clear_normal_enemies()
 	clear_enemy_attacks()
+	collect_boss_entry_crystals()
 
 	var boss = boss_scene.instantiate()
 	configure_top_down_character_body(boss)

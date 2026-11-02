@@ -1,0 +1,13 @@
+Compiled from "BuildConfig.java"
+public final class com.yungdevstudio.jadeascendant.monetizationbridge.BuildConfig {
+  public static final boolean DEBUG = false;
+  public static final java.lang.String LIBRARY_PACKAGE_NAME = "com.yungdevstudio.jadeascendant.monetizationbridge";
+  public static final java.lang.String BUILD_TYPE = "release";
+  public static final java.lang.String GODOT_PLUGIN_NAME = "JadeMonetizationNativeBridge";
+  public static final boolean JADE_IAP_GAMEPLAY_V2_ENABLED = true;
+  public static final boolean JADE_IAP_PRODUCTION_CANDIDATE_ENABLED = true;
+  public static final boolean JADE_IAP_STAGING_CREDIT_ENABLED = false;
+  public static final java.lang.String JADE_IAP_TARGET = "production-candidate";
+  public static final java.lang.String JADE_IAP_WORKER_BASE_URL = "https://jade-ascendant-iap.jade-ascendant-studio.workers.dev";
+  public com.yungdevstudio.jadeascendant.monetizationbridge.BuildConfig();
+}

@@ -12,6 +12,7 @@ var boss_stage_id: int = 1
 var authored_patterns: Array[String] = []
 var boss_signature: String = ""
 var _previous_pattern: String = ""
+var _pattern_cursor: int = 0
 var _strafe_side: float = 1.0
 
 # Chapter IV-only presentation. No scene, damage, save or boss-spawn changes.
@@ -105,7 +106,7 @@ func _ready() -> void:
 	elif realm_id == 5:
 		_solar_intro_left = 0.95
 		queue_redraw()
-	_create_body_ward()
+	preload("res://scripts/enemy/realm_actor_finish.gd").install(self, realm_id, 8 + boss_stage_id)
 
 
 func _process(delta: float) -> void:
@@ -261,19 +262,8 @@ func _draw_solar_body_presence() -> void:
 
 
 func _draw() -> void:
-	if realm_id == 4:
-		_draw_frost_body_presence()
-	elif realm_id == 5:
-		_draw_solar_body_presence()
-	# Small, body-bound defensive ward = not a hostile AoE telegraph.
-	if phase_transition_timer <= 0.0:
-		return
-	var progress: float = 1.0 - clampf(phase_transition_timer / maxf(phase_transition_invulnerability, 0.01), 0.0, 1.0)
-	var primary: Color = Color(0.54, 0.91, 1.0, 0.92) if realm_id == 4 else Color(1.0, 0.76, 0.34, 0.94)
-	var secondary: Color = Color(0.70, 0.74, 1.0, 0.72) if realm_id == 4 else Color(1.0, 0.37, 0.18, 0.72)
-	draw_circle(Vector2(0, -16), 45.0, Color(primary.r, primary.g, primary.b, 0.07))
-	draw_arc(Vector2(0, -16), 51.0, progress * 1.8, progress * 1.8 + PI * 1.5, 36, primary, 2.8, true)
-	draw_arc(Vector2(0, -16), 58.0, -progress * 1.3, -progress * 1.3 + PI * 1.1, 36, secondary, 2.0, true)
+	# The actor finish owns body accents; the sequence owns all floor danger.
+	pass
 
 
 func update_behavior() -> void:
@@ -292,11 +282,12 @@ func try_ranged_attack() -> void:
 		choices.append(boss_signature)
 	if choices.size() > 1:
 		choices.erase(_previous_pattern)
-	var selected: String = choices.pick_random()
+	var selected: String = choices[_pattern_cursor % choices.size()]
+	_pattern_cursor += 1
 	# Showcase the phase-two-only bespoke move once, rather than relying on RNG.
 	# Do not consume it while six hazards are already active.
 	if realm_id in [4, 5] and _first_phase_two_signature_pending and not boss_signature.is_empty():
-		if get_tree().get_nodes_in_group("realm_boss_telegraph").size() >= 6:
+		if get_tree().get_node_count_in_group("realm_boss_telegraph") >= 4:
 			ranged_attack_timer = 0.30
 			return
 		selected = boss_signature
@@ -323,7 +314,7 @@ func try_attack() -> void:
 	if attack_timer > 0.0:
 		return
 	if current_phase == PHASE_TWO and shockwave_timer <= 0.0:
-		var close_pattern: String = "frost_ring" if realm_id == 4 else "solar_ring"
+		var close_pattern: String = boss_signature if not boss_signature.is_empty() else authored_patterns[0]
 		_cast_realm_pattern(close_pattern, global_position)
 		shockwave_timer = shockwave_cooldown
 	else:
@@ -332,30 +323,12 @@ func try_attack() -> void:
 
 
 func _cast_realm_pattern(pattern_name: String, target: Vector2) -> void:
-	# Max six total boss telegraphs, independent of normal/projectile cap.
-	if get_tree().get_nodes_in_group("realm_boss_telegraph").size() >= 6:
-		return
-	var spell: Node2D = RealmTelegraph.new()
-	spell.set("pattern", pattern_name)
 	var is_signature: bool = pattern_name == boss_signature
-	var base_damage: float = projectile_damage * (1.65 if is_signature else 1.34)
-	if current_phase == PHASE_TWO:
-		base_damage *= 1.12
-	spell.set("damage", base_damage)
-	spell.set("warning_duration", 1.35 if is_signature else (1.20 if current_phase == PHASE_ONE else 1.13))
-	var anchored: bool = pattern_name in ["frost_mark", "ember_mark", "lotus_bloom", "nine_suns"]
-	var launch: Vector2 = target if anchored else global_position
-	spell.set("aim", global_position.direction_to(target))
-	spell.add_to_group("realm_boss_telegraph")
-	get_tree().current_scene.add_child(spell)
-	spell.global_position = launch
+	var amount: float = projectile_damage * (1.65 if is_signature else 1.34)
+	if current_phase == PHASE_TWO: amount *= 1.12
+	var sequence: Node2D = preload("res://scripts/enemy/realm_attack_sequence.gd").launch(get_tree().current_scene, pattern_name, global_position, target, amount, self)
+	if sequence == null: return
 	_update_facing_to_position(target)
-	# Pose families reflect the actual spell geometry, not a shared lightning gesture.
-	var family: String = "lightning"
-	if pattern_name in ["frost_lance","solar_lance","frost_fork"]:
-		family = "projectile"
-	elif pattern_name in ["mirror_gate","mirror_cross","frost_crown","solar_fan","forge_cross","phoenix_wings","eclipse_wheel"]:
-		family = "radial"
-	elif pattern_name in ["frost_ring","solar_ring","bell_toll","lotus_bloom"]:
-		family = "shockwave"
-	_play_action_animation(family, float(spell.warning_duration) + .20, float(spell.warning_duration))
+	var family: String = ["projectile", "radial", "shockwave", "lightning", "radial"][clampi(boss_stage_id-1,0,4)]
+	# Wind-up, release and recovery match the first real impact in this sequence.
+	_play_action_animation(family, 1.24, 1.0)

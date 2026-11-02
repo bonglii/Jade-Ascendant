@@ -886,9 +886,15 @@ func _close_target_picker() -> void:
 		_target_overlay.hide();_target_overlay.queue_free()
 	_target_overlay=null
 
+func _target_picker_id() -> String:
+	return PavilionManager.get_wish_target_item_id()
+
+func _target_picker_options() -> Array[String]:
+	return PavilionManager.get_wish_target_options()
+
 func _open_target_picker(category: String="") -> void:
-	if category.is_empty() and not PavilionManager.get_wish_target_item_id().is_empty():
-		var data: Dictionary = EquipmentManager.get_item_data(PavilionManager.get_wish_target_item_id())
+	if category.is_empty() and not _target_picker_id().is_empty():
+		var data: Dictionary = EquipmentManager.get_item_data(_target_picker_id())
 		category = "weapon" if str(data.get("slot","")) == "armament" else "set"
 	if summon_reveal_overlay!=null and summon_reveal_overlay.visible:return
 	if is_instance_valid(_target_overlay) and (category.is_empty() or category==_target_category):return
@@ -911,14 +917,14 @@ func _open_target_picker(category: String="") -> void:
 	_button(tabs,"SET",_open_target_picker.bind("set"),_target_category=="set",JADE)
 	_label(body,"Clear 1–5 membuka seluruh pool equipment & weapon. Target adalah satu item Legendary; ganti target mereset Fate." if SettingsManager.language=="id" else "Clear 1–5 unlocks the full equipment and weapon pool. A target is one Legendary item; changing target resets Fate.",14,MUTED_TEXT)
 	var choices:=GridContainer.new();choices.name="TargetChoices";choices.columns=1 if $SafeArea.size.x<440 else 2;choices.add_theme_constant_override("h_separation",8);choices.add_theme_constant_override("v_separation",8);body.add_child(choices)
-	var available: Array[String]=PavilionManager.get_wish_target_options()
+	var available: Array[String]=_target_picker_options()
 	for id: String in EquipmentManager.get_item_ids():
 		var data: Dictionary=EquipmentManager.get_item_data(id)
 		if str(data.get("rarity",""))!="legendary":continue
 		if (str(data.get("slot",""))=="armament")!=(_target_category=="weapon"):continue
 		var text: String=str(data.get("display_name",id))
 		if _target_category=="set":text+="\n"+EquipmentSetCatalog.get_display_name(EquipmentSetCatalog.get_set_id_for_item(id))
-		text+=("\n✓ TARGET" if id==PavilionManager.get_wish_target_item_id() else "")
+		text+=("\n✓ TARGET" if id==_target_picker_id() else "")
 		var button:=_button(choices,text,_choose_browser_target.bind(id,_target_epoch),false,GOLD);button.name="Target_"+id
 		button.mouse_filter=Control.MOUSE_FILTER_PASS;button.button_down.connect(_target_button_down)
 		button.size_flags_horizontal=Control.SIZE_EXPAND_FILL;button.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;button.custom_minimum_size.y=76
@@ -934,7 +940,7 @@ func _target_button_down() -> void:
 
 func _choose_browser_target(id: String,epoch: int=-1) -> void:
 	if epoch>=0 and epoch!=_target_epoch:return
-	if not is_instance_valid(_target_overlay) or id not in PavilionManager.get_wish_target_options():return
+	if not is_instance_valid(_target_overlay) or id not in _target_picker_options():return
 	if get_global_mouse_position().distance_to(_target_press_pos)>12 or absi((_target_overlay.get_meta("scroll") as ScrollContainer).scroll_vertical-_target_scroll_start)>8:return
 	if not PavilionManager.set_wish_target(id):return
 	selected_rate_up_item_id=id;_close_target_picker();_refresh_summon_panel()

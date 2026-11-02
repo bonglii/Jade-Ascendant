@@ -7,6 +7,8 @@ workers_dev = true
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
+ODYSSEY_AD_UNIT = "ca-app-pub-3082528078187093/8339864838"
+ODYSSEY_AD_REWARD_ITEM = "Dice"
 JADE_REAL_MONEY_RELEASE_ENABLED = "true"
 JADE_PAID_GAMEPLAY_V2_ENABLED = "true"
 JADE_STAGING_ACCOUNT_GUARD = "false"

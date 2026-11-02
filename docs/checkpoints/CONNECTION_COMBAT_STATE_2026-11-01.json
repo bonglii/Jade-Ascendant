@@ -1,0 +1,103 @@
+{
+  "batch": "PLAYER_CONNECTION_COMBAT_20261101",
+  "phase": "R2_READY_FOR_OWNER_WINDOWS_QA",
+  "base_commit": "8654ad52c8237f2cb8832b77c2f5adefe1b2d219",
+  "base_overlay": "Exact uploaded owner conflict files + hash-matched installed 8-10 R2 native source + R4 gameplay/UI",
+  "previous_windows_qa": "R4_PASS_CONFIRMED_BY_OWNER",
+  "scope": [
+    "event and paid connection startup/read scheduling",
+    "boss-entry XP collection",
+    "temporarily hold cosmetic aura",
+    "independent projectile damage",
+    "boss visual/contact readability"
+  ],
+  "author_tools": {
+    "godot": "4.7.2.stable.official.ed1daf0bf",
+    "godot_sha256": "cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4",
+    "native_gui": "Linux Xvfb TCP + Mesa llvmpipe OpenGL4.5; same-exec sessions"
+  },
+  "validation": {
+    "r1_historical_checks": 957,
+    "unchanged_gameplay_source": "Byte-identical to R1 for ten principal files; original evidence retained, not a fresh full R2 run",
+    "r2_focused_godot": {
+      "checks": 267,
+      "failures": 0,
+      "scope": "FOCUSED",
+      "phases": {
+        "connection": 28,
+        "event-recovery": 96,
+        "event-delivery": 18,
+        "trials-recovery": 26,
+        "event-prewarm": 8,
+        "native-event": 91
+      }
+    },
+    "native_compile": {
+      "jvm_executions": 248,
+      "failures": 0,
+      "jni_methods": 35,
+      "source_inputs": 52,
+      "aar_sha256": "2171f13f36cf8d90988fd20248f879653104625c8481b91d3fb0a4303fb098ea",
+      "owner_native_inputs_unchanged": 49,
+      "heavenly_trials_ruleset": 2,
+      "run_card_export": 1
+    },
+    "installer": {
+      "general": {
+        "cases": 10,
+        "checks": 36,
+        "failures": 0,
+        "scope": "Disposable source fixtures using the reviewed real locked AAR and 52 native inputs; no export/device claims."
+      },
+      "owner": {
+        "cases": 8,
+        "checks": 199,
+        "failures": 0,
+        "original_conflict_paths": [
+          "backend/player_identity/export_production.ps1",
+          "docs/checkpoints/IAP_PRODUCTION_NATIVE_CANDIDATE.json",
+          "release/native/JadeMonetizationNativeBridge-production-candidate.aar",
+          "scripts/monetization/odyssey_client.gd"
+        ],
+        "exact_owner_sha256": {
+          "backend/player_identity/export_production.ps1": "88e93d9f11e7699781a28e6a2ec19c6e121a349cf22c8513a46681dbe1ebe3a6",
+          "docs/checkpoints/IAP_PRODUCTION_NATIVE_CANDIDATE.json": "f30ad40b95bfaf47212e468b550bcfa04029bfe635c7248d441d7d2fdb16bc7a",
+          "release/native/JadeMonetizationNativeBridge-production-candidate.aar": "11de7b6d70d27f7bc7df277fadc07afe03e166d7b4a95b6351f1575a72e8b557",
+          "scripts/monetization/odyssey_client.gd": "f99817a97452e9d68e92b46e834727d702dbecfc77632f8d58ce16b1d6caeba0"
+        },
+        "reproduced_original_conflicts": 4,
+        "owner_uploaded_files_verified": 4,
+        "owner_native_inputs_retained": 49,
+        "new_compiled_native_inputs": 52,
+        "scope": "Exact uploaded owner bytes + hash-matched installed 8-10 R2 source. Disposable fixtures; Windows/phone not tested."
+      },
+      "total_cases": 18,
+      "total_checks": 235
+    },
+    "powershell_overlay": {
+      "checks": 40,
+      "cases": 14,
+      "failures": 0,
+      "host": "7.6.9 Linux"
+    },
+    "exporter_verify_only": "PASS_52_INPUTS_NO_EXPORT",
+    "powershell_parser": "PASS_3_FILES",
+    "windows": "NOT_TESTED_R2",
+    "phone": "NOT_TESTED_R2",
+    "live_server_latency": "NOT_MEASURED",
+    "live_billing_ads": "NOT_TESTED"
+  },
+  "installed_owner": false,
+  "committed": false,
+  "pushed": false,
+  "deployed": false,
+  "exported": false,
+  "next_action": "Extract the R2 ZIP in a fresh folder; run apply_and_test.cmd, verify R2 revision and Windows PASS; only then use the production export launcher and test the closed build on phone.",
+  "installer_revision": "CONNECTION_COMBAT_R2_OWNER_NATIVE_20261101",
+  "previous_owner_attempt": {
+    "installer": "R1",
+    "status": "STOPPED_PREFLIGHT",
+    "conflicts": 4,
+    "source_writes": 0
+  }
+}

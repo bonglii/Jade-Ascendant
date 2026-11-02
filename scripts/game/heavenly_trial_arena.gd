@@ -7,6 +7,7 @@ var _boss: Node2D
 var _save_left: float=12
 var _hazard_left: float=7
 var _theme: String="jade_wind"
+var ruleset_version: int=1
 var _resuming: Dictionary={}
 func _enter_tree() -> void:
  # Base courtyard setup only; never begin or complete a Journey run.
@@ -16,8 +17,12 @@ func _enter_tree() -> void:
  _trial=get_node_or_null("/root/HeavenlyTrialsClient")
  if _trial==null or _trial.launch_session.is_empty():return
  var session: Dictionary=_trial.launch_session
- stage_id=int(session.get("week_config",_trial.snapshot.get("week",{})).get("stage",1))
- _theme=str(session.get("week_config",_trial.snapshot.get("week",{})).get("theme","jade_wind"))
+ var frozen: Dictionary=preload("res://scripts/data/trial_ruleset_policy.gd").session_config(session,_trial.snapshot)
+ if frozen.is_empty():_trial.launch_session={};return
+ session["week_config"]=frozen
+ stage_id=int(session.get("week_config",{}).get("stage",1))
+ ruleset_version=int(session.get("week_config",{}).get("ruleset_version",1))
+ _theme=str(session.get("week_config",{}).get("theme","jade_wind"))
  stage_profile=JourneyManager.get_stage_data(int(session.tier),stage_id).duplicate(true)
  # Weekly encounters retain authored attack timings, hitboxes and presentation.
  # Shorter warmup limits crowd count; no extra campaign/elite rewards.
@@ -39,6 +44,14 @@ func _ready() -> void:
  if not _resuming.is_empty():elapsed=float(_resuming.get("trials_elapsed",0))
  SceneTransitionManager.set_back_handler(_leave)
  call_deferred("_resume_boss")
+ if ruleset_version==2 and not _resuming.is_empty():
+  var saved_left: Variant=_resuming.get("trials_hazard_left",7)
+  _hazard_left=clampf(float(saved_left),0,9) if (saved_left is int or saved_left is float) and is_finite(float(saved_left)) else 0.0
+  var raw: Variant=_resuming.get("trials_pattern",{})
+  if preload("res://scripts/game/heavenly_trial_rule_v2.gd").valid_snapshot(raw) and raw.theme==_theme and int(raw.tier)==int(_trial.launch_session.tier):
+   var hazard: Node2D=preload("res://scripts/game/heavenly_trial_rule_v2.gd").new()
+   hazard.theme_id=raw.theme;hazard.tier=int(raw.tier);hazard.clock=float(raw.clock);hazard.axis=float(raw.axis);hazard.hit_mask=int(raw.hit);hazard.position=Vector2(raw.x,raw.y)
+   add_child(hazard)
 func _resume_boss() -> void:
  if bool(_resuming.get("trials_boss_phase",false)) and not ended:get_node("EnemySpawner").spawn_boss()
 func _boss_spawned(actor: Node2D) -> void:
@@ -58,7 +71,8 @@ func _process(delta: float) -> void:
  if _save_left<=0:_save_left=15;get_node("CheckPointManager").save_checkpoint()
  if _hazard_left<=0 and is_instance_valid(player):
   _hazard_left=9
-  var hazard: Node2D=preload("res://scripts/game/heavenly_trial_rule.gd").new()
+  var hazard: Node2D=preload("res://scripts/game/heavenly_trial_rule_v2.gd").new() if ruleset_version==2 else preload("res://scripts/game/heavenly_trial_rule.gd").new()
+  if ruleset_version==2:hazard.axis=randf()*TAU
   hazard.theme_id=_theme;hazard.tier=int(_trial.launch_session.tier);hazard.global_position=player.global_position
   add_child(hazard)
 func _notification(what: int) -> void:
@@ -80,6 +94,13 @@ func finish_heavenly_trial(won: bool) -> void:
  if not _trial.action("finish",report,str(_trial.launch_session.week)):
   ended=false;ledger.frozen=false;return
  _trial.last_result={"won":won,"tier":int(_trial.launch_session.tier),"time_ms":report.time_ms,"hits":int(ledger.hp_hits),"deaths":int(ledger.deaths),"week":str(_trial.launch_session.week)}
+ var skills: Array=[]
+ for skill: Dictionary in ledger.skills():skills.append({"id":str(skill.id),"level":int(skill.level),"armament_id":str(skill.get("armament_id",""))})
+ var amounts: Dictionary={}
+ for key: String in ledger.totals:amounts[key]=roundi(float(ledger.totals[key]))
+ _trial.last_result["display"]={"time_ms":maxi(1,int(report.time_ms)),"hits":int(report.hits),"deaths":int(report.deaths),"complete":ledger.metrics_complete,"damage_complete":not ledger.partial,"skills":skills,"damage":amounts}
+ _trial.last_result["committed"]=false
+ _trial.last_result["_display_request"]=str(_trial._command.get("request_id",""))
  _trial.delete_trial_checkpoint()
  get_node("SurvivalManager").game_running=false
  get_tree().paused=false
@@ -88,3 +109,8 @@ func finish_heavenly_trial(won: bool) -> void:
 func _exit_tree() -> void:
  if is_instance_valid(_trial):_trial.launching=false
  if not SaveManager.has_save_file("checkpoint"):EquipmentManager.active_run_loadout_snapshot.clear()
+
+func pattern_checkpoint() -> Dictionary:
+ for pattern: Node in get_tree().get_nodes_in_group("heavenly_pattern"):
+  if pattern.get_parent()==self:return pattern.snapshot()
+ return {}

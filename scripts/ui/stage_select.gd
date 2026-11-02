@@ -35,6 +35,9 @@ var confirm_body_label: Label
 # Production stage UI is built once per scene. Selection reuses live Controls,
 # preserving typography normalization, viewport geometry, and map scroll.
 var _stage_node_refs: Dictionary = {}
+var _oath_toggle: CheckBox
+var _oath_hint: Label
+var _story_button: Button
 var _preview_image: TextureRect = null
 var _preview_code: Label = null
 var _preview_status: Label = null
@@ -482,6 +485,26 @@ func _build_selected_stage_panel(accent: Color) -> PanelContainer:
 	start_button.disabled = not can_start
 	start_button.focus_mode = Control.FOCUS_NONE
 	start_button.pressed.connect(_on_start_pressed)
+	_oath_toggle = CheckBox.new()
+	_oath_toggle.name = "JadeOathOptIn"
+	_oath_toggle.text = "Sumpah Giok · Opsional" if SettingsManager.language=="id" else "Jade Oath · Optional"
+	_oath_toggle.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
+	_oath_toggle.custom_minimum_size.y = 44
+	text_box.add_child(_oath_toggle)
+	_oath_hint = Label.new()
+	_oath_hint.add_theme_font_size_override("font_size",13)
+	_oath_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_oath_hint.text = "8 dtk di segel / 22 dtk. Menang untuk badge & cerita. Tanpa bonus stat." if SettingsManager.language=="id" else "8s in the seal / 22s. Win for a badge & story. No stat bonus."
+	text_box.add_child(_oath_hint)
+	_story_button = Button.new()
+	_story_button.name = "StageChronicle"
+	_story_button.text = "KISAH REALM  ›" if SettingsManager.language=="id" else "REALM STORY  ›"
+	_story_button.custom_minimum_size.y = 40
+	_story_button.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
+	_story_button.pressed.connect(func():
+		var entry: Dictionary = preload("res://scripts/data/chronicle_catalog.gd").for_chapter(chapter_id,"enter")
+		preload("res://scripts/ui/chronicle_reader.gd").open(self,str(entry.get("id",""))))
+	text_box.add_child(_story_button)
 	text_box.add_child(start_button)
 	var records_button:=Button.new()
 	records_button.name="OpenCombatRecords";records_button.text="REKOR" if SettingsManager.language=="id" else "RECORDS"
@@ -489,6 +512,21 @@ func _build_selected_stage_panel(accent: Color) -> PanelContainer:
 	records_button.pressed.connect(func():preload("res://scripts/ui/stage_records_panel.gd").open(self,chapter_id))
 	_record_button=records_button
 	status_row.add_child(records_button)
+	# Keep Start fixed while long bilingual story/objective copy scrolls natively.
+	row.remove_child(text_box)
+	var details := VBoxContainer.new()
+	details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(details)
+	var details_scroll := ScrollContainer.new()
+	details_scroll.name = "StageDetailScroll"
+	details_scroll.custom_minimum_size.y = 135
+	details_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	details_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	details.add_child(details_scroll)
+	details_scroll.add_child(text_box)
+	text_box.remove_child(start_button)
+	details.add_child(start_button)
+	preload("res://scripts/ui/mobile_scroll_policy.gd").prepare_tree(details_scroll)
 	_preview_image = image
 	_preview_code = code
 	_preview_status = status_label
@@ -593,6 +631,13 @@ func _refresh_selected_stage_panel() -> void:
 	var next_reward: String = str(state.get("reward_text", "")).replace("\n"," · ")
 	if _preview_reward.text != next_reward:
 		_preview_reward.text = next_reward
+	var eligible_oath: bool = chapter_id == 1 and JourneyManager.selected_stage_id == 3 and JourneyManager.is_stage_cleared(1,3)
+	_oath_toggle.visible = eligible_oath
+	_oath_hint.visible = eligible_oath
+	if not eligible_oath:
+		_oath_toggle.button_pressed = false
+	var entry: Dictionary = preload("res://scripts/data/chronicle_catalog.gd").for_chapter(chapter_id,"enter")
+	_story_button.visible = not entry.is_empty() and preload("res://scripts/data/chronicle_catalog.gd").unlocked(entry,JourneyManager.cleared_stage_keys,JourneyManager.cosmetic_badges)
 	var next_button_text: String = str(state.get("button_text", ""))
 	if start_button.text != next_button_text:
 		start_button.text = next_button_text
@@ -697,6 +742,7 @@ func _start_selected_stage() -> void:
 		push_error("StageSelect: stage scene is unavailable: " + expected_scene_path)
 		return
 	GameSession.start_new_game()
+	GameSession.jade_oath_requested = is_instance_valid(_oath_toggle) and _oath_toggle.visible and _oath_toggle.button_pressed
 	var stage_scene_path := expected_scene_path
 	if stage_scene_path.is_empty():
 		push_error("StageSelect: JourneyManager failed to begin selected stage.")

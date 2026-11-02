@@ -1,0 +1,82 @@
+{
+  "batch": "PLAYER_BATCH_1_7_2026-10-26",
+  "base": "057ed76f186940374d2cabe1ecb307a0114d3106",
+  "branch": "work/player-followup-1-7-20261026",
+  "scope": {
+    "one": "Victory/Continue checkpoint finalization",
+    "two": "active campaign totals and reward eligibility with legacy preservation",
+    "three": "inventory-aware Guest follow-up",
+    "four": "consistent en/id UI",
+    "five": "read-only contextual skill/build guidance",
+    "six": "queued breakthrough count and transition comfort",
+    "seven": "targeted Android owner run and evidence collection"
+  },
+  "parked": [
+    "08 optional encounter and new content design",
+    "09 Lin Yue narrative design",
+    "10 share cards design"
+  ],
+  "stage": "client_ready_android_pending",
+  "confirmed": {
+    "repository_heads_verified": true,
+    "base_review_read": true,
+    "isolated_worktree": true,
+    "main_changed": false,
+    "live_iap_configuration": "preserve",
+    "terminal_reproduction": {
+      "normal_victory_exit": "baseline passed",
+      "explicit_late_save": "recreated checkpoint and Home Continue before writer guard",
+      "baseline_evidence": "victory-late-baseline.json"
+    }
+  },
+  "receipts": {
+    "implemented": true,
+    "local_qa": true,
+    "installed": false,
+    "committed": false,
+    "pushed": false,
+    "deployed": false,
+    "exported": false,
+    "android_tested": false,
+    "full_batch_complete": false,
+    "packaged": true
+  },
+  "limitations": [
+    "No connected Android device/control capability was found in available tools; only owner device run can establish Android input/visual/frame-time results.",
+    "Native local display sockets are blocked; do not repeat rejected native-display setup."
+  ],
+  "next": "Owner extracts Jade-Player-Batch-1-7.zip and runs apply_and_check.cmd. Use existing production exporter for the new tester build, then android_playtest.cmd with its actual versionCode. Review physical results before closing 7 or starting design 8\u201310. Commit/push requires explicit instruction.",
+  "updated_utc": "2026-10-26T15:34:55.357300+00:00",
+  "implementation": {
+    "one_to_six": "complete",
+    "seven": "owner Android runner/checklist complete; physical test pending"
+  },
+  "validation": {
+    "engine": "Godot 4.7.2 headless",
+    "functional_checks": 416,
+    "installer_tests": 6,
+    "android_capture_parser_tests": 2,
+    "production_gates": 9,
+    "production_config": "PASS",
+    "runtime_errors": 0,
+    "runtime_exit_leaks": 0,
+    "reuse": "Unaffected passed suites retained; only final skill/generation/fixture corrections rerun in 58-check regression.",
+    "limits": "No Android, GPU render, real audio, Windows install/export or retention evidence."
+  },
+  "package": {
+    "status": "ready",
+    "filename": "Jade-Player-Batch-1-7.zip",
+    "launcher": "apply_and_check.cmd",
+    "file_count": 29,
+    "smoke": "Extracted ZIP installed on separate sparse clone; all manifested file hashes matched; repeat CHANGED=0; main/HEAD/staged edit/protected sentinel preserved. Linux fixture only.",
+    "mutations": "manifest source only with backups and three-way merge; work branch created at same HEAD",
+    "automatic_publish": false
+  },
+  "remaining": [
+    "owner installation and owner-environment QA",
+    "AAB export through existing production launcher",
+    "Android checklist and physical visual/audio/performance review",
+    "commit/push only on explicit user instruction"
+  ],
+  "ready_for_design_8_10": false
+}
