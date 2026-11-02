@@ -3,6 +3,7 @@ extends Node
 signal changed
 signal finished(kind: String, success: bool)
 const BRIDGE: String="JadeMonetizationNativeBridge"
+var risk_choice: int=0 # Personal difficulty only; never sent as reward authority.
 var snapshot: Dictionary={}
 var last_result: Dictionary={}
 var status: String="preparing"
@@ -47,7 +48,7 @@ func _persist(command: Dictionary) -> bool:
  if _path().is_empty():return false
  var file:=FileAccess.open(_path()+".tmp",FileAccess.WRITE)
  if file==null:return false
- file.store_string(JSON.stringify({"owner":_owner,"command":command}));file.flush()
+ file.store_string(JSON.stringify({"owner":_owner,"command":command,"personal_risk":clampi(risk_choice,0,2) if str(command.get("action",{}).get("kind",""))=="start" else 0}));file.flush()
  var error: Error=file.get_error();file.close()
  return error==OK and DirAccess.rename_absolute(_path()+".tmp",_path())==OK
 func _notification(what: int) -> void:
@@ -115,6 +116,10 @@ func _result(request_id: String,success: bool,result_status: String,payload: Str
   return
  var data: Variant=JSON.parse_string(payload)
  if not valid_snapshot(data,_owner):status="invalid_server_response";changed.emit();return
+ if kind=="start" and data.get("session") is Dictionary:
+  var envelope: Variant=JSON.parse_string(FileAccess.get_file_as_string(_path())) if FileAccess.file_exists(_path()) else {}
+  var risk: int=int(envelope.get("personal_risk",0)) if envelope is Dictionary and envelope.get("owner")==_owner and envelope.get("command",{}).get("request_id")==request_id and valid_personal_risk(envelope.get("personal_risk",0)) else 0
+  if not _save_personal_risk(str(data.session.id),risk):status="save_unavailable";_next_read=Time.get_ticks_msec()+5000;changed.emit();return
  if kind=="finish" and not last_result.is_empty() and last_result.get("_display_request")==request_id:last_result["committed"]=true
  snapshot=data;_received=Time.get_ticks_msec();status="connected";_next_read=_received+60000
  if not _command.is_empty():DirAccess.remove_absolute(_path())
@@ -172,6 +177,7 @@ func launch(continuing: bool) -> bool:
  if frozen_config.is_empty():status="saved_rules_unavailable";changed.emit();return false
  launch_session=snapshot.session.duplicate(true)
  launch_session["week_config"]=frozen_config
+ launch_session["personal_risk"]=personal_risk(str(launch_session.id))
  if continuing and checkpoint_data().is_empty():status="saved_attempt_unavailable";changed.emit();return false
  if continuing:EquipmentManager.active_run_loadout_snapshot=checkpoint_data().get("trials_loadout",{}).duplicate(true)
  else:EquipmentManager.active_run_loadout_snapshot=EquipmentManager.build_active_run_loadout_snapshot()
@@ -249,3 +255,22 @@ func _setup_store() -> void:
  if pavilion!=null and not pavilion.is_connected("billing_purchase_state_changed",_purchase_state):pavilion.connect("billing_purchase_state_changed",_purchase_state)
 func _purchase_state(product: String,purchase_status: String,_message: String) -> void:
  if product=="heavenly_trials_support_550" and purchase_status=="wallet_credited":_next_read=Time.get_ticks_msec()+500;changed.emit()
+
+func personal_risk(session_id: String) -> int:
+ if _owner.length()!=64 or session_id.is_empty():return 0
+ var path: String=_path()+".challenge"
+ if not FileAccess.file_exists(path) or FileAccess.get_file_as_bytes(path).size()>1024:return 0
+ var row: Variant=JSON.parse_string(FileAccess.get_file_as_string(path))
+ if not row is Dictionary or row.get("owner")!=_owner or row.get("session")!=session_id or not valid_personal_risk(row.get("risk")):return 0
+ return int(row.risk)
+func _save_personal_risk(session_id: String,risk: int) -> bool:
+ if _owner.length()!=64 or session_id.is_empty() or session_id.length()>160 or (risk<0 or risk>2):return false
+ var path: String=_path()+".challenge"
+ var file:=FileAccess.open(path+".tmp",FileAccess.WRITE)
+ if file==null:return false
+ file.store_string(JSON.stringify({"owner":_owner,"session":session_id,"risk":risk}));file.flush()
+ var error: Error=file.get_error();file.close()
+ return error==OK and DirAccess.rename_absolute(path+".tmp",path)==OK
+
+static func valid_personal_risk(value: Variant) -> bool:
+ return (value is int or value is float) and is_finite(float(value)) and value==floorf(float(value)) and value>=0 and value<=2

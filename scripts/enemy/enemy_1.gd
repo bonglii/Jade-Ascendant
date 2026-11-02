@@ -149,6 +149,12 @@ func take_damage(amount: float) -> void:
 ## Menangani kematian Enemy dan menjatuhkan XP Gem.
 func die() -> void:
 	if is_in_group("companion_training_target"):
+		if bool(get_meta("practice_destructible", false)):
+			is_dead = true
+			remove_from_group("enemy")
+			enemy_defeated.emit()
+			queue_free()
+			return
 		# Dead training targets stop being eligible for auto-targeting; they
 		# remain as inert practice props until the local arena is reset.
 		current_hp=0.0

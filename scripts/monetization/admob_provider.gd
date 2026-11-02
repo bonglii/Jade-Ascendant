@@ -53,6 +53,9 @@ var _consent_retry_delay_seconds: float = CONSENT_RETRY_INITIAL_SECONDS
 
 func _ready() -> void:
 	name = "AdMobProvider"
+	if MonetizationManager.ads_suspended():
+		_state = "ads_temporarily_suspended"
+		return
 
 	if OS.get_name() != "Android":
 		_state = "unsupported_platform"
@@ -473,6 +476,7 @@ func _open_consent_gate() -> void:
 
 
 func _initialize_mobile_ads() -> void:
+	if MonetizationManager.ads_suspended(): return
 	if not _consent_gate_open:
 		return
 
@@ -501,6 +505,7 @@ func _on_mobile_ads_initialized(_initialization_status) -> void:
 
 
 func _load_rewarded_ad(unit: String = "dice") -> void:
+	if MonetizationManager.ads_suspended(): return
 	if not UnitCatalog.UNITS.has(unit) and not (unit=="trials" and not UnitCatalog.trials_unit_id.is_empty()): return
 	var slot: Dictionary = _slot(unit)
 	if not _consent_gate_open or _privacy_form_open or not _ads_initialized or bool(slot.loading) or slot.ad != null or _active_request_id >= 0: return

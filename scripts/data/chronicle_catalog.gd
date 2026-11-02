@@ -209,7 +209,102 @@ const ENTRIES: Array = [
       "id": "Sumpah ini punya tujuan. Aku akan mencari siapa yang belum pulang.",
       "en": "This oath had a purpose. I will find who has not returned."
     }
+  },
+{
+  "id": "verdant_witness",
+  "chapter": 1,
+  "realm": "Verdant Qi Valley",
+  "kind": "fragment",
+  "requires": "1-3",
+  "title": {
+    "id": "Penanda yang diperbaiki",
+    "en": "The mended marker"
+  },
+  "body": {
+    "id": "Di tepi Bamboo Mist Pass, Lin Yue menegakkan penanda yang roboh. Seorang murid lembah mengaku pernah mengikuti cahayanya ketika kabut menutup jalan. Sumpah itu ternyata masih bekerja, jauh dari gerbang besar.",
+    "en": "At the edge of Bamboo Mist Pass, Lin Yue raises a fallen marker. A valley disciple says its light once led him through the fog. The oath is still at work, far from the great gate."
+  },
+  "line": {
+    "id": "Yang kecil pun bisa menjaga jalan pulang.",
+    "en": "Even a small light can guard the way home."
   }
+},
+{
+  "id": "crimson_witness",
+  "chapter": 2,
+  "realm": "Crimson Moon Sect",
+  "kind": "fragment",
+  "requires": "2-3",
+  "title": {
+    "id": "Satu nama di sisi gulungan",
+    "en": "A name in the margin"
+  },
+  "body": {
+    "id": "Di sisi gulungan merah, Lin Yue menemukan tulisan seorang penjaga dapur. Ia tidak tercatat sebagai cultivator, tetapi setiap malam menyiapkan bekal bagi murid yang menjaga segel. Lin Yue menyalin namanya bersama nama yang hilang.",
+    "en": "In the margin of a crimson scroll, Lin Yue finds a kitchen keeper’s note. Never listed as a cultivator, she prepared food each night for the seal watch. Lin Yue copies her name beside the missing one."
+  },
+  "line": {
+    "id": "Sumpah tidak hanya ditopang oleh pedang.",
+    "en": "An oath is upheld by more than swords."
+  }
+},
+{
+  "id": "stars_witness",
+  "chapter": 3,
+  "realm": "Nine Heavens Star Palace",
+  "kind": "fragment",
+  "requires": "3-3",
+  "title": {
+    "id": "Rasi yang rendah",
+    "en": "The low constellation"
+  },
+  "body": {
+    "id": "Sebuah lensa tua mengarahkan cahaya istana ke desa di bawah. Murid-murid menyebutnya rasi yang rendah. Lin Yue memahami bahwa arah cahaya sama pentingnya dengan seberapa tinggi ia dapat mencapai langit.",
+    "en": "An old lens directs the palace light toward a village below. The disciples call it the low constellation. Lin Yue learns that where light is sent matters as much as how high it rises."
+  },
+  "line": {
+    "id": "Bintang yang menunduk tetaplah bintang.",
+    "en": "A star looking down is still a star."
+  }
+},
+{
+  "id": "frost_witness",
+  "chapter": 4,
+  "realm": "Frostveil Abyss",
+  "kind": "fragment",
+  "requires": "4-3",
+  "title": {
+    "id": "Suara yang disimpan",
+    "en": "The voice kept safe"
+  },
+  "body": {
+    "id": "Di bawah es, Lin Yue mendengar pesan untuk seorang penjaga: pulanglah jika jalan sudah aman. Ia menyalin pesan itu sebelum memecahkan lapisan es di atasnya. Ingatan yang dijaga tidak harus terus terkurung.",
+    "en": "Beneath the ice, Lin Yue hears a message to a guardian: return when the road is safe. He copies it before breaking the ice above. A memory kept safe need not remain imprisoned."
+  },
+  "line": {
+    "id": "Mengingat bukan berarti menahan.",
+    "en": "Remembering need not mean holding someone back."
+  }
+},
+{
+  "id": "solar_witness",
+  "chapter": 5,
+  "realm": "Solar Nirvana Domain",
+  "kind": "fragment",
+  "requires": "5-3",
+  "title": {
+    "id": "Api untuk menempa jalan",
+    "en": "Fire to forge a road"
+  },
+  "body": {
+    "id": "Di antara abu tungku, Lin Yue menemukan paku-paku giok yang belum selesai. Api domain ini pernah dipakai memperbaiki jembatan antar-realm. Ia membawa satu paku itu sebagai pengingat bahwa ascension juga dapat membangun jalan bagi orang lain.",
+    "en": "Among the furnace ashes, Lin Yue finds unfinished jade rivets. The domain’s fire once repaired bridges between realms. He carries one rivet as a reminder that ascension can build a road for others."
+  },
+  "line": {
+    "id": "Kekuatan ini harus membawa sesuatu pulang.",
+    "en": "This strength must bring something home."
+  }
+}
 ]
 
 static func unlocked(entry: Dictionary, cleared: Array, badges: Array) -> bool:

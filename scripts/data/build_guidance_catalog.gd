@@ -14,7 +14,7 @@ const WEAPON_ROLES: Dictionary={"jade_binding_chain":"CONTROL · DELAYED BURST",
 static func set_advice(id: String) -> Dictionary:
  var passive: Dictionary=Sets.get_four_piece_passive(id)
  var text: Array=ADVICE.get(str(passive.get("kind","")),["SURVIVAL FOUNDATION","Lower-rarity full sets supply HP. Choose useful individual stats while collecting a matching four-piece set."])
- return {"role":text[0],"advice":text[1],"passive":passive,"set":id}
+ return {"role":TranslationServer.translate(str(text[0])),"advice":TranslationServer.translate(str(text[1])),"passive":passive,"set":id}
 static func loadout(ids: Array[String]) -> Dictionary:
  var dominant: Dictionary=Sets.get_dominant_set_state(ids)
  var result: Dictionary=set_advice(str(dominant.set_id));result.merge(dominant,true)

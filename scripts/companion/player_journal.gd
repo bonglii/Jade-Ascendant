@@ -17,6 +17,8 @@ var _heading: Label
 var _previous_back: Callable
 var _queued: bool=false
 var _feedback: String=""
+var _compare_a: int=1
+var _compare_b: int=0
 var _owner: String
 static func open(host: Node, page: String="tools") -> Control:
  var existing: Node=host.get_node_or_null("PlayerJournal")
@@ -80,7 +82,7 @@ func _redraw(preserve: bool=false) -> void:
  if not is_instance_valid(_body):return
  var offset: int=_scroll.scroll_vertical
  for child: Node in _body.get_children():_body.remove_child(child);child.queue_free()
- var titles: Dictionary={"tools":copy("CULTIVATOR JOURNAL","JURNAL KULTIVATOR"),"presets":copy("BUILD PRESETS","PRESET BUILD"),"goal":copy("COLLECTION GOAL","TARGET KOLEKSI"),"bosses":copy("BOSS ARCHIVE","ARSIP BOSS"),"runs":copy("RECENT RUNS","RUN TERAKHIR"),"agenda":copy("EVENT AGENDA","AGENDA EVENT"),"summons":copy("SUMMON HISTORY","RIWAYAT SUMMON")}
+ var titles: Dictionary={"tools":copy("CULTIVATOR JOURNAL","JURNAL KULTIVATOR"),"presets":copy("BUILD PRESETS","PRESET BUILD"),"goal":copy("COLLECTION GOAL","TARGET KOLEKSI"),"bosses":copy("BOSS ARCHIVE","ARSIP BOSS"),"runs":copy("RECENT RUNS","RUN TERAKHIR"),"agenda":copy("EVENT AGENDA","AGENDA EVENT"),"summons":copy("SUMMON HISTORY","RIWAYAT SUMMON"),"drills":copy("TECHNIQUE RECORDS","CATATAN TEKNIK")}
  _heading.text=str(titles.get(mode,titles.tools))
  if not _feedback.is_empty():_body.add_child(label(_feedback,14,JADE))
  match mode:
@@ -88,6 +90,7 @@ func _redraw(preserve: bool=false) -> void:
   "goal":_goals()
   "bosses":_bosses()
   "runs":_runs()
+  "drills":_drills()
   "agenda":_agenda()
   "summons":_summons()
   _:_tools()
@@ -95,7 +98,7 @@ func _redraw(preserve: bool=false) -> void:
  if preserve:_scroll.set_deferred("scroll_vertical",offset)
 func _tools() -> void:
  card(copy("YOUR PATH, YOUR BUILD","JALUR DAN BUILD PILIHANMU"),copy("Review your equipment, revisit encounters and prepare your next run.","Atur equipment, pelajari pertarungan dan siapkan run berikutnya."),load("res://assets/ui/hero/imperial_v4/sanctuary_banner.png"))
- for entry: Array in [["presets","BUILD PRESETS","PRESET BUILD"],["goal","COLLECTION GOAL","TARGET KOLEKSI"],["bosses","BOSS ARCHIVE","ARSIP BOSS"],["runs","RECENT RUNS","RUN TERAKHIR"],["agenda","EVENT AGENDA","AGENDA EVENT"],["summons","SUMMON HISTORY","RIWAYAT SUMMON"]]:
+ for entry: Array in [["presets","BUILD PRESETS","PRESET BUILD"],["goal","COLLECTION GOAL","TARGET KOLEKSI"],["bosses","BOSS ARCHIVE","ARSIP BOSS"],["runs","RECENT RUNS","RUN TERAKHIR"],["agenda","EVENT AGENDA","AGENDA EVENT"],["summons","SUMMON HISTORY","RIWAYAT SUMMON"],["drills","TECHNIQUE RECORDS","CATATAN TEKNIK"]]:
   var action: Button=button(copy(entry[1],entry[2])+"  ›",_go.bind(entry[0]));action.name="Journal_"+entry[0];_body.add_child(action)
  var practice: Button=button(copy("ENTER TRAINING GROUNDS","MASUK ARENA LATIHAN"),_practice);practice.name="JournalPractice";_body.add_child(practice)
 func _presets() -> void:
@@ -161,6 +164,7 @@ func _boss_detail(chapter: int,stage: int) -> void:
  if boss_stats.has("phase_two_hp_ratio"):details.add_child(label(copy("Phase shift at ","Pergantian fase pada ")+str(roundi(float(boss_stats.phase_two_hp_ratio)*100))+"% HP",16,JADE))
  details.add_child(label(copy("Leave melee windups. Move across projectile lanes, away from lightning marks, and through gaps in radial waves. Return within auto-attack range after dodging. A phase ward can temporarily prevent damage.","Keluar dari ancang-ancang melee. Lewati jalur proyektil, jauhi tanda petir, dan cari celah gelombang radial. Kembali ke jangkauan serang setelah menghindar. Pelindung fase dapat menahan damage sementara."),15))
  details.add_child(label(copy("Pattern pool follows the encounter: ","Kumpulan pola sesuai encounter: ")+_patterns(int(data.get("boss_style",0))),14,JADE))
+ if chapter==1:details.add_child(button(copy("PRACTICE THIS GUARDIAN","LATIHAN PENJAGA INI"),_practice.bind(stage)))
  _body.add_child(button(copy("ALL GUARDIANS","SEMUA PENJAGA"),_redraw));_scroll.scroll_vertical=0;Scroll.prepare_tree(_scroll)
 func _patterns(style: int) -> String:
  if style in [1,2]: return copy("single projectile · radial burst","proyektil tunggal · radial")
@@ -168,6 +172,7 @@ func _patterns(style: int) -> String:
  if style==4:return copy("phase2 also includes the ascended cross","fase2 juga memakai silang ascended")
  return copy("projectile · radial · lightning","proyektil · radial · petir")
 func _runs() -> void:
+ var compare: Button=button(copy("COMPARE TWO RUNS","BANDINGKAN DUA RUN"),_compare_runs);compare.name="CompareRuns";compare.disabled=PlayerCompanion.state.runs.size()<2;_body.add_child(compare)
  _body.add_child(label(copy("Latest10 runs on this device. Reviving the same run replaces its earlier defeat. Personal display only.","10 run terakhir di perangkat ini. Revive pada run yang sama mengganti laporan defeat sebelumnya. Catatan pribadi."),14))
  if PlayerCompanion.state.runs.is_empty():card(copy("YOUR NEXT ATTEMPT","PERCOBAAN BERIKUTMU"),copy("New results will appear here. Earlier stage records remain in Journey.","Hasil baru akan muncul di sini. Rekor stage sebelumnya tetap ada di Journey."))
  for row: Dictionary in PlayerCompanion.state.runs:
@@ -198,12 +203,60 @@ func _agenda() -> void:
  for entry: Dictionary in client.agenda.get("events",[]):
   card(str(entry.title),_date(int(entry.starts_at))+" → "+_date(int(entry.ends_at))+"\n"+str(entry.get("status","scheduled")))
  _body.add_child(button(copy("REFRESH SCHEDULE","PERBARUI JADWAL"),func():client.refresh_agenda()))
-func _practice() -> void:
+func _practice(boss_stage: int=0) -> void:
  if SceneTransitionManager.is_transitioning:return
  var paid: Node=EquipmentManager._paid_v2()
  if paid!=null and (bool(paid.get("busy")) or not (paid.call("_read_pending") as Dictionary).is_empty()):_feedback=copy("Finish pending account recovery first.","Tuntaskan pemulihan akun terlebih dahulu.");_redraw();return
+ if boss_stage>0:get_tree().root.set_meta("practice_boss",boss_stage)
  close()
  SceneTransitionManager.transition_menu_to("res://scenes/ui/training_ground.tscn")
 func close() -> void:queue_free()
 func _exit_tree() -> void:
  if SceneTransitionManager.back_handler==Callable(self,"close"):SceneTransitionManager.set_back_handler(_previous_back if _previous_back.is_valid() else Callable())
+
+func _compare_runs() -> void:
+ var rows: Array=PlayerCompanion.state.runs
+ if rows.size()<2:return
+ _compare_a=clampi(_compare_a,0,rows.size()-1);_compare_b=clampi(_compare_b,0,rows.size()-1)
+ for child: Node in _body.get_children():_body.remove_child(child);child.queue_free()
+ _heading.text=copy("COMPARE TWO RUNS","BANDINGKAN DUA RUN")
+ _body.add_child(label(copy("B minus A · personal records, no rewards. Compare the same stage, outcome and duration for useful build conclusions.","B dikurangi A · catatan pribadi, tanpa reward. Bandingkan stage, hasil dan durasi yang sama untuk menilai build."),15))
+ for side: int in range(2):
+  _body.add_child(label("RUN A" if side==0 else "RUN B",16,GOLD))
+  var picker:=OptionButton.new();picker.name="CompareA" if side==0 else "CompareB";picker.fit_to_longest_item=false;picker.clip_text=true;picker.custom_minimum_size.y=48
+  for row: Dictionary in rows:picker.add_item("%d-%d · %s · %s"%[int(row.chapter),int(row.stage),str(row.outcome),_date(int(row.time))])
+  picker.select(_compare_a if side==0 else _compare_b)
+  picker.item_selected.connect(func(index: int):
+   if side==0:_compare_a=index
+   else:_compare_b=index
+   _compare_runs.call_deferred())
+  _body.add_child(picker)
+ var a: Dictionary=rows[_compare_a];var b: Dictionary=rows[_compare_b]
+ if _compare_a==_compare_b:_body.add_child(label(copy("Choose two different runs.","Pilih dua run yang berbeda."),16,GOLD))
+ elif a.chapter!=b.chapter or a.stage!=b.stage or a.outcome!=b.outcome:_body.add_child(label(copy("Different stage or outcome · damage/DPS does not prove a stronger build.","Stage atau hasil berbeda · damage/DPS tidak membuktikan build lebih kuat."),16,GOLD))
+ var fa: Dictionary=a.facts;var fb: Dictionary=b.facts
+ for stat: Array in [["seconds","Time (s)","Waktu (dtk)"],["level","Level","Level"],["hits","HP hits","Hit ke HP"],["hp_loss","HP lost","HP hilang"]]:
+  var key: String=stat[0]
+  var complete: bool=key not in ["hits","hp_loss"] or (bool(fa.get("incoming_complete",false)) and bool(fb.get("incoming_complete",false)))
+  if not complete or not fa.has(key) or not fb.has(key):card(copy(stat[1],stat[2]),copy("Legacy / incomplete · comparison unavailable","Data lama / tidak lengkap · belum dapat dibandingkan"));continue
+  card(copy(stat[1],stat[2]),"A %.1f · B %.1f · Δ %+.1f"%[float(fa[key]),float(fb[key]),float(fb[key])-float(fa[key])])
+ var totals: Array[float]=[]
+ for facts: Dictionary in [fa,fb]:
+  var total: float=0
+  for damage: Dictionary in facts.get("damage",[]):total+=float(damage.damage)
+  totals.append(total)
+ var complete_damage: bool=not bool(fa.get("damage_partial",true)) and not bool(fb.get("damage_partial",true))
+ if complete_damage:card(copy("ACTUAL DAMAGE / DPS","DAMAGE AKTUAL / DPS"),"A %.0f / %.1f · B %.0f / %.1f\nΔ damage %+.0f"%[totals[0],totals[0]/maxf(.1,float(fa.seconds)),totals[1],totals[1]/maxf(.1,float(fb.seconds)),totals[1]-totals[0]])
+ else:card(copy("PARTIAL DAMAGE","DAMAGE PARSIAL"),copy("One run lacks complete damage data. Use its recorded sources without ranking builds.","Salah satu run tidak punya data damage lengkap. Tinjau sumber tercatat tanpa memberi peringkat build."))
+ for side: int in range(2):
+  var row: Dictionary=[a,b][side];var facts: Dictionary=row.facts
+  var detail: VBoxContainer=card("RUN "+("A" if side==0 else "B"),_slot_names(row.get("slots",{})))
+  for damage: Dictionary in facts.get("damage",[]):detail.add_child(label(str(damage.name)+" · "+str(roundi(float(damage.damage))),14,JADE))
+ _body.add_child(button(copy("BACK TO RUNS","KEMBALI KE RUN"),_redraw));_scroll.scroll_vertical=0;Scroll.prepare_tree(_scroll)
+func _drills() -> void:
+ _body.add_child(label(copy("Personal training marks on this device. No currency, mastery XP or Journey clear is awarded.","Tanda latihan pribadi di perangkat ini. Tanpa currency, XP mastery atau clear Journey."),15))
+ var catalog=preload("res://scripts/data/run_path_policy.gd")
+ for index: int in range(catalog.ARTS.size()):
+  var record: Dictionary=PlayerCompanion.state.get("drills",{}).get("technique:"+catalog.ARTS[index],{})
+  card(catalog.NAMES[index],copy("Not demonstrated yet","Belum dibuktikan") if record.is_empty() else copy("DEMONSTRATED · %.1fs","TERBUKTI · %.1f dtk")%(float(record.time_ms)/1000.0))
+ _body.add_child(button(copy("ENTER TRAINING COURT","MASUK PELATARAN LATIHAN"),_practice))

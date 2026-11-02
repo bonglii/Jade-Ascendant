@@ -903,3 +903,7 @@ installation are separate from owner publish, exact-SHA CI, AAB and Android test
 ## Owner source publisher — 2026-11-02
 
 A literal credential-shaped sample in a self-published test triggered the scanner during author QA. Construct synthetic credential samples at runtime and keep the publication guard enabled. Preserve unrelated index work and recovery markers; retain omitted documentation/build tools in the Git tree; declare push PASS only after the remote ref equals the committed snapshot.
+
+## 2026-11-02 — JSON enum validation and production compilation context
+- Runtime fixtures found that JSON numbers are floats in GDScript and typed `Array.has`/`in` does not equate them with integer enum members. Validate numeric type, finiteness, integrality and bounds before conversion. Exercise actual serialization/deserialization for Trials rules, stage IDs and personal risk; in-memory integer fixtures alone miss this failure.
+- `--check-only` on a production script skips the runtime autoload context and reports missing singleton identifiers. Compile/load singleton-dependent scripts inside a SceneTree harness after autoload initialization, then use runtime fixtures and native GUI checks. Keep invalid-harness failures distinct from project defects.

@@ -23,7 +23,7 @@ func _process(delta: float) -> void:
  refresh_left = 1.0/18.0 if SettingsManager.reduced_effects else 1.0/30.0
  queue_redraw()
 func _draw() -> void:
- if SettingsManager.reduced_effects: return
+ if SettingsManager.reduced_effects or SettingsManager.quiet_player_vfx: return
  if skill_id in ["yin_yang_blades","heavenly_sword_rain"]: return # Authored cels own these effects.
  var instance: Node2D = get_parent()
  var ink: Color = Art.color_for(skill_id)

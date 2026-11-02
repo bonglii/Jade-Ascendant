@@ -6,6 +6,8 @@ static func manager() -> Node:
 static func bonus(key: String,read_only: bool=false) -> float:
  var owner: Node=manager()
  if owner==null:return 0.0
+ var scene: Node=owner.get_tree().current_scene
+ if scene!=null and bool(scene.get_meta("standard_kit",false)):return 0.0
  var equipment: Node=owner.get_node_or_null("/root/EquipmentManager")
  var practice: bool=equipment!=null and bool(equipment.call("is_practice"))
  var choices: Dictionary=owner.get_run_choices(read_only or practice)

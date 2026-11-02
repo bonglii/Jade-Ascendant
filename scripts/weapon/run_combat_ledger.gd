@@ -31,6 +31,10 @@ func _died() -> void:
 static func apply_hit(target: Node,amount: float,source: String) -> float:
  if not is_instance_valid(target) or not target.has_method("take_damage"):return 0.0
  # All production enemies expose current_hp. Preview fixtures may not.
+ var path_player: Node=target.get_tree().get_first_node_in_group("player") if target.is_inside_tree() else null
+ if path_player!=null:
+  var path_manager: Node=path_player.get_node_or_null("WeaponManager")
+  if path_manager!=null:amount*=preload("res://scripts/data/run_path_policy.gd").multiplier(path_manager.run_paths,source,target.is_in_group("boss"))
  var before: Variant=target.get("current_hp")
  var had_audio: bool=target.has_meta(&"jade_audio_hit_source")
  var previous_audio: Variant=target.get_meta(&"jade_audio_hit_source","")
@@ -56,6 +60,8 @@ static func apply_hit(target: Node,amount: float,source: String) -> float:
   if feedback!=null:feedback.weapon_impact((target as Node2D).global_position,source)
  var ledger: Node=player.get_node_or_null("WeaponManager/RunCombatLedger")
  if ledger!=null:ledger.record(source,applied)
+ var world: Node=tree.current_scene
+ if world!=null and world.has_method("record_practice_hit"):world.record_practice_hit(source,target.get_instance_id(),applied)
  return applied
 
 func record(source: String,amount: float) -> void:

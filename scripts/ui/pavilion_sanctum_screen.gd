@@ -344,12 +344,16 @@ func _refresh_rewarded_seal_section() -> void:
 	super()
 	if _ad_hint == null: return
 	var remaining: int = PavilionManager.get_rewarded_ad_claims_remaining()
-	_ad_hint.text = tr("Ads available: %d • Reward: +1 Seal each") % remaining
+	_ad_hint.text = tr("Cycle quota: %d • +1 Seal per verified ad") % remaining
 	if rewarded_seal_state_label != null and locked_watch_ad_button.disabled:
 		_ad_hint.text = rewarded_seal_state_label.text
 	var policy: Dictionary = MonetizationManager.get_rewarded_policy_status("pavilion_seal")
 	var cooldown: int = int(policy.get("cooldown_remaining_seconds",0))
-	if remaining <= 0:
+	if MonetizationManager.ads_suspended():
+		locked_watch_ad_button.disabled = true
+		locked_watch_ad_button.text = "IKLAN DIJEDA" if SettingsManager.language == "id" else "ADS PAUSED"
+		_ad_hint.text = ("Kuota tersisa %d; penayangan sementara tidak tersedia." if SettingsManager.language == "id" else "%d quota remaining; ad delivery is temporarily unavailable.") % remaining
+	elif remaining <= 0:
 		locked_watch_ad_button.text = "KUOTA SIKLUS HABIS" if SettingsManager.language == "id" else "CYCLE LIMIT REACHED"
 		_ad_hint.text = "Pulih setelah 7 hari penyelesaian seluruh Daily Quest." if SettingsManager.language == "id" else "Renews after 7 days of claiming all Daily Quests."
 	elif int(policy.get("placement_claims",0)) >= int(policy.get("daily_limit",1)):
@@ -360,7 +364,7 @@ func _refresh_rewarded_seal_section() -> void:
 	elif cooldown > 0:
 		locked_watch_ad_button.text = ("IKLAN BERIKUTNYA · %ds" if SettingsManager.language == "id" else "NEXT AD · %ds") % cooldown
 	else:
-		locked_watch_ad_button.text = tr("WATCH AD • FREE 1× SUMMON") if not locked_watch_ad_button.disabled else ("SIAPKAN IKLAN · +1 SEAL" if SettingsManager.language == "id" else "LOADING AD · +1 SEAL")
+		locked_watch_ad_button.text = tr("WATCH AD • FREE 1× SUMMON") if not locked_watch_ad_button.disabled else ("IKLAN BELUM TERSEDIA" if SettingsManager.language == "id" else "AD NOT AVAILABLE")
 func _render_summon_result(_result: Dictionary) -> void:
 	# This screen owns a sealed reveal; never paint plaintext legacy results below it.
 	if is_instance_valid(summon_result_box): summon_result_box.visible = false

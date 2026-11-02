@@ -749,7 +749,7 @@ func _start_selected_stage() -> void:
 		return
 	var change_error := SceneTransitionManager.transition_to(stage_scene_path, {
 		"title": str(data.get("display_name", "Entering the trial")),
-		"subtitle": "Stage %d-%d" % [JourneyManager.active_run_chapter_id, JourneyManager.active_run_stage_id],
+		"subtitle": "Stage %d-%d" % [JourneyManager.selected_chapter_id, JourneyManager.selected_stage_id],
 		"minimum_display_time": 0.65,
 		"replace_checkpoint_after_verification": true,
 	})

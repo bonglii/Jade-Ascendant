@@ -406,6 +406,8 @@ func _build_presentation_options() -> void:
 		 "hint":_local("Camera motion on heavy impacts.", "Gerakan kamera saat hantaman besar.")},
 		{"key":"reduced_effects", "title":_local("Reduced Flashes & Effects", "Kurangi Kilatan & Efek"),
 		 "hint":_local("Reduce intense visual effects.", "Kurangi efek visual yang intens.")},
+		{"key":"quiet_player_vfx", "title":_local("Quiet Player Ornament", "Ornamen Player Ringan"),
+		 "hint":_local("Hide extra player trails and flourishes. Enemy warnings and attack shapes stay visible.", "Sembunyikan jejak dan ornamen tambahan player. Peringatan musuh dan bentuk serangan tetap terlihat.")},
 		{"key":"damage_numbers", "title":_local("Damage Numbers", "Angka Damage"),
 		 "hint":_local("Show damage during combat.", "Tampilkan damage saat bertarung.")},
 		{"key":"haptics", "title":_local("Vibration Feedback", "Getaran"),

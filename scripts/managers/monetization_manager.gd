@@ -75,8 +75,12 @@ func _ready() -> void:
 		call_deferred("_activate_android_provider")
 
 
+static func ads_suspended() -> bool:
+	return bool(ProjectSettings.get_setting("monetization/ads_suspended", true))
+
+
 func _activate_android_provider() -> void:
-	if OS.get_name() != "Android" or active_request >= 0:
+	if OS.get_name() != "Android" or active_request >= 0 or ads_suspended():
 		return
 	_attach_provider(AdMobProvider.new())
 

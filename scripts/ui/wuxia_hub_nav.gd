@@ -259,9 +259,9 @@ func _build_tabs() -> void:
 		icon.anchor_right = 0.5
 		icon.anchor_bottom = 0.5
 		icon.offset_left = -26.0
-		icon.offset_top = -26.0
+		icon.offset_top = -36.0
 		icon.offset_right = 26.0
-		icon.offset_bottom = 26.0
+		icon.offset_bottom = 12.0
 		button.add_child(icon)
 		tab_icons.append(icon)
 
@@ -274,7 +274,7 @@ func _build_tabs() -> void:
 		label.anchor_top = 0.0
 		label.anchor_right = 1.0
 		label.anchor_bottom = 1.0
-		label.offset_top = 49.0
+		label.offset_top = 66.0
 		label.offset_bottom = -5.0
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -318,8 +318,8 @@ func _refresh_translated_labels() -> void:
 		var key: String = str(
 			TAB_DATA[tab_index].get("label_key", "TAB")
 		)
-		tab_labels[tab_index].text = ""
-		tab_labels[tab_index].hide()
+		tab_labels[tab_index].text = tr(key)
+		tab_labels[tab_index].show()
 		tab_buttons[tab_index].tooltip_text = tr(key)
 		tab_buttons[tab_index].accessibility_name = tr(key)
 	_fit_sanctuary_labels()
@@ -328,7 +328,7 @@ func _refresh_translated_labels() -> void:
 func _fit_sanctuary_labels() -> void:
 	for label: Label in tab_labels:
 		var font: Font = label.get_theme_font("font")
-		var font_size: int = UiTokens.NAV_LABEL_FONT_SIZE
+		var font_size: int = 18
 		var available: float = maxf(30,size.x / TAB_DATA.size() - 7)
 		while font_size > 9 and font.get_string_size(label.text,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size).x > available:font_size -= 1
 		label.add_theme_font_size_override("font_size",font_size)

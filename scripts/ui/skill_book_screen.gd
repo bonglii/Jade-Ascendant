@@ -158,11 +158,11 @@ func _open_equipment_detail(id: String) -> void:
 	else:c.add_child(_label("Independent weapon • does not count toward a set. Permanent level cap: 10 / 20 / 30 / 40 / 50 at 1–5 stars. Run refinement is separate.",15,Color(.68,.90,.80)))
 	c.add_child(_label("Star ascension requires identical duplicates. Manage your loadout and upgrades in HERO.",14,Color(.73,.83,.79)))
 	if bool(d.get("event_only",false)):
-		c.add_child(_label("EVENT EXCLUSIVE • Jade Dragon Odyssey: complete 12 full laps past START, claim the milestone, then collect the Compass in Mail. Not in normal gacha or forging.",14,Color(.99,.83,.45)))
+		c.add_child(_label("EVENT EXCLUSIVE • Jade Dragon Odyssey: complete 12 full laps past START, claim the milestone, then collect the Compass in Mail. Not in normal gacha.",14,Color(.99,.83,.45)))
 	else:
 		var chapter: int=int(d.get("requires_chapter",0));var stage: int=int(d.get("requires_stage",0))
-		c.add_child(_label("SHOP / FORGE UNLOCK: Clear %d-%d"%[chapter,stage] if chapter>0 else "ACQUISITION: Available from the beginning",14,Color(.99,.83,.45)))
-		c.add_child(_label("GACHA COLLECTION: Opens after clear 1-5. Shop/forge requirements are separate.",14,Color(.68,.90,.80)))
+		c.add_child(_label("EQUIPMENT UNLOCK: Clear %d-%d"%[chapter,stage] if chapter>0 else "ACQUISITION: Available from the beginning",14,Color(.99,.83,.45)))
+		c.add_child(_label("GACHA COLLECTION: Opens after clear 1-5. Equipment unlock requirements are separate.",14,Color(.68,.90,.80)))
 	_open_popup(str(d.display_name),c)
 func _open_popup(title: String,content: Control) -> void:
 	_close_popup()
@@ -209,7 +209,9 @@ func _back() -> void:
 	super._back()
 
 func _label(value: String,font_size: int,color: Color) -> Label:
-	var label: Label=super._label(value,font_size,color)
+	var parts: PackedStringArray=[]
+	for line: String in value.split("\n"):parts.append(tr(line))
+	var label: Label=super._label("\n".join(parts),font_size,color)
 	if font_size>=20:label.add_theme_font_override("font",ArchiveFont)
 	return label
 
@@ -228,10 +230,10 @@ func _refresh_builds() -> void:
 		var ids: Array[String]=[]
 		for slot: String in ["robe","bracer","boots","pendant"]:ids.append(EquipmentManager.get_loadout_equipped_item_id(slot))
 		var current: Dictionary=BuildGuide.loadout(ids)
-		var title: String="CURRENT BUILD · %d / 4"%int(current.piece_count)
-		var detail: String="No matching set equipped. Visit HERO to assemble your loadout."
-		if not str(current.set_id).is_empty():detail=Sets.get_display_name(current.set_id)+" · "+str(current.role)+"\n"+(str(current.passive.get("name",""))+" · ACTIVE" if current.active else "FULL SET · HP BONUSES ACTIVE" if bool(current.full_resonance) else "Four matching pieces activate the full bonus.")+"\n"+str(current.advice)
-		detail+="\nOne dominant set supplies the set tiers. A mixed 2+2 build does not combine both sets' tier bonuses. The weapon is independent."
+		var title: String=tr("CURRENT BUILD · %d / 4")%int(current.piece_count)
+		var detail: String=tr("No matching set equipped. Visit HERO to assemble your loadout.")
+		if not str(current.set_id).is_empty():detail=Sets.get_display_name(current.set_id)+" · "+str(current.role)+"\n"+(str(current.passive.get("name",""))+" · ACTIVE" if current.active else tr("FULL SET · HP BONUSES ACTIVE") if bool(current.full_resonance) else tr("Four matching pieces activate the full bonus."))+"\n"+str(current.advice)
+		detail+=tr("\nOne dominant set supplies the set tiers. A mixed 2+2 build does not combine both sets' tier bonuses. The weapon is independent.")
 		if query.is_empty() or (title+detail).to_lower().contains(query):_list.add_child(_guide_card(title,detail));shown+=1
 	if _filter in ["ALL","SETS"]:
 		for id: String in Sets.SET_ORDER:
@@ -244,11 +246,11 @@ func _refresh_builds() -> void:
 		for id: String in EquipmentManager.get_item_ids():
 			var data: Dictionary=EquipmentManager.get_item_data(id)
 			if str(data.get("slot",""))!="armament" or bool(data.get("retired",false)):continue
-			var detail: String=str(BuildGuide.WEAPON_ROLES.get(id,"INDEPENDENT WEAPON"))+"\n"+str(data.get("signature_effect_description",data.get("description","")))
-			detail+="\nPermanent weapon levels add 1% damage per level after Lv.1. Identical duplicate stars unlock caps 10 / 20 / 30 / 40 / 50. Combat skill levels are separate."
+			var detail: String=tr(str(BuildGuide.WEAPON_ROLES.get(id,"INDEPENDENT WEAPON")))+"\n"+str(data.get("signature_effect_description",data.get("description","")))
+			detail+=tr("\nPermanent weapon levels add 1% damage per level after Lv.1. Identical duplicate stars unlock caps 10 / 20 / 30 / 40 / 50. Combat skill levels are separate.")
 			if not query.is_empty() and not (id+str(data.display_name)+detail).to_lower().contains(query):continue
 			_list.add_child(_guide_card(str(data.display_name),detail,load(Visual.get_icon_path(id)) as Texture2D));shown+=1
-	_count.text="%d BUILD GUIDES"%shown
+	_count.text=tr("%d BUILD GUIDES")%shown
 	if shown==0:_list.add_child(_label("NO MATCHING BUILDS",18,Color(.77,.85,.8)))
 	for category: String in _filter_buttons:_filter_buttons[category].add_theme_color_override("font_color",Color(1,.87,.44) if category==_filter else Color(.75,.85,.8))
 

@@ -248,6 +248,10 @@ func take_damage(amount: float) -> void:
 	if is_rewarded_revive_invulnerable() or is_hit_guarded():
 		return
 
+	var world: Node=get_tree().current_scene
+	if world!=null and world.has_meta("trials_personal_risk") and int(world.get_meta("trials_personal_risk",0))==2:
+		amount*=1.15
+
 	# Reserve protection before signals/feedback to reject reentrant damage and
 	# simultaneous contacts without consuming a second shield charge.
 	hit_guard_remaining = HIT_GUARD_DURATION

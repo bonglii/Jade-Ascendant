@@ -167,6 +167,7 @@ func save_checkpoint() -> bool:
 	if oath != null:
 		save_data["jade_oath"] = oath.state.snapshot()
 	save_data["run_combat_report"] = weapon_manager.get_node("RunCombatLedger").snapshot()
+	save_data["run_paths"] = preload("res://scripts/data/run_path_policy.gd").clean(weapon_manager.run_paths)
 	var magnet_spawner: Node = get_parent().get_node_or_null("EnemySpawner")
 	if magnet_spawner != null:
 		save_data["qi_magnet_state"] = magnet_spawner.get_qi_magnet_state()
@@ -910,6 +911,7 @@ func load_checkpoint() -> bool:
 	# Restoring wounded HP is not a new hit. Restore metrics only after the
 	# health baseline and its HUD notification have been applied.
 	weapon_manager.get_node("RunCombatLedger").restore(save_data.get("run_combat_report", {}))
+	weapon_manager.run_paths = preload("res://scripts/data/run_path_policy.gd").clean(save_data.get("run_paths", {}))
 	var oath: Node = get_parent().get_node_or_null("JadeOath")
 	if oath != null:
 		oath.restore(save_data.get("jade_oath", {}))

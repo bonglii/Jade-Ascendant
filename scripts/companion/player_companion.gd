@@ -29,7 +29,7 @@ func live_owner() -> String:
  var binding: String = GoogleAccountManager.get_monetization_account_binding()
  return binding if binding.length()==64 else ("guest:"+str(PlayerIdentityManager.get_profile_snapshot().get("player_uid","local"))).sha256_text()
 func _empty() -> Dictionary:
- return {"presets":{},"goal":"","summons":[],"runs":[],"seen_bosses":[],"metrics_opt_in":false,"metrics":[],"metric_seen":[]}
+ return {"drills":{},"presets":{},"goal":"","summons":[],"runs":[],"seen_bosses":[],"metrics_opt_in":false,"metrics":[],"metric_seen":[]}
 func _read(path: String) -> Dictionary:
  var file := FileAccess.open(path, FileAccess.READ)
  if file==null or file.get_length()>262144: return {}
@@ -70,6 +70,14 @@ func _clean(raw: Dictionary) -> Dictionary:
  if seen_metrics is Array:
   for value: Variant in seen_metrics.slice(0,200):
    if value is String and value.length()==32 and value.is_valid_hex_number(false):out.metric_seen.append(value)
+ var drills: Variant=raw.get("drills",{})
+ if drills is Dictionary:
+  for key: Variant in drills.keys().slice(0,42):
+   var row: Variant=drills[key]
+   if not key is String or not row is Dictionary or key!=str(row.get("mode",""))+":"+str(row.get("art","")):continue
+   if row.get("mode") not in ["dummy","boss","seal","technique","standard","priority","gauntlet"] or row.get("art") not in preload("res://scripts/data/run_path_policy.gd").ARTS:continue
+   if not number(row.get("time_ms"),1,180000) or not number(row.get("damage"),0,1.0e12):continue
+   out.drills[key]={"mode":row.mode,"art":row.art,"time_ms":int(row.time_ms),"damage":float(row.damage)}
  out.metrics_opt_in=raw.get("metrics_opt_in",false)==true
  return out
 func number(value: Variant, low: float, high: float) -> bool:
@@ -239,3 +247,11 @@ func _metric(kind: String, chapter: int, stage: int, seconds: int=0,event_key: S
  # newly appended event once the original queue reaches its limit.
  while next.metrics.size()>METRIC_QUEUE_MAX: next.metrics.pop_front()
  commit(next)
+
+func record_drill(mode: String,art: String,time_ms: int,damage: float) -> bool:
+ if account_key!=live_owner() or time_ms<1 or time_ms>180000 or not is_finite(damage) or damage<0:return false
+ if mode not in ["dummy","boss","seal","technique","standard","priority","gauntlet"] or art not in preload("res://scripts/data/run_path_policy.gd").ARTS:return false
+ var next: Dictionary=state.duplicate(true)
+ if not next.has("drills"):next.drills={}
+ next.drills[mode+":"+art]={"mode":mode,"art":art,"time_ms":time_ms,"damage":minf(damage,1.0e12)}
+ return commit(next)

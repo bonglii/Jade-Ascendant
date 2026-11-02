@@ -59,6 +59,7 @@ var active_quest_ids: Array[String] = LEGACY_QUEST_IDS.duplicate()
 var _date_check_left: float = 30.0
 var _save_left: float = 2.0
 var _progress_dirty: bool = false
+var daily_rules_version: int = 1
 var active_date_key: String = ""
 var quest_progress: Dictionary = {}
 var completed_quest_ids: Array[String] = []
@@ -199,7 +200,21 @@ func get_daily_quest_data(quest_id: String) -> Dictionary:
 	if not has_daily_quest(quest_id):
 		return {}
 	var data: Dictionary = DAILY_QUESTS[quest_id]
-	return data.duplicate(true)
+	var result: Dictionary=data.duplicate(true)
+	if daily_rules_version>=2 and quest_id in active_quest_ids:
+		result.target=get_target(quest_id)
+		var rank: int=_daily_rank(quest_id)
+		var category: String=str(data.category)
+		var titles: Dictionary={"combat":["Valley Patrol","Guard the Path"],"progression":["Quiet Comprehension","Flowing Qi"],"journey":["Daily Ascension","Walk the Jade Path"]}
+		result.title=tr(str(titles[category][rank]))
+		result.description=tr({"combat":"Defeat %d enemies.","progression":"Reach Level %d during a run.","journey":"Clear %d stage(s), including repeats."}[category]) % int(result.target)
+	return result
+
+func _daily_rank(quest_id: String) -> int:
+	var category: String=str(DAILY_QUESTS[quest_id].category)
+	for id: String in active_quest_ids:
+		if str(DAILY_QUESTS[id].category)==category:return 0 if id==quest_id else 1
+	return 0
 
 func get_progress(quest_id: String) -> int:
 	if not has_daily_quest(quest_id):
@@ -210,6 +225,9 @@ func get_target(quest_id: String) -> int:
 	if not has_daily_quest(quest_id):
 		return 0
 	var data: Dictionary = DAILY_QUESTS[quest_id]
+	if daily_rules_version>=2 and quest_id in active_quest_ids:
+		var targets: Dictionary={"combat":[20,50],"progression":[5,7],"journey":[1,2]}
+		return int(targets[str(data.category)][_daily_rank(quest_id)])
 	return max(int(data.get("target", 0)), 0)
 
 func get_reward(quest_id: String) -> int:
@@ -396,6 +414,7 @@ func _apply_daily_reset_if_needed() -> void:
 	if not active_date_key.is_empty() and active_date_key >= current_date_key:
 		return
 	active_date_key = current_date_key
+	daily_rules_version = 2
 	active_quest_ids = _pick_quests_for_date(active_date_key)
 	quest_progress.clear()
 	completed_quest_ids.clear()
@@ -470,6 +489,8 @@ func load_daily_quests() -> void:
 	active_date_key = str(
 		save_data.get("date_key", "")
 	)
+	var saved_rules: Variant=save_data.get("daily_rules_version",1)
+	daily_rules_version=2 if (saved_rules is int or saved_rules is float) and is_finite(float(saved_rules)) and saved_rules==2 else 1
 	var saved_active: Array[String] = _normalize_id_array(save_data.get("active_quest_ids", LEGACY_QUEST_IDS))
 	active_quest_ids.clear()
 	for quest_id in saved_active:
@@ -568,6 +589,7 @@ func build_save_data() -> Dictionary:
 	return {
 		"version": SAVE_VERSION,
 		"date_key": active_date_key,
+		"daily_rules_version": daily_rules_version,
 		"active_quest_ids": active_quest_ids.duplicate(),
 		"progress": quest_progress.duplicate(true),
 		"completed": completed_quest_ids.duplicate(),

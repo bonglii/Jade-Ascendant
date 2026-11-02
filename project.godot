@@ -110,6 +110,7 @@ up={
 
 [monetization]
 
+ads_suspended=true
 admob/rewarded_ad_unit_id="ca-app-pub-3082528078187093/8339864838"
 
 [physics]

@@ -31,6 +31,7 @@ const CAST_COOLDOWN_FLOORS: Dictionary = {
 }
 const MAX_CAST_TEMPO_DAMAGE_MULTIPLIER: float = 5.0
 
+var run_paths: Dictionary = {"arts":{},"boon":""}
 var _paid_starter_id: String = ""
 var weapons: Array[Weapon] = []
 var attack_timers: Dictionary = {}
@@ -52,6 +53,9 @@ func _ready() -> void:
 	ledger.name="RunCombatLedger"
 	add_child(ledger)
 	initialize_weapons()
+	var path_choices: Node=preload("res://scripts/gameplay/run_path_choices.gd").new()
+	path_choices.name="RunPathChoices"
+	add_child(path_choices)
 
 ## Membuat weapon awal yang dimiliki Player.
 ## Internal weapon_name tetap Spirit Sword untuk kompatibilitas checkpoint v1.

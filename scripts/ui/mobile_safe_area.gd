@@ -26,42 +26,36 @@ const JadeUiGlobalStyle = preload(
 )
 
 const ONBOARDING_STEPS: Dictionary = {
-	"home": [
-		{
-			"eyebrow": "FIRST STEPS",
-			"title": "BEGIN YOUR JOURNEY",
-			"body": "ENTER JOURNEY is the main path forward. Choose a realm and stage, survive its waves, defeat the guardian, and unlock the next step of Lin Yue's ascension."
-		},
-		{
-			"eyebrow": "PREPARE BETWEEN TRIALS",
-			"title": "HERO & PAVILION",
-			"body": "Use HERO to manage permanent equipment. Visit PAVILION for summoning, forging, meditation, and cultivation cosmetics. Both are always available from the bottom navigation."
-		}
-	],
-	"equipment": [
-		{
-			"eyebrow": "HERO LOADOUT",
-			"title": "FIVE PERMANENT SLOTS",
-			"body": "Armament, Robe, Bracer, Boots, and Pendant shape Lin Yue before a run begins. Tap a slot to inspect the relics you own for that position."
-		},
-		{
-			"eyebrow": "MOBILE CONTROLS",
-			"title": "SWIPE TO BROWSE • TAP TO CHOOSE",
-			"body": "Swipe vertically to browse equipment. Use a short tap to inspect or choose an item; dragging stays reserved for scrolling."
-		}
-	],
-	"pavilion": [
-		{
-			"eyebrow": "JADE PAVILION",
-			"title": "RESOURCES & CELESTIAL ARMORY",
-			"body": "Spirit Stones support permanent growth. Equipment forging also uses Spirit Stones. Identical duplicates refine equipment stars. Celestial Jade and Pavilion Seals power the Celestial Armory. Summoning unlocks after Chapter 1 • Stage 5."
-		},
-		{
-			"eyebrow": "CHOOSE YOUR PATH",
-			"title": "SUMMON OR FORGE",
-			"body": "Summon from the progression-unlocked pool with visible rates and pity rules, or use Forge when you want a deterministic equipment path. Daily Meditation and cosmetic auras live here too."
-		}
-	]
+  "home": [
+    {
+      "eyebrow": "FIRST STEPS",
+      "eyebrow_id": "LANGKAH PERTAMA",
+      "title": "YOUR PATH TO ASCENSION",
+      "title_id": "JALUR ASCENSION-MU",
+      "body": "Choose a chapter and stage from Home. Collect Qi, refine your arts, then defeat the guardian. Between runs, use Hero for equipment and Pavilion for summons and meditation.",
+      "body_id": "Pilih bab dan stage dari Beranda. Kumpulkan Qi, perkuat art, lalu kalahkan penjaga. Di antara run, atur perlengkapan di Hero dan buka Pavilion untuk summon serta meditasi."
+    }
+  ],
+  "equipment": [
+    {
+      "eyebrow": "HERO LOADOUT",
+      "eyebrow_id": "PERLENGKAPAN HERO",
+      "title": "FIVE PERMANENT SLOTS",
+      "title_id": "LIMA SLOT PERMANEN",
+      "body": "Equip a weapon and four armor/accessory pieces. Four matching pieces activate a set; the weapon is independent. Swipe to browse and tap to inspect.",
+      "body_id": "Pasang satu senjata dan empat armor/aksesori. Empat bagian sejenis mengaktifkan set; senjata berdiri sendiri. Geser untuk menjelajah dan sentuh untuk memeriksa."
+    }
+  ],
+  "pavilion": [
+    {
+      "eyebrow": "JADE PAVILION",
+      "eyebrow_id": "JADE PAVILION",
+      "title": "SUMMON & MEDITATE",
+      "title_id": "SUMMON & MEDITASI",
+      "body": "Summoning opens after clear 1-5. Inspect rates and pity before using Seals or Jade. Identical duplicates raise equipment stars. Spirit Stones support permanent growth; Daily Meditation supplies daily resources.",
+      "body_id": "Summon terbuka setelah clear 1-5. Periksa rate dan pity sebelum memakai Segel atau Giok. Duplikat identik menaikkan bintang perlengkapan. Spirit Stone mendukung pertumbuhan permanen; Meditasi Harian memberi sumber daya harian."
+    }
+  ]
 }
 
 var _refresh_elapsed: float = 0.0
@@ -442,9 +436,9 @@ func _refresh_onboarding_step() -> void:
 		return
 	var tutorial_data: Dictionary = tutorial_steps[_tutorial_step_index]
 	_tutorial_step_label.text = "%d / %d" % [_tutorial_step_index + 1, tutorial_steps.size()]
-	_tutorial_eyebrow_label.text = tr(str(tutorial_data.get("eyebrow", "")))
-	_tutorial_title_label.text = tr(str(tutorial_data.get("title", "")))
-	_tutorial_body_label.text = tr(str(tutorial_data.get("body", "")))
+	_tutorial_eyebrow_label.text = str(tutorial_data.get("eyebrow_id" if SettingsManager.language == "id" else "eyebrow", ""))
+	_tutorial_title_label.text = str(tutorial_data.get("title_id" if SettingsManager.language == "id" else "title", ""))
+	_tutorial_body_label.text = str(tutorial_data.get("body_id" if SettingsManager.language == "id" else "body", ""))
 	_tutorial_next_button.text = (
 		tr("GOT IT")
 		if _tutorial_step_index >= tutorial_steps.size() - 1

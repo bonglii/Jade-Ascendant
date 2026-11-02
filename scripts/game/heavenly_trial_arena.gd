@@ -7,6 +7,7 @@ var _boss: Node2D
 var _save_left: float=12
 var _hazard_left: float=7
 var _theme: String="jade_wind"
+var personal_risk: int=0
 var ruleset_version: int=1
 var _resuming: Dictionary={}
 func _enter_tree() -> void:
@@ -17,6 +18,8 @@ func _enter_tree() -> void:
  _trial=get_node_or_null("/root/HeavenlyTrialsClient")
  if _trial==null or _trial.launch_session.is_empty():return
  var session: Dictionary=_trial.launch_session
+ personal_risk=int(session.get("personal_risk",0))
+ set_meta("trials_personal_risk",personal_risk)
  var frozen: Dictionary=preload("res://scripts/data/trial_ruleset_policy.gd").session_config(session,_trial.snapshot)
  if frozen.is_empty():_trial.launch_session={};return
  session["week_config"]=frozen
@@ -70,7 +73,7 @@ func _process(delta: float) -> void:
  if elapsed>=300 or _trial.server_time()>int(_trial.launch_session.expires_at):finish_heavenly_trial(false);return
  if _save_left<=0:_save_left=15;get_node("CheckPointManager").save_checkpoint()
  if _hazard_left<=0 and is_instance_valid(player):
-  _hazard_left=9
+  _hazard_left=7 if personal_risk==1 else 9
   var hazard: Node2D=preload("res://scripts/game/heavenly_trial_rule_v2.gd").new() if ruleset_version==2 else preload("res://scripts/game/heavenly_trial_rule.gd").new()
   if ruleset_version==2:hazard.axis=randf()*TAU
   hazard.theme_id=_theme;hazard.tier=int(_trial.launch_session.tier);hazard.global_position=player.global_position
@@ -93,7 +96,7 @@ func finish_heavenly_trial(won: bool) -> void:
  # Persist the report before leaving; retries retain this exact request/identity.
  if not _trial.action("finish",report,str(_trial.launch_session.week)):
   ended=false;ledger.frozen=false;return
- _trial.last_result={"won":won,"tier":int(_trial.launch_session.tier),"time_ms":report.time_ms,"hits":int(ledger.hp_hits),"deaths":int(ledger.deaths),"week":str(_trial.launch_session.week)}
+ _trial.last_result={"personal_risk":personal_risk,"won":won,"tier":int(_trial.launch_session.tier),"time_ms":report.time_ms,"hits":int(ledger.hp_hits),"deaths":int(ledger.deaths),"week":str(_trial.launch_session.week)}
  var skills: Array=[]
  for skill: Dictionary in ledger.skills():skills.append({"id":str(skill.id),"level":int(skill.level),"armament_id":str(skill.get("armament_id",""))})
  var amounts: Dictionary={}

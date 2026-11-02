@@ -2,9 +2,13 @@ extends Control
 ## Approved weekly hub. Visual state reads the verified client; buttons never grant.
 const Style=preload("res://scripts/ui/liveops/event_hub_style.gd")
 const Scroll=preload("res://scripts/ui/mobile_scroll_policy.gd")
+const RewardPreview=preload("res://scripts/data/trial_reward_preview.gd")
 const ART=preload("res://assets/ui/heavenly_trials/jade_gate.png")
 const ICONS: Dictionary={"celestial_jade":preload("res://assets/ui/shared/resources/celestial_jade_premium.png"),"pavilion_seal":preload("res://assets/ui/shared/resources/pavilion_seal_premium.png"),"spirit_stone":preload("res://assets/ui/shared/resources/spirit_stone_premium.png")}
 const RULES: Dictionary={"jade_wind":["JADE WIND","Wind seals mark your last position. Keep moving."],"scarlet_rite":["SCARLET RITE","Scarlet marks erupt twice. Leave the marked ground."],"starfall":["STARFALL","A star seal marks your position before it bursts."],"froststep":["FROSTSTEP","Frost seals linger before they burst. Choose a clear path."],"sunforge":["SUNFORGE","Solar marks cover a wider area. Move before they ignite."]}
+var _risk_picker: OptionButton
+var _reward_preview: VBoxContainer
+var _reward_key: String = ""
 var client: Node
 var _title: Label
 var _time: Label
@@ -74,12 +78,16 @@ func _build() -> void:
   var row:=HBoxContainer.new();row.add_theme_constant_override("separation",12);_margin(panel,14).add_child(row)
   var number: Label=_label(["I","II","III"][tier-1],32,Style.GOLD,true);number.custom_minimum_size.x=42;number.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;row.add_child(number)
   var info:=VBoxContainer.new();info.size_flags_horizontal=SIZE_EXPAND_FILL;row.add_child(info)
-  info.add_child(_label(["Foundation","Tempering","Ascension"][tier-1],23,Style.CREAM,true));var state: Label=_label("Clear %d-5 to unlock"%tier,14,Style.MUTED);info.add_child(state)
+  info.add_child(_label(["Foundation","Tempering","Ascension"][tier-1],23,Style.CREAM,true));var state: Label=_label(tr("Clear %d-5 to unlock")%tier,14,Style.MUTED);info.add_child(state)
   var choose: Button=_button(row,"SELECT",_select.bind(tier));choose.custom_minimum_size=Vector2(84,50);choose.size_flags_vertical=SIZE_SHRINK_CENTER;choose.autowrap_mode=TextServer.AUTOWRAP_OFF;choose.add_theme_font_size_override("font_size",14)
   _tiers.append({"state":state,"button":choose,"panel":panel})
  var rewards_panel:=VBoxContainer.new();rewards_panel.add_theme_constant_override("separation",8);_margin(_panel(list),16).add_child(rewards_panel)
- rewards_panel.add_child(_label("EACH TIER · FIRST WEEKLY CLEAR",12,Style.JADE));_rewards_row(rewards_panel,{"celestial_jade":40,"pavilion_seal":1,"spirit_stone":600})
+ rewards_panel.add_child(_label("EACH TIER · FIRST WEEKLY CLEAR",12,Style.JADE));_reward_preview=VBoxContainer.new();rewards_panel.add_child(_reward_preview)
  _note=_label("",15,Style.MUTED);list.add_child(_note)
+ _risk_picker=OptionButton.new();_risk_picker.name="PersonalTrialRisk";_risk_picker.custom_minimum_size.y=48;_risk_picker.fit_to_longest_item=false
+ for text: String in (["STANDAR · hadiah minggu tetap","LANGIT GIGIH · pola tiap 7 dtk, bukan 9 dtk","SUMPAH TEGUH · damage masuk +15%"] if SettingsManager.language=="id" else ["STANDARD · same weekly reward","RELENTLESS SKY · patterns every 7s, instead of 9s","UNYIELDING VOW · incoming damage +15%"]):_risk_picker.add_item(text)
+ body.add_child(_risk_picker)
+ body.add_child(_label("Risiko pribadi opsional · budget hadiah dan aturan medali tetap sama. Pilihan terkunci sampai percobaan selesai." if SettingsManager.language=="id" else "Optional personal risk · same reward budget and medal rules. Choice is fixed for this attempt.",14,Style.MUTED))
  _entry=_button(body,"ENTER TRIAL",_enter,true)
  var footer:=HBoxContainer.new();footer.add_theme_constant_override("separation",10);body.add_child(footer)
  _rewards=_button(footer,"REWARDS",_open_rewards);_rewards.size_flags_horizontal=SIZE_EXPAND_FILL
@@ -95,25 +103,29 @@ func _refresh() -> void:
   return
  if not is_instance_valid(_entry):return
  var data: Dictionary=client.snapshot if client!=null else {};var week: Variant=data.get("week")
+ _refresh_reward_preview(data)
  var available: bool=client!=null and bool(client.call("is_available"));var busy: bool=client==null or bool(client.call("mutation_busy"))
  var unlocked: int=int(data.get("unlock_tier",0))
  if week is Dictionary:
   _refresh_portrait(_selected,int(week.stage))
-  var rule: Array=RULES.get(str(week.theme),RULES.jade_wind);_title.text=str(rule[0]);find_child("WeekEyebrow",true,false).text="WEEK %02d · ASCENSION"%[int(week.index)+1];_rule.text=rule[1]+"\n"+preload("res://scripts/data/trial_counterplay.gd").hint(str(week.theme),int(week.get("ruleset_version",1)),SettingsManager.language)
-  var left: int=maxi(0,int(week.ends_at)-int(client.call("server_time")));_time.text="RESETS MON 04:00 WIB  ·  %dd %02dh LEFT"%[int(float(left)/86400.0),int(float(left%86400)/3600.0)]
+  var rule: Array=RULES.get(str(week.theme),RULES.jade_wind);_title.text=tr(str(rule[0]));find_child("WeekEyebrow",true,false).text=tr("WEEK %02d · ASCENSION")%[int(week.index)+1];_rule.text=tr(str(rule[1]))+"\n"+preload("res://scripts/data/trial_counterplay.gd").hint(str(week.theme),int(week.get("ruleset_version",1)),SettingsManager.language)
+  var left: int=maxi(0,int(week.ends_at)-int(client.call("server_time")));_time.text=tr("RESETS MON 04:00 WIB  ·  %dd %02dh LEFT")%[int(float(left)/86400.0),int(float(left%86400)/3600.0)]
  else:_time.text="WEEKLY RESET · MONDAY 04:00 WIB"
  for tier: int in range(1,4):
   var progress: Dictionary={}
   for row: Dictionary in data.get("progress",[]):
    if int(row.tier)==tier:progress=row
   var ui: Dictionary=_tiers[tier-1];var locked: bool=tier>unlocked
-  ui.state.text="Clear %d-5 to unlock"%tier if locked else ("REWARD CLAIMED · Replay for mastery" if int(progress.get("claimed",0))==1 else "CLEARED · Reward ready" if int(progress.get("clears",0))>0 else "READY · Unlimited free attempts")
+  ui.state.text=tr("Clear %d-5 to unlock")%tier if locked else ("REWARD CLAIMED · Replay for mastery" if int(progress.get("claimed",0))==1 else "CLEARED · Reward ready" if int(progress.get("clears",0))>0 else "READY · Unlimited free attempts")
   ui.button.disabled=locked or not available or busy;ui.button.text="LOCK" if locked else "✓" if tier==_selected else "SELECT"
   ui.panel.modulate=Color.WHITE if tier==_selected else Color(.82,.88,.82)
  _entry.disabled=not available or busy or _selected>unlocked
- var session: Variant=data.get("session");_entry.text="CONTINUE TRIAL" if session is Dictionary else "ENTER TRIAL · FREE"
+ var session: Variant=data.get("session")
+ _risk_picker.disabled=session is Dictionary or busy
+ if session is Dictionary:_risk_picker.select(client.personal_risk(str(session.id)))
+ _entry.text="CONTINUE TRIAL" if session is Dictionary else "ENTER TRIAL · FREE"
  _note.text="All rewards earned this week remain claimable for 48h after reset."
- if client!=null and str(client.status) not in ["connected","preparing"]:_note.text="Connection: "+str(client.status).replace("_"," ")+". Recovery runs automatically."
+ if client!=null and str(client.status) not in ["connected","preparing"]:_note.text=("Koneksi: " if SettingsManager.language=="id" else "Connection: ")+str(client.status).replace("_"," ")+(". Pemulihan berjalan otomatis." if SettingsManager.language=="id" else ". Recovery runs automatically.")
  if session is Dictionary:_note.text="A trial is in progress. Continue it or abandon it from Rewards."
  _rewards.text="REWARDS";preload("res://scripts/ui/action_ready_dot.gd").show_on(_rewards,int(client.call("ready_count")) if client!=null else 0)
 func _refresh_portrait(tier: int,stage: int) -> void:
@@ -134,7 +146,9 @@ func _enter() -> void:
  if client.snapshot.get("session") is Dictionary:
   if client.busy:_continue_waiting=true;_note.text="Verifying your saved attempt…"
   else:client.call("launch",true)
- else:client.call("action","start",{"tier":_selected})
+ else:
+  client.risk_choice=_risk_picker.selected
+  client.call("action","start",{"tier":_selected})
 func _finished(kind: String,success: bool) -> void:
  if kind=="read" and success and _continue_waiting:
   _continue_waiting=false;client.call("launch",true)
@@ -165,6 +179,7 @@ func _open_rewards() -> void:
  var body: VBoxContainer=_modal_body(heading,"rewards")
  if not outcome.is_empty():
   if client!=null and client.mutation_busy():body.add_child(_label("Securing result with the server…",16,Style.JADE))
+  if int(outcome.get("personal_risk",0))>0:body.add_child(_label(("RISIKO PRIBADI %d · HADIAH TETAP" if SettingsManager.language=="id" else "PERSONAL RISK %d · SAME REWARD")%int(outcome.personal_risk),14,Style.JADE))
   var seconds: int=int(float(outcome.get("time_ms",0))/1000.0)
   body.add_child(_label("TIER %d · %02d:%02d"%[int(outcome.tier),int(float(seconds)/60.0),seconds%60],18,Style.GOLD))
   var card: Dictionary=preload("res://scripts/data/run_share_snapshot.gd").trials(outcome)
@@ -172,17 +187,20 @@ func _open_rewards() -> void:
   if not bool(outcome.get("won",false)):body.add_child(_label("Your Journey is safe. Return for another free attempt.",17,Style.TEXT))
  body.add_child(_label("CLEAR · SURVIVOR · UNTOUCHED",16,Style.GOLD))
  body.add_child(_label("Medals celebrate your best run. Every clear earns the same tier reward, once per week.",16))
- _rewards_row(body,{"celestial_jade":40,"pavilion_seal":1,"spirit_stone":600})
+ _display_reward(body,RewardPreview.for_week(client.snapshot if client!=null else {},str(outcome.get("week",""))))
+ if client!=null and client.snapshot.get("previous") is Dictionary and not client.snapshot.get("previous_progress",[]).is_empty():
+  body.add_child(_label(tr("PREVIOUS WEEK · EARNED REWARDS"),14,Style.JADE))
+  _display_reward(body,RewardPreview.for_week(client.snapshot,str(client.snapshot.previous.id)))
  if client==null:return
  for row: Dictionary in client.snapshot.get("progress",[]):
   var medals: String="CLEAR"+(" · SURVIVOR" if int(row.survivor)==1 else "")+(" · UNTOUCHED" if int(row.untouched)==1 else "")
   body.add_child(_label("TIER %d  ·  %02d:%02d\n%s"%[int(row.tier),int(float(row.best_ms)/60000.0),(int(float(row.best_ms)/1000.0))%60,medals],17,Style.CREAM))
  var claim: Button=_button(body,"CLAIM EARNED REWARDS",_claim,true);claim.disabled=client.mutation_busy() or int(client.call("ready_count"))==0
  body.add_child(_label("Delivered securely to your mailbox. Optional ads add Stones only.",14,Style.MUTED))
- if bool(client.snapshot.get("ads_ready",false)):
+ if bool(client.snapshot.get("ads_ready",false)) and not MonetizationManager.ads_suspended() and not RewardPreview.for_week(client.snapshot).is_empty():
   for row: Dictionary in client.snapshot.get("progress",[]):
    if int(row.get("claimed",0))==1 and int(row.get("bonus",0))==0:
-    var ad: Button=_button(body,"WATCH AD · +600 STONES",_watch.bind(int(row.tier)))
+    var ad: Button=_button(body,tr("WATCH AD · +%d STONES") % int(RewardPreview.for_week(client.snapshot).get("spirit_stone",0)),_watch.bind(int(row.tier)))
     ad.disabled=client.mutation_busy() or str(client.ad_status) in ["watching","verifying_reward","delivery_pending"]
     break
   body.add_child(_label(str(client.ad_status).replace("_"," ").to_upper(),14,Style.JADE))
@@ -239,3 +257,16 @@ func _back() -> void:
  if is_instance_valid(_modal):_close_modal();return
  if _navigating:return
  _navigating=true;preload("res://scripts/ui/liveops/live_ops_ui.gd").return_home(self)
+
+func _refresh_reward_preview(data: Dictionary) -> void:
+ if not is_instance_valid(_reward_preview):return
+ var reward: Dictionary=RewardPreview.for_week(data)
+ var key: String=JSON.stringify(reward)+SettingsManager.language
+ if key==_reward_key:return
+ _reward_key=key
+ for child: Node in _reward_preview.get_children():_reward_preview.remove_child(child);child.queue_free()
+ _display_reward(_reward_preview,reward)
+func _display_reward(host: Node,reward: Dictionary) -> void:
+ if reward.is_empty():host.add_child(_label(tr("Waiting for verified weekly rewards…"),15,Style.MUTED));return
+ if reward.values().all(func(v: Variant):return int(v)==0):host.add_child(_label(tr("No currency reward configured."),15,Style.MUTED));return
+ _rewards_row(host,reward)

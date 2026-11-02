@@ -57,6 +57,7 @@ func get_effective_movement_speed(read_only: bool = false) -> float:
 	var set_bonus: float = EquipmentSetRuntime.get_bonus("movement_speed_bonus")
 	return (
 		speed
+		* preload("res://scripts/data/run_path_policy.gd").movement($WeaponManager.run_paths)
 		* (EquipmentManager.get_movement_speed_multiplier() + set_bonus + CultivationMastery.bonus("movement", read_only))
 	)
 
