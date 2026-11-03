@@ -1,0 +1,85 @@
+{
+  "batch": "REPOSITORY_CLEANUP_20261103",
+  "status": "DELIVERED_AUTHOR_PASS_OWNER_LOCAL_AUDIT_PENDING",
+  "source_commit": "399e16a1d8ab2c7f64334860e7c22b6baa1dbe20",
+  "source_branch": "work/repo-cleanup-20261103",
+  "base_commit": "dbe1c73422f431dce9234aa29efc3374b17a13e8",
+  "owner_latest": "Owner reports menu apply/check CMD run; exact terminal log not supplied",
+  "package": {
+    "zip": "/workspace/scratch/ce4d5408fa71/Jade-Repository-Cleanup-2026-11-03.zip",
+    "bytes": 204155,
+    "sha256": "4e08f094495f88e8ebf118994b2a94d218679299f284d7d2d3a4eb9033e0620c",
+    "entries": 42,
+    "crc_checksums": "PASS",
+    "runtime_guard_files": 800,
+    "library_file_id": "libfile_6945be1a237081919f357f56d4b1097b",
+    "file_id": "file_00000000c80481f68bfb41910c23e617",
+    "saved": "CONFIRMED",
+    "payloads_match_published_commit": "PASS",
+    "scope_matches_reviewed_four_removals_and_two_updates": "PASS"
+  },
+  "report": {
+    "local_path": "/workspace/scratch/ce4d5408fa71/Jade-Repository-Cleanup-Audit-2026-11-03.md",
+    "purpose": "create_library_file",
+    "status": "succeeded",
+    "file_id": "file_00000000656481f7bdf14793d6e91565",
+    "library_file_id": "libfile_c1ec729112b08191938398f05cc53b8f",
+    "file_name": "Jade-Repository-Cleanup-Audit-2026-11-03.md",
+    "local_metadata_applied": true,
+    "path": "/Jade-Repository-Cleanup-Audit-2026-11-03.md",
+    "current_version_number": 0
+  },
+  "handoff": {
+    "local_path": "/workspace/scratch/ce4d5408fa71/Jade-Ascendant-Handoff-2026-11-02.md",
+    "purpose": "replace_library_file",
+    "status": "succeeded",
+    "file_id": "file_00000000dbbc81f496c75048bdf40165",
+    "library_file_id": "libfile_6203dd6b5a9c8191be0c73b3afc5598d",
+    "file_name": "Jade-Ascendant-Handoff-2026-11-02.md",
+    "local_metadata_applied": true,
+    "path": "/Jade-Ascendant-Handoff-2026-11-02.md",
+    "current_version_number": 7,
+    "previous_version": 6
+  },
+  "result": {
+    "initial_tracked_files": 4762,
+    "initial_bytes": 513356002,
+    "removed_files": 4,
+    "removed_bytes": 5099298,
+    "remaining_duplicate_groups": 4,
+    "remaining_duplicate_extra_bytes": 37679,
+    "master_art_kept_bytes": 33857711,
+    "qa_source_files_kept": 429,
+    "qa_evidence_logs_kept": 19
+  },
+  "qa": {
+    "scope": "Linux author fixtures; not Windows owner or new native GUI/phone test",
+    "resource_assertions": 8,
+    "reference_parser_assertions": 11,
+    "core_powershell_scenarios": 10,
+    "additional_scope_guard_scenarios": 3,
+    "post_hardening_apply_restore_repeat": "PASS",
+    "final_read_only_audit_source_writes": 0,
+    "native_inputs": 52,
+    "candidate_aar": "UNCHANGED_PINNED_2171f13f",
+    "gameplay_341_and_native_review": "REUSED_UNCHANGED_INPUTS",
+    "ci": "NOT_CHECKED_NOT_CLAIMED_PASS"
+  },
+  "protected": [
+    "Tests/CI/fixtures and evidence",
+    "Unique/held/master art and SDK",
+    "Save/import cache/backup/receipt/recovery/signing/build artifacts",
+    "52 native inputs, nine live payment gates, AdMob hold ON",
+    "Main, production, previous menu/candidate branches"
+  ],
+  "stages": {
+    "source": "PUBLISHED",
+    "author_checkout_cleanup": "DONE_REVIEWED_SCOPE",
+    "owner_local_inventory": "NOT_RUN",
+    "owner_cleanup": "NOT_RUN",
+    "export_aab": "NOT_RUN",
+    "deploy": "NOT_RUN",
+    "phone": "UNCONFIRMED"
+  },
+  "next_action": "For owner-only files, extract portable ZIP and run audit_cleanup.cmd (read-only, source writes zero). Apply only the reviewed cleanup with apply_cleanup.cmd after Godot/exporter recovery finishes; preserve results/backup/first receipt for restore. Do not blanket-delete tests, caches, SDK or historical packages."
+}
