@@ -934,3 +934,15 @@ A literal credential-shaped sample in a self-published test triggered the scanne
 - Different locals in the same function must not reuse a name in an inner branch and a later parent declaration. Use refreshed_scene for the onboarding re-evaluation branch.
 - Runtime reload alone did not generate these editor warnings, even after changing warning settings in memory. Validate in a fresh real editor/import process with the two warning classes promoted to errors. Reproduce the original diagnostics first; restore project.godot byte-for-byte afterwards and verify ads remain suspended. Do not suppress warnings or treat editor exit code 0 as proof when parse errors are in the log.
 - Preserve the confirmed full Player Content Windows PASS. A warning-only follow-up has its own apply/editor-check status; it does not establish a new AAB or phone PASS.
+
+
+## Menu/player batch, 3 November 2026
+
+- Check existing production features before proposing additions: three gear presets and A/B run comparison already existed. This batch extends their factual previews instead of duplicating either system.
+- Reward previews need the exact snapshot/week identity, including earned previous-week grace rewards. A missing grace ID must stay unknown rather than borrowing current-week rewards.
+- Runtime exit 0 or a printed assertion count is insufficient if SCRIPT ERROR/ERROR appears later. Preserve the whole log, process exit and teardown result; separate native fixtures from owner Windows/phone evidence.
+- Native harness defects encountered: Xvfb process variable was shadowed by rectangle x; a command-path substitution removed method-call parentheses; a paused first-session tutorial was initially mistaken for a movement failure. Keep process/coordinate names distinct, compile the harness and inspect actual UI state before interpreting pilot failures.
+- Workspace synchronization truncated the 146 MB Godot ELF and interfered with a file-command handoff. Verify full binary size/hash, execute the restored engine and transient commands from /tmp, and preserve final source/evidence durably. Reuse the verified engine archive; do not erase import caches as a cure.
+- GitHub source transfer must chunk large files and bound parallel reads. The unbounded read fan-out exhausted the code host; use at most eight reads at once. A shallow fetched commit can appear as a root: compare explicit known trees rather than dumping git show statistics.
+- Compact review caught untranslated Cultivate captions, low-contrast introduction text and undersized guide buttons. Inspect final production composition in both languages and sizes, and apply style overrides after the shared skin when it resets dimensions.
+- First touch swipes require the engine touchscreen hint and a native window. The headless Trials gesture failure is not a production input regression; rerun that inherited suite in its native fixture before claiming PASS.

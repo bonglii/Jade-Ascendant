@@ -208,7 +208,9 @@ func _build_body() -> void:
 	body_content.add_child(_spacer(2.0))
 
 func _build_intro() -> Control:
-	var host := MarginContainer.new()
+	var host := PanelContainer.new()
+	var shade:=StyleBoxFlat.new();shade.bg_color=Color(.003,.025,.03,.80);shade.content_margin_left=10;shade.content_margin_right=10;shade.content_margin_top=8;shade.content_margin_bottom=8
+	host.add_theme_stylebox_override("panel",shade)
 	host.custom_minimum_size = Vector2(0.0, 142.0)
 	host.add_theme_constant_override("margin_left", 10)
 	host.add_theme_constant_override("margin_right", 10)

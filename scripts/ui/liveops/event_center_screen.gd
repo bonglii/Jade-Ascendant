@@ -90,7 +90,7 @@ func _build() -> void:
  var eyebrow: Label=_label("JADE ASCENDANT",12,HubStyle.JADE);titles.add_child(eyebrow)
  _header_title=_label("",32,HubStyle.CREAM,true);titles.add_child(_header_title)
  _subtitle=_label("",15,HubStyle.MUTED);titles.add_child(_subtitle)
- var guide: Button=load("res://scripts/experience/menu_guide.gd").button("?",func():load("res://scripts/experience/menu_guide.gd").open(self,"events"));guide.custom_minimum_size=Vector2(52,52);guide.size_flags_horizontal=SIZE_SHRINK_END;heading.add_child(guide)
+ var guide:=Button.new();guide.text="?";guide.custom_minimum_size=Vector2(48,48);guide.size_flags_horizontal=SIZE_SHRINK_END;guide.add_theme_font_size_override("font_size",27);HubStyle.button(guide);guide.pressed.connect(func():load("res://scripts/experience/menu_guide.gd").open(self,"events"));heading.add_child(guide)
  _close_button=Button.new();_close_button.text="×";_close_button.custom_minimum_size=Vector2(48,48);_close_button.size_flags_vertical=Control.SIZE_SHRINK_BEGIN
  _close_button.add_theme_font_size_override("font_size",27);HubStyle.button(_close_button);heading.add_child(_close_button);_close_button.pressed.connect(_back)
  var filter_row:=HBoxContainer.new();filter_row.add_theme_constant_override("separation",8);body.add_child(filter_row)

@@ -1,0 +1,222 @@
+{
+  "scope": "NATIVE_X11_LINUX_NOT_PHONE",
+  "captures": [
+    {
+      "name": "guide_events_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 91177
+    },
+    {
+      "name": "back_events",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 122361
+    },
+    {
+      "name": "guide_pavilion_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 88183
+    },
+    {
+      "name": "back_pavilion",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 122745
+    },
+    {
+      "name": "guide_cultivate_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 95606
+    },
+    {
+      "name": "back_cultivate",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 121303
+    },
+    {
+      "name": "guide_settings_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 119233
+    },
+    {
+      "name": "swipe_settings",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 118235
+    },
+    {
+      "name": "back_settings",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 121313
+    },
+    {
+      "name": "guide_weekly_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 100045
+    },
+    {
+      "name": "back_weekly",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 287434
+    },
+    {
+      "name": "guide_odyssey_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 100429
+    },
+    {
+      "name": "back_odyssey",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 121320
+    },
+    {
+      "name": "guide_purchase_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 92984
+    },
+    {
+      "name": "back_purchase",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 122821
+    },
+    {
+      "name": "guide_timeline_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 94741
+    },
+    {
+      "name": "back_timeline",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 122808
+    },
+    {
+      "name": "guide_preset_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 103031
+    },
+    {
+      "name": "back_preset",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 122805
+    },
+    {
+      "name": "guide_library_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 68579
+    },
+    {
+      "name": "back_library",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 122790
+    }
+  ],
+  "gestures": [
+    {
+      "test": "events_NATIVE_ESCAPE",
+      "status": "PASS"
+    },
+    {
+      "test": "pavilion_NATIVE_ESCAPE",
+      "status": "PASS"
+    },
+    {
+      "test": "cultivate_NATIVE_ESCAPE",
+      "status": "PASS"
+    },
+    {
+      "test": "settings_FIRST_NATIVE_CARD_SWIPE",
+      "status": "PASS",
+      "before": 0,
+      "after": 9
+    },
+    {
+      "test": "settings_NATIVE_ESCAPE",
+      "status": "PASS"
+    },
+    {
+      "test": "weekly_NATIVE_ESCAPE",
+      "status": "PASS"
+    },
+    {
+      "test": "odyssey_NATIVE_ESCAPE",
+      "status": "PASS"
+    },
+    {
+      "test": "purchase_NATIVE_ESCAPE",
+      "status": "PASS"
+    },
+    {
+      "test": "timeline_NATIVE_ESCAPE",
+      "status": "PASS"
+    },
+    {
+      "test": "preset_NATIVE_ESCAPE",
+      "status": "PASS"
+    },
+    {
+      "test": "library_NATIVE_ESCAPE",
+      "status": "PASS"
+    }
+  ],
+  "failures": 0
+}

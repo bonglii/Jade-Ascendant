@@ -25,7 +25,7 @@ static func skin() -> StyleBoxTexture:
  return value
 static func button(text: String,action: Callable) -> Button:
  var value:=Button.new();value.text=text;value.custom_minimum_size.y=72;value.size_flags_horizontal=SIZE_EXPAND_FILL;value.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;value.mouse_filter=MOUSE_FILTER_PASS;value.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE;value.add_theme_font_size_override("font_size",22)
- load("res://scripts/ui/result_ceremony.gd").style_button(value,"navy");value.pressed.connect(action);return value
+ load("res://scripts/ui/result_ceremony.gd").style_button(value,"navy");value.custom_minimum_size.y=80;value.add_theme_font_size_override("font_size",24);value.pressed.connect(action);return value
 static func section(parent: Node,title: String,text: String="") -> VBoxContainer:
  var card:=PanelContainer.new();card.add_theme_stylebox_override("panel",skin());parent.add_child(card)
  var content:=VBoxContainer.new();content.size_flags_horizontal=SIZE_EXPAND_FILL;content.add_theme_constant_override("separation",10);card.add_child(content);content.add_child(label(title,25,Gold))

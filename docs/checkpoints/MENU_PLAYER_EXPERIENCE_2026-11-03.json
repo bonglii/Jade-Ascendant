@@ -1,6 +1,6 @@
 {
   "batch": "MENU_PLAYER_EXPERIENCE_20261103",
-  "status": "IMPLEMENTATION_RECOVERED_NATIVE_QA_PENDING",
+  "status": "AUTHOR_NATIVE_QA_AND_DELIVERY_IN_PROGRESS",
   "base_commit": "fe4b33b8a7d8595219462e912bf86eb7e6f9ca91",
   "branch": "work/menu-player-experience-20261103",
   "authorized": "Owner chat: oke kalau begitu kita mulai; all latest backlog/menu items in one batch",
@@ -132,14 +132,14 @@
   },
   "stages": {
     "source": "RUNTIME_AND_MENU_IMPLEMENTATION_CHECKPOINT",
-    "author_qa": "FRESH_RUNTIME_58_PASS_NATIVE_UI_IN_PROGRESS",
+    "author_qa": "58_MENU_98_CONTENT_66_CLARITY_6_RESUME_PASS_NATIVE_IN_PROGRESS",
     "package": "NOT_BUILT",
     "owner_install": "UNCONFIRMED",
     "export_aab": "NOT_RUN",
     "deploy": "NOT_RUN",
     "phone": "UNCONFIRMED"
   },
-  "next_action": "Finish fresh runtime edge checks and native EN/ID compact/tall gesture/render review, then package/install fixtures. Do not repeat prior R2 recovery.",
+  "next_action": "Finish focused native EN/ID/safe-inset captures and actual input combat; run native weekly/direction, then final package/PowerShell fixtures.",
   "recovery": {
     "reason": "Author workspace expired after the initial source-read JSON was truncated, before the implementation tree was published",
     "historical_results": "51 new runtime checks/0 failures and earlier 98/0, from previous workspace; raw logs lost, not new proof",
@@ -152,6 +152,8 @@
     "runtime_new": "58 checks / 0 failures; complete fresh log has no SCRIPT ERROR or ERROR",
     "log": "docs/checkpoints/evidence/MENU_EXPERIENCE_RUNTIME_20261103.log",
     "scope": "Production actors and data in Linux disposable userdata; not owner Windows or phone",
-    "native_ui": "IN_PROGRESS; SceneTree probe now addresses dynamically installed managers through root nodes"
+    "native_ui": "IN_PROGRESS; SceneTree probe now addresses dynamically installed managers through root nodes",
+    "native_gestures": "21 fresh captures, 10 Escape closures + 1 settings native card swipe PASS; Linux X11, not phone",
+    "teardown": "No orphan Nodes; zero-reference RefCounted warning in native GUI remains under investigation, headless baseline/current scene cycles clean"
   }
 }
