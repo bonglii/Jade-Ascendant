@@ -680,7 +680,7 @@ func _premium_cta(
 	var button := Button.new()
 	button.custom_minimum_size = Vector2(
 		0.0,
-		66.0
+		80.0
 	)
 	button.size_flags_horizontal = (
 		Control.SIZE_EXPAND_FILL
@@ -708,6 +708,8 @@ func _premium_cta(
 		"font_pressed_color",
 		font_color
 	)
+	button.add_theme_color_override("font_disabled_color", font_color.darkened(0.12))
+	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 	for state_name: String in [
 		"normal",
@@ -920,7 +922,9 @@ func _refresh_popup() -> void:
 	if _rewarded_button != null:
 		_rewarded_button.disabled = true
 
-		if not is_ready:
+		if MonetizationManager.ads_suspended():
+			_rewarded_button.text = tr("2× AD UNAVAILABLE")
+		elif not is_ready:
 			_rewarded_button.text = tr(
 				"2× AFTER 10M"
 			)

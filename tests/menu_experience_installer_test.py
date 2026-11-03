@@ -1,6 +1,6 @@
 """Real PowerShell installer fixtures in disposable Git projects; Linux author QA."""
 from pathlib import Path
-import argparse,hashlib,json,os,shutil,subprocess,tempfile
+import argparse,hashlib,json,os,shutil,subprocess,tempfile,threading,time
 ROOT=Path(__file__).resolve().parents[1]
 def sha(data):return hashlib.sha256(data).hexdigest()
 def text(data):return data.decode('utf-8-sig').replace('\r\n','\n')
@@ -50,11 +50,22 @@ def main():
    p=folder/'.local/production_native_export/active.json';p.parent.mkdir(parents=True,exist_ok=True);p.write_text('{}')
   if name=='missing_tracked':changed.unlink()
   read_only=folder/'scripts/ui';before_mtime=(folder/'project.godot').stat().st_mtime_ns
-  if name=='rollback':read_only.chmod(0o555)
   before=snapshot(folder)
-  try:code,output=run(args.pwsh,pkg,folder,work/(name+'.log'),restricted=name=='rollback' and os.geteuid()==0)
+  concurrent_target=folder/'scripts/ui/stage_select.gd';concurrent_bytes=concurrent_target.read_bytes()+b'\n# fixture owner concurrent edit retained\n'
+  stop=threading.Event();edited=threading.Event()
+  def concurrent_edit():
+   while not stop.wait(.001):
+    if (folder/'project.godot').stat().st_mtime_ns!=before_mtime:
+     concurrent_target.write_bytes(concurrent_bytes);edited.set();return
+  worker=threading.Thread(target=concurrent_edit,daemon=True) if name=='rollback' else None
+  if worker:worker.start()
+  try:code,output=run(args.pwsh,pkg,folder,work/(name+'.log'))
   finally:
-   if name=='rollback':read_only.chmod(0o755)
+   stop.set()
+   if worker:worker.join(timeout=3)
+  if name=='rollback':
+   assert edited.is_set(),'Concurrent failure fixture did not reach a real write'
+   before['scripts/ui/stage_select.gd']=sha(concurrent_bytes)
   success=name in bases or name in ['crlf_bom','independent_edit']
   if success:
    assert code==0 and 'MENU_EXPERIENCE_APPLY=PASS' in output,(name,output[-2400:])
@@ -70,7 +81,7 @@ def main():
   else:
    assert code!=0,(name,'unexpected apply');assert snapshot(folder)==before,(name,'failed operation changed source')
    if name=='rollback':
-    assert 'NATIVE_SOURCE_BINARY_MATCH=PASS' in output and 'ROLLBACK_REQUIRES_REVIEW' not in output
+    assert 'NATIVE_SOURCE_BINARY_MATCH=PASS' in output and 'ROLLBACK_REQUIRES_REVIEW' not in output and 'Source changed before replacement' in output
     assert (folder/'project.godot').stat().st_mtime_ns!=before_mtime,'No real write transaction was exercised'
   results.append({'case':name,'status':'PASS','source_changed_only_when_expected':True});print(name,'PASS',flush=True)
  result={'scope':'REAL_POWERSHELL_7_LINUX_DISPOSABLE_FIXTURES_NOT_WINDOWS','cases':results,'case_count':len(results),'repeat_cases':repeats,'failures':0,'evidence_dir':str(work)}

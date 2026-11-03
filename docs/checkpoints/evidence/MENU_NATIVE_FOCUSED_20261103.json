@@ -1,0 +1,687 @@
+{
+  "scope": "NATIVE_X11_LINUX_NOT_PHONE",
+  "captures": [
+    {
+      "name": "focus_home_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 461317
+    },
+    {
+      "name": "focus_hero_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 120591
+    },
+    {
+      "name": "focus_cultivate_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 486322
+    },
+    {
+      "name": "focus_cultivate_bottom_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 236023
+    },
+    {
+      "name": "focus_events_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 208775
+    },
+    {
+      "name": "popup_celestial_boss_hunt_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 344360
+    },
+    {
+      "name": "context_celestial_boss_hunt_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 318576
+    },
+    {
+      "name": "popup_jade_valley_pilgrimage_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 361031
+    },
+    {
+      "name": "context_jade_valley_pilgrimage_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 324270
+    },
+    {
+      "name": "popup_heavenly_ladder_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 359952
+    },
+    {
+      "name": "context_heavenly_ladder_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 340970
+    },
+    {
+      "name": "popup_celestial_treasure_hunt_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 339502
+    },
+    {
+      "name": "context_celestial_treasure_hunt_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 314526
+    },
+    {
+      "name": "popup_path_of_five_elements_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 355802
+    },
+    {
+      "name": "context_path_of_five_elements_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 315508
+    },
+    {
+      "name": "popup_new_player_event_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 519199
+    },
+    {
+      "name": "popup_meditation_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 360628
+    },
+    {
+      "name": "popup_mailbox_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 104413
+    },
+    {
+      "name": "popup_celestial_treasury_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 452341
+    },
+    {
+      "name": "weekly_reward_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 267742
+    },
+    {
+      "name": "focus_home_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 695245
+    },
+    {
+      "name": "focus_hero_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 143931
+    },
+    {
+      "name": "focus_cultivate_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 653313
+    },
+    {
+      "name": "focus_cultivate_bottom_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 304196
+    },
+    {
+      "name": "focus_events_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 313157
+    },
+    {
+      "name": "popup_celestial_boss_hunt_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 488745
+    },
+    {
+      "name": "context_celestial_boss_hunt_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 477915
+    },
+    {
+      "name": "popup_jade_valley_pilgrimage_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 493847
+    },
+    {
+      "name": "context_jade_valley_pilgrimage_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 464595
+    },
+    {
+      "name": "popup_heavenly_ladder_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 502481
+    },
+    {
+      "name": "context_heavenly_ladder_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 461201
+    },
+    {
+      "name": "popup_celestial_treasure_hunt_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 479938
+    },
+    {
+      "name": "context_celestial_treasure_hunt_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 461339
+    },
+    {
+      "name": "popup_path_of_five_elements_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 501900
+    },
+    {
+      "name": "context_path_of_five_elements_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 476867
+    },
+    {
+      "name": "popup_new_player_event_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 764185
+    },
+    {
+      "name": "popup_meditation_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 502736
+    },
+    {
+      "name": "popup_mailbox_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 162139
+    },
+    {
+      "name": "popup_celestial_treasury_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 628049
+    },
+    {
+      "name": "weekly_reward_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 400262
+    },
+    {
+      "name": "focus_home_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 482667
+    },
+    {
+      "name": "focus_hero_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 116221
+    },
+    {
+      "name": "focus_cultivate_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 485534
+    },
+    {
+      "name": "focus_cultivate_bottom_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 235592
+    },
+    {
+      "name": "focus_events_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 208644
+    },
+    {
+      "name": "popup_celestial_boss_hunt_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 346415
+    },
+    {
+      "name": "context_celestial_boss_hunt_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 317529
+    },
+    {
+      "name": "popup_jade_valley_pilgrimage_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 354494
+    },
+    {
+      "name": "context_jade_valley_pilgrimage_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 326231
+    },
+    {
+      "name": "popup_heavenly_ladder_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 361863
+    },
+    {
+      "name": "context_heavenly_ladder_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 343122
+    },
+    {
+      "name": "popup_celestial_treasure_hunt_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 339994
+    },
+    {
+      "name": "context_celestial_treasure_hunt_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 314904
+    },
+    {
+      "name": "popup_path_of_five_elements_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 354280
+    },
+    {
+      "name": "context_path_of_five_elements_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 315087
+    },
+    {
+      "name": "popup_new_player_event_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 519013
+    },
+    {
+      "name": "popup_meditation_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 360331
+    },
+    {
+      "name": "popup_mailbox_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 104857
+    },
+    {
+      "name": "popup_celestial_treasury_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 453031
+    },
+    {
+      "name": "weekly_reward_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 270274
+    },
+    {
+      "name": "focus_home_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 698283
+    },
+    {
+      "name": "focus_hero_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 145092
+    },
+    {
+      "name": "focus_cultivate_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 654430
+    },
+    {
+      "name": "focus_cultivate_bottom_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 302517
+    },
+    {
+      "name": "focus_events_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 311312
+    },
+    {
+      "name": "popup_celestial_boss_hunt_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 487897
+    },
+    {
+      "name": "context_celestial_boss_hunt_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 477867
+    },
+    {
+      "name": "popup_jade_valley_pilgrimage_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 493950
+    },
+    {
+      "name": "context_jade_valley_pilgrimage_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 457639
+    },
+    {
+      "name": "popup_heavenly_ladder_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 508631
+    },
+    {
+      "name": "context_heavenly_ladder_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 466607
+    },
+    {
+      "name": "popup_celestial_treasure_hunt_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 483087
+    },
+    {
+      "name": "context_celestial_treasure_hunt_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 464228
+    },
+    {
+      "name": "popup_path_of_five_elements_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 502212
+    },
+    {
+      "name": "context_path_of_five_elements_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 477332
+    },
+    {
+      "name": "popup_new_player_event_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 763454
+    },
+    {
+      "name": "popup_meditation_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 526984
+    },
+    {
+      "name": "popup_mailbox_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 161118
+    },
+    {
+      "name": "popup_celestial_treasury_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 628034
+    },
+    {
+      "name": "weekly_reward_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 404080
+    },
+    {
+      "name": "training_setup_7",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 94044
+    },
+    {
+      "name": "training_running_7",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 94035
+    },
+    {
+      "name": "training_setup_8",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 94425
+    },
+    {
+      "name": "training_running_8",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 95445
+    },
+    {
+      "name": "navigation_realm",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 413451
+    }
+  ],
+  "gestures": [],
+  "failures": 0
+}

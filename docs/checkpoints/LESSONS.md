@@ -946,3 +946,8 @@ A literal credential-shaped sample in a self-published test triggered the scanne
 - GitHub source transfer must chunk large files and bound parallel reads. The unbounded read fan-out exhausted the code host; use at most eight reads at once. A shallow fetched commit can appear as a root: compare explicit known trees rather than dumping git show statistics.
 - Compact review caught untranslated Cultivate captions, low-contrast introduction text and undersized guide buttons. Inspect final production composition in both languages and sizes, and apply style overrides after the shared skin when it resets dimensions.
 - First touch swipes require the engine touchscreen hint and a native window. The headless Trials gesture failure is not a production input regression; rerun that inherited suite in its native fixture before claiming PASS.
+
+- Final review caught disabled gold Meditation text inheriting low-contrast theme colors and a Qi timer promise while ads were suspended. Preserve the frame, set readable disabled text and put hold availability before the timer label; claim/ad authority stays unchanged.
+- Empty Odyssey state must not display default 0/72 as confirmed progress. Show a waiting state and cover unknown/confirmed lap-rule progress with the actual reader.
+- Starting training behind its setup is not a visible production playthrough. Use native Apply/Start controls, verify setup closed and movement, then inspect arena frames.
+- setpriv capability configuration was rejected before the rollback fixture. A controlled concurrent edit after a real earlier write exercises rollback: verify prior writes revert and the deliberate owner edit survives. This is author Linux, not Windows QA.

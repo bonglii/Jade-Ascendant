@@ -481,7 +481,9 @@ func _refresh_popup() -> void:
 		_claim_button.text = tr("GATHERING QI")
 
 	_rewarded_button.disabled = true
-	if not is_ready:
+	if MonetizationManager.ads_suspended():
+		_rewarded_button.text = tr("2× AD UNAVAILABLE")
+	elif not is_ready:
 		_rewarded_button.text = tr("2× AFTER 10M")
 	elif save_locked:
 		_rewarded_button.text = tr("2× AD UNAVAILABLE")

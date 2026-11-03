@@ -1,0 +1,48 @@
+[
+  {
+    "name": "baseline",
+    "exit": 0,
+    "errors": [],
+    "warnings": [
+      "WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.",
+      "WARNING: 26 ObjectDB instances were leaked at exit (run with `--verbose` for details)."
+    ],
+    "receipts": [
+      "LEAK_PROBE_DONE"
+    ]
+  },
+  {
+    "name": "current",
+    "exit": 0,
+    "errors": [],
+    "warnings": [
+      "WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.",
+      "WARNING: 27 ObjectDB instances were leaked at exit (run with `--verbose` for details)."
+    ],
+    "receipts": [
+      "LEAK_PROBE_DONE"
+    ]
+  },
+  {
+    "name": "weekly",
+    "exit": 0,
+    "errors": [],
+    "warnings": [
+      "WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver."
+    ],
+    "receipts": [
+      "HEAVENLY_TRIALS checks=57 failures=0"
+    ]
+  },
+  {
+    "name": "direction",
+    "exit": 0,
+    "errors": [],
+    "warnings": [
+      "WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver."
+    ],
+    "receipts": [
+      "PLAYER_DIRECTION checks=54 failures=0"
+    ]
+  }
+]

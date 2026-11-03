@@ -1,0 +1,54 @@
+{
+  "scope": "REAL_POWERSHELL_7_LINUX_DISPOSABLE_FIXTURES_NOT_WINDOWS",
+  "cases": [
+    {
+      "case": "18ff",
+      "status": "PASS",
+      "evidence": "First harness printed PASS after its assertions, before a later unsupported setpriv setup. Case unchanged."
+    },
+    {
+      "case": "fe4",
+      "status": "PASS",
+      "evidence": "First harness printed PASS after its assertions, before a later unsupported setpriv setup. Case unchanged."
+    },
+    {
+      "case": "e258",
+      "status": "PASS",
+      "evidence": "First harness printed PASS after its assertions, before a later unsupported setpriv setup. Case unchanged."
+    },
+    {
+      "case": "independent_edit",
+      "status": "PASS",
+      "evidence": "First harness printed PASS after its assertions, before a later unsupported setpriv setup. Case unchanged."
+    },
+    {
+      "case": "source_conflict",
+      "status": "PASS",
+      "evidence": "First harness printed PASS after its assertions, before a later unsupported setpriv setup. Case unchanged."
+    },
+    {
+      "case": "active_recovery",
+      "status": "PASS",
+      "evidence": "First harness printed PASS after its assertions, before a later unsupported setpriv setup. Case unchanged."
+    },
+    {
+      "case": "rollback",
+      "status": "PASS",
+      "source_changed_only_when_expected": true
+    },
+    {
+      "case": "crlf_bom",
+      "status": "PASS",
+      "source_changed_only_when_expected": true
+    },
+    {
+      "case": "payload_corruption",
+      "status": "PASS",
+      "source_changed_only_when_expected": true
+    }
+  ],
+  "case_count": 9,
+  "repeat_cases": 5,
+  "failures": 0,
+  "rollback": "Real prior writes reverted; deliberate concurrent owner edit retained."
+}

@@ -1,0 +1,165 @@
+{
+  "scope": "NATIVE_X11_LINUX_NOT_PHONE",
+  "captures": [
+    {
+      "name": "odyssey_unknown_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 93873
+    },
+    {
+      "name": "odyssey_unknown_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 132046
+    },
+    {
+      "name": "odyssey_unknown_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 96948
+    },
+    {
+      "name": "odyssey_unknown_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 139447
+    },
+    {
+      "name": "native_training_setup_7",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 94044
+    },
+    {
+      "name": "native_training_ready_7",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 325738
+    },
+    {
+      "name": "native_training_started_7",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 329544
+    },
+    {
+      "name": "native_training_active_7",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 329666
+    },
+    {
+      "name": "native_training_setup_8",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 94425
+    },
+    {
+      "name": "native_training_ready_8",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 330000
+    },
+    {
+      "name": "native_training_started_8",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 334333
+    },
+    {
+      "name": "native_training_active_8",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 335215
+    }
+  ],
+  "gestures": [
+    {
+      "test": "TRAINING_MODE_7_NATIVE_APPLY_START_MOVE",
+      "status": "PASS",
+      "mode": "pattern",
+      "report": {
+        "metrics": {
+          "complete": true,
+          "deaths": 0,
+          "hits": 2,
+          "hp_loss": 4.0,
+          "incoming_complete": true
+        },
+        "partial": false,
+        "timeline": {
+          "clock": 5.41628238095238,
+          "complete": true,
+          "events": [
+            {
+              "hp": 98.0,
+              "loss": 2.0,
+              "source": "projectile",
+              "time": 1.29206349206349
+            },
+            {
+              "hp": 96.0,
+              "loss": 2.0,
+              "source": "projectile",
+              "time": 4.31224238095237
+            }
+          ],
+          "version": 1
+        },
+        "totals": {},
+        "version": 1
+      }
+    },
+    {
+      "test": "TRAINING_MODE_8_NATIVE_APPLY_START_MOVE",
+      "status": "PASS",
+      "mode": "rotation",
+      "report": {
+        "metrics": {
+          "complete": true,
+          "deaths": 0,
+          "hits": 0,
+          "hp_loss": 0.0,
+          "incoming_complete": true
+        },
+        "partial": false,
+        "timeline": {
+          "clock": 5.13236333333333,
+          "complete": true,
+          "events": [],
+          "version": 1
+        },
+        "totals": {
+          "spirit_sword": 45.0
+        },
+        "version": 1
+      }
+    }
+  ],
+  "failures": 0
+}

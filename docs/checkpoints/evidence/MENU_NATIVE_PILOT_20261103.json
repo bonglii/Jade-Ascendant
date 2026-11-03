@@ -1,0 +1,182 @@
+{
+  "scope": "NATIVE_X11_LINUX_NOT_PHONE",
+  "captures": [
+    {
+      "name": "session_home",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 507818
+    },
+    {
+      "name": "session_chapters",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 414208
+    },
+    {
+      "name": "session_stages",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 502725
+    },
+    {
+      "name": "session_combat_start",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 461181
+    },
+    {
+      "name": "session_onboarding",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 264879
+    },
+    {
+      "name": "session_after_visible_skip",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 422191
+    },
+    {
+      "name": "session_combat_moving",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 362802
+    },
+    {
+      "name": "training_setup_7",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 94047
+    },
+    {
+      "name": "training_running_7",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 94050
+    },
+    {
+      "name": "training_live_7",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 94081
+    },
+    {
+      "name": "training_setup_8",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 94429
+    },
+    {
+      "name": "training_running_8",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 95151
+    },
+    {
+      "name": "training_live_8",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 94970
+    },
+    {
+      "name": "preset_native_card",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 103034
+    },
+    {
+      "name": "preset_native_swipe",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 102100
+    }
+  ],
+  "gestures": [
+    {
+      "test": "NATIVE_HOME_REALM_STAGE_COMBAT_MOVEMENT",
+      "status": "PASS",
+      "combat_before": {
+        "hp": 100.0,
+        "position": "(326.0, 577.0)",
+        "report": {
+          "metrics": {
+            "complete": true,
+            "deaths": 0,
+            "hits": 0,
+            "hp_loss": 0.0,
+            "incoming_complete": true
+          },
+          "partial": false,
+          "timeline": {
+            "clock": 1.82909,
+            "complete": true,
+            "events": [],
+            "version": 1
+          },
+          "totals": {},
+          "version": 1
+        }
+      },
+      "combat_after": {
+        "hp": 100.0,
+        "position": "(599.3334, 850.3317)",
+        "report": {
+          "metrics": {
+            "complete": true,
+            "deaths": 0,
+            "hits": 0,
+            "hp_loss": 0.0,
+            "incoming_complete": true
+          },
+          "partial": false,
+          "timeline": {
+            "clock": 8.94670599999999,
+            "complete": true,
+            "events": [],
+            "version": 1
+          },
+          "totals": {
+            "spirit_sword": 60.0
+          },
+          "version": 1
+        }
+      }
+    },
+    {
+      "test": "PRESET_FIRST_NATIVE_CARD_SWIPE",
+      "status": "PASS"
+    }
+  ],
+  "failures": 0
+}

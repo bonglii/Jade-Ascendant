@@ -8,7 +8,8 @@ ROOT=Path(__file__).resolve().parents[2]
 def main():
  parser=argparse.ArgumentParser()
  for key in ['godot','xvfb','xdotool','output']:parser.add_argument('--'+key,required=True)
- parser.add_argument('--display',default=':99');parser.add_argument('--phase',choices=['baseline','final','guides','gestures','focused','pilot','combat'],default='final');args=parser.parse_args()
+ parser.add_argument('--language',choices=['en','id','both'],default='both')
+ parser.add_argument('--display',default=':99');parser.add_argument('--phase',choices=['baseline','final','guides','gestures','focused','pilot','combat','finish'],default='final');args=parser.parse_args()
  out=Path(args.output).resolve();out.mkdir(parents=True,exist_ok=True)
  for exe in [args.godot,args.xvfb,args.xdotool]:
   p=Path(exe)
@@ -62,7 +63,7 @@ def main():
   native('windowmove',window,20,20,'windowfocus',window)
   scenes=['cultivate','hero','events','settings'] if args.phase=='baseline' else ['home','cultivate','hero','daily','achievements','pavilion','builds','events','trials','court','settings','mail','odyssey','treasury','realm']
   if args.phase in ['baseline','final']:
-   for lang in ['en','id']:
+   for lang in (['en','id'] if args.language=='both' else [args.language]):
     for width,height,tag in ([(360,640,'compact')] if args.phase=='baseline' else [(360,640,'compact'),(405,860,'tall')]):
      for scene in scenes:
       command(scene=scene,language=lang,width=width,height=height,unlocked=True)
@@ -92,7 +93,7 @@ def main():
        gestures.append({'test':key+'_NATIVE_ESCAPE','status':'PASS'})
       else:command(close_guide=True)
   if args.phase=='focused':
-   for lang in ['en','id']:
+   for lang in (['en','id'] if args.language=='both' else [args.language]):
     for width,height,tag in [(360,640,'compact'),(405,860,'tall')]:
      for scene in ['home','hero','cultivate','events']:
       command(scene=scene,language=lang,width=width,height=height,unlocked=True)
@@ -101,6 +102,7 @@ def main():
      for popup in ['celestial_boss_hunt','jade_valley_pilgrimage','heavenly_ladder','celestial_treasure_hunt','path_of_five_elements','new_player_event','meditation','mailbox','celestial_treasury']:
       command(scene='home',language=lang,width=width,height=height,unlocked=True);command(dismiss_guide=True)
       command(popup=popup,insets=True,capture='popup_'+popup+'_'+lang+'_'+tag)
+      if popup in ['celestial_boss_hunt','jade_valley_pilgrimage','heavenly_ladder','celestial_treasure_hunt','path_of_five_elements']:command(scroll_bottom=True,capture='context_'+popup+'_'+lang+'_'+tag)
      command(scene='trials',language=lang,width=width,height=height,unlocked=True);command(dismiss_guide=True)
      command(scroll_bottom=True,capture='weekly_reward_'+lang+'_'+tag)
    for mode in [7,8]:
@@ -109,12 +111,13 @@ def main():
     command(start=True,contrast=True,capture='training_running_'+str(mode))
    command(scene='realm',language='id',width=360,height=640,dismiss_guide=True,capture='navigation_realm')
   if args.phase=='pilot':
-   for lang in ['en','id']:
+   for lang in (['en','id'] if args.language=='both' else [args.language]):
     for width,height,tag in [(360,640,'compact'),(405,860,'tall')]:
      for popup in ['new_player_event','meditation']:
       command(scene='home',language=lang,width=width,height=height,unlocked=True);command(dismiss_guide=True)
       state=command(popup=popup,insets=True,capture='return_'+popup+'_'+lang+'_'+tag)
       assert len(state['controls'])>3,(popup,'popup not visible')
+      if popup=='meditation':assert state['meditation']['hold'] and state['meditation']['ad_disabled'] and ('UNAVAILABLE' in state['meditation']['ad_text'] or 'TERSEDIA' in state['meditation']['ad_text']),state['meditation']
    state=command(scene='home',language='id',width=360,height=640);command(dismiss_guide=True)
    state=command(capture='pilot_home')
    def click_control(info,predicate):
@@ -159,6 +162,23 @@ def main():
    after=command(capture='preset_native_swipe');assert next(s for s in after['scrolls'] if s['name']=='ExperienceScroll')['position']>scroll['position']
    assert after['scene']==state['scene'];gestures.append({'test':'PRESET_FIRST_NATIVE_CARD_SWIPE','status':'PASS'})
 
+  if args.phase=='finish':
+   def click_control(info,name):
+    c=next(c for c in info['controls'] if c['name']==name)
+    left,top,w,h=c['physical'];native('mousemove','--window',window,round(left+w/2),round(top+h/2),'mousedown',1,'sleep',.12,'mouseup',1);time.sleep(1.5)
+   for lang in ['en','id']:
+    for width,height,tag in [(360,640,'compact'),(405,860,'tall')]:
+     command(scene='hero',language=lang,width=width,height=height);command(dismiss_guide=True)
+     command(guide='odyssey',capture='odyssey_unknown_'+lang+'_'+tag)
+   for mode in [7,8]:
+    command(scene='court',language='id',width=360,height=640,unlocked=True,training_mode=mode)
+    state=command(setup=True,capture='native_training_setup_'+str(mode));click_control(state,'PracticeApply')
+    state=command(capture='native_training_ready_'+str(mode));assert not state['setup_open']
+    click_control(state,'PracticeStart');state=command(capture='native_training_started_'+str(mode))
+    assert state['running'] and not state['setup_open'];time.sleep(3)
+    native('keydown','Right');time.sleep(.7);native('keyup','Right')
+    after=command(capture='native_training_active_'+str(mode));assert after['running'] and after['combat']['position']!=state['combat']['position']
+    gestures.append({'test':'TRAINING_MODE_'+str(mode)+'_NATIVE_APPLY_START_MOVE','status':'PASS','mode':after['mode'],'report':after['combat']['report']})
   counter+=1;command_path.write_text(json.dumps({'id':'quit-'+str(counter),'quit':True}));game.wait(timeout=20)
   log=(out/'runtime.log').read_text(errors='replace')
   assert 'SCRIPT ERROR:' not in log and '\nERROR:' not in log

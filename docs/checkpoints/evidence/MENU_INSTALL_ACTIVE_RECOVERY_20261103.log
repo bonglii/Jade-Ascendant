@@ -1,0 +1,2 @@
+MENU_EXPERIENCE_RESULT=STOPPED; NO_DEPLOY_OR_EXPORT_PERFORMED
+Exception: Native/recovery preflight refused; no source writes. Exception: An interrupted export session exists. Run recover_production_export.cmd first.

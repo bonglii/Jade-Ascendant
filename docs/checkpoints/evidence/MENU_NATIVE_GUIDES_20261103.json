@@ -1,0 +1,327 @@
+{
+  "scope": "NATIVE_X11_LINUX_NOT_PHONE",
+  "captures": [
+    {
+      "name": "guide_events_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 88414
+    },
+    {
+      "name": "guide_pavilion_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 89398
+    },
+    {
+      "name": "guide_cultivate_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 89701
+    },
+    {
+      "name": "guide_settings_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 117968
+    },
+    {
+      "name": "guide_weekly_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 97805
+    },
+    {
+      "name": "guide_odyssey_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 99124
+    },
+    {
+      "name": "guide_purchase_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 89383
+    },
+    {
+      "name": "guide_timeline_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 89890
+    },
+    {
+      "name": "guide_preset_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 101821
+    },
+    {
+      "name": "guide_library_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 70576
+    },
+    {
+      "name": "guide_events_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 127823
+    },
+    {
+      "name": "guide_pavilion_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 129139
+    },
+    {
+      "name": "guide_cultivate_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 128013
+    },
+    {
+      "name": "guide_settings_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 157652
+    },
+    {
+      "name": "guide_weekly_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 150777
+    },
+    {
+      "name": "guide_odyssey_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 138445
+    },
+    {
+      "name": "guide_purchase_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 127533
+    },
+    {
+      "name": "guide_timeline_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 130425
+    },
+    {
+      "name": "guide_preset_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 143293
+    },
+    {
+      "name": "guide_library_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 106134
+    },
+    {
+      "name": "guide_events_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 91264
+    },
+    {
+      "name": "guide_pavilion_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 88173
+    },
+    {
+      "name": "guide_cultivate_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 95884
+    },
+    {
+      "name": "guide_settings_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 118364
+    },
+    {
+      "name": "guide_weekly_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 100037
+    },
+    {
+      "name": "guide_odyssey_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 100109
+    },
+    {
+      "name": "guide_purchase_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 93100
+    },
+    {
+      "name": "guide_timeline_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 94708
+    },
+    {
+      "name": "guide_preset_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 102874
+    },
+    {
+      "name": "guide_library_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 68581
+    },
+    {
+      "name": "guide_events_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 128547
+    },
+    {
+      "name": "guide_pavilion_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 126563
+    },
+    {
+      "name": "guide_cultivate_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 136957
+    },
+    {
+      "name": "guide_settings_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 163075
+    },
+    {
+      "name": "guide_weekly_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 154009
+    },
+    {
+      "name": "guide_odyssey_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 143338
+    },
+    {
+      "name": "guide_purchase_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 130834
+    },
+    {
+      "name": "guide_timeline_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 137583
+    },
+    {
+      "name": "guide_preset_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 146477
+    },
+    {
+      "name": "guide_library_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 104670
+    }
+  ],
+  "gestures": [],
+  "failures": 0
+}

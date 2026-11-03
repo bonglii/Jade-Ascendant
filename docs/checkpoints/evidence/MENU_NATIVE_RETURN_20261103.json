@@ -1,0 +1,87 @@
+{
+  "scope": "NATIVE_X11_LINUX_NOT_PHONE",
+  "captures": [
+    {
+      "name": "return_new_player_event_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 494885
+    },
+    {
+      "name": "return_meditation_en_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 343018
+    },
+    {
+      "name": "return_new_player_event_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 764187
+    },
+    {
+      "name": "return_meditation_en_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 529316
+    },
+    {
+      "name": "return_new_player_event_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 519013
+    },
+    {
+      "name": "return_meditation_id_compact",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 362997
+    },
+    {
+      "name": "return_new_player_event_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 763471
+    },
+    {
+      "name": "return_meditation_id_tall",
+      "size": [
+        405,
+        860
+      ],
+      "bytes": 530061
+    },
+    {
+      "name": "pilot_home",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 521068
+    },
+    {
+      "name": "pilot_chapters",
+      "size": [
+        360,
+        640
+      ],
+      "bytes": 413451
+    }
+  ],
+  "gestures": [],
+  "failures": 0
+}

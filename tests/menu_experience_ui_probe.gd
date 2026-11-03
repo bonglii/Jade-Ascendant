@@ -128,6 +128,10 @@ func apply(command: Dictionary) -> void:
   if is_instance_valid(_journal):metadata.compare_a=_journal._compare_a;metadata.compare_b=_journal._compare_b
   for scroll: ScrollContainer in current_scene.find_children("*","ScrollContainer",true,false):
    if scroll.is_visible_in_tree():metadata.scrolls.append({"name":scroll.name,"position":scroll.scroll_vertical,"maximum":scroll.get_v_scroll_bar().max_value,"page":scroll.get_v_scroll_bar().page})
+  metadata.meditation={}
+  var idle_presenter: Node=root.get_node("IdleCultivationManager/IdleCultivationPresenter")
+  var ad_button: Variant=idle_presenter.get("_rewarded_button")
+  if is_instance_valid(ad_button):metadata.meditation={"ad_disabled":ad_button.disabled,"ad_text":ad_button.text,"hold":root.get_node("MonetizationManager").ads_suspended()}
   metadata.combat={}
   var player: Node=get_first_node_in_group("player")
   if player!=null:

@@ -99,7 +99,19 @@ func begin() -> void:
   for key: String in ["events","pavilion","cultivate","settings","weekly","odyssey","purchase","timeline","preset","library"]:
    var guide: Control=load("res://scripts/experience/menu_guide.gd").open(current_scene,key,{"index":0})
    await frames(3);check(is_instance_valid(guide) and is_instance_valid(guide.body),"reader "+language+" "+key)
+   if key=="odyssey" and language=="en":
+    var words: String=""
+    for text: Label in guide.body.find_children("*","Label",true,false):words+=text.text
+    check(words.contains("WAITING FOR YOUR PROGRESS") and not words.contains("0/72"),"offline Odyssey never invents confirmed progress")
    guide.close();await frames(2)
+ var odyssey: Node=root.get_node("OdysseyClient");var old_snapshot: Dictionary=odyssey.snapshot.duplicate(true)
+ odyssey.snapshot={"state":{"journey_laps_version":2,"laps":4,"milestones":[]}}
+ settings.set_presentation("language","en")
+ var confirmed_guide: Control=load("res://scripts/experience/menu_guide.gd").open(current_scene,"odyssey");await frames(3)
+ var confirmed_words: String=""
+ for text: Label in confirmed_guide.body.find_children("*","Label",true,false):confirmed_words+=text.text
+ check(confirmed_words.contains("4/12"),"Odyssey reads confirmed lap-rule progress")
+ confirmed_guide.close();odyssey.snapshot=old_snapshot;await frames(2)
  var mail: Node=load("res://scripts/ui/liveops/mailbox_screen.gd").new()
  var authority:=MailData.new()
  authority.rows=[{"id":"b","expires_at":0,"reward":{"spirit_stone":1}},{"id":"a","expires_at":10,"reward":{"spirit_stone":1}},{"id":"c","expires_at":5,"reward":{"spirit_stone":1}}]
