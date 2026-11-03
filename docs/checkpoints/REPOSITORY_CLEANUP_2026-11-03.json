@@ -1,0 +1,35 @@
+{
+  "batch": "REPOSITORY_CLEANUP_20261103",
+  "status": "COMPREHENSIVE_AUDIT_IN_PROGRESS",
+  "base_commit": "dbe1c73422f431dce9234aa29efc3374b17a13e8",
+  "branch": "work/repo-cleanup-20261103",
+  "authorized": "Owner requests comprehensive review/cleaning of unused files and leftover QA after running apply/check cmd",
+  "owner_latest": "Owner reports apply/check cmd already run; exact terminal PASS/log not supplied. Preserve this distinction.",
+  "scope": [
+    "Full tracked/untracked inventory, byte/hash duplicates, resource references including UID and dynamic loads",
+    "QA/CI and tooling consumers, current delivery manifests/provenance and export exclusions",
+    "Safe removals only with explicit evidence, recoverable originals and changed-file hashes; do not delete merely because filename contains QA",
+    "Portable local audit for owner-specific leftovers not visible in author checkout"
+  ],
+  "protected": [
+    "Owner saves, Godot import cache, backup, receipt, recovery markers",
+    "Native 52 inputs and installed/debug/candidate AARs, signing configuration, all nine live payment gates",
+    "Existing tests/fixtures used by CI or launcher, authoritative evidence/checkpoints and immutable prior packages"
+  ],
+  "initial_inventory": {
+    "tracked_files": 4762,
+    "tracked_bytes": 513356002,
+    "asset_bytes": 493386392,
+    "qa_export": "tests/tools/docs excluded already; no export filter change needed"
+  },
+  "stages": {
+    "source": "AUDIT_BRANCH_PREPARING",
+    "author_audit": "IN_PROGRESS",
+    "owner_local_scan": "NOT_RUN",
+    "owner_cleanup": "NOT_RUN",
+    "deploy": "NOT_RUN",
+    "export_aab": "NOT_RUN",
+    "phone": "UNCONFIRMED"
+  },
+  "next_action": "Build complete reference/duplicate audit, investigate candidates against code/UID/dynamic families and QA consumers, then implement safe changes and portable audit with verification. Reuse unchanged game QA."
+}
