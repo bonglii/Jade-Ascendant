@@ -1,6 +1,6 @@
 {
   "batch": "MENU_PLAYER_EXPERIENCE_20261103",
-  "status": "AUTHOR_PASS_FINAL_PACKAGE_IN_PROGRESS",
+  "status": "DELIVERED_AUTHOR_PASS_OWNER_WINDOWS_PENDING",
   "base_commit": "fe4b33b8a7d8595219462e912bf86eb7e6f9ca91",
   "branch": "work/menu-player-experience-20261103",
   "authorized": "Owner chat: oke kalau begitu kita mulai; all latest backlog/menu items in one batch",
@@ -114,7 +114,7 @@
     {
       "id": "delivery",
       "acceptance": "One cumulative Windows patch with verified ancestors, backups, atomic rollback, source/QA receipts and no automatic AAB/export/deploy.",
-      "status": "FINALIZING"
+      "status": "DELIVERED_AUTHOR_PASS_OWNER_PENDING"
     }
   ],
   "invariants": [
@@ -131,15 +131,15 @@
     "phone": "UNCONFIRMED"
   },
   "stages": {
-    "source": "FINAL_SOURCE_READY_TO_PUBLISH",
-    "author_qa": "341_CHECKS_0_FAILURES_NATIVE_AND_9_INSTALLER_CASES_PASS",
-    "package": "FINALIZING",
+    "source": "PUBLISHED_BCBCEB8",
+    "author_qa": "PASS_SCOPED_341_RUNTIME_15_NATIVE_INTERACTION_9_INSTALLER",
+    "package": "BUILT_CHECKED_SAVED",
     "owner_install": "UNCONFIRMED",
     "export_aab": "NOT_RUN",
     "deploy": "NOT_RUN",
     "phone": "UNCONFIRMED"
   },
-  "next_action": "Publish final source, build archive, verify payloads/CRC and final apply+repeat, then save ZIP/report/handoff and publish delivery receipt. No export/deploy or prior recovery rerun.",
+  "next_action": "Owner second review: when ready on the intended work branch, close Godot and wait for any active exporter recovery, extract new cumulative ZIP and run apply_and_test.cmd. Expected MENU_EXPERIENCE_WINDOWS_QA=PASS. Resume qa_only.cmd after a QA interruption. Keep candidate/AAB and phone facts separate; do not reapply older packages or rerun passed R2 recovery.",
   "recovery": {
     "reason": "Author workspace expired after the initial source-read JSON was truncated, before the implementation tree was published",
     "historical_results": "51 new runtime checks/0 failures and earlier 98/0, from previous workspace; raw logs lost, not new proof",
@@ -157,5 +157,7 @@
     "teardown": "Native renderer exit warns of zero-reference RefCounted on baseline/current (26/27), no orphan Nodes/SCRIPT ERROR; same headless cycles clean; documented limitation",
     "runtime_regression": "98 content + 66 clarity + 6 resume + 57 native Trials + 54 direction; 341 total including latest 60",
     "installer": "9 cases + 5 zero-write repeats PASS; real-write rollback preserves concurrent edit"
-  }
+  },
+  "game_source_commit": "bcbceb87908edbd0e2d80032509bf024efcb0eb5",
+  "delivery_receipt": "docs/checkpoints/MENU_EXPERIENCE_2026-11-03.delivery.json"
 }

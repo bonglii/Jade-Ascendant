@@ -1,0 +1,78 @@
+{
+  "batch": "MENU_PLAYER_EXPERIENCE_20261103",
+  "status": "DELIVERED_AUTHOR_PASS_OWNER_WINDOWS_PENDING",
+  "game_source_commit": "bcbceb87908edbd0e2d80032509bf024efcb0eb5",
+  "source_branch": "work/menu-player-experience-20261103",
+  "source_url": "https://github.com/bonglii/Jade-Ascendant/commit/bcbceb87908edbd0e2d80032509bf024efcb0eb5",
+  "prior_aab_candidate_branch": "work/player-review-batch-20261102",
+  "prior_aab_candidate_head_verified_unchanged": "fe4b33b8a7d8595219462e912bf86eb7e6f9ca91",
+  "package": {
+    "name": "Jade-Menu-Player-Experience-Batch-2026-11-03.zip",
+    "bytes": 80476915,
+    "sha256": "421b6efcf3fde24417c100b63d09fffa9f231613ce80f5aa44d61535cfe591f4",
+    "entries": 915,
+    "payloads": 139,
+    "crc": "PASS",
+    "all_checksums": "PASS",
+    "all_payloads_match_git_commit": "PASS",
+    "library_file_id": "libfile_9195c3940e1c81919f9b86e947b81a4f",
+    "file_id": "file_0000000087808243b3594c01f4cb2a02",
+    "saved": "CONFIRMED",
+    "metadata_applied": true
+  },
+  "report": {
+    "name": "Jade-Menu-Player-Experience-2026-11-03.md",
+    "library_file_id": "libfile_bfc28237decc8191bea5eae67c0f80e9",
+    "file_id": "file_00000000dcf481fbb18b2c27bb4044a8",
+    "saved": "CONFIRMED"
+  },
+  "handoff": {
+    "name": "Jade-Ascendant-Handoff-2026-11-02.md",
+    "library_file_id": "libfile_6203dd6b5a9c8191be0c73b3afc5598d",
+    "file_id": "file_00000000e33881fb93df47d08d9f0474",
+    "version": 6,
+    "guarded_previous_version": 5,
+    "saved": "CONFIRMED"
+  },
+  "author_qa": {
+    "scope": "Linux Godot 4.7.2, X11/Xvfb/Mesa, touch emulation, Dummy audio; disposable userdata, not owner Windows or phone",
+    "checks": {
+      "menu": 60,
+      "content": 98,
+      "clarity": 66,
+      "continue_restart": 6,
+      "native_trials": 57,
+      "direction": 54,
+      "total": 341,
+      "failures": 0
+    },
+    "native_capture_count": 243,
+    "native_gesture_or_control_checks": 15,
+    "installer_distinct_scenarios": 9,
+    "installer_zero_write_repeats": 5,
+    "final_archive_apply_and_repeat_on_candidate_fe4": "PASS_ADDITIONAL_1_REPEAT",
+    "protected_native_preflight": "52_INPUTS_AND_CANDIDATE_AAR_MATCH",
+    "native_rebuild": "NOT_RUN_REUSED_UNCHANGED_R2_PROVENANCE",
+    "renderer_limitation": "Native Linux exit has zero-reference RefCounted warnings on baseline/current (26/27); no orphan Nodes or SCRIPT ERROR; equivalent headless cycles clean. Retained in full raw logs.",
+    "exact_sha_ci": "API_0_RUNS_FOR_BCBCEB8_NOT_CI_PASS"
+  },
+  "owner": {
+    "r2_recovery": "PRIOR_PASS_REUSED",
+    "player_content_windows": "PASS_OWNER_CHAT_2026_11_03",
+    "menu_batch_windows": "UNCONFIRMED",
+    "separate_old_warning_hotfix": "UNCONFIRMED_NEW_CUMULATIVE_INCLUDES_FIX",
+    "aab": "UNCONFIRMED",
+    "closed_test_upload": "UNCONFIRMED",
+    "phone": "UNCONFIRMED"
+  },
+  "invariants": {
+    "ads_hold": "ON_NO_CALENDAR_REACTIVATION",
+    "live_payment_gates": 9,
+    "save_cache_receipts_recovery": "PRESERVED",
+    "main_production": "NOT_WRITTEN",
+    "deploy": "NOT_RUN",
+    "export_aab": "NOT_RUN",
+    "event_activation_notifications_analytics_rollout": "NOT_RUN"
+  },
+  "next_action": "Owner second review: when ready on the intended work branch, close Godot and wait for any active exporter recovery, extract new cumulative ZIP and run apply_and_test.cmd. Expected MENU_EXPERIENCE_WINDOWS_QA=PASS. Resume qa_only.cmd after a QA interruption. Keep candidate/AAB and phone facts separate; do not reapply older packages or rerun passed R2 recovery."
+}

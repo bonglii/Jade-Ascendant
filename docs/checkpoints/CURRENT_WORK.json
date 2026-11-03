@@ -2,6 +2,7 @@
   "state": "docs/checkpoints/MENU_PLAYER_EXPERIENCE_2026-11-03.json",
   "base": "fe4b33b8a7d8595219462e912bf86eb7e6f9ca91",
   "previous": "docs/checkpoints/PLAYER_CONTENT_BATCH_2026-11-02.delivery.json",
-  "revision": "MENU_PLAYER_EXPERIENCE_AUTHOR_PASS_DELIVERY_IN_PROGRESS",
-  "source_branch": "work/menu-player-experience-20261103"
+  "revision": "MENU_PLAYER_EXPERIENCE_DELIVERED_OWNER_PENDING",
+  "source_branch": "work/menu-player-experience-20261103",
+  "delivery_receipt": "docs/checkpoints/MENU_EXPERIENCE_2026-11-03.delivery.json"
 }
