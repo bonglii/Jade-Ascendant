@@ -1,0 +1,143 @@
+{
+  "batch": "MENU_PLAYER_EXPERIENCE_20261103",
+  "status": "IMPLEMENTING",
+  "base_commit": "fe4b33b8a7d8595219462e912bf86eb7e6f9ca91",
+  "branch": "work/menu-player-experience-20261103",
+  "authorized": "Owner chat: oke kalau begitu kita mulai; all latest backlog/menu items in one batch",
+  "candidate_branch_unchanged": "work/player-review-batch-20261102",
+  "items": [
+    {
+      "id": "reward_preview",
+      "acceptance": "Event Center uses current/previous-week reward snapshots; unknown/offline never invents a grant.",
+      "status": "PENDING"
+    },
+    {
+      "id": "menu_identity",
+      "acceptance": "Daily/weekly/earned Journey milestones are consistently named and contextualized across hub and event pages.",
+      "status": "PENDING"
+    },
+    {
+      "id": "home_target",
+      "acceptance": "One read-only pinned collection target under the Journey card; recovery/Continue stays first.",
+      "status": "PENDING"
+    },
+    {
+      "id": "cultivate",
+      "acceptance": "Read-only next-run impact and actionable Lv.10/mastery readiness using production stats/caps.",
+      "status": "PENDING"
+    },
+    {
+      "id": "presets",
+      "acceptance": "Three existing gear presets gain whole-loadout before/after preview and explicit next-run/server compatibility.",
+      "status": "PENDING"
+    },
+    {
+      "id": "defeat_timeline",
+      "acceptance": "Bounded optional last-ten-second HP event review survives Continue; old records remain unknown.",
+      "status": "PENDING"
+    },
+    {
+      "id": "run_insights",
+      "acceptance": "A/B comparison adds factual changes in equipment, paths, duration and damage completeness, without a fake power score.",
+      "status": "PENDING"
+    },
+    {
+      "id": "pattern_drill",
+      "acceptance": "Known Chapter 1 guardian single-pattern drill uses real boss attacks in isolated training.",
+      "status": "PENDING"
+    },
+    {
+      "id": "training_rotation",
+      "acceptance": "Deterministic local weekly training itinerary uses fixed rules and no economy or live-server rotation.",
+      "status": "PENDING"
+    },
+    {
+      "id": "personal_records",
+      "acceptance": "Account-isolated bounded training records compare matching mode/rules/kit only; technique history remains compatible.",
+      "status": "PENDING"
+    },
+    {
+      "id": "realm_encounters",
+      "acceptance": "Distinct realm encounter cadence within existing optional cadence policy; preserve authored elite slots, HP/damage, spawn budget and Continue.",
+      "status": "PENDING"
+    },
+    {
+      "id": "audio",
+      "acceptance": "Prioritize readable boss danger cues using approved existing audio, bounded voices and existing bus/volume settings.",
+      "status": "PENDING"
+    },
+    {
+      "id": "accessibility",
+      "acceptance": "Audit and improve compact text/control contrast and telegraph readability without changing hit geometry.",
+      "status": "PENDING"
+    },
+    {
+      "id": "library_training",
+      "acceptance": "Contextual access to training, boss archive, journals and relevant story; retain current library content.",
+      "status": "PENDING"
+    },
+    {
+      "id": "weekly_rule_teaching",
+      "acceptance": "Weekly rule explanation gains a short visual/counterplay guide from the real ruleset.",
+      "status": "PENDING"
+    },
+    {
+      "id": "event_context",
+      "acceptance": "Boss Hunt, Pilgrimage, Ladder, Treasure Hunt and Five Elements disclose progress sources and a next action.",
+      "status": "PENDING"
+    },
+    {
+      "id": "odyssey_context",
+      "acceptance": "Clarify route implications, lap milestones and earned-claim timing from authoritative snapshots.",
+      "status": "PENDING"
+    },
+    {
+      "id": "returning_player",
+      "acceptance": "Meditation and seven-day claim navigation remains short, preserves actual claim and cooldown authority.",
+      "status": "PENDING"
+    },
+    {
+      "id": "mail_store_account",
+      "acceptance": "Improve discoverability of pending/claimable states and contextual help; reuse Claim All, restore and payment recovery.",
+      "status": "PENDING"
+    },
+    {
+      "id": "settings",
+      "acceptance": "Demonstrate existing comfort/quality preferences, audit labels and touch readability in both languages.",
+      "status": "PENDING"
+    },
+    {
+      "id": "first_session",
+      "acceptance": "Author native first-session navigation/combat pilot and EN/ID compact/tall safe-area review; retention and Android results remain external.",
+      "status": "PENDING"
+    },
+    {
+      "id": "delivery",
+      "acceptance": "One cumulative Windows patch with verified ancestors, backups, atomic rollback, source/QA receipts and no automatic AAB/export/deploy.",
+      "status": "PENDING"
+    }
+  ],
+  "invariants": [
+    "Preserve saves/cache/backups/recovery markers and all 52 R2 native inputs",
+    "Preserve paid ownership, refunds, nine live production gates and ads hold ON",
+    "Reuse prior passed unchanged evidence; do not reset or rerun R2 recovery",
+    "No new currency, weapon/equipment, automatic event activation, server deploy, analytics rollout or Play upload",
+    "Reuse approved xianxia assets and shared native mobile scroll policy"
+  ],
+  "prior_receipts": {
+    "content_windows": "PASS_CONFIRMED_OWNER_2026_11_03",
+    "warning_hotfix_owner": "UNCONFIRMED",
+    "aab": "UNCONFIRMED",
+    "phone": "UNCONFIRMED"
+  },
+  "stages": {
+    "source": "BASE_VERIFIED",
+    "author_qa": "IN_PROGRESS",
+    "package": "NOT_BUILT",
+    "owner_install": "UNCONFIRMED",
+    "export_aab": "NOT_RUN",
+    "deploy": "NOT_RUN",
+    "phone": "UNCONFIRMED"
+  },
+  "next_action": "Inspect baseline native composition, implement bounded policies/runtime and menu changes, test affected domains, publish staged checkpoints and one cumulative patch. Android/performance/retention claims await real closed testing."
+}
