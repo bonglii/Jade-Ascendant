@@ -14,11 +14,13 @@
     "scripts/data/build_guidance_catalog.gd",
     "scripts/data/chronicle_catalog.gd",
     "scripts/data/cultivation_mastery_runtime.gd",
+    "scripts/data/equipment_set_catalog.gd",
     "scripts/data/player_review_copy.gd",
     "scripts/data/player_review_copy.gd.uid",
     "scripts/data/run_path_policy.gd",
     "scripts/data/run_path_policy.gd.uid",
     "scripts/data/run_review.gd",
+    "scripts/data/skill_catalog.gd",
     "scripts/data/trial_reward_preview.gd",
     "scripts/data/trial_reward_preview.gd.uid",
     "scripts/data/trial_ruleset_policy.gd",
@@ -51,9 +53,11 @@
     "scripts/weapon/weapon_manager.gd",
     "tests/heavenly_trials_recovery_smoke.gd",
     "tests/player_content_batch_smoke.gd",
+    "tests/player_content_installer_test.py",
     "tests/player_content_ui_probe.gd",
     "tests/player_direction_smoke.gd",
     "tools/player_content_batch/Install.ps1",
+    "tools/player_content_batch/author_gui.py",
     "tools/player_content_batch/build_package.py"
   ]
 }

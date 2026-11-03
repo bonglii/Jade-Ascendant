@@ -836,3 +836,9 @@ func _enter_tree() -> void:
 	for message: String in preload("res://scripts/data/player_review_copy.gd").INDONESIAN:
 		translation.add_message(message, preload("res://scripts/data/player_review_copy.gd").INDONESIAN[message])
 	TranslationServer.add_translation(translation)
+
+	var english: Translation=Translation.new()
+	english.locale="en"
+	for message: String in preload("res://scripts/data/player_review_copy.gd").ENGLISH:
+		english.add_message(message,preload("res://scripts/data/player_review_copy.gd").ENGLISH[message])
+	TranslationServer.add_translation(english)

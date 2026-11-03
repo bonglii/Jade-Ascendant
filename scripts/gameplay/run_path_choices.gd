@@ -66,6 +66,9 @@ func _pick(value: String) -> void:
 	if checkpoint!=null:checkpoint.save_checkpoint()
 func _cancel() -> void:
 	if is_instance_valid(_modal):_pick("none" if _key=="boon" else "balanced")
+func _unhandled_key_input(event: InputEvent) -> void:
+	if is_instance_valid(_modal) and event.is_action_pressed("ui_cancel") and not event.is_echo():
+		_cancel();get_viewport().set_input_as_handled()
 func _restore_back() -> void:
 	if is_instance_valid(SceneTransitionManager) and SceneTransitionManager.back_handler==Callable(self,"_cancel"):
 		SceneTransitionManager.set_back_handler(_previous_back)

@@ -40,7 +40,7 @@ func _ready() -> void:
 	var tabs:=GridContainer.new();tabs.columns=2;body.add_child(tabs)
 	for value: String in ["EQUIPMENT","SKILLS","BUILDS","CHRONICLES"]:
 		var tab:=_button(value);tab.name="LibraryTab"+value;tab.size_flags_horizontal=Control.SIZE_EXPAND_FILL;tab.pressed.connect(_set_mode.bind(value));tabs.add_child(tab);_tabs[value]=tab
-	_search=LineEdit.new();_search.name="SkillBookSearch";_search.placeholder_text="Search the archives…";_search.custom_minimum_size.y=44
+	_search=LineEdit.new();_search.name="SkillBookSearch";_search.placeholder_text=tr("Search the archives…");_search.custom_minimum_size.y=44
 	_search.add_theme_font_size_override("font_size",16)
 	_search.add_theme_stylebox_override("normal",Ui.make_panel_style(Color(.004,.03,.036,.97),Color(.40,.68,.60),8))
 	_search.text_changed.connect(_on_search);body.add_child(_search)
@@ -48,7 +48,7 @@ func _ready() -> void:
 	var count_row:=HBoxContainer.new();body.add_child(count_row)
 	_count=_label("",13,Color(.79,.87,.82));count_row.add_child(_count)
 	_rarity_picker=OptionButton.new();_rarity_picker.name="LibraryRarity";_rarity_picker.custom_minimum_size=Vector2(104,34);_rarity_picker.add_theme_font_size_override("font_size",12)
-	for value: String in ["ALL","common","rare","epic","legendary"]:_rarity_picker.add_item("All rarities" if value=="ALL" else value.capitalize())
+	for value: String in ["ALL","common","rare","epic","legendary"]:_rarity_picker.add_item(tr("All rarities") if value=="ALL" else value.capitalize())
 	for state: String in ["normal","hover","pressed"]:_rarity_picker.add_theme_stylebox_override(state,_skin(state))
 	_rarity_picker.get_popup().add_theme_stylebox_override("panel",Ui.make_panel_style(Color(.003,.03,.039,.99),Color(.83,.66,.32),10))
 	_rarity_picker.item_selected.connect(func(index: int):_rarity=["ALL","common","rare","epic","legendary"][index];_refresh())
@@ -134,11 +134,11 @@ func _equipment_tile(id: String) -> Button:
 	var mark:=Label.new();mark.text="◆" if InventoryManager.owns_item(id) else "○";mark.tooltip_text="OWNED" if InventoryManager.owns_item(id) else "NOT OWNED";mark.add_theme_font_size_override("font_size",12);mark.add_theme_color_override("font_color",color);mark.mouse_filter=Control.MOUSE_FILTER_IGNORE;b.add_child(mark);mark.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT);mark.offset_left=-18;mark.offset_top=4
 	b.pressed.connect(_select_equipment.bind(id));return b
 func _select_equipment(id: String) -> void:
-	_selected=id;var d: Dictionary=EquipmentManager.get_item_data(id);_summary_icon.texture=load(Visual.get_icon_path(id));_summary_text.text=str(d.display_name)+"\n"+str(d.rarity).to_upper()+" • "+("OWNED" if InventoryManager.owns_item(id) else "NOT OWNED")+"\n"+Visual.get_stat_summary(d)
+	_selected=id;var d: Dictionary=EquipmentManager.get_item_data(id);_summary_icon.texture=load(Visual.get_icon_path(id));_summary_text.text=str(d.display_name)+"\n"+str(d.rarity).to_upper()+" • "+(tr("OWNED") if InventoryManager.owns_item(id) else tr("NOT OWNED"))+"\n"+Visual.get_stat_summary(d)
 func _set_card(id: String) -> Control:
 	var p:=PanelContainer.new();p.add_theme_stylebox_override("panel",Ui.make_panel_style(Color(.003,.028,.035,.97),Visual.get_rarity_color(Sets.get_set_rarity(id)),10));var c:=VBoxContainer.new();p.add_child(c);c.add_child(_label(Sets.get_display_name(id),20,Color(.99,.85,.48)));var row:=HBoxContainer.new();c.add_child(row)
 	for item: String in Sets.get_piece_ids(id):var tile:=_equipment_tile(item);tile.custom_minimum_size.y=74;row.add_child(tile)
-	c.add_child(_label("FOUR PIECES • "+Sets.get_identity(id),14,Color(.62,.91,.82)));c.add_child(_label(Sets.get_tier_description(id,4),14,Color(.85,.93,.87)));return p
+	c.add_child(_label(tr("FOUR PIECES • ")+Sets.get_identity(id),14,Color(.62,.91,.82)));c.add_child(_label(Sets.get_tier_description(id,4),14,Color(.85,.93,.87)));return p
 func _card(id: String) -> Control:
 	var b:=Button.new();b.name="Skill_"+id;b.custom_minimum_size.y=114;b.mouse_filter=Control.MOUSE_FILTER_PASS;b.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE
 	b.add_theme_stylebox_override("normal",Ui.make_panel_style(Color(.003,.028,.035,.96),Color(.58,.66,.40),10))
@@ -150,19 +150,19 @@ func _open_equipment_detail(id: String) -> void:
 	var d: Dictionary=EquipmentManager.get_item_data(id);var c:=VBoxContainer.new();c.add_theme_constant_override("separation",12)
 	var art:=TextureRect.new();art.custom_minimum_size.y=100;art.texture=load(Visual.get_icon_path(id));art.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;art.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;c.add_child(art)
 	c.add_child(_label(str(d.rarity).to_upper()+" • "+Visual.get_slot_title(str(d.slot)),14,Visual.get_rarity_color(str(d.rarity))))
-	c.add_child(_label("BASE STATS • "+Visual.get_stat_summary(d),16,Color(.9,.94,.9)))
+	c.add_child(_label(tr("BASE STATS • ")+Visual.get_stat_summary(d),16,Color(.9,.94,.9)))
 	c.add_child(_label(Visual.get_signature_effect_description(d),15,Color(.82,.90,.86)))
 	var set_id: String=Sets.get_set_id_for_item(id)
 	if not set_id.is_empty():
-		c.add_child(_label(Sets.get_display_name(set_id)+" • FOUR ARMOR/ACCESSORY PIECES",16,Color(.99,.83,.45)))
-		for tier: int in [2,3,4]:c.add_child(_label("%d PIECES: %s"%[tier,Sets.get_tier_description(set_id,tier)],15,Color(.68,.90,.80)))
+		c.add_child(_label(Sets.get_display_name(set_id)+tr(" • FOUR ARMOR/ACCESSORY PIECES"),16,Color(.99,.83,.45)))
+		for tier: int in [2,3,4]:c.add_child(_label(tr("%d PIECES: %s")%[tier,Sets.get_tier_description(set_id,tier)],15,Color(.68,.90,.80)))
 	else:c.add_child(_label("Independent weapon • does not count toward a set. Permanent level cap: 10 / 20 / 30 / 40 / 50 at 1–5 stars. Run refinement is separate.",15,Color(.68,.90,.80)))
 	c.add_child(_label("Star ascension requires identical duplicates. Manage your loadout and upgrades in HERO.",14,Color(.73,.83,.79)))
 	if bool(d.get("event_only",false)):
 		c.add_child(_label("EVENT EXCLUSIVE • Jade Dragon Odyssey: complete 12 full laps past START, claim the milestone, then collect the Compass in Mail. Not in normal gacha.",14,Color(.99,.83,.45)))
 	else:
 		var chapter: int=int(d.get("requires_chapter",0));var stage: int=int(d.get("requires_stage",0))
-		c.add_child(_label("EQUIPMENT UNLOCK: Clear %d-%d"%[chapter,stage] if chapter>0 else "ACQUISITION: Available from the beginning",14,Color(.99,.83,.45)))
+		c.add_child(_label(tr("EQUIPMENT UNLOCK: Clear %d-%d")%[chapter,stage] if chapter>0 else "ACQUISITION: Available from the beginning",14,Color(.99,.83,.45)))
 		c.add_child(_label("GACHA COLLECTION: Opens after clear 1-5. Equipment unlock requirements are separate.",14,Color(.68,.90,.80)))
 	_open_popup(str(d.display_name),c)
 func _open_popup(title: String,content: Control) -> void:
@@ -178,11 +178,12 @@ func _open_popup(title: String,content: Control) -> void:
 	var close:=_button("×");close.custom_minimum_size=Vector2(44,44);close.pressed.connect(_close_popup);_detail_header.add_child(close)
 	_detail_scroll=ScrollContainer.new();_detail_scroll.name="LibraryDescriptionScroll";_detail_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;_detail_scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL;_detail_scroll.scroll_deadzone=8;body.add_child(_detail_scroll)
 	_detail_content=content;content.size_flags_horizontal=Control.SIZE_EXPAND_FILL;content.size_flags_vertical=Control.SIZE_SHRINK_BEGIN;_detail_scroll.add_child(content)
+	preload("res://scripts/ui/mobile_scroll_policy.gd").prepare_tree(_popup)
 	if not resized.is_connected(_fit_detail_popup):resized.connect(_fit_detail_popup)
 	_fit_detail_popup()
 
 func _fit_detail_popup() -> void:
-	if not is_instance_valid(_popup) or not is_instance_valid(_detail_panel):return
+	if not is_inside_tree() or not is_instance_valid(_popup) or not is_instance_valid(_detail_panel):return
 	var width: float=minf(520,size.x-32)
 	var skin: StyleBox=_detail_panel.get_theme_stylebox("panel")
 	_detail_content.custom_minimum_size.x=maxf(1,width-skin.get_minimum_size().x-12)
@@ -190,12 +191,15 @@ func _fit_detail_popup() -> void:
 	call_deferred("_finish_detail_popup_fit")
 
 func _finish_detail_popup_fit() -> void:
+	if not is_inside_tree():return
+	var tree: SceneTree=get_tree()
 	var expected: PanelContainer=_detail_panel
 	# Wrapped labels invalidate container minima after sorting. Let those native
 	# passes settle while transparent, then reveal the final compact panel once.
 	for _pass: int in range(3):
-		await get_tree().process_frame
-		if not is_instance_valid(_popup) or not is_instance_valid(expected) or expected!=_detail_panel:return
+		if not is_inside_tree():return
+		await tree.process_frame
+		if not is_inside_tree() or not is_instance_valid(_popup) or not is_instance_valid(expected) or expected!=_detail_panel:return
 		var width: float=minf(520,size.x-32)
 		var skin: StyleBox=expected.get_theme_stylebox("panel")
 		var wanted: float=_detail_content.get_combined_minimum_size().y+maxf(44,_detail_header.get_combined_minimum_size().y)+skin.get_minimum_size().y+12
@@ -239,7 +243,7 @@ func _refresh_builds() -> void:
 	if _filter in ["ALL","SETS"]:
 		for id: String in Sets.SET_ORDER:
 			var guide: Dictionary=BuildGuide.set_advice(id)
-			var detail: String=str(guide.role)+"\n"+str(guide.advice)+"\n4 PIECES: "+Sets.get_tier_description(id,4)
+			var detail: String=str(guide.role)+"\n"+str(guide.advice)+"\n"+tr("4 PIECES: ")+Sets.get_tier_description(id,4)
 			if not query.is_empty() and not (id+Sets.get_display_name(id)+detail).to_lower().contains(query):continue
 			var first: String=Sets.get_piece_ids(id)[0]
 			_list.add_child(_guide_card(Sets.get_display_name(id),detail,load(Visual.get_icon_path(first)) as Texture2D));shown+=1

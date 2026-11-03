@@ -41,6 +41,14 @@ func apply(command: Dictionary) -> void:
    root.get_node("JourneyManager").cleared_stage_keys=cleared # Explicit presentation fixture, never a live grant.
   change_scene_to_file(scenes.get(command.scene,scenes.court));await frames(20)
   if command.scene=="builds":current_scene._set_mode("BUILDS");await frames(8)
+ if command.has("library_mode"):
+  current_scene._set_mode(str(command.library_mode));await frames(8)
+ if command.has("journal_page"):
+  _journal=load("res://scripts/companion/player_journal.gd").open(current_scene,str(command.journal_page));await frames(10)
+ if command.has("skill_detail"):
+  current_scene._open_skill_detail(str(command.skill_detail));await frames(8)
+ if command.has("equipment_detail"):
+  current_scene._open_equipment_detail(str(command.equipment_detail));await frames(8)
  if command.has("mode") and current_scene.has_method("_select_mode"):current_scene._mode_picker.select(int(command.mode));current_scene._select_mode(int(command.mode));await frames(10)
  if command.get("setup",false):current_scene._configure();await frames(10)
  if command.get("start",false):current_scene._start();await frames(30)
@@ -68,23 +76,45 @@ func apply(command: Dictionary) -> void:
   for area: Control in current_scene.find_children("*","Control",true,false):
    if area.has_method("refresh_safe_area"):area.offset_top=24;area.offset_bottom=-32
   await frames(10)
+ if command.get("scroll_bottom",false):
+  for scroll: ScrollContainer in current_scene.find_children("*","ScrollContainer",true,false):
+   if scroll.is_visible_in_tree():scroll.scroll_vertical=int(scroll.get_v_scroll_bar().max_value)
+  await frames(8)
+ if command.has("scroll_to"):
+  var target: Control=current_scene.find_child(str(command.scroll_to),true,false)
+  var scroll: ScrollContainer=preload("res://scripts/ui/mobile_scroll_policy.gd").ancestor(target) if target!=null else null
+  if scroll!=null:
+   scroll.ensure_control_visible(target);await frames(3)
+   scroll.scroll_vertical+=180
+  await frames(8)
  if command.has("capture"):
   await RenderingServer.frame_post_draw
   var path: String=OS.get_environment("JADE_UI_CAPTURE_DIR").path_join(str(command.capture)+".png")
-  var metadata: Dictionary={"fixture":true,"window":DisplayServer.window_get_size(),"root_size":root.size,"viewport":root.get_visible_rect().size,"scrolls":[],"option_popup_open":false}
+  var metadata: Dictionary={"fixture":true,"scene":current_scene.name,"paused":paused,"quiet_vfx":settings.quiet_player_vfx,"window":DisplayServer.window_get_size(),"root_size":root.size,"viewport":root.get_visible_rect().size,"scrolls":[],"option_popup_open":false}
+  if current_scene.has_method("_configure"):
+   metadata.setup_open=current_scene._setup.visible;metadata.running=current_scene._running;metadata.mode=current_scene.mode;metadata.art_index=current_scene._skills.selected;metadata.joystick_input=current_scene._joystick.is_processing_input()
+   metadata.run_paths=current_scene.player.get_node("WeaponManager").run_paths.duplicate(true)
+  if is_instance_valid(_journal):metadata.compare_a=_journal._compare_a;metadata.compare_b=_journal._compare_b
   for scroll: ScrollContainer in current_scene.find_children("*","ScrollContainer",true,false):
    if scroll.is_visible_in_tree():metadata.scrolls.append({"name":scroll.name,"position":scroll.scroll_vertical,"maximum":scroll.get_v_scroll_bar().max_value,"page":scroll.get_v_scroll_bar().page})
+  metadata.popups=[]
   for option: OptionButton in current_scene.find_children("*","OptionButton",true,false):
-   if option.get_popup().visible:metadata.option_popup_open=true
+   if option.get_popup().visible:
+    metadata.option_popup_open=true
+    var popup: PopupMenu=option.get_popup()
+    metadata.popups.append({"owner":option.name,"position":[popup.position.x,popup.position.y],"size":[popup.size.x,popup.size.y],"embedded":popup.is_embedded(),"count":popup.item_count})
   metadata.controls=[]
   for control: Control in current_scene.find_children("*","Control",true,false):
-   if control.is_visible_in_tree() and (control is OptionButton or control.name in ["PracticeStart","OnboardingSkipButton"]):metadata.controls.append({"name":control.name,"rect":control.get_global_rect(),"screen":control.get_global_transform_with_canvas().origin})
+   if control.is_visible_in_tree() and (control is OptionButton or control.name in ["PracticeStart","OnboardingSkipButton","quiet_player_vfx"]):metadata.controls.append({"name":control.name,"under_scroll":preload("res://scripts/ui/mobile_scroll_policy.gd").ancestor(control)!=null,"physical":[control.get_global_rect().position.x*root.size.x/root.get_visible_rect().size.x,control.get_global_rect().position.y*root.size.y/root.get_visible_rect().size.y,control.size.x*root.size.x/root.get_visible_rect().size.x,control.size.y*root.size.y/root.get_visible_rect().size.y],"rect":control.get_global_rect(),"screen":control.get_global_transform_with_canvas().origin})
   var proof:=FileAccess.open(path.trim_suffix(".png")+".json",FileAccess.WRITE);proof.store_string(JSON.stringify(metadata,"  "));proof.close()
   var captured: Image=root.get_texture().get_image()
   if captured.get_size()!=root.size:push_error("UI_CAPTURE_DIMENSION_MISMATCH")
   var error: Error=captured.save_png(path)
   print("UI_CAPTURE ",command.capture," error=",error," viewport=",root.get_visible_rect().size)
  if command.get("quit",false):
-  paused=false;await load("res://tests/qa_runtime_teardown.gd").stop_audio(self);quit();return
+  paused=false;await load("res://tests/qa_runtime_teardown.gd").stop_audio(self)
+  _journal=null
+  if current_scene!=null:current_scene.queue_free();current_scene=null
+  await frames(4);quit();return
  print("UI_COMMAND_DONE ",str(command.get("id","")))
  _busy=false

@@ -275,6 +275,9 @@ func _draw() -> void:
  var point: Vector2=_seal.location
  draw_circle(point,Oath.RADIUS,Color(.12,.65,.47,.12));draw_arc(point,Oath.RADIUS,0,TAU,40,Sheet.GOLD,2,true)
  draw_arc(point,Oath.RADIUS-7,-PI/2,-PI/2+TAU*_seal.charge/Oath.CHARGE,40,Sheet.JADE,4,true)
+func _unhandled_key_input(event: InputEvent) -> void:
+ if _setup!=null and _setup.visible and event.is_action_pressed("ui_cancel") and not event.is_echo():
+  _back();get_viewport().set_input_as_handled()
 func _back() -> void:
  if _setup!=null and _setup.visible:_setup.hide();return
  if SceneTransitionManager.is_transitioning:return

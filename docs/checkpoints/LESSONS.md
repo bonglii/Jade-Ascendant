@@ -918,3 +918,12 @@ A literal credential-shaped sample in a self-published test triggered the scanne
 - Gauntlet completion fixtures must honor the production phase gate. Forcing HP below a first-phase threshold creates an impossible fixture; apply the threshold hit, advance the ward timer explicitly, then apply the killing hit.
 - PowerShell telemetry caused an automatic approval rejection. New author processes set POWERSHELL_TELEMETRY_OPTOUT=1 before launch as documented by Microsoft. The later complete launcher returned 251 checks with no failures; the telemetry-interrupted run is not an overall PASS.
 - Keep source snapshots and evidence durable before expensive GUI/package work. The environment disappeared after passing runtime/installer checks, before the cumulative ZIP and Library writeback. Never label an unpublished workspace or an unfinished archive as delivered.
+
+## Player content continuation — 2026-11-03
+
+- Preserve passed receipts after workspace expiry and distinguish them from fresh logs. Restore only unsynchronized copy/tooling and test affected input/layout/package paths; never invent missing raw evidence.
+- Desktop Esc is separate from Window.go_back_requested. Setup/choice modals consume ui_cancel through their existing Back action. A capture-complete log line is not proof that its following assertions passed.
+- Native PopupMenu touch focus differs from keyboard focus. Open the actual dropdown, inspect its bounds and click a real item; assert both selected indices. Keep harness-focus failure separate from a game selection defect.
+- Deferred detail fitting can resume after scene detach. Capture a valid SceneTree before awaiting and guard is_inside_tree before/after each frame; stop if the expected popup changed. Rapid detail/size/menu changes reproduced the error; do not slow the fixture to hide it.
+- Inspect the new setting itself, not the card above it. Ensure its real rectangle is visible after sorting and test native toggle/restore.
+- Translate message IDs before concatenating counts/metadata. Inspect list cards and complete popups. Correct per-target versus per-blade wording from the verified R2 mechanic without touching damage.

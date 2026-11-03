@@ -247,10 +247,10 @@ static func get_tier_description(set_id: String, tier: int) -> String:
 	if tier not in [2,3,4]: return ""
 	var tier_data: Dictionary = TIER_DESCRIPTIONS.get(set_id, {})
 	if get_set_rarity(set_id) in ["common", "rare"]:
-		return "+%d Max HP" % (tier * (2 if get_set_rarity(set_id) == "common" else 3))
-	var text: String = str(tier_data.get(tier, ""))
+		return TranslationServer.translate("+%d Max HP") % (tier * (2 if get_set_rarity(set_id) == "common" else 3))
+	var text: String = TranslationServer.translate(str(tier_data.get(tier, "")))
 	if tier == 4:
-		text += " • " + str(get_four_piece_passive(set_id).get("description", ""))
+		text += " • " + TranslationServer.translate(str(get_four_piece_passive(set_id).get("description", "")))
 	return text
 
 static func get_tier_descriptions(set_id: String) -> Dictionary:

@@ -177,7 +177,7 @@ func _runs() -> void:
  if PlayerCompanion.state.runs.is_empty():card(copy("YOUR NEXT ATTEMPT","PERCOBAAN BERIKUTMU"),copy("New results will appear here. Earlier stage records remain in Journey.","Hasil baru akan muncul di sini. Rekor stage sebelumnya tetap ada di Journey."))
  for row: Dictionary in PlayerCompanion.state.runs:
   var facts: Dictionary=row.facts
-  var content: VBoxContainer=card("%d-%d · %s"%[int(row.chapter),int(row.stage),str(row.outcome).to_upper()],_date(int(row.time))+" · %02d:%02d · Lv.%d"%[int(float(facts.seconds)/60),int(facts.seconds)%60,int(facts.level)])
+  var content: VBoxContainer=card("%d-%d · %s"%[int(row.chapter),int(row.stage),_outcome_copy(str(row.outcome))],_date(int(row.time))+" · %02d:%02d · Lv.%d"%[int(float(facts.seconds)/60),int(facts.seconds)%60,int(facts.level)])
   content.add_child(label(_slot_names(row.get("slots",{})),13,JADE))
   for damage: Dictionary in facts.get("damage",[]):content.add_child(label(str(damage.name)+" · "+preload("res://scripts/ui/readable_numbers.gd").compact(roundi(float(damage.damage))),14))
   if facts.has("run_paths"):content.add_child(label(_path_summary(facts.run_paths),13,JADE))
@@ -225,7 +225,7 @@ func _compare_runs() -> void:
  for side: int in range(2):
   _body.add_child(label("RUN A" if side==0 else "RUN B",16,GOLD))
   var picker:=OptionButton.new();picker.name="CompareA" if side==0 else "CompareB";picker.fit_to_longest_item=false;picker.clip_text=true;picker.custom_minimum_size.y=48
-  for row: Dictionary in rows:picker.add_item("%d-%d · %s · %s"%[int(row.chapter),int(row.stage),str(row.outcome),_date(int(row.time))])
+  for row: Dictionary in rows:picker.add_item("%d-%d · %s · %s"%[int(row.chapter),int(row.stage),_outcome_copy(str(row.outcome)),_date(int(row.time))])
   picker.select(_compare_a if side==0 else _compare_b)
   picker.item_selected.connect(func(index: int):
    if side==0:_compare_a=index
@@ -271,3 +271,6 @@ func _path_summary(raw: Dictionary) -> String:
   parts.append(preload("res://scripts/data/skill_catalog.gd").get_upgrade_display_name(art)+" · "+({"focus":copy("Guardian Focus","Fokus Penjaga"),"sweep":copy("Valley Sweep","Sapuan Lembah"),"balanced":copy("Balanced","Seimbang")}.get(choice,choice)))
  if paths.boon in ["ember","wind"]:parts.append(copy("Altar: ","Altar: ")+({"ember":copy("Ember","Bara"),"wind":copy("Wind","Angin")}[paths.boon]))
  return "\n".join(parts) if not parts.is_empty() else copy("Balanced path · no altar boon","Jalur seimbang · tanpa berkah altar")
+
+func _outcome_copy(value: String) -> String:
+ return copy("VICTORY","MENANG") if value=="victory" else copy("DEFEAT","KALAH") if value=="defeat" else value.to_upper()
