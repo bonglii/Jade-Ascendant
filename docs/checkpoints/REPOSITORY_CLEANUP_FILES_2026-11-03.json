@@ -1,0 +1,30 @@
+[
+  {
+    "path": "assets/ui/main_menu/home_celestial_realm_bg.png",
+    "sha256": "96aa00303dbb56d93ca9ad931d2d095ad90c5e564e9be8eb0312e8bb95aee730",
+    "bytes": 3942475,
+    "canonical": "assets/ui/cultivation/cultivation_celestial_realm_bg.png",
+    "reason": "Identical pixels/import parameters; uncalled legacy background or canonical frame consumer updated."
+  },
+  {
+    "path": "assets/ui/main_menu/home_celestial_realm_bg.png.import",
+    "sha256": "bad7257cc015bb1c56a7444f1ac8d1ddcc7537d1b0d6cd1ef2dba199adedfd80",
+    "bytes": 993,
+    "canonical": "assets/ui/cultivation/cultivation_celestial_realm_bg.png",
+    "reason": "Identical pixels/import parameters; uncalled legacy background or canonical frame consumer updated."
+  },
+  {
+    "path": "assets/ui/liveops/treasury_production/treasury_window_frame.png",
+    "sha256": "23e508606567c1db87bd117cca69c98a3d3da68602753e987ae6dc9f048f2728",
+    "bytes": 1154825,
+    "canonical": "assets/ui/liveops/mail/spirit_messages_jade_frame.png",
+    "reason": "Identical pixels/import parameters; uncalled legacy background or canonical frame consumer updated."
+  },
+  {
+    "path": "assets/ui/liveops/treasury_production/treasury_window_frame.png.import",
+    "sha256": "1f1ce29aca56f154f06f8210ffffb5f621035712ef8bfaf071e464fb2738de0a",
+    "bytes": 1005,
+    "canonical": "assets/ui/liveops/mail/spirit_messages_jade_frame.png",
+    "reason": "Identical pixels/import parameters; uncalled legacy background or canonical frame consumer updated."
+  }
+]

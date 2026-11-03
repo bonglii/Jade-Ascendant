@@ -35,3 +35,7 @@ artifacts/
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# Reproducible Python developer bytecode (source tests remain tracked)
+__pycache__/
+*.py[cod]

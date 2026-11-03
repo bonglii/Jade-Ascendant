@@ -1,0 +1,658 @@
+{
+  "batch": "REPOSITORY_CLEANUP_20261103",
+  "base_commit": "dbe1c73422f431dce9234aa29efc3374b17a13e8",
+  "scope": "Full tracked source checkout; owner-only/ignored local extras require supplied read-only scanner",
+  "before": {
+    "tracked_files": 4762,
+    "tracked_bytes": 513355890,
+    "resource_files": 1831,
+    "reachable_resources": 1105,
+    "no_direct_or_dynamic_consumer_candidates": 404,
+    "no_known_consumer_candidates": 101,
+    "duplicate_groups": 6,
+    "duplicate_extra_bytes": 5134979
+  },
+  "after_snapshot": {
+    "tracked_files": 4766,
+    "tracked_bytes": 508303724,
+    "resource_files": 1830,
+    "reachable_resources": 1104,
+    "no_direct_or_dynamic_consumer_candidates": 404,
+    "no_known_consumer_candidates": 101,
+    "duplicate_groups": 4,
+    "duplicate_extra_bytes": 37679
+  },
+  "native": {
+    "input_count": 52,
+    "all_inputs_match": true,
+    "candidate_aar_matches": true,
+    "mismatches": []
+  },
+  "export_dev_exclusions": {
+    "tests": true,
+    "tools": true,
+    "docs": true,
+    "artifacts": true,
+    ".local": true
+  },
+  "duplicate_groups_before": [
+    {
+      "sha256": "96aa00303dbb56d93ca9ad931d2d095ad90c5e564e9be8eb0312e8bb95aee730",
+      "bytes_each": 3942475,
+      "extra_bytes": 3942475,
+      "paths": [
+        "assets/ui/cultivation/cultivation_celestial_realm_bg.png",
+        "assets/ui/main_menu/home_celestial_realm_bg.png"
+      ]
+    },
+    {
+      "sha256": "23e508606567c1db87bd117cca69c98a3d3da68602753e987ae6dc9f048f2728",
+      "bytes_each": 1154825,
+      "extra_bytes": 1154825,
+      "paths": [
+        "assets/ui/liveops/mail/spirit_messages_jade_frame.png",
+        "assets/ui/liveops/treasury_production/treasury_window_frame.png"
+      ]
+    },
+    {
+      "sha256": "53eafa5d62762e80e9688386768e405b705ddf3b7ad57228110cccb974d3d34d",
+      "bytes_each": 15544,
+      "extra_bytes": 31088,
+      "paths": [
+        "docs/privacy-policy.html",
+        "release/privacy-policy.html",
+        "release/privacy-policy.template.html"
+      ]
+    },
+    {
+      "sha256": "6bd86322aa3973eb17ab973b4dae442222b605845743c4237c7ed3a4785a0156",
+      "bytes_each": 6414,
+      "extra_bytes": 6414,
+      "paths": [
+        "docs/account-deletion.html",
+        "release/account-deletion.html"
+      ]
+    },
+    {
+      "sha256": "7caeda388c4d6ea8fbdfe64228d4d207368d8b32c08d99b6582f39f3e8434244",
+      "bytes_each": 124,
+      "extra_bytes": 124,
+      "paths": [
+        "backend/cloud_save/android_bridge/gradle.properties",
+        "backend/monetization/android_bridge/gradle.properties"
+      ]
+    },
+    {
+      "sha256": "795c404b861c4f7fad8af26d412ca65bfa2c84c346aa143054e6347092c2eb5e",
+      "bytes_each": 53,
+      "extra_bytes": 53,
+      "paths": [
+        "addons/admob/android/.gitignore",
+        "addons/admob/ios/.gitignore"
+      ]
+    }
+  ],
+  "duplicate_groups_remaining": [
+    {
+      "sha256": "53eafa5d62762e80e9688386768e405b705ddf3b7ad57228110cccb974d3d34d",
+      "bytes_each": 15544,
+      "extra_bytes": 31088,
+      "paths": [
+        "docs/privacy-policy.html",
+        "release/privacy-policy.html",
+        "release/privacy-policy.template.html"
+      ]
+    },
+    {
+      "sha256": "6bd86322aa3973eb17ab973b4dae442222b605845743c4237c7ed3a4785a0156",
+      "bytes_each": 6414,
+      "extra_bytes": 6414,
+      "paths": [
+        "docs/account-deletion.html",
+        "release/account-deletion.html"
+      ]
+    },
+    {
+      "sha256": "7caeda388c4d6ea8fbdfe64228d4d207368d8b32c08d99b6582f39f3e8434244",
+      "bytes_each": 124,
+      "extra_bytes": 124,
+      "paths": [
+        "backend/cloud_save/android_bridge/gradle.properties",
+        "backend/monetization/android_bridge/gradle.properties"
+      ]
+    },
+    {
+      "sha256": "795c404b861c4f7fad8af26d412ca65bfa2c84c346aa143054e6347092c2eb5e",
+      "bytes_each": 53,
+      "extra_bytes": 53,
+      "paths": [
+        "addons/admob/android/.gitignore",
+        "addons/admob/ios/.gitignore"
+      ]
+    }
+  ],
+  "candidate_triage": [
+    {
+      "path": "assets/ui/main_menu/home_celestial_realm_bg.png",
+      "bytes": 3942475,
+      "decision": "REMOVED_REVIEWED_IDENTICAL_DUPLICATE"
+    },
+    {
+      "path": "assets/ui/liveops/mail/spirit_messages_xianxia_background.png",
+      "bytes": 3065714,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/world/chapter4/frost_ritual_arena_underlay.png",
+      "bytes": 2845799,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "addons/admob/assets/music.ogg",
+      "bytes": 1801126,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "assets/ui/liveops/event_center_production/treasury_frame_approved.png",
+      "bytes": 1132932,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/ui/cultivation/cultivation_sanctum.png",
+      "bytes": 1026888,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/ui/results/premium_v2/frame_jade.png",
+      "bytes": 664218,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/ui/results/premium_v2/frame_crimson.png",
+      "bytes": 630478,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/character/player/player_lin_yue_idle_walk_96x96.png",
+      "bytes": 386075,
+      "decision": "KEEP_ORIGINAL_CHARACTER_REFERENCE"
+    },
+    {
+      "path": "addons/admob/assets/icon-1024.png",
+      "bytes": 264159,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "assets/ui/results/premium_v2/jade_hover.png",
+      "bytes": 237687,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/ui/results/premium_v2/navy_hover.png",
+      "bytes": 233634,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/ui/results/premium_v2/red_hover.png",
+      "bytes": 228502,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/ui/results/premium_v2/jade_normal.png",
+      "bytes": 221799,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/ui/results/premium_v2/red_normal.png",
+      "bytes": 210093,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/ui/results/premium_v2/navy_normal.png",
+      "bytes": 200458,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/ui/results/premium_v2/jade_pressed.png",
+      "bytes": 200138,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/ui/results/premium_v2/red_pressed.png",
+      "bytes": 186540,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/ui/results/premium_v2/navy_pressed.png",
+      "bytes": 182865,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/vfx/realm/solar_bolt.png",
+      "bytes": 179885,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/vfx/realm/frost_bolt.png",
+      "bytes": 179248,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/character/player/player_lin_yue_hurt_death_96x96.png",
+      "bytes": 165220,
+      "decision": "KEEP_ORIGINAL_CHARACTER_REFERENCE"
+    },
+    {
+      "path": "assets/vfx/realm/frost_branch.png",
+      "bytes": 154572,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/vfx/realm/solar_branch.png",
+      "bytes": 128239,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/ui/pavilion/icons/elixir.png",
+      "bytes": 102315,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/ui/pavilion/auras/aura_frost.png",
+      "bytes": 90349,
+      "decision": "KEEP_PREVIOUSLY_HELD_ART"
+    },
+    {
+      "path": "assets/ui/pavilion/auras/aura_thunder.png",
+      "bytes": 88544,
+      "decision": "KEEP_PREVIOUSLY_HELD_ART"
+    },
+    {
+      "path": "assets/ui/pavilion/auras/aura_void.png",
+      "bytes": 87216,
+      "decision": "KEEP_PREVIOUSLY_HELD_ART"
+    },
+    {
+      "path": "assets/ui/pavilion/icons/summon_ritual.png",
+      "bytes": 85925,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/ui/pavilion/auras/aura_flame.png",
+      "bytes": 82760,
+      "decision": "KEEP_PREVIOUSLY_HELD_ART"
+    },
+    {
+      "path": "assets/ui/liveops/event_center_production/frame_interior_silhouette.png",
+      "bytes": 67015,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "addons/admob/assets/icon-500.png",
+      "bytes": 56624,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/assets/donate/Patreon_logo_with_wordmark.svg",
+      "bytes": 38477,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/assets/ios.png",
+      "bytes": 23445,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/assets/donate/Ko-fi_Logo_RGB_ColorBg.png",
+      "bytes": 20680,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/assets/format-native.svg",
+      "bytes": 13234,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/assets/format-app-open.svg",
+      "bytes": 10269,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/assets/theme_modern.tres",
+      "bytes": 10176,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "tests/trials_ascendant_smoke.gd",
+      "bytes": 8964,
+      "decision": "KEEP_REGRESSION_FIXTURE"
+    },
+    {
+      "path": "addons/admob/gdscript/src/api/NativeOverlayAd.gd",
+      "bytes": 8595,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/assets/poing.jpeg",
+      "bytes": 8232,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/assets/icon-76.png",
+      "bytes": 7491,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "assets/ui/equipment/polish/hero_attunement_chamber_v3.svg",
+      "bytes": 6774,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "addons/admob/assets/android.png",
+      "bytes": 6674,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "tests/hybrid_paid_wallet_snapshot_m9_smoke.gd",
+      "bytes": 6631,
+      "decision": "KEEP_REGRESSION_FIXTURE"
+    },
+    {
+      "path": "addons/admob/assets/format-banner.svg",
+      "bytes": 4977,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "tests/realm_expansion_gate_c_smoke.gd",
+      "bytes": 4459,
+      "decision": "KEEP_REGRESSION_FIXTURE"
+    },
+    {
+      "path": "addons/admob/gdscript/src/api/AdView.gd",
+      "bytes": 4453,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "assets/ui/wuxia/stage_locked.png",
+      "bytes": 4171,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/ui/wuxia/stage_soon.png",
+      "bytes": 4033,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/ui/wuxia/stage_selected.png",
+      "bytes": 4026,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/ui/results/victory_sanctum.svg",
+      "bytes": 3564,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "addons/admob/assets/donate/PayPal.svg",
+      "bytes": 3476,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "tests/hybrid_paid_summon_recovery_m12_smoke.gd",
+      "bytes": 3472,
+      "decision": "KEEP_REGRESSION_FIXTURE"
+    },
+    {
+      "path": "tests/realm_expansion_gate_a_smoke.gd",
+      "bytes": 3211,
+      "decision": "KEEP_REGRESSION_FIXTURE"
+    },
+    {
+      "path": "assets/ui/results/defeat_sanctum.svg",
+      "bytes": 3076,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "tests/hybrid_wallet_game_bridge_m7_smoke.gd",
+      "bytes": 3017,
+      "decision": "KEEP_REGRESSION_FIXTURE"
+    },
+    {
+      "path": "addons/admob/internal/services/translation_service.gd",
+      "bytes": 2679,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "tests/hybrid_paid_purchase_receipt_m14_smoke.gd",
+      "bytes": 2642,
+      "decision": "KEEP_REGRESSION_FIXTURE"
+    },
+    {
+      "path": "addons/admob/assets/icon-15.png",
+      "bytes": 2507,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "assets/ui/equipment/polish/cultivation_seal.svg",
+      "bytes": 2507,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "addons/admob/gdscript/src/api/RewardedInterstitialAdLoader.gd",
+      "bytes": 2447,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "tests/paid_equipment_runtime_rc6_smoke.gd",
+      "bytes": 2422,
+      "decision": "KEEP_REGRESSION_FIXTURE"
+    },
+    {
+      "path": "addons/admob/gdscript/src/api/InterstitialAdLoader.gd",
+      "bytes": 2365,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/gdscript/src/api/AppOpenAdLoader.gd",
+      "bytes": 2289,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "assets/weapons/sword/yin_yang_blades_64x64.png",
+      "bytes": 2256,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "tests/hybrid_paid_entitlements_rc_smoke.gd",
+      "bytes": 2243,
+      "decision": "KEEP_REGRESSION_FIXTURE"
+    },
+    {
+      "path": "addons/admob/internal/services/export_service.gd",
+      "bytes": 2162,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "assets/ui/equipment/polish/hero_showcase_halo.svg",
+      "bytes": 2087,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/ui/equipment/polish/hero_showcase_arch.svg",
+      "bytes": 2079,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "tests/hybrid_wallet_policy_m6_smoke.gd",
+      "bytes": 2026,
+      "decision": "KEEP_REGRESSION_FIXTURE"
+    },
+    {
+      "path": "addons/admob/gdscript/src/mediation/extras/bidmachine/BidMachine.gd",
+      "bytes": 1624,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/gdscript/src/mediation/extras/dtexchange/DTExchange.gd",
+      "bytes": 1590,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/internal/sample_registry.gd",
+      "bytes": 1564,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/gdscript/src/mediation/extras/applovin/AppLovin.gd",
+      "bytes": 1562,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/gdscript/src/mediation/extras/vungle/Vungle.gd",
+      "bytes": 1552,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/gdscript/src/mediation/extras/ironsource/IronSource.gd",
+      "bytes": 1542,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/gdscript/src/mediation/extras/line/LineMediationExtras.gd",
+      "bytes": 1520,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/gdscript/src/mediation/extras/unity_ads/UnityAds.gd",
+      "bytes": 1476,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "assets/ui/system_v2/custom/frames/relic_vault_backdrop_v2.svg",
+      "bytes": 1468,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "addons/admob/gdscript/src/mediation/extras/meta/FBAdSettings.gd",
+      "bytes": 1439,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/gdscript/src/mediation/extras/chartboost/Chartboost.gd",
+      "bytes": 1434,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/gdscript/src/mediation/extras/vungle/VungleInterstitialMediationExtras.gd",
+      "bytes": 1336,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/gdscript/src/mediation/extras/line/LineAds.gd",
+      "bytes": 1329,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/gdscript/src/mediation/extras/vungle/VungleRewardedMediationExtras.gd",
+      "bytes": 1328,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/gdscript/src/mediation/extras/imobile/IMobile.gd",
+      "bytes": 1234,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/gdscript/src/mediation/extras/inmobi/InMobi.gd",
+      "bytes": 1232,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "assets/ui/equipment/polish/hero_qi_particles.svg",
+      "bytes": 1091,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/ui/system_v2/custom/frames/relic_altar_v2.svg",
+      "bytes": 931,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/ui/equipment/polish/hero_pedestal.svg",
+      "bytes": 928,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/ui/icons/equipment.svg",
+      "bytes": 610,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "assets/ui/main_menu/main_menu_key_art.gdshader",
+      "bytes": 547,
+      "decision": "KEEP_UNIQUE_LEGACY_OR_OPTIONAL_ASSET_NO_AUTOMATIC_DELETE"
+    },
+    {
+      "path": "addons/admob/assets/pos_bottom.svg",
+      "bytes": 252,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/assets/pos_bottom_right.svg",
+      "bytes": 252,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/assets/pos_center.svg",
+      "bytes": 252,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/assets/pos_right.svg",
+      "bytes": 252,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/assets/pos_bottom_left.svg",
+      "bytes": 251,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/assets/pos_left.svg",
+      "bytes": 251,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/assets/pos_top.svg",
+      "bytes": 251,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/assets/pos_top_right.svg",
+      "bytes": 251,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    },
+    {
+      "path": "addons/admob/assets/pos_top_left.svg",
+      "bytes": 250,
+      "decision": "KEEP_VENDOR_SDK_COMPONENT"
+    }
+  ],
+  "raw_audit_location": "evidence/repository_before.json and repository_after.json inside portable ZIP; developer script reproduces the audit",
+  "removed_files": 4,
+  "removed_bytes": 5099298,
+  "qa": {
+    "resource_checks": 8,
+    "resource_failures": 0,
+    "parser_fixture_assertions": 11,
+    "installer_cases": 10,
+    "installer_failures": 0,
+    "final_readonly_source_writes": 0
+  },
+  "not_claimed": [
+    "Owner Windows cleanup",
+    "New AAB size",
+    "Phone testing",
+    "Git-history size reduction"
+  ]
+}

@@ -11,7 +11,7 @@ const LiveOpsUi = preload("res://scripts/ui/liveops/live_ops_ui.gd")
 
 const EconomyCatalog = preload("res://scripts/data/economy_catalog.gd")
 const HOME_ART: Texture2D = preload("res://assets/ui/main_menu/main_menu_key_art_lin_yue.png")
-const FRAME_ART: Texture2D = preload("res://assets/ui/liveops/treasury_production/treasury_window_frame.png")
+const FRAME_ART: Texture2D = preload("res://assets/ui/liveops/mail/spirit_messages_jade_frame.png")
 const HERO_ART: Texture2D = preload("res://assets/ui/liveops/treasury_production/treasury_approved_hero_crop.png")
 const DAILY_ART: Texture2D = preload("res://assets/ui/liveops/treasury_production/treasury_daily_chest.png")
 const JADE_ART: Texture2D = preload("res://assets/ui/liveops/treasury_production/treasury_jade_chest.png")

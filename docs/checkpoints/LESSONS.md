@@ -951,3 +951,12 @@ A literal credential-shaped sample in a self-published test triggered the scanne
 - Empty Odyssey state must not display default 0/72 as confirmed progress. Show a waiting state and cover unknown/confirmed lap-rule progress with the actual reader.
 - Starting training behind its setup is not a visible production playthrough. Use native Apply/Start controls, verify setup closed and movement, then inspect arena frames.
 - setpriv capability configuration was rejected before the rollback fixture. A controlled concurrent edit after a real earlier write exercises rollback: verify prior writes revert and the deliberate owner edit survives. This is author Linux, not Windows QA.
+
+
+## Repository hygiene, 3 November 2026
+
+- Do not label all QA files garbage: native proof inputs contain JVM tests; launcher/CI uses fixture names dynamically; evidence supports recovery. Inspect export exclusion first (tests/tools/docs were already excluded).
+- Extend reference auditing beyond literal paths: Godot UID, global class_name, relative plugin scripts, printf/interpolation and directory listing semantics. Ignore art-source folders in runtime reachability and distinguish backend string validation from actual resource loading. Static candidates are not deletion authority.
+- Two source PNGs can be byte-identical yet have different importer settings. Consolidate only after comparing both; preserve exact originals and verify actual dependent production scenes. Keep held artwork and unique ambiguous legacy assets.
+- PowerShell inventory needs Get-Item -Force for hidden files in Linux fixtures. Initial atomic replacement using a null backup argument failed due to .NET coercion; reuse the existing proven Write-Atomic implementation instead. Both failures stopped before source mutation and were corrected before delivery.
+- A read-only owner audit should list untracked files and summarize ignored roots without reading their protected contents. Unknown local production source blocks destructive apply; never infer a Windows cleanup or AAB-size result from the author checkout.
