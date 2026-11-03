@@ -1,13 +1,15 @@
 {
   "batch": "PLAYER_REVIEW_CONTENT_20261102",
   "finalized_on": "2026-11-03",
-  "status": "OWNER_WINDOWS_PASS_AWAITING_AAB",
+  "status": "OWNER_WINDOWS_PASS_WARNING_HOTFIX_DELIVERED_AWAITING_EDITOR_AND_AAB",
   "source": {
     "repository": "bonglii/Jade-Ascendant",
     "branch": "work/player-review-batch-20261102",
     "game_commit": "18ff78656bcdc58891ba3c1442506bc115a17cad",
     "payload_matches_published_commit": 58,
-    "receipt_commit_changes_game_code": false
+    "receipt_commit_changes_game_code": false,
+    "current_game_commit": "b4f0a3939c4b279b29b448b2a2f257d51213b6a2",
+    "warning_hotfix_commit": "b4f0a3939c4b279b29b448b2a2f257d51213b6a2"
   },
   "package": {
     "filename": "Jade-Player-Content-Batch-2026-11-02.zip",
@@ -33,7 +35,7 @@
     {
       "name": "Jade-Ascendant-Handoff-2026-11-02.md",
       "library_file_id": "libfile_6203dd6b5a9c8191be0c73b3afc5598d",
-      "version": 4,
+      "version": 5,
       "status": "succeeded"
     }
   ],
@@ -66,8 +68,8 @@
     "ad_client_hold": "ON_NO_CALENDAR_REENABLE",
     "admob_account_status": "NOT_REVERIFIED"
   },
-  "next_action": "Export AAB on the already-passed owner Windows project using backend\\player_identity\\export_production.cmd. Keep the exporter terminal open until Godot closes and the original installed bridge is restored. Then update the existing active closed-testing track and perform real phone QA. Do not repeat passed Player Content installation/Windows QA or older R2 recovery unless new input changes or failures justify it. AAB/export/upload/phone remain unconfirmed.",
-  "checkpoint_note": "This final delivery receipt supersedes packaging-pending wording in the immutable source checkpoint and Library handoff points here. Kept outside the 58-file payload to avoid recursive source/ZIP hashes; game source is exactly game_commit above.",
+  "next_action": "Close Godot; if an exporter is still active, let it finish restoring the original installed bridge first. Apply the two-file warning ZIP with apply_hotfix.cmd, reopen Godot and verify the two warning types are gone. Then continue backend\\player_identity\\export_production.cmd and the existing closed-testing/phone workflow. The confirmed Player Content Windows PASS is preserved; do not repeat full content QA or older R2 recovery without changed inputs or a new failure. Hotfix owner install/editor, AAB/export/upload/phone remain unconfirmed.",
+  "checkpoint_note": "This delivery receipt supersedes packaging-pending wording in the immutable source checkpoint. Original package/game_commit above remain the 58-file base 18ff786; current_game_commit adds the two-file warning hotfix. Both packages are immutable with their own checksums. Receipt updates change no game code.",
   "updated_on": "2026-11-03",
   "owner_confirmation": {
     "stage": "Player Content installation / Windows QA",
@@ -77,5 +79,47 @@
     "exact_message": "oke player content pass",
     "full_log_attached": false,
     "author_rerun": false
+  },
+  "warning_hotfix": {
+    "batch": "PLAYER_CONTENT_WARNINGS_20261103",
+    "status": "AUTHOR_QA_PASS_DELIVERED_OWNER_EDITOR_UNCONFIRMED",
+    "source_commit": "b4f0a3939c4b279b29b448b2a2f257d51213b6a2",
+    "source_url": "https://github.com/bonglii/Jade-Ascendant/commit/b4f0a3939c4b279b29b448b2a2f257d51213b6a2",
+    "checkpoint": "docs/checkpoints/PLAYER_CONTENT_WARNINGS_2026-11-03.json",
+    "scope": [
+      "scripts/managers/monetization_manager.gd",
+      "scripts/ui/refine_onboarding.gd"
+    ],
+    "package": {
+      "filename": "Jade-Player-Content-Warnings-Fix-2026-11-03.zip",
+      "sha256": "9d39471d16d2babf1c0892bcce632b2b378eecccec2a190e20fc0c398857254d",
+      "bytes": 28481,
+      "entries": 18,
+      "source_files": 2,
+      "crc_and_all_checksums": "PASS",
+      "payload_matches_published_commit": 2
+    },
+    "artifact": {
+      "name": "Jade-Player-Content-Warnings-Fix-2026-11-03.zip",
+      "library_file_id": "libfile_631a8a6718788191accf684c7db07f48",
+      "version": 0,
+      "status": "succeeded"
+    },
+    "author_validation": {
+      "engine": "Godot 4.7.2 stable Linux",
+      "editor": "BOTH_SCREENSHOT_WARNINGS_REPRODUCED_AS_ERRORS_THEN_CLEAN_AFTER_FIX",
+      "runtime": "SIX_RELOADS_AND_INSTANCE_GETTER_PASS",
+      "project_settings": "RESTORED_IDENTICALLY_NO_WARNING_SUPPRESSION",
+      "installer": "REAL_POWERSHELL_7_LINUX_TWO_CASES_ONE_REPEAT_ZERO_FAILURES",
+      "apply": "TWO_WRITES_THEN_REPEAT_ZERO_WRITES",
+      "recovery_guard": "ACTIVE_EXPORT_REFUSED_BEFORE_SOURCE_WRITES"
+    },
+    "owner_install_editor": "UNCONFIRMED",
+    "prior_full_content_windows": "PASS_CONFIRMED_PRESERVED_NO_FULL_RERUN",
+    "native": "UNCHANGED_R2",
+    "ad_client_hold": "ON_NO_CALENDAR_REENABLE",
+    "aab": "UNCONFIRMED",
+    "phone": "UNCONFIRMED",
+    "deploy": "NOT_RUN"
   }
 }
