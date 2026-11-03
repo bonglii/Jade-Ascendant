@@ -190,6 +190,7 @@ func _build_utility_rows() -> void:
 	rates_button = _button(row, _copy("Peluang", "Odds"), _show_drop_rates_overlay, false, JADE_SOFT)
 	_button(row, _copy("Riwayat", "History"), _show_history_overlay, false, JADE_SOFT)
 	_button(row, _copy("Info", "Info"), _open_mode_info, false, JADE_SOFT)
+	_button(summon_controls_stack,_copy("Target koleksi & build ›","Collection target & build ›"),func():load("res://scripts/experience/menu_guide.gd").open(self,"pavilion"),false,JADE)
 
 func _refresh() -> void:
 	if not is_instance_valid(_focus_daily) or not is_instance_valid(locked_root): return

@@ -107,6 +107,7 @@ func _presets() -> void:
   var row: Dictionary=PlayerCompanion.state.presets.get(str(index),{})
   var title: String=str(row.get("name",[copy("Farming","Farming"),copy("Boss","Boss"),copy("Defense","Pertahanan")][index]))
   var content: VBoxContainer=card("%d · %s"%[index+1,title],_slot_names(row.get("slots",{})) if not row.is_empty() else copy("Empty build slot","Slot build kosong"))
+  if not row.is_empty():content.add_child(button(copy("PREVIEW WHOLE PRESET","PRATINJAU SELURUH PRESET"),func():load("res://scripts/experience/menu_guide.gd").open(get_tree().current_scene,"preset",{"index":index})))
   var input:=LineEdit.new();input.text=title;input.max_length=24;input.custom_minimum_size.y=46;input.add_theme_font_size_override("font_size",15);content.add_child(input)
   var actions:=HBoxContainer.new();actions.add_theme_constant_override("separation",8);content.add_child(actions)
   actions.add_child(button(copy("SAVE","SIMPAN"),func(): _feedback=copy("Build saved.","Build disimpan.") if PlayerCompanion.save_preset(index,input.text) else copy("Cannot save now.","Belum dapat disimpan.");_redraw()))
@@ -235,6 +236,10 @@ func _compare_runs() -> void:
  var a: Dictionary=rows[_compare_a];var b: Dictionary=rows[_compare_b]
  if _compare_a==_compare_b:_body.add_child(label(copy("Choose two different runs.","Pilih dua run yang berbeda."),16,GOLD))
  elif a.chapter!=b.chapter or a.stage!=b.stage or a.outcome!=b.outcome:_body.add_child(label(copy("Different stage or outcome · damage/DPS does not prove a stronger build.","Stage atau hasil berbeda · damage/DPS tidak membuktikan build lebih kuat."),16,GOLD))
+ var changed: PackedStringArray=[]
+ for slot: String in EquipmentManager.get_slot_ids():
+  if a.slots.get(slot,"")!=b.slots.get(slot,""):changed.append(slot.capitalize())
+ card(copy("WHAT CHANGED","APA YANG BERUBAH"),(copy("Equipment slots: ","Slot equipment: ")+", ".join(changed)) if not changed.is_empty() else copy("Same equipment IDs. Review stars, weapon levels and run choices separately.","ID equipment sama. Tinjau bintang, level weapon dan pilihan run secara terpisah."))
  var fa: Dictionary=a.facts;var fb: Dictionary=b.facts
  for stat: Array in [["seconds","Time (s)","Waktu (dtk)"],["level","Level","Level"],["hits","HP hits","Hit ke HP"],["hp_loss","HP lost","HP hilang"]]:
   var key: String=stat[0]
@@ -253,9 +258,12 @@ func _compare_runs() -> void:
   var row: Dictionary=[a,b][side];var facts: Dictionary=row.facts
   var detail: VBoxContainer=card("RUN "+("A" if side==0 else "B"),_slot_names(row.get("slots",{})))
   if facts.has("run_paths"):detail.add_child(label(_path_summary(facts.run_paths),14,JADE))
+  detail.add_child(button(copy("LAST TEN SECONDS","SEPULUH DETIK TERAKHIR"),func():load("res://scripts/experience/menu_guide.gd").open(get_tree().current_scene,"timeline",facts.get("timeline",{}))))
   for damage: Dictionary in facts.get("damage",[]):detail.add_child(label(str(damage.name)+" · "+str(roundi(float(damage.damage))),14,JADE))
  _body.add_child(button(copy("BACK TO RUNS","KEMBALI KE RUN"),_redraw));_scroll.scroll_vertical=0;Scroll.prepare_tree(_scroll)
 func _drills() -> void:
+ for row: Dictionary in PlayerCompanion.state.get("training_records",{}).values().slice(-8):
+  card(copy("PERSONAL BEST · ","REKOR PRIBADI · ")+load("res://scripts/data/experience_policy.gd").record_label(str(row.label),SettingsManager.language),copy("%.1fs · %.0f damage · %d HP hits. Matching rules and kit only.","%.1f dtk · %.0f damage · %d hit ke HP. Hanya aturan dan kit yang sama.")%[float(row.time_ms)/1000.0,float(row.damage),int(row.hits)])
  _body.add_child(label(copy("Personal training marks on this device. No currency, mastery XP or Journey clear is awarded.","Tanda latihan pribadi di perangkat ini. Tanpa currency, XP mastery atau clear Journey."),15))
  var catalog=preload("res://scripts/data/run_path_policy.gd")
  for index: int in range(catalog.ARTS.size()):

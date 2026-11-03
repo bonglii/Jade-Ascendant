@@ -90,7 +90,7 @@ func _build_presentation() -> void:
 	layout.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	layout.add_theme_constant_override("separation", 10)
 	presentation_root.add_child(layout)
-	hall_title = _label(tr("TRIALS"), 36)
+	hall_title = _label("UJIAN HARIAN & PENCAPAIAN" if SettingsManager.language=="id" else "DAILY TRIALS & RECORDS", 28)
 	var title: Label = hall_title
 	title.add_theme_font_override("font", DISPLAY_FONT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

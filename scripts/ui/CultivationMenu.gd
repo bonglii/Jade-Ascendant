@@ -76,6 +76,7 @@ var focus_effects: GridContainer
 var focus_action: GridContainer
 var focus_divider: ColorRect
 var mastery_panel: Control
+var _impact_copy: Label
 var selected_path: String = "vitality"
 
 @onready var content_host: Control = $Content
@@ -198,6 +199,9 @@ func _build_body() -> void:
 	body_content.add_child(_build_intro())
 	body_content.add_child(_build_ritual_stage())
 	body_content.add_child(_build_focus_sheet())
+	var impact: VBoxContainer=load("res://scripts/experience/menu_guide.gd").section(body_content,"RUN BERIKUTNYA" if SettingsManager.language=="id" else "NEXT JOURNEY")
+	_impact_copy=load("res://scripts/experience/menu_guide.gd").label("");impact.add_child(_impact_copy)
+	impact.add_child(load("res://scripts/experience/menu_guide.gd").button("ARAH KULTIVASI ›" if SettingsManager.language=="id" else "CULTIVATION PATH ›",func():load("res://scripts/experience/menu_guide.gd").open(self,"cultivate")))
 	mastery_panel=preload("res://scripts/ui/cultivation_mastery_panel.gd").new()
 	mastery_panel.scroll_owner=body_scroll;body_content.add_child(mastery_panel)
 	body_content.add_child(_build_footer_ornament())
@@ -689,7 +693,7 @@ func _build_result_layer() -> void:
 	var continue_button := Button.new()
 	continue_button.custom_minimum_size = Vector2(0.0, 56.0)
 	continue_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	continue_button.text = "RETURN TO INNER SEA"
+	continue_button.text = tr("RETURN TO INNER SEA")
 	continue_button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	continue_button.add_theme_font_override("font", UI_FONT)
 	continue_button.add_theme_font_size_override("font_size", 19)
@@ -831,6 +835,8 @@ func _refresh_focus() -> void:
 	selected_doctrine.add_theme_color_override("font_color", accent.lerp(Color.WHITE, 0.18))
 	selected_level.text = tr("LV %d / %d") % [level, max_level]
 	selected_description.text = tr(str(data.get("description", "")))
+	if is_instance_valid(_impact_copy):
+		_impact_copy.text="%s %s\n%s %s\n%s %s"%[tr("Vitality"),_effect_text("vitality",_get_level("vitality")),tr("Sword Power"),_effect_text("sword_power",_get_level("sword_power")),tr("Swift Qi"),_effect_text("swift_qi",_get_level("swift_qi"))]
 	current_value.text = _effect_text(selected_path, level)
 	current_value.add_theme_color_override("font_color", accent)
 	next_value.text = tr("PERFECTED") if maxed else _effect_text(selected_path, level + 1)
@@ -847,7 +853,7 @@ func _refresh_focus() -> void:
 	if maxed:
 		refine_button.disabled = false
 		refine_button.text = "BUKA MASTERY" if SettingsManager.language=="id" else "OPEN MASTERY"
-		refine_hint.text = "Lv.10 selesai • pilih spesialisasi untuk run berikutnya"
+		refine_hint.text = "Lv.10 selesai • pilih spesialisasi untuk run berikutnya" if SettingsManager.language=="id" else "Lv.10 complete • choose a specialization for the next run"
 	else:
 		var can_afford: bool = ProgressionManager.spirit_stone >= cost
 		refine_button.disabled = not can_afford
@@ -923,10 +929,10 @@ func _show_result(
 	var data: Dictionary = PATH_DATA.get(path_id, PATH_DATA["vitality"])
 	var accent: Color = data.get("accent", JADE)
 	result_icon.texture = PATH_ICONS[path_id] as Texture2D
-	result_name.text = str(data.get("name", "Cultivation"))
+	result_name.text = tr(str(data.get("name", "Cultivation")))
 	result_name.add_theme_color_override("font_color", accent.lerp(Color.WHITE, 0.28))
 	result_transition.text = "LV %d   →   LV %d" % [old_level, new_level]
-	result_effect.text = "PERMANENT PATH ADVANCED"
+	result_effect.text = tr("PERMANENT PATH ADVANCED")
 	result_effect.add_theme_color_override("font_color", accent)
 	result_before_value.text = _effect_text(path_id, old_level)
 	result_before_value.add_theme_color_override("font_color", Color(0.72, 0.80, 0.78, 1.0))
@@ -1096,7 +1102,7 @@ func _effect_text(path_id: String, level: int) -> String:
 			return "+%d%% POWER" % (level * SWORD_POWER_PERCENT_PER_LEVEL)
 		"swift_qi":
 			var cooldown: float = pow(SWIFT_QI_COOLDOWN_MULTIPLIER, float(level))
-			return "%.3f ATTACKS/S" % (1.0 / maxf(cooldown, 0.2))
+			return ("COOLDOWN DASAR ×%.3f" if SettingsManager.language=="id" else "BASE COOLDOWN ×%.3f") % cooldown
 		_:
 			return "CURRENT EFFECT"
 
@@ -1124,7 +1130,7 @@ func _return_to_journey() -> void:
 
 func _label(value: String, font_size: int, color: Color) -> Label:
 	var result := Label.new()
-	result.text = value
+	result.text = tr(value)
 	result.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	result.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	result.add_theme_font_override("font", UI_FONT)

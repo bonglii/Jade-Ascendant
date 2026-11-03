@@ -37,6 +37,7 @@ func _ready() -> void:
 	var seal:=_label("JADE ARCHIVES",13,Color(.97,.80,.43));seal.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;top.add_child(seal)
 	body.add_child(_label("LIBRARY",30,Color(1,.88,.55)))
 	var journal: Button=_button("JURNAL KULTIVATOR" if SettingsManager.language=="id" else "CULTIVATOR JOURNAL");journal.name="LibraryJournal";body.add_child(journal);journal.pressed.connect(func():load("res://scripts/companion/player_journal.gd").open(self))
+	var practice: Button=_button("PELATARAN LATIHAN ›" if SettingsManager.language=="id" else "TRAINING COURT ›");practice.name="LibraryTraining";body.add_child(practice);practice.pressed.connect(func():SceneTransitionManager.transition_menu_to("res://scenes/ui/training_ground.tscn"))
 	var tabs:=GridContainer.new();tabs.columns=2;body.add_child(tabs)
 	for value: String in ["EQUIPMENT","SKILLS","BUILDS","CHRONICLES"]:
 		var tab:=_button(value);tab.name="LibraryTab"+value;tab.size_flags_horizontal=Control.SIZE_EXPAND_FILL;tab.pressed.connect(_set_mode.bind(value));tabs.add_child(tab);_tabs[value]=tab

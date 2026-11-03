@@ -331,6 +331,7 @@ func _return_to_journey() -> void:
 func _build_presentation_options() -> void:
 	var parent_box: VBoxContainer = get_node("SafeArea/Scroll/Content") as VBoxContainer
 	var source_card: PanelContainer = get_node("SafeArea/Scroll/Content/AudioCard") as PanelContainer
+	var guide: Button=load("res://scripts/experience/menu_guide.gd").button(_local("COMFORT PREVIEW & GUIDE ›","PRATINJAU & PANDUAN KENYAMANAN ›"),func():load("res://scripts/experience/menu_guide.gd").open(self,"settings"));guide.name="ComfortGuide";parent_box.add_child(guide)
 	# Restore Audio Defaults belongs to the Audio card, not between unrelated cards.
 	var audio_content: VBoxContainer = source_card.get_node("AudioContent") as VBoxContainer
 	var audio_actions: HBoxContainer = parent_box.get_node("Actions") as HBoxContainer
@@ -406,6 +407,8 @@ func _build_presentation_options() -> void:
 		 "hint":_local("Camera motion on heavy impacts.", "Gerakan kamera saat hantaman besar.")},
 		{"key":"reduced_effects", "title":_local("Reduced Flashes & Effects", "Kurangi Kilatan & Efek"),
 		 "hint":_local("Reduce intense visual effects.", "Kurangi efek visual yang intens.")},
+		{"key":"high_contrast_warnings", "title":_local("High Contrast Warnings", "Peringatan Kontras Tinggi"), "hint":_local("Bright danger outlines and symbols; same radius and timing.","Garis bahaya terang dan simbol; radius dan waktu tetap.")},
+		{"key":"realm_approaches", "title":_local("Realm Approaches", "Variasi Arah Realm"), "hint":_local("New Journey runs: varied ordinary-enemy approach sectors. Counts, stats and elites stay unchanged.","Run Journey baru: variasi arah musuh biasa. Jumlah, stat dan elite tetap.")},
 		{"key":"quiet_player_vfx", "title":_local("Quiet Player Ornament", "Ornamen Player Ringan"),
 		 "hint":_local("Hide extra player trails and flourishes. Enemy warnings and attack shapes stay visible.", "Sembunyikan jejak dan ornamen tambahan player. Peringatan musuh dan bentuk serangan tetap terlihat.")},
 		{"key":"damage_numbers", "title":_local("Damage Numbers", "Angka Damage"),

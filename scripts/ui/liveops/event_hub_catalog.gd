@@ -58,3 +58,10 @@ static func preview(context: Node,key: String) -> Dictionary:
  var rewards: Node=context.get_node_or_null("/root/RewardManager")
  if rewards!=null and rewards.has_method("retire_fragments"):result.reward=rewards.retire_fragments(result.reward)
  return result
+
+static func category(key: String) -> String:
+ if key=="heavenly_trials":return copy("WEEKLY COMBAT · separate attempts","COMBAT MINGGUAN · percobaan terpisah")
+ if key=="daily":return copy("DAILY QUESTS · play normally","MISI HARIAN · bermain seperti biasa")
+ if key=="seven_day":return copy("LOGIN GIFTS · earned days","HADIAH LOGIN · hari yang diperoleh")
+ if key=="pavilion":return copy("SUMMON & COLLECTION","SUMMON & KOLEKSI")
+ return copy("JOURNEY MILESTONE · progress while exploring","MILESTONE JOURNEY · progres sambil menjelajah")

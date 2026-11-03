@@ -90,6 +90,7 @@ func _build() -> void:
  var eyebrow: Label=_label("JADE ASCENDANT",12,HubStyle.JADE);titles.add_child(eyebrow)
  _header_title=_label("",32,HubStyle.CREAM,true);titles.add_child(_header_title)
  _subtitle=_label("",15,HubStyle.MUTED);titles.add_child(_subtitle)
+ var guide: Button=load("res://scripts/experience/menu_guide.gd").button("?",func():load("res://scripts/experience/menu_guide.gd").open(self,"events"));guide.custom_minimum_size=Vector2(52,52);guide.size_flags_horizontal=SIZE_SHRINK_END;heading.add_child(guide)
  _close_button=Button.new();_close_button.text="×";_close_button.custom_minimum_size=Vector2(48,48);_close_button.size_flags_vertical=Control.SIZE_SHRINK_BEGIN
  _close_button.add_theme_font_size_override("font_size",27);HubStyle.button(_close_button);heading.add_child(_close_button);_close_button.pressed.connect(_back)
  var filter_row:=HBoxContainer.new();filter_row.add_theme_constant_override("separation",8);body.add_child(filter_row)
@@ -166,7 +167,7 @@ func _refresh_event_status() -> void:
  for key: String in _activity_handles:
   var item: Dictionary=_activity_handles[key];var data: Dictionary=Catalog.preview(self,key);var ready_count: int=ActionDot.count(self,key)
   item.card.visible=_filter!="limited" and (_filter!="progress" or key!="pavilion") and (not bool(data.complete) or ready_count>0)
-  item.title.text=Catalog.title(key);item.description.text=Catalog.description(key)
+  item.title.text=Catalog.title(key);item.description.text=Catalog.description(key)+"\n"+Catalog.category(key)
   item.status.text=Catalog.copy("%d READY TO CLAIM","%d SIAP DIKLAIM")%ready_count if ready_count>0 else (Catalog.copy("COMPLETED","SELESAI") if data.complete else Catalog.copy("PROGRESS %d / %d","PROGRES %d / %d")%[data.current,data.total])
   item.status.add_theme_color_override("font_color",HubStyle.CREAM if ready_count>0 else HubStyle.JADE)
   item.meter.max_value=maxi(1,int(data.total));item.meter.value=data.current

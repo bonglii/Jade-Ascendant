@@ -21,7 +21,7 @@ static func clean_records(raw: Variant) -> Dictionary:
   if not key is String or key.length()!=64 or not key.is_valid_hex_number(false) or not row is Dictionary:continue
   if not row.get("label") is String or row.label.length()>120:continue
   if not preload("res://scripts/data/hit_timeline.gd").number(row.get("time_ms"),1,180000) or not preload("res://scripts/data/hit_timeline.gd").number(row.get("damage"),0,1.0e12) or not preload("res://scripts/data/hit_timeline.gd").number(row.get("hits"),0,1000000):continue
-  if row.get("score") not in ["time","damage"]:continue
+  if float(row.time_ms)!=floorf(float(row.time_ms)) or float(row.hits)!=floorf(float(row.hits)) or row.get("score") not in ["time","damage"]:continue
   result[key]={"label":row.label,"time_ms":int(row.time_ms),"damage":float(row.damage),"hits":int(row.hits),"score":row.score}
  return result
 static func better(candidate: Dictionary,previous: Dictionary) -> bool:
@@ -35,3 +35,8 @@ static func realm_arc(realm: int,wave: int,index: int,fallback: float) -> float:
   4:return float(index)*2.39996+float(wave)*.2
   5:return float(index%3)*TAU/3.0+sin(float(wave))*.25
  return fallback
+
+static func record_label(raw: String,language: String) -> String:
+ var names: Dictionary={"dummy":["Art Measurement","Pengukuran Art"],"boss":["Guardian Practice","Latihan Penjaga"],"seal":["Defend the Seals","Pertahankan Segel"],"technique":["Weapon Technique","Teknik Senjata"],"standard":["Equal-Footing Trial","Ujian Setara"],"priority":["Break the Ward","Pecahkan Pelindung"],"gauntlet":["Three Guardians","Tiga Penjaga"],"pattern":["Pattern Drill","Latihan Pola"],"rotation":["Weekly Court","Pelataran Mingguan"]}
+ var pieces: PackedStringArray=raw.split(" · ",false,1)
+ return str(names[pieces[0]][1 if language=="id" else 0])+" · "+pieces[1] if pieces.size()==2 and names.has(pieces[0]) else raw

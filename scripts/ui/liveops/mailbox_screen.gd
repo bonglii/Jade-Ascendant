@@ -695,6 +695,15 @@ func _entries() -> Array[Dictionary]:
 	if live_ops == null or not is_instance_valid(live_ops):
 		return []
 	var entries: Array[Dictionary] = live_ops.get_mail_entries()
+	entries.sort_custom(func(a: Dictionary,b: Dictionary):
+		var claim_a: bool=_claim_batch._eligible(a) if is_instance_valid(_claim_batch) else false
+		var claim_b: bool=_claim_batch._eligible(b) if is_instance_valid(_claim_batch) else false
+		if claim_a!=claim_b:return claim_a
+		var end_a: int=int(a.get("expires_at",0));var end_b: int=int(b.get("expires_at",0))
+		if end_a<=0:end_a=9223372036854775807
+		if end_b<=0:end_b=9223372036854775807
+		if end_a!=end_b:return end_a<end_b
+		return str(a.id)<str(b.id))
 	return entries
 
 

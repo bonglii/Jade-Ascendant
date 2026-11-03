@@ -1,0 +1,92 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+[SYSTEM] Build unreported (0) | Source unreported | Godot 4.7.2-stable (official)
+[SYSTEM] SaveManager aktif!
+[SYSTEM] Save Architecture Version: 1
+[SYSTEM] Save Catalog Valid: true
+[SYSTEM] Save Domain Count: 12
+[SYSTEM] Permanent Save Domains: 9
+[SYSTEM] Active Run Save Domains: 1
+[SYSTEM] Existing Save Files: 0
+[SYSTEM] Legacy Save Domains: 0
+[SYSTEM] Save Domain achievements: permanent | Schema: v1 | Exists: false | Owner: AchievementManager
+[SYSTEM] Save Domain checkpoint: active_run | Schema: v1 | Exists: false | Owner: CheckpointManager
+[SYSTEM] Save Domain cultivation_mastery: permanent | Schema: v1 | Exists: false | Owner: CultivationMasteryManager
+[SYSTEM] Save Domain daily_quests: permanent | Schema: v1 | Exists: false | Owner: DailyQuestManager
+[SYSTEM] Save Domain equipment: permanent | Schema: v1 | Exists: false | Owner: EquipmentManager
+[SYSTEM] Save Domain idle_cultivation: permanent | Schema: v1 | Exists: false | Owner: IdleCultivationManager
+[SYSTEM] Save Domain inventory: permanent | Schema: v1 | Exists: false | Owner: InventoryManager
+[SYSTEM] Save Domain journey: permanent | Schema: v1 | Exists: false | Owner: JourneyManager
+[SYSTEM] Save Domain pavilion: permanent | Schema: v1 | Exists: false | Owner: PavilionManager
+[SYSTEM] Save Domain player_profile: local_profile | Schema: v1 | Exists: false | Owner: PlayerIdentityManager
+[SYSTEM] Save Domain progression: permanent | Schema: v1 | Exists: false | Owner: ProgressionManager
+[SYSTEM] Save Domain server_mail: local_profile | Schema: v1 | Exists: false | Owner: ServerMailManager
+Belum ada progression save.
+ProgressionManager aktif!
+Spirit Stone: 0
+Vitality Level: 0
+Sword Power Level: 0
+Swift Qi Level: 0
+Lin Yue Hero Level: 1
+Hero Milestones Claimed: []
+Hero EXP: 0/100
+[SYSTEM] JourneyManager aktif! Selected: Chapter 1 Stage 1
+[SYSTEM] Belum ada achievement save.
+[SYSTEM] AchievementManager aktif!
+[SYSTEM] Achievement Count: 45
+[SYSTEM] Achievement Unlocked: 0
+[SYSTEM] Achievement Claimable: 0
+[SYSTEM] Belum ada daily quest save.
+[SYSTEM] DailyQuestManager reset untuk tanggal: 2026-11-03
+[SYSTEM] DailyQuestManager aktif!
+[SYSTEM] Daily Date: 2026-11-03
+[SYSTEM] Daily Quest Count: 12
+[SYSTEM] Daily Quest Completed: 0
+[SYSTEM] Daily Quest Claimable: 0
+[SYSTEM] Belum ada equipment save.
+[SYSTEM] EquipmentManager aktif!
+[SYSTEM] Equipment Item Count: 58
+[SYSTEM] Equipment Slot armament: Empty
+[SYSTEM] Equipment Slot robe: Empty
+[SYSTEM] Equipment Slot bracer: Empty
+[SYSTEM] Equipment Slot boots: Empty
+[SYSTEM] Equipment Slot pendant: Empty
+[SYSTEM] Belum ada inventory save.
+[SYSTEM] InventoryManager aktif!
+[SYSTEM] Inventory Unique Items: 0
+[SYSTEM] Inventory Total Items: 0
+[SYSTEM] RewardManager aktif!
+[SYSTEM] SceneTransitionManager aktif!
+[SYSTEM] SettingsManager aktif!
+[SYSTEM] Audio Preferences | Master: 100% | Music: 80% | SFX: 100%
+[SYSTEM] IdleCultivationManager aktif | Tier: 0 | Offline gap: 0s
+[SYSTEM] LiveOps active login recorded | Day 1 | 2026-11-03
+[SYSTEM] LiveOps Phase 1 aktif | Active day: 1/7
+[SYSTEM] Floating Virtual Joystick aktif! Full-width lower zone -> ui_* actions.
+[SYSTEM] Permanent Sword Power Level: 0
+[SYSTEM] Initial Power Multiplier: 1.0
+[SYSTEM] Permanent Swift Qi Level: 0
+[SYSTEM] Initial Attack Cooldown: 1.0
+[SYSTEM] Initial Attack Speed: 1.0 attacks/sec
+[SYSTEM] WeaponManager aktif!
+[SYSTEM] Weapon ditambahkan: Spirit Sword
+[SYSTEM] Starter Armament Combat Identity: Spirit Sword | Equipment ID: default
+[SYSTEM] Player Max HP: 100.0
+[SYSTEM] Vitality Level: 0
+[SYSTEM] Permanent Sword Power Level: 0
+[SYSTEM] Initial Power Multiplier: 1.0
+[SYSTEM] Permanent Swift Qi Level: 0
+[SYSTEM] Initial Attack Cooldown: 1.0
+[SYSTEM] Initial Attack Speed: 1.0 attacks/sec
+[SYSTEM] WeaponManager aktif!
+[SYSTEM] Weapon ditambahkan: Spirit Sword
+[SYSTEM] Starter Armament Combat Identity: Spirit Sword | Equipment ID: default
+[SYSTEM] Player Max HP: 100.0
+[SYSTEM] Vitality Level: 0
+[SYSTEM] ==========================================
+[SYSTEM] BOSS MUNCUL!
+[SYSTEM] Boss HP: 500.0
+[SYSTEM] Boss Phase: 1
+[SYSTEM] ==========================================
+[SYSTEM] Hero UI ready | builds 1 | build 80 ms
+MENU_EXPERIENCE_QA checks=58 failures=0

@@ -133,7 +133,8 @@ func get_enemy_display_name(entity: Node) -> String:
 	return str(entity.name)
 
 func _ready() -> void:
-	formation_enabled = SettingsManager.realm_approaches
+	var world: Node=get_tree().current_scene
+	formation_enabled = SettingsManager.realm_approaches and world!=null and world.scene_file_path.begins_with("res://scenes/levels/") and not world.has_method("finish_heavenly_trial")
 	player = get_tree().get_first_node_in_group("player")
 
 	if player == null:
@@ -498,7 +499,8 @@ func scheduled_spawn_wave() -> int:
 func restore_encounter_cadence_state(raw: Variant) -> void:
 	var schedule: Dictionary = stage_profile.get("elite_schedule", {4: 1, 8: 2})
 	var state: Dictionary = preload("res://scripts/data/encounter_cadence_state.gd").clean(raw, schedule, int(wave_manager.current_wave), int(wave_manager.final_wave))
-	formation_enabled = bool(state.get("formation", {}).get("enabled", false))
+	var formation_world: Node=get_tree().current_scene
+	formation_enabled = bool(state.get("formation", {}).get("enabled", false)) and formation_world!=null and not formation_world.has_method("finish_heavenly_trial")
 	formation_index = int(state.get("formation", {}).get("index", 0))
 	elite_spawned_waves.clear()
 	if state.is_empty():

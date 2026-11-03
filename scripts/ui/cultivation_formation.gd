@@ -175,7 +175,7 @@ func _label(value: String, font_size: int, color: Color) -> Label:
 	result.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	result.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	result.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	result.text = value
+	result.text = tr(value)
 	result.add_theme_font_override("font", UI_FONT)
 	result.add_theme_font_size_override("font_size", font_size)
 	result.add_theme_color_override("font_color", color)
@@ -212,7 +212,7 @@ func _refresh_labels() -> void:
 		var title := node_titles.get(path_id) as Label
 		var level_label := node_levels.get(path_id) as Label
 		if kicker != null:
-			kicker.text = "PERFECTED" if maxed else str(PATH_SHORT[path_id])
+			kicker.text = tr("PERFECTED") if maxed else tr(str(PATH_SHORT[path_id]))
 			kicker.add_theme_color_override(
 				"font_color",
 				Color(1.0, 0.84, 0.39, 1.0) if maxed else Color(0.59, 0.76, 0.72, 0.98)

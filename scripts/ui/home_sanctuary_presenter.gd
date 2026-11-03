@@ -11,6 +11,7 @@ const BOSS_ART: Texture2D = preload("res://assets/ui/liveops/event_identity/boss
 const STONE: Texture2D = preload("res://assets/ui/shared/resources/spirit_stone_premium.png")
 const Goals=preload("res://scripts/data/player_goal_catalog.gd")
 var _goal: Dictionary={}
+var _pinned_goal: Button
 var goal_hint: Label
 var lower_scroll: ScrollContainer
 var lower_stack: VBoxContainer
@@ -134,6 +135,7 @@ func _build_body() -> void:
  lower_stack=VBoxContainer.new();lower_stack.name="SanctuaryPanels";lower_stack.size_flags_horizontal=Control.SIZE_EXPAND_FILL
  lower_stack.add_theme_constant_override("separation",10);lower_scroll.add_child(lower_stack)
  _build_journey_card()
+ _pinned_goal=load("res://scripts/experience/menu_guide.gd").button("",func():load("res://scripts/companion/player_journal.gd").open(get_tree().current_scene,"goal"));_pinned_goal.name="HomePinnedGoal";_pinned_goal.hide();lower_stack.add_child(_pinned_goal)
  var heading:=Control.new();heading.name="EventsHeading";heading.custom_minimum_size.y=28;lower_stack.add_child(heading)
  var caption:=_copy(heading,tr("CELESTIAL EVENTS"),19,GOLD_BRIGHT,true);caption.name="EventsCaption"
  all_events_button=_button("AllEvents",_open_live_popup.bind(EVENT_CENTER_SCENE),heading)
@@ -211,6 +213,11 @@ func _refresh_journey() -> void:
  if journey_card==null:return
  if journey_button.button_pressed:return
  _goal=Goals.choose_progression(Goals.context(get_tree().root,checkpoint_available))
+ var pinned: Dictionary=PlayerCompanion.goal_progress()
+ _pinned_goal.visible=not pinned.is_empty() and _goal.action!="recovery"
+ if not pinned.is_empty():
+  var target_name: String=load("res://scripts/data/equipment_set_catalog.gd").get_display_name(str(pinned.id).trim_prefix("set:")) if str(pinned.id).begins_with("set:") else str(EquipmentManager.get_item_data(str(pinned.id)).get("display_name",pinned.id))
+  _pinned_goal.text="TARGET · %s · %d/%d ›"%[target_name,pinned.owned,pinned.total]
  var saved: Dictionary={}
  if _goal.action=="continue":
   var menu: Node=_main_menu()

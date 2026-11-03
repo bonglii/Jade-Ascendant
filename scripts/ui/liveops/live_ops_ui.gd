@@ -153,6 +153,7 @@ static func build_shell(
 	var summaries: Dictionary={"jade_valley_pilgrimage":["Clear marked stages. Claim each offering once.","Tuntaskan stage yang ditandai. Klaim tiap persembahan sekali."],"heavenly_ladder":["Clear Journey stages. Claim each ascent once.","Tuntaskan stage Journey. Klaim tiap tingkatan sekali."],"celestial_boss_hunt":["Defeat realm guardians. Claim each bounty once.","Kalahkan penjaga realm. Klaim tiap hadiah sekali."],"celestial_treasure_hunt":["Complete each realm to reveal its treasure.","Tuntaskan setiap realm untuk membuka hartanya."],"path_of_five_elements":["Complete the five elemental trials.","Tuntaskan kelima trial elemen."]}
 	var event_key: String=root.scene_file_path.get_file().trim_suffix("_screen.tscn")
 	subtitle.text=str(summaries[event_key][1 if TranslationServer.get_locale().begins_with("id") else 0]) if summaries.has(event_key) else subtitle_text
+	if summaries.has(event_key):subtitle.text += ("\nMILESTONE JOURNEY · lanjutkan stage terkait" if TranslationServer.get_locale().begins_with("id") else "\nJOURNEY MILESTONE · continue the related stage")
 	subtitle.add_theme_font_size_override("font_size", 13)
 	subtitle.add_theme_color_override(
 		"font_color",

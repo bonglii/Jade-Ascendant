@@ -222,6 +222,7 @@ func _refresh_all() -> void:
   heading.add_child(journal)
  else:page.add_child(journal)
  journal.pressed.connect(func():load("res://scripts/companion/player_journal.gd").open(self,"presets"))
+ var practice: Button=_button("UJI BUILD ›" if SettingsManager.language=="id" else "TEST BUILD ›");practice.name="HeroTraining";page.add_child(practice);practice.pressed.connect(func():SceneTransitionManager.transition_menu_to("res://scenes/ui/training_ground.tscn"))
  page=backpack
  _build_collection()
  _layout_sections.call_deferred()

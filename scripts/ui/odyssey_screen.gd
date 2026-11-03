@@ -156,6 +156,7 @@ func _ready() -> void:
 	roll=button("ROLL DICE · 1 DIE",_roll_pressed,true); body.add_child(roll)
 	var optional:=HBoxContainer.new(); optional.add_theme_constant_override("separation",6); body.add_child(optional)
 	ad=button("+1 DIE · AD 0/2",_watch_ad); optional.add_child(ad); buy=button("TRAVEL SHOP",_shop); optional.add_child(buy)
+	var guide: Button=button("JALUR & TARGET ›" if SettingsManager.language=="id" else "ROUTES & TARGETS ›",func():load("res://scripts/experience/menu_guide.gd").open(self,"odyssey"));guide.name="OdysseyGuide";body.add_child(guide)
 	var footer:=HBoxContainer.new(); footer.add_theme_constant_override("separation",8); body.add_child(footer)
 	missions_button=button("DAILY MISSIONS",_missions); missions_button.custom_minimum_size.y=58; footer.add_child(missions_button)
 

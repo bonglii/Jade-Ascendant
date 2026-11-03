@@ -187,6 +187,8 @@ func _install_run_review() -> void:
 	style_button(hero, "navy")
 	hero.pressed.connect(_host.call.bind("_on_review_hero_pressed"))
 	box.add_child(hero)
+	var timeline: Button=load("res://scripts/experience/menu_guide.gd").button("SEPULUH DETIK TERAKHIR" if SettingsManager.language=="id" else "LAST TEN SECONDS",func():load("res://scripts/experience/menu_guide.gd").open(_host,"timeline",review.get("timeline",{})))
+	timeline.name="DefeatTimeline";box.add_child(timeline)
 	preload("res://scripts/ui/mobile_scroll_policy.gd").prepare_tree(_host.get_node("ColorRect"))
 
 func capture_defeat_report() -> void:

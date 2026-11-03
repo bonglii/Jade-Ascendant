@@ -74,6 +74,7 @@ func _build() -> void:
  var week_label: Label=_label("WEEKLY ASCENSION",12,Style.JADE);week_label.name="WeekEyebrow";hero_content.add_child(week_label);_title=_label("THE GATE AWAITS",30,Style.CREAM,true);hero_content.add_child(_title)
  hero_content.add_child(_label("Three trials. One path to mastery.",16,Style.TEXT))
  _rule=_label("Preparing the weekly challenge…",17,Style.CREAM);_margin(_panel(list,Color("60734b")),14).add_child(_rule)
+ var guide: Button=_button(list,"BACA POLA MINGGU INI ›" if SettingsManager.language=="id" else "READ THIS WEEK’S PATTERN ›",func():load("res://scripts/experience/menu_guide.gd").open(self,"weekly"));guide.name="WeeklyPatternGuide"
  for tier: int in range(1,4):
   var panel: PanelContainer=_panel(list,Color("526c50"));panel.name="Tier%d"%tier
   var row:=HBoxContainer.new();row.add_theme_constant_override("separation",12);_margin(panel,14).add_child(row)

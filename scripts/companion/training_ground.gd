@@ -5,9 +5,9 @@ const Skill=preload("res://scripts/data/skill_catalog.gd")
 const Paths=preload("res://scripts/data/run_path_policy.gd")
 const Oath=preload("res://scripts/data/jade_oath_state.gd")
 const ATTACKS: Array[String]=["spirit_sword","fire_orb","thunder_talisman","yin_yang_blades","heavenly_sword_rain","eight_trigrams_formation"]
-const MODES: Array[String]=["dummy","boss","seal","technique","standard","priority","gauntlet"]
-const TITLES_EN: Array[String]=["ART MEASUREMENT","GUARDIAN PRACTICE","DEFEND THE SEALS","WEAPON TECHNIQUE","EQUAL-FOOTING TRIAL","BREAK THE WARD","THREE GUARDIANS"]
-const TITLES_ID: Array[String]=["PENGUKURAN ART","LATIHAN PENJAGA","PERTAHANKAN SEGEL","TEKNIK SENJATA","UJIAN SETARA","PECAHKAN PELINDUNG","TIGA PENJAGA"]
+const MODES: Array[String]=["dummy","boss","seal","technique","standard","priority","gauntlet","pattern","rotation"]
+const TITLES_EN: Array[String]=["ART MEASUREMENT","GUARDIAN PRACTICE","DEFEND THE SEALS","WEAPON TECHNIQUE","EQUAL-FOOTING TRIAL","BREAK THE WARD","THREE GUARDIANS","READ ONE PATTERN","WEEKLY COURT ITINERARY"]
+const TITLES_ID: Array[String]=["PENGUKURAN ART","LATIHAN PENJAGA","PERTAHANKAN SEGEL","TEKNIK SENJATA","UJIAN SETARA","PECAHKAN PELINDUNG","TIGA PENJAGA","BACA SATU POLA","AGENDA PELATARAN MINGGUAN"]
 var player: CharacterBody2D
 var targets: Array[Node2D]=[]
 var elapsed: float=0.0
@@ -43,6 +43,23 @@ var _selected_boss: int=1
 var _duration: float=30.0
 var _outcome: String=""
 var _outgoing: float=0.0
+var _rotation: Dictionary={}
+var _pattern_picker: OptionButton
+var _pattern_ids: Array[int]=[]
+var _record_context: Dictionary={}
+func _active_mode() -> String:return str(_rotation.get("mode","standard")) if mode=="rotation" else mode
+func _selected_pattern() -> int:
+ if mode=="rotation":
+  var requested: int=int(_rotation.get("pattern",0))
+  return requested if requested in _pattern_ids else (_pattern_ids[0] if not _pattern_ids.is_empty() else 0)
+ return _pattern_ids[_pattern_picker.selected] if _pattern_picker!=null and not _pattern_ids.is_empty() else 0
+func _sync_patterns() -> void:
+ _pattern_picker.clear();_pattern_ids.clear()
+ var actor: Node=load("res://scripts/enemy/boss_1.gd").new()
+ actor.configure_encounter(JourneyManager.get_stage_data(1,_selected_boss))
+ _pattern_ids.assign(actor.available_ranged_patterns());actor.free()
+ for id: int in _pattern_ids:_pattern_picker.add_item([Sheet.copy("Projectile lane","Jalur proyektil"),Sheet.copy("Radial gaps","Celah radial"),Sheet.copy("Lightning marks","Tanda petir"),Sheet.copy("Cross pattern","Pola silang")][id])
+
 func _ready() -> void:
  set_meta("companion_practice",true);set_meta("standard_kit",false)
  EquipmentManager.capture_practice_loadout();_owner=PlayerCompanion.account_key
@@ -104,7 +121,8 @@ func _build_setup() -> void:
  if _known.is_empty():boss_picker.add_item(Sheet.copy("Encounter a guardian first","Temui penjaga terlebih dahulu"));boss_picker.disabled=true
  else:
   for stage: int in _known:boss_picker.add_item("1-%d · %s"%[stage,str(JourneyManager.get_stage_data(1,stage).boss_name)])
-  boss_picker.item_selected.connect(func(index: int):_selected_boss=_known[index])
+  boss_picker.item_selected.connect(func(index: int):_selected_boss=_known[index];_sync_patterns())
+ list.add_child(Sheet.label(Sheet.copy("PATTERN DRILL · guardian keeps its HP; read one real pattern for 45s","LATIHAN POLA · HP penjaga tetap; baca satu pola asli selama 45 dtk"),14));_pattern_picker=_picker(list);_pattern_picker.name="PracticePattern";_sync_patterns()
  list.add_child(Sheet.label(Sheet.copy("MEASUREMENT WINDOW","JENDELA PENGUKURAN"),14));var window: OptionButton=_picker(list)
  for seconds: int in [15,30,60]:window.add_item("%ds"%seconds)
  window.select(1);window.item_selected.connect(func(index: int):_duration=float([15,30,60][index]))
@@ -122,11 +140,12 @@ func _reset() -> void:
  _resetting=true;_rebuild.call_deferred()
 func _rebuild() -> void:
  _start_button.text=Sheet.copy("START","MULAI")
+ _rotation=preload("res://scripts/data/experience_policy.gd").itinerary(int(Time.get_unix_time_from_system())) if mode=="rotation" else {}
  _running=false;_outcome="";_hits.clear();_boss_round=0;_boss=null;_seals=0;elapsed=0;_readout_timer=0;_spawn_left=0;_spawn_index=0;_outgoing=0
  for child: Node in get_children():
   if child is Node2D and child!=_camera:remove_child(child);child.queue_free()
  targets.clear()
- var standard: bool=mode in ["technique","standard"]
+ var standard: bool=_active_mode() in ["technique","standard"]
  set_meta("standard_kit",standard)
  EquipmentManager.capture_practice_loadout()
  if standard:EquipmentManager.practice_items.clear();EquipmentManager.practice_levels.clear()
@@ -139,7 +158,7 @@ func _rebuild() -> void:
  var manager: Node=player.get_node("WeaponManager");var id: String=ATTACKS[_skills.selected]
  if id!="spirit_sword":manager.call("add_"+id)
  var weapon: Node=manager.get_weapon_by_name(Paths.NAMES[_skills.selected])
- var requested: int=5 if mode=="technique" else 3 if mode=="standard" else int([1,3,5,7][_levels.selected])
+ var requested: int=5 if _active_mode()=="technique" else 3 if _active_mode()=="standard" else int([1,3,5,7][_levels.selected])
  if weapon!=null:
   for step: int in range(6):
    if int(weapon.level)>=requested:break
@@ -147,7 +166,7 @@ func _rebuild() -> void:
    if int(weapon.level)<=before:break
  if requested>=5 and not standard:manager.run_paths.arts[id]=["balanced","focus","sweep"][_path_picker.selected]
  if not standard:manager.run_paths.boon=["none","ember","wind"][_boon_picker.selected]
- if mode in ["dummy","technique"]:_spawn_targets()
+ if _active_mode() in ["dummy","technique"]:_spawn_targets()
  _freeze_actors(true);_resetting=false;_refresh_instructions();_readout()
 func _refresh_instructions() -> void:
  var descriptions: Dictionary={
@@ -158,8 +177,10 @@ func _refresh_instructions() -> void:
   "standard":Sheet.copy("60s · fixed 100 HP, base power/tempo, chosen art Lv.3. No gear or mastery.","60 dtk · tetap 100 HP, power/tempo dasar, art Lv.3. Tanpa gear atau mastery."),
   "priority":Sheet.copy("60s · destroy the jade ward bearer. Nearby enemies take 35% less damage while protected.","60 dtk · hancurkan pembawa pelindung giok. Musuh dekat menerima 35% lebih sedikit damage selama terlindungi."),
   "gauntlet":Sheet.copy("180s · three known guardians in sequence. HP carries between fights.","180 dtk · tiga penjaga dikenal secara berurutan. HP dibawa antar pertarungan.")}
+ descriptions["pattern"]=Sheet.copy("45s · one real guardian pattern, no melee. Guardian takes no damage. Avoid HP hits.","45 dtk · satu pola asli penjaga, tanpa melee. HP penjaga tetap. Hindari hit ke HP.")
+ descriptions["rotation"]=str(_rotation.get("title_id" if SettingsManager.language=="id" else "title_en",""))+" · "+str(_rotation.get("goal_id" if SettingsManager.language=="id" else "goal_en",""))+Sheet.copy(" Local schedule · Monday 00:00 WIB · no rewards."," Agenda lokal · Senin 00.00 WIB · tanpa reward.")
  _hint.text=descriptions[mode];_status.text=Sheet.copy("READY · START WHEN PREPARED","SIAP · MULAI SAAT SUDAH SIAP")
- _start_button.disabled=(mode=="boss" and _known.is_empty()) or (mode=="gauntlet" and not [1,2,3].all(func(stage: int):return stage in _known))
+ _start_button.disabled=(_active_mode() in ["boss","pattern"] and _known.is_empty()) or (_active_mode()=="gauntlet" and not [1,2,3].all(func(stage: int):return stage in _known))
  if _start_button.disabled:_status.text=Sheet.copy("Encounter the required guardian(s) in Journey first.","Temui penjaga yang diperlukan di Journey terlebih dahulu.")
 func _spawn_targets() -> void:
  for i: int in range(3):
@@ -174,9 +195,12 @@ func _start() -> void:
  if not _outcome.is_empty():
   _resetting=true;_retry.call_deferred();return
  _running=true;_start_button.disabled=true;_freeze_actors(false)
- if mode in ["boss","gauntlet"]:_spawn_boss(_selected_boss if mode=="boss" else 1)
- if mode=="seal":_next_seal()
- if mode=="priority":
+ var tested_weapon: Node=player.get_node("WeaponManager").get_weapon_by_name(Paths.NAMES[_skills.selected])
+ var tested_level: int=int(tested_weapon.level) if tested_weapon!=null else 1
+ _record_context={"revision":1,"mode":mode,"resolved":_active_mode(),"week":int(_rotation.get("week",-1)),"art":ATTACKS[_skills.selected],"level":tested_level,"paths":player.get_node("WeaponManager").run_paths.duplicate(true),"moving":moving,"duration":_duration,"boss":_selected_boss,"pattern":_selected_pattern(),"slots":EquipmentManager.practice_items.duplicate(true),"levels":EquipmentManager.practice_levels.duplicate(true),"stats":[player.get_node("PlayerHealth").max_health,player.get_node("PlayerStats").power_multiplier,player.get_node("PlayerStats").attack_cooldown,player.speed],"mastery":get_node("/root/CultivationMasteryManager").state.duplicate(true)}
+ if _active_mode() in ["boss","gauntlet","pattern"]:_spawn_boss(_selected_boss if _active_mode() in ["boss","pattern"] else 1)
+ if _active_mode()=="seal":_next_seal()
+ if _active_mode()=="priority":
   var bearer: Node2D=_enemy(Vector2(324,420));bearer.name="JadeWardBearer";bearer.max_hp=90.0;bearer.current_hp=90.0;bearer.speed=0.0;bearer.modulate=Color(.55,1,.78)
   var ward: Node2D=preload("res://scripts/gameplay/training_support_ward.gd").new();bearer.add_child(ward)
   for i: int in range(4):_enemy(Vector2(204+i*80,480))
@@ -184,11 +208,13 @@ func _retry() -> void:
  _rebuild();_start()
 func _spawn_boss(stage: int) -> void:
  _boss_round+=1
- var actor: Node2D=load("res://scenes/enemy/boss_1.tscn").instantiate();actor.configure_encounter(JourneyManager.get_stage_data(1,stage));actor.position=Vector2(324,410);actor.motion_mode=CharacterBody2D.MOTION_MODE_FLOATING;actor.collision_layer=2;actor.collision_mask=0;add_child(actor);_boss=actor
+ var actor: Node2D=load("res://scenes/enemy/boss_1.tscn").instantiate();actor.configure_encounter(JourneyManager.get_stage_data(1,stage));actor.position=Vector2(324,410);actor.motion_mode=CharacterBody2D.MOTION_MODE_FLOATING;actor.collision_layer=2;actor.collision_mask=0
+ if _active_mode()=="pattern":actor.set_meta("practice_pattern",_selected_pattern())
+ add_child(actor);_boss=actor
  actor.boss_defeated.connect(func():_boss_defeated.call_deferred())
 func _boss_defeated() -> void:
  if not _running:return
- if mode=="gauntlet" and _boss_round<3:_spawn_boss(_boss_round+1)
+ if _active_mode()=="gauntlet" and _boss_round<3:_spawn_boss(_boss_round+1)
  else:_finish(Sheet.copy("GUARDIAN TRIAL COMPLETE","UJIAN PENJAGA SELESAI"),true)
 
 func _next_seal() -> void:
@@ -196,7 +222,7 @@ func _next_seal() -> void:
 func _freeze_actors(frozen: bool) -> void:
  for child: Node in get_children():
   if child is Node2D and child!=_camera:child.process_mode=Node.PROCESS_MODE_DISABLED if frozen else Node.PROCESS_MODE_INHERIT
- if not frozen and mode in ["dummy","technique"]:
+ if not frozen and _active_mode() in ["dummy","technique"]:
   for target: Node2D in targets:if is_instance_valid(target):target.set_physics_process(false)
 func _process(delta: float) -> void:
  if not is_instance_valid(player):return
@@ -204,33 +230,34 @@ func _process(delta: float) -> void:
  _fit_arena()
  if not _running:return
  elapsed+=delta;player.position=player.position.clamp(Vector2(72,330),Vector2(576,920))
- if mode in ["dummy","technique"]:
+ if _active_mode() in ["dummy","technique"]:
   for i: int in range(targets.size()):
    if is_instance_valid(targets[i]):targets[i].position=Vector2(244+i*80+(sin(elapsed*1.4+float(i))*55 if moving else 0),500+(sin(elapsed+float(i))*35 if moving else 0))
- if mode in ["seal","standard"]:
+ if _active_mode() in ["seal","standard"]:
   _spawn_left-=delta
   if _spawn_left<=0:
    _spawn_left=2.5
    if get_tree().get_nodes_in_group("enemy").size()<12:
     var angle: float=float(_spawn_index)*2.39996;_spawn_index+=1
     _enemy((player.position+Vector2.RIGHT.rotated(angle)*260).clamp(Vector2(85,350),Vector2(560,900)))
- if mode=="seal":
+ if _active_mode()=="seal":
   _seal.advance(delta,player.position.distance_to(_seal.location)<=Oath.RADIUS,5);queue_redraw()
   if _seal.phase=="pending":
    _seals+=1
    if _seals>=3:_finish(Sheet.copy("THREE SEALS DEFENDED","TIGA SEGEL TERJAGA"),true);return
    _next_seal()
   elif _seal.phase=="failed":_finish(Sheet.copy("SEAL LOST · KEEP AN ESCAPE ROUTE","SEGEL GAGAL · JAGA JALUR KELUAR"));return
- var limit: float=75 if mode=="seal" else 180 if mode=="gauntlet" else 120 if mode=="boss" else 60 if mode in ["technique","standard","priority"] else _duration
- if mode=="priority" and not is_instance_valid(get_node_or_null("JadeWardBearer")):_finish(Sheet.copy("WARD BROKEN","PELINDUNG PECAH"),true);return
- if mode=="technique":
+ var limit: float=45 if _active_mode()=="pattern" else 75 if _active_mode()=="seal" else 180 if _active_mode()=="gauntlet" else 120 if _active_mode()=="boss" else 60 if _active_mode() in ["technique","standard","priority"] else _duration
+ if _active_mode()=="priority" and not is_instance_valid(get_node_or_null("JadeWardBearer")):_finish(Sheet.copy("WARD BROKEN","PELINDUNG PECAH"),true);return
+ if _active_mode()=="technique":
   var hit: Dictionary=_hits.get(ATTACKS[_skills.selected],{})
   var needed: int=[6,4,8,20,6,18][_skills.selected]
   var count: int=0
   for row: Dictionary in hit.values():count+=int(row.hits)
   if hit.size()>=3 and count>=needed:_finish(Sheet.copy("TECHNIQUE DEMONSTRATED","TEKNIK TERBUKTI"),true);return
- if elapsed>=limit and mode=="standard":_finish(Sheet.copy("EQUAL-FOOTING TRIAL COMPLETE","UJIAN SETARA SELESAI"),true);return
- if elapsed>=limit:_finish(Sheet.copy("MEASUREMENT COMPLETE","PENGUKURAN SELESAI") if mode=="dummy" else Sheet.copy("TIME LIMIT · REVIEW YOUR APPROACH","BATAS WAKTU · TINJAU PENDEKATANMU"));return
+ if elapsed>=limit and _active_mode()=="pattern":_finish(Sheet.copy("PATTERN READ · REVIEW HP HITS","POLA TERBACA · TINJAU HIT KE HP"),true);return
+ if elapsed>=limit and _active_mode()=="standard":_finish(Sheet.copy("EQUAL-FOOTING TRIAL COMPLETE","UJIAN SETARA SELESAI"),true);return
+ if elapsed>=limit:_finish(Sheet.copy("MEASUREMENT COMPLETE","PENGUKURAN SELESAI") if _active_mode()=="dummy" else Sheet.copy("TIME LIMIT · REVIEW YOUR APPROACH","BATAS WAKTU · TINJAU PENDEKATANMU"),_active_mode()=="dummy");return
  _readout_timer-=delta
  if _readout_timer<=0:_readout_timer=.15;_readout()
 func record_practice_hit(source: String,target_id: int,amount: float) -> void:
@@ -245,21 +272,27 @@ func _readout() -> void:
  var lines: PackedStringArray=[Sheet.copy("TOTAL BUILD · %.1fs · %s DMG · %s DPS","TOTAL BUILD · %.1f dtk · %s DMG · %s DPS")%[elapsed,preload("res://scripts/ui/readable_numbers.gd").compact(roundi(total)),preload("res://scripts/ui/readable_numbers.gd").compact(roundi(total/maxf(elapsed,.1)))]]
  for row: Dictionary in ledger.damage_rows().slice(0,2):
   if float(row.damage)>0:lines.append(str(row.name)+" · "+str(roundi(float(row.damage))))
- if mode=="technique":
+ if _active_mode()=="technique":
   var art_hits: Dictionary=_hits.get(ATTACKS[_skills.selected],{});var hit_count: int=0
   for row: Dictionary in art_hits.values():hit_count+=int(row.hits)
   lines.append(("TARGET %d/3 · HIT %d/%d" if SettingsManager.language=="id" else "TARGETS %d/3 · HITS %d/%d")%[mini(art_hits.size(),3),hit_count,[6,4,8,20,6,18][_skills.selected]])
  _report.text="\n".join(lines)
  var hp: Node=player.get_node("PlayerHealth")
- if _running:_status.text="HP %d/%d · %.1fs%s"%[roundi(hp.current_health),roundi(hp.max_health),elapsed," · %d/3 · %.1f/8s"%[_seals,_seal.charge] if mode=="seal" else ""]
+ if _running:_status.text="HP %d/%d · %.1fs%s"%[roundi(hp.current_health),roundi(hp.max_health),elapsed," · %d/3 · %.1f/8s"%[_seals,_seal.charge] if _active_mode()=="seal" else ""]
  if _running and is_instance_valid(_boss):
   _status.text+=" · BOSS %d%%"%ceili(100.0*_boss.current_hp/maxf(1.0,_boss.max_hp))
-  if mode=="gauntlet":_status.text+=" · %d/3"%_boss_round
+  if _active_mode()=="gauntlet":_status.text+=" · %d/3"%_boss_round
 func _finish(outcome: String,completed: bool=false) -> void:
  if not _running:return
  if PlayerCompanion.account_key!=_owner:_back();return
  _running=false;_outcome=outcome;_readout();_freeze_actors(true);player.get_node("WeaponManager/RunCombatLedger").frozen=true
- if completed:PlayerCompanion.record_drill(mode,ATTACKS[_skills.selected],clampi(roundi(elapsed*1000),1,180000),_outgoing,_owner)
+ completed=completed and not player.get_node("PlayerHealth").is_dead and player.get_node("PlayerHealth").current_health>0
+ if player.get_node("PlayerHealth").is_dead:outcome=Sheet.copy("DEFEAT · TRY ANOTHER APPROACH","KALAH · COBA PENDEKATAN LAIN")
+ if completed and mode in ["dummy","boss","seal","technique","standard","priority","gauntlet"]:PlayerCompanion.record_drill(mode,ATTACKS[_skills.selected],clampi(roundi(elapsed*1000),1,180000),_outgoing,_owner)
+ if completed:
+  var row: Dictionary={"label":mode+" · "+Skill.get_upgrade_display_name(ATTACKS[_skills.selected])+" · Lv.%d · %ds"%[int(_record_context.level),roundi(elapsed)],"time_ms":clampi(roundi(elapsed*1000),1,180000),"damage":_outgoing,"hits":player.get_node("WeaponManager/RunCombatLedger").hp_hits,"score":"damage" if _active_mode()=="dummy" else "time"}
+  var improved: bool=PlayerCompanion.record_training(_record_context,row,_owner)
+  outcome+=Sheet.copy(" · PERSONAL BEST"," · REKOR PRIBADI") if improved else ""
  _status.text=outcome;_start_button.text=Sheet.copy("TRY AGAIN","COBA LAGI");_start_button.disabled=false
 func _fit_arena() -> void:
  var accepts_input: bool=_running and (_setup==null or not _setup.visible) and not get_tree().paused
@@ -271,7 +304,7 @@ func _fit_arena() -> void:
  var zoom_value: float=clampf(minf((view.x-32)/504.0,(view.y-top-140)/590.0),.12,1.2)
  _camera.zoom=Vector2.ONE*zoom_value;_camera.position=Vector2(324,625-(top-128)/(2*zoom_value))
 func _draw() -> void:
- if mode!="seal" or _seal.phase!="charging":return
+ if _active_mode()!="seal" or _seal.phase!="charging":return
  var point: Vector2=_seal.location
  draw_circle(point,Oath.RADIUS,Color(.12,.65,.47,.12));draw_arc(point,Oath.RADIUS,0,TAU,40,Sheet.GOLD,2,true)
  draw_arc(point,Oath.RADIUS-7,-PI/2,-PI/2+TAU*_seal.charge/Oath.CHARGE,40,Sheet.JADE,4,true)
