@@ -826,6 +826,7 @@ func release_runtime_audio() -> void:
 		voice.stream_paused = false
 		voice.stream = null
 
+	if is_instance_valid(_danger_voice):_danger_voice.stop();_danger_voice.stream=null
 	cooldown_until.clear()
 	variation_cursor.clear()
 	pitch_cursor.clear()
@@ -843,6 +844,7 @@ func _exit_tree() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_PAUSED:
 		backgrounded = true
+		if is_instance_valid(_danger_voice):_danger_voice.stop()
 		for voice: AudioStreamPlayer in voices:
 			voice.stop()
 		for music_player: AudioStreamPlayer in music_players:
@@ -851,3 +853,15 @@ func _notification(what: int) -> void:
 		backgrounded = false
 		for music_player: AudioStreamPlayer in music_players:
 			music_player.stream_paused = false
+
+var _danger_voice: AudioStreamPlayer
+var _danger_until: int=0
+func play_danger_cue(pattern: int) -> void:
+	var now: int=Time.get_ticks_msec()
+	if backgrounded or now<_danger_until:return
+	_danger_until=now+650
+	var cue: String="thunder" if pattern==2 else "shield" if pattern in [1,3] else "chain"
+	if not is_instance_valid(_danger_voice):
+		_danger_voice=AudioStreamPlayer.new();_danger_voice.name="DangerCueVoice";_danger_voice.bus="SFX";add_child(_danger_voice)
+	_danger_voice.stream=_get_sfx_stream(cue);_danger_voice.volume_db=_get_sfx_volume_db(cue)-8.0;_danger_voice.pitch_scale=.90;_danger_voice.play()
+	duck_music(.45,-24.0)

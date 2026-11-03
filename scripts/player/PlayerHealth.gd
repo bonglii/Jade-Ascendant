@@ -242,7 +242,9 @@ func get_iron_body_reduction() -> float:
 	)
 
 ## Memproses damage yang diterima Player.
-func take_damage(amount: float) -> void:
+var last_damage_source: String = "unknown"
+
+func take_damage(amount: float, source: String = "unknown") -> void:
 	if is_dead or amount <= 0 or not is_finite(amount):
 		return
 	if is_rewarded_revive_invulnerable() or is_hit_guarded():
@@ -271,6 +273,7 @@ func take_damage(amount: float) -> void:
 	var passive: Dictionary = preload("res://scripts/data/equipment_set_catalog.gd").get_active_passive(EquipmentSetRuntime.get_equipped_item_ids())
 	final_damage *= 1.0 - float(passive.get("reduction",0.0))
 	final_damage*=1.0-CultivationMastery.bonus("reduction")
+	last_damage_source = source if source in preload("res://scripts/data/hit_timeline.gd").SOURCES else "unknown"
 	current_health -= final_damage
 	CombatFeedback.hit(get_parent(), final_damage)
 

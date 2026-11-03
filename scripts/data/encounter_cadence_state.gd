@@ -33,4 +33,6 @@ static func clean(value: Variant, schedule: Dictionary, wave: int, final_wave: i
 		if not number(active.get("health_ratio"), 0.000001, 1.0) or not number(active.get("x"), -20000.0, 20000.0) or not number(active.get("y"), -20000.0, 20000.0):
 			return {}
 		active = {"wave": slot, "type": int(active.type), "health_ratio": float(active.health_ratio), "x": float(active.x), "y": float(active.y)}
-	return {"version": 1, "spawn_timer": float(value.spawn_timer), "kills": int(value.kills), "spawned": spawned, "active": active.duplicate(true)}
+	var formation: Variant = value.get("formation", {"enabled":false,"index":0})
+	if not formation is Dictionary or not formation.get("enabled") is bool or not number(formation.get("index"),0,1000000) or float(formation.index)!=floorf(float(formation.index)):return {}
+	return {"formation":{"enabled":formation.enabled,"index":int(formation.index)},"version": 1, "spawn_timer": float(value.spawn_timer), "kills": int(value.kills), "spawned": spawned, "active": active.duplicate(true)}

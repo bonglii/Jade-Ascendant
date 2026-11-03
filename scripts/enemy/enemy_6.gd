@@ -628,7 +628,7 @@ func damage_player_from_qi_pulse() -> void:
 		return
 
 	player_health.take_damage(
-		qi_pulse_damage
+		qi_pulse_damage, "area"
 	)
 
 	DebugLogger.combat(

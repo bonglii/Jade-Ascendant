@@ -20,7 +20,7 @@ static func preview(context: Node,key: String) -> Dictionary:
   var claimed: int=0
   if trials!=null:
    for row: Dictionary in trials.snapshot.get("progress",[]):claimed+=int(row.get("claimed",0))
-  return {"current":claimed,"total":3,"complete":trials==null or not trials.is_available() or claimed==3,"reward":{"celestial_jade":40,"pavilion_seal":1,"spirit_stone":600}}
+  return {"current":claimed,"total":3,"complete":trials==null or not trials.is_available() or claimed==3,"reward":preload("res://scripts/data/trial_reward_preview.gd").for_hub(trials.snapshot) if trials!=null else {}}
  var live: Node=context.get_node_or_null("/root/LiveOpsManager")
  if live==null:return {"current":0,"total":1,"complete":false,"reward":{}}
  var result: Dictionary={"current":0,"total":1,"complete":false,"reward":{}}

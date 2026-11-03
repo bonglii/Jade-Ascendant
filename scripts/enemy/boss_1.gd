@@ -525,6 +525,13 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		return
 
+	if _pattern_drill():
+		velocity = Vector2.ZERO
+		update_ranged_attack_timer(delta)
+		update_visual_action_timer(delta)
+		try_ranged_attack()
+		return
+
 	_pressure_clock += delta
 	if velocity.length_squared() > 25.0 and get_last_motion().length_squared() < 0.04:
 		_pressure_blocked += delta
@@ -909,7 +916,7 @@ func attack_player() -> void:
 		return
 	var player_health: PlayerHealth = target.get_node_or_null("PlayerHealth") as PlayerHealth
 	if player_health != null:
-		player_health.take_damage(attack_damage)
+		player_health.take_damage(attack_damage, "melee")
 
 ## Memilih ranged attack tanpa mengulang pattern sebelumnya.
 func try_ranged_attack() -> void:
@@ -917,6 +924,7 @@ func try_ranged_attack() -> void:
 		return
 
 	var attack_pattern: int = choose_ranged_pattern()
+	AudioManager.play_danger_cue(attack_pattern)
 
 	match attack_pattern:
 		RANGED_SINGLE_PROJECTILE:
@@ -946,7 +954,7 @@ func get_current_radial_projectile_count() -> int:
 	return radial_projectile_count
 
 ## Memilih ranged pattern secara acak dengan anti-repeat.
-func choose_ranged_pattern() -> int:
+func available_ranged_patterns() -> Array[int]:
 	var available_patterns: Array[int] = [
 		RANGED_SINGLE_PROJECTILE,
 		RANGED_RADIAL_BURST,
@@ -962,9 +970,18 @@ func choose_ranged_pattern() -> int:
 		if current_phase == PHASE_TWO:
 			available_patterns = [RANGED_RADIAL_BURST, RANGED_HEAVENLY_LIGHTNING, RANGED_ASCENDED_CROSS]
 
-	if last_ranged_pattern in available_patterns:
-		available_patterns.erase(last_ranged_pattern)
+	return available_patterns
 
+func _pattern_drill() -> bool:
+	var world: Node=get_tree().current_scene if is_inside_tree() else null
+	return world!=null and bool(world.get_meta("companion_practice",false)) and has_meta("practice_pattern")
+
+func choose_ranged_pattern() -> int:
+	var available_patterns: Array[int]=available_ranged_patterns()
+	if _pattern_drill():
+		var selected: int=int(get_meta("practice_pattern"))
+		return selected if selected in available_patterns else available_patterns[0]
+	if last_ranged_pattern in available_patterns:available_patterns.erase(last_ranged_pattern)
 	return available_patterns.pick_random()
 
 func _projectile_release_origin(radial: bool) -> Vector2:
@@ -1097,6 +1114,7 @@ func cast_ascended_cross() -> void:
 
 ## Membuat Qi Shockwave pada snapshot posisi Boss.
 func cast_qi_shockwave() -> void:
+	AudioManager.play_danger_cue(3)
 	_update_facing_to_player()
 
 	_play_action_animation(
@@ -1121,6 +1139,7 @@ func cast_qi_shockwave() -> void:
 
 ## Mengurangi HP Boss dan mengirim perubahan HP ke UI.
 func take_damage(amount: float) -> void:
+	if _pattern_drill():return
 	if is_dead:
 		return
 

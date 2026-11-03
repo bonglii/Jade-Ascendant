@@ -252,7 +252,7 @@ func damage_player_from_dash() -> void:
 		push_error("Shadow Assassin tidak menemukan PlayerHealth.")
 		return
 	has_hit_player_this_dash = true
-	player_health.take_damage(dash_damage)
+	player_health.take_damage(dash_damage, "melee")
 
 	DebugLogger.combat(
 		"Shadow Assassin Dash Hit | Damage: %.1f"

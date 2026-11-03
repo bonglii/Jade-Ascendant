@@ -11,6 +11,16 @@ var metrics_complete: bool=true
 var hp_loss: float=0.0
 var incoming_complete: bool=true
 var _previous_hp: float=0
+var review_clock: float=0.0
+var review_events: Array[Dictionary]=[]
+var review_complete: bool=true
+
+func _process(delta: float) -> void:
+ if not frozen:review_clock=minf(86400.0,review_clock+delta)
+
+func timeline_snapshot() -> Dictionary:
+ return {"version":1,"clock":review_clock,"complete":review_complete,"events":review_events.duplicate(true)}
+
 
 func _ready() -> void:_attach_health.call_deferred()
 func _attach_health() -> void:
@@ -21,6 +31,9 @@ func _attach_health() -> void:
  if not health.died.is_connected(_died):health.died.connect(_died)
 func _health_changed(hp: float,_maximum: float) -> void:
  if not frozen and hp<_previous_hp:
+  var health: Node=get_parent().get_parent().get_node_or_null("PlayerHealth")
+  review_events.append({"time":review_clock,"loss":_previous_hp-hp,"hp":hp,"source":str(health.last_damage_source) if health!=null else "unknown"})
+  while review_events.size()>40 or (not review_events.is_empty() and float(review_events[0].time)<review_clock-10.0):review_events.pop_front()
   hp_hits=mini(1000000,hp_hits+1)
   hp_loss=minf(1.0e12,hp_loss+_previous_hp-hp)
  _previous_hp=hp
@@ -69,7 +82,7 @@ func record(source: String,amount: float) -> void:
  totals[source]=float(totals.get(source,0.0))+amount
 
 func snapshot() -> Dictionary:
- return {"version":1,"totals":totals.duplicate(),"partial":partial,"metrics":{"hits":hp_hits,"deaths":deaths,"complete":metrics_complete,"hp_loss":hp_loss,"incoming_complete":incoming_complete}}
+ return {"timeline":timeline_snapshot(),"version":1,"totals":totals.duplicate(),"partial":partial,"metrics":{"hits":hp_hits,"deaths":deaths,"complete":metrics_complete,"hp_loss":hp_loss,"incoming_complete":incoming_complete}}
 
 static func valid_snapshot(value: Variant) -> bool:
  if not value is Dictionary or value.get("version")!=1 or not value.get("totals") is Dictionary or not value.get("partial") is bool:return false
@@ -90,6 +103,9 @@ static func valid_snapshot(value: Variant) -> bool:
  return true
 
 func restore(value: Variant) -> void:
+ var timeline: Dictionary=preload("res://scripts/data/hit_timeline.gd").clean(value.get("timeline") if value is Dictionary else null)
+ review_events.clear();review_clock=0.0;review_complete=not timeline.is_empty() and bool(timeline.get("complete",false))
+ if not timeline.is_empty():review_events.assign(timeline.events);review_clock=float(timeline.clock)
  totals.clear();frozen=false;hp_hits=0;deaths=0;metrics_complete=false;hp_loss=0.0;incoming_complete=false
  partial=not valid_snapshot(value)
  if partial:return

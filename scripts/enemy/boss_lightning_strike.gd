@@ -20,6 +20,7 @@ var telegraph_outline: Line2D = null
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
 func _ready() -> void:
+	load("res://scripts/experience/accessible_hazard.gd").install(self,strike_radius,telegraph_duration)
 	add_to_group("enemy_attack")
 
 	collision_layer = 0
@@ -289,7 +290,7 @@ func apply_damage_if_inside_radius() -> void:
 	if player_health == null:
 		return
 
-	player_health.take_damage(base_damage)
+	player_health.take_damage(base_damage, "lightning")
 
 	DebugLogger.combat(
 		"Boss Heavenly Lightning Hit | Damage: %.1f | Distance: %.1f"

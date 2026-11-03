@@ -68,5 +68,5 @@ func _on_body_entered(body: Node2D) -> void:
 	DebugLogger.system(str("BOSS PROJECTILE HIT!"))
 	DebugLogger.system(str("Projectile Damage: ", damage))
 
-	player_health.take_damage(damage)
+	player_health.take_damage(damage, "projectile")
 	queue_free()

@@ -42,7 +42,7 @@ func _process(delta: float) -> void:
    impact=impact or (player!=null and Patterns.contains(z,player.global_position))
  if impact:
   var health: Node=player.get_node_or_null("PlayerHealth")
-  if health!=null:health.take_damage(damage) # At most once per cast frame, including overlapping zones.
+  if health!=null:health.take_damage(damage, "area") # At most once per cast frame, including overlapping zones.
  if age>=_end:queue_free();return
  _draw_left-=delta
  if _draw_left<=0:

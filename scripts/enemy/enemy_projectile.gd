@@ -70,5 +70,5 @@ func _on_body_entered(body: Node2D) -> void:
 		% damage
 	)
 
-	player_health.take_damage(damage)
+	player_health.take_damage(damage, "projectile")
 	queue_free()

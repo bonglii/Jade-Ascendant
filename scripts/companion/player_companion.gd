@@ -29,7 +29,7 @@ func live_owner() -> String:
  var binding: String = GoogleAccountManager.get_monetization_account_binding()
  return binding if binding.length()==64 else ("guest:"+str(PlayerIdentityManager.get_profile_snapshot().get("player_uid","local"))).sha256_text()
 func _empty() -> Dictionary:
- return {"drills":{},"presets":{},"goal":"","summons":[],"runs":[],"seen_bosses":[],"metrics_opt_in":false,"metrics":[],"metric_seen":[]}
+ return {"training_records":{},"drills":{},"presets":{},"goal":"","summons":[],"runs":[],"seen_bosses":[],"metrics_opt_in":false,"metrics":[],"metric_seen":[]}
 func _read(path: String) -> Dictionary:
  var file := FileAccess.open(path, FileAccess.READ)
  if file==null or file.get_length()>262144: return {}
@@ -45,6 +45,7 @@ func _reload() -> void:
  state=_clean(raw.get("data",{}));_pending_runs.clear();changed.emit()
 func _clean(raw: Dictionary) -> Dictionary:
  var out: Dictionary = _empty()
+ out.training_records=preload("res://scripts/data/experience_policy.gd").clean_records(raw.get("training_records",{}))
  var presets: Variant = raw.get("presets",{})
  if presets is Dictionary:
   for key: String in ["0","1","2"]:
@@ -255,3 +256,13 @@ func record_drill(mode: String,art: String,time_ms: int,damage: float,expected_o
  if not next.has("drills"):next.drills={}
  next.drills[mode+":"+art]={"mode":mode,"art":art,"time_ms":time_ms,"damage":minf(damage,1.0e12)}
  return commit(next)
+
+func record_training(context: Dictionary,row: Dictionary,owner: String) -> bool:
+ if owner!=account_key or owner!=live_owner():return false
+ var key: String=preload("res://scripts/data/experience_policy.gd").record_key(context)
+ var checked: Dictionary=preload("res://scripts/data/experience_policy.gd").clean_records({key:row})
+ if checked.is_empty():return false
+ var next: Dictionary=state.duplicate(true)
+ if not preload("res://scripts/data/experience_policy.gd").better(checked[key],next.training_records.get(key,{})):return false
+ if not next.training_records.has(key) and next.training_records.size()>=64:next.training_records.erase(next.training_records.keys()[0])
+ next.training_records[key]=checked[key];return commit(next)

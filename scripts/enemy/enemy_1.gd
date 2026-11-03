@@ -85,7 +85,7 @@ func damage_player(target_player: Node) -> void:
 		% contact_damage
 	)
 
-	player_health.take_damage(contact_damage)
+	player_health.take_damage(contact_damage, "melee")
 
 	contact_damage_timer = contact_damage_cooldown
 

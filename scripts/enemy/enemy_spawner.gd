@@ -36,6 +36,8 @@ var boss_spawned: bool = false
 var spawn_timer: float = 0.0
 var elite_spawned_waves: Dictionary = {}
 var run_kill_count: int = 0
+var formation_enabled: bool = false
+var formation_index: int = 0
 var stage_profile: Dictionary = {}
 var _restoring_elite_wave: int = 0
 
@@ -131,6 +133,7 @@ func get_enemy_display_name(entity: Node) -> String:
 	return str(entity.name)
 
 func _ready() -> void:
+	formation_enabled = SettingsManager.realm_approaches
 	player = get_tree().get_first_node_in_group("player")
 
 	if player == null:
@@ -367,7 +370,7 @@ func spawn_enemy() -> void:
 
 	get_parent().add_child(enemy)
 
-	enemy.global_position = get_random_spawn_position()
+	enemy.global_position = get_random_spawn_position(true)
 
 	connect_enemy_defeated_signal(enemy)
 
@@ -487,7 +490,7 @@ func get_encounter_cadence_state() -> Dictionary:
 		var offset: Vector2 = (enemy as Node2D).global_position - player.global_position
 		active = {"wave": slot, "type": int(schedule[slot]), "health_ratio": clampf(float(enemy.get("current_hp")) / maxf(float(enemy.get("max_hp")), 0.001), 0.000001, 1.0), "x": offset.x, "y": offset.y}
 		break
-	return {"version": 1, "spawn_timer": maxf(spawn_timer, 0.0), "kills": run_kill_count, "spawned": elite_spawned_waves.keys(), "active": active}
+	return {"formation":{"enabled":formation_enabled,"index":formation_index},"version": 1, "spawn_timer": maxf(spawn_timer, 0.0), "kills": run_kill_count, "spawned": elite_spawned_waves.keys(), "active": active}
 
 func scheduled_spawn_wave() -> int:
 	return _restoring_elite_wave if _restoring_elite_wave > 0 else int(wave_manager.current_wave)
@@ -495,6 +498,8 @@ func scheduled_spawn_wave() -> int:
 func restore_encounter_cadence_state(raw: Variant) -> void:
 	var schedule: Dictionary = stage_profile.get("elite_schedule", {4: 1, 8: 2})
 	var state: Dictionary = preload("res://scripts/data/encounter_cadence_state.gd").clean(raw, schedule, int(wave_manager.current_wave), int(wave_manager.final_wave))
+	formation_enabled = bool(state.get("formation", {}).get("enabled", false))
+	formation_index = int(state.get("formation", {}).get("index", 0))
 	elite_spawned_waves.clear()
 	if state.is_empty():
 		# Old saves only prove completed drop milestones. Never invent an elite
@@ -747,8 +752,11 @@ func spawn_boss() -> void:
 	DebugLogger.system(str("=========================================="))
 
 ## Menghasilkan posisi spawn acak di sekitar Player.
-func get_random_spawn_position() -> Vector2:
+func get_random_spawn_position(ordinary: bool = false) -> Vector2:
 	var angle: float = randf() * TAU
+	if ordinary and formation_enabled:
+		angle = preload("res://scripts/data/experience_policy.gd").realm_arc(int(stage_profile.get("realm_id", 1)), int(wave_manager.current_wave), formation_index, angle)
+		formation_index = mini(1000000, formation_index + 1)
 
 	var spawn_offset := Vector2(
 		cos(angle),

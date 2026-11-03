@@ -26,6 +26,8 @@ var sfx_volume: float = DEFAULT_SFX_VOLUME
 var screen_shake: bool = true
 var reduced_effects: bool = false
 var quiet_player_vfx: bool = false
+var high_contrast_warnings: bool = false
+var realm_approaches: bool = false
 var damage_numbers: bool = true
 var haptics: bool = false
 var frame_limit: int = 60
@@ -156,6 +158,8 @@ func _load_settings() -> void:
 	screen_shake = _read_bool(config, "screen_shake", true)
 	reduced_effects = _read_bool(config, "reduced_effects", false)
 	quiet_player_vfx = _read_bool(config, "quiet_player_vfx", false)
+	high_contrast_warnings = _read_bool(config, "high_contrast_warnings", false)
+	realm_approaches = _read_bool(config, "realm_approaches", false)
 	damage_numbers = _read_bool(config, "damage_numbers", true)
 	haptics = _read_bool(config, "haptics", false)
 	var saved_fps: Variant = config.get_value("presentation", "frame_limit", 60)
@@ -169,7 +173,7 @@ func _save_settings() -> void:
 	config.set_value("audio", "master_volume", master_volume)
 	config.set_value("audio", "music_volume", music_volume)
 	config.set_value("audio", "sfx_volume", sfx_volume)
-	for key: String in ["screen_shake", "reduced_effects", "quiet_player_vfx", "damage_numbers", "haptics", "frame_limit", "language"]:
+	for key: String in ["screen_shake", "reduced_effects", "quiet_player_vfx", "high_contrast_warnings", "realm_approaches", "damage_numbers", "haptics", "frame_limit", "language"]:
 		config.set_value("presentation", key, get(key))
 	var save_error: Error = config.save(SETTINGS_PATH)
 	if save_error != OK:
@@ -182,7 +186,7 @@ func _round_percent(value: float) -> int:
 	return int(round(clampf(value, 0.0, 1.0) * 100.0))
 
 func set_presentation(key: String, value: Variant) -> void:
-	if key in ["screen_shake", "reduced_effects", "quiet_player_vfx", "damage_numbers", "haptics"]:
+	if key in ["screen_shake", "reduced_effects", "quiet_player_vfx", "high_contrast_warnings", "realm_approaches", "damage_numbers", "haptics"]:
 		if not value is bool:
 			return
 	elif key == "frame_limit":

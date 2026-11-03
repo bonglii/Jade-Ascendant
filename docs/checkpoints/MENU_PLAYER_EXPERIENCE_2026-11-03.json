@@ -1,6 +1,6 @@
 {
   "batch": "MENU_PLAYER_EXPERIENCE_20261103",
-  "status": "IMPLEMENTING",
+  "status": "RUNTIME_SOURCE_RECOVERED_AWAITING_REVALIDATION",
   "base_commit": "fe4b33b8a7d8595219462e912bf86eb7e6f9ca91",
   "branch": "work/menu-player-experience-20261103",
   "authorized": "Owner chat: oke kalau begitu kita mulai; all latest backlog/menu items in one batch",
@@ -131,13 +131,20 @@
     "phone": "UNCONFIRMED"
   },
   "stages": {
-    "source": "BASE_VERIFIED",
-    "author_qa": "IN_PROGRESS",
+    "source": "RUNTIME_RECOVERY_CHECKPOINT",
+    "author_qa": "TARGETED_REVALIDATION_REQUIRED",
     "package": "NOT_BUILT",
     "owner_install": "UNCONFIRMED",
     "export_aab": "NOT_RUN",
     "deploy": "NOT_RUN",
     "phone": "UNCONFIRMED"
   },
-  "next_action": "Inspect baseline native composition, implement bounded policies/runtime and menu changes, test affected domains, publish staged checkpoints and one cumulative patch. Android/performance/retention claims await real closed testing."
+  "next_action": "Inspect baseline native composition, implement bounded policies/runtime and menu changes, test affected domains, publish staged checkpoints and one cumulative patch. Android/performance/retention claims await real closed testing.",
+  "recovery": {
+    "reason": "Author workspace expired after the initial source-read JSON was truncated, before the implementation tree was published",
+    "historical_results": "51 new runtime checks/0 failures and earlier 98/0, from previous workspace; raw logs lost, not new proof",
+    "restored_from": "Base 4e49de0 plus recorded implementation edits in this conversation",
+    "current_step": "Runtime policies, incoming HP sources/timeline, optional realm approaches, accessible hazards, boss pattern API, priority audio and snapshot-backed hub rewards restored",
+    "remaining": "Training/reader/menu adapters and QA tooling restore, then targeted runtime/native UI verification and cumulative package"
+  }
 }

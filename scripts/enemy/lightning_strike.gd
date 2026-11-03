@@ -89,6 +89,7 @@ func _presentation_color(
 	return storm
 
 func _ready() -> void:
+	load("res://scripts/experience/accessible_hazard.gd").install(self,strike_radius,telegraph_duration)
 	preload("res://scripts/enemy/hostile_attack_polish.gd").install(self,"lightning")
 	add_to_group("enemy_attack")
 
@@ -408,7 +409,7 @@ func apply_damage_to_player() -> void:
 		return
 
 	player_health.take_damage(
-		base_damage
+		base_damage, "lightning"
 	)
 
 	DebugLogger.combat(

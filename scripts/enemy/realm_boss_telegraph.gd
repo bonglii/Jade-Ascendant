@@ -61,7 +61,7 @@ func _apply_impact() -> void:
 		return
 	var health: PlayerHealth = player.get_node_or_null("PlayerHealth") as PlayerHealth
 	if health != null:
-		health.take_damage(damage)
+		health.take_damage(damage, "area")
 
 ## Pure hit test also serves deterministic QA for telegraph shape/radius.
 func contains_world_point(world_point: Vector2) -> bool:

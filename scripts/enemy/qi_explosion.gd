@@ -407,7 +407,7 @@ func apply_damage_to_player() -> void:
 		return
 
 	player_health.take_damage(
-		base_damage
+		base_damage, "area"
 	)
 
 	DebugLogger.combat(
