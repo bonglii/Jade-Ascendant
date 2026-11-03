@@ -1,7 +1,7 @@
 {
   "batch": "PLAYER_REVIEW_CONTENT_20261102",
   "finalized_on": "2026-11-03",
-  "status": "DELIVERED_AWAITING_OWNER_WINDOWS",
+  "status": "OWNER_WINDOWS_PASS_AWAITING_AAB",
   "source": {
     "repository": "bonglii/Jade-Ascendant",
     "branch": "work/player-review-batch-20261102",
@@ -27,13 +27,13 @@
     {
       "name": "Jade-Player-Review-2026-11-02.md",
       "library_file_id": "libfile_0951424c3fe48191b4744695e520b475",
-      "version": 2,
+      "version": 3,
       "status": "succeeded"
     },
     {
       "name": "Jade-Ascendant-Handoff-2026-11-02.md",
       "library_file_id": "libfile_6203dd6b5a9c8191be0c73b3afc5598d",
-      "version": 3,
+      "version": 4,
       "status": "succeeded"
     }
   ],
@@ -57,7 +57,7 @@
   "stages": {
     "older_owner_recovery_R2": "PASS_CONFIRMED",
     "older_owner_windows_R2": "PASS_CONFIRMED_BY_CHAT_2026_11_02",
-    "new_content_owner_windows": "UNCONFIRMED",
+    "new_content_owner_windows": "PASS_CONFIRMED_BY_OWNER_CHAT_2026_11_03",
     "aab": "UNCONFIRMED",
     "phone": "UNCONFIRMED",
     "backend_deploy": "NOT_RUN",
@@ -66,6 +66,16 @@
     "ad_client_hold": "ON_NO_CALENDAR_REENABLE",
     "admob_account_status": "NOT_REVERIFIED"
   },
-  "next_action": "Owner extracts the saved cumulative ZIP and runs apply_and_test.cmd on the authorized work branch. Target PLAYER_CONTENT_WINDOWS_QA=PASS; resume installed-source QA with qa_only.cmd if needed. Then use the existing production exporter, closed-track update and real phone QA. Do not repeat confirmed older R2 recovery or the unaffected author suites.",
-  "checkpoint_note": "This final delivery receipt supersedes packaging-pending wording in the immutable source checkpoint and Library handoff points here. Kept outside the 58-file payload to avoid recursive source/ZIP hashes; game source is exactly game_commit above."
+  "next_action": "Export AAB on the already-passed owner Windows project using backend\\player_identity\\export_production.cmd. Keep the exporter terminal open until Godot closes and the original installed bridge is restored. Then update the existing active closed-testing track and perform real phone QA. Do not repeat passed Player Content installation/Windows QA or older R2 recovery unless new input changes or failures justify it. AAB/export/upload/phone remain unconfirmed.",
+  "checkpoint_note": "This final delivery receipt supersedes packaging-pending wording in the immutable source checkpoint and Library handoff points here. Kept outside the 58-file payload to avoid recursive source/ZIP hashes; game source is exactly game_commit above.",
+  "updated_on": "2026-11-03",
+  "owner_confirmation": {
+    "stage": "Player Content installation / Windows QA",
+    "status": "PASS",
+    "reported_date": "2026-11-03",
+    "evidence": "owner chat",
+    "exact_message": "oke player content pass",
+    "full_log_attached": false,
+    "author_rerun": false
+  }
 }
