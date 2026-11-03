@@ -1,0 +1,55 @@
+{
+  "batch": "PLAYER_CONTENT_WARNINGS_20261103",
+  "base_source_commit": "38b8d0b6b8bc8530b2c72a1b90c934a48fbdd4d0",
+  "base_content_commit": "18ff78656bcdc58891ba3c1442506bc115a17cad",
+  "source_branch": "work/player-review-batch-20261102",
+  "scope": [
+    "scripts/managers/monetization_manager.gd: use the existing autoload instance API for ads_suspended",
+    "scripts/ui/refine_onboarding.gd: rename the inner scene local to refreshed_scene"
+  ],
+  "author_qa": {
+    "godot": "4.7.2.stable.official.ed1daf0bf",
+    "verification": "REAL_EDITOR_IMPORT_WITH_TWO_WARNING_CLASSES_AS_ERRORS",
+    "before_reproduced_both_messages": true,
+    "editor_exit": 0,
+    "after_errors": [],
+    "project_settings_restored": true,
+    "ads_setting_unchanged": true,
+    "scope": "author Linux; not new owner Windows/AAB/phone proof",
+    "runtime_reloads": 6,
+    "runtime_api": "PASS_INSTANCE_CALL_RETURNS_HELD_ADS",
+    "source_files": {
+      "scripts/managers/monetization_manager.gd": "75c363c5fc22d0d424668f5c2a0217c94326c03172c9b2a696e8b1886741cf03",
+      "scripts/ui/refine_onboarding.gd": "ef4da52d5f3d744973656090335e4ad37629214cb06d6ca5c408a26565d86927"
+    },
+    "installer": {
+      "scope": "REAL_POWERSHELL_7_LINUX_DISPOSABLE_FIXTURES_NOT_WINDOWS",
+      "cases": [
+        {
+          "case": "417a",
+          "status": "PASS",
+          "source_changed_only_when_expected": true
+        },
+        {
+          "case": "active_recovery",
+          "status": "PASS",
+          "source_changed_only_when_expected": true
+        }
+      ],
+      "case_count": 2,
+      "repeat_cases": 1,
+      "failures": 0,
+      "apply": "PASS_TWO_WRITES_THEN_REPEAT_ZERO_WRITES",
+      "recovery_guard": "PASS_ACTIVE_EXPORT_REFUSED_BEFORE_SOURCE_WRITES"
+    }
+  },
+  "baseline_owner_windows": "PASS_CONFIRMED_2026_11_03_REUSED",
+  "hotfix_owner_windows": "UNCONFIRMED",
+  "aab": "UNCONFIRMED",
+  "phone": "UNCONFIRMED",
+  "deploy": "NOT_RUN",
+  "native": "UNCHANGED_R2",
+  "delivery_receipt": "docs/checkpoints/PLAYER_CONTENT_BATCH_2026-11-02.delivery.json",
+  "delivery_field": "warning_hotfix",
+  "next_action": "Apply the small two-file warning patch after Godot/export recovery finishes, reopen the editor to verify, then continue existing AAB export. Do not repeat full Player Content QA or old R2 recovery without changed inputs/failures."
+}

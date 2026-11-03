@@ -927,3 +927,10 @@ A literal credential-shaped sample in a self-published test triggered the scanne
 - Deferred detail fitting can resume after scene detach. Capture a valid SceneTree before awaiting and guard is_inside_tree before/after each frame; stop if the expected popup changed. Rapid detail/size/menu changes reproduced the error; do not slow the fixture to hide it.
 - Inspect the new setting itself, not the card above it. Ensure its real rectangle is visible after sorting and test native toggle/restore.
 - Translate message IDs before concatenating counts/metadata. Inspect list cards and complete popups. Correct per-target versus per-blade wording from the verified R2 mechanic without touching damage.
+
+## Player Content editor warnings — 2026-11-03
+
+- An autoload API called through its instance must use an instance method unless callers deliberately address the script type. ads_suspended only reads the existing setting; removing static preserves every caller and the ad hold while avoiding circular preloads between the manager and provider.
+- Different locals in the same function must not reuse a name in an inner branch and a later parent declaration. Use refreshed_scene for the onboarding re-evaluation branch.
+- Runtime reload alone did not generate these editor warnings, even after changing warning settings in memory. Validate in a fresh real editor/import process with the two warning classes promoted to errors. Reproduce the original diagnostics first; restore project.godot byte-for-byte afterwards and verify ads remain suspended. Do not suppress warnings or treat editor exit code 0 as proof when parse errors are in the log.
+- Preserve the confirmed full Player Content Windows PASS. A warning-only follow-up has its own apply/editor-check status; it does not establish a new AAB or phone PASS.

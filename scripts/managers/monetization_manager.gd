@@ -75,7 +75,7 @@ func _ready() -> void:
 		call_deferred("_activate_android_provider")
 
 
-static func ads_suspended() -> bool:
+func ads_suspended() -> bool:
 	return bool(ProjectSettings.get_setting("monetization/ads_suspended", true))
 
 

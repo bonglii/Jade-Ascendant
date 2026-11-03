@@ -140,9 +140,9 @@ func _continue(expected_step: int = -1, expected_popup: int = 0) -> void:
   # Re-evaluate after the tap: inventory/costs may have changed while visible.
   if not owned_equipment_ids().is_empty():
    empty_mode = false; step = 0
-   var scene: Node = get_tree().current_scene
+   var refreshed_scene: Node = get_tree().current_scene
    _dismiss(false)
-   if scene != null: _show_guide(scene)
+   if refreshed_scene != null: _show_guide(refreshed_scene)
    return
   var destination: String = CULTIVATION if has_affordable_cultivation() else JOURNEY
   if not _save_mark("empty_explained"): return
