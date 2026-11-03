@@ -33,7 +33,7 @@ Git history tetap menyimpan original. Backup saat apply juga tetap menyimpan byt
 - Identitas PNG dan parameter import dibandingkan sebelum konsolidasi; canonical images tidak berubah.
 - Godot 4.7.2 exact binary yang sama, fresh import dan 8 resource/scene assertions: PASS, tanpa SCRIPT ERROR/ERROR. Home, Cultivate, Mail dan Treasury benar-benar dimuat pada userdata QA sementara. Ini headless dependency smoke, bukan native GUI/phone baru. Review 243 capture dan QA gameplay 341 yang input-nya tetap digunakan kembali.
 - Fixture parser referensi: 11 assertions mencakup UID, class_name SDK, format dinamis, listing direktori, ignored source master dan audit tanpa penghapusan.
-- 10 skenario PowerShell Linux: audit tanpa tulisan, apply/restore/repeat, CRLF+BOM, aset diedit, source baru, export aktif, native mismatch, payload rusak, rollback edit bersamaan dan konflik saat restore: PASS. Final read-only audit dari script final juga PASS, SOURCE_WRITES=0. Windows owner belum diuji author.
+- 10 skenario inti PowerShell Linux: audit tanpa tulisan, apply/restore/repeat, CRLF+BOM, aset diedit, source baru, export aktif, native mismatch, payload rusak, rollback edit bersamaan dan konflik saat restore: PASS. Final read-only audit juga PASS, SOURCE_WRITES=0. Guard tambahan membatasi manifest ke empat removal/two update yang direview dan mengunci 52 input/candidate R2; manifest yang mencoba target protected atau proof kosong ditolak. Windows owner belum diuji author.
 - Seluruh 52 input native dan candidate AAR cocok; hash candidate tetap 2171f13f36cf8d90988fd20248f879653104625c8481b91d3fb0a4303fb098ea. SDK, sembilan gate pembayaran dan AdMob hold tetap.
 
 ## Pakai di PC owner

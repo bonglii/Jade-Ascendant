@@ -38,7 +38,9 @@
     "parser_fixture_assertions": 11,
     "installer_cases": 10,
     "installer_failures": 0,
-    "final_readonly_source_writes": 0
+    "final_readonly_source_writes": 0,
+    "scope_guard_cases": 3,
+    "post_hardening_apply_restore_repeat": "PASS"
   },
   "removed": {
     "files": 4,

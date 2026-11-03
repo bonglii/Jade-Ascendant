@@ -5,7 +5,7 @@ ROOT=Path(__file__).resolve().parents[1]
 def digest(b):return hashlib.sha256(b).hexdigest()
 def snapshot(root):return {p.relative_to(root).as_posix():digest(p.read_bytes()) for p in root.rglob('*') if p.is_file() and '.git' not in p.relative_to(root).parts}
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--package',type=Path,required=True);parser.add_argument('--pwsh',required=True);parser.add_argument('--result',type=Path,required=True);args=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--cases');parser.add_argument('--package',type=Path,required=True);parser.add_argument('--pwsh',required=True);parser.add_argument('--result',type=Path,required=True);args=parser.parse_args()
     package=args.package.resolve();manifest=json.loads((package/'cleanup_manifest.json').read_text());proof=json.loads((ROOT/'docs/checkpoints/IAP_PRODUCTION_NATIVE_CANDIDATE.json').read_text())
     needed=set(manifest['reference_guard'])|set(proof['inputs'])|{'.gitignore','docs/checkpoints/IAP_PRODUCTION_NATIVE_CANDIDATE.json','release/native/JadeMonetizationNativeBridge-production-candidate.aar'}
     needed|={r['path'] for r in manifest['removals']}|{r['canonical'] for r in manifest['removals']}
@@ -20,7 +20,9 @@ def main():
         cmd=[args.pwsh,'-NoLogo','-NoProfile','-File',str(pkg/'cleanup_project.ps1'),'-ProjectPath',str(folder),'-PackageRoot',str(pkg),'-Mode',mode]
         if receipt:cmd+=['-ReceiptPath',str(receipt)]
         r=subprocess.run(cmd,env=env,capture_output=True,text=True,timeout=150);text=r.stdout+r.stderr;(work/log).write_text(text);return r.returncode,text
-    cases=['audit','apply_restore_repeat','crlf_bom','modified_asset','unreviewed_source','active_export','native_mismatch','payload_corruption','concurrent_rollback','restore_conflict']
+    cases=['audit','apply_restore_repeat','crlf_bom','modified_asset','unreviewed_source','active_export','native_mismatch','payload_corruption','concurrent_rollback','restore_conflict','protected_manifest','unapproved_update','empty_native_proof']
+    if args.cases:
+        wanted=args.cases.split(',');assert all(x in cases for x in wanted);cases=wanted
     for name in cases:
         owner=work/name;shutil.copytree(golden,owner);pkg=work/(name+'_package');shutil.copytree(package,pkg)
         for p in ['.godot/protected.bin','.local/receipt.keep','artifacts/protected.aab','backups/save.keep']:
@@ -36,6 +38,13 @@ def main():
             p=owner/next(k for k in proof['inputs'] if k.endswith('.kt'));p.write_bytes(p.read_bytes()+b'\n// changed\n')
         if name=='payload_corruption':
             p=pkg/manifest['updates'][0]['payload'];p.write_bytes(p.read_bytes()+b'\n# corrupt\n')
+        if name in ['protected_manifest','unapproved_update']:
+            m=json.loads((pkg/'cleanup_manifest.json').read_text())
+            if name=='protected_manifest':m['removals'][0]['path']='.local/receipt.keep'
+            else:m['updates'][0]['path']='project.godot'
+            (pkg/'cleanup_manifest.json').write_text(json.dumps(m))
+        if name=='empty_native_proof':
+            p=owner/'docs/checkpoints/IAP_PRODUCTION_NATIVE_CANDIDATE.json';m=json.loads(p.read_text());m['inputs']={};p.write_text(json.dumps(m))
         before=snapshot(owner);stop=threading.Event();edited=threading.Event();late=owner/manifest['removals'][-1]['path'];late_bytes=late.read_bytes()+b'\n# concurrent owner edit\n';old_code=digest(changed.read_bytes())
         def concurrent():
             while not stop.wait(.001):

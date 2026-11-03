@@ -63,6 +63,10 @@ try{
     if($LASTEXITCODE -ne 0 -or [IO.Path]::GetFullPath($top).TrimEnd([char]47,[char]92) -ne [IO.Path]::GetFullPath($project).TrimEnd([char]47,[char]92)){throw 'Project must be the Git root'}
     $manifest=Get-Content -LiteralPath (Join-Path $package 'cleanup_manifest.json') -Raw|ConvertFrom-Json
     if($manifest.batch -ne 'REPOSITORY_CLEANUP_20261103'){throw 'Wrong cleanup manifest'}
+    $approvedRemovals=@('assets/ui/main_menu/home_celestial_realm_bg.png','assets/ui/main_menu/home_celestial_realm_bg.png.import','assets/ui/liveops/treasury_production/treasury_window_frame.png','assets/ui/liveops/treasury_production/treasury_window_frame.png.import')
+    if(@($manifest.removals).Count -ne 4 -or @($manifest.removals|Where-Object{$_.path -notin $approvedRemovals}).Count -or @($manifest.removals.path|Select-Object -Unique).Count -ne 4){throw 'Unapproved removal manifest; protected files cannot be cleanup targets'}
+    if(@($manifest.updates).Count -ne 2 -or @($manifest.updates|Where-Object{$_.path -notin @('.gitignore','scripts/ui/liveops/celestial_treasury_screen.gd')}).Count -or @($manifest.updates.path|Select-Object -Unique).Count -ne 2){throw 'Unapproved update manifest'}
+
     $tracked=Git-Paths @();$untracked=Git-Paths @('--others','--exclude-standard')
     $activeExport=Test-Path -LiteralPath (Join-Path $project '.local/production_native_export/active.json')
     if($Mode -ne 'Audit'){
@@ -111,7 +115,7 @@ try{
     $nativeMismatch=New-Object Collections.Generic.List[string]
     foreach($property in $proof.inputs.PSObject.Properties){if((Text-Hash (Target $property.Name)) -ne $property.Value){$nativeMismatch.Add($property.Name)}}
     $candidate=Target 'release/native/JadeMonetizationNativeBridge-production-candidate.aar'
-    $nativeOk=$nativeMismatch.Count -eq 0 -and (Hash-Bytes ([IO.File]::ReadAllBytes($candidate))) -eq $proof.aar_sha256
+    $nativeOk=@($proof.inputs.PSObject.Properties).Count -eq 52 -and $proof.aar_sha256 -eq '2171f13f36cf8d90988fd20248f879653104625c8481b91d3fb0a4303fb098ea' -and $nativeMismatch.Count -eq 0 -and (Hash-Bytes ([IO.File]::ReadAllBytes($candidate))) -eq $proof.aar_sha256
     $runtimeUnknown=New-Object Collections.Generic.List[string]
     $sourceExtensions=@('.cs','.gd','.tscn','.tres','.gdshader','.gdextension','.cfg','.godot','.json')
     foreach($relative in @($tracked)+@($untracked)){
