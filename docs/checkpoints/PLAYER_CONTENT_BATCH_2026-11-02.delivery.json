@@ -1,0 +1,71 @@
+{
+  "batch": "PLAYER_REVIEW_CONTENT_20261102",
+  "finalized_on": "2026-11-03",
+  "status": "DELIVERED_AWAITING_OWNER_WINDOWS",
+  "source": {
+    "repository": "bonglii/Jade-Ascendant",
+    "branch": "work/player-review-batch-20261102",
+    "game_commit": "18ff78656bcdc58891ba3c1442506bc115a17cad",
+    "payload_matches_published_commit": 58,
+    "receipt_commit_changes_game_code": false
+  },
+  "package": {
+    "filename": "Jade-Player-Content-Batch-2026-11-02.zip",
+    "sha256": "95830844ef74d6b4165bbd934ab4ddb0a6eb3f4b845e1f89a6cf2672e5cb3a74",
+    "bytes": 19398298,
+    "entries": 336,
+    "source_files": 58,
+    "crc_and_all_checksums": "PASS"
+  },
+  "artifacts": [
+    {
+      "name": "Jade-Player-Content-Batch-2026-11-02.zip",
+      "library_file_id": "libfile_1e060d7b2ba88191973ced66e559b8b2",
+      "version": 0,
+      "status": "succeeded"
+    },
+    {
+      "name": "Jade-Player-Review-2026-11-02.md",
+      "library_file_id": "libfile_0951424c3fe48191b4744695e520b475",
+      "version": 2,
+      "status": "succeeded"
+    },
+    {
+      "name": "Jade-Ascendant-Handoff-2026-11-02.md",
+      "library_file_id": "libfile_6203dd6b5a9c8191be0c73b3afc5598d",
+      "version": 3,
+      "status": "succeeded"
+    }
+  ],
+  "author_validation": {
+    "reused_previous_launcher_checks": 251,
+    "reused_previous_launcher_failures": 0,
+    "reused_previous_installer_cases": 14,
+    "reused_previous_installer_repeats": 6,
+    "prior_raw_files": "LOST_WITH_PREVIOUS_WORKSPACE; CHECKPOINT_RECEIPTS_RETAINED_NOT_RECONSTRUCTED",
+    "resume_installer_cases": 6,
+    "resume_installer_repeats": 4,
+    "final_cumulative_owner_a5": "PASS_AND_REPEAT_ZERO_WRITES",
+    "native_inputs_match": 52,
+    "native_aar_sha256": "2171f13f36cf8d90988fd20248f879653104625c8481b91d3fb0a4303fb098ea",
+    "jvm_248": "REUSED_UNCHANGED_R2_BUILD_EVIDENCE",
+    "fresh_selected_gui_viewports": 66,
+    "fresh_native_os_captures": 1,
+    "native_input": "PASS_X11_EMULATED_TOUCH_NOT_ANDROID",
+    "ci_exact_game_sha": "ZERO_RUNS; NO_CI_PASS_CLAIM"
+  },
+  "stages": {
+    "older_owner_recovery_R2": "PASS_CONFIRMED",
+    "older_owner_windows_R2": "PASS_CONFIRMED_BY_CHAT_2026_11_02",
+    "new_content_owner_windows": "UNCONFIRMED",
+    "aab": "UNCONFIRMED",
+    "phone": "UNCONFIRMED",
+    "backend_deploy": "NOT_RUN",
+    "event_activation": "NOT_RUN",
+    "notifications": "NOT_SENT",
+    "ad_client_hold": "ON_NO_CALENDAR_REENABLE",
+    "admob_account_status": "NOT_REVERIFIED"
+  },
+  "next_action": "Owner extracts the saved cumulative ZIP and runs apply_and_test.cmd on the authorized work branch. Target PLAYER_CONTENT_WINDOWS_QA=PASS; resume installed-source QA with qa_only.cmd if needed. Then use the existing production exporter, closed-track update and real phone QA. Do not repeat confirmed older R2 recovery or the unaffected author suites.",
+  "checkpoint_note": "This final delivery receipt supersedes packaging-pending wording in the immutable source checkpoint and Library handoff points here. Kept outside the 58-file payload to avoid recursive source/ZIP hashes; game source is exactly game_commit above."
+}
