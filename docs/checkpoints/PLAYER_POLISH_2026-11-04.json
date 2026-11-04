@@ -2,7 +2,7 @@
   "base": "1921495faac5cdf26a7ef660eeeee451c99615eb",
   "branch": "work/player-polish-20261104",
   "authorization": "Owner approved all 33 review items, five implementation batches, integrated QA at end, total change summary and closed-test notes.",
-  "status": "IN_PROGRESS",
+  "status": "SOURCE_RESTORED_QA_IN_PROGRESS",
   "batches": [
     {
       "batch": 1,
@@ -17,7 +17,7 @@
         27,
         28
       ],
-      "status": "IN_PROGRESS"
+      "status": "SOURCE_UPDATED_REVIEW_IN_PROGRESS"
     },
     {
       "batch": 2,
@@ -28,7 +28,7 @@
         24,
         32
       ],
-      "status": "PENDING"
+      "status": "SOURCE_UPDATED_REVIEW_IN_PROGRESS"
     },
     {
       "batch": 3,
@@ -40,7 +40,7 @@
         16,
         17
       ],
-      "status": "PENDING"
+      "status": "SOURCE_UPDATED_REVIEW_IN_PROGRESS"
     },
     {
       "batch": 4,
@@ -53,7 +53,7 @@
         19,
         26
       ],
-      "status": "PENDING"
+      "status": "SOURCE_UPDATED_REVIEW_IN_PROGRESS"
     },
     {
       "batch": 5,
@@ -63,7 +63,7 @@
         31,
         33
       ],
-      "status": "PENDING"
+      "status": "SOURCE_UPDATED_REVIEW_IN_PROGRESS"
     },
     {
       "batch": 6,
@@ -71,13 +71,13 @@
         23,
         25
       ],
-      "status": "PENDING"
+      "status": "HEADLESS_QA_IN_PROGRESS"
     }
   ],
   "qa": "PENDING_FINAL_INTEGRATION",
-  "next": "Finish batch 1 results/navigation, then remaining batch items. All changes await integrated runtime and visual QA.",
+  "next": "Verify user journeys and updated screen states with isolated QA. Record outstanding device checks before preparing the closed-test candidate.",
   "owner_note": "Fresh navbar confirmed safe; old project backed up and renamed.",
-  "publication": "PENDING",
+  "publication": "Checkpoint 35a441b published. Subsequent polish commit awaiting branch verification.",
   "aab": "PENDING",
   "phone": "PENDING",
   "implemented_pending_qa": [
@@ -97,5 +97,6 @@
       "item": 27,
       "change": "Compact stage preview retains the stage hint."
     }
-  ]
+  ],
+  "qa_output_policy": "Keep Godot imports, fixtures, test saves, logs and captures in a temporary directory outside the project. Use a unique test save directory per run."
 }

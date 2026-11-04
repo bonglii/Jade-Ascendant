@@ -986,8 +986,13 @@ func _refresh_letter() -> void:
 		else tr("UNCLAIMED ATTACHMENT") if has_reward
 		else tr("OFFICIAL NOTICE")
 	)
-	# Server status already has a dedicated slot above the inbox list.
-	_footer_label.visible = false
+	var expiry: int = int(entry.get("expires_at", 0))
+	_footer_label.visible = has_reward
+	if has_reward:
+		_footer_label.text = _claim_button.text
+		if expiry > 0 and not claimed and not bool(entry.get("expired", false)):
+			var stamp: String = Time.get_datetime_string_from_unix_time(expiry).replace("T", " ")
+			_footer_label.text += "\n" + (("Batas klaim %s UTC" if SettingsManager.language == "id" else "Claim by %s UTC") % stamp)
 
 
 func _reward_tiles(reward: Dictionary) -> Array[Dictionary]:

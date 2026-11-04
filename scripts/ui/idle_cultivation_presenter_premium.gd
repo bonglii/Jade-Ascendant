@@ -914,7 +914,11 @@ func _refresh_popup() -> void:
 			or rewarded_pending
 			or request_active
 		)
-		if is_ready:
+		if rewarded_pending or request_active:
+			_claim_button.text = "MEMPROSES KLAIM…" if SettingsManager.language == "id" else "PROCESSING CLAIM…"
+		elif save_locked:
+			_claim_button.text = "PEMULIHAN SAVE" if SettingsManager.language == "id" else "SAVE RECOVERY"
+		elif is_ready:
 			_claim_button.text = tr("CLAIM 1×")
 		else:
 			_claim_button.text = tr("GATHERING QI")

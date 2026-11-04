@@ -39,6 +39,9 @@ func _on_player_died() -> void:
 		return
 
 	game_over_triggered = true
+	var hud: Node = get_parent().get_node_or_null("HUD")
+	if hud != null and hud.has_method("dismiss_run_controls"):
+		hud.dismiss_run_controls()
 	defeat_finalized = false
 	rewarded_revive_pending = false
 

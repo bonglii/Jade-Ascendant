@@ -451,9 +451,9 @@ func _on_boss_spawned_audio(boss: Node) -> void:
 
 func _on_boss_phase_changed_audio(new_phase: int) -> void:
 	if new_phase >= 2:
-		# boss_1.gd keeps its established level/breakthrough transient; this
-		# overlay adds low thunder/ritual pressure and makes Phase 2 unmistakable.
 		play_sfx("boss_phase")
+		if SettingsManager.haptics and OS.has_feature("android"):
+			Input.vibrate_handheld(40)
 
 
 func _connect_button(button: BaseButton) -> void:

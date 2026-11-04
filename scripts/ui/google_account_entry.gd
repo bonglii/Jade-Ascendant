@@ -71,7 +71,7 @@ func _apply_copy() -> void:
 	panel_eyebrow.hide()
 	panel_title.text = _local("Your journey begins", "Perjalananmu dimulai")
 	panel_description.text = _local("Enter the realm and begin your cultivation.", "Masuki dunia dan awali kultivasimu.")
-	privacy_note.text = _local("Progress is saved on this device.", "Progres tersimpan di perangkat ini.")
+	privacy_note.text = _local("Guest: play with progress on this device. Google: connect your account, then enable Cloud Backup in Settings.", "Tamu: main dengan progres di perangkat ini. Google: hubungkan akun, lalu aktifkan Backup Cloud di Pengaturan.")
 	privacy_note.tooltip_text = _local("Google login links your identity. Enable Cloud backup in Settings to upload supported progress.", "Login Google menghubungkan identitas. Aktifkan Cloud backup di Pengaturan untuk mengunggah progres yang didukung.")
 
 func _skin(file: String, panel: bool=false) -> StyleBoxTexture:
@@ -179,8 +179,8 @@ func _on_account_state_changed(snapshot: Dictionary) -> void:
 		)
 	elif not native_available:
 		account_status.text = _local(
-			"Google login is unavailable in this build.",
-			"Login Google belum tersedia di build ini."
+			"Google login is unavailable in this build. Play as Guest to continue.",
+			"Login Google belum tersedia di build ini. Main sebagai Tamu untuk lanjut."
 		)
 	else:
 		var current_status: String = str(snapshot.get("status", ""))

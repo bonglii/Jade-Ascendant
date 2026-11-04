@@ -241,14 +241,14 @@ func _update_level_up_congratulation() -> void:
 	breakthrough_level_label.text = "LV. %d → %d" % [maxi(1, level_value - 1), level_value]
 	var eyebrow: Label = find_child("Eyebrow", true, false) as Label
 	if eyebrow != null:
-		eyebrow.text = "SELAMAT! LEVEL NAIK" if SettingsManager.language == "id" else "CONGRATULATIONS!"
+		eyebrow.text = "LEVEL RUN NAIK" if SettingsManager.language == "id" else "RUN LEVEL UP"
 	var subtitle: Label = find_child("Subtitle", true, false) as Label
 	if subtitle != null:
 		var count: int = 1 + player.get_pending_level_up_count()
 		if count > 1:
 			subtitle.text = ("HP penuh • %d pilihan tersisa" if SettingsManager.language == "id" else "HP restored • %d choices left") % count
 		else:
-			subtitle.text = "HP penuh. Pilih satu skill." if SettingsManager.language == "id" else "HP restored. Choose one skill."
+			subtitle.text = "HP penuh • 1 pilihan tersisa" if SettingsManager.language == "id" else "HP restored • 1 choice left"
 
 
 func is_upgrade_available(upgrade_id: String) -> bool:

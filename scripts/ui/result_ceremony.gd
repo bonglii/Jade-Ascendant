@@ -100,7 +100,7 @@ func _ready() -> void:
 		_host.get("result_atmosphere").hide()
 		_host.get("result_atmosphere").set_process(false)
 	for button: Button in _content.find_children("*", "Button", true, false):
-		var primary: bool = button == _host.get("main_menu_button") if _mode == "victory" else button == _host.get("retry_button")
+		var primary: bool = (button.name == "NextStagePreview" or button == _host.get("main_menu_button")) if _mode == "victory" else button == _host.get("retry_button")
 		style_button(button, ("red" if _mode == "defeat" else "jade") if primary else "navy")
 	preload("res://scripts/ui/mobile_scroll_policy.gd").prepare_tree(backdrop)
 	_safe.resized.connect(fit)
@@ -164,6 +164,8 @@ var _report_partial: bool=false
 var _review_title: Label
 var _review_facts: Label
 var _review_body: Label
+var _defeat_details: VBoxContainer
+var _defeat_hit_stats: Label
 var review: Dictionary = {}
 
 func _install_run_review() -> void:
@@ -188,7 +190,23 @@ func _install_run_review() -> void:
 	hero.pressed.connect(_host.call.bind("_on_review_hero_pressed"))
 	box.add_child(hero)
 	var timeline: Button=load("res://scripts/experience/menu_guide.gd").button("SEPULUH DETIK TERAKHIR" if SettingsManager.language=="id" else "LAST TEN SECONDS",func():load("res://scripts/experience/menu_guide.gd").open(_host,"timeline",review.get("timeline",{})))
-	timeline.name="DefeatTimeline";box.add_child(timeline)
+	timeline.name = "DefeatTimeline"
+	_defeat_details = VBoxContainer.new()
+	_defeat_details.hide()
+	var details_button := Button.new()
+	details_button.name = "DefeatRunDetails"
+	details_button.text = "RINCIAN RUN" if SettingsManager.language == "id" else "RUN DETAILS"
+	details_button.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
+	style_button(details_button, "navy")
+	details_button.pressed.connect(func():
+		_defeat_details.visible = not _defeat_details.visible
+		fit()
+	)
+	box.add_child(details_button)
+	box.add_child(_defeat_details)
+	_defeat_hit_stats = _report_label("", Color(.68, .82, .78), 14)
+	_defeat_details.add_child(_defeat_hit_stats)
+	_defeat_details.add_child(timeline)
 	preload("res://scripts/ui/mobile_scroll_policy.gd").prepare_tree(_host.get_node("ColorRect"))
 
 func capture_defeat_report() -> void:
@@ -203,12 +221,14 @@ func capture_defeat_report() -> void:
 	_review_body.text = text.body
 	var clock: String = "%02d:%02d" % [int(float(review.seconds) / 60.0), int(review.seconds) % 60]
 	_review_facts.text = "WAVE %d · LV.%d · %s" % [int(review.wave), int(review.level), clock]
+	_defeat_hit_stats.text = ""
 	if bool(review.metrics_complete):
-		_review_facts.text += ("\nHIT KE HP %d" if id else "\nHP HITS %d") % int(review.hits)
+		_defeat_hit_stats.text += ("\nHIT KE HP %d" if id else "\nHP HITS %d") % int(review.hits)
 	if bool(review.incoming_complete):
-		_review_facts.text += (" · HP HILANG %s" if id else " · HP LOST %s") % preload("res://scripts/ui/readable_numbers.gd").compact(roundi(float(review.hp_loss)))
+		_defeat_hit_stats.text += (" · HP HILANG %s" if id else " · HP LOST %s") % preload("res://scripts/ui/readable_numbers.gd").compact(roundi(float(review.hp_loss)))
 	elif bool(review.metrics_complete):
-		_review_facts.text += "\nRiwayat damage masuk belum lengkap." if id else "\nIncoming damage history is incomplete."
+		_defeat_hit_stats.text += "\nRiwayat damage masuk belum lengkap." if id else "\nIncoming damage history is incomplete."
+	_defeat_hit_stats.visible = not _defeat_hit_stats.text.is_empty()
 	_report_damage = review.damage
 	_report_skills = review.skills
 	_report_partial = bool(review.damage_partial)
@@ -220,7 +240,8 @@ func _install_run_report() -> void:
 	_report.name="RunReport"
 	_report.add_theme_constant_override("separation",10)
 	_body.add_child(_report)
-	if _mode == "defeat": _body.move_child(_report, _body.get_node("RunReview").get_index() + 1)
+	if _mode == "defeat":
+		_report.reparent(_defeat_details)
 	_record_summary=_report_label("",Color(.48,.87,.73),15);_record_summary.name="PersonalRecordSummary";_record_summary.hide();_report.add_child(_record_summary)
 	var tabs:=HBoxContainer.new()
 	_report.add_child(tabs)

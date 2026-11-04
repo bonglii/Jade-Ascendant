@@ -6,6 +6,7 @@ const Gear=preload("res://scripts/companion/equipment_projection.gd")
 const Gold=Color("f1d18a")
 const Jade=Color("77dfbb")
 const GUIDES: Dictionary={
+ "combat_basics":["COMBAT FIELD GUIDE","PANDUAN COMBAT","Move away from marked danger, collect Qi after enemies fall, and choose one art when your Run Level rises. Hero EXP is permanent and appears in the stage result. Read the threat hint on Stage Select before entering a new realm.","Menjauh dari tanda bahaya, ambil Qi setelah musuh jatuh, dan pilih satu art saat Run Level naik. Hero EXP bersifat permanen dan tampil pada hasil stage. Baca petunjuk ancaman di Stage Select sebelum masuk realm baru."],
  "cultivate":["PREPARE THE NEXT JOURNEY","SIAPKAN PERJALANAN BERIKUTNYA","Vitality adds starting HP. Sword Power strengthens supported direct attacks. Swift Qi lowers the base cooldown; weapon floors and TEMPO still apply. Lv.10 opens free specialization on each path for new runs. Continue keeps its saved choices.","Vitality menambah HP awal. Sword Power memperkuat serangan langsung yang mendukungnya. Swift Qi menurunkan cooldown dasar; batas weapon dan TEMPO tetap berlaku. Lv.10 membuka spesialisasi gratis tiap jalur untuk run baru. Continue mempertahankan pilihan tersimpannya."],
  "events":["PLAY, PROGRESS, CLAIM","MAIN, MAJU, KLAIM","Weekly: Heavenly Trials has its own attempts and reset. Journey milestones: Boss Hunt, Pilgrimage, Ladder, Treasure Hunt and Five Elements follow their displayed conditions. Limited: Odyssey follows its confirmed schedule and earned-claim window.","Mingguan: Trial Surgawi memiliki percobaan dan reset sendiri. Milestone Journey: Perburuan Boss, Ziarah, Tangga Surgawi, Perburuan Harta dan Lima Elemen mengikuti syaratnya. Terbatas: Odyssey mengikuti jadwal terkonfirmasi dan masa klaim hadiah yang telah diperoleh."],
  "pavilion":["A TARGET FOR YOUR BUILD","TARGET UNTUK BUILDMU","Jade & Seals and Paid Jade have separate targets and guarantee progress. The selected mode shows its actual cost. Rarity guarantee and Wish Fate are different promises; changing a target can reset Fate as explained in Info.","Jade & Segel dan Jade Berbayar memiliki target dan progres jaminan terpisah. Mode yang dipilih menampilkan biaya aktual. Jaminan rarity dan Wish Fate berbeda; mengganti target dapat mereset Fate sesuai penjelasan Info."],
@@ -94,10 +95,21 @@ func _preset(data: Dictionary) -> void:
   var a: float=float(before[row[0]])*row[2];var b: float=float(after[row[0]])*row[2];body.add_child(label("%s %.1f → %.1f (%+.1f)"%[row[1],a,b,b-a],24,Jade if b>=a else Color("f39787")))
  for pair: Array in [[before,copy("CURRENT","SEKARANG")],[after,"PRESET"]]:
   var model: Dictionary=pair[0];section(body,pair[1],"%s %d/4 · %s"%[model.set.display_name,model.set.piece_count,str(model.passive.get("name",copy("No active four-piece passive","Tanpa pasif empat set")))])
- if PlayerCompanion.preset_problem(index).is_empty():body.add_child(button(copy("APPLY THIS PRESET","PAKAI PRESET INI"),func():
-  if PlayerCompanion.apply_preset(index):close()
+ var problem: String=PlayerCompanion.preset_problem(index)
+ if problem.is_empty():body.add_child(button(copy("APPLY THIS PRESET","PAKAI PRESET INI"),func():
+  if PlayerCompanion.apply_preset(index):
+   for child: Node in body.get_children():
+    body.remove_child(child)
+    child.queue_free()
+   section(body,copy("PRESET EQUIPPED","PRESET TERPASANG"),str(preset.name))
+   var scroll: ScrollContainer=body.get_parent() as ScrollContainer
+   if scroll!=null:scroll.scroll_vertical=0
   else:section(body,copy("NOT APPLIED","BELUM DIPAKAI"),copy("Ownership, gear or run status changed. Review the Journal.","Kepemilikan, gear atau status run berubah. Periksa Jurnal."))))
- else:section(body,copy("PREVIEW ONLY","PRATINJAU SAJA"),copy("Match verified gear and ownership; finish combat or save recovery before applying.","Samakan gear terverifikasi dan kepemilikan; selesaikan combat atau pemulihan save sebelum memakai."))
+ else:
+  var reason: String=copy("Finish the active run or save recovery first.","Selesaikan run aktif atau pemulihan save dulu.")
+  if problem=="match_server_armory":reason=copy("Match your verified equipped relics to this preset in Hero.","Samakan relik terverifikasi yang terpasang dengan preset ini di Hero.")
+  if problem=="item_not_owned":reason=copy("This preset contains a relic you no longer own. Review its equipment list in the Journal.","Preset ini berisi relik yang sudah tidak dimiliki. Periksa daftar perlengkapannya di Jurnal.")
+  section(body,copy("PREVIEW ONLY","PRATINJAU SAJA"),reason)
 func _timeline(data: Dictionary) -> void:
  var snapshot: Dictionary=load("res://scripts/data/hit_timeline.gd").clean(data)
  section(body,copy("LAST TEN SECONDS · HP EVENTS","SEPULUH DETIK TERAKHIR · HIT KE HP"),copy("Actual HP lost after defenses. Shield blocks are not HP hits. This does not prove attacker position or dodge inputs.","HP aktual yang hilang setelah pertahanan. Blok shield bukan hit ke HP. Catatan ini tidak membuktikan posisi penyerang atau input menghindar."))

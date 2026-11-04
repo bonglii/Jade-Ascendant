@@ -83,7 +83,13 @@ func _ready() -> void:
  var back: Button=Sheet.button("‹",_back);back.size_flags_horizontal=Control.SIZE_SHRINK_CENTER;back.custom_minimum_size.x=44;heading.add_child(back)
  var title: Label=Sheet.label(Sheet.copy("SECT TRAINING COURT","PELATARAN LATIHAN SEKTE"),20,Sheet.GOLD);title.size_flags_horizontal=Control.SIZE_EXPAND_FILL;heading.add_child(title)
  _mode_picker=OptionButton.new();_mode_picker.name="PracticeMode";_mode_picker.custom_minimum_size.y=48;_mode_picker.fit_to_longest_item=false
- for i: int in range(MODES.size()):_mode_picker.add_item(Sheet.copy(TITLES_EN[i],TITLES_ID[i]))
+ for i: int in range(MODES.size()):
+  var goal := "Build"
+  if MODES[i] in ["boss", "pattern", "gauntlet"]:
+   goal = Sheet.copy("Guardian", "Penjaga")
+  elif MODES[i] in ["seal", "priority", "rotation"]:
+   goal = Sheet.copy("Challenge", "Tantangan")
+  _mode_picker.add_item("%s · %s" % [goal, Sheet.copy(TITLES_EN[i], TITLES_ID[i])])
  _mode_picker.select(MODES.find(mode))
  _mode_picker.item_selected.connect(_select_mode);box.add_child(_mode_picker)
  var controls:=HBoxContainer.new();controls.add_theme_constant_override("separation",8);box.add_child(controls)
@@ -293,7 +299,7 @@ func _finish(outcome: String,completed: bool=false) -> void:
   var row: Dictionary={"label":mode+" · "+Skill.get_upgrade_display_name(ATTACKS[_skills.selected])+" · Lv.%d · %ds"%[int(_record_context.level),roundi(elapsed)],"time_ms":clampi(roundi(elapsed*1000),1,180000),"damage":_outgoing,"hits":player.get_node("WeaponManager/RunCombatLedger").hp_hits,"score":"damage" if _active_mode()=="dummy" else "time"}
   var improved: bool=PlayerCompanion.record_training(_record_context,row,_owner)
   outcome+=Sheet.copy(" · PERSONAL BEST"," · REKOR PRIBADI") if improved else ""
- _status.text=outcome;_start_button.text=Sheet.copy("TRY AGAIN","COBA LAGI");_start_button.disabled=false
+ _status.text=outcome;_start_button.text=Sheet.copy("REPEAT SETUP","ULANG SETUP");_start_button.disabled=false
 func _fit_arena() -> void:
  var accepts_input: bool=_running and (_setup==null or not _setup.visible) and not get_tree().paused
  if _joystick.is_processing_input()!=accepts_input:

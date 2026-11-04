@@ -1203,7 +1203,6 @@ func enter_phase_two() -> void:
 	queue_redraw()
 	CombatFeedback.pulse(global_position, "level")
 	CombatFeedback.actor_action(self, PHASE_TWO_VISUAL_DURATION)
-	AudioManager.play_sfx("level")
 	phase_changed.emit(current_phase)
 
 	_update_facing_to_player()

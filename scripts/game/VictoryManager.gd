@@ -93,7 +93,9 @@ func _on_boss_defeated() -> void:
 		return
 
 	victory_processed = true
-	AudioManager.play_sfx("victory")
+	var hud: Node = get_parent().get_node_or_null("HUD")
+	if hud != null and hud.has_method("dismiss_run_controls"):
+		hud.dismiss_run_controls()
 
 	DebugLogger.system(str("=========================================="))
 	DebugLogger.system(str("VICTORY!"))
@@ -101,11 +103,16 @@ func _on_boss_defeated() -> void:
 
 	var record_run_id: String=JourneyManager.m7d_run_id
 	route_boss_defeat_reward()
+	var journey_before: Dictionary = JourneyManager.build_save_data()
 	var stage_completion := complete_journey_stage()
 	if not grant_victory_reward(stage_completion):
+		JourneyManager.unlocked_stage_keys.assign(journey_before.unlocked_stage_keys)
+		JourneyManager.cleared_stage_keys.assign(journey_before.cleared_stage_keys)
+		JourneyManager.active_run_chapter_id = int(journey_before.active_run_chapter_id)
+		JourneyManager.active_run_stage_id = int(journey_before.active_run_stage_id)
 		get_tree().paused = true
 		if victory_ui != null:
-			victory_ui.call("show_victory")
+			victory_ui.call("show_victory", {}, false)
 		return
 	if bool(stage_completion.get("completed", false)):
 		_capture_personal_record.call_deferred(stage_completion,record_run_id)
@@ -120,7 +127,7 @@ func _on_boss_defeated() -> void:
 		push_error(str("ERROR: CheckPointManager tidak valid!"))
 
 	if victory_ui != null and victory_ui.has_method("show_victory"):
-		victory_ui.call("show_victory")
+		victory_ui.call("show_victory", stage_completion)
 	else:
 		push_error(str("ERROR: VictoryUI tidak valid!"))
 
@@ -300,8 +307,16 @@ func grant_victory_reward(stage_completion: Dictionary) -> bool:
 			+ str(grant_result.get("error", "unknown error"))
 		)
 		return false
-	if bool(stage_completion.get("completed",false)) and int(stage_completion.get("stage_id",0)) == 5:
-		story_entry_id = str(preload("res://scripts/data/chronicle_catalog.gd").for_chapter(int(stage_completion.chapter_id),"clear").get("id",""))
+	if bool(stage_completion.get("completed", false)) and was_first_clear:
+		var story_kind := ""
+		match int(stage_completion.stage_id):
+			3: story_kind = "fragment"
+			5: story_kind = "clear"
+		if not story_kind.is_empty():
+			var catalog := preload("res://scripts/data/chronicle_catalog.gd")
+			var story: Dictionary = catalog.for_chapter(int(stage_completion.chapter_id), story_kind)
+			if not story.is_empty() and catalog.unlocked(story, JourneyManager.cleared_stage_keys, JourneyManager.cosmetic_badges):
+				story_entry_id = str(story.get("id", ""))
 	if oath_won:
 		story_entry_id = "verdant_oath_fragment"
 		JourneyManager.cosmetic_badges = domains.journey.cosmetic_badges.duplicate()

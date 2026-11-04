@@ -180,15 +180,20 @@ func _open_rewards() -> void:
  var heading: String="TRIAL CLEARED" if bool(outcome.get("won",false)) else "TRIAL COMPLETE" if not outcome.is_empty() else "WEEKLY REWARDS"
  var body: VBoxContainer=_modal_body(heading,"rewards")
  if not outcome.is_empty():
-  if client!=null and client.mutation_busy():body.add_child(_label("Securing result with the server…",16,Style.JADE))
+  var verified: bool = bool(outcome.get("committed", false))
+  var result_status := "SERVER RESULT CONFIRMED" if verified else "AWAITING SERVER CONFIRMATION"
+  if SettingsManager.language == "id":
+   result_status = "HASIL DIKONFIRMASI SERVER" if verified else "MENUNGGU KONFIRMASI SERVER"
+  body.add_child(_label(result_status,16,Style.JADE))
   if int(outcome.get("personal_risk",0))>0:body.add_child(_label(("RISIKO PRIBADI %d · HADIAH TETAP" if SettingsManager.language=="id" else "PERSONAL RISK %d · SAME REWARD")%int(outcome.personal_risk),14,Style.JADE))
   var seconds: int=int(float(outcome.get("time_ms",0))/1000.0)
   body.add_child(_label("TIER %d · %02d:%02d"%[int(outcome.tier),int(float(seconds)/60.0),seconds%60],18,Style.GOLD))
   var card: Dictionary=preload("res://scripts/data/run_share_snapshot.gd").trials(outcome)
   if not card.is_empty():_button(body,"KARTU RUN  ›" if SettingsManager.language=="id" else "RUN CARD  ›",func():preload("res://scripts/ui/run_share_panel.gd").open(self,card))
   if not bool(outcome.get("won",false)):body.add_child(_label("Your Journey is safe. Return for another free attempt.",17,Style.TEXT))
- body.add_child(_label("CLEAR · SURVIVOR · UNTOUCHED",16,Style.GOLD))
+ body.add_child(_label("MEDALI · CLEAR / SURVIVOR / UNTOUCHED" if SettingsManager.language=="id" else "MEDALS · CLEAR / SURVIVOR / UNTOUCHED",16,Style.GOLD))
  body.add_child(_label("Medals celebrate your best run. Every clear earns the same tier reward, once per week.",16))
+ body.add_child(_label("HADIAH MINGGUAN" if SettingsManager.language=="id" else "WEEKLY REWARD",16,Style.GOLD))
  _display_reward(body,RewardPreview.for_week(client.snapshot if client!=null else {},str(outcome.get("week",""))))
  if client!=null and client.snapshot.get("previous") is Dictionary and not client.snapshot.get("previous_progress",[]).is_empty():
   body.add_child(_label(tr("PREVIOUS WEEK · EARNED REWARDS"),14,Style.JADE))

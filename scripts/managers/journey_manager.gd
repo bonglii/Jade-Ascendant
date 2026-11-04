@@ -121,6 +121,19 @@ func is_chapter_unlocked(chapter_id: int) -> bool:
 func get_active_stage_ids(chapter_id: int) -> Array:
 	return CampaignStagePolicy.active_ids(chapter_id, get_stage_ids(chapter_id))
 
+## Return the next visible campaign entry once a clear has been committed.
+func get_next_playable_stage(chapter_id: int, stage_id: int) -> Vector2i:
+	for candidate_chapter: int in get_chapter_ids():
+		if candidate_chapter < chapter_id:
+			continue
+		for candidate_stage: int in get_active_stage_ids(candidate_chapter):
+			if candidate_chapter == chapter_id and candidate_stage <= stage_id:
+				continue
+			if is_stage_unlocked(candidate_chapter, candidate_stage) and is_stage_implemented(candidate_chapter, candidate_stage):
+				return Vector2i(candidate_chapter, candidate_stage)
+			return Vector2i.ZERO
+	return Vector2i.ZERO
+
 func get_active_stage_count() -> int:
 	var total: int = 0
 	for chapter_id: int in get_chapter_ids():

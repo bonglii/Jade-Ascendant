@@ -444,7 +444,7 @@ func _refresh() -> void:
 	claim_all_button.text = (
 		tr("CLAIM ALL  ◆  %d") % reward_total
 		if ready_count > 0
-		else tr("ALL REWARDS SETTLED")
+		else ("BELUM ADA HADIAH SIAP" if SettingsManager.language == "id" else "NO REWARDS READY")
 	)
 
 	_sync_trial_cards(_get_sorted_record_ids())

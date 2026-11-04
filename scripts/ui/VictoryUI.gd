@@ -67,6 +67,9 @@ func record_hero_level(level: int) -> void:
 		reward_summary_label.get_parent().add_child(hero_level_summary)
 	hero_level_summary.text = ("LEVEL HERO %d → %d" if SettingsManager.language == "id" else "HERO LEVEL %d → %d") % [hero_level_from, hero_level_to]
 
+var _next_stage_button: Button
+var _next_stage := Vector2i.ZERO
+var _clear_saved: bool = false
 var intro_tween: Tween = null
 var victory_seal: TextureRect = null
 var reward_chip_row: GridContainer = null
@@ -88,19 +91,46 @@ func _ready() -> void:
 	var ceremony: Node = preload("res://scripts/ui/result_ceremony.gd").new()
 	ceremony.name = "ResultCeremony"
 	ceremony.configure(self, "victory")
+	_next_stage_button = Button.new()
+	_next_stage_button.name = "NextStagePreview"
+	_next_stage_button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_next_stage_button.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
+	_next_stage_button.pressed.connect(_open_next_stage)
+	_next_stage_button.hide()
+	content.add_child(_next_stage_button)
+	content.move_child(_next_stage_button, main_menu_button.get_index())
 	add_child(ceremony)
 	hide()
 
-func show_victory() -> void:
+func show_victory(completion: Dictionary = {}, clear_saved: bool = true) -> void:
+	_clear_saved = clear_saved and not SaveManager.is_progress_read_only()
+	_next_stage = Vector2i.ZERO
+	if _clear_saved and bool(completion.get("completed", false)):
+		_next_stage = JourneyManager.get_next_playable_stage(
+			int(completion["chapter_id"]), int(completion["stage_id"])
+		)
+	_next_stage_button.visible = _next_stage != Vector2i.ZERO
+	if _next_stage_button.visible:
+		var stage: Dictionary = JourneyManager.get_stage_data(_next_stage.x, _next_stage.y)
+		var newly_available: bool = bool(completion.get("was_first_clear", false)) and not JourneyManager.is_stage_cleared(_next_stage.x, _next_stage.y)
+		var prefix := "PREVIEW STAGE"
+		if SettingsManager.language == "id":
+			prefix = "TAHAP BARU" if newly_available else "LIHAT TAHAP"
+		elif newly_available:
+			prefix = "NEW STAGE"
+		_next_stage_button.text = "%s · %s ›" % [prefix, stage.get("display_name", "%d-%d" % [_next_stage.x, _next_stage.y])]
+		preload("res://scripts/ui/result_ceremony.gd").style_button(main_menu_button, "navy")
 	get_node("ResultCeremony").fit()
 	get_node("ResultCeremony").call_deferred("capture_run_report")
 	_refresh_stage_identity()
 	_refresh_reward_summary()
-	if SaveManager.is_progress_read_only():
+	if not _clear_saved:
 		clear_state_label.text = tr("SAVE PENDING")
 		reward_summary_label.text = tr(
 			"A save needs recovery. Close and reopen the game before continuing."
 		)
+		if not SaveManager.is_progress_read_only():
+			reward_summary_label.text = "Hasil belum tersimpan. Kembali ke Home untuk memeriksa progres." if SettingsManager.language == "id" else "The result could not be saved. Return Home to check your progress."
 	_play_intro()
 	_m7c_last_message = ""
 	_refresh_m7c_offer()
@@ -681,6 +711,7 @@ func _play_intro() -> void:
 	clear_state_label.modulate.a = 0.0
 	reward_panel.modulate.a = 0.0
 	main_menu_button.modulate.a = 0.0
+	_next_stage_button.modulate.a = 0.0
 
 	if victory_seal != null:
 		victory_seal.modulate.a = 0.0
@@ -693,7 +724,12 @@ func _play_intro() -> void:
 	show()
 
 	intro_tween = create_tween()
+	intro_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	intro_tween.set_parallel(true)
+	if _clear_saved:
+		intro_tween.tween_callback(AudioManager.play_sfx.bind("victory")).set_delay(
+			0.0 if SettingsManager.reduced_effects else INTRO_PANEL_DELAY
+		)
 	intro_tween.tween_property(
 		victory_backdrop,
 		"modulate:a",
@@ -741,6 +777,7 @@ func _play_intro() -> void:
 		0.26
 	).set_delay(0.34)
 
+	intro_tween.tween_property(_next_stage_button, "modulate:a", 1.0, 0.24).set_delay(0.44)
 	intro_tween.tween_property(
 		main_menu_button,
 		"modulate:a",
@@ -757,6 +794,7 @@ func _reset_intro_visual_state() -> void:
 	clear_state_label.modulate.a = 1.0
 	reward_panel.modulate.a = 1.0
 	main_menu_button.modulate.a = 1.0
+	_next_stage_button.modulate.a = 1.0
 	if victory_seal != null:
 		victory_seal.modulate.a = 1.0
 		victory_seal.scale = Vector2.ONE
@@ -824,6 +862,9 @@ func _process(delta: float) -> void:
 func _refresh_m7c_offer() -> void:
 	if _m7c_bridge == null or _m7c_row == null:
 		return
+	if not _clear_saved:
+		_m7c_row.hide()
+		return
 	var status: Dictionary = _m7c_bridge.call("get_offer_status")
 	_m7c_row.visible = bool(status.get("visible", false))
 	if not _m7c_row.visible:
@@ -854,6 +895,16 @@ func _on_m7c_offer_finished(success: bool, message: String) -> void:
 	if success:
 		_refresh_reward_summary()
 	_refresh_m7c_offer()
+
+func _open_next_stage() -> void:
+	if SceneTransitionManager.is_transitioning or SaveManager.is_progress_read_only() or not _clear_saved:
+		return
+	if _next_stage == Vector2i.ZERO or not JourneyManager.select_stage(_next_stage.x, _next_stage.y):
+		return
+	SceneTransitionManager.transition_to("res://scenes/ui/stage_select.tscn", {
+		"title": "Perjalanan berikutnya" if SettingsManager.language == "id" else "Next Journey",
+		"minimum_display_time": 0.25
+	})
 
 func _on_main_menu_pressed() -> void:
 	if SceneTransitionManager.is_transitioning:

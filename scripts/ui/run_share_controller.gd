@@ -87,6 +87,9 @@ func _export(share: bool) -> void:
 			return
 		_save.disabled = true
 		_share.disabled = true
+		_status.text = "Menyiapkan gambar untuk dibagikan…" if SettingsManager.language == "id" else "Preparing image to share…"
+		if not share:
+			_status.text = "Menyimpan PNG…" if SettingsManager.language == "id" else "Saving PNG…"
 		_native.call("exportRunCardV1",_request,ProjectSettings.globalize_path(_temporary),share)
 	else:
 		var dialog := FileDialog.new()

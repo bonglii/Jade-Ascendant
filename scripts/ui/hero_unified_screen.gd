@@ -519,10 +519,12 @@ func _show_detail(id: String,force: bool=false) -> void:
  detail_progress_key=_detail_progress_key()
  var body: VBoxContainer=_make_sheet("item")
  var data: Dictionary=EquipmentManager.get_item_data(id) if EquipmentManager.has_item_definition(id) else InventoryManager.get_item_data(id)
+ _paragraph(body,str(data.get("display_name",id)),24,GOLD)
+ if EquipmentManager.has_item_definition(id):
+  _comparison(body,id)
  var stage:=Control.new();stage.name="RelicArtStage";stage.clip_contents=true;stage.custom_minimum_size.y=120*popup_unit;body.add_child(stage)
  var landscape:=_texture("res://assets/ui/hero/imperial_v4/sanctuary_banner.png");landscape.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_COVERED;landscape.modulate=Color(.45,.58,.55);stage.add_child(landscape);landscape.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
  var icon:=_texture(Visual.get_icon_path(id));icon.name="DetailIcon";stage.add_child(icon);icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);icon.offset_top=8;icon.offset_bottom=-8
- _paragraph(body,str(data.get("display_name",id)),24,GOLD)
  if not EquipmentManager.has_item_definition(id):
   _paragraph(body,tr("MATERIAL • Quantity %d")%InventoryManager.get_item_count(id),16,JADE)
   detail_values.material=body.get_child(body.get_child_count()-1)
@@ -541,7 +543,6 @@ func _show_detail(id: String,force: bool=false) -> void:
   body.get_child(body.get_child_count()-1).name="UpgradePathLabel"
  _paragraph(body,Visual.get_stat_summary(effective),18)
  detail_values.stats=body.get_child(body.get_child_count()-1)
- _comparison(body,id)
  if weapon:
   _paragraph(body,tr("Weapons are independent of armor sets. Permanent weapon levels are separate from Lv.1–7 refinement inside a run."),14)
  else:

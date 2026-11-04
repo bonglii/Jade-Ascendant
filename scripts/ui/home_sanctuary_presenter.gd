@@ -214,7 +214,7 @@ func _refresh_journey() -> void:
  if journey_button.button_pressed:return
  _goal=Goals.choose_progression(Goals.context(get_tree().root,checkpoint_available))
  var pinned: Dictionary=PlayerCompanion.goal_progress()
- _pinned_goal.visible=not pinned.is_empty() and _goal.action!="recovery"
+ _pinned_goal.visible=not pinned.is_empty() and _goal.action not in ["recovery", "continue"]
  if not pinned.is_empty():
   var target_name: String=load("res://scripts/data/equipment_set_catalog.gd").get_display_name(str(pinned.id).trim_prefix("set:")) if str(pinned.id).begins_with("set:") else str(EquipmentManager.get_item_data(str(pinned.id)).get("display_name",pinned.id))
   _pinned_goal.text="TARGET · %s · %d/%d ›"%[target_name,pinned.owned,pinned.total]

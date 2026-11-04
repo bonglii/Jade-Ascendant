@@ -331,7 +331,7 @@ func _return_to_journey() -> void:
 func _build_presentation_options() -> void:
 	var parent_box: VBoxContainer = get_node("SafeArea/Scroll/Content") as VBoxContainer
 	var source_card: PanelContainer = get_node("SafeArea/Scroll/Content/AudioCard") as PanelContainer
-	var guide: Button=load("res://scripts/experience/menu_guide.gd").button(_local("COMFORT PREVIEW & GUIDE ›","PRATINJAU & PANDUAN KENYAMANAN ›"),func():load("res://scripts/experience/menu_guide.gd").open(self,"settings"));guide.name="ComfortGuide";parent_box.add_child(guide)
+	var guide: Button=load("res://scripts/experience/menu_guide.gd").button(_local("COMFORT PREVIEW & GUIDE ›","PRATINJAU & PANDUAN KENYAMANAN ›"),func():load("res://scripts/experience/menu_guide.gd").open(self,"settings"));guide.name="ComfortGuide"
 	# Restore Audio Defaults belongs to the Audio card, not between unrelated cards.
 	var audio_content: VBoxContainer = source_card.get_node("AudioContent") as VBoxContainer
 	var audio_actions: HBoxContainer = parent_box.get_node("Actions") as HBoxContainer
@@ -402,6 +402,12 @@ func _build_presentation_options() -> void:
 	)
 	var comfort_box: VBoxContainer = comfort_card.get_child(0) as VBoxContainer
 	_add_section_rule(comfort_box, JADE)
+	comfort_box.add_child(guide)
+	var basics: Button = load("res://scripts/experience/menu_guide.gd").button(
+		_local("COMBAT FIELD GUIDE ›", "PANDUAN COMBAT ›"),
+		func(): load("res://scripts/experience/menu_guide.gd").open(self, "combat_basics")
+	)
+	control_box.add_child(basics)
 	var entries: Array[Dictionary] = [
 		{"key":"screen_shake", "title":_local("Screen Shake", "Guncangan Layar"),
 		 "hint":_local("Camera motion on heavy impacts.", "Gerakan kamera saat hantaman besar.")},
@@ -1211,14 +1217,23 @@ func _confirm_progress_backup(restore: bool) -> void:
 	if not restore and not ProgressBackupManager.can_backup(): return
 	var account_binding: String = GoogleAccountManager.get_monetization_account_binding()
 	var revision: int = ProgressBackupManager.revision
+	var backup: Dictionary = ProgressBackupManager.get_status()
 	var dialog := ConfirmationDialog.new(); dialog.title = _local("Restore progress" if restore else "Save progress", "Pulihkan progress" if restore else "Simpan progress"); dialog.dialog_autowrap = true
 	dialog.dialog_text = _local("Replace local progress with this account's backup. The game will close after restoring; reopen it to play." if restore else "Save this device's progress to this Google account and enable automatic menu backups. An existing cloud backup will be replaced.", "Ganti progress lokal dengan backup akun ini. Game ditutup setelah pemulihan; buka kembali untuk bermain." if restore else "Simpan progress perangkat ini ke akun Google dan aktifkan backup otomatis saat di menu. Backup cloud sebelumnya akan diganti.")
+	var account_hint: String = GoogleAccountManager.get_known_account_hint(account_binding)
+	if not account_hint.is_empty():
+		dialog.dialog_text += "\n" + _local("Google account %s", "Akun Google %s") % account_hint
+	var updated: int = int(backup.get("updated_at", 0))
+	if updated > 0:
+		var stamp: String = Time.get_datetime_string_from_unix_time(updated).replace("T", " ")
+		dialog.dialog_text += "\n" + _local("Cloud backup %s UTC", "Backup cloud %s UTC") % stamp
 	dialog.ok_button_text = _local("RESTORE & CLOSE" if restore else "SAVE", "PULIHKAN & TUTUP" if restore else "SIMPAN")
 	add_child(dialog)
 	dialog.confirmed.connect(func():
 		if account_binding == GoogleAccountManager.get_monetization_account_binding() and revision == ProgressBackupManager.revision:
 			if restore: ProgressBackupManager.restore_and_close()
 			else: ProgressBackupManager.backup_now()
+		else: ProgressBackupManager.refresh()
 		dialog.queue_free())
 	dialog.canceled.connect(dialog.queue_free)
 	dialog.popup_centered(Vector2i(int(minf(480.0, get_viewport_rect().size.x - 40.0)), 240))

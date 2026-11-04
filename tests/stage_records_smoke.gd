@@ -97,6 +97,8 @@ func run() -> void:
  # Restore fresh data, then real boss defeat transaction. Final lethal HP loss is recorded after return.
  ledger.restore({"version":1,"totals":{},"partial":false,"metrics":{"hits":0,"deaths":0,"complete":true}})
  world.get_node("SurvivalManager").survival_time=180.25
+ var progress: Node = root.get_node("ProgressionManager")
+ progress.hero_experience_total = progress.get_hero_experience_to_next_for_level(1) - 1
  var victory: Node=world.get_node("VictoryManager")
  var boss: Node=spawner.boss_scene.instantiate();world.add_child(boss);boss.set_physics_process(false);boss.current_hp=17;boss.phase_transition_invulnerability=0;boss.phase_two_hp_ratio=0
  victory._on_boss_spawned(boss)
@@ -104,6 +106,14 @@ func run() -> void:
  check(victory.victory_processed and victory.record_result in ["best","saved"],"actual victory writes personal record after reward transaction")
  check(journey.stage_records["1-1"].last.damage.fire_orb==17,"final boss killing hit included in saved report")
  check(ledger.frozen,"ledger frozen at post-hit record boundary")
+ var result: Node = world.get_node("VictoryUI")
+ var hero_level: Label = result.find_child("VictoryHeroLevel", true, false)
+ check(hero_level != null and hero_level.is_visible_in_tree() and hero_level.text.contains("1 → 2"), "committed Hero Level is inside Victory")
+ var level_notice: Node = root.get_node("RewardDeliveryPresenter/HeroLevelNotice")
+ check(not level_notice.panel.visible and level_notice.to_level == 0, "Victory consumes its Hero Level without a toast")
+ var next_stage: Button = result.find_child("NextStagePreview", true, false)
+ check(next_stage != null and next_stage.is_visible_in_tree() and result._next_stage == Vector2i(1, 2), "committed clear offers the next active stage preview")
+ check(not checkpoint.save_checkpoint(), "victory cannot recreate the finished checkpoint")
  var summary: Label=world.get_node("VictoryUI").find_child("PersonalRecordSummary",true,false)
  check(summary!=null and summary.visible and summary.text.contains("03:00"),"result exposes saved run record")
  var cloud: Dictionary=preload("res://scripts/managers/progress_backup_snapshot.gd").capture()

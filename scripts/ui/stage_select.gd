@@ -251,11 +251,11 @@ func _build_journey_view() -> void:
 	map_scroll.add_child(canvas)
 	_build_stage_map(canvas, accent, metrics, stage_ids)
 	canvas.resized.connect(_fit_map_width.bind(canvas))
-	map_scroll.resized.connect(func():_scroll_stage_map_to_selected.call_deferred(metrics,stage_ids))
+	map_scroll.get_v_scroll_bar().changed.connect(_scroll_stage_map_to_selected, CONNECT_DEFERRED)
 	_fit_map_width.call_deferred(canvas)
 
 	layout.add_child(_build_selected_stage_panel(accent))
-	call_deferred("_scroll_stage_map_to_selected", metrics, stage_ids)
+	_scroll_stage_map_to_selected.call_deferred()
 
 
 func _get_stage_map_metrics(stage_count: int) -> Dictionary:
@@ -626,6 +626,11 @@ func _refresh_selected_stage_panel() -> void:
 	if _preview_title.text != next_title:
 		_preview_title.text = next_title
 	var next_hint: String = str(data.get("description", ""))
+	var record: Dictionary = JourneyManager.stage_records.get(JourneyManager.get_stage_key(chapter_id, preview_stage_id), {})
+	if not record.is_empty() and int(record.get("best_ms", 0)) > 0:
+		var time_text: String = preload("res://scripts/data/stage_record_book.gd").clock(int(record["best_ms"]))
+		var best_label := "Rekor" if SettingsManager.language == "id" else "Best time"
+		next_hint += "\n%s · %s" % [best_label, time_text]
 	if _preview_hint.text != next_hint:
 		_preview_hint.text = next_hint
 	var next_reward: String = str(state.get("reward_text", "")).replace("\n"," · ")
@@ -906,24 +911,12 @@ func _stage_status_color(status: String, accent: Color) -> Color:
 	return Color(0.62, 0.66, 0.66, 1.0)
 
 
-func _scroll_stage_map_to_selected(metrics: Dictionary, stage_ids: Array) -> void:
-	if map_scroll == null or stage_ids.is_empty():
+func _scroll_stage_map_to_selected() -> void:
+	var button: Control = _stage_node_refs.get(preview_stage_id, {}).get("button") as Control
+	if not is_instance_valid(map_scroll) or not is_instance_valid(button):
 		return
-	var index := stage_ids.find(preview_stage_id)
-	if index < 0:
-		return
-	var top_y := float(metrics.get("top_y", 122.0))
-	var boss_gap := float(metrics.get("boss_gap", 238.0))
-	var normal_gap := float(metrics.get("normal_gap", 176.0))
-	var distance := stage_ids.size() - 1 - index
-	var y := top_y
-	if distance > 0:
-		y += boss_gap + float(distance - 1) * normal_gap
-	var target_scroll: int=maxi(int(y + 45.0 - maxf(map_scroll.size.y,1.0)*0.5),0)
-	var plate: Control=_stage_node_refs.get(preview_stage_id,{}).get("plate") as Control
-	if is_instance_valid(plate):
-		target_scroll=maxi(target_scroll,ceili(plate.position.y+plate.size.y-map_scroll.size.y+8.0))
-	map_scroll.scroll_vertical=target_scroll
+	var center_y: float = button.position.y + button.size.y * 0.5
+	map_scroll.scroll_vertical = maxi(0, roundi(center_y - map_scroll.size.y * 0.5))
 
 
 func _hide_scrollbar_chrome(scroll: ScrollContainer) -> void:
@@ -975,7 +968,8 @@ func _fit_phone() -> void:
 	if is_instance_valid(_realm_subtitle):_realm_subtitle.visible=not compact
 	if is_instance_valid(_detail_art):_detail_art.visible=not compact
 	if is_instance_valid(_preview_hint):
-		_preview_hint.visible = true
+		_preview_hint.max_lines_visible = 1 if compact else 3
+		_preview_hint.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 
 func _fit_map_width(canvas: Control) -> void:
 	if not is_instance_valid(canvas):return

@@ -81,6 +81,8 @@ func _ready() -> void:
 	pause_main_menu_button.pressed.connect(_on_pause_main_menu_pressed)
 	if not level_up_panel.visibility_changed.is_connected(_on_level_up_visibility_changed):
 		level_up_panel.visibility_changed.connect(_on_level_up_visibility_changed)
+	resume_button.text = "LANJUT MAIN" if SettingsManager.language == "id" else "RESUME RUN"
+	pause_main_menu_button.text = "SIMPAN & KEMBALI" if SettingsManager.language == "id" else "SAVE & RETURN"
 	_capture_pause_presentation_baseline()
 	_build_encounter_banner()
 	SceneTransitionManager.set_back_handler(handle_system_back)
@@ -228,7 +230,7 @@ func _refresh_level_and_exp(force: bool) -> void:
 		player.experience_to_next_level
 	)
 	if force or current_level != last_level:
-		level_label.text = "LV. %d" % current_level
+		level_label.text = ("LV. RUN %d" if SettingsManager.language == "id" else "RUN LV. %d") % current_level
 		if not force and last_level >= 0:
 			_pulse_control(level_label, HUD_GOLD, 1.18)
 		last_level = current_level
@@ -740,7 +742,17 @@ func _hide_encounter_banner() -> void:
 	_encounter_banner.scale = Vector2.ONE
 
 
+func dismiss_run_controls() -> void:
+	if is_instance_valid(_in_run_stats_overlay):
+		_in_run_stats_overlay.call("close_snapshot")
+	level_up_panel.hide()
+	pause_overlay.hide()
+
 func handle_system_back() -> void:
+	var victory: CanvasLayer = get_parent().get_node_or_null("VictoryUI") as CanvasLayer
+	var defeat: CanvasLayer = get_parent().get_node_or_null("GameOverUI") as CanvasLayer
+	if (victory != null and victory.visible) or (defeat != null and defeat.visible):
+		return
 	if SceneTransitionManager.is_transitioning:
 		return
 	if _in_run_stats_overlay != null and _in_run_stats_overlay.visible:
@@ -792,8 +804,12 @@ func _on_pause_main_menu_pressed() -> void:
 		pause_main_menu_button.text = tr("SAVE FAILED • TRY AGAIN")
 		var hint: Label = pause_overlay.find_child("CheckpointHint", true, false) as Label
 		if hint != null:
-			hint.text = tr("Your run is still open. Free device storage or retry saving before leaving.")
+			if SaveManager.is_progress_read_only():
+				hint.text = tr("A save needs recovery. Close and reopen the game before continuing.")
+			else:
+				hint.text = "Run masih terbuka. Coba simpan lagi sebelum kembali." if SettingsManager.language == "id" else "The run is still open. Try saving again before returning."
 		return
+	pause_main_menu_button.text = "SIMPAN & KEMBALI" if SettingsManager.language == "id" else "SAVE & RETURN"
 	# Keep pause visible if asynchronous loading fails.
 	var change_error: Error = SceneTransitionManager.transition_to(
 		"res://scenes/ui/main_menu.tscn",

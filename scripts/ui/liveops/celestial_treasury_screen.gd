@@ -968,7 +968,8 @@ func _update_details() -> void:
 		and (_message_product_id.is_empty() or _message_product_id == _selected_id)
 	):
 		body += "\n" + _billing_message
-	body += "\n\n" + ("Pembayaran tertunda: tunggu keputusan Play dan saldo terverifikasi. Pulihkan pembelian yang memenuhi syarat melalui tombol di bawah; tidak perlu membeli ulang untuk memperbaiki receipt." if SettingsManager.language=="id" else "Pending payment: wait for Play approval and verified balance. Restore eligible purchases below; do not purchase again to repair a pending receipt.")
+	if _selected_id in _pending_products:
+		body += "\n\n" + ("Pembayaran tertunda: tunggu keputusan Play dan saldo terverifikasi. Pulihkan pembelian yang memenuhi syarat melalui tombol di bawah; tidak perlu membeli ulang untuk memperbaiki receipt." if SettingsManager.language=="id" else "Pending payment: wait for Play approval and verified balance. Restore eligible purchases below; do not purchase again to repair a pending receipt.")
 	if _details_body.text != body:
 		_details_body.text = body
 

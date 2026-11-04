@@ -21,6 +21,7 @@ var _focus_aura_info: Label
 var _focus_aura_action: Button
 var _focus_aura_id: String = "plain"
 var _focus_aura_buttons: Dictionary = {}
+var _focus_summon_summary: Label
 var _focus_result_stats: Label
 var _focus_result_hero: Button
 var _focus_mutation_busy: bool = false
@@ -116,6 +117,9 @@ func _build_summon_section() -> void:
 	_build_legendary_mandate()
 	_build_summon_ctas()
 	_focus_normal_row = summon_one_button.get_parent()
+	_focus_summon_summary = _label(locked_root, "", 13, JADE_SOFT)
+	_focus_summon_summary.name = "SummonModeSummary"
+	locked_root.move_child(_focus_summon_summary, summon_controls_stack.get_index())
 	_build_utility_rows()
 	starter_button = _button(locked_root, tr("CLAIM INITIATE GIFT • +10 PAVILION SEALS"), _claim_starter_seals, false, JADE)
 	starter_button.visible = false
@@ -222,6 +226,8 @@ func _refresh_summon_panel() -> void:
 		if verified and not target.is_empty():
 			legendary_remaining.text += "\n" + (_copy("Wish Fate aktif · Legendary berikutnya sesuai target.", "Wish Fate active · next Legendary matches your target.") if bool(snapshot.get("wish_guaranteed", false)) else _copy("Wish Fate · Target dan progres terpisah dari Jade & Segel.", "Wish Fate · Target and progress are separate from Jade & Seals."))
 		_banner_notice.visible = false
+	var mode_copy: String = _copy("Jade Berbayar", "Paid Jade") if paid_mode else _copy("Jade & Segel", "Jade & Seals")
+	_focus_summon_summary.text = "%s · %s\n%s" % [mode_copy, focal_name.text, legendary_remaining.text.get_slice("\n", 0)]
 	_fit_sanctum()
 
 func _refresh_paid_summons() -> void:
@@ -235,6 +241,8 @@ func _refresh_paid_summons() -> void:
 	_paid_status.text = _copy("Jade berbayar: ", "Paid Jade: ") + (_format_count(int(view.balance)) if int(view.get("balance", -1)) >= 0 else "…")
 	_focus_paid_note.visible = paid_mode
 	_focus_paid_note.text = _copy("Segel biasa dipakai lebih dulu. Saldo berbayar tetap tersimpan.", "Use regular Seals first. Your paid balance is retained.") if owns_seals else _copy("Pilih target Legendary di atas. Target dan jaminan Jade berbayar tersimpan terpisah.", "Choose a Legendary target above. Paid Jade target and guarantee are retained separately.")
+	if paid_mode and is_instance_valid(PavilionManager.paid_gameplay) and PavilionManager.paid_gameplay.mutation_pending():
+		_focus_paid_note.text = _copy("Permintaan yang sama sedang diverifikasi atau dipulihkan.", "The same request is being verified or recovered.")
 	_focus_use_seals.visible = paid_mode and owns_seals
 	for action: Button in _paid_buttons:
 		action.disabled = action.disabled or owns_seals
@@ -473,6 +481,8 @@ func _show_landed_entry(entry: Dictionary) -> void:
 	_focus_result_stats.text = EquipmentVisualCatalog.get_stat_summary(EquipmentManager.get_item_data(id))
 	_focus_result_stats.visible = true
 	_focus_result_hero.visible = true
+	if bool(entry.get("duplicate", false)):
+		_focus_result_stats.text += "\n" + _copy("Duplikat · +1 salinan untuk naik bintang", "Duplicate · +1 copy for star ascension")
 	_fit_sanctum()
 
 func _build_formation() -> void:
@@ -482,7 +492,14 @@ func _build_formation() -> void:
 
 func _paint_formation_seal(index: int) -> void:
 	super(index)
-	if is_instance_valid(_focus_result_hero): _focus_result_hero.visible = _formation_opened.size() == summon_reveal_entries.size()
+	if not is_instance_valid(_focus_result_hero):
+		return
+	_focus_result_hero.visible = _formation_opened.size() == summon_reveal_entries.size()
+	if _focus_result_hero.visible:
+		var copies := 0
+		for entry: Dictionary in summon_reveal_entries:
+			copies += int(bool(entry.get("duplicate", false)))
+		_result_state.text = _copy("%d baru · %d duplikat untuk naik bintang", "%d new · %d duplicates for star ascension") % [summon_reveal_entries.size() - copies, copies]
 
 func _open_focus_hero() -> void:
 	if SceneTransitionManager.is_transitioning or _paid_reveal_busy or summon_reveal_busy: return
