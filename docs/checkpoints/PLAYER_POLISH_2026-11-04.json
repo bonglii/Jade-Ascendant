@@ -2,7 +2,7 @@
   "base": "1921495faac5cdf26a7ef660eeeee451c99615eb",
   "branch": "work/player-polish-20261104",
   "authorization": "Owner approved all 33 review items, five implementation batches, integrated QA at end, total change summary and closed-test notes.",
-  "status": "SOURCE_RESTORED_QA_IN_PROGRESS",
+  "status": "AUTHOR_HEADLESS_REVIEW_COMPLETE_DEVICE_REVIEW_PENDING",
   "batches": [
     {
       "batch": 1,
@@ -17,7 +17,7 @@
         27,
         28
       ],
-      "status": "SOURCE_UPDATED_REVIEW_IN_PROGRESS"
+      "status": "SOURCE_POLISHED_AUTHOR_REVIEW_DEVICE_PENDING"
     },
     {
       "batch": 2,
@@ -28,7 +28,7 @@
         24,
         32
       ],
-      "status": "SOURCE_UPDATED_REVIEW_IN_PROGRESS"
+      "status": "SOURCE_POLISHED_AUTHOR_REVIEW_DEVICE_PENDING"
     },
     {
       "batch": 3,
@@ -40,7 +40,7 @@
         16,
         17
       ],
-      "status": "SOURCE_UPDATED_REVIEW_IN_PROGRESS"
+      "status": "SOURCE_POLISHED_AUTHOR_REVIEW_DEVICE_PENDING"
     },
     {
       "batch": 4,
@@ -53,7 +53,7 @@
         19,
         26
       ],
-      "status": "SOURCE_UPDATED_REVIEW_IN_PROGRESS"
+      "status": "SOURCE_POLISHED_AUTHOR_REVIEW_DEVICE_PENDING"
     },
     {
       "batch": 5,
@@ -63,7 +63,7 @@
         31,
         33
       ],
-      "status": "SOURCE_UPDATED_REVIEW_IN_PROGRESS"
+      "status": "SOURCE_POLISHED_AUTHOR_REVIEW_DEVICE_PENDING"
     },
     {
       "batch": 6,
@@ -71,14 +71,14 @@
         23,
         25
       ],
-      "status": "HEADLESS_QA_IN_PROGRESS"
+      "status": "HEADLESS_COMPLETE_NATIVE_AND_PHONE_PENDING"
     }
   ],
-  "qa": "PENDING_FINAL_INTEGRATION",
-  "next": "Verify user journeys and updated screen states with isolated QA. Record outstanding device checks before preparing the closed-test candidate.",
+  "qa": "Integrated headless suites ran with disposable user data outside checkout. Keep QA logs and captures outside Git and the owner project.",
+  "next": "Review the change summary. Confirm native Android layout, first session pacing, account and Share flows, sound and touch, and device performance before calling the build fully verified.",
   "owner_note": "Fresh navbar confirmed safe; old project backed up and renamed.",
-  "publication": "Checkpoint 35a441b published. Subsequent polish commit awaiting branch verification.",
-  "aab": "PENDING",
+  "publication": "Verify the work branch head for the commit containing this checkpoint.",
+  "aab": "PENDING_WINDOWS_EXPORT",
   "phone": "PENDING",
   "implemented_pending_qa": [
     {
@@ -98,5 +98,8 @@
       "change": "Compact stage preview retains the stage hint."
     }
   ],
-  "qa_output_policy": "Keep Godot imports, fixtures, test saves, logs and captures in a temporary directory outside the project. Use a unique test save directory per run."
+  "qa_output_policy": "Keep Godot imports, fixtures, test saves, logs and captures in a temporary directory outside the project. Use a unique test save directory per run.",
+  "validation_source": "a9c2d84817180ee9c98f5bb6d5844d7fd248c704 plus the Victory recovery and guardian drill follow-up",
+  "owner_install": "PENDING",
+  "deploy": "NOT_REQUESTED"
 }

@@ -165,7 +165,9 @@ func _boss_detail(chapter: int,stage: int) -> void:
  if boss_stats.has("phase_two_hp_ratio"):details.add_child(label(copy("Phase shift at ","Pergantian fase pada ")+str(roundi(float(boss_stats.phase_two_hp_ratio)*100))+"% HP",16,JADE))
  details.add_child(label(copy("Leave melee windups. Move across projectile lanes, away from lightning marks, and through gaps in radial waves. Return within auto-attack range after dodging. A phase ward can temporarily prevent damage.","Keluar dari ancang-ancang melee. Lewati jalur proyektil, jauhi tanda petir, dan cari celah gelombang radial. Kembali ke jangkauan serang setelah menghindar. Pelindung fase dapat menahan damage sementara."),15))
  details.add_child(label(copy("Pattern pool follows the encounter: ","Kumpulan pola sesuai encounter: ")+_patterns(int(data.get("boss_style",0))),14,JADE))
- if chapter==1:details.add_child(button(copy("PRACTICE THIS GUARDIAN","LATIHAN PENJAGA INI"),_practice.bind(stage)))
+ if chapter==1:
+  details.add_child(button(copy("PRACTICE THIS GUARDIAN","LATIHAN PENJAGA INI"),_practice.bind(stage)))
+  details.add_child(button(copy("DRILL ONE PATTERN","LATIH SATU POLA"),_practice.bind(stage, true)))
  _body.add_child(button(copy("ALL GUARDIANS","SEMUA PENJAGA"),_redraw));_scroll.scroll_vertical=0;Scroll.prepare_tree(_scroll)
 func _patterns(style: int) -> String:
  if style in [1,2]: return copy("single projectile · radial burst","proyektil tunggal · radial")
@@ -205,11 +207,13 @@ func _agenda() -> void:
  for entry: Dictionary in client.agenda.get("events",[]):
   card(str(entry.title),_date(int(entry.starts_at))+" → "+_date(int(entry.ends_at))+"\n"+str(entry.get("status","scheduled")))
  _body.add_child(button(copy("REFRESH SCHEDULE","PERBARUI JADWAL"),func():client.refresh_agenda()))
-func _practice(boss_stage: int=0) -> void:
+func _practice(boss_stage: int=0, pattern_drill: bool=false) -> void:
  if SceneTransitionManager.is_transitioning:return
  var paid: Node=EquipmentManager._paid_v2()
  if paid!=null and (bool(paid.get("busy")) or not (paid.call("_read_pending") as Dictionary).is_empty()):_feedback=copy("Finish pending account recovery first.","Tuntaskan pemulihan akun terlebih dahulu.");_redraw();return
- if boss_stage>0:get_tree().root.set_meta("practice_boss",boss_stage)
+ if boss_stage>0:
+  get_tree().root.set_meta("practice_boss",boss_stage)
+  get_tree().root.set_meta("practice_pattern_drill",pattern_drill)
  close()
  SceneTransitionManager.transition_menu_to("res://scenes/ui/training_ground.tscn")
 func close() -> void:queue_free()

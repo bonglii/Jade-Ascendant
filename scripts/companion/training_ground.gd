@@ -68,7 +68,12 @@ func _ready() -> void:
  if not _known.is_empty():_selected_boss=_known[0]
  var requested_boss: int=int(get_tree().root.get_meta("practice_boss",0))
  if get_tree().root.has_meta("practice_boss"):get_tree().root.remove_meta("practice_boss")
- if requested_boss in _known:mode="boss";_selected_boss=requested_boss
+ var pattern_drill: bool = bool(get_tree().root.get_meta("practice_pattern_drill", false))
+ if get_tree().root.has_meta("practice_pattern_drill"):
+  get_tree().root.remove_meta("practice_pattern_drill")
+ if requested_boss in _known:
+  mode = "pattern" if pattern_drill else "boss"
+  _selected_boss = requested_boss
  _camera=Camera2D.new();_camera.position=Vector2(324,576);add_child(_camera)
  var background:=CanvasLayer.new();background.layer=-10;add_child(background)
  var art:=TextureRect.new();art.texture=load("res://assets/ui/cultivation/cultivation_inner_sea_sanctum_v6.png");art.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;art.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_COVERED;art.modulate=Color(.32,.43,.41);art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);art.mouse_filter=Control.MOUSE_FILTER_IGNORE;background.add_child(art)
@@ -127,6 +132,7 @@ func _build_setup() -> void:
  if _known.is_empty():boss_picker.add_item(Sheet.copy("Encounter a guardian first","Temui penjaga terlebih dahulu"));boss_picker.disabled=true
  else:
   for stage: int in _known:boss_picker.add_item("1-%d · %s"%[stage,str(JourneyManager.get_stage_data(1,stage).boss_name)])
+  boss_picker.select(_known.find(_selected_boss))
   boss_picker.item_selected.connect(func(index: int):_selected_boss=_known[index];_sync_patterns())
  list.add_child(Sheet.label(Sheet.copy("PATTERN DRILL · guardian keeps its HP; read one real pattern for 45s","LATIHAN POLA · HP penjaga tetap; baca satu pola asli selama 45 dtk"),14));_pattern_picker=_picker(list);_pattern_picker.name="PracticePattern";_sync_patterns()
  list.add_child(Sheet.label(Sheet.copy("MEASUREMENT WINDOW","JENDELA PENGUKURAN"),14));var window: OptionButton=_picker(list)

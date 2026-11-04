@@ -120,17 +120,18 @@ func show_victory(completion: Dictionary = {}, clear_saved: bool = true) -> void
 			prefix = "NEW STAGE"
 		_next_stage_button.text = "%s · %s ›" % [prefix, stage.get("display_name", "%d-%d" % [_next_stage.x, _next_stage.y])]
 		preload("res://scripts/ui/result_ceremony.gd").style_button(main_menu_button, "navy")
-	get_node("ResultCeremony").fit()
 	get_node("ResultCeremony").call_deferred("capture_run_report")
 	_refresh_stage_identity()
 	_refresh_reward_summary()
 	if not _clear_saved:
+		reward_summary_label.show()
 		clear_state_label.text = tr("SAVE PENDING")
 		reward_summary_label.text = tr(
 			"A save needs recovery. Close and reopen the game before continuing."
 		)
 		if not SaveManager.is_progress_read_only():
 			reward_summary_label.text = "Hasil belum tersimpan. Kembali ke Home untuk memeriksa progres." if SettingsManager.language == "id" else "The result could not be saved. Return Home to check your progress."
+	get_node("ResultCeremony").fit()
 	_play_intro()
 	_m7c_last_message = ""
 	_refresh_m7c_offer()
