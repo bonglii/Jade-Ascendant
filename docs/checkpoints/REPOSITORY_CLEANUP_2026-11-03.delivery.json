@@ -1,6 +1,6 @@
 {
   "batch": "REPOSITORY_CLEANUP_20261103",
-  "status": "DELIVERED_AUTHOR_PASS_OWNER_LOCAL_AUDIT_PENDING",
+  "status": "DELIVERED_AUTHOR_AND_OWNER_WINDOWS_PASS",
   "source_commit": "399e16a1d8ab2c7f64334860e7c22b6baa1dbe20",
   "source_branch": "work/repo-cleanup-20261103",
   "base_commit": "dbe1c73422f431dce9234aa29efc3374b17a13e8",
@@ -33,13 +33,13 @@
     "local_path": "/workspace/scratch/ce4d5408fa71/Jade-Ascendant-Handoff-2026-11-02.md",
     "purpose": "replace_library_file",
     "status": "succeeded",
-    "file_id": "file_00000000dbbc81f496c75048bdf40165",
+    "file_id": "file_00000000b3048211add1f50a55316ca2",
     "library_file_id": "libfile_6203dd6b5a9c8191be0c73b3afc5598d",
     "file_name": "Jade-Ascendant-Handoff-2026-11-02.md",
     "local_metadata_applied": true,
     "path": "/Jade-Ascendant-Handoff-2026-11-02.md",
-    "current_version_number": 7,
-    "previous_version": 6
+    "current_version_number": 8,
+    "previous_version": 7
   },
   "result": {
     "initial_tracked_files": 4762,
@@ -75,11 +75,20 @@
   "stages": {
     "source": "PUBLISHED",
     "author_checkout_cleanup": "DONE_REVIEWED_SCOPE",
-    "owner_local_inventory": "NOT_RUN",
-    "owner_cleanup": "NOT_RUN",
+    "owner_local_inventory": "REPORT_DIRECTORY_REPORTED",
+    "owner_cleanup": "PASS_OWNER_LOG",
     "export_aab": "NOT_RUN",
     "deploy": "NOT_RUN",
     "phone": "UNCONFIRMED"
   },
-  "next_action": "For owner-only files, extract portable ZIP and run audit_cleanup.cmd (read-only, source writes zero). Apply only the reviewed cleanup with apply_cleanup.cmd after Godot/exporter recovery finishes; preserve results/backup/first receipt for restore. Do not blanket-delete tests, caches, SDK or historical packages."
+  "next_action": "Use the reported LOCAL_AUDIT.json for any future review of owner-only files.",
+  "owner_windows_apply": {
+    "date": "2026-11-04",
+    "platform": "Windows",
+    "evidence": "OWNER_TERMINAL_OUTPUT",
+    "result": "PASS",
+    "source_writes": 0,
+    "local_audit": "REPORT_DIRECTORY_REPORTED",
+    "restore_receipt": "APPLY_RECEIPT.json"
+  }
 }

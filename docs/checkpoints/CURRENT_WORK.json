@@ -2,7 +2,7 @@
   "state": "docs/checkpoints/REPOSITORY_CLEANUP_2026-11-03.json",
   "base": "dbe1c73422f431dce9234aa29efc3374b17a13e8",
   "previous": "docs/checkpoints/MENU_EXPERIENCE_2026-11-03.delivery.json",
-  "revision": "REPOSITORY_CLEANUP_DELIVERED_OWNER_AUDIT_PENDING",
+  "revision": "REPOSITORY_CLEANUP_OWNER_WINDOWS_PASS",
   "source_branch": "work/repo-cleanup-20261103",
   "delivery_receipt": "docs/checkpoints/REPOSITORY_CLEANUP_2026-11-03.delivery.json"
 }
