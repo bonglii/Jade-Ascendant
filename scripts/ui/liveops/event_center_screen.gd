@@ -164,8 +164,14 @@ func _refresh_event_status() -> void:
  _section_title.text=Catalog.copy("YOUR EVENTS","EVENT KAMU")
  var total_ready: int=ActionDot.count(self,"all_events")
  _ready_count.text=Catalog.copy("%d READY","%d TERSEDIA")%total_ready if total_ready>0 else Catalog.copy("KEEP EXPLORING","TERUS JELAJAHI")
- for key: String in _activity_handles:
+ var ready_cards: Array[Control] = []
+ var other_cards: Array[Control] = []
+ for key: String in Catalog.IDS:
   var item: Dictionary=_activity_handles[key];var data: Dictionary=Catalog.preview(self,key);var ready_count: int=ActionDot.count(self,key)
+  if ready_count > 0:
+   ready_cards.append(item.card)
+  else:
+   other_cards.append(item.card)
   item.card.visible=_filter!="limited" and (_filter!="progress" or key!="pavilion") and (not bool(data.complete) or ready_count>0)
   item.title.text=Catalog.title(key);item.description.text=Catalog.description(key)+"\n"+Catalog.category(key)
   item.status.text=Catalog.copy("%d READY TO CLAIM","%d SIAP DIKLAIM")%ready_count if ready_count>0 else (Catalog.copy("COMPLETED","SELESAI") if data.complete else Catalog.copy("PROGRESS %d / %d","PROGRES %d / %d")%[data.current,data.total])
@@ -174,6 +180,13 @@ func _refresh_event_status() -> void:
   item.reward.text=_reward_text(data.reward);item.reward.visible=not item.reward.text.is_empty()
   item.cta.tooltip_text=Catalog.copy("Open ","Buka ")+Catalog.title(key);item.hit.tooltip_text=item.cta.tooltip_text
   ActionDot.show_on(item.cta,ready_count)
+ if not _dragging and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and Time.get_ticks_msec() >= _tap_guard_until:
+  var ordered: Array[Control] = ready_cards + other_cards
+  for index: int in range(ordered.size()):
+   var card: Control = ordered[index]
+   var target_index: int = index + 2 # Featured Odyssey and the section heading.
+   if card.get_index() != target_index:
+    card.get_parent().move_child(card, target_index)
  _refresh_odyssey()
 func _refresh_activity_handles() -> void:_refresh_event_status()
 func _reward_text(reward: Dictionary) -> String:

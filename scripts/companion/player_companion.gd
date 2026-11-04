@@ -133,17 +133,23 @@ func save_preset(index: int, title: String) -> bool:
  next.presets[str(index)]={"name":title.strip_edges().left(24),"slots":GearProjection.slots(),"server":paid}
  return commit(next)
 func preset_problem(index: int) -> String:
- var row: Dictionary=state.presets.get(str(index),{})
- if row.is_empty(): return "empty"
- if not EquipmentManager.can_modify_equipment(): return "save_or_run_busy"
+ return str(preset_issue(index).get("reason", ""))
+
+func preset_issue(index: int) -> Dictionary:
+ var row: Dictionary = state.presets.get(str(index), {})
+ if row.is_empty():
+  return {"reason": "empty"}
+ if not EquipmentManager.can_modify_equipment():
+  return {"reason": "save_or_run_busy"}
  for slot: String in EquipmentManager.get_slot_ids():
-  var paid: String=EquipmentManager._paid_selected_v2(slot)
-  if paid!=str(row.get("server",{}).get(slot,"")): return "match_server_armory"
-  var id: String=str(row.slots[slot])
-  if not paid.is_empty():
-   if id!=paid: return "match_server_armory"
-  elif not id.is_empty() and not InventoryManager.owns_item(id): return "item_not_owned"
- return ""
+  var paid: String = EquipmentManager._paid_selected_v2(slot)
+  var item: String = str(row.slots[slot])
+  if paid != str(row.get("server", {}).get(slot, "")) or (not paid.is_empty() and item != paid):
+   return {"reason": "match_server_armory", "slot": slot, "item": item}
+  if paid.is_empty() and not item.is_empty() and not InventoryManager.owns_item(item):
+   return {"reason": "item_not_owned", "slot": slot, "item": item}
+ return {}
+
 func apply_preset(index: int) -> bool:
  if not preset_problem(index).is_empty(): return false
  return EquipmentManager.apply_local_preset(state.presets[str(index)].slots)

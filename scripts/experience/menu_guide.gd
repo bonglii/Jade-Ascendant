@@ -95,7 +95,8 @@ func _preset(data: Dictionary) -> void:
   var a: float=float(before[row[0]])*row[2];var b: float=float(after[row[0]])*row[2];body.add_child(label("%s %.1f → %.1f (%+.1f)"%[row[1],a,b,b-a],24,Jade if b>=a else Color("f39787")))
  for pair: Array in [[before,copy("CURRENT","SEKARANG")],[after,"PRESET"]]:
   var model: Dictionary=pair[0];section(body,pair[1],"%s %d/4 · %s"%[model.set.display_name,model.set.piece_count,str(model.passive.get("name",copy("No active four-piece passive","Tanpa pasif empat set")))])
- var problem: String=PlayerCompanion.preset_problem(index)
+ var issue: Dictionary = PlayerCompanion.preset_issue(index)
+ var problem: String = str(issue.get("reason", ""))
  if problem.is_empty():body.add_child(button(copy("APPLY THIS PRESET","PAKAI PRESET INI"),func():
   if PlayerCompanion.apply_preset(index):
    for child: Node in body.get_children():
@@ -109,6 +110,12 @@ func _preset(data: Dictionary) -> void:
   var reason: String=copy("Finish the active run or save recovery first.","Selesaikan run aktif atau pemulihan save dulu.")
   if problem=="match_server_armory":reason=copy("Match your verified equipped relics to this preset in Hero.","Samakan relik terverifikasi yang terpasang dengan preset ini di Hero.")
   if problem=="item_not_owned":reason=copy("This preset contains a relic you no longer own. Review its equipment list in the Journal.","Preset ini berisi relik yang sudah tidak dimiliki. Periksa daftar perlengkapannya di Jurnal.")
+  var slot: String = str(issue.get("slot", ""))
+  var item_id: String = str(issue.get("item", ""))
+  if not slot.is_empty():
+   var slot_name: String = tr("WEAPON" if slot == "armament" else slot.to_upper())
+   var item_name: String = str(EquipmentManager.get_item_data(item_id).get("display_name", item_id))
+   reason = "%s%s\n%s" % [slot_name, " · " + item_name if not item_name.is_empty() else "", reason]
   section(body,copy("PREVIEW ONLY","PRATINJAU SAJA"),reason)
 func _timeline(data: Dictionary) -> void:
  var snapshot: Dictionary=load("res://scripts/data/hit_timeline.gd").clean(data)
