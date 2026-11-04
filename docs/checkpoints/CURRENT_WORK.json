@@ -1,7 +1,6 @@
 {
-  "state": "docs/checkpoints/FRESH_SOURCE_NAVBAR_2026-11-04.json",
-  "base": "7f7917b7e77c3fd31c7c16dc93bf6d92d0ab39be",
-  "previous": "docs/checkpoints/REPOSITORY_CLEANUP_2026-11-03.json",
-  "revision": "FRESH_SOURCE_NAVBAR_RESTORED",
-  "source_branch": "work/repo-cleanup-20261103"
+  "state": "docs/checkpoints/PLAYER_POLISH_2026-11-04.json",
+  "base": "1921495faac5cdf26a7ef660eeeee451c99615eb",
+  "previous": "docs/checkpoints/FRESH_SOURCE_NAVBAR_2026-11-04.json",
+  "source_branch": "work/player-polish-20261104"
 }

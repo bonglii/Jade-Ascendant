@@ -180,7 +180,7 @@ func _build_body() -> void:
 	body_scroll.anchor_right = 0.975
 	body_scroll.anchor_bottom = 1.0
 	body_scroll.offset_top = 76.0
-	body_scroll.offset_bottom = -102.0
+	body_scroll.offset_bottom = -preload("res://scripts/ui/jade_ui_tokens.gd").NAV_HEIGHT - 20.0
 	body_scroll.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	body_scroll.grow_vertical = Control.GROW_DIRECTION_BOTH
 	body_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED

@@ -1,0 +1,101 @@
+{
+  "base": "1921495faac5cdf26a7ef660eeeee451c99615eb",
+  "branch": "work/player-polish-20261104",
+  "authorization": "Owner approved all 33 review items, five implementation batches, integrated QA at end, total change summary and closed-test notes.",
+  "status": "IN_PROGRESS",
+  "batches": [
+    {
+      "batch": 1,
+      "items": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        11,
+        27,
+        28
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "batch": 2,
+      "items": [
+        20,
+        21,
+        22,
+        24,
+        32
+      ],
+      "status": "PENDING"
+    },
+    {
+      "batch": 3,
+      "items": [
+        7,
+        8,
+        9,
+        10,
+        16,
+        17
+      ],
+      "status": "PENDING"
+    },
+    {
+      "batch": 4,
+      "items": [
+        12,
+        13,
+        14,
+        15,
+        18,
+        19,
+        26
+      ],
+      "status": "PENDING"
+    },
+    {
+      "batch": 5,
+      "items": [
+        29,
+        30,
+        31,
+        33
+      ],
+      "status": "PENDING"
+    },
+    {
+      "batch": 6,
+      "items": [
+        23,
+        25
+      ],
+      "status": "PENDING"
+    }
+  ],
+  "qa": "PENDING_FINAL_INTEGRATION",
+  "next": "Finish batch 1 results/navigation, then remaining batch items. All changes await integrated runtime and visual QA.",
+  "owner_note": "Fresh navbar confirmed safe; old project backed up and renamed.",
+  "publication": "PENDING",
+  "aab": "PENDING",
+  "phone": "PENDING",
+  "implemented_pending_qa": [
+    {
+      "item": 1,
+      "change": "Stage-clear Hero Level events render inside the reward panel and coalesce multiple levels."
+    },
+    {
+      "item": 8,
+      "change": "Cultivation scroll bottom follows shared navigation height with spacing."
+    },
+    {
+      "item": 26,
+      "change": "Odyssey milestone notification uses confirmed eligibility including laps and legacy progress."
+    },
+    {
+      "item": 27,
+      "change": "Compact stage preview retains the stage hint."
+    }
+  ]
+}

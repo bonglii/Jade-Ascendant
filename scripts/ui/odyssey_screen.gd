@@ -266,7 +266,7 @@ func _refresh() -> void:
 		var n: int = [24,48,72][i]; var claimed: bool = n in state.get("milestones",[])
 		milestones[i].text = "%d · %s" % [int(float(n)/6.0) if lap_mode else n, "CLAIMED" if claimed else "CLAIM" if _journey_ready(state,n) else "2 SEALS" if n==24 else "3 SEALS" if n==48 else "COMPASS"]
 		milestones[i].disabled = travelling or not _event_enabled()
-		ActionDot.show_on(milestones[i],int(claim_open and not claimed and count>=n))
+		ActionDot.show_on(milestones[i],int(claim_open and not claimed and _confirmed_view() and _journey_ready(state,n)))
 	notice.text = str(state.get("notice","Connect Google to begin your journey.")) if client.status in ["connected","sending_action","refreshing"] else {"NETWORK_UNAVAILABLE":"Connection interrupted. Retrying automatically; progress is saved.","ENDPOINT_POLICY_REJECTED":"App update required. Install the latest Play build.","native_update_required":"App update required. Install the latest Play build.","ACCOUNT_HELD":"A refunded purchase requires review. Contact support.","BACKEND_NOT_READY":"Server is preparing the event. Please retry shortly."}.get(str(client.status),str(client.status).replace("_"," ").capitalize())
 	if client.busy and client.status=="sending_action": notice.text="MENGIRIM AKSI…"
 	elif client.has_method("ad_feedback") and not str(client.call("ad_feedback")).is_empty(): notice.text=str(client.call("ad_feedback"))

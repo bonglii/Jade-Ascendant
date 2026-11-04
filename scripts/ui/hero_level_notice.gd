@@ -76,6 +76,12 @@ func _account_changed(_snapshot: Dictionary) -> void:
 	frame.hide()
 
 func _earned_level(level: int) -> void:
+	var scene: Node = get_tree().current_scene
+	var victory: Node = scene.get_node_or_null("VictoryManager") if scene != null else null
+	var result: Node = scene.get_node_or_null("VictoryUI") if scene != null else null
+	if victory != null and bool(victory.get("victory_processed")) and result != null and result.has_method("record_hero_level"):
+		result.record_hero_level(level)
+		return
 	if from_level == 0: from_level = maxi(1, level - 1)
 	to_level = maxi(to_level, level)
 	settle_left = .25

@@ -50,6 +50,23 @@ const INTRO_PANEL_FADE_DURATION: float = 0.30
 )
 
 var victory_reward_entries: Array[Dictionary] = []
+var hero_level_from: int = 0
+var hero_level_to: int = 0
+var hero_level_summary: Label
+
+func record_hero_level(level: int) -> void:
+	if hero_level_from == 0:
+		hero_level_from = maxi(1, level - 1)
+	hero_level_to = maxi(hero_level_to, level)
+	if hero_level_summary == null:
+		hero_level_summary = Label.new()
+		hero_level_summary.name = "VictoryHeroLevel"
+		hero_level_summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		hero_level_summary.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		hero_level_summary.add_theme_color_override("font_color", Color(1.0, 0.87, 0.53))
+		reward_summary_label.get_parent().add_child(hero_level_summary)
+	hero_level_summary.text = ("LEVEL HERO %d → %d" if SettingsManager.language == "id" else "HERO LEVEL %d → %d") % [hero_level_from, hero_level_to]
+
 var intro_tween: Tween = null
 var victory_seal: TextureRect = null
 var reward_chip_row: GridContainer = null

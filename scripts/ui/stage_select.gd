@@ -974,7 +974,8 @@ func _fit_phone() -> void:
 	if is_instance_valid(_realm_eyebrow):_realm_eyebrow.visible=not compact
 	if is_instance_valid(_realm_subtitle):_realm_subtitle.visible=not compact
 	if is_instance_valid(_detail_art):_detail_art.visible=not compact
-	if is_instance_valid(_preview_hint):_preview_hint.visible=not compact
+	if is_instance_valid(_preview_hint):
+		_preview_hint.visible = true
 
 func _fit_map_width(canvas: Control) -> void:
 	if not is_instance_valid(canvas):return
