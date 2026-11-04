@@ -1,0 +1,26 @@
+{
+  "batch": "FRESH_SOURCE_NAVBAR_2026-11-04",
+  "base": "7f7917b7e77c3fd31c7c16dc93bf6d92d0ab39be",
+  "source_branch": "work/repo-cleanup-20261103",
+  "regression": "4c94ebc930682c9d1deafdee5e09941093b8953b",
+  "restored_from": "fa106fe416de9373fd9fdc3bb0256332f58e2d9c",
+  "restored_blob": "5a68bf5b5bab2d081430a3079d52173b942feefa",
+  "scope": "Restore the approved shared icon-only navbar with centered icons, translated accessibility names and the existing touch targets.",
+  "validation": {
+    "godot": "4.7.2.stable.official.ed1daf0bf with the repository-pinned archive SHA-256",
+    "focused_headless": "Five production menus, EN/ID, 320x568 and 720x1600. Base: 200 of 420 checks fail on labels and icon centering. Restored source: 420 checks, 0 failures.",
+    "final_mobile_polish_headless": "178 checks, 0 failures",
+    "interface_consistency_headless": "91 checks, 15 identical failures before and after. The older test expects 88px. The current shared token is 104px.",
+    "strict_runner": "The existing runner promotes a PlayerCompanion shadowing warning to an error. Focused suites ran with the project default for that warning in an isolated fixture.",
+    "production_contract": "PASS, 9 gates",
+    "native_gui": "No fresh render receipt. The author runtime could not open an X11 socket."
+  },
+  "stages": {
+    "commit_and_push": "Verify the work branch ref for the commit containing this checkpoint.",
+    "owner_checkout": "UNCONFIRMED",
+    "owner_full_source_parity": "UNCONFIRMED. The navbar difference is established against the fresh source. Other Windows-local changes have not been compared against the active project.",
+    "aab_export": "UNCONFIRMED",
+    "phone_test": "UNCONFIRMED"
+  },
+  "next": "Fast-forward the existing fresh checkout and reopen the project in Godot. Keep the old project available while comparing any other differences."
+}

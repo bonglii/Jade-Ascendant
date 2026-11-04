@@ -707,6 +707,12 @@ A fixture mounted outside its actual popup or with the wrong native event stream
 can falsely report a gesture failure. Keep the shared mobile scroll policy intact.
 Icon-only navigation retains accessible names and identical safe touch targets;
 touch tooltips are intentionally suppressed by the shared guard.
+The 2026-11-02 Player Content batch restored visible labels despite this decision.
+For shared navigation edits, run the icon-only assertions in
+`tests/final_mobile_polish_smoke.gd` and verify each production menu uses the
+shared component. A folder comparison only establishes parity for the paths
+and snapshots actually checked. Confirm a reported visual difference against
+the live scene and its source before treating a fresh checkout as equivalent.
 
 Identify a circled effect from source and artwork before replacing it: these
 screenshots showed stage hazards, not Compass attacks. Replace prototype runes
