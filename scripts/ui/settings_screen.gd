@@ -34,6 +34,7 @@ var _backup_restore: Button
 var _connection_tick: float = 0.0
 var fps_choice: OptionButton = null
 var language_choice: OptionButton = null
+var joystick_preview: Control = null
 var joystick_mode_choice: OptionButton = null
 var joystick_mode_hint: Label = null
 var _control_mode_index: int = ControlPrefs.DEFAULT_MODE
@@ -388,6 +389,11 @@ func _build_presentation_options() -> void:
 	joystick_opacity_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	opacity_row.add_child(joystick_opacity_label)
 	joystick_opacity_slider.value_changed.connect(_on_joystick_opacity_changed)
+	_add_setting_label(control_box, _local("Joystick Preview", "Pratinjau Joystick"),
+		_local("Illustration while dragging. Size and opacity update immediately; swipe here to scroll.", "Ilustrasi saat digeser. Ukuran dan opasitas langsung berubah; usap di sini untuk scroll."))
+	joystick_preview = preload("res://scripts/ui/joystick_preview.gd").new()
+	joystick_preview.name = "JoystickPreview"
+	control_box.add_child(joystick_preview)
 	reset_controls_button = Button.new()
 	reset_controls_button.text = _local("RESET CONTROLS", "RESET KONTROL")
 	reset_controls_button.custom_minimum_size.y = 48.0
@@ -427,9 +433,9 @@ func _build_presentation_options() -> void:
 
 	var system_card: PanelContainer = _create_settings_card(
 		parent_box, source_card, _local("DISPLAY", "TAMPILAN"),
-		_local("Performance & Language", "Performa & Bahasa"),
-		_local("Adjust frame rate and language on this device.",
-			"Atur frame rate dan bahasa di perangkat ini.")
+		_local("Performance", "Performa"),
+		_local("Balance smoothness and battery use on this device.",
+			"Sesuaikan kelancaran dan penggunaan baterai perangkat ini.")
 	)
 	var system_box: VBoxContainer = system_card.get_child(0) as VBoxContainer
 	_add_section_rule(system_box, GOLD)
@@ -451,14 +457,21 @@ func _build_presentation_options() -> void:
 	fps_choice.item_selected.connect(_on_fps_selected)
 	system_box.add_child(fps_choice)
 	_apply_dropdown_polish(fps_choice)
-	_add_setting_label(system_box, _local("Language", "Bahasa"),
+	var general_card: PanelContainer = _create_settings_card(
+		parent_box, source_card, _local("GENERAL", "UMUM"),
+		_local("Language & Support", "Bahasa & Bantuan"),
+		_local("Interface language, privacy and help.", "Bahasa antarmuka, privasi dan bantuan.")
+	)
+	var general_box: VBoxContainer = general_card.get_child(0) as VBoxContainer
+	_add_section_rule(general_box, GOLD)
+	_add_setting_label(general_box, _local("Language", "Bahasa"),
 		_local("Interface language; saved automatically.", "Bahasa antarmuka; disimpan otomatis."))
 	language_choice = OptionButton.new()
 	language_choice.add_item("English")
 	language_choice.add_item("Bahasa Indonesia")
 	language_choice.custom_minimum_size.y = 56.0
 	language_choice.item_selected.connect(_on_language_selected)
-	system_box.add_child(language_choice)
+	general_box.add_child(language_choice)
 	_apply_dropdown_polish(language_choice)
 	var privacy := Button.new()
 	privacy.text = tr("PRIVACY, SUPPORT & CREDITS")
@@ -466,7 +479,7 @@ func _build_presentation_options() -> void:
 	privacy.theme_type_variation = &"JadeSecondaryButton"
 	privacy.add_theme_font_size_override("font_size", 15)
 	privacy.pressed.connect(_open_privacy)
-	system_box.add_child(privacy)
+	general_box.add_child(privacy)
 
 	_build_connection_support(parent_box, source_card)
 	if PlayerCompanion.METRICS_ROLLOUT_APPROVED:

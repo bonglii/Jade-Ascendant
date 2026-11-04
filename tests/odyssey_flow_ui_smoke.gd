@@ -5,6 +5,12 @@ var Sim: GDScript
 var Dice: GDScript
 var Arena: GDScript
 var Batch: GDScript
+var checks: int = 0
+var failures: int = 0
+class Auth extends Node:
+ var uid: String = "odyssey-fixture-a"
+ func is_signed_in() -> bool: return true
+ func get_current_user_data() -> Dictionary: return {"uid": uid}
 class Native extends RefCounted:
  var sent: Array=[]
  func requestOdysseyV1(id: String,body: String)->void: sent.append([id,body])
@@ -16,6 +22,7 @@ class Event extends Node:
  var busy: bool=false
  var last_action: Dictionary={}
  func refresh()->bool: return true
+ func refresh_if_stale()->bool: return true
  func server_time()->int: return 1800000000
  func submit(action: Dictionary)->bool: last_action=action;busy=true;status="sending_action";changed.emit();return true
  func purchase_bonus_active()->bool: return bool(snapshot.get("purchase_bonus",{}).get("active",false))
@@ -31,7 +38,7 @@ class Authority extends Node:
  func claim_mail(id: String)->bool:
   requests.append(id)
   if id.begins_with("server:"):
-   if id not in get_tree().root.get_node("ServerMailManager").pending_ids: get_tree().root.get_node("ServerMailManager").pending_ids.append(id)
+   get_tree().root.get_node("ServerMailManager")._queue.append({"id": id})
    return true
   return grant(id)
  func grant(id: String)->bool:
@@ -40,16 +47,29 @@ class Authority extends Node:
     if bool(entry.get("claimed",false)): return true
     entry.claimed=true;grants+=int(entry.reward.spirit_stone)
     get_tree().root.get_node("RewardManager").reward_granted.emit("pavilion","live_ops_mail_server_"+id.trim_prefix("server:") if id.begins_with("server:") else "live_ops_mail_"+id,entry.reward)
-    get_tree().root.get_node("ServerMailManager").pending_ids.erase(id);return true
+    get_tree().root.get_node("ServerMailManager")._queue.erase({"id": id});return true
   return false
 func _initialize()->void: call_deferred("run")
 func check(value: bool,reason: String)->void:
- if not value: push_error(reason);quit(1)
+ checks += 1
+ if not value: failures += 1;push_error(reason)
 func _mail(id: String,flags: Dictionary={})->Dictionary:
  var entry: Dictionary={"id":id,"reward":{"spirit_stone":10,"items":{}},"claimed":false,"can_claim":true};entry.merge(flags,true);return entry
 func run()->void:
+ if not OS.get_user_data_dir().contains("qa"): quit(2);return
+ # Let production autoload deferred initialization finish before substituting
+ # only the Odyssey network boundary. Never create a duplicate named singleton.
+ for frame in range(4): await process_frame
+ var production_client: Node = root.get_node("OdysseyClient")
+ production_client.name = "ProductionOdysseyClient"
+ production_client.set_process(false)
  var server_mail: Node=root.get_node("ServerMailManager");var save_manager: Node=root.get_node("SaveManager");var identity: Node=root.get_node("PlayerIdentityServerClient")
- create_timer(25).timeout.connect(func()->void: quit(1))
+ server_mail.set_process(false)
+ var auth := Auth.new();root.add_child(auth)
+ identity.set_process(false)
+ var previous_auth: Node = identity._auth
+ identity._auth = auth
+ create_timer(45).timeout.connect(func()->void: quit(1))
  Screen=load("res://scripts/ui/odyssey_screen.gd");Client=load("res://scripts/monetization/odyssey_client.gd");Sim=load("res://scripts/ui/liveops/odyssey_arena_sim.gd");Dice=load("res://scripts/ui/liveops/odyssey_dice.gd");Arena=load("res://scripts/ui/liveops/odyssey_arena.gd");Batch=load("res://scripts/ui/liveops/mailbox_claim_batch.gd")
  # The client and backend use exactly the same integer physics, not invented win flags.
  var vectors: Variant=JSON.parse_string(FileAccess.get_file_as_string("res://tests/odyssey_arena_vectors.json"))
@@ -71,7 +91,7 @@ func run()->void:
  for dimensions: Vector2i in [Vector2i(360,640),Vector2i(412,915),Vector2i(648,1152),Vector2i(840,400)]:
   var view:=SubViewport.new();view.size=dimensions;root.add_child(view)
   var client:=Event.new();client.name="OdysseyClient";root.add_child(client)
-  client.snapshot={"owner_binding":"a".repeat(64),"event":{"id":"dragon-test","enabled":true,"purchases_enabled":true,"starts_at":1799999900,"ends_at":1801000000},"state":{"tickets":3,"daily_rolls":5,"missions":[1],"milestones":[],"daily_gifts":3,"daily_guardians":0,"task_claims":[],"day":"2027-01-15","rolls":12,"position":0},"purchase_bonus":{"active":true,"offers":[{"product_id":"jade_satchel_550","jade":550,"dice":3,"claimed":false}]}}
+  client.snapshot={"owner_binding":"a".repeat(64),"event":{"id":"dragon-test","enabled":true,"purchases_enabled":true,"starts_at":1799999900,"ends_at":1801000000},"state":{"tickets":3,"daily_rolls":5,"missions":[1],"milestones":[],"daily_gifts":3,"daily_guardians":0,"task_claims":[],"day":Time.get_datetime_string_from_unix_time(1800000000).substr(0,10),"task_day":Time.get_datetime_string_from_unix_time(1800000000).substr(0,10),"rolls":12,"position":0},"purchase_bonus":{"active":true,"offers":[{"product_id":"jade_satchel_550","jade":550,"dice":3,"claimed":false}]}}
   var screen: Control=Screen.new();screen.size=Vector2(dimensions);view.add_child(screen);await process_frame;await process_frame
   screen._missions();await process_frame;await process_frame
   check(screen._mission_handles.size()==6,"Six daily rows must be present")
@@ -108,20 +128,24 @@ func run()->void:
  check(int(merged.get("celestial_jade",0))==150 and int(merged.get("pavilion_seal",0))==3,"Claim All summary must preserve Jade and Pavilion Seals")
  result_presenter.free()
  # Bulk claims serialize existing authorities, stop on uncertain failures, and resume without duplicate grants.
- var authority:=Authority.new();authority.name="LiveOpsManager";root.add_child(authority)
+ var authority:=Authority.new();authority.name="FixtureMailAuthority";root.add_child(authority)
  authority.entries=[_mail("local_a"),_mail("local_b"),_mail("server:c"),_mail("claimed",{"claimed":true}),_mail("expired",{"expired":true}),_mail("blocked",{"blocked_on_other_device":true})]
  var batch: Node=Batch.new();batch.authority=authority;batch.name="MailboxClaimBatch";authority.add_child(batch);batch.set_process(false)
  batch.start();batch.start();check(batch.total==3,"Bulk selection must exclude claimed, expired and blocked letters")
  for n: int in range(3): batch._process(0.3)
  check(authority.grants==20 and server_mail.is_busy_for("server:c"),"Server claim must stay serialized and ungranted until confirmation")
  check(batch.owns_reward("live_ops_mail_server_c") and not batch.owns_reward("live_ops_mail_other"),"Suppress only this batch's exact reward source")
- server_mail.pending_ids.clear();server_mail.status="Offline";batch._sent_at=Time.get_ticks_msec()-2000;batch._process(0.3)
+ server_mail._queue.clear();server_mail._status="Offline";batch._sent_at=Time.get_ticks_msec()-2000;batch._process(0.3)
  check(batch.paused,"Uncertain network failure must pause the bulk coordinator")
  batch.start();batch._process(0.3);authority.grant("server:c");batch._process(0.3)
  check(not batch.active and batch.claimed==3 and authority.grants==30,"Bulk completion without duplicate credits")
  batch.start();check(not batch.active and authority.grants==30,"Bulk replay must be a no-op")
- authority.entries.append(_mail("later"));save_manager.blocked=true;batch.start();check(not batch.active,"Read-only save must block bulk claims")
- save_manager.blocked=false;batch.start();identity.binding="b".repeat(64);batch._process(0.3);check(not batch.active,"Account switch must cancel bulk state")
+ authority.entries.append(_mail("later"));save_manager.begin_save_write_barrier("odyssey-flow-qa","fixture recovery");batch.start();check(not batch.active,"Read-only save must block bulk claims")
+ save_manager.end_save_write_barrier("odyssey-flow-qa");batch.start();auth.uid="odyssey-fixture-b";batch._process(0.3);check(not batch.active,"Account switch must cancel bulk state")
  authority.queue_free();await process_frame
- print("ODYSSEY_FLOW_UI=PASS; FOUR_VIEWPORTS; SIX_DAILIES; CLAIM_FENCES; STABLE_SHEET; DICE_PACING; ARENA_PARITY; JOYSTICK_BOUNDS; MAIL_BULK_RETRY_OWNERSHIP")
- quit()
+ identity._auth = previous_auth
+ auth.queue_free()
+ production_client.name = "OdysseyClient"
+ print("checks=%d failures=%d" % [checks, failures])
+ print("ODYSSEY_FLOW_UI=%s; FOUR_VIEWPORTS; SIX_DAILIES; CLAIM_FENCES; STABLE_SHEET; DICE_PACING; ARENA_PARITY; JOYSTICK_BOUNDS; MAIL_BULK_RETRY_OWNERSHIP" % ("PASS" if failures == 0 else "FAIL"))
+ quit(1 if failures else 0)

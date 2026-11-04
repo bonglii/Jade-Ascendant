@@ -966,3 +966,9 @@ A literal credential-shaped sample in a self-published test triggered the scanne
 - Two source PNGs can be byte-identical yet have different importer settings. Consolidate only after comparing both; preserve exact originals and verify actual dependent production scenes. Keep held artwork and unique ambiguous legacy assets.
 - PowerShell inventory needs Get-Item -Force for hidden files in Linux fixtures. Initial atomic replacement using a null backup argument failed due to .NET coercion; reuse the existing proven Write-Atomic implementation instead. Both failures stopped before source mutation and were corrected before delivery.
 - A read-only owner audit should list untracked files and summarize ignored roots without reading their protected contents. Unknown local production source blocks destructive apply; never infer a Windows cleanup or AAB-size result from the author checkout.
+
+## 2026-11-04 · Final polish fixture and popup priority
+- Before replacing an autoload in a UI fixture, finish deferred initialization and move the original node out of its reserved name. Match current methods, server-time/day fields, real save barriers and account identity; do not preserve obsolete fake properties.
+- A headless SceneTree test must runtime-load scripts that depend on autoload globals after initialization; preloading them through an inner subclass can fail before the globals exist.
+- Keep each test invocation's output path unique and reap a failed process before rerunning it. A still-running failed process can corrupt a reused log; final evidence must come from a fresh isolated run.
+- Home's decorative overlay is not a modal. Automatic claim priority must consider visibility and input interception, preserving manual claims and never releasing gameplay actions from a read-only preview.

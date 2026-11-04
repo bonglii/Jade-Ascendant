@@ -186,8 +186,34 @@ func _maybe_auto_open() -> void:
 		return
 	if int(manager.call("get_claimable_units")) <= 0:
 		return
+	# Returning players choose Continue/recovery first. Keep the earned-claim
+	# shortcut available, but do not ambush them later after that run ends.
+	var scene: Node = get_tree().current_scene
+	if scene == null or scene.scene_file_path != MAIN_MENU_SCENE:
+		return
+	if SaveManager.is_progress_read_only() or (scene.has_method("_has_checkpoint") and bool(scene.call("_has_checkpoint"))):
+		_auto_shown = true
+		return
+	if SceneTransitionManager.is_transitioning or get_tree().paused:
+		return
+	# Home uses non-modal guidance; ready rewards stay on their existing badges.
+	# Never stack an automatic claim on top of a player-opened sheet.
+	if _home_has_open_sheet(get_tree().root):
+		_auto_shown = true
+		return
 	_auto_shown = true
-	call_deferred("_open_popup")
+	_open_popup()
+
+
+func _home_has_open_sheet(node: Node) -> bool:
+	for child: Node in node.get_children():
+		if child is Control and child.is_visible_in_tree() and child.mouse_filter == Control.MOUSE_FILTER_STOP:
+			var title: String = str(child.name).to_lower()
+			if title.contains("popup") or title.contains("modal") or title.contains("overlay") or title.contains("sheet"):
+				return true
+		if _home_has_open_sheet(child):
+			return true
+	return false
 
 
 func _on_offline_gap(seconds: int) -> void:
