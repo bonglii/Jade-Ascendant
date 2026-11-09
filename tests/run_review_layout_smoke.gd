@@ -59,8 +59,15 @@ func run() -> void:
 			var hero: Button = ceremony._body.find_child("ReviewHeroButton", true, false)
 			var touch_area: Rect2 = hero.get_global_rect().intersection(scroll.get_global_rect())
 			check(touch_area.size.y >= 24, "contextual Hero action initially visible for first button swipe")
+			var bar: VScrollBar = scroll.get_v_scroll_bar()
+			var remaining_scroll: float = maxf(0.0, bar.max_value - bar.page - scroll.scroll_vertical)
+			var before_swipe: int = scroll.scroll_vertical
 			await swipe(touch_area.get_center())
-			check(scroll.scroll_vertical > 20 and paused and not current_scene.get_node("GameOverManager").defeat_finalized, "first native swipe scrolls without ending run")
+			var scrolled: int = scroll.scroll_vertical - before_swipe
+			var defeat_finalized: bool = current_scene.get_node("GameOverManager").defeat_finalized
+			print("RUN_REVIEW_SWIPE locale=%s dimensions=%s range=%.1f moved=%d paused=%s finalized=%s" % [language, dimensions, remaining_scroll, scrolled, paused, defeat_finalized])
+			check(scrolled >= mini(21, floori(remaining_scroll)), "first native swipe moves through available content " + str(dimensions) + language)
+			check(paused and not defeat_finalized, "first native swipe leaves the run paused and recoverable " + str(dimensions) + language)
 			check(hero.size.y >= 44 and hero.size.x <= scroll.size.x, "Hero action fits reader")
 			check(scroll.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_SHOW_NEVER, "shared hidden-scrollbar policy")
 			var directory: String = OS.get_environment("JADE_COMBAT_RENDER_DIR")

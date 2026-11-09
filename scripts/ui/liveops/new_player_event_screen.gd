@@ -438,6 +438,7 @@ func _build_footer(parent: VBoxContainer) -> void:
 	column.add_child(_day_title)
 
 	_day_status = _label("READY TO CLAIM", 13, JADE)
+	_day_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_day_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	column.add_child(_day_status)
 
@@ -708,6 +709,8 @@ func _refresh_footer() -> void:
 	_day_title.add_theme_font_size_override("font_size", 18 if compact else 22)
 	_day_title.add_theme_color_override("font_color", GOLD_LIGHT if final_day or state == "ready" else JADE)
 	_day_status.text = _state_text(state)
+	if compact and state == "locked":
+		_day_status.text = "TERSEGEL" if indonesian else "SEALED"
 	_day_status.add_theme_color_override("font_color", _accent(_selected_day, state))
 
 	# Keep the two pinned reward tiles and their normalized typography alive.

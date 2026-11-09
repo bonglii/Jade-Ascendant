@@ -54,5 +54,7 @@ func run() -> void:
  screen.handle_system_back();await process_frame
  check(current_scene==screen and screen.detail==null,"Back only dismisses modal")
  check(equipment.build_equipment_save_data()==before and inventory.item_counts==counts,"polish never mutates equipment or inventory")
+ current_scene=null;screen.free()
+ await load("res://tests/qa_runtime_teardown.gd").stop_audio(self)
  print("HERO_POPUP_POLISH_CHECKS=",checks,";FAILURES=",failures)
  quit(1 if failures else 0)

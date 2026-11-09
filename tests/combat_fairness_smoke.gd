@@ -157,6 +157,8 @@ func run() -> void:
  stats.attack_cooldown=.3
  check(up.get_upgrade_effect("attack_speed").contains("TEMPO") and up.get_upgrade_effect("attack_speed").contains("→"),"refinement card discloses actual next tempo multiplier")
  check(load("res://scripts/data/skill_catalog.gd").get_upgrade_description("attack_speed").contains("casting limit"),"Skill Book explains extra tempo")
- up.free();chain.queue_free();glaive.queue_free();actor.queue_free()
+ up.free()
+ current_scene=null;world.free()
+ await load("res://tests/qa_runtime_teardown.gd").stop_audio(self)
  print("COMBAT_FAIRNESS_QA checks=",checks," failures=",failures)
  quit(1 if failures else 0)
