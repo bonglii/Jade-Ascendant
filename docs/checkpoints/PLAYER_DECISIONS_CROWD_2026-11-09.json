@@ -2,7 +2,7 @@
   "base": "b9c64f2ebd0009375af4aa01578f8b1adf98321f",
   "base_tree": "2efc25fe225a49175b29cdcba6153b44340a0897",
   "branch": "work/player-polish-20261104",
-  "status": "STRICT_IMPORT_FIX_CANDIDATE_QA_PENDING",
+  "status": "COMPACT_REALM_FOCUS_FIX_QA_PENDING",
   "candidate_branch": "checkpoint/player-decisions-crowd-20261109",
   "baseline": {
     "player_ui": {
@@ -67,5 +67,16 @@
     "windows_script_job": "PASS",
     "runtime_jobs": "Both stopped before runtime during a fresh strict import. PlayerCompanion.record_training shadowed Node.owner in both the base and candidate.",
     "recovery": "Rename the parameter to expected_owner, preserving both account checks. Re-run the exact candidate's strict import and runtime gates."
+  },
+  "ci_strict_import_fix": {
+    "head": "ff17228543135792f54f4c1ee185952334ee6896",
+    "player_release_run": 42650869701,
+    "player_journey_run": 42650869739,
+    "strict_import": "PASS in both jobs",
+    "run_review": "7 checks and restart 33 checks, zero failures",
+    "run_entry": "40 checks, zero failures",
+    "windows_script_job": "PASS on hosted Windows for script checks only",
+    "remaining": "Realm stage title failed initial focus at 320x568. Run Review layout failed 2 of 113 assertions for a first swipe inside a headless runner. Native viewport retest required.",
+    "realm_fix": "Focus the selected seal and title together and prefer the title when both do not fit. Re-evaluate after the responsive title position changes."
   }
 }
