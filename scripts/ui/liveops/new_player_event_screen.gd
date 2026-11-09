@@ -305,18 +305,21 @@ func _build_header(parent: VBoxContainer) -> void:
 	title_column.add_theme_constant_override("separation", 1)
 	title_inset.add_child(title_column)
 
+	var compact: bool = get_viewport_rect().size.x < 350.0
 	var eyebrow := _label("✦  SEVEN-DAY BLESSING  ✦", 13, JADE)
 	eyebrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_apply_title_shadow(eyebrow)
 	title_column.add_child(eyebrow)
 
-	var heading := _label("CELESTIAL SIGN-IN", 30, GOLD_LIGHT)
+	var heading := _label("CELESTIAL SIGN-IN", 23 if compact else 30, GOLD_LIGHT)
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	heading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_apply_title_shadow(heading)
 	title_column.add_child(heading)
 
 	var subtitle := _label("Seven active days. Your ascension awaits.", 15, TEXT)
+	if compact:
+		subtitle.text = "Hadiah selama 7 hari aktif." if SettingsManager.language == "id" else "Rewards for 7 active days."
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_apply_title_shadow(subtitle)
@@ -413,6 +416,7 @@ func _build_day_track(parent: VBoxContainer) -> void:
 func _build_footer(parent: VBoxContainer) -> void:
 	# Reserve room for the usual footer, expanding the slot only when wrapped
 	# captions or the final reward need more space. The reader above can scroll.
+	var compact: bool = get_viewport_rect().size.x < 350.0
 	var footer_slot := Control.new()
 	footer_slot.name = "SelectedDayDetailsFixedSlot"
 	footer_slot.custom_minimum_size = Vector2(0.0, 262.0)
@@ -453,7 +457,7 @@ func _build_footer(parent: VBoxContainer) -> void:
 
 	_reward_row = GridContainer.new()
 	_reward_row.columns = 2
-	_reward_row.custom_minimum_size = Vector2(0.0, 90.0)
+	_reward_row.custom_minimum_size = Vector2(0.0, 74.0 if compact else 90.0)
 	_reward_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_reward_row.add_theme_constant_override("h_separation", 8)
 	_reward_row.add_theme_constant_override("v_separation", 8)
@@ -773,6 +777,7 @@ func _refresh_footer() -> void:
 		tr("SAVING UNAVAILABLE") if progress_locked
 		else tr("NEXT CYCLE ON YOUR NEXT ACTIVE DATE")
 		if bool(live_ops.is_new_player_event_complete())
+		else ("Tersimpan saat klaim" if indonesian else "Saved on claim") if compact
 		else tr("REWARDS SAVE ON CLAIM")
 	)
 
@@ -780,10 +785,8 @@ func _refresh_footer() -> void:
 func _footer_reward_item(icon_texture: Texture2D, amount: String, label_text: String) -> PanelContainer:
 	var panel := PanelContainer.new()
 	# Keep two readable cards even on a narrow portrait viewport.
-	var cell_width: float = (
-		112.0 if get_viewport_rect().size.x < 350.0 else 148.0
-	)
-	panel.custom_minimum_size = Vector2(cell_width, 90.0)
+	var compact: bool = get_viewport_rect().size.x < 350.0
+	panel.custom_minimum_size = Vector2(112.0, 74.0) if compact else Vector2(148.0, 90.0)
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.add_theme_stylebox_override(
 		"panel",
@@ -808,16 +811,23 @@ func _footer_reward_item(icon_texture: Texture2D, amount: String, label_text: St
 	icon_and_value.alignment = BoxContainer.ALIGNMENT_CENTER
 	icon_and_value.add_theme_constant_override("separation", 6)
 	content.add_child(icon_and_value)
+	var icon_size: float = 29.0 if compact else 37.0
 	var icon := _texture(
-		icon_texture, Vector2(37.0, 37.0),
+		icon_texture, Vector2(icon_size, icon_size),
 		TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	)
 	icon_and_value.add_child(icon)
-	var value := _label(amount, 24, GOLD_LIGHT)
+	var value := _label(amount, 20 if compact else 24, GOLD_LIGHT)
 	value.name = "RewardValue"
 	value.autowrap_mode = TextServer.AUTOWRAP_OFF
 	icon_and_value.add_child(value)
 	var title := _label(label_text, 14, TEXT)
+	if compact:
+		match label_text:
+			"SPIRIT STONES":
+				title.text = "BATU SPIRIT" if SettingsManager.language == "id" else "STONES"
+			"CELESTIAL JADE":
+				title.text = "JADE"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(title)
