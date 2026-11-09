@@ -59,6 +59,7 @@ var _day_section: VBoxContainer = null
 var _layout_generation: int = 0
 var _pressed_scroll_y: Dictionary = {}
 var _header: Control = null
+var _header_copy: MarginContainer = null
 var _day_scroll: ScrollContainer = null
 var _day_strip: HBoxContainer = null
 # Keep selected/unselected plaques alive; only update their visual state.
@@ -132,16 +133,20 @@ func _notification(what: int) -> void:
 
 
 func _layout_to_viewport() -> void:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return
 	_layout_generation += 1
 	var generation: int = _layout_generation
-	await get_tree().process_frame
-	await get_tree().process_frame
-	if generation != _layout_generation:
+	await tree.process_frame
+	await tree.process_frame
+	if not is_inside_tree() or generation != _layout_generation:
 		return
 	if (
 		_top_scroll == null or not is_instance_valid(_top_scroll)
 		or _top_contents == null or not is_instance_valid(_top_contents)
 		or _header == null or not is_instance_valid(_header)
+		or not is_instance_valid(_header_copy)
 		or _day_section == null or not is_instance_valid(_day_section)
 		or _day_scroll == null or not is_instance_valid(_day_scroll)
 	):
@@ -157,8 +162,9 @@ func _layout_to_viewport() -> void:
 		_day_section.get_combined_minimum_size().y
 		+ float(_top_contents.get_theme_constant("separation"))
 	)
+	var copy_height: float = _header_copy.position.y + _header_copy.get_combined_minimum_size().y + 8.0
 	_header.custom_minimum_size.y = maxf(
-		122.0,
+		maxf(122.0, copy_height),
 		_top_scroll.size.y - section_minimum - 4.0
 	)
 
@@ -278,6 +284,8 @@ func _build_header(parent: VBoxContainer) -> void:
 	_header.add_child(header_glass)
 
 	var title_inset := MarginContainer.new()
+	_header_copy = title_inset
+	title_inset.minimum_size_changed.connect(_layout_to_viewport, CONNECT_DEFERRED)
 	title_inset.anchor_left = 0.0
 	title_inset.anchor_top = 0.0
 	title_inset.anchor_right = 1.0
@@ -350,6 +358,7 @@ func _build_day_track(parent: VBoxContainer) -> void:
 
 	var path_title := _label("ASCENSION PATH", 15, GOLD_LIGHT)
 	path_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	path_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	heading_row.add_child(path_title)
 
 	_active_label = _label("04 / 07 ACTIVE", 13, JADE)
@@ -390,6 +399,7 @@ func _build_day_track(parent: VBoxContainer) -> void:
 
 	var guide := _label("←  SWIPE FOR DAYS 1–7  →", 14, MUTED)
 	guide.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	guide.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	guide.modulate = Color(1.0, 1.0, 1.0, 0.78)
 	section.add_child(guide)
 
@@ -401,9 +411,8 @@ func _build_day_track(parent: VBoxContainer) -> void:
 
 
 func _build_footer(parent: VBoxContainer) -> void:
-	# A plain Control reserves exactly one fixed footprint in the parent VBox.
-	# Unlike PanelContainer, its minimum height does not grow when the day
-	# switches from one visible reward to two (or the labels change).
+	# Reserve room for the usual footer, expanding the slot only when wrapped
+	# captions or the final reward need more space. The reader above can scroll.
 	var footer_slot := Control.new()
 	footer_slot.name = "SelectedDayDetailsFixedSlot"
 	footer_slot.custom_minimum_size = Vector2(0.0, 262.0)
@@ -467,7 +476,7 @@ func _build_footer(parent: VBoxContainer) -> void:
 	_action.keep_pressed_outside = false
 	_action.add_theme_font_size_override("font_size", 20)
 	_action.add_theme_color_override("font_color", Color(0.20, 0.13, 0.02, 1.0))
-	_action.add_theme_color_override("font_disabled_color", Color(0.30, 0.28, 0.18, 1.0))
+	_action.add_theme_color_override("font_disabled_color", Color(0.92, 0.98, 0.96, 1.0))
 	for style_name: String in ["normal", "hover", "pressed", "disabled", "focus"]:
 		var transparent := StyleBoxFlat.new()
 		transparent.bg_color = Color.TRANSPARENT
@@ -483,6 +492,12 @@ func _build_footer(parent: VBoxContainer) -> void:
 	_footer_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_footer_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	column.add_child(_footer_note)
+
+	var fit_footer: Callable = func():
+		if is_instance_valid(footer_slot) and is_instance_valid(footer):
+			footer_slot.custom_minimum_size.y = maxf(262.0, footer.get_combined_minimum_size().y)
+	footer.minimum_size_changed.connect(fit_footer, CONNECT_DEFERRED)
+	fit_footer.call()
 
 
 func _refresh() -> void:
