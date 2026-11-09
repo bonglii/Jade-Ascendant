@@ -215,6 +215,7 @@ func _on_guest_pressed() -> void:
 	var snapshot: Dictionary = GoogleAccountManager.get_account_snapshot()
 	if bool(snapshot.get("busy", false)) and str(snapshot.get("operation", "")) != "anonymous_identity":
 		return
+	GoogleAccountManager.select_guest_entry()
 	_continue_home()
 
 

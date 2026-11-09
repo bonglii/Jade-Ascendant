@@ -297,17 +297,16 @@ func _refresh_profile_shortcut(_snapshot: Dictionary = {}) -> void:
 	var rank_short: String = str(rank_short_names.get(ProgressionManager.get_hero_rank_title(), tr(ProgressionManager.get_hero_rank_title())))
 	profile_rank.text = "Lv.%02d • %s" % [level, rank_short]
 	profile_exp.value = ProgressionManager.get_hero_progress_ratio()
+	var connection: Node = PlayerIdentityManager.get_node_or_null("ConnectionReadiness")
 	var connected: bool = str(snapshot.get("server_status", "")) == "connected"
 	var status_text: String = "ONLINE" if connected else "OFFLINE"
-	if str(snapshot.get("server_status", "")) == "sign_in_required": status_text = "LOGIN" if indonesian else "SIGN IN"
-	if str(snapshot.get("server_status", "")) in ["pending", "connecting", "registering", "resolving_ipv4", "checking_connection"]: status_text = "KONEKSI…" if indonesian else "CONNECTING"
-	if not bool(snapshot.get("ready", false)): status_text = "PROFIL BELUM SIAP" if indonesian else "PROFILE UNAVAILABLE"
-	var exp_text: String = "MAX" if ProgressionManager.get_hero_level() >= ProgressionManager.HERO_MAX_LEVEL else "EXP %d%%" % roundi(profile_exp.value * 100)
-	profile_status.text = exp_text + " • " + status_text
+	if connection != null:
+		var state: Dictionary = connection.get_snapshot()
+		connected = str(state.stage) == "ready"
+		status_text = connection.status_text(str(state.stage), indonesian)
+	profile_status.text = status_text
 	profile_status.add_theme_color_override("font_color", JADE_SOFT if connected else GOLD_BRIGHT)
 	profile_connection.add_theme_stylebox_override("panel", _panel_style(JADE if connected else GOLD, Color(.01,.08,.08), 5, 0))
-	var uid: String = str(snapshot.get("player_uid", ""))
-	profile_shortcut.tooltip_text = "%s\n%s\nUID %s\n%s\n%s" % [profile_name.text, "Lv.%02d • %s" % [level, tr(ProgressionManager.get_hero_rank_title())], uid, status_text, "Ketuk untuk profil, salin UID, dan ubah nama" if indonesian else "Tap for profile, copy UID, and rename"]
 
 
 func _on_profile_progress_changed(_level: int, _experience: int, _required: int) -> void:
@@ -752,6 +751,9 @@ func _position_meditation() -> void:
 
 
 func _connect_runtime_signals() -> void:
+	var connection: Node = PlayerIdentityManager.get_node_or_null("ConnectionReadiness")
+	if connection != null and not connection.changed.is_connected(_refresh_profile_shortcut):
+		connection.changed.connect(_refresh_profile_shortcut)
 	if not PlayerIdentityManager.profile_changed.is_connected(_refresh_profile_shortcut):
 		PlayerIdentityManager.profile_changed.connect(_refresh_profile_shortcut)
 	if not ProgressionManager.hero_progress_changed.is_connected(_on_profile_progress_changed):

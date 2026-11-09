@@ -63,6 +63,8 @@ func _can_present() -> bool:
  var transition: Node = get_node_or_null("/root/SceneTransitionManager")
  if not _focused or scene == null or get_tree().paused or (transition != null and bool(transition.get("is_transitioning"))): return false
  if scene.scene_file_path.get_file().get_basename() not in MENUS: return false
+ var connection: Node = _identity.get_node_or_null("ConnectionReadiness")
+ if connection != null and str(connection.get_snapshot().stage) not in ["local", "ready"]: return false
  var announcements: CanvasLayer = get_node_or_null("/root/AnnouncementCenter") as CanvasLayer
  if announcements != null and announcements.visible: return false
  for item: Node in scene.find_children("*","Control",true,false):

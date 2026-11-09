@@ -1,0 +1,50 @@
+{
+  "base": "d76c0507816b1251dd3cdb8838028958cbb29db5",
+  "branch": "work/player-polish-20261104",
+  "authorization": "Owner asks for sensible connection preparation so data is ready before play.",
+  "status": "AUTHOR_HEADLESS_PASS_READY_FOR_OWNER_ANDROID",
+  "scope": [
+    "early read preparation through existing auth/profile/equipment services",
+    "aggregate Home readiness and retry",
+    "bounded run entry wait, verified current loadout before signed-account run",
+    "preserve Guest and legacy local Continue, journals and account isolation"
+  ],
+  "validation": {
+    "runtime": "Godot 4.7.2 headless, disposable external project and user data",
+    "final_source_checks": {
+      "home_connection_readiness": 43,
+      "home_connection_ui_geometry": 156,
+      "run_entry_reliability": 40,
+      "paid_run_new": 15,
+      "paid_run_restart": 30,
+      "paid_gameplay_contract": 58,
+      "google_callbacks": 21,
+      "connection_welcome": 39,
+      "final_mobile_polish": 178
+    },
+    "final_source_total": 580,
+    "failures": 0,
+    "retained_previous_evidence": {
+      "connection_readiness": 28,
+      "profile_resilience": 54,
+      "menu_experience": 60
+    },
+    "production_gates": 9,
+    "native_provenance_inputs": 52,
+    "layout": "Full Home and profile geometry in EN and ID at 320x568, 390x844 and 648x1152. Synthetic touch in fixture only.",
+    "limitations": "Native GUI and physical Android require a matching release build. The run-entry fixture preloads level resources to isolate network gating from cold scene loading."
+  },
+  "owner_source_install": "PREVIOUS_d76c050_CONFIRMED_NEW_UPDATE_PENDING",
+  "aab": "PENDING",
+  "phone": "PENDING",
+  "deploy": "NOT_REQUESTED",
+  "native": "EXISTING_R2_UNCHANGED",
+  "qa_output_policy": "All imports, copies, user data, logs and captures outside checkout.",
+  "remaining": [
+    "Fast-forward the owner checkout to the containing commit.",
+    "Verify android/build/google-services.json from the last working backup before exporting. Use the established signed production exporter.",
+    "Final Android QA: cold boot and a slow link, Google sign-in, Home equipment sync, exact loadout on Begin and Continue, reconnect, and explicit Guest offline. Verify actual Play-installed release before release signoff."
+  ],
+  "reviewed_on": "2026-11-09",
+  "publication": "Verify the containing commit on work/player-polish-20261104. Parent is d76c050."
+}

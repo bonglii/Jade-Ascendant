@@ -1,6 +1,6 @@
 {
-  "state": "docs/checkpoints/PLAYER_POLISH_2026-11-04.json",
-  "base": "1921495faac5cdf26a7ef660eeeee451c99615eb",
-  "previous": "docs/checkpoints/FRESH_SOURCE_NAVBAR_2026-11-04.json",
+  "state": "docs/checkpoints/CONNECTION_STARTUP_2026-11-05.json",
+  "base": "d76c0507816b1251dd3cdb8838028958cbb29db5",
+  "previous": "docs/checkpoints/PLAYER_POLISH_2026-11-04.json",
   "source_branch": "work/player-polish-20261104"
 }

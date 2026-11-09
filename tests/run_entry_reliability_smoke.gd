@@ -62,7 +62,11 @@ func run() -> void:
  client.snapshot={};client.replies.compass_authorized=false;client.replies.state.compass_verification="not_granted"
  check(not await client.prepare_scene_run(false) and client.run_gate_error=="COMPASS_GRANT_REQUIRED","inventory without authoritative grant has a specific reason")
  client.replies.state.compass_verification="unavailable"
- check(not await client.prepare_scene_run(false) and client.run_gate_error=="COMPASS_VERIFICATION_UNAVAILABLE","server grant outage is not missing ownership")
+ var last_dispatch: int = client.dispatch_count
+ check(not await client.prepare_scene_run(false) and client.run_gate_error=="COMPASS_GRANT_REQUIRED" and client.dispatch_count==last_dispatch,"a fresh negative lease retains its confirmed result")
+ # Move past the read coalescing window before expecting the new server reply.
+ client._received_msec=Time.get_ticks_msec()-16000
+ check(not await client.prepare_scene_run(false) and client.run_gate_error=="COMPASS_VERIFICATION_UNAVAILABLE" and client.dispatch_count==last_dispatch+1,"server grant outage is not missing ownership")
  client.snapshot={"compass_authorized":true};client._received_msec=Time.get_ticks_msec();client.status="ACCOUNT_HELD";client.fail_status="ACCOUNT_HELD"
  check(not await client.prepare_scene_run(false) and client.run_gate_error=="ACCOUNT_HELD","explicit hold cannot reuse a cached positive lease")
  client.snapshot={};client.fail_status="APP_CHECK_UNAVAILABLE"
@@ -86,6 +90,9 @@ func run() -> void:
  var saver: Node=root.get_node("SaveManager");saver.write_save_data("checkpoint",{"fixture_sentinel":"preserve until gates pass"})
  var before: Dictionary=saver.read_save_data("checkpoint").data.duplicate(true)
  var journey: Node=root.get_node("JourneyManager");journey.select_stage(1,1);journey.clear_active_run()
+ # Verify the entry decision with level resources already loaded, as in paid-run recovery QA.
+ var level_fixture: PackedScene = load("res://scenes/levels/level_1.tscn")
+ check(level_fixture != null,"production level loads before the run-gate fixture")
  var stage: Control=load("res://scenes/ui/stage_select.tscn").instantiate();root.add_child(stage);current_scene=stage;await settle()
  stage._start_selected_stage();stage._start_selected_stage()
  while transition.is_transitioning:await process_frame

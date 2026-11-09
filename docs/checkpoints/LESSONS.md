@@ -972,3 +972,9 @@ A literal credential-shaped sample in a self-published test triggered the scanne
 - A headless SceneTree test must runtime-load scripts that depend on autoload globals after initialization; preloading them through an inner subclass can fail before the globals exist.
 - Keep each test invocation's output path unique and reap a failed process before rerunning it. A still-running failed process can corrupt a reused log; final evidence must come from a fresh isolated run.
 - Home's decorative overlay is not a modal. Automatic claim priority must consider visibility and input interception, preserving manual claims and never releasing gameplay actions from a read-only preview.
+
+## 2026-11-09 · Connection preparation before stage entry
+- Profile registration, paid wallet/equipment readiness and permission to start a run are separate. Prepare reads early and aggregate their state in Home. A bound account with unconfirmed equipment must wait or get a retry message. A confirmed empty account and explicit local Guest entry can use local equipment.
+- Bound the entire foreground gate. Preserve request IDs and journals when the UI stops waiting, and recheck account binding before using any response. Test a delayed native receipt and Continue after a process restart.
+- A mock backend reply cannot change an already observed snapshot inside its coalescing window. Exercise both the fresh result and a new request after the observation expires. Preload the level fixture when testing authorization rather than cold resource loading.
+- Measure Home status captions at the smallest supported viewport in both languages. The short labels fit the existing profile card at 320 px and use the same status as the full retry controls.

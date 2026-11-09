@@ -6,6 +6,7 @@ const HASH: String = "16cfc8c6171f52bb60dfc76eb756769f6e13ce7122d87bec531bb46d75
 const Catalog = preload("res://scripts/data/equipment_catalog.gd")
 const SLOTS: Array[String] = ["armament", "robe", "bracer", "boots", "pendant"]
 const SINGLETON: String = "JadeMonetizationNativeBridge"
+const ENTRY_WAIT_MSEC: int = 12000
 const SNAPSHOT_FIELDS: Array[String] = [
 	"paid_gameplay_version", "account_binding", "catalog_hash", "state", "revision",
 	"wallet", "inventory", "stars", "slots", "pity", "wish", "wish_guaranteed",
@@ -31,6 +32,7 @@ var _run_weapon_level: int = 0
 var _run_prepared: bool = false
 var _run_entered: bool = false
 var _preparing_run: bool = false
+var _entry_wait_until: int = 0
 var _last_result: Dictionary = {}
 var run_gate_error: String = ""
 var run_gate_owner_hint: String = ""
@@ -96,6 +98,8 @@ func _invalidate(reason: String) -> void:
 	changed.emit()
 func _fresh() -> bool:
 	return not snapshot.is_empty() and _binding == _live_binding() and Time.get_ticks_msec() < _expires
+func connection_ready() -> bool:
+	return _fresh() and snapshot.get("state", "") in ["ready", "unfunded"]
 func is_verified_ready() -> bool:
 	return _fresh() and snapshot.get("state", "") == "ready"
 func paid_balance() -> int:
@@ -211,6 +215,12 @@ func refresh() -> bool:
 	var pending: Dictionary = _read_pending()
 	if pending.has("error"): _invalidate("recovery_required"); return false
 	return _dispatch(pending)
+func prepare_connection(user_requested: bool = false) -> bool:
+	if busy or _preparing_run:
+		return false
+	if not user_requested and not _fresh() and Time.get_ticks_msec() < _next_read:
+		return false
+	return refresh_if_stale()
 func refresh_if_stale(max_age_ms: int = 15000) -> bool:
 	if _fresh() and _read_pending().is_empty() and Time.get_ticks_msec() - (_expires - 120000) < max_age_ms:
 		return true
@@ -351,8 +361,27 @@ func _checkpoint_for_gate() -> Dictionary:
 	var script: Script=load("res://scripts/managers/checkpoint_manager.gd")
 	var result: Dictionary=script.read_checkpoint_result()
 	return result.get("data",{}) if bool(result.get("success",false)) else {}
-func _await_transport() -> void:
-	while busy: await get_tree().process_frame
+func _await_transport() -> bool:
+	# The native request may finish in the background after the entry UI times out.
+	# Keep its request ID and durable journal so a retry cannot duplicate it.
+	while busy and Time.get_ticks_msec() < _entry_wait_until:
+		await get_tree().process_frame
+	return not busy
+
+func _await_entry_identity() -> bool:
+	if not _live_binding().is_empty():
+		return true
+	var account: Node = _service("GoogleAccountManager")
+	if account != null and account.can_enter_local_without_identity():
+		return true
+	if account == null or not bool(account.get_account_snapshot().get("native_ready", false)):
+		return _gate_fail("NATIVE_LOGIN_UNAVAILABLE")
+	account.ensure_monetization_identity()
+	while _live_binding().is_empty() and bool(account.get_account_snapshot().get("busy", false)) and Time.get_ticks_msec() < _entry_wait_until:
+		await get_tree().process_frame
+	if _live_binding().is_empty():
+		return _gate_fail("IDENTITY_PENDING" if bool(account.get_account_snapshot().get("busy", false)) else "SIGN_IN_REQUIRED")
+	return true
 func _seal_run(ref: Dictionary, frozen: Dictionary) -> void:
 	_run_ref=ref.duplicate(true); _run_slots=frozen.get("slots",{}).duplicate(true)
 	_run_stars=frozen.get("stars",{}).duplicate(true); _run_weapon_level=int(frozen.get("weapon_level",0))
@@ -370,8 +399,10 @@ func prepare_scene_run(continuing: bool) -> bool:
 	if _preparing_run: return _gate_fail("VERIFICATION_BUSY")
 	run_gate_error="";run_gate_owner_hint=""
 	_preparing_run=true
+	_entry_wait_until = Time.get_ticks_msec() + ENTRY_WAIT_MSEC
 	var ok: bool=await _prepare_scene_run(continuing)
 	_preparing_run=false
+	_entry_wait_until = 0
 	if not ok: _reset_run()
 	return ok
 func _prepare_scene_run(continuing: bool) -> bool:
@@ -387,19 +418,44 @@ func _prepare_scene_run(continuing: bool) -> bool:
 		var account: Node=_service("GoogleAccountManager")
 		if account!=null and account.has_method("get_known_account_hint"):run_gate_owner_hint=str(account.call("get_known_account_hint",str(ref.binding)))
 		return _gate_fail("ACCOUNT_MISMATCH")
+	if not continuing and not await _await_entry_identity():
+		return false
 	var account_binding: String=_live_binding()
-	await _await_transport()
+	if _binding != account_binding:
+		_identity_changed(false)
+	if not await _await_transport():
+		return _gate_fail("VERIFICATION_PENDING")
 	if account_binding!=_live_binding(): return _gate_fail("ACCOUNT_CHANGED")
 	if not _read_pending().is_empty():
 		if not refresh(): return _gate_fail("RECOVERY_REQUIRED")
-		await _await_transport()
+		if not await _await_transport():
+			return _gate_fail("VERIFICATION_PENDING")
 		if account_binding!=_live_binding(): return _gate_fail("ACCOUNT_CHANGED")
 		if not _read_pending().is_empty(): return _gate_fail("RECOVERY_REQUIRED")
-	if not continuing and not is_verified_ready():
-		_seal_run({},{}); return true
+	if not continuing:
+		if account_binding.is_empty():
+			_seal_run({}, {})
+			return true
+		if not connection_ready():
+			if not refresh():
+				return _gate_fail(_transport_gate_reason())
+			if not await _await_transport():
+				return _gate_fail("VERIFICATION_PENDING")
+			# A verified initialize_required response queues its existing command.
+			await get_tree().process_frame
+			if not await _await_transport():
+				return _gate_fail("VERIFICATION_PENDING")
+			if account_binding != _live_binding():
+				return _gate_fail("ACCOUNT_CHANGED")
+			if not connection_ready():
+				return _gate_fail(_transport_gate_reason())
+		if str(snapshot.get("state", "")) == "unfunded":
+			_seal_run({}, {})
+			return true
 	if continuing:
 		if not refresh(): return _gate_fail(_transport_gate_reason())
-		await _await_transport()
+		if not await _await_transport():
+			return _gate_fail("VERIFICATION_PENDING")
 		if account_binding!=_live_binding(): return _gate_fail("ACCOUNT_CHANGED")
 		if not is_verified_ready(): return _gate_fail(_transport_gate_reason())
 	var selected: Dictionary=snapshot.get("slots",{})
@@ -411,8 +467,11 @@ func _prepare_scene_run(continuing: bool) -> bool:
 		var equipment: Node=_service("EquipmentManager")
 		var arm: String=str(selected.get("armament",""))
 		extra.weapon_level=0 if arm=="" else clampi(int(equipment.get("weapon_levels").get(arm,1)),1,item_star(arm)*10)
+	if Time.get_ticks_msec() >= _entry_wait_until:
+		return _gate_fail("VERIFICATION_PENDING")
 	if not submit("run_resume" if continuing else "run_start",extra): return _gate_fail("RECOVERY_REQUIRED")
-	await _await_transport()
+	if not await _await_transport():
+		return _gate_fail("VERIFICATION_PENDING")
 	if account_binding!=_live_binding(): return _gate_fail("ACCOUNT_CHANGED")
 	if not _last_result.get("success",false) or not _fresh(): return _gate_fail(_transport_gate_reason())
 	var op: Dictionary=_last_result.get("operation",{})

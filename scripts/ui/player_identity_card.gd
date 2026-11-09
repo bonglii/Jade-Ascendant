@@ -81,11 +81,14 @@ func _ready() -> void:
 	_status = _label(_local("Player identity on this device.","Identitas pemain di perangkat ini."),12,MUTED)
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(_status)
-	_server_connect = _button(_local("CONNECT SERVER","HUBUNGKAN SERVER"),PlayerIdentityServerClient.connect_profile)
+	_server_connect = _button(_local("CONNECT SERVER","HUBUNGKAN SERVER"),_retry_connection)
 	content.add_child(_server_connect)
 	_retry = _button(_local("RETRY","COBA LAGI"),PlayerIdentityManager.refresh_profile)
 	content.add_child(_retry)
 	var receipts:=_button(_local("RECENT REWARDS","RIWAYAT HADIAH"),_open_receipts);receipts.name="ProfileRewardReceipts";content.add_child(receipts)
+	var connection: Node = PlayerIdentityManager.get_node_or_null("ConnectionReadiness")
+	if connection != null:
+		connection.changed.connect(_connection_changed)
 	PlayerIdentityManager.profile_changed.connect(_refresh)
 	_refresh(PlayerIdentityManager.get_profile_snapshot())
 
@@ -128,12 +131,30 @@ func _refresh(snapshot: Dictionary) -> void:
 	else:
 		_status.text = _connection_hint(snapshot)
 	_edit.visible = not _editor.visible
-	_server_connect.visible = profile_ready and str(snapshot.server_status) != "connected"
-	_server_connect.disabled = str(snapshot.server_status) in ["android_required","sign_in_required","connecting","checking_connection","resolving_ipv4"]
+	var connection: Node = PlayerIdentityManager.get_node_or_null("ConnectionReadiness")
+	if connection != null and profile_ready:
+		var state: Dictionary = connection.get_snapshot()
+		_status.text += "\n" + connection.status_text(str(state.stage), SettingsManager.language == "id")
+		_server_connect.visible = bool(state.can_retry)
+		_server_connect.disabled = not bool(state.can_retry)
+		_server_connect.text = _local("RETRY CONNECTION", "COBA LAGI KONEKSI")
+	else:
+		_server_connect.visible = profile_ready and str(snapshot.server_status) != "connected"
+		_server_connect.disabled = str(snapshot.server_status) in ["android_required", "sign_in_required", "connecting", "checking_connection", "resolving_ipv4"]
+
+func _connection_changed(_state: Dictionary) -> void:
+	_refresh(PlayerIdentityManager.get_profile_snapshot())
+
+func _retry_connection() -> void:
+	var connection: Node = PlayerIdentityManager.get_node_or_null("ConnectionReadiness")
+	if connection != null:
+		connection.retry()
+	else:
+		PlayerIdentityServerClient.connect_profile()
 
 func _connection_hint(snapshot: Dictionary) -> String:
 	var state: String = str(snapshot.server_status)
-	if state == "connected": return _local("SERVER CONNECTED","SERVER TERHUBUNG")
+	if state == "connected": return _local("PROFILE CONNECTED","PROFIL TERHUBUNG")
 	var message: String = _local("Server registration pending.","Registrasi server belum selesai.")
 	match state:
 		"connecting": message = _local("Connecting to server...","Menghubungkan server...")

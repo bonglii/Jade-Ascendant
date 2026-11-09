@@ -19,6 +19,9 @@ var _server_status: String = "pending"
 
 func _ready() -> void:
 	refresh_profile()
+	var connection: Node = preload("res://scripts/managers/home_connection_readiness.gd").new()
+	connection.name = "ConnectionReadiness"
+	add_child(connection)
 	var welcome: CanvasLayer = preload("res://scripts/ui/connection_welcome_toast.gd").new()
 	welcome.name = "ConnectionWelcomeToast"
 	add_child(welcome)

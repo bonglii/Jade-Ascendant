@@ -13,6 +13,7 @@ const ACCOUNT_CARD_PATH: String = "res://scripts/ui/google_account_card.gd"
 const NATIVE_SINGLETON: String = "GodotFirebaseAndroid"
 const OPERATION_TIMEOUT_SECONDS: float = 35.0
 
+var _guest_entry_selected: bool = false
 var _auth: Object = null
 var _native_ready: bool = false
 var _signed_in: bool = false
@@ -66,6 +67,14 @@ func _on_scene_changed() -> void:
 		content.move_child(card, audio_card.get_index())
 	# The Settings scene is deliberately left untouched. The Account card is
 	# appended only in Settings; all existing controls remain intact.
+
+
+func select_guest_entry() -> void:
+	_guest_entry_selected = true
+
+
+func can_enter_local_without_identity() -> bool:
+	return not OS.has_feature("android") or (_guest_entry_selected and not _signed_in)
 
 
 func get_account_snapshot() -> Dictionary:
