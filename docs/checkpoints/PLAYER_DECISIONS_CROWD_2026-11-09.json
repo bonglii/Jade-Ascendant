@@ -180,5 +180,12 @@
     "The broad audit opens 26 production scenes at three sizes in both locales, with focused assertion coverage on changed controls. All remaining failures from the broad sweep were Ascension-only and are covered by the final focused pass.",
     "Native evidence uses Godot X11 with simulated GUI input. Owner Windows installation and Android performance are separate.",
     "No owner QA files were written. Imports, saves, logs and renders used disposable QA storage."
-  ]
+  ],
+  "ci_ascension_first_paint": {
+    "run": 42656823438,
+    "headless": "116 of 120",
+    "native": "122 of 126",
+    "remaining": "Four compact day-picker assertions failed per mode. The upper reader had 0 to 6 px of the rail before scrolling. Native screenshots confirmed the header decoration and progress row used too much of the first viewport.",
+    "fix": "Compact layout keeps the gold title and close button, uses a shorter active-day row and action caption, and reduces the decorative header floor. Verify the picker is visible on arrival."
+  }
 }
