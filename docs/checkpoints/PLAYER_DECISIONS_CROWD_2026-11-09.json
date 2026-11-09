@@ -2,7 +2,7 @@
   "base": "b9c64f2ebd0009375af4aa01578f8b1adf98321f",
   "base_tree": "2efc25fe225a49175b29cdcba6153b44340a0897",
   "branch": "work/player-polish-20261104",
-  "status": "SOURCE_CANDIDATE_FINAL_GODOT_QA_PENDING",
+  "status": "STRICT_IMPORT_FIX_CANDIDATE_QA_PENDING",
   "candidate_branch": "checkpoint/player-decisions-crowd-20261109",
   "baseline": {
     "player_ui": {
@@ -15,9 +15,23 @@
     },
     "crowd": {
       "workload": "Same seeded input and fixed physics step in production stages 1-5 and 5-5. Each measured sample contains 480 frames.",
-      "stage_1_5": {"enemies": 96, "baseline_median_p95_ms": 5.253, "baseline_hp_loss": 112, "enemy_collision_off_hp_loss": 194},
-      "stage_5_5": {"enemies": 110, "baseline_median_p95_ms": 6.154, "baseline_hp_loss": 145.92, "enemy_collision_off_hp_loss": 227.84},
-      "rejected_experiments": ["enemy collision masks", "one slide per step", "unused area removal or monitoring changes"],
+      "stage_1_5": {
+        "enemies": 96,
+        "baseline_median_p95_ms": 5.253,
+        "baseline_hp_loss": 112,
+        "enemy_collision_off_hp_loss": 194
+      },
+      "stage_5_5": {
+        "enemies": 110,
+        "baseline_median_p95_ms": 6.154,
+        "baseline_hp_loss": 145.92,
+        "enemy_collision_off_hp_loss": 227.84
+      },
+      "rejected_experiments": [
+        "enemy collision masks",
+        "one slide per step",
+        "unused area removal or monitoring changes"
+      ],
       "earlier_cosmetic_probe": "The less aggressive pose experiment preserved measured hit traces but did not establish a repeatable frame-time improvement.",
       "candidate_measurement": "The final paired run was interrupted by a scratch rollback. The candidate measurement is pending."
     }
@@ -44,5 +58,14 @@
   ],
   "owner_install": "PENDING",
   "aab": "PENDING",
-  "android": "PENDING"
+  "android": "PENDING",
+  "ci_initial": {
+    "head": "a0df81a1f985188055a183b976813122f8eec533",
+    "draft_pr": 1,
+    "player_release_run": 42649795390,
+    "player_journey_run": 42649795440,
+    "windows_script_job": "PASS",
+    "runtime_jobs": "Both stopped before runtime during a fresh strict import. PlayerCompanion.record_training shadowed Node.owner in both the base and candidate.",
+    "recovery": "Rename the parameter to expected_owner, preserving both account checks. Re-run the exact candidate's strict import and runtime gates."
+  }
 }

@@ -990,3 +990,5 @@ A literal credential-shaped sample in a self-published test triggered the scanne
 - Treat detected wrapping and overflow as review leads. Verify the player-facing cases with compact and tall EN and ID views, including a pending or locked action and its confirmation.
 - Compare combat traces when profiling collision work. Disabling enemy collisions, limiting slides and disabling unused area monitoring each changed incoming HP loss or projectile counts. Preserve the collision path while testing a cosmetic budget separately.
 - Separate candidate source, verified runtime evidence and the Android result. The scratch workspace rolled back during the final paired benchmark. Recover the canonical source by tree hash and retain only the earlier receipts that were observed.
+
+- Run the clean strict Godot import before treating static validation or a warm fixture as release readiness. GitHub caught an inherited autoload parameter shadowing Node.owner, which stopped both release and journey suites before runtime. Rename the parameter and preserve both account checks.

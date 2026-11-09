@@ -263,8 +263,8 @@ func record_drill(mode: String,art: String,time_ms: int,damage: float,expected_o
  next.drills[mode+":"+art]={"mode":mode,"art":art,"time_ms":time_ms,"damage":minf(damage,1.0e12)}
  return commit(next)
 
-func record_training(context: Dictionary,row: Dictionary,owner: String) -> bool:
- if owner!=account_key or owner!=live_owner():return false
+func record_training(context: Dictionary,row: Dictionary,expected_owner: String) -> bool:
+ if expected_owner!=account_key or expected_owner!=live_owner():return false
  var key: String=preload("res://scripts/data/experience_policy.gd").record_key(context)
  var checked: Dictionary=preload("res://scripts/data/experience_policy.gd").clean_records({key:row})
  if checked.is_empty():return false
