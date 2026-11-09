@@ -137,7 +137,7 @@ func _refresh() -> void:
  _rewards.text="REWARDS";preload("res://scripts/ui/action_ready_dot.gd").show_on(_rewards,int(client.call("ready_count")) if client!=null else 0)
 func _update_risk_summary(active: bool=false) -> void:
  var indonesian: bool=SettingsManager.language=="id"
- var effects: Array[String]=["Pola tiap 9 dtk.","Pola tiap 7 dtk (standar 9 dtk).","Damage masuk +15%."] if indonesian else ["Patterns every 9s.","Patterns every 7s (standard 9s).","Incoming damage +15%."]
+ var effects: Array=["Pola tiap 9 dtk.","Pola tiap 7 dtk (standar 9 dtk).","Damage masuk +15%."] if indonesian else ["Patterns every 9s.","Patterns every 7s (standard 9s).","Incoming damage +15%."]
  var prefix: String=("Pilihan run aktif · " if indonesian else "Active trial · ") if active else ""
  _risk_summary.text=prefix+effects[clampi(_risk_picker.selected,0,2)]+(" Hadiah mingguan sama." if indonesian else " Same weekly rewards.")
 func _refresh_portrait(tier: int,stage: int) -> void:

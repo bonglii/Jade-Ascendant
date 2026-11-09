@@ -73,6 +73,7 @@ var _shard_reward_value: Label = null
 var _shard_reward_slot: PanelContainer = null
 var _action: Button = null
 var _action_art: TextureRect = null
+var _seal_reward_note: Label = null
 var _footer_note: Label = null
 var _tap_guard_until: int = 0
 var _pressed_scroll_x: Dictionary = {}
@@ -448,9 +449,16 @@ func _build_footer(parent: VBoxContainer) -> void:
 	_reward_row.add_theme_constant_override("v_separation", 8)
 	column.add_child(_reward_row)
 
+	_seal_reward_note = _label("", 14, GOLD_LIGHT)
+	_seal_reward_note.name = "FinalSealReward"
+	_seal_reward_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_seal_reward_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(_seal_reward_note)
+
 	_action = Button.new()
 	_action.custom_minimum_size = Vector2(0.0, 56.0)
 	_action.text = "CLAIM REWARD"
+	_action.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_action.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_action.focus_mode = Control.FOCUS_NONE
 	_action.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -690,8 +698,14 @@ func _refresh_footer() -> void:
 	var final_day: bool = _selected_day == _total_days()
 	var reward: Dictionary = _reward(_selected_day)
 
-	var reward_title: String = "HADIAH HARI %d" if SettingsManager.language == "id" else "DAY %d REWARD"
-	_day_title.text = tr("DAY 07  •  THE SEVENTH GATE") if final_day else reward_title % _selected_day
+	var indonesian: bool = SettingsManager.language == "id"
+	var compact: bool = get_viewport_rect().size.x < 350.0
+	var reward_title: String = "HADIAH HARI %d" if indonesian else "DAY %d REWARD"
+	var final_title: String = tr("DAY 07  •  THE SEVENTH GATE")
+	if compact:
+		final_title = "HARI 7 · HADIAH AKHIR" if indonesian else "DAY 7 · FINAL GIFT"
+	_day_title.text = final_title if final_day else reward_title % _selected_day
+	_day_title.add_theme_font_size_override("font_size", 18 if compact else 22)
 	_day_title.add_theme_color_override("font_color", GOLD_LIGHT if final_day or state == "ready" else JADE)
 	_day_status.text = _state_text(state)
 	_day_status.add_theme_color_override("font_color", _accent(_selected_day, state))
@@ -719,12 +733,9 @@ func _refresh_footer() -> void:
 		_shard_reward_value.text = str(shard_amount)
 	_shard_reward_slot.visible = shard_amount > 0
 
-	var seal_note: Label = _reward_row.get_node_or_null("FinalSealReward")
-	if seal_note == null:
-		seal_note = _label("+1 PAVILION SEAL",14,GOLD_LIGHT)
-		seal_note.name = "FinalSealReward"
-		_reward_row.add_child(seal_note)
-	seal_note.visible = int(reward.get("pavilion_seal",0)) > 0
+	var seal_count: int = int(reward.get("pavilion_seal", 0))
+	_seal_reward_note.text = "+" + (tr("%d PAVILION SEAL%s") % [seal_count, "" if seal_count == 1 else "S"])
+	_seal_reward_note.visible = seal_count > 0
 	var progress_locked: bool = SaveManager.is_progress_read_only()
 	if state == "ready":
 		_action.text = tr("CLAIM FINAL GIFT") if final_day else tr("CLAIM REWARD")
