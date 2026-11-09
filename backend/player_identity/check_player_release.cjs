@@ -8,7 +8,8 @@ const { spawnSync } = require('node:child_process');
 const { qa, runProcess } = require('./check_event_touch.cjs');
 
 const suites = [
-  ['run_review_layout_smoke', 'RUN_REVIEW_LAYOUT checks=', 'jade_event_touch_qa', true]
+  ['player_decisions_matrix', 'DECISION_MATRIX checks=', 'jade_decision_qa'],
+  ['player_decisions_matrix', 'DECISION_MATRIX checks=', 'jade_decision_qa', true]
 ];
 
 async function check(project, godot) {
@@ -23,6 +24,7 @@ async function check(project, godot) {
   fs.mkdirSync(images);
   process.env.JADE_JOURNEY_RENDER_DIR = images;
   process.env.JADE_COMBAT_RENDER_DIR = images;
+  process.env.JADE_DECISION_RENDER_DIR = images;
 
   const engine = spawnSync(godot, ['--version'], { encoding: 'utf8' });
   if (engine.status !== 0 || !/^4\.7\.2\./.test(engine.stdout.trim())) throw Error('Pinned Godot 4.7.2 required');
@@ -46,7 +48,7 @@ async function check(project, godot) {
       const source = path.join(logs, name + '.log');
       if (fs.existsSync(source)) {
         const lines = fs.readFileSync(source, 'utf8').split(/\r?\n/);
-        for (const line of lines.filter(line => /^(DECISION_CASE|DECISIONS_FAIL|DECISION_MATRIX|CROWD_PAIRED|RUN_REVIEW_SWIPE|SCRIPT ERROR|ERROR:|REAL_SCROLL)/.test(line)).slice(-120)) console.log(line);
+        for (const line of lines.filter(line => /^(DECISION_CASE|DECISIONS_FAIL|DECISION_MATRIX|CROWD_PAIRED|SCRIPT ERROR|ERROR:|REAL_SCROLL)/.test(line)).slice(-120)) console.log(line);
       }
       console.log('DECISION_SUITE_FAIL ' + name + ' ' + error.message);
       issues.push(name);
@@ -64,8 +66,6 @@ async function check(project, godot) {
   const upload = path.join(root, '.local/player_release_qa');
   fs.mkdirSync(upload, { recursive: true });
   for (const file of evidence) fs.copyFileSync(file, path.join(upload, path.basename(file)));
-  const review = fs.readFileSync(path.join(logs,"run_review_layout_smoke-native.log"), "utf8");
-  for (const line of review.split(/\r?\n/).filter(line => line.startsWith("RUN_REVIEW_SWIPE"))) console.log(line);
   fs.cpSync(images, path.join(upload, 'images'), { recursive: true });
   console.log('DECISION_BATCH issues=' + JSON.stringify(issues));
   if (issues.length) process.exitCode = 1;

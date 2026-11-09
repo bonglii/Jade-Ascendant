@@ -2,7 +2,7 @@
   "base": "b9c64f2ebd0009375af4aa01578f8b1adf98321f",
   "base_tree": "2efc25fe225a49175b29cdcba6153b44340a0897",
   "branch": "work/player-polish-20261104",
-  "status": "TRIALS_AND_ASCENSION_LAYOUT_FIX_QA_PENDING",
+  "status": "COMPACT_ASCENSION_STATUS_FIX_QA_PENDING",
   "candidate_branch": "checkpoint/player-decisions-crowd-20261109",
   "baseline": {
     "player_ui": {
@@ -129,5 +129,25 @@
     "failures": 22,
     "remaining": "Trials risk text failed in both languages due to runtime typed ternary conversion. Ascension final reward title and action exceed the 320 px viewport. Hero and fairness reported errors during fixture teardown.",
     "fix": "Use the ordinary array type for localized risk copy. Put the final Seal line across the footer outside the two-card grid, with compact final-day heading and wrapped button. Verify both separately."
+  },
+  "ci_first_ui_rerun": {
+    "head": "d1f120128a3b5f8ab7dd282ddbb2171a27582327",
+    "release_run": 42653120129,
+    "journey_run": 42653120174,
+    "journey": "PASS",
+    "hero_checks": 128,
+    "combat_fairness_checks": 84,
+    "headless_matrix": "642 of 648",
+    "native_matrix": "146 of 152",
+    "remaining": "Ascension day 7 panel still widened to 286 px at x=47.2 on a 320 px viewport, affecting title, Seal and action. Trials risk runtime error resolved.",
+    "follow_up": "The fallback readability manager increases the long, unwrapped locked status. Wrap the status and use a short SEALED or TERSEGEL on compact views. The unlock button still gives the day. Audit the bounds with the production locale setter."
+  },
+  "ci_run_review_native": {
+    "head": "579ccc9b4eb0c6e03db8380590f89a3179863c46",
+    "run": 42653412232,
+    "status": "PASS",
+    "checks": 121,
+    "native": "X11 software rendering and injected GUI mouse events",
+    "cause_of_previous_failures": "The tall 648x1152 reader only has 16 px of scroll; the harness demanded more than 20. The actual first swipe moves all 16 px in EN and ID. All eight samples leave the run paused and unfinalized."
   }
 }

@@ -167,10 +167,16 @@ func audit(view_name: String, view: Node, locale: String) -> void:
 				view._refresh_footer()
 				await frames()
 				readable(view._day_title,"Ascension day %d" % day)
+				fits(view._root,"Ascension panel")
+				readable(view._day_status,"Ascension day status")
 				fits(view._action,"Ascension claim or lock")
 				check(view._action.disabled == (view._state(day) != "ready"),"real claim eligibility")
 				if day == view._total_days():
 					readable(view._seal_reward_note,"final Seal")
+					var output_dir: String = OS.get_environment("JADE_DECISION_RENDER_DIR")
+					if DisplayServer.get_name() != "headless" and not output_dir.is_empty():
+						await RenderingServer.frame_post_draw
+						check(root.get_texture().get_image().save_png(output_dir.path_join("ascension-final-"+locale+".png")) == OK,"native capture")
 		"celestial_boss_hunt_screen":
 			var shown: bool = false
 			for label: Label in view.find_children("*","Label",true,false):
@@ -211,7 +217,7 @@ func run() -> void:
 		dimensions = [Vector2i(320,568)]
 		scenes = ["main_menu","equipment_screen","stage_select","daily_quest_screen","achievement_screen","skill_book_screen","pavilion_screen","heavenly_trials_screen","new_player_event_screen","celestial_boss_hunt_screen"]
 	for locale: String in ["en","id"]:
-		settings.language = locale
+		settings.set_presentation("language",locale)
 		for dims: Vector2i in dimensions:
 			root.size = dims
 			for scene_name: String in scenes:
