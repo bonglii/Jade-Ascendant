@@ -23,6 +23,8 @@ const suites = [
   ['menu_experience_smoke', 'MENU_EXPERIENCE_QA', 'jade_paid_v2_qa'],
   ['run_entry_reliability_smoke', 'RUN_ENTRY_RELIABILITY checks=', 'jade_event_touch_qa'],
   ['stage_records_smoke', 'STAGE_RECORDS checks=', 'jade_event_touch_qa'],
+  ['player_journey_layout_smoke', 'PLAYER_JOURNEY_LAYOUT checks=', 'jade_event_touch_qa', true],
+  ['run_review_layout_smoke', 'RUN_REVIEW_LAYOUT checks=', 'jade_event_touch_qa', true],
   ['combat_fairness_smoke', 'COMBAT_FAIRNESS_QA', 'jade_combat_fairness_qa'],
   ['crowd_performance_smoke', 'CROWD_PERFORMANCE_CHECKS=', 'jade_crowd_qa'],
   ['pavilion_focus_smoke', 'PAVILION_FOCUS checks=', 'jade_pavilion_focus_qa', true],
@@ -38,6 +40,10 @@ async function check(project, godot) {
   process.env.XDG_CONFIG_HOME = path.join(receipt, 'config');
   process.env.XDG_CACHE_HOME = path.join(receipt, 'cache');
   process.env.GODOT_SILENCE_ROOT_WARNING = '1';
+  const images = path.join(receipt, 'images');
+  fs.mkdirSync(images);
+  process.env.JADE_JOURNEY_RENDER_DIR = images;
+  process.env.JADE_COMBAT_RENDER_DIR = images;
 
   const engine = spawnSync(godot, ['--version'], { encoding: 'utf8' });
   if (engine.status !== 0 || !/^4\.7\.2\./.test(engine.stdout.trim())) throw Error('Pinned Godot 4.7.2 required');
@@ -96,6 +102,7 @@ async function check(project, godot) {
   const upload = path.join(root, '.local/player_release_qa');
   fs.mkdirSync(upload, { recursive: true });
   for (const file of evidence) fs.copyFileSync(file, path.join(upload, path.basename(file)));
+  fs.cpSync(images, path.join(upload, 'images'), { recursive: true });
   console.log('DECISION_BATCH issues=' + JSON.stringify(issues));
   if (issues.length) process.exitCode = 1;
 }

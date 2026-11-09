@@ -923,11 +923,17 @@ func _stage_status_color(status: String, accent: Color) -> Color:
 
 
 func _scroll_stage_map_to_selected() -> void:
-	var button: Control = _stage_node_refs.get(preview_stage_id, {}).get("button") as Control
-	if not is_instance_valid(map_scroll) or not is_instance_valid(button):
+	var refs: Dictionary = _stage_node_refs.get(preview_stage_id, {})
+	var button: Control = refs.get("button") as Control
+	var plate: Control = refs.get("plate") as Control
+	if not is_instance_valid(map_scroll) or not is_instance_valid(button) or not is_instance_valid(plate):
 		return
-	var center_y: float = button.position.y + button.size.y * 0.5
-	map_scroll.scroll_vertical = maxi(0, roundi(center_y - map_scroll.size.y * 0.5))
+	var target: Rect2 = button.get_rect().merge(plate.get_rect())
+	# On compact layouts the title sits below the seal. Keep the title readable
+	# even when the map has too little height to center both together.
+	if target.size.y > map_scroll.size.y:
+		target = plate.get_rect()
+	map_scroll.scroll_vertical = maxi(0, roundi(target.get_center().y - map_scroll.size.y * 0.5))
 
 
 func _hide_scrollbar_chrome(scroll: ScrollContainer) -> void:
@@ -997,3 +1003,4 @@ func _fit_map_width(canvas: Control) -> void:
 				child.position.x=clampf(original.position.x*ratio,8,width-child.size.x-8)
 				child.position.y=(child.get_meta("map_label_point") as Vector2).y+72 if width<500 else original.position.y
 			else:child.position.x=original.get_center().x*ratio-original.size.x*.5
+	_scroll_stage_map_to_selected.call_deferred()
