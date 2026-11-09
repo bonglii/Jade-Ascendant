@@ -2,7 +2,7 @@
   "base": "b9c64f2ebd0009375af4aa01578f8b1adf98321f",
   "base_tree": "2efc25fe225a49175b29cdcba6153b44340a0897",
   "branch": "work/player-polish-20261104",
-  "status": "ASCENSION_FIRST_PAINT_DAY_PICKER_QA_PENDING",
+  "status": "AUTHOR_QA_PASS_OWNER_VALIDATION_PENDING",
   "candidate_branch": "checkpoint/player-decisions-crowd-20261109",
   "baseline": {
     "player_ui": {
@@ -89,7 +89,7 @@
     "diff_check": "PASS"
   },
   "next": [
-    "For owner validation, pull the published work branch and confirm its receipt. Run the final phone cycle and verify the dense scenes, fresh boot, and touch layouts before Play closed testing.",
+    "For owner validation, pull the work branch and confirm its receipt. Run the final phone cycle and verify dense stages, fresh boot and touch layouts before Play closed testing.",
     "Keep the AdMob hold and preserve the existing production exporter and nine gates."
   ],
   "owner_install": "PENDING",
@@ -162,8 +162,8 @@
     "remaining": "Full frame still overflows on 320 px in both languages. Indonesian at 390 px has a final-day button 2.42 px past the viewport. Both remaining findings are confined to the Ascension production popup.",
     "last_fix": "Wrap the horizontal day-track caption and guide. The pinned footer now grows when the localized content exceeds its reserved slot, borrowing space from the upper reader."
   },
-  "verified_source_tree": "76cb7249b8f5c592a3e5601b8d85e285e4b0e58f",
-  "verified_source_commit": "225f9c294ed9ce194ceaa6b337ecc842d94a7cc8",
+  "verified_source_tree": "2c29042e8582937164b5f052686b29b1ea60da0f",
+  "verified_source_commit": "ee2ad6bd28479f8bed56b6652dde67c0c4d1026c",
   "ci_ascension_final": {
     "draft_head": "73dded5388ada098451b4669a4b7597d143df4fa",
     "release_focused_run": 42655767192,
@@ -187,5 +187,16 @@
     "native": "122 of 126",
     "remaining": "Four compact day-picker assertions failed per mode. The upper reader had 0 to 6 px of the rail before scrolling. Native screenshots confirmed the header decoration and progress row used too much of the first viewport.",
     "fix": "Compact layout keeps the gold title and close button, uses a shorter active-day row and action caption, and reduces the decorative header floor. Verify the picker is visible on arrival."
+  },
+  "ci_last": {
+    "draft_head": "b117d56a755d3d9874ed47bf07bd14800bffa0f8",
+    "release_focused_run": 42657629962,
+    "journey_run": 42657629833,
+    "artifact": 13692083198,
+    "headless_checks": 120,
+    "x11_checks": 126,
+    "event_scroll_checks": 159,
+    "failures": 0,
+    "scope": "Ascension day 1 and 7 at 320x568, 390x844 and 648x1152, actual production locale setter for EN and ID. Frame, header, title, day status, action, final Seal and first-paint day picker. Event scroll production surfaces. Reuse standard Release 585 checks from the same gameplay and test tree before the final Ascension-only UI edits."
   }
 }
