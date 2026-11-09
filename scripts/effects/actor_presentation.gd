@@ -28,6 +28,7 @@ var premium_boss: bool = false
 var stride_phase: float = 0.0
 var travel_strength: float = 0.0
 var last_actor_position: Vector2
+var crowd_idle: bool = false
 
 
 func _ready() -> void:
@@ -53,6 +54,8 @@ func hurt() -> void:
 		if health != null and health.has_method("is_hit_guarded") and health.is_hit_guarded():
 			hurt_left = maxf(hurt_left, float(health.hit_guard_remaining))
 	presentation_accumulator = 0.0
+	if crowd_idle:
+		set_process(true)
 
 
 func action(duration: float = 0.28) -> void:
@@ -61,10 +64,33 @@ func action(duration: float = 0.28) -> void:
 	action_length = maxf(duration, 0.12)
 	action_left = action_length
 	presentation_accumulator = 0.0
+	if crowd_idle:
+		set_process(true)
 
 	var actor: CharacterBody2D = get_parent() as CharacterBody2D
 	if actor != null and absf(actor.velocity.x) > 0.01:
 		action_direction = signf(actor.velocity.x)
+
+
+func set_crowd_idle(enabled: bool) -> void:
+	if crowd_idle == enabled or not is_instance_valid(sprite):
+		return
+	crowd_idle = enabled
+	presentation_accumulator = 0.0
+	last_actor_position = get_parent().global_position
+	if crowd_idle and hurt_left <= 0.0 and action_left <= 0.0:
+		_rest_crowd_sprite()
+	else:
+		set_process(true)
+
+
+func _rest_crowd_sprite() -> void:
+	sprite.scale = rest_scale
+	sprite.position = rest_position
+	sprite.rotation = rest_rotation
+	sprite.self_modulate = Color.WHITE
+	queue_redraw()
+	set_process(false)
 
 
 func _process(delta: float) -> void:
@@ -72,10 +98,7 @@ func _process(delta: float) -> void:
 		return
 
 	age += delta
-	var distance: float = get_parent().global_position.distance_to(last_actor_position)
-	last_actor_position = get_parent().global_position
-	stride_phase = fmod(stride_phase + minf(distance, 24.0) * TAU / (72.0 if premium_boss else 42.0), TAU)
-	travel_strength = move_toward(travel_strength, 1.0 if distance > 0.02 else 0.0, delta * 10.0)
+	var had_action: bool = action_left > 0.0
 	var reaction_was_active: bool = hurt_left > 0.0 or action_left > 0.0
 	hurt_left = maxf(hurt_left - delta, 0.0)
 	action_left = maxf(action_left - delta, 0.0)
@@ -89,13 +112,15 @@ func _process(delta: float) -> void:
 		return
 
 	var active_reaction: bool = hurt_left > 0.0 or action_left > 0.0
-	if not active_reaction:
-		# If a reaction ended this frame, immediately restore the passive pose and
-		# clear the hurt tint before switching back to the budgeted idle cadence.
-		if reaction_was_active:
-			presentation_accumulator = 0.0
-			_update_non_player_presentation()
-			return
+	if crowd_idle and not active_reaction:
+		_rest_crowd_sprite()
+		return
+	var position_now: Vector2 = get_parent().global_position
+	var distance: float = position_now.distance_to(last_actor_position)
+	last_actor_position = position_now
+	stride_phase = fmod(stride_phase + minf(distance, 24.0) * TAU / (72.0 if premium_boss else 42.0), TAU)
+	travel_strength = move_toward(travel_strength, 1.0 if distance > 0.02 else 0.0, delta * 10.0)
+	if not active_reaction and not reaction_was_active:
 		presentation_accumulator += delta
 		var idle_interval: float = (
 			REDUCED_IDLE_PRESENTATION_INTERVAL
@@ -106,11 +131,13 @@ func _process(delta: float) -> void:
 			return
 		presentation_accumulator = fmod(presentation_accumulator, idle_interval)
 	else:
-		# Hurt/action reactions retain full-frame responsiveness. Only passive
-		# breathing is budgeted to a lower visual tick rate.
+		# Active reactions and the final pose reset stay full rate.
 		presentation_accumulator = 0.0
 
 	_update_non_player_presentation()
+	# Passive motion is a sprite transform. Only ink needs a canvas redraw.
+	if not premium_boss and (had_action or action_left > 0.0):
+		queue_redraw()
 
 
 func _update_player_hurt_tint() -> void:
@@ -171,7 +198,6 @@ func _update_non_player_presentation() -> void:
 		+ (gait * 0.035 - lean * 0.025 + action_weight * 0.09 * action_direction * action_amplitude) * motion
 	)
 
-	queue_redraw()
 	# self_modulate leaves child telegraphs and guardian status rings untouched.
 	var flash: float = (
 		hurt_weight

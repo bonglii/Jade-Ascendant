@@ -28,6 +28,14 @@ func old_nearest(player: Node2D,enemies: Array[Node],maximum: float,boss_maximum
   if candidate>distance_sq or (candidate>boss_maximum*boss_maximum and enemy.is_in_group("boss")):continue
   if nearest==null or candidate<distance_sq:distance_sq=candidate;nearest=enemy
  return nearest
+func pose_actor(feedback: Node, elite: bool=false) -> Node2D:
+ var actor:=Node2D.new()
+ var sprite:=AnimatedSprite2D.new();sprite.name="AnimatedSprite2D";actor.add_child(sprite)
+ actor.add_to_group("enemy")
+ if elite:actor.add_to_group("elite")
+ root.add_child(actor)
+ feedback.register_actor(actor)
+ return actor
 func _initialize() -> void:run.call_deferred()
 func run() -> void:
  if not OS.get_user_data_dir().contains("jade_crowd_qa"):quit(2);return
@@ -97,5 +105,30 @@ func run() -> void:
  print("CROWD_SWEEP_CPU_US old=",before_usec," optimized=",Time.get_ticks_usec()-start_usec," enemies=",enemies.size()," repetitions=100")
  for enemy: Node in enemies:enemy.queue_free()
  player.queue_free();optimized.queue_free();reference.queue_free();await process_frame
+ var feedback: Node=root.get_node("CombatFeedback")
+ var ordinary: Node2D=pose_actor(feedback)
+ var elite: Node2D=pose_actor(feedback,true)
+ var ordinary_pose: Node=ordinary.get_node("QiPresentation")
+ var elite_pose: Node=elite.get_node("QiPresentation")
+ var crowd: Array[Node]=[]
+ for i: int in 78:
+  var member:=Node2D.new();member.add_to_group("enemy");root.add_child(member);crowd.append(member)
+ feedback._process(.016)
+ check(not ordinary_pose.is_processing() and elite_pose.is_processing(),"dense crowd parks only regular passive poses")
+ feedback.actor_action(ordinary,.28)
+ check(ordinary_pose.is_processing() and ordinary_pose.action_left>0.0,"authored cast wakes a parked pose")
+ ordinary_pose._process(.3)
+ check(not ordinary_pose.is_processing(),"pose sleeps after clearing completed cast ink")
+ ordinary_pose.hurt()
+ check(ordinary_pose.is_processing(),"damage reaction wakes a parked pose")
+ ordinary_pose._process(.2)
+ for i: int in 8:crowd.pop_back().free()
+ feedback._process(.016)
+ check(not ordinary_pose.is_processing(),"pose budget holds across small changes around crowd threshold")
+ crowd.pop_back().free()
+ feedback._process(.016)
+ check(ordinary_pose.is_processing(),"ordinary pose restores below the recovery threshold")
+ for member: Node in crowd:member.free()
+ ordinary.free();elite.free()
  print("CROWD_PERFORMANCE_CHECKS=",checks,";FAILURES=",failures)
  quit(0 if failures==0 else 1)

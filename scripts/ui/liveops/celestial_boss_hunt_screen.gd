@@ -224,7 +224,7 @@ func _build_bounty_dashboard(
 	)
 	var note := LiveOpsUi.add_label(
 		body,
-		tr("NORMAL CLAIM ALWAYS REMAINS AVAILABLE"),
+		"Klaim biasa tersedia" if SettingsManager.language == "id" else "Standard claim available",
 		10,
 		MUTED
 	)

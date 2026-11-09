@@ -641,6 +641,7 @@ func _sync_weapon_comparison() -> void:
   for id: String in ids:weapon_picker.add_item(tr(str(EquipmentManager.get_item_data(id).get("display_name",id))))
  weapon_picker.visible=ids.size()>1
  weapon_picker.select(ids.find(selected_item_id))
+ weapon_picker.text="GANTI KANDIDAT" if SettingsManager.language=="id" else "CHANGE CANDIDATE"
  weapon_comparison.refresh(current,selected_item_id,has_alternative)
 
 func _inspect_weapon_candidate(index: int,generation: int) -> void:

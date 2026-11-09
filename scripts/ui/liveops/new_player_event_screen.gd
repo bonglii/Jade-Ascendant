@@ -432,8 +432,7 @@ func _build_footer(parent: VBoxContainer) -> void:
 	inset.add_child(column)
 
 	_day_title = _label("DAY 04", 22, GOLD_LIGHT)
-	_day_title.autowrap_mode = TextServer.AUTOWRAP_OFF
-	_day_title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_day_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_day_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	column.add_child(_day_title)
 
@@ -691,7 +690,8 @@ func _refresh_footer() -> void:
 	var final_day: bool = _selected_day == _total_days()
 	var reward: Dictionary = _reward(_selected_day)
 
-	_day_title.text = tr("DAY 07  •  THE SEVENTH GATE") if final_day else tr("DAY %02d  •  ASCENSION REWARD") % _selected_day
+	var reward_title: String = "HADIAH HARI %d" if SettingsManager.language == "id" else "DAY %d REWARD"
+	_day_title.text = tr("DAY 07  •  THE SEVENTH GATE") if final_day else reward_title % _selected_day
 	_day_title.add_theme_color_override("font_color", GOLD_LIGHT if final_day or state == "ready" else JADE)
 	_day_status.text = _state_text(state)
 	_day_status.add_theme_color_override("font_color", _accent(_selected_day, state))
@@ -788,17 +788,9 @@ func _footer_reward_item(icon_texture: Texture2D, amount: String, label_text: St
 	value.name = "RewardValue"
 	value.autowrap_mode = TextServer.AUTOWRAP_OFF
 	icon_and_value.add_child(value)
-	# Two intentional words, not automatic one-character wrapping.
-	var readable_name: String = (
-		"REFINEMENT\nSHARDS"
-		if label_text == "REFINEMENT SHARDS"
-		else label_text
-	)
-	var title := _label(readable_name, 14, TEXT)
+	var title := _label(label_text, 14, TEXT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	# Do not wrap the label into one-letter columns when the panel narrows.
-	title.autowrap_mode = TextServer.AUTOWRAP_OFF
-	title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(title)
 	return panel
 

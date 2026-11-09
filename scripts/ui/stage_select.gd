@@ -463,12 +463,12 @@ func _build_selected_stage_panel(accent: Color) -> PanelContainer:
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text_box.add_child(title)
 	var hint := Label.new()
+	hint.name = "StageTacticalHint"
 	hint.theme_type_variation = &"JadeMutedLabel"
 	hint.add_theme_font_size_override("font_size", 13)
 	hint.add_theme_color_override("font_color", Color(0.80, 0.85, 0.84, 1.0))
 	hint.text = str(data.get("description", ""))
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	hint.max_lines_visible = 2
 	text_box.add_child(hint)
 	var reward := Label.new()
 	reward.theme_type_variation = &"JadeSubtitle"
@@ -668,17 +668,23 @@ func _build_confirm_overlay() -> void:
 	confirm_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	confirm_overlay.hide()
 	add_child(confirm_overlay)
+	var safe := preload("res://scripts/ui/mobile_safe_area.gd").new()
+	confirm_overlay.add_child(safe)
+	safe.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var center := CenterContainer.new()
+	safe.add_child(center)
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	confirm_overlay.add_child(center)
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(520.0, 300.0)
+	panel.name = "ReplaceRunPanel"
 	panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.004, 0.018, 0.025, 0.99), Color(GOLD.r, GOLD.g, GOLD.b, 0.84), 16, 2))
 	center.add_child(panel)
+	var fit: Callable = func(): panel.custom_minimum_size.x = clampf(safe.size.x - 24.0, 0.0, 520.0)
+	safe.resized.connect(fit)
+	fit.call()
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 24)
+	margin.add_theme_constant_override("margin_left", 14)
 	margin.add_theme_constant_override("margin_top", 22)
-	margin.add_theme_constant_override("margin_right", 24)
+	margin.add_theme_constant_override("margin_right", 14)
 	margin.add_theme_constant_override("margin_bottom", 22)
 	panel.add_child(margin)
 	var box := VBoxContainer.new()
@@ -686,7 +692,8 @@ func _build_confirm_overlay() -> void:
 	margin.add_child(box)
 	var eyebrow := Label.new()
 	eyebrow.theme_type_variation = &"JadeSubtitle"
-	eyebrow.text = "ABANDON CURRENT TRIAL?"
+	eyebrow.text = "MULAI UJIAN BARU?" if SettingsManager.language == "id" else "START A NEW TRIAL?"
+	eyebrow.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	eyebrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(eyebrow)
 	confirm_stage_label = Label.new()
@@ -705,16 +712,20 @@ func _build_confirm_overlay() -> void:
 	buttons.add_theme_constant_override("separation", 12)
 	box.add_child(buttons)
 	var cancel := Button.new()
+	cancel.name = "KeepSavedRun"
 	cancel.custom_minimum_size = Vector2(0.0, 52.0)
 	cancel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cancel.text = "CANCEL"
+	cancel.text = "PERTAHANKAN RUN" if SettingsManager.language == "id" else "KEEP SAVED RUN"
+	cancel.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	cancel.pressed.connect(_hide_start_confirm_dialog)
 	buttons.add_child(cancel)
 	var start_new := Button.new()
+	start_new.name = "StartNewTrial"
 	start_new.custom_minimum_size = Vector2(0.0, 52.0)
 	start_new.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	start_new.theme_type_variation = &"JadePrimaryButton"
-	start_new.text = "START NEW"
+	start_new.text = "MULAI BARU" if SettingsManager.language == "id" else "START NEW"
+	start_new.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	start_new.pressed.connect(_confirm_start_new_stage)
 	buttons.add_child(start_new)
 
@@ -722,7 +733,7 @@ func _build_confirm_overlay() -> void:
 func _show_start_confirm_dialog() -> void:
 	var data := JourneyManager.get_selected_stage_data()
 	confirm_stage_label.text = str(data.get("display_name", "Selected Trial"))
-	confirm_body_label.text = "A saved run already exists. Starting this trial will replace that checkpoint."
+	confirm_body_label.text = "Saat ujian baru dimulai, simpanan run sebelumnya akan diganti." if SettingsManager.language == "id" else "Your saved run will be replaced when the new trial starts."
 	confirm_overlay.show()
 
 
@@ -967,9 +978,6 @@ func _fit_phone() -> void:
 	if is_instance_valid(_realm_eyebrow):_realm_eyebrow.visible=not compact
 	if is_instance_valid(_realm_subtitle):_realm_subtitle.visible=not compact
 	if is_instance_valid(_detail_art):_detail_art.visible=not compact
-	if is_instance_valid(_preview_hint):
-		_preview_hint.max_lines_visible = 1 if compact else 3
-		_preview_hint.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 
 func _fit_map_width(canvas: Control) -> void:
 	if not is_instance_valid(canvas):return

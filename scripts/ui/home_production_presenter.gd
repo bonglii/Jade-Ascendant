@@ -295,7 +295,7 @@ func _refresh_profile_shortcut(_snapshot: Dictionary = {}) -> void:
 		"HEAVENLY ASCENDANT": "SURGAWI" if indonesian else "HEAVENLY"
 	}
 	var rank_short: String = str(rank_short_names.get(ProgressionManager.get_hero_rank_title(), tr(ProgressionManager.get_hero_rank_title())))
-	profile_rank.text = "Lv.%02d • %s" % [level, rank_short]
+	profile_rank.text = "Lv.%d · %s" % [level, rank_short]
 	profile_exp.value = ProgressionManager.get_hero_progress_ratio()
 	var connection: Node = PlayerIdentityManager.get_node_or_null("ConnectionReadiness")
 	var connected: bool = str(snapshot.get("server_status", "")) == "connected"

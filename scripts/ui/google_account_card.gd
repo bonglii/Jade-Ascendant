@@ -27,7 +27,7 @@ func _ready() -> void:
 	content.add_child(eyebrow)
 
 	var heading: Label = _make_label(
-		_local("Your Jade Account", "Akun Jade Lu"), 22, GOLD
+		_local("Your Jade Account", "Akun Jade"), 22, GOLD
 	)
 	content.add_child(heading)
 
@@ -50,6 +50,7 @@ func _ready() -> void:
 
 	_action = Button.new()
 	_action.custom_minimum_size.y = 57.0
+	_action.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_action.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
 	_action.mouse_filter = Control.MOUSE_FILTER_PASS
 	_action.add_theme_font_size_override("font_size", 16)

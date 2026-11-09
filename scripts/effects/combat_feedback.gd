@@ -5,7 +5,10 @@ const ActorPresentation = preload("res://scripts/effects/actor_presentation.gd")
 const CelArt = preload("res://scripts/effects/combat_cel_art.gd")
 const WEAPON_IMPACT_CAPACITY: int = 32
 const CROWDED_ENEMY_COUNT: int = 80
+const CROWD_RECOVERY_COUNT: int = 72
+const REGULAR_POSE_GROUP: StringName = &"regular_enemy_pose"
 var _redraw_left: float = 0.0
+var _crowd_idle: bool = false
 var weapon_impacts: Array[Dictionary] = []
 var weapon_impact_cursor: int = 0
 const POOL_SIZE: int = 96
@@ -72,6 +75,9 @@ func register_actor(actor: Node2D) -> void:
 	var presentation: Node = ActorPresentation.new()
 	presentation.name = "QiPresentation"
 	actor.add_child(presentation)
+	if actor.is_in_group("enemy") and not actor.is_in_group("elite") and not actor.is_in_group("boss"):
+		presentation.add_to_group(REGULAR_POSE_GROUP)
+		presentation.set_crowd_idle(_crowd_idle)
 
 func actor_action(actor: Node2D, duration: float = 0.28) -> void:
 	var presentation: Node = actor.get_node_or_null("QiPresentation")
@@ -283,6 +289,14 @@ func _process(delta: float) -> void:
 	if active_scene != get_tree().current_scene:
 		_reset_feedback()
 		active_scene = get_tree().current_scene
+
+	# Dense crowds keep authored sprite frames. Only the generic passive pose
+	# sleeps. Casts and hit reactions wake it on demand.
+	var cutoff: int = CROWD_RECOVERY_COUNT if _crowd_idle else CROWDED_ENEMY_COUNT
+	var crowd_idle: bool = get_tree().get_node_count_in_group(&"enemy") >= cutoff
+	if _crowd_idle != crowd_idle:
+		_crowd_idle = crowd_idle
+		get_tree().call_group(REGULAR_POSE_GROUP, &"set_crowd_idle", _crowd_idle)
 
 	# CombatFeedback is an autoload that also exists while menus are open.
 	# When no pooled visual or camera impulse is alive, avoid scanning every

@@ -7,6 +7,7 @@ const ART=preload("res://assets/ui/heavenly_trials/jade_gate.png")
 const ICONS: Dictionary={"celestial_jade":preload("res://assets/ui/shared/resources/celestial_jade_premium.png"),"pavilion_seal":preload("res://assets/ui/shared/resources/pavilion_seal_premium.png"),"spirit_stone":preload("res://assets/ui/shared/resources/spirit_stone_premium.png")}
 const RULES: Dictionary={"jade_wind":["JADE WIND","Wind seals mark your last position. Keep moving."],"scarlet_rite":["SCARLET RITE","Scarlet marks erupt twice. Leave the marked ground."],"starfall":["STARFALL","A star seal marks your position before it bursts."],"froststep":["FROSTSTEP","Frost seals linger before they burst. Choose a clear path."],"sunforge":["SUNFORGE","Solar marks cover a wider area. Move before they ignite."]}
 var _risk_picker: OptionButton
+var _risk_summary: Label
 var _reward_preview: VBoxContainer
 var _reward_key: String = ""
 var client: Node
@@ -87,9 +88,12 @@ func _build() -> void:
  rewards_panel.add_child(_label("EACH TIER · FIRST WEEKLY CLEAR",12,Style.JADE));_reward_preview=VBoxContainer.new();rewards_panel.add_child(_reward_preview)
  _note=_label("",15,Style.MUTED);list.add_child(_note)
  _risk_picker=OptionButton.new();_risk_picker.name="PersonalTrialRisk";_risk_picker.custom_minimum_size.y=48;_risk_picker.fit_to_longest_item=false
- for text: String in (["STANDAR · hadiah minggu tetap","LANGIT GIGIH · pola tiap 7 dtk, bukan 9 dtk","SUMPAH TEGUH · damage masuk +15%"] if SettingsManager.language=="id" else ["STANDARD · same weekly reward","RELENTLESS SKY · patterns every 7s, instead of 9s","UNYIELDING VOW · incoming damage +15%"]):_risk_picker.add_item(text)
+ for text: String in (["STANDAR","LANGIT GIGIH","SUMPAH TEGUH"] if SettingsManager.language=="id" else ["STANDARD","RELENTLESS SKY","UNYIELDING VOW"]):_risk_picker.add_item(text)
  body.add_child(_risk_picker)
- body.add_child(_label("Risiko pribadi opsional · budget hadiah dan aturan medali tetap sama. Pilihan terkunci sampai percobaan selesai." if SettingsManager.language=="id" else "Optional personal risk · same reward budget and medal rules. Choice is fixed for this attempt.",14,Style.MUTED))
+ _risk_summary=_label("",14,Style.CREAM)
+ _risk_summary.name="PersonalTrialRiskSummary"
+ body.add_child(_risk_summary)
+ _risk_picker.item_selected.connect(func(_index: int):_update_risk_summary())
  _entry=_button(body,"ENTER TRIAL",_enter,true)
  var footer:=HBoxContainer.new();footer.add_theme_constant_override("separation",10);body.add_child(footer)
  _rewards=_button(footer,"REWARDS",_open_rewards);_rewards.size_flags_horizontal=SIZE_EXPAND_FILL
@@ -125,11 +129,17 @@ func _refresh() -> void:
  var session: Variant=data.get("session")
  _risk_picker.disabled=session is Dictionary or busy
  if session is Dictionary:_risk_picker.select(client.personal_risk(str(session.id)))
+ _update_risk_summary(session is Dictionary)
  _entry.text="CONTINUE TRIAL" if session is Dictionary else "ENTER TRIAL · FREE"
  _note.text="All rewards earned this week remain claimable for 48h after reset."
  if client!=null and str(client.status) not in ["connected","preparing"]:_note.text=("Koneksi: " if SettingsManager.language=="id" else "Connection: ")+str(client.status).replace("_"," ")+(". Pemulihan berjalan otomatis." if SettingsManager.language=="id" else ". Recovery runs automatically.")
  if session is Dictionary:_note.text="A trial is in progress. Continue it or abandon it from Rewards."
  _rewards.text="REWARDS";preload("res://scripts/ui/action_ready_dot.gd").show_on(_rewards,int(client.call("ready_count")) if client!=null else 0)
+func _update_risk_summary(active: bool=false) -> void:
+ var indonesian: bool=SettingsManager.language=="id"
+ var effects: Array[String]=["Pola tiap 9 dtk.","Pola tiap 7 dtk (standar 9 dtk).","Damage masuk +15%."] if indonesian else ["Patterns every 9s.","Patterns every 7s (standard 9s).","Incoming damage +15%."]
+ var prefix: String=("Pilihan run aktif · " if indonesian else "Active trial · ") if active else ""
+ _risk_summary.text=prefix+effects[clampi(_risk_picker.selected,0,2)]+(" Hadiah mingguan sama." if indonesian else " Same weekly rewards.")
 func _refresh_portrait(tier: int,stage: int) -> void:
  var key: String="%d_%d"%[clampi(tier,1,3),clampi(stage,1,5)]
  if key==_portrait_key:return

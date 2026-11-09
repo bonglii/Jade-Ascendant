@@ -238,7 +238,11 @@ func _refresh_paid_summons() -> void:
 	_paid_buttons[0].get_parent().visible = paid_mode
 	_paid_status.visible = paid_mode
 	var view: Dictionary = PavilionManager.get_server_jade_view()
-	_paid_status.text = _copy("Jade berbayar: ", "Paid Jade: ") + (_format_count(int(view.balance)) if int(view.get("balance", -1)) >= 0 else "…")
+	var paid_balance: int = int(view.get("balance", -1))
+	if paid_balance >= 0:
+		_paid_status.text = _copy("Saldo Jade berbayar · ", "Paid Jade balance · ") + _format_count(paid_balance)
+	else:
+		_paid_status.text = _copy("Saldo Jade berbayar belum terverifikasi.", "Paid Jade balance is awaiting verification.")
 	_focus_paid_note.visible = paid_mode
 	_focus_paid_note.text = _copy("Segel biasa dipakai lebih dulu. Saldo berbayar tetap tersimpan.", "Use regular Seals first. Your paid balance is retained.") if owns_seals else _copy("Pilih target Legendary di atas. Target dan jaminan Jade berbayar tersimpan terpisah.", "Choose a Legendary target above. Paid Jade target and guarantee are retained separately.")
 	if paid_mode and is_instance_valid(PavilionManager.paid_gameplay) and PavilionManager.paid_gameplay.mutation_pending():

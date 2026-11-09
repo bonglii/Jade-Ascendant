@@ -15,6 +15,8 @@ var _tabs: Dictionary={}
 var _summary: PanelContainer
 var _summary_icon: TextureRect
 var _summary_text: Label
+var _summary_meta: Label
+var _summary_stats: Label
 var _selected: String=""
 var _popup: Control
 var _rarity_picker: OptionButton
@@ -36,8 +38,14 @@ func _ready() -> void:
 	var back:=_button("‹ HOME");back.custom_minimum_size.x=100;back.name="SkillBookBack";back.pressed.connect(_back);top.add_child(back)
 	var seal:=_label("JADE ARCHIVES",13,Color(.97,.80,.43));seal.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;top.add_child(seal)
 	body.add_child(_label("LIBRARY",30,Color(1,.88,.55)))
-	var journal: Button=_button("JURNAL KULTIVATOR" if SettingsManager.language=="id" else "CULTIVATOR JOURNAL");journal.name="LibraryJournal";body.add_child(journal);journal.pressed.connect(func():load("res://scripts/companion/player_journal.gd").open(self))
-	var practice: Button=_button("PELATARAN LATIHAN ›" if SettingsManager.language=="id" else "TRAINING COURT ›");practice.name="LibraryTraining";body.add_child(practice);practice.pressed.connect(func():SceneTransitionManager.transition_menu_to("res://scenes/ui/training_ground.tscn"))
+	var shortcuts:=HBoxContainer.new()
+	body.add_child(shortcuts)
+	var journal: Button=_button("JURNAL" if SettingsManager.language=="id" else "JOURNAL")
+	journal.name="LibraryJournal";journal.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	shortcuts.add_child(journal);journal.pressed.connect(func():load("res://scripts/companion/player_journal.gd").open(self))
+	var practice: Button=_button("LATIHAN ›" if SettingsManager.language=="id" else "TRAINING ›")
+	practice.name="LibraryTraining";practice.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	shortcuts.add_child(practice);practice.pressed.connect(func():SceneTransitionManager.transition_menu_to("res://scenes/ui/training_ground.tscn"))
 	var tabs:=GridContainer.new();tabs.columns=2;body.add_child(tabs)
 	for value: String in ["EQUIPMENT","SKILLS","BUILDS","CHRONICLES"]:
 		var tab:=_button(value);tab.name="LibraryTab"+value;tab.size_flags_horizontal=Control.SIZE_EXPAND_FILL;tab.pressed.connect(_set_mode.bind(value));tabs.add_child(tab);_tabs[value]=tab
@@ -61,7 +69,9 @@ func _ready() -> void:
 	var row:=HBoxContainer.new();row.add_theme_constant_override("separation",10);_summary.add_child(row)
 	_summary_icon=TextureRect.new();_summary_icon.custom_minimum_size=Vector2(64,64);_summary_icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;_summary_icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;row.add_child(_summary_icon)
 	var copy:=VBoxContainer.new();copy.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(copy)
-	_summary_text=_label("Tap a relic to explore.",15,Color(.98,.86,.56));_summary_text.max_lines_visible=3;copy.add_child(_summary_text)
+	_summary_text=_label("Tap a relic to explore.",16,Color(.98,.86,.56));copy.add_child(_summary_text)
+	_summary_meta=_label("",12,Color(.50,.90,.78));copy.add_child(_summary_meta)
+	_summary_stats=_label("",13,Color(.82,.90,.86));copy.add_child(_summary_stats)
 	var detail:=_button("VIEW DETAILS ›");detail.custom_minimum_size.y=36;detail.pressed.connect(func():if not _selected.is_empty():_open_equipment_detail(_selected));copy.add_child(detail)
 	var guard: Node=preload("res://scripts/ui/mobile_touch_presentation_guard.gd").new();add_child(guard)
 	SceneTransitionManager.set_back_handler(_back)
@@ -103,6 +113,7 @@ func _refresh() -> void:
 	if _mode=="SKILLS":super._refresh();return
 	for child: Node in _list.get_children():_list.remove_child(child);child.queue_free()
 	var query: String=_search.text.strip_edges().to_lower();var shown: int=0
+	var visible_relics: Array[String]=[]
 	if _filter=="SETS":
 		for id: String in Sets.SET_ORDER:
 			if not query.is_empty() and not (id+" "+Sets.get_display_name(id)+" "+Sets.get_identity(id)).to_lower().contains(query):continue
@@ -122,20 +133,28 @@ func _refresh() -> void:
 			if _rarity!="ALL" and str(d.rarity)!=_rarity:continue
 			if not query.is_empty() and not (id+" "+str(d.display_name)+" "+str(d.rarity)+" "+Sets.get_display_name(Sets.get_set_id_for_item(id))).to_lower().contains(query):continue
 			grid.add_child(_equipment_tile(id));shown+=1
+			visible_relics.append(id)
 	_count.text="%d %s"%[shown,"SETS" if _filter=="SETS" else "RELICS"]
 	if shown==0:_list.add_child(_label("NO MATCHING ENTRIES",18,Color(.77,.85,.80)))
 	for category: String in _filter_buttons:_filter_buttons[category].add_theme_color_override("font_color",Color(1,.87,.44) if category==_filter else Color(.75,.85,.80))
-	if _selected.is_empty():_select_equipment("void_piercer_spear")
+	if _summary.visible and _selected not in visible_relics:
+		if visible_relics.is_empty():_summary.hide()
+		else:_select_equipment(visible_relics[0])
 func _equipment_tile(id: String) -> Button:
 	var d: Dictionary=EquipmentManager.get_item_data(id);var color: Color=Visual.get_rarity_color(str(d.rarity))
 	var b:=Button.new();b.name="Relic_"+id;b.tooltip_text=str(d.display_name);b.custom_minimum_size.y=62 if size.x<400 else 104;b.size_flags_horizontal=Control.SIZE_EXPAND_FILL;b.mouse_filter=Control.MOUSE_FILTER_PASS;b.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE
 	for state: String in ["normal","hover","pressed"]:
 		var skin:=Ui.make_panel_style(Color(.005,.028,.037,.98),color,8);skin.set_border_width_all(2);skin.shadow_color=Color(color.r,color.g,color.b,.18);skin.shadow_size=4;skin.content_margin_left=4;skin.content_margin_right=4;b.add_theme_stylebox_override(state,skin)
 	var art:=TextureRect.new();art.texture=load(Visual.get_icon_path(id));art.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;art.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;art.mouse_filter=Control.MOUSE_FILTER_IGNORE;b.add_child(art);art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);art.offset_left=6;art.offset_right=-6;art.offset_top=6;art.offset_bottom=-6
-	var mark:=Label.new();mark.text="◆" if InventoryManager.owns_item(id) else "○";mark.tooltip_text="OWNED" if InventoryManager.owns_item(id) else "NOT OWNED";mark.add_theme_font_size_override("font_size",12);mark.add_theme_color_override("font_color",color);mark.mouse_filter=Control.MOUSE_FILTER_IGNORE;b.add_child(mark);mark.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT);mark.offset_left=-18;mark.offset_top=4
+	var mark:=Label.new();mark.text="◆" if EquipmentManager.owns_backpack_item(id) else "○";mark.add_theme_font_size_override("font_size",12);mark.add_theme_color_override("font_color",color);mark.mouse_filter=Control.MOUSE_FILTER_IGNORE;b.add_child(mark);mark.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT);mark.offset_left=-18;mark.offset_top=4
 	b.pressed.connect(_select_equipment.bind(id));return b
 func _select_equipment(id: String) -> void:
-	_selected=id;var d: Dictionary=EquipmentManager.get_item_data(id);_summary_icon.texture=load(Visual.get_icon_path(id));_summary_text.text=str(d.display_name)+"\n"+str(d.rarity).to_upper()+" • "+(tr("OWNED") if InventoryManager.owns_item(id) else tr("NOT OWNED"))+"\n"+Visual.get_stat_summary(d)
+	_selected=id
+	var data: Dictionary=EquipmentManager.get_item_data(id)
+	_summary_icon.texture=load(Visual.get_icon_path(id))
+	_summary_text.text=str(data.display_name)
+	_summary_meta.text="%s · %s"%[str(data.rarity).to_upper(),tr("OWNED") if EquipmentManager.owns_backpack_item(id) else tr("NOT OWNED")]
+	_summary_stats.text=Visual.get_stat_summary(data)
 func _set_card(id: String) -> Control:
 	var p:=PanelContainer.new();p.add_theme_stylebox_override("panel",Ui.make_panel_style(Color(.003,.028,.035,.97),Visual.get_rarity_color(Sets.get_set_rarity(id)),10));var c:=VBoxContainer.new();p.add_child(c);c.add_child(_label(Sets.get_display_name(id),20,Color(.99,.85,.48)));var row:=HBoxContainer.new();c.add_child(row)
 	for item: String in Sets.get_piece_ids(id):var tile:=_equipment_tile(item);tile.custom_minimum_size.y=74;row.add_child(tile)
@@ -145,7 +164,7 @@ func _card(id: String) -> Control:
 	b.add_theme_stylebox_override("normal",Ui.make_panel_style(Color(.003,.028,.035,.96),Color(.58,.66,.40),10))
 	var row:=HBoxContainer.new();row.mouse_filter=Control.MOUSE_FILTER_IGNORE;row.add_theme_constant_override("separation",12);b.add_child(row);row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);row.offset_left=12;row.offset_right=-12;row.offset_top=10;row.offset_bottom=-10
 	var icon:=TextureRect.new();var arm: String=EquipmentManager.get_equipped_item_id("armament");icon.texture=load(Catalog.get_icon_path(id,arm));icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;icon.custom_minimum_size=Vector2(72,72);icon.mouse_filter=Control.MOUSE_FILTER_IGNORE;row.add_child(icon)
-	var c:=VBoxContainer.new();c.mouse_filter=Control.MOUSE_FILTER_IGNORE;c.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(c);c.add_child(_label(_display_name(id),20,Color(.99,.85,.48)));c.add_child(_label(Catalog.get_category(id),11,Color(.50,.90,.78)));var desc:=_label(_description(id),14,Color(.82,.90,.86));desc.max_lines_visible=2;c.add_child(desc);b.pressed.connect(_open_skill_detail.bind(id));return b
+	var c:=VBoxContainer.new();c.mouse_filter=Control.MOUSE_FILTER_IGNORE;c.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(c);c.add_child(_label(_display_name(id),20,Color(.99,.85,.48)));c.add_child(_label(Catalog.get_category(id),11,Color(.50,.90,.78)));c.add_child(_label(_description(id),14,Color(.82,.90,.86)));b.pressed.connect(_open_skill_detail.bind(id));return b
 func _open_skill_detail(id: String) -> void:_open_popup(_display_name(id),super._card(id))
 func _open_equipment_detail(id: String) -> void:
 	var d: Dictionary=EquipmentManager.get_item_data(id);var c:=VBoxContainer.new();c.add_theme_constant_override("separation",12)

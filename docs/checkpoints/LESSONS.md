@@ -983,3 +983,10 @@ A literal credential-shaped sample in a self-published test triggered the scanne
 - The Hero readability pass enlarged new card labels until the first stat row fell below the compact viewport. Set deliberate card typography before first paint and check both weapon cards and the gear and level damage rows at 320 px with insets.
 - A wrapped label measured before its width settled expanded the Altar beyond the safe area. Refit after the container minimum size changes and verify fixed actions and a swipe from the first boon card in landscape.
 - Seed the existing Hero upgrade regression in Indonesian and the Player Content regression in English. Their caption assertions expect those locales.
+
+## 2026-11-09 · Decision audit and dense crowds
+
+- Inspect the inner panel, clipped reader and actual buttons. Checking the full-screen overlay alone passed while the profile content was wider than the phone. Follow the scene to the active presenter before changing an inherited implementation.
+- Treat detected wrapping and overflow as review leads. Verify the player-facing cases with compact and tall EN and ID views, including a pending or locked action and its confirmation.
+- Compare combat traces when profiling collision work. Disabling enemy collisions, limiting slides and disabling unused area monitoring each changed incoming HP loss or projectile counts. Preserve the collision path while testing a cosmetic budget separately.
+- Separate candidate source, verified runtime evidence and the Android result. The scratch workspace rolled back during the final paired benchmark. Recover the canonical source by tree hash and retain only the earlier receipts that were observed.

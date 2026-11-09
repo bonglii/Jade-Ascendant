@@ -67,7 +67,10 @@ func run() -> void:
 			status.changed.emit(status.get_snapshot())
 			check(not card._server_connect.visible, "Ready state removes the redundant connection action")
 			var overlay: Control = current_scene.profile_overlay
-			check(Rect2(Vector2.ZERO, Vector2(dimensions)).grow(1).encloses(overlay.get_global_rect()), "Profile stays inside phone viewport")
+			var viewport := Rect2(Vector2.ZERO, Vector2(dimensions)).grow(1)
+			check(viewport.encloses(overlay.get_global_rect()), "Profile overlay stays inside phone viewport")
+			check(viewport.encloses(current_scene.profile_sheet_panel.get_global_rect()), "Profile sheet and close button fit the viewport")
+			check(current_scene.profile_sheet_body.size.x <= current_scene.profile_scroll.size.x + 1, "Profile content fits its scroll width")
 			current_scene._close_profile_sheet()
 	current_scene.free()
 	current_scene = null

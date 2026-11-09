@@ -556,10 +556,6 @@ func _ensure_profile_sheet() -> void:
 	var outer_margin := MarginContainer.new()
 	outer_margin.name = "OuterMargin"
 	outer_margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	outer_margin.add_theme_constant_override("margin_left", 18)
-	outer_margin.add_theme_constant_override("margin_top", 16)
-	outer_margin.add_theme_constant_override("margin_right", 18)
-	outer_margin.add_theme_constant_override("margin_bottom", 16)
 	outer_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	profile_overlay.add_child(outer_margin)
 
@@ -602,6 +598,7 @@ func _ensure_profile_sheet() -> void:
 	content.add_child(header)
 
 	var seal := TextureRect.new()
+	seal.name = "ProfileSeal"
 	seal.custom_minimum_size = Vector2(84.0, 84.0)
 	seal.texture = profile_seal.texture
 	seal.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -614,6 +611,7 @@ func _ensure_profile_sheet() -> void:
 	header_text.add_theme_constant_override("separation", 1)
 	header.add_child(header_text)
 	var character_label := Label.new()
+	character_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	character_label.text = "LIN YUE  •  " + ("PROFIL PEMAIN" if SettingsManager.language == "id" else "PLAYER PROFILE")
 	character_label.add_theme_font_size_override("font_size",12)
 	character_label.add_theme_color_override("font_color",Color(0.58,0.95,0.86))
@@ -632,6 +630,7 @@ func _ensure_profile_sheet() -> void:
 	header_text.add_child(name_label)
 
 	profile_sheet_rank_label = Label.new()
+	profile_sheet_rank_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	profile_sheet_rank_label.theme_type_variation = &"JadeSubtitle"
 	profile_sheet_rank_label.add_theme_font_size_override("font_size", 15)
 	profile_sheet_rank_label.add_theme_color_override(
@@ -641,6 +640,7 @@ func _ensure_profile_sheet() -> void:
 	header_text.add_child(profile_sheet_rank_label)
 
 	profile_sheet_level_label = Label.new()
+	profile_sheet_level_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	profile_sheet_level_label.add_theme_font_size_override("font_size", 14)
 	profile_sheet_level_label.add_theme_color_override(
 		"font_color",
@@ -759,6 +759,15 @@ func _layout_profile_sheet() -> void:
 	outer.offset_right = home_ui.position.x+safe_size.x-profile_overlay.size.x-18.0
 	outer.offset_top = home_ui.position.y+16.0
 	outer.offset_bottom = home_ui.position.y+safe_size.y-profile_overlay.size.y-16.0
+	var compact: bool = safe_size.x < 420.0
+	var margin: MarginContainer = profile_sheet_panel.get_node("Margin")
+	var padding: int = 12 if compact else 24
+	margin.add_theme_constant_override("margin_left",padding)
+	margin.add_theme_constant_override("margin_right",padding)
+	var header: HBoxContainer = margin.get_node("Content/Header")
+	header.add_theme_constant_override("separation",8 if compact else 14)
+	var seal: TextureRect = header.get_node("ProfileSeal")
+	seal.custom_minimum_size = Vector2.ONE * (48.0 if compact else 84.0)
 	profile_sheet_panel.custom_minimum_size = Vector2(minf(598.0,maxf(0.0,safe_size.x-36.0)),minf(1038.0,maxf(0.0,safe_size.y-32.0)))
 
 func _make_profile_style(
@@ -1263,7 +1272,7 @@ func _add_profile_combat_tile(
 	margin.add_child(column)
 	var title := Label.new()
 	title.text = title_text
-	title.autowrap_mode = TextServer.AUTOWRAP_OFF
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 14)
 	title.add_theme_color_override("font_color", Color(0.78, 0.89, 0.85, 1.0))
@@ -1367,6 +1376,7 @@ func _add_profile_stat_row(
 
 	var name_label := Label.new()
 	name_label.text = stat_name
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	name_label.theme_type_variation = &"JadeSubtitle"
 	name_label.add_theme_font_size_override("font_size", 17)
 	name_label.add_theme_color_override(
@@ -1384,7 +1394,7 @@ func _add_profile_stat_row(
 		text_box.add_child(description_label)
 
 	var value_label := Label.new()
-	value_label.custom_minimum_size = Vector2(118.0, 0.0)
+	value_label.custom_minimum_size.x = 70.0 if home_ui.size.x < 420.0 else 118.0
 	value_label.text = value_text
 	value_label.theme_type_variation = &"JadeHeroName"
 	value_label.add_theme_font_size_override("font_size", 18)
@@ -1431,6 +1441,7 @@ func _add_profile_cultivation_row(
 
 	var name_label := Label.new()
 	name_label.text = stat_name
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	name_label.theme_type_variation = &"JadeHeroName"
 	name_label.add_theme_font_size_override("font_size", 17)
 	name_label.add_theme_color_override(
@@ -1447,7 +1458,7 @@ func _add_profile_cultivation_row(
 	text_box.add_child(description_label)
 
 	var level_label := Label.new()
-	level_label.custom_minimum_size = Vector2(118.0, 0.0)
+	level_label.custom_minimum_size.x = 70.0 if home_ui.size.x < 420.0 else 118.0
 	level_label.text = value_text
 	level_label.theme_type_variation = &"JadeHeroName"
 	level_label.add_theme_font_size_override("font_size", 19)
@@ -1491,8 +1502,10 @@ func _add_profile_milestones(hero_level: int) -> void:
 	box.add_theme_constant_override("separation", 8)
 	margin.add_child(box)
 
-	var milestone_row := HBoxContainer.new()
-	milestone_row.add_theme_constant_override("separation", 7)
+	var milestone_row := GridContainer.new()
+	milestone_row.columns = 3 if home_ui.size.x < 420.0 else milestones.size()
+	milestone_row.add_theme_constant_override("h_separation",7)
+	milestone_row.add_theme_constant_override("v_separation",7)
 	box.add_child(milestone_row)
 
 	for milestone_level: int in milestones:
@@ -1575,6 +1588,7 @@ func _add_profile_milestones(hero_level: int) -> void:
 
 	var status_label := Label.new()
 	status_label.theme_type_variation = &"JadeSubtitle"
+	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	status_label.add_theme_font_size_override("font_size", 14)
 	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	if claimable_milestone > 0:
@@ -1600,6 +1614,7 @@ func _add_profile_milestones(hero_level: int) -> void:
 	if claimable_milestone > 0:
 		var claim_button := Button.new()
 		claim_button.custom_minimum_size = Vector2(0.0, 48.0)
+		claim_button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		claim_button.text = (
 			tr("CLAIM MILESTONE REWARD  •  LV %d") % claimable_milestone
 		)

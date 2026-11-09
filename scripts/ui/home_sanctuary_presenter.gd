@@ -403,7 +403,7 @@ func _layout_sanctuary() -> void:
  var avatar_y: float=(header_h-avatar_side)*.5
  _rect(profile_seal_view,Vector2(inset,avatar_y),Vector2(avatar_side,avatar_side))
  var text_x: float=inset+avatar_side+maxf(8,10*u)
- var text_w: float=maxf(40,profile_w-text_x-maxf(18,24*u))
+ var text_w: float=maxf(40,profile_w-text_x-(8.0 if short_phone else maxf(18,24*u)))
  var name_y: float=maxf(10,14*u)
  var name_h: float=maxf(20,26*u)
  var rank_y: float=name_y+name_h+2*u
@@ -416,6 +416,7 @@ func _layout_sanctuary() -> void:
  var dot_side: float=maxf(7,9*u)
  _rect(profile_connection,Vector2(inset+avatar_side-dot_side,avatar_y+avatar_side-dot_side),Vector2.ONE*dot_side)
  _rect(profile_chevron,Vector2(profile_w-maxf(16,20*u),(header_h-24*u)*.5),Vector2(12,24)*u)
+ profile_chevron.visible=not short_phone
  _fit_icon(settings_shortcut,maxf(10,16*u));_fit_icon(mailbox_button,maxf(8,12*u))
  _rect(hero_title,Vector2(side+8*u,maxf(header_y+header_h+14, size.y*.19)),Vector2(size.x*.42,65*u))
  _rect(title_name,Vector2.ZERO,Vector2(hero_title.size.x,42*u));_font(title_name,35,true)

@@ -90,8 +90,9 @@ func _build_presentation() -> void:
 	layout.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	layout.add_theme_constant_override("separation", 10)
 	presentation_root.add_child(layout)
-	hall_title = _label("UJIAN HARIAN & PENCAPAIAN" if SettingsManager.language=="id" else "DAILY TRIALS & RECORDS", 28)
+	hall_title = _label("HARIAN & REKOR" if SettingsManager.language=="id" else "DAILY & RECORDS", 28)
 	var title: Label = hall_title
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title.add_theme_font_override("font", DISPLAY_FONT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.theme_type_variation = &"JadeTitle"
@@ -119,6 +120,7 @@ func _build_presentation() -> void:
 	info.add_theme_constant_override("separation", 8)
 	header_panel.add_child(info)
 	section_title = _label("", 30)
+	section_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	section_title.theme_type_variation = &"JadeTitle"
 	section_title.add_theme_font_override("font", DISPLAY_FONT)
 	section_title.add_theme_color_override("font_shadow_color", Color.BLACK)
@@ -127,6 +129,7 @@ func _build_presentation() -> void:
 	header_progress = _label("", 19)
 	info.add_child(header_progress)
 	reset_label = _label("", 16)
+	reset_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	reset_label.add_theme_color_override("font_color", MUTED)
 	info.add_child(reset_label)
 	filters = GridContainer.new()
@@ -167,6 +170,7 @@ func _build_presentation() -> void:
 	layout.add_child(footer)
 	claim_all_button = _button("", true)
 	claim_all_button.custom_minimum_size.y = 56
+	claim_all_button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	claim_all_button.pressed.connect(_on_claim_all_pressed)
 	footer.add_child(claim_all_button)
 	completion_reward = _label("",15)
@@ -209,9 +213,12 @@ func _refresh() -> void:
 	completion_reward.visible = is_daily or _get_claimable_count() > 0
 	claim_all_button.disabled = _get_claimable_count() <= 0
 	claim_all_button.text = tr("CLAIM ALL") + " · %d" % _get_claimable_count() if not claim_all_button.disabled else tr("NO REWARDS READY")
-	claim_all_button.tooltip_text = _claim_all_summary()
 	var completion: Dictionary = PavilionManager.get_daily_completion_reward_preview()
-	completion_reward.text = (tr("Complete all daily trials: ") + RewardManager.get_reward_summary(completion).replace("\n"," · ") if not completion.is_empty() else tr("Daily completion bonus claimed")) if is_daily else _claim_all_summary()
+	var claim_summary: String = "" if claim_all_button.disabled else _claim_all_summary()
+	completion_reward.text = claim_summary
+	if is_daily:
+		var bonus_text: String = tr("Complete all daily trials: ") + RewardManager.get_reward_summary(completion).replace("\n"," · ") if not completion.is_empty() else tr("Daily completion bonus claimed")
+		completion_reward.text = bonus_text if claim_summary.is_empty() else claim_summary+"\n"+bonus_text
 	for tab: Button in [daily_tab, achievement_tab]:
 		var selected: bool = (tab == daily_tab) == is_daily
 		for state: String in ["normal", "hover"]:
@@ -346,7 +353,8 @@ func _build_trial_card(record_id: String) -> PanelContainer:
 				amount_label.name="PremiumRewardAmount";amount_label.autowrap_mode=TextServer.AUTOWRAP_OFF
 				amount_label.add_theme_color_override("font_color",GOLD)
 				reward.add_child(amount_label)
-	var action := _button(tr("CLAIM") if claimable else tr("CLAIMED") if claimed else tr("GO") if active_section == "daily" else tr("ONGOING"), claimable)
+	var progress_action: String = "PILIH BAB" if SettingsManager.language=="id" else "CHOOSE REALM"
+	var action := _button(tr("CLAIM") if claimable else tr("CLAIMED") if claimed else progress_action if active_section == "daily" else tr("ONGOING"), claimable)
 	action.add_theme_font_size_override("font_size", 14)
 	action.disabled = claimed or (active_section != "daily" and not claimable)
 	if action.disabled:action.mouse_filter=Control.MOUSE_FILTER_IGNORE
@@ -371,7 +379,7 @@ func _adapt_card(card: PanelContainer) -> void:
 		destination = body
 	if actions.get_parent() != destination:
 		actions.reparent(destination, false)
-	actions.vertical = not narrow or bool(actions.get_meta("premium_reward",false))
+	actions.vertical = not narrow or presentation_root.size.x<380 or bool(actions.get_meta("premium_reward",false))
 	actions.alignment = BoxContainer.ALIGNMENT_END
 	actions.add_theme_constant_override("separation", 12 if narrow else 4)
 	seal.custom_minimum_size.x = 48 if narrow else 64

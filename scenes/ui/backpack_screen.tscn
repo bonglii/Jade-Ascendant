@@ -204,7 +204,7 @@ text = "HERO"
 layout_mode = 2
 theme_type_variation = &"JadeMutedLabel"
 theme_override_font_sizes/font_size = 11
-text = "BACKPACK  •  CULTIVATION COLLECTION"
+text = "BACKPACK"
 
 [node name="StoneBox" type="HBoxContainer" parent="Content/TopBar/TopRow"]
 layout_mode = 2

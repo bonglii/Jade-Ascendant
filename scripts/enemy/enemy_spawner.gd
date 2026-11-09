@@ -207,7 +207,7 @@ func _process(delta: float) -> void:
 		# per spawn batch so a weak build cannot create an unbounded mobile load.
 		var enemy_cap: int = int(stage_profile.get("enemy_cap", 0))
 		if enemy_cap > 0:
-			var alive_count: int = get_tree().get_nodes_in_group("enemy").size()
+			var alive_count: int = get_tree().get_node_count_in_group(&"enemy")
 			spawn_count = mini(spawn_count, maxi(enemy_cap - alive_count, 0))
 
 		for i in range(spawn_count):

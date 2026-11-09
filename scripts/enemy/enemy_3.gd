@@ -189,8 +189,7 @@ func damage_player(target_player: Node) -> void:
 		))
 		return
 
-	DebugLogger.system(str("ENEMY 3 HIT!"))
-	DebugLogger.system(str("Enemy 3 Damage: ", contact_damage))
+	DebugLogger.combat("Enemy 3 hit player | Damage: %.1f" % contact_damage)
 
 	player_health.take_damage(contact_damage, "melee")
 	contact_damage_timer = contact_damage_cooldown
@@ -246,7 +245,7 @@ func take_damage(amount: float) -> void:
 	preload("res://scripts/effects/equipment_set_status.gd").on_hit(self, final_damage)
 	CombatFeedback.hit(self, final_damage)
 
-	DebugLogger.system(str("Enemy 3 HP: ", current_hp))
+	DebugLogger.combat("Enemy 3 HP: %.1f" % current_hp)
 
 	if current_hp <= 0.0:
 		die()

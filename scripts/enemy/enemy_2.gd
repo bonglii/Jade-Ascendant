@@ -355,7 +355,7 @@ func take_damage(amount: float) -> void:
 	preload("res://scripts/effects/equipment_set_status.gd").on_hit(self, final_damage)
 	CombatFeedback.hit(self, final_damage)
 
-	DebugLogger.system(str("Enemy 2 HP: ", current_hp))
+	DebugLogger.combat("Enemy 2 HP: %.1f" % current_hp)
 
 	if current_hp <= 0.0:
 		die()
