@@ -2,7 +2,7 @@
   "base": "b9c64f2ebd0009375af4aa01578f8b1adf98321f",
   "base_tree": "2efc25fe225a49175b29cdcba6153b44340a0897",
   "branch": "work/player-polish-20261104",
-  "status": "COMPACT_REALM_FOCUS_FIX_QA_PENDING",
+  "status": "TRIALS_AND_ASCENSION_LAYOUT_FIX_QA_PENDING",
   "candidate_branch": "checkpoint/player-decisions-crowd-20261109",
   "baseline": {
     "player_ui": {
@@ -33,7 +33,44 @@
         "unused area removal or monitoring changes"
       ],
       "earlier_cosmetic_probe": "The less aggressive pose experiment preserved measured hit traces but did not establish a repeatable frame-time improvement.",
-      "candidate_measurement": "The final paired run was interrupted by a scratch rollback. The candidate measurement is pending."
+      "candidate_measurement": {
+        "run": 42651364052,
+        "engine": "4.7.2.stable.official.ed1daf0bf",
+        "paired_rounds": 3,
+        "frames_per_sample": 480,
+        "comparison": "Restore exactly the five baseline combat source files in the same imported fixture. Alternate base and candidate order. Fixed 60 Hz simulation without render loop.",
+        "stage_1_5": {
+          "enemies": 96,
+          "median_p95_ms": [
+            4.695,
+            4.473
+          ],
+          "median_active_poses": [
+            96,
+            6.925
+          ],
+          "hp_loss": 112,
+          "hits": 19,
+          "peak_hostiles": 43,
+          "outgoing_sword": 70
+        },
+        "stage_5_5": {
+          "enemies": 110,
+          "median_p95_ms": [
+            5.42,
+            5.285
+          ],
+          "median_active_poses": [
+            110,
+            6.241667
+          ],
+          "hp_loss": 158.72,
+          "hits": 23,
+          "peak_hostiles": 52,
+          "outgoing_sword": 70
+        },
+        "limit": "Combat trace matched in all six pairs. This is Linux headless CPU time. One 110-enemy pair had no improvement, so this does not establish an Android FPS or dense-crowd fix."
+      }
     }
   },
   "candidate_changes": [
@@ -52,9 +89,8 @@
     "diff_check": "PASS"
   },
   "next": [
-    "Run the compact UI audit again and exercise the saved-run cancel action, Profile scroll, Library filters, Daily claims, Pavilion verification and Trials risks.",
-    "Run crowd_performance_smoke, combat fairness and the same paired production workloads. Check population, attack count, outgoing damage, incoming hits and HP loss.",
-    "Verify native visual and first-touch behavior, then consider the candidate for the working branch. Record Android frame timing in the final phone pass."
+    "Confirm the corrected Trials and Ascension state and compact native panels. Check the two fixture teardown reruns and Run Review native swipe. Reuse the paired crowd results since the five combat inputs are identical.",
+    "Keep phone testing last. Merge only reviewed source separately from draft-only fixtures."
   ],
   "owner_install": "PENDING",
   "aab": "PENDING",
@@ -78,5 +114,20 @@
     "windows_script_job": "PASS on hosted Windows for script checks only",
     "remaining": "Realm stage title failed initial focus at 320x568. Run Review layout failed 2 of 113 assertions for a first swipe inside a headless runner. Native viewport retest required.",
     "realm_fix": "Focus the selected seal and title together and prefer the title when both do not fit. Re-evaluate after the responsive title position changes."
+  },
+  "ci_realm_focus": {
+    "source": "9e3e280b80b392d3aeea76b16f6b4b61cf09c222",
+    "qa_head": "a29a47e42434fa467d2f356cc210499fe01cb20b",
+    "journey_run": 42651650774,
+    "status": "PASS",
+    "layout_checks": 27
+  },
+  "ci_matrix_first_pass": {
+    "run": 42651364052,
+    "head": "0903d6498a4c556e4d35628f5fc6300484c3428b",
+    "checks": 624,
+    "failures": 22,
+    "remaining": "Trials risk text failed in both languages due to runtime typed ternary conversion. Ascension final reward title and action exceed the 320 px viewport. Hero and fairness reported errors during fixture teardown.",
+    "fix": "Use the ordinary array type for localized risk copy. Put the final Seal line across the footer outside the two-card grid, with compact final-day heading and wrapped button. Verify both separately."
   }
 }

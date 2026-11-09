@@ -992,3 +992,5 @@ A literal credential-shaped sample in a self-published test triggered the scanne
 - Separate candidate source, verified runtime evidence and the Android result. The scratch workspace rolled back during the final paired benchmark. Recover the canonical source by tree hash and retain only the earlier receipts that were observed.
 
 - Run the clean strict Godot import before treating static validation or a warm fixture as release readiness. GitHub caught an inherited autoload parameter shadowing Node.owner, which stopped both release and journey suites before runtime. Rename the parameter and preserve both account checks.
+
+- Godot strict import passed while a typed ternary array still failed at runtime. Exercise both translated branches in the production Trials screen. Keep an extra final-day reward out of the two-card grid so its caption cannot inflate a fixed-width column.

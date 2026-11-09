@@ -31,7 +31,10 @@ func rect_of(control: Control) -> Rect2:
 	return control.get_global_transform_with_canvas() * Rect2(Vector2.ZERO,control.size)
 
 func fits(control: Control, what: String) -> void:
-	check(is_instance_valid(control) and control.is_visible_in_tree() and root.get_visible_rect().grow(1).encloses(rect_of(control)),what)
+	if not is_instance_valid(control):
+		check(false,what + " missing")
+		return
+	check(control.is_visible_in_tree() and root.get_visible_rect().grow(1).encloses(rect_of(control)),what + " " + str(rect_of(control)))
 
 func readable(label: Label, what: String) -> void:
 	fits(label,what + " in viewport")
@@ -165,6 +168,9 @@ func audit(view_name: String, view: Node, locale: String) -> void:
 				await frames()
 				readable(view._day_title,"Ascension day %d" % day)
 				fits(view._action,"Ascension claim or lock")
+				check(view._action.disabled == (view._state(day) != "ready"),"real claim eligibility")
+				if day == view._total_days():
+					readable(view._seal_reward_note,"final Seal")
 		"celestial_boss_hunt_screen":
 			var shown: bool = false
 			for label: Label in view.find_children("*","Label",true,false):
@@ -199,11 +205,16 @@ func run() -> void:
 	journey.select_stage(1,3)
 	var settings: Node = root.get_node("SettingsManager")
 	settings.reduced_effects = true
+	var dimensions: Array[Vector2i] = [Vector2i(320,568),Vector2i(390,844),Vector2i(648,1152)]
+	var scenes: Array = SCENES
+	if DisplayServer.get_name() != "headless":
+		dimensions = [Vector2i(320,568)]
+		scenes = ["main_menu","equipment_screen","stage_select","daily_quest_screen","achievement_screen","skill_book_screen","pavilion_screen","heavenly_trials_screen","new_player_event_screen","celestial_boss_hunt_screen"]
 	for locale: String in ["en","id"]:
 		settings.language = locale
-		for dims: Vector2i in [Vector2i(320,568),Vector2i(390,844),Vector2i(648,1152)]:
+		for dims: Vector2i in dimensions:
 			root.size = dims
-			for scene_name: String in SCENES:
+			for scene_name: String in scenes:
 				case_name = "%s %s %s" % [locale,dims,scene_name]
 				var old_fails: int = failures
 				var view: Node = await open_view(scene_name)
