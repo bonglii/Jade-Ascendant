@@ -1,30 +1,78 @@
 'use strict';
-const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),{spawnSync}=require('node:child_process');
-const {qa,runProcess}=require('./check_event_touch.cjs');
-async function check(project,godot){
- const root=fs.realpathSync(project),logs=path.join(root,'.local/player_release_qa');fs.mkdirSync(logs,{recursive:true});
- const remembered=path.join(root,'.local/production_native_export/godot-path.local.txt');godot=godot||process.env.GODOT_PATH||(fs.existsSync(remembered)?fs.readFileSync(remembered,'utf8').trim().replace(/^"|"$/g,''):'');
- if(!godot||!fs.existsSync(godot))throw Error('Set GODOT_PATH to your installed Godot4.7.2 console executable.');
- const version=spawnSync(godot,['--version'],{encoding:'utf8',windowsHide:true});if(version.status!==0||!/^4\.7\.2\./.test(version.stdout.trim()))throw Error('Use Godot4.7.2 console.');
- const contract=spawnSync(process.execPath,['backend/player_identity/production_release_contract.mjs'],{cwd:root,encoding:'utf8',windowsHide:true});if(contract.status!==0)throw Error('Existing production contract failed.');console.log(contract.stdout.trim());
- await qa(root,godot,{only:[]});
- const fixture=path.join(root,'.local/event_touch_qa/fixture'),cfg=path.join(fixture,'project.godot'),baseline=fs.readFileSync(cfg,'utf8');
- const suites=[
- ['run_review_smoke.gd','RUN_REVIEW checks=','jade_event_touch_qa','RUN_REVIEW_RESTART'],
- ['run_review_layout_smoke.gd','RUN_REVIEW_LAYOUT checks=','jade_event_touch_qa',''],
- ['run_report_smoke.gd','RUN_REPORT_QA','jade_report_qa','RUN_REPORT_RESTART'],
- ['stage_records_smoke.gd','STAGE_RECORDS checks=','jade_event_touch_qa','STAGE_RECORDS_RESTART'],
- ['paid_run_recovery_smoke.gd','PAID_RUN_RECOVERY_CHECKS=','jade_paid_run_qa','PAID_RUN_RECOVERY_CHECKS='],
- ['combat_clarity_smoke.gd','COMBAT_CLARITY checks=','jade_event_touch_qa','COMBAT_CLARITY_RESTART'],
- ['public_readiness_smoke.gd','PUBLIC_READINESS_QA','jade_paid_v2_qa','']
- ];
- try{for(const [script,marker,prefix,restart]of suites){
-  fs.writeFileSync(cfg,baseline.replace(/config\/custom_user_dir_name="[^"\r\n]*"/,'config/custom_user_dir_name="'+prefix+'_jade_event_touch_qa_'+crypto.randomUUID()+'"'));
-  const args=['--headless','--audio-driver','Dummy','--path',fixture,'--script','res://tests/'+script];
-  await runProcess(godot,args,{cwd:root,logs,name:script,marker,idleMs:120000,totalMs:150000});
-  if(restart)await runProcess(godot,[...args,'--','--resume'],{cwd:root,logs,name:script+'-restart',marker:restart,idleMs:120000,totalMs:150000});
- }}finally{fs.writeFileSync(cfg,baseline);}
- console.log('PLAYER_RELEASE_QA=PASS; REAL_SAVES=UNTOUCHED; NATIVE=UNCHANGED; PURCHASE=NONE; DEPLOY=NONE');return{pass:true};
+// Temporary runner for the draft QA branch. All runtime work is isolated from the checkout.
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { randomUUID } = require('node:crypto');
+const { spawnSync } = require('node:child_process');
+const { qa, runProcess } = require('./check_event_touch.cjs');
+
+const suites = [
+  ['player_decisions_matrix', 'DECISION_MATRIX checks=', 'jade_decision_qa'],
+  ['player_decisions_matrix', 'DECISION_MATRIX checks=', 'jade_decision_qa', true],
+  ['event_scroll_surface_smoke', 'EVENT_SCROLL_SURFACE checks=', 'jade_event_touch_qa', true]
+];
+
+async function check(project, godot) {
+  const root = fs.realpathSync(project);
+  const receipt = fs.mkdtempSync(path.join(process.env.RUNNER_TEMP || os.tmpdir(), 'jade-decisions-qa-'));
+  const logs = path.join(receipt, 'runtime');
+  process.env.XDG_DATA_HOME = path.join(receipt, 'userdata');
+  process.env.XDG_CONFIG_HOME = path.join(receipt, 'config');
+  process.env.XDG_CACHE_HOME = path.join(receipt, 'cache');
+  process.env.GODOT_SILENCE_ROOT_WARNING = '1';
+  const images = path.join(receipt, 'images');
+  fs.mkdirSync(images);
+  process.env.JADE_JOURNEY_RENDER_DIR = images;
+  process.env.JADE_COMBAT_RENDER_DIR = images;
+  process.env.JADE_DECISION_RENDER_DIR = images;
+
+  const engine = spawnSync(godot, ['--version'], { encoding: 'utf8' });
+  if (engine.status !== 0 || !/^4\.7\.2\./.test(engine.stdout.trim())) throw Error('Pinned Godot 4.7.2 required');
+  console.log('DECISION_ENGINE ' + engine.stdout.trim());
+  await qa(root, godot, { only: [], logs: receipt });
+  const fixture = path.join(receipt, 'fixture');
+  const config = path.join(fixture, 'project.godot');
+  const baseline = fs.readFileSync(config, 'utf8');
+  const issues = [];
+
+  async function run(script, marker, prefix, { native = false, extra = [], name = script, userArgs = [] } = {}) {
+    fs.writeFileSync(config, baseline.replace(/config\/custom_user_dir_name="[^"\r\n]*"/,
+      'config/custom_user_dir_name="' + prefix + '_jade_event_touch_qa_' + randomUUID() + '"'));
+    const args = ['--audio-driver', 'Dummy', '--path', fixture, ...extra, '--script', 'res://tests/' + script + '.gd', '--', ...userArgs];
+    const command = native ? 'xvfb-run' : godot;
+    const commandArgs = native ? ['-a', '-s', '-screen 0 1280x1600x24 -nolisten tcp', godot, ...args] : ['--headless', ...args];
+    try {
+      await runProcess(command, commandArgs, { cwd: receipt, logs, name, marker, idleMs: 80000, totalMs: 145000 });
+      return true;
+    } catch (error) {
+      const source = path.join(logs, name + '.log');
+      if (fs.existsSync(source)) {
+        const lines = fs.readFileSync(source, 'utf8').split(/\r?\n/);
+        for (const line of lines.filter(line => /^(DECISION_CASE|DECISIONS_FAIL|DECISION_MATRIX|CROWD_PAIRED|SCRIPT ERROR|ERROR:|REAL_SCROLL)/.test(line)).slice(-120)) console.log(line);
+      }
+      console.log('DECISION_SUITE_FAIL ' + name + ' ' + error.message);
+      issues.push(name);
+      return false;
+    }
+  }
+
+  for (const [script, marker, prefix, native] of suites) {
+    const name = script + (native ? '-native' : '');
+    await run(script, marker, prefix, { native, name, userArgs: ['--ascension-only'] });
+  }
+
+  const evidence = fs.readdirSync(logs).filter(name => name.endsWith('.log')).map(name => path.join(logs, name));
+  // The existing workflow uploads this path on its disposable runner.
+  const upload = path.join(root, '.local/player_release_qa');
+  fs.mkdirSync(upload, { recursive: true });
+  for (const file of evidence) fs.copyFileSync(file, path.join(upload, path.basename(file)));
+  fs.cpSync(images, path.join(upload, 'images'), { recursive: true });
+  console.log('DECISION_BATCH issues=' + JSON.stringify(issues));
+  if (issues.length) process.exitCode = 1;
 }
-if(require.main===module)check(process.argv[2]||path.resolve(__dirname,'../..'),process.argv[3]).catch(e=>{console.error('PLAYER_RELEASE_QA_STOPPED: '+e.message);process.exitCode=1;});
-module.exports={check};
+
+check(process.argv[2], process.argv[3]).catch(error => {
+  console.error('DECISION_RUNNER_STOP ' + error.message);
+  process.exitCode = 1;
+});

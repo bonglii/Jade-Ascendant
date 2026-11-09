@@ -2,7 +2,7 @@
   "base": "b9c64f2ebd0009375af4aa01578f8b1adf98321f",
   "base_tree": "2efc25fe225a49175b29cdcba6153b44340a0897",
   "branch": "work/player-polish-20261104",
-  "status": "COMPACT_ASCENSION_STATUS_FIX_QA_PENDING",
+  "status": "ASCENSION_PANEL_FINAL_LAYOUT_QA_PENDING",
   "candidate_branch": "checkpoint/player-decisions-crowd-20261109",
   "baseline": {
     "player_ui": {
@@ -149,5 +149,17 @@
     "checks": 121,
     "native": "X11 software rendering and injected GUI mouse events",
     "cause_of_previous_failures": "The tall 648x1152 reader only has 16 px of scroll; the harness demanded more than 20. The actual first swipe moves all 16 px in EN and ID. All eight samples leave the run paused and unfinalized."
+  },
+  "ci_clean_candidate": {
+    "source": "9111881b95835ac4d2f98aa405b948f0905f6fc1",
+    "same_tree_ci_head": "981b9fa091973b5102149f2dc16d9bc855251273",
+    "journey_run": 42654561112,
+    "release_run": 42654561082,
+    "standard_suites": "PASS",
+    "matrix_run": 42654451162,
+    "headless": "679 of 684",
+    "native": "162 of 166",
+    "remaining": "Full frame still overflows on 320 px in both languages. Indonesian at 390 px has a final-day button 2.42 px past the viewport. Both remaining findings are confined to the Ascension production popup.",
+    "last_fix": "Wrap the horizontal day-track caption and guide. The pinned footer now grows when the localized content exceeds its reserved slot, borrowing space from the upper reader."
   }
 }
