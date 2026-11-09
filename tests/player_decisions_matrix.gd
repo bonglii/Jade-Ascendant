@@ -169,6 +169,8 @@ func audit(view_name: String, view: Node, locale: String) -> void:
 				await frames()
 				readable(view._day_title,"Ascension day %d" % day)
 				fits(view._root,"Ascension panel")
+				var rail_preview: Rect2 = rect_of(view._day_scroll).intersection(rect_of(view._top_scroll))
+				check(rail_preview.size.y >= 28,"day picker visible before vertical scroll " + str(rail_preview))
 				readable(view._day_status,"Ascension day status")
 				fits(view._action,"Ascension claim or lock")
 				check(view._action.disabled == (view._state(day) != "ready"),"real claim eligibility")
@@ -203,13 +205,15 @@ func run() -> void:
 		cfg.set_value("tutorials",key,true)
 	cfg.save("user://jade_onboarding.cfg")
 	root.get_node("RefineOnboarding").completed = true
-	var inventory: Node = root.get_node("InventoryManager")
-	inventory.item_counts = {"jade_binding_chain":2,"celestial_returning_glaive":1,"nine_heavens_star_sword":1}
-	root.get_node("EquipmentManager").equip_item("jade_binding_chain")
-	var journey: Node = root.get_node("JourneyManager")
-	journey.unlocked_stage_keys.assign(["1-1","1-2","1-3","1-4","1-5"])
-	journey.cleared_stage_keys.assign(["1-1","1-2","1-3","1-4","1-5"])
-	journey.select_stage(1,3)
+	var ascension_only: bool = OS.get_cmdline_user_args().has("--ascension-only")
+	if not ascension_only:
+		var inventory: Node = root.get_node("InventoryManager")
+		inventory.item_counts = {"jade_binding_chain":2,"celestial_returning_glaive":1,"nine_heavens_star_sword":1}
+		root.get_node("EquipmentManager").equip_item("jade_binding_chain")
+		var journey: Node = root.get_node("JourneyManager")
+		journey.unlocked_stage_keys.assign(["1-1","1-2","1-3","1-4","1-5"])
+		journey.cleared_stage_keys.assign(["1-1","1-2","1-3","1-4","1-5"])
+		journey.select_stage(1,3)
 	var settings: Node = root.get_node("SettingsManager")
 	settings.reduced_effects = true
 	var dimensions: Array[Vector2i] = [Vector2i(320,568),Vector2i(390,844),Vector2i(648,1152)]
@@ -217,7 +221,7 @@ func run() -> void:
 	if DisplayServer.get_name() != "headless":
 		dimensions = [Vector2i(320,568)]
 		scenes = ["main_menu","equipment_screen","stage_select","daily_quest_screen","achievement_screen","skill_book_screen","pavilion_screen","heavenly_trials_screen","new_player_event_screen","celestial_boss_hunt_screen"]
-	if OS.get_cmdline_user_args().has("--ascension-only"):
+	if ascension_only:
 		dimensions = [Vector2i(320,568),Vector2i(390,844),Vector2i(648,1152)]
 		scenes = ["new_player_event_screen"]
 	for locale: String in ["en","id"]:

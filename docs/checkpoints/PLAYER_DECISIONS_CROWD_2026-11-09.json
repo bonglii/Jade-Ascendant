@@ -2,7 +2,7 @@
   "base": "b9c64f2ebd0009375af4aa01578f8b1adf98321f",
   "base_tree": "2efc25fe225a49175b29cdcba6153b44340a0897",
   "branch": "work/player-polish-20261104",
-  "status": "ASCENSION_PANEL_FINAL_LAYOUT_QA_PENDING",
+  "status": "ASCENSION_FIRST_PAINT_DAY_PICKER_QA_PENDING",
   "candidate_branch": "checkpoint/player-decisions-crowd-20261109",
   "baseline": {
     "player_ui": {
@@ -89,8 +89,8 @@
     "diff_check": "PASS"
   },
   "next": [
-    "Confirm the corrected Trials and Ascension state and compact native panels. Check the two fixture teardown reruns and Run Review native swipe. Reuse the paired crowd results since the five combat inputs are identical.",
-    "Keep phone testing last. Merge only reviewed source separately from draft-only fixtures."
+    "For owner validation, pull the published work branch and confirm its receipt. Run the final phone cycle and verify the dense scenes, fresh boot, and touch layouts before Play closed testing.",
+    "Keep the AdMob hold and preserve the existing production exporter and nine gates."
   ],
   "owner_install": "PENDING",
   "aab": "PENDING",
@@ -161,5 +161,24 @@
     "native": "162 of 166",
     "remaining": "Full frame still overflows on 320 px in both languages. Indonesian at 390 px has a final-day button 2.42 px past the viewport. Both remaining findings are confined to the Ascension production popup.",
     "last_fix": "Wrap the horizontal day-track caption and guide. The pinned footer now grows when the localized content exceeds its reserved slot, borrowing space from the upper reader."
-  }
+  },
+  "verified_source_tree": "76cb7249b8f5c592a3e5601b8d85e285e4b0e58f",
+  "verified_source_commit": "225f9c294ed9ce194ceaa6b337ecc842d94a7cc8",
+  "ci_ascension_final": {
+    "draft_head": "73dded5388ada098451b4669a4b7597d143df4fa",
+    "release_focused_run": 42655767192,
+    "journey_run": 42655767255,
+    "artifact": 13692690816,
+    "headless_checks": 108,
+    "x11_checks": 114,
+    "event_scroll_checks": 159,
+    "failures": 0,
+    "scope": "Ascension day 1 and 7 at 320x568, 390x844 and 648x1152, actual production locale setter for EN and ID, whole frame, artwork title, day status, action and final Seal. Event scroll production surfaces. A previous standard Release suite passed on the identical gameplay and test source before the final Ascension-only UI edit.",
+    "first_party_visual_follow_up": "Native 320 screenshot showed the frame and action fit, but the day picker was completely below the upper reader fold. Tighten the compact header and reward tiles so the picker starts in view. Isolate Ascension fixture from unrelated seeded Journey XP to avoid a synthetic level-up toast."
+  },
+  "final_notes": [
+    "The broad audit opens 26 production scenes at three sizes in both locales, with focused assertion coverage on changed controls. All remaining failures from the broad sweep were Ascension-only and are covered by the final focused pass.",
+    "Native evidence uses Godot X11 with simulated GUI input. Owner Windows installation and Android performance are separate.",
+    "No owner QA files were written. Imports, saves, logs and renders used disposable QA storage."
+  ]
 }
