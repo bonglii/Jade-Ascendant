@@ -2,6 +2,12 @@ extends Node
 ## Pause-owned optional choices. No grants, extra projectiles or account writes.
 const Policy=preload("res://scripts/data/run_path_policy.gd")
 const Sheet=preload("res://scripts/companion/player_journal.gd")
+const Scroll=preload("res://scripts/ui/mobile_scroll_policy.gd")
+const SafeArea=preload("res://scripts/ui/mobile_safe_area.gd")
+const SERIF: Font=preload("res://assets/ui/library/fonts/archive_serif.ttf")
+const EMBER_ICON: Texture2D=preload("res://assets/ui/level_up/skill_art/fire_orb.png")
+const WIND_ICON: Texture2D=preload("res://assets/ui/level_up/skill_art/movement_speed.png")
+const BOON_HEIGHT: float=436.0
 var _modal: CanvasLayer
 var _left: float=1.0
 var _key: String=""
@@ -19,10 +25,7 @@ func _process(delta: float) -> void:
 	var health: Node=manager.get_parent().get_node_or_null("PlayerHealth")
 	if wave==null or health==null or health.is_dead:return
 	if int(wave.current_wave)>=3 and str(manager.run_paths.boon).is_empty():
-		_offer("boon",Sheet.copy("ALTAR OF TWO WINDS","ALTAR DUA ANGIN"),[
-			["ember",Sheet.copy("EMBER OATH · +12% direct art damage, −10% movement.","SUMPAH BARA · +12% damage langsung art, −10% gerak.")],
-			["wind",Sheet.copy("WIND OATH · +10% movement, −8% direct art damage.","SUMPAH ANGIN · +10% gerak, −8% damage langsung art.")],
-			["none",Sheet.copy("KEEP MY BALANCE · no boon or penalty.","JAGA KESEIMBANGAN · tanpa berkah atau penalti.")]])
+		_offer("boon",Sheet.copy("ALTAR OF TWO WINDS","ALTAR DUA ANGIN"),[])
 		return
 	for index: int in range(Policy.ARTS.size()):
 		var id: String=Policy.ARTS[index]
@@ -34,25 +37,103 @@ func _process(delta: float) -> void:
 				["balanced",Sheet.copy("BALANCED ART · retain the original damage.","ART SEIMBANG · pertahankan damage asli.")]])
 			return
 func _offer(key: String,title: String,choices: Array) -> void:
+	if is_instance_valid(_modal):return
 	_key=key
+	var boon: bool=key=="boon"
 	_modal=CanvasLayer.new();_modal.name="RunPathChoice";_modal.layer=80;add_child(_modal)
-	var root:=Control.new();root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);_modal.add_child(root)
-	var veil:=ColorRect.new();veil.color=Color(.005,.025,.025,.92);veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);root.add_child(veil)
-	var center:=CenterContainer.new();center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);root.add_child(center)
-	var panel:=PanelContainer.new();panel.add_theme_stylebox_override("panel",Sheet.skin(18));panel.custom_minimum_size=Vector2(minf(520,get_viewport().get_visible_rect().size.x-32),0);center.add_child(panel)
-	var body:=VBoxContainer.new();body.add_theme_constant_override("separation",12);panel.add_child(body)
-	body.add_child(Sheet.label(title,22,Sheet.GOLD))
-	body.add_child(Sheet.label(Sheet.copy("This run only · chosen once · Continue keeps your choice. Set DoT ticks receive no additional path/boon multiplier.","Hanya run ini · satu pilihan · Continue menyimpan pilihanmu. Tick DoT set tidak dikalikan ulang oleh cabang/berkah."),15))
-	var scroll:=ScrollContainer.new();scroll.custom_minimum_size.y=minf(340,get_viewport().get_visible_rect().size.y*.46);body.add_child(scroll)
-	var list:=VBoxContainer.new();list.size_flags_horizontal=Control.SIZE_EXPAND_FILL;list.add_theme_constant_override("separation",12);scroll.add_child(list)
-	for choice: Array in choices:
-		var action: Button=Sheet.button(str(choice[1]),_pick.bind(str(choice[0])))
-		action.name="Path_"+str(choice[0]);action.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;action.custom_minimum_size.y=76;list.add_child(action)
-	preload("res://scripts/ui/mobile_scroll_policy.gd").configure(scroll)
-	preload("res://scripts/ui/mobile_scroll_policy.gd").prepare_tree(root)
+	var root:=Control.new();_modal.add_child(root);root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var veil:=ColorRect.new();veil.color=Color(.005,.025,.025,.88);root.add_child(veil);veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var safe:=SafeArea.new();safe.name="ChoiceSafeArea";root.add_child(safe);safe.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var panel:=PanelContainer.new();panel.name="PathPanel";panel.add_theme_stylebox_override("panel",Sheet.skin(14));safe.add_child(panel)
+	var body:=VBoxContainer.new();body.add_theme_constant_override("separation",8);panel.add_child(body)
+	if boon:
+		var eyebrow: Label=Sheet.label(Sheet.copy("RUN EVENT  ◆  OPTIONAL BOON","EVENT RUN  ◆  BERKAH OPSIONAL"),12,Sheet.JADE)
+		eyebrow.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+		body.add_child(eyebrow)
+	var heading: Label=Sheet.label(title,22,Sheet.GOLD)
+	heading.add_theme_font_override("font",SERIF)
+	heading.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	body.add_child(heading)
+	var caption: String=Sheet.copy("This run only · Continue keeps your choice.","Hanya run ini · pilihan tersimpan saat Continue.") if boon else Sheet.copy("This run only · chosen once · Continue keeps your choice. Set DoT ticks receive no additional path multiplier.","Hanya run ini · satu pilihan · Continue menyimpan pilihanmu. Tick DoT set tidak dikalikan ulang oleh cabang.")
+	var hint: Label=Sheet.label(caption,14)
+	hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	body.add_child(hint)
+	var scroll:=ScrollContainer.new()
+	scroll.name="PathChoicesScroll"
+	scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL
+	body.add_child(scroll)
+	var list:=VBoxContainer.new();list.size_flags_horizontal=Control.SIZE_EXPAND_FILL;list.add_theme_constant_override("separation",8);scroll.add_child(list)
+	if boon:
+		list.add_child(_boon_card("ember",Sheet.copy("EMBER OATH","SUMPAH BARA"),EMBER_ICON,Color("f4ba72")))
+		list.add_child(_boon_card("wind",Sheet.copy("WIND OATH","SUMPAH ANGIN"),WIND_ICON,Sheet.JADE))
+		var skip: Button=Sheet.button(Sheet.copy("CONTINUE WITHOUT BOON","LANJUT TANPA BERKAH"),_pick.bind("none"))
+		skip.name="Path_none"
+		body.add_child(skip)
+	else:
+		for choice: Array in choices:
+			var action: Button=Sheet.button(str(choice[1]),_pick.bind(str(choice[0])))
+			action.name="Path_"+str(choice[0]);action.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;action.custom_minimum_size.y=76;list.add_child(action)
+	var fit: Callable=func():
+		if safe.size.x<=24 or safe.size.y<=24:return
+		panel.size=Vector2(minf(500,safe.size.x-24),minf(BOON_HEIGHT if boon else 426,safe.size.y-24))
+		panel.position=(safe.size-panel.size)*.5
+	Scroll.prepare_tree(root)
+	safe.resized.connect(fit,CONNECT_DEFERRED)
+	panel.minimum_size_changed.connect(fit,CONNECT_DEFERRED)
+	fit.call_deferred()
 	_previous_back=SceneTransitionManager.back_handler
 	SceneTransitionManager.set_back_handler(_cancel)
 	get_tree().paused=true
+	if boon:
+		AudioManager.play_sfx("achievement_unlock")
+		if SettingsManager.haptics and OS.has_feature("android"):
+			Input.vibrate_handheld(32)
+		if not SettingsManager.reduced_effects:
+			panel.modulate.a=0.0
+			create_tween().tween_property(panel,"modulate:a",1.0,.22)
+
+func _boon_card(id: String, title: String, art: Texture2D, accent: Color) -> Button:
+	var action: Button=Sheet.button("",_pick.bind(id))
+	action.name="Path_"+id
+	action.custom_minimum_size.y=94
+	var style:=StyleBoxFlat.new()
+	style.bg_color=Color("19231e") if id=="ember" else Color("0c2528")
+	style.border_color=Color(accent,.68)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(8)
+	style.border_width_left=3
+	action.add_theme_stylebox_override("normal",style)
+	var active: StyleBoxFlat=style.duplicate()
+	active.bg_color=style.bg_color.lightened(.08)
+	active.border_color=accent
+	action.add_theme_stylebox_override("pressed",active)
+	action.add_theme_stylebox_override("hover",active)
+	var row:=HBoxContainer.new()
+	row.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	row.add_theme_constant_override("separation",10)
+	action.add_child(row);row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	row.offset_left=10;row.offset_right=-10;row.offset_top=6;row.offset_bottom=-6
+	var icon:=TextureRect.new()
+	icon.texture=art;icon.custom_minimum_size.x=44;icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;icon.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	row.add_child(icon)
+	var text:=VBoxContainer.new()
+	text.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	text.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	text.alignment=BoxContainer.ALIGNMENT_CENTER
+	text.add_theme_constant_override("separation",2)
+	row.add_child(text)
+	text.add_child(Sheet.label(title,16,accent))
+	var chosen: Dictionary={"boon":id}
+	var damage: String="%+.0f%% %s"%[(Policy.multiplier(chosen,"spirit_sword",false)-1.0)*100.0,Sheet.copy("direct art damage","damage langsung art")]
+	var movement: String="%+.0f%% %s"%[(Policy.movement(chosen)-1.0)*100.0,Sheet.copy("movement speed","kecepatan gerak")]
+	var gain: String=damage if id=="ember" else movement
+	var cost: String=movement if id=="ember" else damage
+	text.add_child(Sheet.label(gain,14,Sheet.JADE))
+	text.add_child(Sheet.label(cost,14,Color("f6a089")))
+	action.accessibility_name="%s. %s. %s"%[title,gain,cost]
+	return action
 func _pick(value: String) -> void:
 	if not is_instance_valid(_modal):return
 	var manager: Node=get_parent()

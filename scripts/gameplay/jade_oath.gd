@@ -1,9 +1,15 @@
 extends Node2D
 const State = preload("res://scripts/data/jade_oath_state.gd")
+const Sheet = preload("res://scripts/companion/player_journal.gd")
+const ARRIVAL_DURATION := .65
 var state = State.new()
 var _actor: Node2D
 var _waves: Node
-var _chip: Label
+var _panel: PanelContainer
+var _heading: Label
+var _instruction: Label
+var _progress: ProgressBar
+var _arrival_left: float = 0.0
 var _probe_left: float = 0.0
 var _draw_left: float = 0.0
 
@@ -14,43 +20,64 @@ func _ready() -> void:
 	_waves = get_parent().get_node("WaveManager")
 	state.begin(GameSession.jade_oath_requested and JourneyManager.is_stage_cleared(1,3))
 	GameSession.jade_oath_requested = false
-	var layer := CanvasLayer.new()
-	layer.layer = 0
-	add_child(layer)
-	var root := Control.new()
-	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	layer.add_child(root)
-	var safe := Control.new()
-	safe.name = "DeviceSafeArea"
-	safe.set_script(preload("res://scripts/ui/mobile_safe_area.gd"))
-	root.add_child(safe)
-	safe.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	safe.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var panel := PanelContainer.new()
-	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	panel.position = Vector2(-154,112)
-	panel.custom_minimum_size = Vector2(308,46)
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var skin := StyleBoxFlat.new()
-	skin.bg_color = Color(.015,.055,.05,.94)
-	skin.border_color = Color("83cca7")
-	skin.set_border_width_all(1)
-	skin.set_corner_radius_all(10)
-	skin.content_margin_left = 10
-	skin.content_margin_right = 10
-	panel.add_theme_stylebox_override("panel",skin)
-	safe.add_child(panel)
-	_chip = Label.new()
-	_chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_chip.add_theme_font_size_override("font_size",14)
-	_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(_chip)
+	var safe: Control = get_parent().get_node_or_null("HUD/ScreenRoot/HUDSafeArea")
+	if safe == null:
+		return
+	_panel = PanelContainer.new()
+	_panel.name = "JadeOathHUD"
+	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_theme_stylebox_override("panel",Sheet.skin(8))
+	safe.add_child(_panel)
+	var body := VBoxContainer.new()
+	body.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	body.add_theme_constant_override("separation",3)
+	_panel.add_child(body)
+	_heading = Sheet.label("",14,Sheet.GOLD)
+	_heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	body.add_child(_heading)
+	_instruction = Sheet.label("",13)
+	_instruction.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	body.add_child(_instruction)
+	_progress = ProgressBar.new()
+	_progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_progress.show_percentage = false
+	_progress.custom_minimum_size.y = 5
+	_progress.max_value = State.CHARGE
+	_progress.step = 0.0
+	var track := StyleBoxFlat.new()
+	track.bg_color = Color("1a3b37")
+	track.set_corner_radius_all(3)
+	var fill: StyleBoxFlat = track.duplicate()
+	fill.bg_color = Sheet.JADE
+	_progress.add_theme_stylebox_override("background",track)
+	_progress.add_theme_stylebox_override("fill",fill)
+	body.add_child(_progress)
+	safe.resized.connect(_fit_chip)
+	safe.get_node("TopHUD").resized.connect(_fit_chip)
+	safe.get_node("BossPanel").visibility_changed.connect(_fit_chip)
+	_fit_chip()
 	_refresh()
+
+func _fit_chip() -> void:
+	if not is_instance_valid(_panel):
+		return
+	var safe: Control = _panel.get_parent()
+	var width: float = minf(340,safe.size.x - 24)
+	var top: float = maxf(safe.get_node("TopHUD").get_rect().end.y,safe.get_node("StageIdentity").get_rect().end.y)
+	var boss: Control = safe.get_node("BossPanel")
+	if boss.visible:
+		top = maxf(top,boss.get_rect().end.y)
+	_panel.size = Vector2(width,0)
+	_panel.position = Vector2((safe.size.x - width)*.5,top + 6.0)
 
 func restore(raw: Variant) -> void:
 	state.restore(raw)
+	_arrival_left = 0.0
 	_refresh()
+
+func _exit_tree() -> void:
+	if is_instance_valid(_panel):
+		_panel.queue_free()
 
 func _process(delta: float) -> void:
 	if not is_instance_valid(_actor) or bool(_actor.get_node("PlayerHealth").is_dead):
@@ -63,8 +90,12 @@ func _process(delta: float) -> void:
 			var spawner: Node = get_parent().get_node("EnemySpawner")
 			if available >= State.WINDOW and not spawner.has_active_scheduled_elite():
 				var candidate: Variant = _safe_point()
-				if candidate is Vector2:
-					state.offer(candidate,5,available)
+				if candidate is Vector2 and state.offer(candidate,5,available):
+					_arrival_left = 0.0 if SettingsManager.reduced_effects else ARRIVAL_DURATION
+					AudioManager.play_sfx("achievement_unlock")
+					if SettingsManager.haptics and OS.has_feature("android"):
+						Input.vibrate_handheld(32)
+	_arrival_left = maxf(0.0,_arrival_left-delta)
 	state.advance(delta,_actor.global_position.distance_squared_to(state.location) <= State.RADIUS*State.RADIUS,int(_waves.current_wave))
 	_draw_left -= delta
 	if _draw_left <= 0:
@@ -99,22 +130,37 @@ func _safe_point() -> Variant:
 
 func _refresh() -> void:
 	queue_redraw()
-	if _chip == null:
+	if not is_instance_valid(_panel):
 		return
-	_chip.get_parent().visible = state.phase in ["charging","pending","failed"]
-	var id: bool = SettingsManager.language == "id"
+	_panel.visible = state.phase in ["charging","pending","failed"]
+	if not _panel.visible:
+		return
+	_heading.text = Sheet.copy("◆ JADE OATH","◆ SUMPAH GIOK")
+	_progress.visible = state.phase == "charging"
 	match state.phase:
-		"charging": _chip.text = ("SUMPAH GIOK  %.1f / 8 dtk  ·  %.0f dtk" if id else "JADE OATH  %.1f / 8s  ·  %.0fs") % [state.charge,ceilf(state.remaining)]
-		"pending": _chip.text = "Segel pulih · Menang untuk membuka cerita" if id else "Seal restored · Win to unlock the story"
-		"failed": _chip.text = "Segel padam · Lanjutkan trial" if id else "Seal faded · Continue the trial"
+		"charging":
+			_heading.text += Sheet.copy("  ·  %ds left","  ·  sisa %d dtk") % ceili(state.remaining)
+			var inside: bool = _actor.global_position.distance_squared_to(state.location) <= State.RADIUS*State.RADIUS
+			_instruction.text = Sheet.copy("Stay inside to charge","Tetap di dalam untuk mengisi") if inside else Sheet.copy("Step inside the jade seal","Masuk ke lingkaran segel")
+			_progress.value = state.charge
+		"pending":
+			_instruction.text = Sheet.copy("Seal restored · Win to unlock the story","Segel pulih · Menang untuk membuka cerita")
+		"failed":
+			_instruction.text = Sheet.copy("Seal faded · Continue the trial","Segel padam · Lanjutkan trial")
 
 func _draw() -> void:
 	if state.phase != "charging":
 		return
 	var point: Vector2 = to_local(state.location)
-	draw_circle(point,State.RADIUS,Color(.22,.69,.48,.12))
-	draw_arc(point,State.RADIUS,0,TAU,64,Color("a8dbc0"),2,true)
+	draw_circle(point,State.RADIUS,Color(.22,.69,.48,.18))
+	draw_arc(point,State.RADIUS+2,0,TAU,64,Color(.02,.12,.10,.85),6,true)
+	draw_arc(point,State.RADIUS,0,TAU,64,Sheet.JADE,3,true)
 	draw_arc(point,State.RADIUS-5,-PI/2,-PI/2+TAU*state.charge/State.CHARGE,64,Color("edce82"),4,true)
+	var seal := PackedVector2Array([point+Vector2(0,-16),point+Vector2(11,0),point+Vector2(0,16),point+Vector2(-11,0)])
+	draw_colored_polygon(seal,Color("edce82"))
 	for index: int in range(4):
 		var axis := Vector2.from_angle(float(index)*PI/2)
-		draw_line(point+axis*12,point+axis*26,Color("83cca7"),2,true)
+		draw_line(point+axis*(State.RADIUS-11),point+axis*(State.RADIUS+7),Sheet.GOLD,3,true)
+	if _arrival_left > 0.0:
+		var arrival: float = _arrival_left/ARRIVAL_DURATION
+		draw_arc(point,State.RADIUS+32*(1.0-arrival),0,TAU,64,Color(Sheet.GOLD,arrival*.65),3,true)

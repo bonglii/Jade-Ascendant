@@ -4,6 +4,8 @@ extends Control
 const Visual=preload("res://scripts/ui/equipment_visual_catalog.gd")
 const Sets=preload("res://scripts/data/equipment_set_catalog.gd")
 const Nav=preload("res://scripts/ui/wuxia_hub_nav.gd")
+const WeaponComparison=preload("res://scripts/ui/weapon_comparison.gd")
+const ScrollPolicy=preload("res://scripts/ui/mobile_scroll_policy.gd")
 const HERO_SERIF: Font=preload("res://assets/ui/library/fonts/archive_serif.ttf")
 const GOLD: Color=Color(0.95,0.79,0.43)
 const JADE: Color=Color(0.40,0.92,0.80)
@@ -43,6 +45,9 @@ var equip_action_pending: bool=false
 var detail_progress_key: String=""
 var inventory_sync_pending: bool=false
 var detail_values: Dictionary={}
+var weapon_comparison: WeaponComparison
+var weapon_picker: OptionButton
+var weapon_options: Array[String]=[]
 var detail_set_header: Label
 var detail_set_lines: Array[Label]=[]
 var header_count: Label
@@ -58,7 +63,7 @@ func _ready() -> void:
  fixed_deck=VBoxContainer.new();fixed_deck.name="FixedHeroLoadout";content.add_child(fixed_deck)
  scroll=ScrollContainer.new();scroll.name="HeroScroll";scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
  scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_SHOW_NEVER;scroll.follow_focus=false;scroll.scroll_deadzone=10
- preload("res://scripts/ui/mobile_scroll_policy.gd").configure(scroll)
+ ScrollPolicy.configure(scroll)
  content.add_child(scroll)
  page=VBoxContainer.new();page.name="UnifiedPage";page.size_flags_horizontal=Control.SIZE_EXPAND_FILL;page.add_theme_constant_override("separation",12);scroll.add_child(page)
  nav=Nav.new();nav.name="HubNav";nav.active_tab=2;content.add_child(nav)
@@ -159,10 +164,11 @@ func _sync_detail_loadout() -> void:
  if not EquipmentManager.has_item_definition(selected_item_id):
   if detail_values.has("material"):detail_values.material.text=tr("MATERIAL • Quantity %d")%EquipmentManager.get_backpack_item_count(selected_item_id)
   return
+ if is_instance_valid(weapon_comparison):_sync_weapon_comparison()
  var equip: Button=sheet_actions.find_child("EquipAction",true,false) as Button
  if equip!=null:
   var equipped: bool=selected_item_id in _equipped_ids()
-  equip.text=tr("UNEQUIP") if equipped else tr("EQUIP")
+  equip.text=_equip_caption(equipped)
   equip.disabled=not EquipmentManager.can_modify_equipment()
   _bind_action(equip,_equip_selected.bind(selected_item_id,equipped,sheet_generation))
  var id: String=selected_item_id
@@ -427,24 +433,38 @@ func _stars(rank: int) -> String:
 func _card_pressed(id: String) -> void:
  if card_buttons.has(id) and bool(card_buttons[id].get_meta("jade_scroll_cancelled",false)):return
  if get_global_mouse_position().distance_to(drag_start)>12:return
- _show_detail(id)
+ if id==EquipmentManager.get_loadout_equipped_item_id("armament"):
+  _slot_pressed("armament")
+ else:_show_detail(id)
 
 func _slot_pressed(slot: String) -> void:
  var id: String=EquipmentManager.get_loadout_equipped_item_id(slot)
- if id.is_empty():filter_id=slot;filter_menu.select(maxi(FILTERS.find(slot),0));_rebuild_grid();scroll.set_deferred("scroll_vertical",0)
- else:_show_detail(id)
+ if id.is_empty():
+  filter_id=slot
+  filter_menu.select(maxi(FILTERS.find(slot),0))
+  _rebuild_grid()
+  scroll.set_deferred("scroll_vertical",0)
+  return
+ if slot=="armament":
+  for candidate: String in _owned_weapons():
+   if candidate!=id:
+    _show_detail(candidate)
+    return
+ _show_detail(id)
 
 func _close_detail() -> void:
  detail_open=false;sheet_generation+=1
  if is_instance_valid(detail):detail.queue_free()
  detail=null
 
-func _make_sheet(mode: String="item") -> VBoxContainer:
+func _make_sheet(mode: String="item",weapon: bool=false) -> VBoxContainer:
  if is_instance_valid(detail):content.remove_child(detail);detail.queue_free()
  sheet_mode=mode;sheet_generation+=1
  detail_set_header=null;detail_set_lines.clear();detail_values.clear()
+ weapon_comparison=null;weapon_picker=null;weapon_options=[]
  detail=Control.new();detail.name="ItemDetail";content.add_child(detail);detail.z_index=80
- detail.position=Vector2(0,76);detail.size=Vector2(content.size.x,maxf(80,nav.position.y-82))
+ var top_inset: float=4.0 if weapon else 76.0
+ detail.position=Vector2(0,top_inset);detail.size=Vector2(content.size.x,maxf(80,nav.position.y-top_inset-6.0))
  popup_unit=minf(unit,maxf(.7,detail.size.y/700.0))
  building_popup=true
  var dim:=ColorRect.new();dim.color=Color(0,0,0,.62);detail.add_child(dim);dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -455,7 +475,19 @@ func _make_sheet(mode: String="item") -> VBoxContainer:
  sheet_panel.add_theme_stylebox_override("panel",skin)
  sheet_root=VBoxContainer.new();sheet_root.add_theme_constant_override("separation",8);sheet_panel.add_child(sheet_root)
  var top:=HBoxContainer.new();top.name="PopupHeader";sheet_root.add_child(top)
- var title:=_label(tr("LOADOUT STATS") if mode=="stats" else tr("RELIC DETAILS"),20,GOLD);title.size_flags_horizontal=Control.SIZE_EXPAND_FILL;title.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;top.add_child(title)
+ var heading: String="LOADOUT STATS" if mode=="stats" else "RELIC DETAILS"
+ if weapon:heading="BANDINGKAN SENJATA" if SettingsManager.language=="id" else "COMPARE WEAPONS"
+ var title:=_label(heading,20,GOLD);title.size_flags_horizontal=Control.SIZE_EXPAND_FILL;title.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+ if weapon:
+  var selector:=VBoxContainer.new()
+  selector.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+  selector.add_theme_constant_override("separation",3)
+  top.add_child(selector);selector.add_child(title)
+  weapon_picker=OptionButton.new();weapon_picker.name="WeaponCandidatePicker"
+  weapon_picker.custom_minimum_size.y=44
+  _polish_dropdown(weapon_picker);selector.add_child(weapon_picker)
+  weapon_picker.item_selected.connect(_inspect_weapon_candidate.bind(sheet_generation))
+ else:top.add_child(title)
  var close:=_button("×");close.custom_minimum_size.x=44;close.pressed.connect(_close_detail);top.add_child(close)
  sheet_scroll=ScrollContainer.new();sheet_scroll.name="DescriptionScroll";sheet_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;sheet_scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_AUTO;sheet_scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL;sheet_scroll.scroll_deadzone=8;sheet_root.add_child(sheet_scroll)
  _polish_scrollbar(sheet_scroll.get_v_scroll_bar())
@@ -471,6 +503,9 @@ func _fit_sheet(expected_generation: int=-1) -> void:
  if not is_inside_tree() or is_queued_for_deletion() or expected_generation!=sheet_generation or not is_instance_valid(detail) or not is_instance_valid(sheet_panel):return
  var width: float=minf(560.0*unit,detail.size.x-24.0*unit)
  var max_height: float=minf((470.0 if sheet_mode=="stats" else 580.0)*popup_unit,detail.size.y*.72)
+ if is_instance_valid(weapon_comparison):
+  width=minf(600,detail.size.x-16)
+  max_height=minf(760,detail.size.y-8)
  sheet_panel.position=Vector2((detail.size.x-width)*.5,0)
  sheet_panel.size=Vector2(width,max_height)
  var skin: StyleBox=sheet_panel.get_theme_stylebox("panel")
@@ -482,7 +517,7 @@ func _fit_sheet(expected_generation: int=-1) -> void:
  var height: float=minf(max_height,maxf(fixed+44,natural))
  sheet_scroll.custom_minimum_size.y=maxf(44,height-fixed)
  sheet_panel.size=Vector2(width,height)
- sheet_panel.position.y=maxf(8,(detail.size.y-height)*.5)
+ sheet_panel.position.y=maxf(4 if is_instance_valid(weapon_comparison) else 8,(detail.size.y-height)*.5)
  sheet_panel.self_modulate.a=1.0
 
 func _polish_dropdown(control: OptionButton) -> void:
@@ -517,15 +552,21 @@ func _show_detail(id: String,force: bool=false) -> void:
  if not EquipmentManager.owns_backpack_item(id):_close_detail();return
  selected_item_id=id;detail_open=true
  detail_progress_key=_detail_progress_key()
- var body: VBoxContainer=_make_sheet("item")
- var data: Dictionary=EquipmentManager.get_item_data(id) if EquipmentManager.has_item_definition(id) else InventoryManager.get_item_data(id)
+ var is_equipment: bool=EquipmentManager.has_item_definition(id)
+ var data: Dictionary=EquipmentManager.get_item_data(id) if is_equipment else InventoryManager.get_item_data(id)
+ var weapon: bool=str(data.get("slot",""))=="armament" and is_equipment
+ var body: VBoxContainer=_make_sheet("item",weapon)
+ if weapon:
+  weapon_comparison=WeaponComparison.new();weapon_comparison.name="WeaponComparison";body.add_child(weapon_comparison)
+  _sync_weapon_comparison()
+  _paragraph(body,"DETAIL SENJATA" if SettingsManager.language=="id" else "WEAPON DETAILS",17,JADE)
  _paragraph(body,str(data.get("display_name",id)),24,GOLD)
- if EquipmentManager.has_item_definition(id):
+ if is_equipment and not weapon:
   _comparison(body,id)
  var stage:=Control.new();stage.name="RelicArtStage";stage.clip_contents=true;stage.custom_minimum_size.y=120*popup_unit;body.add_child(stage)
  var landscape:=_texture("res://assets/ui/hero/imperial_v4/sanctuary_banner.png");landscape.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_COVERED;landscape.modulate=Color(.45,.58,.55);stage.add_child(landscape);landscape.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
  var icon:=_texture(Visual.get_icon_path(id));icon.name="DetailIcon";stage.add_child(icon);icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);icon.offset_top=8;icon.offset_bottom=-8
- if not EquipmentManager.has_item_definition(id):
+ if not is_equipment:
   _paragraph(body,tr("MATERIAL • Quantity %d")%InventoryManager.get_item_count(id),16,JADE)
   detail_values.material=body.get_child(body.get_child_count()-1)
   _paragraph(body,str(data.get("description","")));building_popup=false;return
@@ -534,7 +575,6 @@ func _show_detail(id: String,force: bool=false) -> void:
  _paragraph(body,str(data.get("rarity","common")).to_upper()+"  •  "+tr(SLOT_NAMES[maxi(SLOTS.find(str(data.get("slot",""))),0)]),15,JADE)
  _paragraph(body,_stars(star),24,GOLD)
  detail_values.stars=body.get_child(body.get_child_count()-1)
- var weapon: bool=str(data.get("slot",""))=="armament"
  if weapon:
   _paragraph(body,tr("WEAPON LEVEL %d / %d • +%d%% weapon damage")%[EquipmentManager.get_item_weapon_level(id),EquipmentManager.get_weapon_level_cap(id),roundi((EquipmentManager.get_weapon_level_multiplier(id)-1)*100)],17,JADE)
   detail_values.level=body.get_child(body.get_child_count()-1)
@@ -558,7 +598,7 @@ func _show_detail(id: String,force: bool=false) -> void:
  _paragraph(body,tr("IDENTICAL DUPLICATES %d • Ascension uses 1 duplicate; the main item is kept.")%EquipmentManager.get_backpack_refine_copies(id),14)
  detail_values.copies=body.get_child(body.get_child_count()-1)
  var row:=HBoxContainer.new();row.add_theme_constant_override("separation",8);sheet_actions.add_child(row)
- var equip:=_button(tr("UNEQUIP") if id in _equipped_ids() else tr("EQUIP"),true);equip.name="EquipAction";equip.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(equip)
+ var equip:=_button(_equip_caption(id in _equipped_ids()),true);equip.name="EquipAction";equip.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(equip)
  equip.disabled=not EquipmentManager.can_modify_equipment();_bind_action(equip,_equip_selected.bind(id,id in _equipped_ids(),sheet_generation))
  var ascend:=_button(tr("ASCEND STAR") if star<5 else tr("MAX STARS"));ascend.name="AscendAction";ascend.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(ascend)
  ascend.disabled=not EquipmentManager.can_ascend_backpack_item(id);_bind_upgrade_action(ascend,id,"star",detail_progress_key)
@@ -569,7 +609,44 @@ func _show_detail(id: String,force: bool=false) -> void:
   level.disabled=not EquipmentManager.can_level_weapon(id)
   if EquipmentManager.get_item_weapon_level(id)>=EquipmentManager.get_weapon_level_cap(id):level.text=tr("LEVEL CAP • ASCEND STAR") if star<5 else tr("MAX LEVEL 50")
   _bind_upgrade_action(level,id,"level",detail_progress_key)
+  ScrollPolicy.prepare_tree(sheet_scroll)
  building_popup=false
+
+func _equip_caption(equipped: bool) -> String:
+ if equipped:return tr("UNEQUIP")
+ if is_instance_valid(weapon_comparison):
+  return "PAKAI SENJATA" if SettingsManager.language=="id" else "EQUIP WEAPON"
+ return tr("EQUIP")
+
+func _owned_weapons() -> Array[String]:
+ var ids: Array[String]=[]
+ for id: String in EquipmentManager.get_backpack_item_ids():
+  var data: Dictionary=EquipmentManager.get_item_data(id)
+  if data.get("slot")=="armament" and not bool(data.get("retired",false)):ids.append(id)
+ ids.sort_custom(func(a: String,b: String)->bool:
+  var first: String=str(EquipmentManager.get_item_data(a).get("display_name",a))
+  var second: String=str(EquipmentManager.get_item_data(b).get("display_name",b))
+  return first.naturalnocasecmp_to(second)<0)
+ return ids
+
+func _sync_weapon_comparison() -> void:
+ var current: String=EquipmentManager.get_loadout_equipped_item_id("armament")
+ var ids: Array[String]=_owned_weapons()
+ var has_alternative: bool=ids.any(func(id: String)->bool:return id!=current)
+ if current not in ids and EquipmentManager.owns_backpack_item(current):ids.push_front(current)
+ if selected_item_id not in ids:ids.append(selected_item_id)
+ if weapon_options!=ids:
+  weapon_options=ids
+  weapon_picker.clear()
+  for id: String in ids:weapon_picker.add_item(tr(str(EquipmentManager.get_item_data(id).get("display_name",id))))
+ weapon_picker.visible=ids.size()>1
+ weapon_picker.select(ids.find(selected_item_id))
+ weapon_comparison.refresh(current,selected_item_id,has_alternative)
+
+func _inspect_weapon_candidate(index: int,generation: int) -> void:
+ if generation!=sheet_generation or not detail_open or index<0 or index>=weapon_options.size():return
+ var id: String=weapon_options[index]
+ if EquipmentManager.owns_backpack_item(id):_show_detail(id)
 
 func _equip_selected(expected_id: String="",expected_equipped: Variant=null,generation: int=-1) -> void:
  if generation>=0 and generation!=sheet_generation:return

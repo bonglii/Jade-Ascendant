@@ -23,7 +23,9 @@ func run() -> void:
   for id: String in ["refinement_shard","sovereign_mantle","nine_heavens_star_sword","jade_binding_chain"]:
    screen._show_detail(id);await settle()
    var panel: Rect2=screen.sheet_panel.get_global_rect();var overlay: Rect2=screen.detail.get_global_rect()
-   check(panel.size.y<overlay.size.y*.85,"compact item popup "+id+str(viewport))
+   if is_instance_valid(screen.weapon_comparison):
+    check(panel.size.y<=overlay.size.y-7,"weapon comparison uses available height "+id+str(viewport))
+   else:check(panel.size.y<overlay.size.y*.85,"compact item popup "+id+str(viewport))
    check(panel.position.x>=overlay.position.x and panel.end.x<=overlay.end.x+1,"popup width fits "+id+str(viewport))
    check(panel.position.y>=overlay.position.y and panel.end.y<=overlay.end.y+1,"popup height fits "+id+str(viewport))
    check(screen.sheet_scroll.get_global_rect().end.y<=screen.sheet_actions.get_global_rect().position.y+1,"scroll ends above fixed actions "+id)

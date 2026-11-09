@@ -1,6 +1,6 @@
 {
-  "state": "docs/checkpoints/CONNECTION_STARTUP_2026-11-05.json",
-  "base": "d76c0507816b1251dd3cdb8838028958cbb29db5",
-  "previous": "docs/checkpoints/PLAYER_POLISH_2026-11-04.json",
+  "state": "docs/checkpoints/WEAPON_COMPARE_RUN_BONUS_2026-11-09.json",
+  "base": "bd0215644c9a7c42788c1ee66334fdd6dab352d6",
+  "previous": "docs/checkpoints/CONNECTION_STARTUP_2026-11-05.json",
   "source_branch": "work/player-polish-20261104"
 }

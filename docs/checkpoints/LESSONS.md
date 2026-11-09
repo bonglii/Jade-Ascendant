@@ -978,3 +978,8 @@ A literal credential-shaped sample in a self-published test triggered the scanne
 - Bound the entire foreground gate. Preserve request IDs and journals when the UI stops waiting, and recheck account binding before using any response. Test a delayed native receipt and Continue after a process restart.
 - A mock backend reply cannot change an already observed snapshot inside its coalescing window. Exercise both the fresh result and a new request after the observation expires. Preload the level fixture when testing authorization rather than cold resource loading.
 - Measure Home status captions at the smallest supported viewport in both languages. The short labels fit the existing profile card at 320 px and use the same status as the full retry controls.
+
+## 2026-11-09 · Weapon comparison and run events
+- The Hero readability pass enlarged new card labels until the first stat row fell below the compact viewport. Set deliberate card typography before first paint and check both weapon cards and the gear and level damage rows at 320 px with insets.
+- A wrapped label measured before its width settled expanded the Altar beyond the safe area. Refit after the container minimum size changes and verify fixed actions and a swipe from the first boon card in landscape.
+- Seed the existing Hero upgrade regression in Indonesian and the Player Content regression in English. Their caption assertions expect those locales.

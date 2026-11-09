@@ -1,0 +1,32 @@
+{
+  "base": "bd0215644c9a7c42788c1ee66334fdd6dab352d6",
+  "branch": "work/player-polish-20261104",
+  "status": "AUTHOR_HEADLESS_PASS_READY_FOR_OWNER_ANDROID",
+  "scope": [
+    "The equipped slot and equipped backpack card open side-by-side comparison. The first owned alternative is selected for inspection and the existing footer applies deliberate equip and upgrade actions.",
+    "Wave 3 Altar of Two Winds shows illustrated, localized tradeoffs with an arrival chime, brief reveal and optional haptic cue.",
+    "Replay 1-3 Jade Oath has a stronger seal marker and a safe-area HUD below stage identity with charge and time remaining. Its arrival cue plays on the live offer."
+  ],
+  "validation": {
+    "qa_output_policy": "All imports, copies, user data, logs and captures outside checkout.",
+    "runtime": "Godot 4.7.2 headless with the actual Hero and stage 1-3 scenes.",
+    "checks": {
+      "weapon_comparison_and_event_geometry_input_restore": 459,
+      "hero_popup_polish": 128,
+      "hero_upgrade_burst": 737,
+      "player_content": 98
+    },
+    "failures": 0,
+    "layout": "EN and ID in compact and tall portrait, with synthetic 320 px safe insets, and landscape. Input uses synthetic GUI events.",
+    "limitations": "Native display rendering, Android touch, mix and haptics require the final device pass."
+  },
+  "owner_source_install": "PENDING",
+  "publication": "Verify the containing commit on work/player-polish-20261104 with bd0215644c9a7c42788c1ee66334fdd6dab352d6 as its parent.",
+  "aab": "PENDING",
+  "phone": "PENDING",
+  "deploy": "NOT_REQUESTED",
+  "remaining": [
+    "Fast-forward the owner checkout to the containing commit.",
+    "During final Android QA, tap the equipped weapon, inspect and equip an alternate, observe the wave 3 Altar and replay 1-3 Jade Oath, then check Continue."
+  ]
+}
