@@ -163,8 +163,9 @@ func _layout_to_viewport() -> void:
 		+ float(_top_contents.get_theme_constant("separation"))
 	)
 	var copy_height: float = _header_copy.position.y + _header_copy.get_combined_minimum_size().y + 8.0
+	var header_floor: float = 68.0 if get_viewport_rect().size.x < 350.0 else 122.0
 	_header.custom_minimum_size.y = maxf(
-		maxf(122.0, copy_height),
+		maxf(header_floor, copy_height),
 		_top_scroll.size.y - section_minimum - 4.0
 	)
 
@@ -270,6 +271,7 @@ func _build_popup() -> void:
 
 
 func _build_header(parent: VBoxContainer) -> void:
+	var compact: bool = get_viewport_rect().size.x < 350.0
 	_header = Control.new()
 	_header.name = "ApprovedSevenDayHero"
 	_header.custom_minimum_size = Vector2(0.0, 122.0)
@@ -291,10 +293,10 @@ func _build_header(parent: VBoxContainer) -> void:
 	title_inset.anchor_right = 1.0
 	title_inset.anchor_bottom = 0.0
 	title_inset.offset_top = 10.0
-	title_inset.offset_bottom = 108.0
+	title_inset.offset_bottom = 58.0 if compact else 108.0
 	title_inset.add_theme_constant_override("margin_left", 13)
 	title_inset.add_theme_constant_override("margin_top", 7)
-	title_inset.add_theme_constant_override("margin_right", 13)
+	title_inset.add_theme_constant_override("margin_right", 52 if compact else 13)
 	title_inset.add_theme_constant_override("margin_bottom", 7)
 	title_inset.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_header.add_child(title_inset)
@@ -305,21 +307,22 @@ func _build_header(parent: VBoxContainer) -> void:
 	title_column.add_theme_constant_override("separation", 1)
 	title_inset.add_child(title_column)
 
-	var compact: bool = get_viewport_rect().size.x < 350.0
 	var eyebrow := _label("✦  SEVEN-DAY BLESSING  ✦", 13, JADE)
+	eyebrow.visible = not compact
 	eyebrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_apply_title_shadow(eyebrow)
 	title_column.add_child(eyebrow)
 
-	var heading := _label("CELESTIAL SIGN-IN", 23 if compact else 30, GOLD_LIGHT)
-	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var heading := _label("CELESTIAL SIGN-IN", 22 if compact else 30, GOLD_LIGHT)
+	if compact and SettingsManager.language == "en":
+		heading.text = "CELESTIAL LOGIN"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT if compact else HORIZONTAL_ALIGNMENT_CENTER
 	heading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_apply_title_shadow(heading)
 	title_column.add_child(heading)
 
 	var subtitle := _label("Seven active days. Your ascension awaits.", 15, TEXT)
-	if compact:
-		subtitle.text = "Hadiah selama 7 hari aktif." if SettingsManager.language == "id" else "Rewards for 7 active days."
+	subtitle.visible = not compact
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_apply_title_shadow(subtitle)
@@ -360,6 +363,8 @@ func _build_day_track(parent: VBoxContainer) -> void:
 	section.add_child(heading_row)
 
 	var path_title := _label("ASCENSION PATH", 15, GOLD_LIGHT)
+	if get_viewport_rect().size.x < 350.0:
+		path_title.text = "HARI AKTIF" if SettingsManager.language == "id" else "ACTIVE DAYS"
 	path_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	path_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	heading_row.add_child(path_title)
@@ -478,7 +483,7 @@ func _build_footer(parent: VBoxContainer) -> void:
 	_action.mouse_filter = Control.MOUSE_FILTER_PASS
 	_action.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
 	_action.keep_pressed_outside = false
-	_action.add_theme_font_size_override("font_size", 20)
+	_action.add_theme_font_size_override("font_size", 18 if compact else 20)
 	_action.add_theme_color_override("font_color", Color(0.20, 0.13, 0.02, 1.0))
 	_action.add_theme_color_override("font_disabled_color", Color(0.92, 0.98, 0.96, 1.0))
 	for style_name: String in ["normal", "hover", "pressed", "disabled", "focus"]:
@@ -521,6 +526,11 @@ func _refresh() -> void:
 		_total_days(),
 		cycle,
 	]
+	if get_viewport_rect().size.x < 350.0:
+		var cycle_label: String = "SIKLUS" if SettingsManager.language == "id" else "CYCLE"
+		_active_label.text = "%d/%d · %s %d" % [
+			int(live_ops.get_active_login_day_count()), _total_days(), cycle_label, cycle
+		]
 	_render_day_cards()
 	_refresh_footer()
 
@@ -769,6 +779,8 @@ func _refresh_footer() -> void:
 		_action_art.texture = CLAIM_BLUE
 	else:
 		_action.text = tr("UNLOCK ON DAY %d") % _selected_day
+		if compact:
+			_action.text = ("BUKA HARI %d" if indonesian else "OPENS DAY %d") % _selected_day
 		_action.disabled = true
 		_action_art.texture = CLAIM_BLUE
 
