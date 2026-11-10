@@ -29,6 +29,7 @@ var meditation_badge: Panel
 var feature_dot: Panel
 var library_button: Button
 var settings_shortcut: Button
+var starter_pack_shortcut: Button
 var profile_seal_view: TextureRect
 var profile_chevron: Label
 var portrait_unit: float = 1.0
@@ -52,6 +53,7 @@ var _feature_manual_key: String=""
 var _feature_manual_until: int=0
 var _feature_direction: float=1.0
 const EventCatalog=preload("res://scripts/ui/liveops/event_hub_catalog.gd")
+const StarterPack = preload("res://scripts/data/starter_pack_catalog.gd")
 const EventArtwork=preload("res://scripts/ui/liveops/event_identity_catalog.gd")
 
 func _ready() -> void:
@@ -85,6 +87,7 @@ func _on_save_completed(domain: String,_result: Dictionary) -> void:
 
 func _on_stage_completed(_chapter: int,_stage: int,_first: bool) -> void:
  _refresh_all()
+ _queue_layout()
 
 func _queue_layout() -> void:
  if layout_queued:return
@@ -121,6 +124,11 @@ func _build_header() -> void:
  _plate(mailbox_button)
  _icon(mailbox_button,MAILBOX_ICON)
  mailbox_badge=_add_notification_badge(mailbox_button)
+ starter_pack_shortcut=_button("GaleStarterPackShortcut",_open_live_popup.bind(StarterPack.OFFER_SCENE))
+ starter_pack_shortcut.tooltip_text="Gale Starter Pack"
+ starter_pack_shortcut.hide()
+ _plate(starter_pack_shortcut)
+ _icon(starter_pack_shortcut,preload("res://assets/ui/equipment/galeweave/parasol_open.png"))
  hero_title=Control.new();hero_title.mouse_filter=Control.MOUSE_FILTER_IGNORE;add_child(hero_title)
  title_name=_copy(hero_title,"LIN YUE",35,GOLD_BRIGHT,true)
  title_role=_copy(hero_title,"THE JADE WANDERER",12,Color(.93,.89,.74))
@@ -430,6 +438,12 @@ func _layout_sanctuary() -> void:
  var panel_h: float=card_h+event_h+shortcut_h+heading_h+gap*3
  var bottom: float=size.y-nav_height-20
  var upper: float=maxf(header_y+header_h+10,bottom-panel_h)
+ starter_pack_shortcut.visible=StarterPack.preview_available()
+ if starter_pack_shortcut.visible:
+  var offer_y: float=maxf(header_y+header_h+6.0,upper-59.0)
+  _rect(starter_pack_shortcut,Vector2(size.x-side-52.0,offer_y),Vector2.ONE*52.0)
+  _fit_icon(starter_pack_shortcut,5.0)
+  upper=maxf(upper,offer_y+59.0)
  var available: float=maxf(70,bottom-upper)
  # Publish the complete authored stack height before the parent sorts. A
  # width-only update can leave a stale no-overflow range after viewport changes.

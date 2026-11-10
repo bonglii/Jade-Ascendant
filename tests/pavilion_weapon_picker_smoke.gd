@@ -19,7 +19,7 @@ func run() -> void:
  for rarity: String in pool:count+=pool[rarity].size()
  var eligible: Array[String]=[]
  for id: String in equipment.get_item_ids():
-  if not bool(equipment.get_item_data(id).get("event_only",false)):eligible.append(id)
+  if not bool(equipment.get_item_data(id).get("event_only",false)) and not bool(equipment.get_item_data(id).get("starter_pack",false)):eligible.append(id)
  check(count==eligible.size(),"all non-event equipment opens at 1-5")
  for id: String in eligible:check(id in pool[str(equipment.get_item_data(id).rarity)],"correct rarity pool "+id)
  for id: String in ["jade_binding_chain","celestial_returning_glaive","nine_heavens_star_sword","void_piercer_spear"]:check(id in pavilion.get_wish_target_options(),"weapon target open at 1-5 "+id)

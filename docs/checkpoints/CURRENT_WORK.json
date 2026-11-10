@@ -1,6 +1,6 @@
 {
-  "state": "docs/checkpoints/CAMPAIGN_ATMOSPHERE_ENERGY_HERO_2026-11-10.json",
-  "base": "2c5804eb12d2bba2cbf8ee8a3979e23595054b11",
-  "previous": "docs/checkpoints/SETTINGS_SUMMON_CROWD_2026-11-10.json",
-  "source_branch": "work/player-polish-20261104"
+  "state": "docs/checkpoints/GALE_STARTER_2026-11-10.json",
+  "base": "26e3c9549bcd4a3cc997344eedf2a702a5939b81",
+  "previous": "docs/checkpoints/CAMPAIGN_ATMOSPHERE_ENERGY_HERO_2026-11-10.json",
+  "source_branch": "work/gale-starter-20261110"
 }

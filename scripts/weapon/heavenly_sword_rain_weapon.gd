@@ -21,6 +21,9 @@ const HEAVENLY_LIGHTNING_SCENE: PackedScene = preload(
 )
 
 const MAX_LEVEL: int = 7
+const Orbit = preload("res://scripts/weapon/sword_rain_orbit.gd")
+const SEQUENCE_INTERVAL := 0.12
+const REPEAT_TARGET_SCALE := 0.35
 
 const BASE_DAMAGE: float = 18.0
 const DAMAGE_PER_LEVEL: float = 4.0
@@ -38,40 +41,97 @@ var level: int = 1
 var strike_count: int = BASE_STRIKE_COUNT
 var strike_radius: float = BASE_STRIKE_RADIUS
 
+var sequential: bool = false
+var _orbit: Node2D
+var _volley: Array[Node2D] = []
+var _sequence_remaining: int = 0
+var _sequence_wait: float = 0.0
+var _cast_cooldown: float = 2.4
+var _sequence_damage: float = 0.0
+var _sequence_radius: float = BASE_STRIKE_RADIUS
+
 func _init() -> void:
 	weapon_name = "Heavenly Sword Rain"
 	cooldown = 2.4
 
 	apply_level_stats()
 
-## Memanggil seluruh strike Heavenly Sword Rain di sekitar target.
+func _ready() -> void:
+	_orbit = Orbit.new()
+	_orbit.name = "SwordRainOrbit"
+	_orbit.position.y = -13.0
+	_orbit.z_index = 2
+	_orbit.count = strike_count
+	get_parent().get_parent().add_child.call_deferred(_orbit)
+
+func _exit_tree() -> void:
+	if is_instance_valid(_orbit):
+		_orbit.queue_free()
+
+func _process(delta: float) -> void:
+	if not is_instance_valid(_orbit):
+		return
+	if _orbit.released > 0 and _sequence_remaining == 0:
+		var timer: float = get_parent().attack_timers.get(self, 0.0)
+		_orbit.cooldown_progress = clampf(1.0 - timer / _cast_cooldown, 0.0, 1.0)
+	if _sequence_remaining <= 0:
+		return
+	_sequence_wait -= delta
+	if _sequence_wait <= 0.0:
+		_sequence_wait += SEQUENCE_INTERVAL
+		_fire_sequence_blade()
+
 func attack(player: Node2D, target: Node2D) -> void:
-	if player == null:
+	if not is_instance_valid(target) or not is_instance_valid(player):
+		return
+	var player_stats := player.get_node_or_null("PlayerStats")
+	if player_stats == null:
 		return
 
+	_cast_cooldown = get_parent().get_weapon_cooldown(self)
+	_orbit.released = 0
+	_orbit.cooldown_progress = 0.0
+	_sequence_remaining = 0
+	_volley.clear()
+	if sequential:
+		_sequence_damage = damage
+		_sequence_radius = strike_radius
+		_sequence_remaining = strike_count
+		_sequence_wait = SEQUENCE_INTERVAL
+		_fire_sequence_blade(target)
+		return
+	_orbit.release(strike_count)
+	for strike_index in range(strike_count):
+		spawn_strike(target.global_position, strike_index, player_stats)
+
+func _fire_sequence_blade(preferred: Node2D = null) -> void:
+	var manager: Node = get_parent()
+	var player: Node2D = manager.get_parent()
+	var target: Node2D = preferred
+	var previous: Node2D
 	if target == null:
-		return
-
+		var distance := INF
+		for candidate: Node in get_tree().get_nodes_in_group("enemy"):
+			if not manager._is_target_attackable(candidate):
+				continue
+			if candidate in _volley:
+				if previous == null or candidate.is_in_group("boss"):
+					previous = candidate
+				continue
+			var next_distance: float = player.global_position.distance_squared_to(candidate.global_position)
+			if next_distance < distance:
+				distance = next_distance
+				target = candidate
+		if target == null:
+			target = previous
+	_sequence_remaining -= 1
 	if not is_instance_valid(target):
 		return
-
-	var player_stats: Node = player.get_node_or_null(
-		"PlayerStats"
-	)
-
-	if player_stats == null:
-		push_error(
-			"PlayerStats tidak ditemukan untuk Heavenly Sword Rain."
-		)
-
-		return
-
-	for strike_index in range(strike_count):
-		spawn_strike(
-			target.global_position,
-			strike_index,
-			player_stats
-		)
+	var repeat := target in _volley
+	if not repeat:
+		_volley.append(target)
+	_orbit.release(1)
+	spawn_strike(target.global_position, 0, player.get_node("PlayerStats"), target, REPEAT_TARGET_SCALE if repeat else 1.0)
 
 ## Menaikkan level Heavenly Sword Rain hingga level maksimum.
 func upgrade() -> bool:
@@ -117,12 +177,16 @@ func apply_level_stats() -> void:
 		strike_radius = 38.0
 	else:
 		strike_radius = 32.0
+	if is_instance_valid(_orbit):
+		_orbit.count = strike_count
 
 ## Membuat satu strike pada posisi impact yang ditentukan.
 func spawn_strike(
 	target_position: Vector2,
 	strike_index: int,
-	player_stats: Node
+	player_stats: Node,
+	locked_target: Node2D = null,
+	damage_scale: float = 1.0
 ) -> void:
 	var strike: HeavenlySwordRain = (
 		STRIKE_SCENE.instantiate()
@@ -137,11 +201,13 @@ func spawn_strike(
 		return
 
 	strike.setup(
-		damage,
-		strike_radius,
+		(damage if locked_target == null else _sequence_damage) * damage_scale,
+		strike_radius if locked_target == null else _sequence_radius,
 		player_stats
 	)
 
+	if is_instance_valid(locked_target):
+		strike.restrict_to_target(locked_target)
 	strike.successful_impact.connect(
 		_on_strike_successful_impact.bind(
 			player_stats
@@ -173,11 +239,9 @@ func get_strike_position(
 	if strike_index == 0:
 		return target_position
 
-	var angle: float = (
-		TAU
-		* float(strike_index)
-		/ float(max(strike_count, 1))
-	)
+	var angle := TAU * float(strike_index) / float(maxi(strike_count, 1))
+	if strike_count == MAX_STRIKE_COUNT:
+		angle = TAU * float(strike_index - 1) / float(MAX_STRIKE_COUNT - 1)
 
 	var offset: Vector2 = (
 		Vector2.RIGHT.rotated(angle)

@@ -1009,3 +1009,7 @@ A literal credential-shaped sample in a self-published test triggered the scanne
 - Strict editor import alone does not exercise scenes that load scripts at runtime. Launch all stage families. Avoid typed ternary arrays and check built-in GDScript name collisions in runtime-only presenters.
 - Review ambient on actual moving maps and compare both combat damage and frame timings. Replace the broad old pass with bounded world-space accents during dense waves. Keep the audio source and visual landmark recognizable in Reduced Effects.
 - Open or seed first-run overlays in a native input fixture before judging a dead button. Bind tests to named controls through their containers, seed the expected locale, and keep the fixture user directory name below the filesystem component limit.
+
+## Gale source recovery — 2026-11-10
+
+A local commit and uploaded blobs did not survive an interrupted publish as a reachable source branch. Save a reachable checkpoint before long transfers or validation. Verify the GitHub ref and matching tree before treating it as the owner handoff. Reuse historical results for unchanged inputs and label fresh checks against reconstructed source separately. A fixed-item offer preview must stay locked until the verified account-bound purchase, restoration and refund flows are implemented.

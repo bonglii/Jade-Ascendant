@@ -177,6 +177,10 @@ func _open_equipment_detail(id: String) -> void:
 			"EVENT EXCLUSIVE • Complete 12 laps past START in Jade Dragon Odyssey. Claim the milestone, then collect the Compass in Mail.",
 			"EKSKLUSIF EVENT • Lewati START 12 kali di Jade Dragon Odyssey. Klaim hadiah milestone, lalu ambil Kompas di Mail."
 		)
+	elif bool(d.get("starter_pack",false)):
+		source = preload("res://scripts/companion/player_journal.gd").copy(
+			"STARTER PACK • Google Play purchase. Preview after Stage 1-5.",
+			"STARTER PACK • Pembelian Google Play. Pratinjau setelah Stage 1-5.")
 	elif bool(d.get("event_only",false)):
 		source = preload("res://scripts/companion/player_journal.gd").copy("EVENT EXCLUSIVE • Check its event rewards.", "EKSKLUSIF EVENT • Cek hadiah event terkait.")
 	else:

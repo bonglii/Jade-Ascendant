@@ -1,6 +1,6 @@
 extends RefCounted
 ## Personal records, never reward authority. Integer-only values survive cloud snapshots.
-const SOURCES: Array[String]=["heavenweaver_compass","phoenix_war_fan","void_piercer_spear","astral_resonance_bell","spirit_sword","jade_binding_chain","celestial_returning_glaive","fire_orb","thunder_talisman","yin_yang_blades","heavenly_sword_rain","eight_trigrams_formation","heavenly_tribulation","set_bleed","set_poison","set_burn"]
+const SOURCES: Array[String]=["gale_parasol","heavenweaver_compass","phoenix_war_fan","void_piercer_spear","astral_resonance_bell","spirit_sword","jade_binding_chain","celestial_returning_glaive","fire_orb","thunder_talisman","yin_yang_blades","heavenly_sword_rain","eight_trigrams_formation","heavenly_tribulation","set_bleed","set_poison","set_burn"]
 const MAX_TIME: int=86400000
 static func whole(value: Variant, low: int, high: int) -> bool:
  return (value is int or value is float) and is_finite(float(value)) and float(value)==floorf(float(value)) and value>=low and value<=high

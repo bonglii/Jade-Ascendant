@@ -31,7 +31,7 @@ const OPTIONAL_NUMERIC_SAVE_KEYS: Array[String] = [
 const OPTIONAL_BOOL_SAVE_KEYS: Array[String] = [
 	"sword_dao_resonance_owned", "yin_yang_reversal_owned", "heavenly_tribulation_owned",
 	"fire_orb_owned", "thunder_talisman_owned", "yin_yang_blades_owned",
-	"heavenly_sword_rain_owned", "eight_trigrams_formation_owned",
+	"heavenly_sword_rain_owned", "heavenly_sword_rain_sequential", "eight_trigrams_formation_owned",
 	"defeat_pending", "rewarded_revive_used", "m7c2_qi_focus_active"
 ]
 
@@ -304,6 +304,7 @@ func save_checkpoint() -> bool:
 	)
 
 	if heavenly_sword_rain != null:
+		save_data["heavenly_sword_rain_sequential"] = heavenly_sword_rain.sequential
 		save_data["heavenly_sword_rain_level"] = (
 			heavenly_sword_rain.level
 		)
@@ -1146,6 +1147,7 @@ func load_checkpoint() -> bool:
 				heavenly_sword_rain_level
 			)
 
+			heavenly_sword_rain.sequential = bool(save_data.get("heavenly_sword_rain_sequential", false))
 			heavenly_sword_rain.apply_level_stats()
 
 	var eight_trigrams_formation_owned: bool = bool(

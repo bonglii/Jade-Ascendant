@@ -2,7 +2,7 @@ extends RefCounted
 ## Optional run specializations. Pure, bounded, no paid/quest authority.
 const ARTS := ["spirit_sword","fire_orb","thunder_talisman","yin_yang_blades","heavenly_sword_rain","eight_trigrams_formation"]
 const NAMES := ["Spirit Sword","Fire Orb","Thunder Talisman","Yin-Yang Blades","Heavenly Sword Rain","Eight Trigrams Formation"]
-const STARTERS := ["heavenweaver_compass","jade_binding_chain","celestial_returning_glaive","phoenix_war_fan","void_piercer_spear","astral_resonance_bell"]
+const STARTERS := ["gale_parasol","heavenweaver_compass","jade_binding_chain","celestial_returning_glaive","phoenix_war_fan","void_piercer_spear","astral_resonance_bell"]
 static func clean(raw: Variant) -> Dictionary:
 	var result := {"arts":{},"boon":""}
 	if not raw is Dictionary: return result

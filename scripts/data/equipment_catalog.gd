@@ -5,6 +5,11 @@ extends RefCounted
 ## Collection Expansion Pass adds three complete five-piece set families
 ## without changing permanent loadout slots or save schema.
 const ITEMS: Dictionary = {
+	"gale_parasol": {"display_name":"Gale Parasol","slot":"armament","rarity":"rare","weapon_type":"parasol","starter_pack":true,"damage_bonus":0.04,"signature_effect_name":"GALE WARD","signature_effect_description":"Fire piercing thorns while closed. When surrounded, open the canopy to damage enemies and push regular enemies away."},
+	"galeweave_robe": {"display_name":"Galeweave Robe","slot":"robe","rarity":"epic","starter_pack":true,"max_health_flat":10.0},
+	"galeweave_bracer": {"display_name":"Galeweave Bracer","slot":"bracer","rarity":"epic","starter_pack":true,"damage_bonus":0.035},
+	"galeweave_boots": {"display_name":"Galeweave Boots","slot":"boots","rarity":"epic","starter_pack":true,"movement_speed_bonus":0.025},
+	"galeweave_pendant": {"display_name":"Galeweave Pendant","slot":"pendant","rarity":"epic","starter_pack":true,"experience_bonus":0.025},
 	"heavenweaver_compass": {"display_name":"Heavenweaver Compass","slot":"armament","rarity":"legendary","event_only":true,"damage_bonus":0.08,"critical_chance_bonus":0.02,"price":1100,"forge_cost":220,"requires_chapter":1,"requires_stage":1,"signature_effect_name":"JADE DRAGON PURSUIT","signature_effect_description":"A jade dragon continuously pursues the nearest enemy. Lv.3: faster pursuit. Lv.5: 25% afterimage. Lv.7: two dragons share boss damage and split nearby targets. Strike interval0.45s, minimum0.25s; extra Attack Speed becomes potency. Range320px, bosses230px.","description":"Event exclusive. Complete 12 full Jade Dragon Odyssey laps past START and claim the milestone in Mail. Connect to verify event ownership when starting or continuing a run. Identical duplicates ascend stars; permanent weapon levels remain separate."},
 	"frost_lotus_robe":{"display_name":"Frost Lotus Robe","slot":"robe","rarity":"epic","max_health_flat":14.0,"price":420,"forge_cost":90,"requires_chapter":1,"requires_stage":5},
 	"frost_lotus_bracer":{"display_name":"Frost Lotus Bracer","slot":"bracer","rarity":"epic","damage_bonus":0.08,"critical_chance_bonus":0.015,"price":420,"forge_cost":90,"requires_chapter":1,"requires_stage":5},

@@ -16,6 +16,7 @@ const ControlPrefs = preload("res://scripts/ui/joystick_prefs.gd")
 @export_range(0.25, 0.75, 0.01) var activation_top_ratio: float = 0.42
 @export_range(0.0, 40.0, 1.0) var edge_padding: float = 14.0
 
+var excluded_control: Control
 var active_touch_index: int = INVALID_TOUCH_INDEX
 var mouse_dragging: bool = false
 var raw_offset: Vector2 = Vector2.ZERO
@@ -200,6 +201,10 @@ func _viewport_to_local(viewport_position: Vector2) -> Vector2:
 	return get_global_transform_with_canvas().affine_inverse() * viewport_position
 
 func _is_inside_activation_zone(viewport_position: Vector2) -> bool:
+	if is_instance_valid(excluded_control) and excluded_control.is_visible_in_tree():
+		var point := excluded_control.get_global_transform_with_canvas().affine_inverse() * viewport_position
+		if Rect2(Vector2.ZERO, excluded_control.size).has_point(point):
+			return false
 	var local_position: Vector2 = _viewport_to_local(viewport_position)
 	var zone_width: float = size.x * activation_width_ratio
 	var zone_top: float = size.y * activation_top_ratio

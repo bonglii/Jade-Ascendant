@@ -21,6 +21,7 @@ var telegraph_duration: float = DEFAULT_TELEGRAPH_DURATION
 var active_duration: float = DEFAULT_ACTIVE_DURATION
 var player_stats: Node = null
 var has_impacted: bool = false
+var _locked_target_id: int = 0
 var _impact_visual_elapsed: float = 0.0
 
 var telegraph_ring: Line2D = null
@@ -72,6 +73,10 @@ func setup(
 	strike_damage = damage
 	strike_radius = radius
 	player_stats = stats
+
+
+func restrict_to_target(target: Node2D) -> void:
+	_locked_target_id = target.get_instance_id()
 
 
 func apply_strike_radius() -> void:
@@ -144,22 +149,12 @@ func _make_line(
 
 
 func create_telegraph_visual() -> void:
-	# Outer ring is EXACT gameplay radius: no false telegraph.
-	telegraph_ring = _make_line(
-		create_ring_points(strike_radius),
-		2.6,
-		Color(0.66, 0.90, 1.0, 0.74)
-	)
-	middle_ring = _make_line(
-		create_ring_points(strike_radius * 0.70),
-		1.5,
-		Color(0.80, 0.95, 1.0, 0.46)
-	)
-	inner_marker = _make_line(
-		create_ring_points(strike_radius * 0.34),
-		1.2,
-		Color(0.92, 0.99, 1.0, 0.42)
-	)
+	# Area shows its true radius. Sequence marks one selected target.
+	var mark_radius := strike_radius if _locked_target_id == 0 else minf(14.0, strike_radius)
+	telegraph_ring = _make_line(create_ring_points(mark_radius), 2.6, Color(0.66, 0.90, 1.0, 0.74))
+	if _locked_target_id == 0:
+		middle_ring = _make_line(create_ring_points(strike_radius * 0.70), 1.5, Color(0.80, 0.95, 1.0, 0.46))
+		inner_marker = _make_line(create_ring_points(strike_radius * 0.34), 1.2, Color(0.92, 0.99, 1.0, 0.42))
 
 	var tween := create_tween()
 	tween.set_parallel(true)
@@ -169,6 +164,8 @@ func create_telegraph_visual() -> void:
 		middle_ring,
 		inner_marker
 	]:
+		if ring == null:
+			continue
 		tween.tween_property(
 			ring,
 			"scale",
@@ -248,11 +245,12 @@ func _draw() -> void:
 	var t: float = clampf(_impact_visual_elapsed / IMPACT_VISUAL_DURATION,0,1)
 	var fade: float = pow(1.0-t,1.6)
 	var reduced: bool = SettingsManager.reduced_effects
-	CelArt.paint(self,"impacts",4,Vector2.ZERO,Vector2.ONE*strike_radius*lerpf(1.15,2.0,1.0-pow(1.0-t,2)),0,fade)
+	var visual_radius := strike_radius if _locked_target_id == 0 else minf(14.0, strike_radius)
+	CelArt.paint(self,"impacts",4,Vector2.ZERO,Vector2.ONE*visual_radius*lerpf(1.15,2.0,1.0-pow(1.0-t,2)),0,fade)
 	if not reduced:
-		CelArt.paint(self,"blades",3,Vector2.ZERO,Vector2.ONE*strike_radius*1.75,t*.22,fade*.72)
+		CelArt.paint(self,"blades",3,Vector2.ZERO,Vector2.ONE*visual_radius*1.75,t*.22,fade*.72)
 	# Single true-radius boundary; the painted plume is purely vertical debris.
-	draw_arc(Vector2.ZERO,strike_radius*lerpf(.4,1,t),0,TAU,40,Color(.62,.9,1,fade*.60),1.2,true)
+	draw_arc(Vector2.ZERO,visual_radius*lerpf(.4,1,t),0,TAU,40,Color(.62,.9,1,fade*.60),1.2,true)
 
 
 func impact() -> void:
@@ -271,6 +269,8 @@ func impact() -> void:
 	var hit_successful: bool = false
 
 	for body in get_overlapping_bodies():
+		if _locked_target_id != 0 and body.get_instance_id() != _locked_target_id:
+			continue
 		if damage_target(body):
 			hit_successful = true
 

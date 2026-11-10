@@ -1,0 +1,29 @@
+{
+  "base": "26e3c9549bcd4a3cc997344eedf2a702a5939b81",
+  "source_branch": "work/gale-starter-20261110",
+  "scope": [
+    "Heavenly Sword Rain orbit count, level-seven area spacing, sequential targeting, mobile switch and Continue compatibility",
+    "Gale Parasol piercing thorns and crowd-triggered canopy with four Galeweave equipment pieces",
+    "Debug Home offer preview after Stage 1-5, five fixed items and Indonesia target price Rp39.000"
+  ],
+  "recovery": {
+    "interrupted_local_commit": "2208275a281892878edd677c1f5f4aa7bee95f76",
+    "status": "SOURCE_RECONSTRUCTED",
+    "art": "Six cutouts from original approved art boards",
+    "historical_targeted_checks": "80/80 passed before executor reset; raw run logs were lost",
+    "current_validation": "Godot 4.7.2 project import and startup, targeted behavior validation pending"
+  },
+  "commerce": {
+    "product_id_draft": "gale_starter_pack",
+    "checkout": "DISABLED",
+    "price_idr_target": 39000,
+    "remaining": "Account-bound Google Play entitlement, verified grants, restore/refund, and product configuration"
+  },
+  "owner_install": "UNCONFIRMED",
+  "push": "IN_PROGRESS",
+  "windows_qa": "UNCONFIRMED",
+  "android_export": "UNCONFIRMED",
+  "phone_qa": "UNCONFIRMED",
+  "backend_deploy": "NOT_RUN",
+  "next_action": "Publish this recovery snapshot, then run focused validation of the recovered gameplay and preview."
+}

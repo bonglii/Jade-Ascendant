@@ -10,6 +10,7 @@ signal weapon_attack_triggered(
 	target_position: Vector2
 )
 
+const GaleParasol = preload("res://scripts/weapon/gale_parasol_weapon.gd")
 const EquipmentSetRuntime = preload("res://scripts/data/equipment_set_runtime.gd")
 
 const Reach=preload("res://scripts/data/weapon_reach.gd")
@@ -27,7 +28,8 @@ const CAST_COOLDOWN_FLOORS: Dictionary = {
 	"celestial_returning_glaive": 1.75,
 	"phoenix_war_fan": .9,
 	"void_piercer_spear": 1.35,
-	"astral_resonance_bell": 2.4
+	"astral_resonance_bell": 2.4,
+	"gale_parasol": 0.55
 }
 const MAX_CAST_TEMPO_DAMAGE_MULTIPLIER: float = 5.0
 
@@ -73,6 +75,9 @@ func initialize_weapons() -> void:
 	elif runtime_armament_id == "jade_binding_chain":
 		spirit_sword.free()
 		spirit_sword = preload("res://scripts/weapon/jade_binding_chain_weapon.gd").new()
+	elif runtime_armament_id == "gale_parasol":
+		spirit_sword.free()
+		spirit_sword = GaleParasol.new()
 	elif runtime_armament_id == "celestial_returning_glaive":
 		spirit_sword.free()
 		spirit_sword = preload("res://scripts/weapon/celestial_returning_glaive_weapon.gd").new()
@@ -122,6 +127,12 @@ func _process(delta: float) -> void:
 			continue
 
 		attack_timers[weapon] -= delta
+		if weapon is GaleParasol:
+			if weapon.tick_opening(player, delta):
+				weapon_attack_triggered.emit(weapon.get_combat_display_name(), player.global_position)
+				_fired_attacks += 1
+			if weapon.blocks_needle():
+				continue
 		if attack_timers[weapon] > 0.0:
 			continue
 
@@ -358,6 +369,8 @@ func upgrade_weapon(weapon_name: String) -> void:
 ## Menghitung cooldown final weapon berdasarkan Attack Speed Player.
 func get_weapon_cooldown(weapon: Weapon) -> float:
 	var requested: float = get_requested_weapon_cooldown(weapon)
+	if weapon is HeavenlySwordRainWeapon:
+		return maxf(requested, 0.65)
 	return maxf(requested, float(CAST_COOLDOWN_FLOORS.get(_cast_armament_id(weapon), 0.1)))
 
 
@@ -411,7 +424,7 @@ func get_cadence_snapshot(weapon: Weapon, factor_override: float = -1.0) -> Dict
 	if weapon == null or not is_instance_valid(weapon):
 		return {}
 	var requested: float = get_requested_weapon_cooldown(weapon, factor_override)
-	var floor_value: float = float(CAST_COOLDOWN_FLOORS.get(_cast_armament_id(weapon), 0.1))
+	var floor_value: float = 0.65 if weapon is HeavenlySwordRainWeapon else float(CAST_COOLDOWN_FLOORS.get(_cast_armament_id(weapon), 0.1))
 	var seconds: float = maxf(requested, floor_value)
 	var potency: float = clampf(seconds / requested, 1.0, MAX_CAST_TEMPO_DAMAGE_MULTIPLIER) if CAST_COOLDOWN_FLOORS.has(_cast_armament_id(weapon)) else 1.0
 	return {"seconds": seconds, "potency": potency, "floor": floor_value, "tempo": CAST_COOLDOWN_FLOORS.has(_cast_armament_id(weapon))}

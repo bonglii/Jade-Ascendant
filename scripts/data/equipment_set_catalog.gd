@@ -1,11 +1,14 @@
 extends RefCounted
 
+const Equipment = preload("res://scripts/data/equipment_catalog.gd")
+
 ## Presentation grouping and conservative gameplay resonance for the permanent equipment collection.
 ## Gameplay bonuses are derived from equipped IDs only; no save fields are required.
 ##
 ## Four armor/accessory pieces form a complete set; armament is independent.
 
 const SET_ORDER: Array[String] = [
+	"galeweave",
 	"verdant_wanderer",
 	"mistbound_disciple",
 	"moon_seal",
@@ -20,6 +23,7 @@ const SET_ORDER: Array[String] = [
 ]
 
 const SETS: Dictionary = {
+	"galeweave":{"display_name":"GALEWEAVE REGALIA","items":["galeweave_robe","galeweave_bracer","galeweave_boots","galeweave_pendant"]},
 	"frost_lotus":{"display_name":"FROST LOTUS","items":["frost_lotus_robe","frost_lotus_bracer","frost_lotus_boots","frost_lotus_pendant"]},
 	"vermilion_verdict":{"display_name":"VERMILION VERDICT","items":["vermilion_verdict_robe","vermilion_verdict_bracer","vermilion_verdict_boots","vermilion_verdict_pendant"]},
 	"celestial_aegis":{"display_name":"CELESTIAL AEGIS","items":["celestial_aegis_robe","celestial_aegis_bracer","celestial_aegis_boots","celestial_aegis_pendant"]},
@@ -101,6 +105,7 @@ const SETS: Dictionary = {
 # Tiers 2/3/4 are incremental; four armor/accessory pieces are complete.
 # Values stay intentionally small because individual equipment already contributes stats.
 const SET_IDENTITIES: Dictionary = {
+	"galeweave":"PARASOL SPECIALIST",
 	"frost_lotus":"LOTUS CHILL",
 	"vermilion_verdict":"FINAL VERDICT",
 	"celestial_aegis":"CELESTIAL REFUGE",
@@ -116,6 +121,7 @@ const SET_IDENTITIES: Dictionary = {
 }
 
 const TIER_DESCRIPTIONS: Dictionary = {
+	"galeweave":{2:"+5 Max HP",3:"Parasol thorns pierce 1 extra enemy",4:"Stronger canopy push"},
 	"frost_lotus":{2:"+5 Max HP",3:"+2% Movement",4:"+1% Damage"},
 	"vermilion_verdict":{2:"+1% Damage",3:"+1% Critical chance",4:"+6 Max HP"},
 	"celestial_aegis":{2:"+6 Max HP",3:"+2% Movement",4:"+2% EXP"},
@@ -171,6 +177,7 @@ const TIER_DESCRIPTIONS: Dictionary = {
 }
 
 const GAMEPLAY_TIERS: Dictionary = {
+	"galeweave":{2:{"max_health_flat":5.0}},
 	"frost_lotus":{2:{"max_health_flat":5.0},3:{"movement_speed_bonus":0.02},4:{"damage_bonus":0.01}},
 	"vermilion_verdict":{2:{"damage_bonus":0.01},3:{"critical_chance_bonus":0.01},4:{"max_health_flat":6.0}},
 	"celestial_aegis":{2:{"max_health_flat":6.0},3:{"movement_speed_bonus":0.02},4:{"experience_bonus":0.02}},
@@ -245,6 +252,11 @@ static func get_identity(set_id: String) -> String:
 
 static func get_tier_description(set_id: String, tier: int) -> String:
 	if tier not in [2,3,4]: return ""
+	if set_id == "galeweave":
+		match tier:
+			2: return _localized("+5 Max HP", "+5 HP Maks.")
+			3: return _localized("Parasol thorns pierce 1 extra enemy • Requires a parasol", "Duri menembus 1 musuh tambahan • Perlu parasol")
+			4: return _localized("Stronger canopy push and +20% movement for 1.2s on opening • Requires a parasol", "Dorongan payung lebih kuat dan +20% kecepatan gerak selama 1,2 dtk saat membuka • Perlu parasol")
 	var tier_data: Dictionary = TIER_DESCRIPTIONS.get(set_id, {})
 	if get_set_rarity(set_id) in ["common", "rare"]:
 		return TranslationServer.translate("+%d Max HP") % (tier * (2 if get_set_rarity(set_id) == "common" else 3))
@@ -252,6 +264,9 @@ static func get_tier_description(set_id: String, tier: int) -> String:
 	if tier == 4:
 		text += " • " + TranslationServer.translate(str(get_four_piece_passive(set_id).get("description", "")))
 	return text
+
+static func _localized(en: String, id: String) -> String:
+	return id if TranslationServer.get_locale().begins_with("id") else en
 
 static func get_tier_descriptions(set_id: String) -> Dictionary:
 	return {2:get_tier_description(set_id,2),3:get_tier_description(set_id,3),4:get_tier_description(set_id,4)}
@@ -266,6 +281,17 @@ static func get_piece_count(set_id: String, equipped_item_ids: Array[String]) ->
 		if equipped_item_ids.has(str(raw_item_id)):
 			count += 1
 	return count
+
+static func is_tier_active(set_id: String, tier: int, ids: Array[String]) -> bool:
+	if get_piece_count(set_id, ids) < tier:
+		return false
+	if set_id != "galeweave" or tier < 3:
+		return true
+	for id: String in ids:
+		var item: Dictionary = Equipment.ITEMS.get(id, {})
+		if item.get("weapon_type", "") == "parasol":
+			return true
+	return false
 
 static func get_dominant_set_state(equipped_item_ids: Array[String]) -> Dictionary:
 	var best_set_id: String = ""
@@ -359,11 +385,13 @@ static func get_gameplay_bonus(
 	return total
 
 const SET_RARITIES: Dictionary = {
+	"galeweave":"epic",
 	"frost_lotus":"epic",
 	"vermilion_verdict":"legendary",
 	"celestial_aegis":"legendary",
 "verdant_wanderer":"common", "mistbound_disciple":"rare", "moon_seal":"rare", "crimson_shadow":"epic", "nine_heavens":"legendary", "jade_bastion":"rare", "stillwater_mirror":"epic", "solar_meridian":"legendary"}
 const FOUR_PIECE_PASSIVES: Dictionary = {
+	"galeweave":{"kind":"windstep","name":"WINDSTEP","description":"+20% movement for 1.2s when the canopy opens."},
 	"frost_lotus":{"kind":"frost","name":"LOTUS CHILL","description":"Hit langsung memperlambat musuh 20% selama 0.60 detik; boss 6%. Slow terkuat berlaku, tidak menumpuk."},
 	"vermilion_verdict":{"kind":"verdict","name":"FINAL VERDICT","description":"Hit langsung ke musuh yang sudah berada pada HP 35% atau kurang mendapat +12% damage; boss +6%. Bukan instant kill dan tidak memperkuat DoT."},
 	"celestial_aegis":{"kind":"aegis","name":"CELESTIAL REFUGE","description":"Setelah 8 detik tanpa hit diterima, pulihkan 1 Qi Shield bila charge kosong. Maksimal 1 charge dari pasif; hit dan block mereset waktu. Pause membekukan waktu. Continue memulai jeda baru, bukan shield gratis."},
@@ -379,4 +407,4 @@ static func get_four_piece_passive(set_id: String) -> Dictionary:
 	return FOUR_PIECE_PASSIVES.get(set_id,{}).duplicate(true)
 static func get_active_passive(ids: Array[String]) -> Dictionary:
 	var state: Dictionary=get_dominant_set_state(ids)
-	return get_four_piece_passive(str(state.set_id)) if int(state.piece_count)>=4 else {}
+	return get_four_piece_passive(str(state.set_id)) if is_tier_active(str(state.set_id),4,ids) else {}

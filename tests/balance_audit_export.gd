@@ -76,7 +76,7 @@ func run() -> void:
  pavilion.rng.seed=13102026
  var pool: Dictionary={"common":[],"rare":[],"epic":[],"legendary":[]}
  for item: Dictionary in output.equipment:
-  if not bool(item.star1.get("event_only",false)) and not bool(item.star1.get("retired",false)):pool[str(item.star1.rarity)].append(item.id)
+  if not bool(item.star1.get("event_only",false)) and not bool(item.star1.get("retired",false)) and not bool(item.star1.get("starter_pack",false)):pool[str(item.star1.rarity)].append(item.id)
  var totals: Array[int]=[]
  var first_targets: Array[int]=[]
  for experiment: int in range(1000):

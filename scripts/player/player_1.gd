@@ -24,6 +24,8 @@ var movement_speed_level: int = 0
 var spiritual_insight_level: int = 0
 var m7c2_qi_focus_active: bool = false
 
+var _parasol_windstep: float = 0.0
+
 var facing_direction: String = "down"
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -35,7 +37,11 @@ func _ready() -> void:
 	locomotion.setup(animated_sprite)
 	_play_animation_if_available("idle_" + facing_direction)
 
+func activate_parasol_windstep() -> void:
+	_parasol_windstep = 1.2
+
 func _physics_process(delta: float) -> void:
+	_parasol_windstep = maxf(_parasol_windstep - delta, 0.0)
 	var direction: Vector2 = Input.get_vector(
 		"ui_left",
 		"ui_right",
@@ -57,6 +63,7 @@ func get_effective_movement_speed(read_only: bool = false) -> float:
 	var set_bonus: float = EquipmentSetRuntime.get_bonus("movement_speed_bonus")
 	return (
 		speed
+		* (1.20 if _parasol_windstep > 0.0 else 1.0)
 		* preload("res://scripts/data/run_path_policy.gd").movement($WeaponManager.run_paths)
 		* (EquipmentManager.get_movement_speed_multiplier() + set_bonus + CultivationMastery.bonus("movement", read_only))
 	)

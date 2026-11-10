@@ -70,6 +70,7 @@ var _encounter_banner_bottom_line: ColorRect = null
 var _encounter_banner_tween: Tween = null
 var _in_run_stats_overlay: Control = null
 var _review_guide_button: Button
+var _sword_rain_switch: Button
 
 func _ready() -> void:
 	boss_panel.visible = false
@@ -91,10 +92,55 @@ func _ready() -> void:
 	_apply_runtime_presentation()
 	_build_in_run_stats_entry()
 	_build_review_guide_entry()
+	_build_sword_rain_switch()
 	_refresh_player_hud(true)
 
 func _process(_delta: float) -> void:
 	_refresh_player_hud(false)
+	_refresh_sword_rain_switch()
+
+func _build_sword_rain_switch() -> void:
+	var safe_area := get_node_or_null("ScreenRoot/HUDSafeArea") as Control
+	if safe_area == null:
+		return
+	_sword_rain_switch = preload("res://scripts/ui/sword_rain_switch.gd").new()
+	_sword_rain_switch.name = "SwordRainMode"
+	_sword_rain_switch.hide()
+	safe_area.add_child(_sword_rain_switch)
+	_sword_rain_switch.set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT)
+	_sword_rain_switch.offset_left = -98.0
+	_sword_rain_switch.offset_right = -12.0
+	_sword_rain_switch.offset_top = 28.0
+	_sword_rain_switch.offset_bottom = 77.0
+	_sword_rain_switch.add_theme_font_size_override("font_size", 12)
+	_sword_rain_switch.pressed.connect(_toggle_sword_rain)
+	var joystick := safe_area.get_node_or_null("VirtualJoystick")
+	if joystick != null:
+		joystick.excluded_control = _sword_rain_switch
+
+func _current_sword_rain() -> HeavenlySwordRainWeapon:
+	var owner_player := get_tree().get_first_node_in_group("player")
+	var manager := owner_player.get_node_or_null("WeaponManager") if owner_player != null else null
+	return manager.get_weapon_by_name("Heavenly Sword Rain") as HeavenlySwordRainWeapon if manager != null else null
+
+func _toggle_sword_rain() -> void:
+	if get_tree().paused:
+		return
+	var rain := _current_sword_rain()
+	if rain != null:
+		rain.sequential = not rain.sequential
+		_refresh_sword_rain_switch()
+
+func _refresh_sword_rain_switch() -> void:
+	if _sword_rain_switch == null:
+		return
+	var rain := _current_sword_rain()
+	_sword_rain_switch.visible = rain != null and not get_tree().paused and not level_up_panel.visible and not pause_overlay.visible
+	if rain != null:
+		var id_locale := SettingsManager.language == "id"
+		var label := "BERGILIR" if id_locale else "SEQUENCE"
+		_sword_rain_switch.text = "RAIN\n" + (label if rain.sequential else "AREA")
+		_sword_rain_switch.tooltip_text = "Ganti mode Heavenly Sword Rain" if id_locale else "Switch Heavenly Sword Rain mode"
 
 
 func _build_in_run_stats_entry() -> void:

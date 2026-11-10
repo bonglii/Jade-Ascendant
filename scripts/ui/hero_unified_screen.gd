@@ -200,8 +200,8 @@ func _sync_detail_loadout() -> void:
   var label: Label=detail_set_lines[i]
   if not is_instance_valid(label):continue
   var tier: int=i+2
-  label.text=tr("%d pieces: %s%s")%[tier,Sets.get_tier_description(set_id,tier),tr("  ✓ ACTIVE") if pieces>=tier else ""]
-  label.add_theme_color_override("font_color",JADE if pieces>=tier else TEXT)
+  label.text=tr("%d pieces: %s%s")%[tier,Sets.get_tier_description(set_id,tier),tr("  ✓ ACTIVE") if Sets.is_tier_active(set_id,tier,_equipped_ids()) else ""]
+  label.add_theme_color_override("font_color",JADE if Sets.is_tier_active(set_id,tier,_equipped_ids()) else TEXT)
 
 func _refresh_all() -> void:
  var started_usec: int=Time.get_ticks_usec()
@@ -597,14 +597,19 @@ func _show_detail(id: String,force: bool=false) -> void:
  _paragraph(body,Visual.get_stat_summary(effective),18)
  detail_values.stats=body.get_child(body.get_child_count()-1)
  if weapon:
-  _paragraph(body,tr("Weapons are independent of armor sets. Permanent weapon levels are separate from Lv.1–7 refinement inside a run."),14)
+  if data.get("weapon_type","")=="parasol":
+   _paragraph(body,preload("res://scripts/companion/player_journal.gd").copy(
+    "Galeweave's 3/4 and 4/4 bonuses require a parasol. Permanent and in-run weapon levels are separate.",
+    "Bonus Galeweave 3/4 dan 4/4 perlu parasol. Level senjata permanen dan level di dalam run terpisah."),14)
+  else:
+   _paragraph(body,tr("Weapons are independent of armor sets. Permanent weapon levels are separate from Lv.1–7 refinement inside a run."),14)
  else:
   var set_id: String=Sets.get_set_id_for_item(id)
   var pieces: int=Sets.get_piece_count(set_id,_equipped_ids())
   _paragraph(body,"%s • SET %s • %d/4"%[Sets.get_display_name(set_id),Sets.get_set_rarity(set_id).to_upper(),pieces],16,GOLD)
   detail_set_header=body.get_child(body.get_child_count()-1) as Label
   for tier: int in [2,3,4]:
-   _paragraph(body,tr("%d pieces: %s%s")%[tier,Sets.get_tier_description(set_id,tier),tr("  ✓ ACTIVE") if pieces>=tier else ""],14,JADE if pieces>=tier else TEXT)
+   _paragraph(body,tr("%d pieces: %s%s")%[tier,Sets.get_tier_description(set_id,tier),tr("  ✓ ACTIVE") if Sets.is_tier_active(set_id,tier,_equipped_ids()) else ""],14,JADE if Sets.is_tier_active(set_id,tier,_equipped_ids()) else TEXT)
    detail_set_lines.append(body.get_child(body.get_child_count()-1) as Label)
  _paragraph(body,Visual.get_signature_effect_name(data),16,GOLD)
  _paragraph(body,Visual.get_signature_effect_description(data),14)
@@ -747,7 +752,7 @@ func _show_stats(force: bool=false) -> void:
  var state: Dictionary=Sets.get_dominant_set_state(ids)
  if int(state.piece_count)>0:
   _paragraph(body,"%s • %d/4"%[str(state.display_name),int(state.piece_count)],16,GOLD)
-  for tier: int in [2,3,4]:_paragraph(body,tr("%d pieces: %s")%[tier,Sets.get_tier_description(str(state.set_id),tier)],14,JADE if int(state.piece_count)>=tier else TEXT)
+  for tier: int in [2,3,4]:_paragraph(body,tr("%d pieces: %s")%[tier,Sets.get_tier_description(str(state.set_id),tier)],14,JADE if Sets.is_tier_active(str(state.set_id),tier,_equipped_ids()) else TEXT)
  else:_paragraph(body,tr("Equip pieces of the same set to activate set bonuses."),14)
  building_popup=false
 

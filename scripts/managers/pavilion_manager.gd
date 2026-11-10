@@ -1999,7 +1999,7 @@ func get_summon_pool_by_rarity() -> Dictionary:
 	if not is_summon_unlocked(): return pool
 	for item_id: String in EquipmentManager.get_item_ids():
 		var item_data: Dictionary = EquipmentManager.get_item_data(item_id)
-		if bool(item_data.get("event_only", false)): continue
+		if bool(item_data.get("event_only", false)) or bool(item_data.get("starter_pack", false)): continue
 		var rarity: String = str(item_data.get("rarity", "common"))
 		if pool.has(rarity):
 			pool[rarity].append(item_id)
@@ -2426,8 +2426,8 @@ func get_item_unlock_requirement(item_id: String) -> Dictionary:
 
 
 func is_item_unlocked(item_id: String) -> bool:
-	if bool(EquipmentManager.get_item_data(item_id).get("event_only", false)): return false
-	if bool(EquipmentManager.get_item_data(item_id).get("retired",false)): return false
+	var item: Dictionary = EquipmentManager.get_item_data(item_id)
+	if bool(item.get("event_only", false)) or bool(item.get("starter_pack", false)) or bool(item.get("retired", false)): return false
 	var requirement := get_item_unlock_requirement(item_id)
 	if requirement.is_empty():
 		return false
@@ -2440,7 +2440,7 @@ func is_item_unlocked(item_id: String) -> bool:
 
 func can_buy_equipment_with_stones(item_id: String) -> bool:
 	var item: Dictionary = EquipmentManager.get_item_data(item_id)
-	if item.is_empty():
+	if item.is_empty() or bool(item.get("starter_pack", false)):
 		return false
 	return EconomyCatalog.can_direct_buy_rarity(str(item.get("rarity", "common")))
 

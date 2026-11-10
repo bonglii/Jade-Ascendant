@@ -4,6 +4,11 @@ extends RefCounted
 ## Gameplay authority remains in EquipmentManager / InventoryManager.
 
 const ITEM_ICON_PATHS: Dictionary = {
+	"gale_parasol":"res://assets/ui/equipment/galeweave/parasol_closed.png",
+	"galeweave_robe":"res://assets/ui/equipment/galeweave/robe.png",
+	"galeweave_bracer":"res://assets/ui/equipment/galeweave/bracer.png",
+	"galeweave_boots":"res://assets/ui/equipment/galeweave/boots.png",
+	"galeweave_pendant":"res://assets/ui/equipment/galeweave/pendant.png",
 	"heavenweaver_compass":"res://assets/ui/liveops/odyssey/compass.png",
 	"frost_lotus_robe":"res://assets/ui/equipment/expansion_20261014/frost_lotus_robe.png",
 	"frost_lotus_bracer":"res://assets/ui/equipment/expansion_20261014/frost_lotus_bracer.png",
@@ -148,6 +153,8 @@ static func get_signature_effect_name(item_data: Dictionary) -> String:
 	return "NO SIGNATURE EFFECT"
 
 static func get_signature_effect_description(item_data: Dictionary) -> String:
+	if item_data.get("weapon_type", "") == "parasol" and TranslationServer.get_locale().begins_with("id"):
+		return "Tembakkan duri yang menembus musuh saat tertutup. Saat dikerumuni, payung terbuka untuk melukai dan mendorong musuh biasa."
 	var explicit_description: String = str(item_data.get("signature_effect_description", ""))
 	if not explicit_description.is_empty():
 		return explicit_description
