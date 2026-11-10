@@ -86,7 +86,7 @@ func _process(delta: float) -> void:
 		_probe_left -= delta
 		if _probe_left <= 0:
 			_probe_left = .5
-			var available: float = float(_waves.wave_timer) + float(_waves.wave_duration)
+			var available: float = float(_waves.wave_timer) + float(_waves.duration_for_wave(6))
 			var spawner: Node = get_parent().get_node("EnemySpawner")
 			if available >= State.WINDOW and not spawner.has_active_scheduled_elite():
 				var candidate: Variant = _safe_point()

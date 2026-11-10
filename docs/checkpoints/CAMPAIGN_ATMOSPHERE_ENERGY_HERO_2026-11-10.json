@@ -1,0 +1,41 @@
+{
+  "base": "2c5804eb12d2bba2cbf8ee8a3979e23595054b11",
+  "source_branch": "work/player-polish-20261104",
+  "status": "AUTHOR_QA_PASS",
+  "scope": [
+    "Phase-based wave timing on 26 authored campaign maps",
+    "Opening Qi bonus and existing pre-boss pickup collection moved into preparation",
+    "Map-specific world-space ambience, regional beds and positional audio",
+    "First-clear campaign Energy in the existing atomic run-end save",
+    "Shared compact comparison for all five Hero equipment slots"
+  ],
+  "decisions": {
+    "energy": "Prototype 12 max, 2 per first clear, +1 each 15 minutes after a debit, with 1-1 through 1-5 exempt. Device-local clock and Journey save. Accepted run cost is checkpointed. Old saves without Energy start full and old checkpoints keep free completion.",
+    "pacing": "Chapter 1 targets in active seconds before boss are 165, 220, 235, 248, 315. Total clear targets are design ranges. Existing boss HP and patterns are retained until device play gives timing evidence.",
+    "ambient": "Original compact audio assets and existing scenery, two motifs per authored map, up to six local effects. Crowded mode draws two local accents and suppresses inherited broad mist. Trials use their frozen combat rules."
+  },
+  "validation": {
+    "godot_4_7_2_import": "PASS",
+    "campaign_energy_ambient_hero": "335/335, all 26 authored maps, real opening pickup, earned pre-boss Qi, both locales, all five slots",
+    "actual_victory_atomicity": "15/15, injected write barrier logs expected reward failure; rollback and retry verified",
+    "native_x11": "76/76, full scene captures and first native swipes, EN/ID, simulated insets, portrait and landscape; software rendering",
+    "hero_upgrades_and_popups": "737/737 and 128/128",
+    "regression": "Stage Records 91, Journey 27, Home/Boss 84, Combat Clarity 66, Level-Up heal 20, Paid Run Recovery 15, Heavenly Trials 57 and recovery 27, Interface 91, Event Scroll 159, all passing",
+    "production_contract": "24/24 combined with paid gameplay. All nine production gates preserved.",
+    "opening_pilot": {
+      "scope": "Actual gameplay loop with scripted movement and upgrade selections, damage immunity for the pilot. Different opportunity counts are fixture evidence; full boss kill time and first-time player behavior are pending.",
+      "stages": ["1-1", "1-2", "1-5"],
+      "first_choice_seconds": [7.60, 6.58, 6.50],
+      "choices_before_wave_five_baseline": [8, 9, 12],
+      "choices_before_wave_five_candidate": [10, 10, 13]
+    },
+    "crowd_ab": {
+      "scope": "Linux X11 software renderer, two pairs of 300 active frames with actual 120 targets. Exact per-target damage trace matched all four runs.",
+      "median_draw_calls_before_after": [207, 207],
+      "p95_before_ms": [26.745, 27.693],
+      "p95_after_ms": [25.183, 24.993]
+    }
+  },
+  "pending": ["Owner pull and install", "AAB", "Android stage pacing, boss duration, ambient mix and dense-wave frame time"],
+  "next": "Install the exact work branch, export with the established exporter and compare a fresh 1-1, 1-2 and 1-5 run on Android before calibrating Energy."
+}

@@ -625,6 +625,7 @@ func get_run_end_domains() -> Dictionary:
 	var journey_data: Dictionary = JourneyManager.build_save_data()
 	journey_data["active_run_chapter_id"] = JourneyManager.NO_ACTIVE_ID
 	journey_data["active_run_stage_id"] = JourneyManager.NO_ACTIVE_ID
+	journey_data["active_run_energy_cost"] = 0
 	var domains: Dictionary = {"journey": journey_data}
 	var checkpoint_result: Dictionary = SaveManager.read_save_data("checkpoint")
 	if bool(checkpoint_result.get("success", false)):

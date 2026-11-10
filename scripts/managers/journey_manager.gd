@@ -23,6 +23,7 @@ const ChapterTwoCatalog = preload("res://scripts/data/chapter_two_catalog.gd")
 const ChapterThreeCatalog = preload("res://scripts/data/chapter_three_catalog.gd")
 const ChapterFourCatalog = preload("res://scripts/data/chapter_four_catalog.gd")
 const ChapterFiveCatalog = preload("res://scripts/data/chapter_five_catalog.gd")
+const CampaignEnergy = preload("res://scripts/data/campaign_energy.gd")
 const CampaignStagePolicy = preload("res://scripts/data/campaign_stage_policy.gd")
 const CHAPTERS := {
 	1: {
@@ -56,6 +57,8 @@ var active_run_stage_id: int = NO_ACTIVE_ID
 var unlocked_stage_keys: Array = []
 var cleared_stage_keys: Array = []
 var m7d_run_id: String = ""
+var campaign_energy: Dictionary = {}
+var active_run_energy_cost: int = 0
 var stage_records: Dictionary = {}
 var cosmetic_badges: Array = []
 const RecordBook=preload("res://scripts/data/stage_record_book.gd")
@@ -226,8 +229,31 @@ func select_stage(chapter_id: int, stage_id: int) -> bool:
 func get_selected_stage_data() -> Dictionary:
 	return get_stage_data(selected_chapter_id, selected_stage_id)
 
+func get_stage_energy_cost(chapter: int, stage: int) -> int:
+	if not is_stage_implemented(chapter, stage) or is_stage_cleared(chapter, stage):
+		return 0
+	if chapter == DEFAULT_CHAPTER_ID and stage <= 5:
+		return 0
+	return CampaignEnergy.FIRST_CLEAR_COST
+
+func get_energy_status(chapter: int, stage: int) -> Dictionary:
+	var now: int = int(Time.get_unix_time_from_system())
+	var balance: Dictionary = CampaignEnergy.view(campaign_energy, now)
+	var cost: int = get_stage_energy_cost(chapter, stage)
+	return {
+		"units": int(balance.units), "capacity": CampaignEnergy.CAPACITY, "cost": cost,
+		"wait_seconds": CampaignEnergy.seconds_until(balance, cost, now),
+		"refill_seconds": CampaignEnergy.seconds_until(balance, int(balance.units) + 1, now)
+			if int(balance.units) < CampaignEnergy.CAPACITY else 0
+	}
+
+func selected_stage_has_energy() -> bool:
+	return int(get_energy_status(selected_chapter_id, selected_stage_id).wait_seconds) == 0
+
 func begin_selected_stage() -> String:
-	if SaveManager.is_progress_read_only():
+	if SaveManager.is_progress_read_only() or SaveManager.has_pending_transaction():
+		return ""
+	if not selected_stage_has_energy():
 		return ""
 	if not is_stage_unlocked(selected_chapter_id, selected_stage_id):
 		return ""
@@ -240,10 +266,17 @@ func begin_selected_stage() -> String:
 	var next_run_id: String = _m7d_new_run_nonce()
 	if next_run_id.is_empty():
 		return ""
+	var previous: Array = [m7d_run_id, active_run_chapter_id, active_run_stage_id, active_run_energy_cost]
 	m7d_run_id = next_run_id
 	active_run_chapter_id = selected_chapter_id
 	active_run_stage_id = selected_stage_id
-	_save_progress()
+	active_run_energy_cost = get_stage_energy_cost(active_run_chapter_id, active_run_stage_id)
+	if not _save_progress():
+		m7d_run_id = previous[0]
+		active_run_chapter_id = previous[1]
+		active_run_stage_id = previous[2]
+		active_run_energy_cost = previous[3]
+		return ""
 	return scene_path
 
 func has_active_run() -> bool:
@@ -264,13 +297,14 @@ func get_active_stage_scene_path() -> String:
 		return ""
 	return str(stage_data.get("scene_path", ""))
 
-func restore_active_run(chapter_id: int, stage_id: int) -> bool:
+func restore_active_run(chapter_id: int, stage_id: int, energy_cost: Variant = 0) -> bool:
 	if not has_stage(chapter_id, stage_id):
 		return false
 	if not is_stage_implemented(chapter_id, stage_id):
 		return false
 	active_run_chapter_id = chapter_id
 	active_run_stage_id = stage_id
+	active_run_energy_cost = mini(CampaignEnergy.accepted_cost(energy_cost), get_stage_energy_cost(chapter_id, stage_id))
 	selected_chapter_id = chapter_id
 	selected_stage_id = stage_id
 	_append_unique_stage_key(
@@ -290,12 +324,17 @@ func complete_active_stage(persist_now: bool = true) -> bool:
 		completed_stage_id
 	)
 	var was_first_clear := completed_key not in cleared_stage_keys
+	var prior: Dictionary = build_save_data() if persist_now else {}
+	if was_first_clear and active_run_energy_cost > 0:
+		campaign_energy = CampaignEnergy.debit(campaign_energy, active_run_energy_cost, int(Time.get_unix_time_from_system()))
 	_append_unique_stage_key(cleared_stage_keys, completed_key)
 	_unlock_next_stage(completed_chapter_id, completed_stage_id)
 	clear_active_run(false)
 	if not persist_now:
 		return was_first_clear
-	_save_progress()
+	if not _save_progress():
+		restore_uncommitted_clear(prior)
+		return false
 	stage_completed.emit(
 		completed_chapter_id,
 		completed_stage_id,
@@ -303,9 +342,18 @@ func complete_active_stage(persist_now: bool = true) -> bool:
 	)
 	return was_first_clear
 
+func restore_uncommitted_clear(prior: Dictionary) -> void:
+	unlocked_stage_keys.assign(prior.unlocked_stage_keys)
+	cleared_stage_keys.assign(prior.cleared_stage_keys)
+	active_run_chapter_id = int(prior.active_run_chapter_id)
+	active_run_stage_id = int(prior.active_run_stage_id)
+	active_run_energy_cost = int(prior.active_run_energy_cost)
+	campaign_energy = prior.campaign_energy.duplicate()
+
 func clear_active_run(save_now: bool = true) -> void:
 	active_run_chapter_id = NO_ACTIVE_ID
 	active_run_stage_id = NO_ACTIVE_ID
+	active_run_energy_cost = 0
 	if save_now:
 		_save_progress()
 
@@ -377,6 +425,7 @@ func _ensure_valid_state() -> void:
 		):
 			active_run_chapter_id = NO_ACTIVE_ID
 			active_run_stage_id = NO_ACTIVE_ID
+			active_run_energy_cost = 0
 
 func _normalize_stage_keys(value: Variant) -> Array:
 	var normalized: Array = []
@@ -389,14 +438,16 @@ func _normalize_stage_keys(value: Variant) -> Array:
 		_append_unique_stage_key(normalized, stage_key)
 	return normalized
 
-func _save_progress() -> void:
+func _save_progress() -> bool:
 	var save_data: Dictionary = build_save_data()
 	var io_result: Dictionary = SaveManager.write_save_data(
 		"journey",
 		save_data
 	)
-	if not bool(io_result.get("success", false)):
+	var saved: bool = bool(io_result.get("success", false))
+	if not saved:
 		push_error("JourneyManager: gagal menyimpan journey progress.")
+	return saved
 
 func _load_progress() -> void:
 	var io_result: Dictionary = SaveManager.read_save_data("journey")
@@ -421,6 +472,9 @@ func _load_progress() -> void:
 	unlocked_stage_keys = save_data.get("unlocked_stage_keys", [])
 	cleared_stage_keys = save_data.get("cleared_stage_keys", [])
 	m7d_run_id = str(save_data.get("m7d_run_id", ""))
+	var stored_energy: Variant = save_data.get("campaign_energy", {})
+	campaign_energy = stored_energy.duplicate() if stored_energy is Dictionary else {}
+	active_run_energy_cost = CampaignEnergy.accepted_cost(save_data.get("active_run_energy_cost", 0))
 	var known: Array=[]
 	for chapter: int in get_chapter_ids():
 		for stage: int in get_stage_ids(chapter):known.append(get_stage_key(chapter,stage))
@@ -440,6 +494,8 @@ func build_save_data() -> Dictionary:
 		"unlocked_stage_keys": unlocked_stage_keys.duplicate(),
 		"cleared_stage_keys": cleared_stage_keys.duplicate(),
 		"m7d_run_id": m7d_run_id,
+		"campaign_energy": campaign_energy.duplicate(),
+		"active_run_energy_cost": active_run_energy_cost,
 		"stage_records": stage_records.duplicate(true),
 		"cosmetic_badges": cosmetic_badges.duplicate()
 	}

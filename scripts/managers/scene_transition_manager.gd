@@ -351,6 +351,9 @@ func _finish_transition() -> void:
 			_fail_transition(ERR_INVALID_DATA,true)
 			_show_paid_run_notice("RUN_STATE_CHANGED")
 			return
+		if not JourneyManager.selected_stage_has_energy():
+			_fail_transition(ERR_UNAVAILABLE, true)
+			return
 		var reset: Dictionary=SaveManager.reset_active_run_saves()
 		if not bool(reset.get("success",false)):
 			_fail_transition(ERR_CANT_CREATE,true)

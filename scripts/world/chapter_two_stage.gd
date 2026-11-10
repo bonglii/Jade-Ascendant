@@ -24,8 +24,8 @@ func _enter_tree() -> void:
 		enemy_spawner.call("configure_stage_profile", stage_profile)
 	else:
 		push_error("ChapterTwoStage: EnemySpawner belum mendukung stage profile generik.")
-	get_node("WaveManager").set("wave_duration", float(stage_profile["wave_duration"]))
 	get_node("DifficultyManager").set("difficulty_interval", float(stage_profile["difficulty_interval"]))
+	get_node("WaveManager").configure_campaign(2, stage_id, stage_profile)
 	if stage_id > 1:
 		_apply_environment_profile()
 	if stage_id <= 5:

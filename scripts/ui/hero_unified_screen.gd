@@ -2,6 +2,7 @@ extends Control
 
 ## One HERO page. Gameplay/save authority stays in the existing managers.
 const Visual=preload("res://scripts/ui/equipment_visual_catalog.gd")
+const GearProjection =preload("res://scripts/companion/equipment_projection.gd")
 const Sets=preload("res://scripts/data/equipment_set_catalog.gd")
 const Nav=preload("res://scripts/ui/wuxia_hub_nav.gd")
 const WeaponComparison=preload("res://scripts/ui/weapon_comparison.gd")
@@ -48,6 +49,7 @@ var detail_values: Dictionary={}
 var weapon_comparison: WeaponComparison
 var weapon_picker: OptionButton
 var weapon_options: Array[String]=[]
+var set_impact: Label
 var detail_set_header: Label
 var detail_set_lines: Array[Label]=[]
 var header_count: Label
@@ -86,6 +88,7 @@ func _layout() -> void:
  fixed_deck.size.x=content.size.x-side*2
  page.custom_minimum_size.x=content.size.x-side*2
  fixed_deck.custom_minimum_size.x=page.custom_minimum_size.x
+ if is_instance_valid(detail):_fit_sheet.call_deferred(sheet_generation)
  _queue_refresh()
 
 func _queue_refresh() -> void:
@@ -433,8 +436,9 @@ func _stars(rank: int) -> String:
 func _card_pressed(id: String) -> void:
  if card_buttons.has(id) and bool(card_buttons[id].get_meta("jade_scroll_cancelled",false)):return
  if get_global_mouse_position().distance_to(drag_start)>12:return
- if id==EquipmentManager.get_loadout_equipped_item_id("armament"):
-  _slot_pressed("armament")
+ var slot: String=str(EquipmentManager.get_item_data(id).get("slot",""))
+ if slot in SLOTS and id==EquipmentManager.get_loadout_equipped_item_id(slot):
+  _slot_pressed(slot)
  else:_show_detail(id)
 
 func _slot_pressed(slot: String) -> void:
@@ -445,11 +449,10 @@ func _slot_pressed(slot: String) -> void:
   _rebuild_grid()
   scroll.set_deferred("scroll_vertical",0)
   return
- if slot=="armament":
-  for candidate: String in _owned_weapons():
-   if candidate!=id:
-    _show_detail(candidate)
-    return
+ for candidate: String in _owned_slot_items(slot):
+  if candidate!=id:
+   _show_detail(candidate)
+   return
  _show_detail(id)
 
 func _close_detail() -> void:
@@ -457,14 +460,16 @@ func _close_detail() -> void:
  if is_instance_valid(detail):detail.queue_free()
  detail=null
 
-func _make_sheet(mode: String="item",weapon: bool=false) -> VBoxContainer:
+func _make_sheet(mode: String="item",compare: bool=false,weapon: bool=false) -> VBoxContainer:
  if is_instance_valid(detail):content.remove_child(detail);detail.queue_free()
  sheet_mode=mode;sheet_generation+=1
  detail_set_header=null;detail_set_lines.clear();detail_values.clear()
- weapon_comparison=null;weapon_picker=null;weapon_options=[]
+ weapon_comparison=null;weapon_picker=null;weapon_options=[];set_impact=null
  detail=Control.new();detail.name="ItemDetail";content.add_child(detail);detail.z_index=80
- var top_inset: float=4.0 if weapon else 76.0
- detail.position=Vector2(0,top_inset);detail.size=Vector2(content.size.x,maxf(80,nav.position.y-top_inset-6.0))
+ var top_inset: float=4.0 if compare else 76.0
+ detail.position=Vector2(0,top_inset)
+ var bottom: float=content.size.y if compare and content.size.x>content.size.y else nav.position.y
+ detail.size=Vector2(content.size.x,maxf(80,bottom-top_inset-6.0))
  popup_unit=minf(unit,maxf(.7,detail.size.y/700.0))
  building_popup=true
  var dim:=ColorRect.new();dim.color=Color(0,0,0,.62);detail.add_child(dim);dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -476,14 +481,15 @@ func _make_sheet(mode: String="item",weapon: bool=false) -> VBoxContainer:
  sheet_root=VBoxContainer.new();sheet_root.add_theme_constant_override("separation",8);sheet_panel.add_child(sheet_root)
  var top:=HBoxContainer.new();top.name="PopupHeader";sheet_root.add_child(top)
  var heading: String="LOADOUT STATS" if mode=="stats" else "RELIC DETAILS"
- if weapon:heading="BANDINGKAN SENJATA" if SettingsManager.language=="id" else "COMPARE WEAPONS"
+ if compare:
+  heading=("BANDINGKAN SENJATA" if SettingsManager.language=="id" else "COMPARE WEAPONS") if weapon else ("BANDINGKAN EQUIPMENT" if SettingsManager.language=="id" else "COMPARE GEAR")
  var title:=_label(heading,20,GOLD);title.size_flags_horizontal=Control.SIZE_EXPAND_FILL;title.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
- if weapon:
+ if compare:
   var selector:=VBoxContainer.new()
   selector.size_flags_horizontal=Control.SIZE_EXPAND_FILL
   selector.add_theme_constant_override("separation",3)
   top.add_child(selector);selector.add_child(title)
-  weapon_picker=OptionButton.new();weapon_picker.name="WeaponCandidatePicker"
+  weapon_picker=OptionButton.new();weapon_picker.name="WeaponCandidatePicker" if weapon else "GearCandidatePicker"
   weapon_picker.custom_minimum_size.y=44
   _polish_dropdown(weapon_picker);selector.add_child(weapon_picker)
   weapon_picker.item_selected.connect(_inspect_weapon_candidate.bind(sheet_generation))
@@ -501,6 +507,8 @@ func _fit_sheet(expected_generation: int=-1) -> void:
  if expected_generation<0:expected_generation=sheet_generation
  await get_tree().process_frame
  if not is_inside_tree() or is_queued_for_deletion() or expected_generation!=sheet_generation or not is_instance_valid(detail) or not is_instance_valid(sheet_panel):return
+ var bottom: float=content.size.y if is_instance_valid(weapon_comparison) and content.size.x>content.size.y else nav.position.y
+ detail.size=Vector2(content.size.x,maxf(80,bottom-detail.position.y-6.0))
  var width: float=minf(560.0*unit,detail.size.x-24.0*unit)
  var max_height: float=minf((470.0 if sheet_mode=="stats" else 580.0)*popup_unit,detail.size.y*.72)
  if is_instance_valid(weapon_comparison):
@@ -555,14 +563,19 @@ func _show_detail(id: String,force: bool=false) -> void:
  var is_equipment: bool=EquipmentManager.has_item_definition(id)
  var data: Dictionary=EquipmentManager.get_item_data(id) if is_equipment else InventoryManager.get_item_data(id)
  var weapon: bool=str(data.get("slot",""))=="armament" and is_equipment
- var body: VBoxContainer=_make_sheet("item",weapon)
- if weapon:
-  weapon_comparison=WeaponComparison.new();weapon_comparison.name="WeaponComparison";body.add_child(weapon_comparison)
-  _sync_weapon_comparison()
-  _paragraph(body,"DETAIL SENJATA" if SettingsManager.language=="id" else "WEAPON DETAILS",17,JADE)
+ var body: VBoxContainer=_make_sheet("item",is_equipment,weapon)
+ var gear_details: VBoxContainer
+ if is_equipment:
+  weapon_comparison=WeaponComparison.new();weapon_comparison.name="WeaponComparison" if weapon else "GearComparison";body.add_child(weapon_comparison)
+  var more:=_button("LIHAT DETAIL" if SettingsManager.language=="id" else "VIEW DETAILS")
+  more.name="ViewEquipmentDetails";more.toggle_mode=true;body.add_child(more)
+  gear_details=VBoxContainer.new();gear_details.name="EquipmentDetails";gear_details.add_theme_constant_override("separation",8);gear_details.hide();body.add_child(gear_details)
+  more.toggled.connect(func(open: bool):
+   gear_details.visible=open
+   more.text=("TUTUP DETAIL" if open else "LIHAT DETAIL") if SettingsManager.language=="id" else ("HIDE DETAILS" if open else "VIEW DETAILS")
+   _fit_sheet.call_deferred(sheet_generation))
+  body=gear_details
  _paragraph(body,str(data.get("display_name",id)),24,GOLD)
- if is_equipment and not weapon:
-  _comparison(body,id)
  var stage:=Control.new();stage.name="RelicArtStage";stage.clip_contents=true;stage.custom_minimum_size.y=120*popup_unit;body.add_child(stage)
  var landscape:=_texture("res://assets/ui/hero/imperial_v4/sanctuary_banner.png");landscape.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_COVERED;landscape.modulate=Color(.45,.58,.55);stage.add_child(landscape);landscape.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
  var icon:=_texture(Visual.get_icon_path(id));icon.name="DetailIcon";stage.add_child(icon);icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);icon.offset_top=8;icon.offset_bottom=-8
@@ -597,6 +610,10 @@ func _show_detail(id: String,force: bool=false) -> void:
  _paragraph(body,Visual.get_signature_effect_description(data),14)
  _paragraph(body,tr("IDENTICAL DUPLICATES %d • Ascension uses 1 duplicate; the main item is kept.")%EquipmentManager.get_backpack_refine_copies(id),14)
  detail_values.copies=body.get_child(body.get_child_count()-1)
+ if not weapon:
+  set_impact=_label("",13,GOLD);set_impact.name="GearSetImpact"
+  set_impact.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;sheet_actions.add_child(set_impact)
+ _sync_weapon_comparison()
  var row:=HBoxContainer.new();row.add_theme_constant_override("separation",8);sheet_actions.add_child(row)
  var equip:=_button(_equip_caption(id in _equipped_ids()),true);equip.name="EquipAction";equip.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(equip)
  equip.disabled=not EquipmentManager.can_modify_equipment();_bind_action(equip,_equip_selected.bind(id,id in _equipped_ids(),sheet_generation))
@@ -609,20 +626,20 @@ func _show_detail(id: String,force: bool=false) -> void:
   level.disabled=not EquipmentManager.can_level_weapon(id)
   if EquipmentManager.get_item_weapon_level(id)>=EquipmentManager.get_weapon_level_cap(id):level.text=tr("LEVEL CAP • ASCEND STAR") if star<5 else tr("MAX LEVEL 50")
   _bind_upgrade_action(level,id,"level",detail_progress_key)
-  ScrollPolicy.prepare_tree(sheet_scroll)
+ ScrollPolicy.prepare_tree(sheet_scroll)
  building_popup=false
 
 func _equip_caption(equipped: bool) -> String:
  if equipped:return tr("UNEQUIP")
- if is_instance_valid(weapon_comparison):
+ if EquipmentManager.get_item_data(selected_item_id).get("slot")=="armament":
   return "PAKAI SENJATA" if SettingsManager.language=="id" else "EQUIP WEAPON"
- return tr("EQUIP")
+ return "PAKAI" if SettingsManager.language=="id" else "EQUIP"
 
-func _owned_weapons() -> Array[String]:
+func _owned_slot_items(slot: String) -> Array[String]:
  var ids: Array[String]=[]
  for id: String in EquipmentManager.get_backpack_item_ids():
   var data: Dictionary=EquipmentManager.get_item_data(id)
-  if data.get("slot")=="armament" and not bool(data.get("retired",false)):ids.append(id)
+  if data.get("slot")==slot and not bool(data.get("retired",false)):ids.append(id)
  ids.sort_custom(func(a: String,b: String)->bool:
   var first: String=str(EquipmentManager.get_item_data(a).get("display_name",a))
   var second: String=str(EquipmentManager.get_item_data(b).get("display_name",b))
@@ -630,8 +647,9 @@ func _owned_weapons() -> Array[String]:
  return ids
 
 func _sync_weapon_comparison() -> void:
- var current: String=EquipmentManager.get_loadout_equipped_item_id("armament")
- var ids: Array[String]=_owned_weapons()
+ var slot: String=str(EquipmentManager.get_item_data(selected_item_id).get("slot",""))
+ var current: String=EquipmentManager.get_loadout_equipped_item_id(slot)
+ var ids: Array[String]=_owned_slot_items(slot)
  var has_alternative: bool=ids.any(func(id: String)->bool:return id!=current)
  if current not in ids and EquipmentManager.owns_backpack_item(current):ids.push_front(current)
  if selected_item_id not in ids:ids.append(selected_item_id)
@@ -642,7 +660,27 @@ func _sync_weapon_comparison() -> void:
  weapon_picker.visible=ids.size()>1
  weapon_picker.select(ids.find(selected_item_id))
  weapon_picker.text="GANTI KANDIDAT" if SettingsManager.language=="id" else "CHANGE CANDIDATE"
- weapon_comparison.refresh(current,selected_item_id,has_alternative)
+ weapon_comparison.refresh(current,selected_item_id,has_alternative,slot)
+ if is_instance_valid(set_impact):
+  var preview: Dictionary=GearProjection.compare(selected_item_id)
+  var text: String=_set_change(preview.before,preview.after) if current!=selected_item_id and not preview.is_empty() else ""
+  var layout_changed: bool=set_impact.visible!=(not text.is_empty()) or set_impact.text!=text
+  set_impact.text=text;set_impact.visible=not text.is_empty()
+  if layout_changed and not building_popup:_fit_sheet.call_deferred(sheet_generation)
+
+func _set_change(before: Dictionary,after: Dictionary) -> String:
+ var left: Dictionary=before.set;var right: Dictionary=after.set
+ var left_tier: int=int(left.piece_count) if bool(left.resonant) else 0
+ var right_tier: int=int(right.piece_count) if bool(right.resonant) else 0
+ var left_name: String=tr(str(before.passive.get("name","")))
+ var right_name: String=tr(str(after.passive.get("name","")))
+ if left_tier>0 and left_name.is_empty():left_name="%s %d/4"%[tr(str(left.display_name)),left_tier]
+ if right_tier>0 and right_name.is_empty():right_name="%s %d/4"%[tr(str(right.display_name)),right_tier]
+ if left_name==right_name:return ""
+ var id_locale: bool=SettingsManager.language=="id"
+ if left_name.is_empty():return ("Set aktif · " if id_locale else "Set gained · ")+right_name
+ if right_name.is_empty():return ("Set hilang · " if id_locale else "Set lost · ")+left_name
+ return ("Bonus set · " if id_locale else "Set bonus · ")+"%s → %s"%[left_name,right_name]
 
 func _inspect_weapon_candidate(index: int,generation: int) -> void:
  if generation!=sheet_generation or not detail_open or index<0 or index>=weapon_options.size():return
@@ -760,17 +798,3 @@ func _layout_sections() -> void:
  var deck_gap: float=4.0 if content.size.y<620 and content.size.x>content.size.y else 8.0
  scroll.position=Vector2(fixed_deck.position.x,fixed_deck.position.y+height+deck_gap)
  scroll.size=Vector2(page.custom_minimum_size.x,maxf(40,nav.position.y-scroll.position.y-8))
-
-func _comparison(body: VBoxContainer,id: String) -> void:
- var preview: Dictionary=preload("res://scripts/companion/equipment_projection.gd").compare(id)
- if preview.is_empty():return
- _paragraph(body,"PERBANDINGAN GEAR" if SettingsManager.language=="id" else "GEAR COMPARISON",17,GOLD)
- for row: Array in [["max_health_flat","HP gear",1.0],["damage_bonus","Damage gear %",100.0],["critical_chance_bonus","Crit %",100.0],["movement_speed_bonus","Move %",100.0],["experience_bonus","EXP %",100.0]]:
-  var before: float=float(preview.before[row[0]])*float(row[2]);var after: float=float(preview.after[row[0]])*float(row[2])
-  _paragraph(body,"%s  %.1f → %.1f  (%+.1f)"%[row[1],before,after,after-before],14,JADE if after>=before else Color(.97,.57,.45))
- for row: Array in [["before","SEKARANG" if SettingsManager.language=="id" else "CURRENT"],["after","SESUDAH" if SettingsManager.language=="id" else "AFTER"]]:
-  var state: Dictionary=preview[row[0]].set
-  _paragraph(body,"%s · %s %d/4"%[row[1],str(state.display_name),int(state.piece_count)],14,GOLD)
-  var passive: Dictionary=preview[row[0]].passive
-  _paragraph(body,str(passive.get("name", "Tanpa pasif 4 set" if SettingsManager.language=="id" else "No active 4-piece passive")),13,JADE)
- _paragraph(body,"Bonus gear tanpa kondisi. Pasif, level weapon dan pola attack tetap punya peran berbeda; ini bukan perkiraan DPS." if SettingsManager.language=="id" else "Unconditional gear bonuses. Passives, weapon levels and attack patterns have distinct roles; this is not a DPS estimate.",12)

@@ -6,7 +6,9 @@ static func slots() -> Dictionary:
  for slot: String in EquipmentManager.get_slot_ids(): result[slot] = EquipmentManager.get_loadout_equipped_item_id(slot)
  return result
 static func project(loadout: Dictionary) -> Dictionary:
- var totals: Dictionary = {"max_health_flat":0.0,"damage_bonus":0.0,"critical_chance_bonus":0.0,"movement_speed_bonus":0.0,"experience_bonus":0.0}
+ var totals: Dictionary = {"max_health_flat":0.0,"damage_bonus":0.0,"critical_chance_bonus":0.0,"movement_speed_bonus":0.0,"experience_bonus":0.0,
+  "critical_damage_bonus":0.0,"attack_cooldown_reduction":0.0,"low_health_damage_bonus":0.0,
+  "pickup_radius_bonus":0.0,"starting_shield_charges":0.0,"blood_qi_heal_bonus":0.0}
  var ids: Array[String] = []
  for slot: String in EquipmentManager.get_slot_ids():
   var id: String = str(loadout.get(slot, ""))

@@ -5,6 +5,7 @@ extends Node2D
 ## Decoration is one cached CanvasItem: no collision, timers, save fields,
 ## enemy interactions, random gameplay state or per-frame allocations.
 
+const BambooWind = preload("res://assets/shaders/stage_bamboo_wind.gdshader")
 const GROVE_A: Texture2D = preload("res://assets/world/chapter_one/bamboo_grove_a.png")
 const GROVE_B: Texture2D = preload("res://assets/world/chapter_one/bamboo_grove_b.png")
 const EDGE_A: Texture2D = preload("res://assets/world/chapter_one/forest_edge_a.png")
@@ -22,12 +23,43 @@ const WORLD_SPACING_Y: float = 655.0
 # Vector4 = world x, world y, scale, material identity.
 var _scenery: Array[Vector4] = []
 var _path_patches: Array[Vector3] = []
+var _bamboo_materials: Array[ShaderMaterial] = []
 
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	_build_layout()
+	if int(get_parent().get("stage_id")) == 2:
+		for data: Vector4 in _scenery:
+			if _moves_in_wind(data):
+				_add_wind_grove(data)
 	queue_redraw()
+
+
+func _moves_in_wind(data: Vector4) -> bool:
+	return int(data.w) <= 1 and Vector2(data.x, data.y).distance_squared_to(HOME) < 620.0 * 620.0
+
+
+func _add_wind_grove(data: Vector4) -> void:
+	var grove := Sprite2D.new()
+	grove.name = "WindGrove"
+	grove.texture = GROVE_A if int(data.w) == 0 else GROVE_B
+	var anchor := Vector2(data.x, data.y)
+	grove.position = anchor.move_toward(Vector2(HOME.x, anchor.y), 65.0)
+	var art_size := Vector2(352.0, 600.0 if int(data.w) == 0 else 598.0)
+	grove.scale = art_size * data.z / grove.texture.get_size()
+	grove.modulate.a = 0.9
+	var wind := ShaderMaterial.new()
+	wind.shader = BambooWind
+	wind.set_shader_parameter("phase", (data.x + data.y) * 0.003)
+	grove.material = wind
+	_bamboo_materials.append(wind)
+	add_child(grove)
+
+
+func set_quiet_wind(quiet: bool) -> void:
+	for wind: ShaderMaterial in _bamboo_materials:
+		wind.set_shader_parameter("quiet", 0.22 if quiet else 1.0)
 
 
 func _build_layout() -> void:
@@ -106,6 +138,8 @@ func _draw() -> void:
 			Vector2(290.0, 442.0) * patch.z, Color(1.0, 1.0, 1.0, 0.61))
 
 	for data: Vector4 in _scenery:
+		if not _bamboo_materials.is_empty() and _moves_in_wind(data):
+			continue
 		var art: Texture2D = GROVE_A
 		var art_size: Vector2 = Vector2(352.0, 600.0)
 		var opacity: float = 0.90

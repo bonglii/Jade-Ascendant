@@ -106,10 +106,7 @@ func _on_boss_defeated() -> void:
 	var journey_before: Dictionary = JourneyManager.build_save_data()
 	var stage_completion := complete_journey_stage()
 	if not grant_victory_reward(stage_completion):
-		JourneyManager.unlocked_stage_keys.assign(journey_before.unlocked_stage_keys)
-		JourneyManager.cleared_stage_keys.assign(journey_before.cleared_stage_keys)
-		JourneyManager.active_run_chapter_id = int(journey_before.active_run_chapter_id)
-		JourneyManager.active_run_stage_id = int(journey_before.active_run_stage_id)
+		JourneyManager.restore_uncommitted_clear(journey_before)
 		get_tree().paused = true
 		if victory_ui != null:
 			victory_ui.call("show_victory", {}, false)

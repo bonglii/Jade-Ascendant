@@ -28,6 +28,10 @@ func attract_to_player(target: Node2D) -> bool:
 
 func _ready() -> void:
 	add_to_group("qi_pickup")
+	var world: Node = get_parent()
+	var waves: Node = world.get_node_or_null("WaveManager") if world != null else null
+	if waves != null:
+		experience_value += int(waves.campaign_opening_qi_bonus())
 	player = get_tree().get_first_node_in_group("player") as Node2D
 	magnet_radius += EquipmentManager.get_secondary_bonus("pickup_radius_bonus", 72.0)
 	# The normal path needs only the count. Allocate the full group array

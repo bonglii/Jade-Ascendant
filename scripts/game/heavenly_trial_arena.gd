@@ -32,6 +32,7 @@ func _enter_tree() -> void:
  stage_profile.enemy_cap=36;stage_profile.spawn_interval=1.6;stage_profile.elite_schedule={}
  stage_profile.hazard_kind=0
  get_node("EnemySpawner").configure_stage_profile(stage_profile)
+ get_node("WaveManager").configure_campaign(int(session.tier),stage_id,stage_profile)
  get_node("WaveManager").wave_duration=8.0
  get_node("WaveManager").final_wave=10
  get_node("DifficultyManager").difficulty_interval=60.0

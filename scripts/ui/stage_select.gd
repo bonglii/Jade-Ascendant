@@ -27,6 +27,8 @@ var _realm_eyebrow: Label
 var _realm_subtitle: Label
 var _detail_art: PanelContainer
 var start_button: Button
+var _energy_label: Label
+var _stage_can_start: bool = false
 var confirm_overlay: Control
 var start_confirm_dialog: Control
 var confirm_stage_label: Label
@@ -57,6 +59,11 @@ func _ready() -> void:
 	_load_textures()
 	_build_shell()
 	_refresh_screen()
+	var energy_clock := Timer.new()
+	energy_clock.wait_time = 1.0
+	energy_clock.autostart = true
+	energy_clock.timeout.connect(_refresh_stage_energy)
+	add_child(energy_clock)
 	SceneTransitionManager.set_back_handler(handle_system_back)
 	resized.connect(_fit_phone)
 	preload("res://scripts/ui/mobile_scroll_policy.gd").prepare_tree(self)
@@ -525,7 +532,15 @@ func _build_selected_stage_panel(accent: Color) -> PanelContainer:
 	details.add_child(details_scroll)
 	details_scroll.add_child(text_box)
 	text_box.remove_child(start_button)
+	_energy_label = Label.new()
+	_energy_label.name = "StageEnergy"
+	_energy_label.add_theme_font_size_override("font_size", 12)
+	_energy_label.add_theme_color_override("font_color", GOLD)
+	_energy_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	details.add_child(_energy_label)
 	details.add_child(start_button)
+	_stage_can_start = can_start
+	_refresh_stage_energy()
 	preload("res://scripts/ui/mobile_scroll_policy.gd").prepare_tree(details_scroll)
 	_preview_image = image
 	_preview_code = code
@@ -646,9 +661,32 @@ func _refresh_selected_stage_panel() -> void:
 	var next_button_text: String = str(state.get("button_text", ""))
 	if start_button.text != next_button_text:
 		start_button.text = next_button_text
-	var next_disabled: bool = not bool(state.get("can_start", false))
-	if start_button.disabled != next_disabled:
-		start_button.disabled = next_disabled
+	_stage_can_start = bool(state.get("can_start", false))
+	_refresh_stage_energy()
+
+
+func _refresh_stage_energy() -> void:
+	if not is_instance_valid(_energy_label) or not is_instance_valid(start_button):
+		return
+	var status: Dictionary = JourneyManager.get_energy_status(chapter_id, preview_stage_id)
+	var indonesian: bool = SettingsManager.language == "id"
+	var display: String = "Energy %d/%d" % [status.units, status.capacity]
+	if _get_stage_status(preview_stage_id) in ["AVAILABLE", "CLEARED"]:
+		if int(status.cost) == 0:
+			display += " · Gratis" if indonesian else " · Free"
+		else:
+			display += " · %d saat menang" % status.cost if indonesian else " · %d on first clear" % status.cost
+	var wait_seconds: int = int(status.wait_seconds)
+	if wait_seconds > 0:
+		display += ("\nSiap dalam " if indonesian else "\nReady in ") + _energy_clock_text(wait_seconds)
+	elif int(status.refill_seconds) > 0:
+		display += ("\n+1 dalam " if indonesian else "\n+1 in ") + _energy_clock_text(int(status.refill_seconds))
+	_energy_label.text = display
+	start_button.disabled = not _stage_can_start or wait_seconds > 0 or SaveManager.is_progress_read_only()
+
+
+func _energy_clock_text(seconds: int) -> String:
+	return "%02d:%02d" % [floori(seconds / 60.0), seconds % 60]
 
 
 func _on_start_pressed() -> void:
@@ -748,6 +786,9 @@ func _confirm_start_new_stage() -> void:
 
 func _start_selected_stage() -> void:
 	if SceneTransitionManager.is_transitioning or SaveManager.is_progress_read_only():
+		return
+	if not JourneyManager.selected_stage_has_energy():
+		_refresh_stage_energy()
 		return
 	var data := JourneyManager.get_selected_stage_data()
 	if data.is_empty():
@@ -929,10 +970,10 @@ func _scroll_stage_map_to_selected() -> void:
 	if not is_instance_valid(map_scroll) or not is_instance_valid(button) or not is_instance_valid(plate):
 		return
 	var target: Rect2 = button.get_rect().merge(plate.get_rect())
-	# On compact layouts the title sits below the seal. Keep the title readable
-	# even when the map has too little height to center both together.
+	# The selected title is already in the details card. Keep the seal
+	# tappable when the compact map cannot fit both the seal and its plate.
 	if target.size.y > map_scroll.size.y:
-		target = plate.get_rect()
+		target = button.get_rect()
 	map_scroll.scroll_vertical = maxi(0, roundi(target.get_center().y - map_scroll.size.y * 0.5))
 
 

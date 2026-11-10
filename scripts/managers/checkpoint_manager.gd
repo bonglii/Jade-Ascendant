@@ -158,6 +158,7 @@ func save_checkpoint() -> bool:
 	if JourneyManager.has_active_run():
 		save_data["chapter_id"] = JourneyManager.active_run_chapter_id
 		save_data["stage_id"] = JourneyManager.active_run_stage_id
+		save_data["campaign_energy_cost"] = JourneyManager.active_run_energy_cost
 
 	save_data["survival_time"] = survival_manager.survival_time
 
@@ -698,7 +699,7 @@ func _restore_journey_identity(save_data: Dictionary) -> bool:
 		return false
 	var chapter_id := int(save_data["chapter_id"])
 	var stage_id := int(save_data["stage_id"])
-	if not JourneyManager.restore_active_run(chapter_id, stage_id):
+	if not JourneyManager.restore_active_run(chapter_id, stage_id, save_data.get("campaign_energy_cost", 0)):
 		push_error(str(
 			"ERROR: Gagal memulihkan active stage dari checkpoint! ",
 			"Chapter ",

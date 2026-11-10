@@ -15,6 +15,7 @@ func _initialize() -> void:run.call_deferred()
 func action(name_value: String) -> Button:return screen.sheet_actions.find_child(name_value,true,false) as Button
 func run() -> void:
  if not OS.get_user_data_dir().contains("jade_hero_qa"):quit(2);return
+ root.get_node("SettingsManager").set_presentation("language","id")
  await create_timer(.4).timeout
  root.content_scale_size=Vector2i.ZERO;root.size=Vector2i(648,1152)
  inv=root.get_node("InventoryManager");eq=root.get_node("EquipmentManager");progression=root.get_node("ProgressionManager")
@@ -99,7 +100,7 @@ func run() -> void:
  inv.item_counts["refinement_shard"]=2;screen._show_detail("refinement_shard");await settle();var material_panel: int=screen.sheet_panel.get_instance_id()
  inv.item_counts["refinement_shard"]=3;inv.inventory_changed.emit("refinement_shard",3);await settle()
  check(screen.sheet_panel.get_instance_id()==material_panel and screen.detail_values.material.text.ends_with("3"),"material quantity updates without popup recreation")
- screen._show_detail("jade_binding_chain");await settle();var demo: Button=screen.sheet_body.get_node("DemoAction") as Button
+ screen._show_detail("jade_binding_chain");await settle();var demo: Button=screen.sheet_body.find_child("DemoAction",true,false) as Button
  var old_demo: Callable=demo.get_meta("hero_action")
  old_demo.call();old_demo.call();await frames()
  check(screen.get_children().filter(func(node: Node):return node.name=="JadeBindingPreview").size()==1,"duplicate Demo entry remains single")

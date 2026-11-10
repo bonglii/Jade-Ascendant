@@ -1001,3 +1001,11 @@ A literal credential-shaped sample in a self-published test triggered the scanne
 - A native Paid Jade tap should keep its progress message in view above the cost buttons. A recent verified wallet can avoid an extra read while submission still checks the account binding and expected revision and waits for a server receipt.
 - Seed the neutral art choice and boon when isolating combat. An unexpected pause invalidates a timed physics fixture, and the current Yin-Yang limit applies per blade and target. Compare applied damage before and after with both stationary and moving crowds.
 - Check the shared icon-only navigation against its current layout token and rendered label visibility. A historic height and hidden caption font size can no longer establish that contract.
+
+## 2026-11-10 · Campaign tempo, Energy, ambience and Hero
+
+- Keep the Energy cost with the accepted run and the debit inside the existing atomic clear. Recheck before replacing a checkpoint. A failed write needs to restore Energy alongside the existing Journey fields.
+- New fixed controls can make the current stage seal scroll outside the compact map. When the card already has the stage name, center the interactive seal before prioritizing the label plate.
+- Strict editor import alone does not exercise scenes that load scripts at runtime. Launch all stage families. Avoid typed ternary arrays and check built-in GDScript name collisions in runtime-only presenters.
+- Review ambient on actual moving maps and compare both combat damage and frame timings. Replace the broad old pass with bounded world-space accents during dense waves. Keep the audio source and visual landmark recognizable in Reduced Effects.
+- Open or seed first-run overlays in a native input fixture before judging a dead button. Bind tests to named controls through their containers, seed the expected locale, and keep the fixture user directory name below the filesystem component limit.

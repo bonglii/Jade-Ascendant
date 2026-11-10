@@ -22,8 +22,8 @@ func _enter_tree() -> void:
 	# Children exist after PackedScene instantiation; initialize their exports
 	# now, before WaveManager initializes its timer in _ready.
 	get_node("EnemySpawner").call("configure_stage", stage_id)
-	get_node("WaveManager").set("wave_duration", float(stage_profile["wave_duration"]))
 	get_node("DifficultyManager").set("difficulty_interval", float(stage_profile["difficulty_interval"]))
+	get_node("WaveManager").configure_campaign(1, stage_id, stage_profile)
 	if stage_id > 1:
 		_apply_environment_profile()
 	if stage_id <= 5:

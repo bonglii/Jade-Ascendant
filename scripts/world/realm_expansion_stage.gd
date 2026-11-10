@@ -27,8 +27,8 @@ func _enter_tree() -> void:
 		enemy_spawner.call("configure_stage_profile", stage_profile)
 	else:
 		push_error("RealmExpansionStage: EnemySpawner stage-profile API is missing.")
-	get_node("WaveManager").set("wave_duration", float(stage_profile["wave_duration"]))
 	get_node("DifficultyManager").set("difficulty_interval", float(stage_profile["difficulty_interval"]))
+	get_node("WaveManager").configure_campaign(realm_id, stage_id, stage_profile)
 	hazard_timer = float(stage_profile.get("hazard_initial_delay", 11.0))
 	_apply_environment_profile()
 	_apply_expansion_ground()

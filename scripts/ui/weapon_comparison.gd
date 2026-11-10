@@ -1,7 +1,7 @@
 extends VBoxContainer
-## Read-only comparison of permanent weapon bonuses and progression.
+## Shared next-run comparison across the five Hero slots.
 const Visual = preload("res://scripts/ui/equipment_visual_catalog.gd")
-const Guidance = preload("res://scripts/data/build_guidance_catalog.gd")
+const GearProjection = preload("res://scripts/companion/equipment_projection.gd")
 const Sheet = preload("res://scripts/companion/player_journal.gd")
 const SERIF: Font = preload("res://assets/ui/library/fonts/archive_serif.ttf")
 const STARTER_ICON: Texture2D = preload("res://assets/ui/level_up/skill_art/spirit_sword.png")
@@ -24,48 +24,47 @@ const ROWS := [
 
 var _display_key: Array = []
 
-func refresh(current: String, selected: String, can_compare: bool) -> void:
+func refresh(current: String, selected: String, can_compare: bool, slot: String = "armament") -> void:
+	var weapon: bool = slot == "armament"
 	var candidate: String = selected if selected != current else ""
-	var left: Dictionary = _data(current)
-	var right: Dictionary = _data(candidate)
-	if left.is_empty():
-		current = ""
-	var key: Array = [current, candidate, left, right, can_compare, SettingsManager.language]
+	var left: Dictionary = EquipmentManager.get_loadout_equipped_item_data(slot)
+	var right: Dictionary = EquipmentManager._build_effective_item_data(candidate, EquipmentManager.get_backpack_item_star(candidate))
+	var projection: Dictionary = GearProjection.compare(candidate) if not weapon and not candidate.is_empty() else {}
+	var key: Array = [slot, current, candidate, left, right, projection, can_compare, SettingsManager.language]
 	if _display_key == key:
 		return
 	_display_key = key
 	for child: Node in get_children():
 		remove_child(child)
 		child.queue_free()
-	add_theme_constant_override("separation", 4)
+	add_theme_constant_override("separation", 5)
 	mouse_filter = MOUSE_FILTER_IGNORE
 	var cards := HBoxContainer.new()
 	cards.mouse_filter = MOUSE_FILTER_IGNORE
 	cards.add_theme_constant_override("separation", 8)
 	add_child(cards)
-	cards.add_child(_card(current, left, true, can_compare))
-	cards.add_child(_card(candidate, right, false, can_compare))
-	if not candidate.is_empty():
-		for row: Array in ROWS:
-			var before: float = _stat(left, row[0], row[3])
-			var after: float = _stat(right, row[0], row[3])
-			if row[0] not in ["damage_bonus", "weapon_damage_multiplier"] and is_zero_approx(before) and is_zero_approx(after):
-				continue
-			_add_stat(row, before, after)
-		add_child(Sheet.label(Sheet.copy(
-			"Permanent weapon bonuses. See Weapon Details below for the attack effect.",
-			"Bonus permanen senjata. Lihat Detail Senjata di bawah untuk efek serangannya."
-		), 12, MUTED))
+	cards.add_child(_card(current, left, true, can_compare, weapon))
+	cards.add_child(_card(candidate, right, false, can_compare, weapon))
+	if candidate.is_empty():
+		return
+	var changed: int = 0
+	var item_stats: bool = weapon or current.is_empty()
+	var before_stats: Dictionary = left if item_stats else projection.get("before", {})
+	var after_stats: Dictionary = right if item_stats else projection.get("after", {})
+	for metric: Array in ROWS:
+		var before: float = _stat(before_stats, metric[0], metric[3])
+		var after: float = _stat(after_stats, metric[0], metric[3])
+		if is_equal_approx(before, after):
+			continue
+		_add_stat(metric, before, after, not weapon and current.is_empty())
+		changed += 1
+	if changed == 0:
+		add_child(_centered(Sheet.copy("Same numeric bonuses", "Bonus angka sama"), 13, MUTED))
 
-func _data(id: String) -> Dictionary:
-	if id.is_empty():
-		return {}
-	return EquipmentManager._build_effective_item_data(id, EquipmentManager.get_backpack_item_star(id))
-
-func _card(id: String, data: Dictionary, equipped: bool, can_compare: bool) -> PanelContainer:
+func _card(id: String, data: Dictionary, equipped: bool, can_compare: bool, weapon: bool) -> PanelContainer:
 	var accent: Color = Sheet.JADE if equipped else Sheet.GOLD
 	var card := PanelContainer.new()
-	card.name = "EquippedWeapon" if equipped else "CandidateWeapon"
+	card.name = ("EquippedWeapon" if equipped else "CandidateWeapon") if weapon else ("EquippedGear" if equipped else "CandidateGear")
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.mouse_filter = MOUSE_FILTER_IGNORE
 	var skin := StyleBoxFlat.new()
@@ -84,9 +83,11 @@ func _card(id: String, data: Dictionary, equipped: bool, can_compare: bool) -> P
 	column.add_theme_constant_override("separation", 2)
 	card.add_child(column)
 	var badge: String = Sheet.copy("EQUIPPED", "TERPASANG") if equipped else Sheet.copy("CANDIDATE", "KANDIDAT")
-	if id.is_empty() and not equipped:
+	if id.is_empty() and (not equipped or not weapon):
 		column.add_child(_centered(badge, 12, accent))
-		var empty: String = Sheet.copy("Pick another weapon above.", "Pilih senjata lain di atas.") if can_compare else Sheet.copy("No other weapon owned yet.", "Belum punya senjata lain.")
+		var empty: String = Sheet.copy("Slot empty", "Slot kosong")
+		if not equipped:
+			empty = Sheet.copy("Choose an item above.", "Pilih item di atas.") if can_compare else Sheet.copy("No other item owned.", "Belum punya item lain.")
 		var hint: Label = _centered(empty, 13, MUTED)
 		hint.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		column.add_child(hint)
@@ -118,48 +119,46 @@ func _card(id: String, data: Dictionary, equipped: bool, can_compare: bool) -> P
 	var rank: String = Sheet.copy("Starter weapon", "Senjata awal")
 	var rank_color: Color = MUTED
 	if not id.is_empty():
-		rank = "Lv. %d  ·  ★ %d/5" % [int(data.weapon_level), int(data.ascension_star)]
+		rank = "★ %d/5" % int(data.get("ascension_star", 1))
+		if weapon:
+			rank = "Lv. %d  ·  %s" % [int(data.get("weapon_level", 1)), rank]
 		rank_color = Visual.get_rarity_color(str(data.get("rarity", "common")))
 	var progression: Label = _centered(rank, 12, rank_color)
 	progression.name = "WeaponRank"
 	column.add_child(progression)
-	var role: String = str(Guidance.WEAPON_ROLES.get(id, data.get("signature_effect_name", "")))
-	if not role.is_empty():
-		column.add_child(_centered(tr(role), 12, MUTED))
 	return card
 
-func _add_stat(metric: Array, before: float, after: float) -> void:
+func _add_stat(metric: Array, before: float, after: float, empty_slot: bool) -> void:
 	var row := HBoxContainer.new()
 	row.name = str(metric[0])
 	row.mouse_filter = MOUSE_FILTER_IGNORE
 	row.add_theme_constant_override("separation", 4)
 	add_child(row)
 	var suffix: String = "%" if metric[3] else ""
-	var before_label: Label = _centered("%.1f%s" % [before, suffix], 14, Sheet.TEXT)
+	var before_label: Label = _centered("—" if empty_slot else _number(before) + suffix, 14, Sheet.TEXT)
 	before_label.name = "Before"
-	before_label.custom_minimum_size.x = 64
 	before_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(before_label)
 	var caption: Label = _centered(Sheet.copy(metric[1], metric[2]), 12, MUTED)
-	caption.custom_minimum_size.x = 96
+	caption.custom_minimum_size.x = 87
 	row.add_child(caption)
-	var right := HBoxContainer.new()
+	var right := VBoxContainer.new()
 	right.mouse_filter = MOUSE_FILTER_IGNORE
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	right.custom_minimum_size.x = 64
-	right.alignment = BoxContainer.ALIGNMENT_CENTER
-	right.add_theme_constant_override("separation", 5)
+	right.add_theme_constant_override("separation", 0)
 	row.add_child(right)
-	var after_label: Label = _centered("%.1f%s" % [after, suffix], 14, Sheet.TEXT)
+	var shown: float = after - before if empty_slot else after
+	var after_label: Label = _centered(_number(shown) + suffix, 14, Sheet.TEXT)
 	after_label.name = "After"
-	after_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	right.add_child(after_label)
-	var delta: float = snappedf(after - before, .1)
-	if not is_zero_approx(delta):
-		var change: Label = _centered("%+.1f" % delta, 12, Sheet.JADE if delta > 0.0 else DOWN)
+	if not empty_slot:
+		var delta: float = snappedf(after - before, .1)
+		var change: Label = _centered(("+" if delta > 0.0 else "−") + _number(absf(delta)) + suffix, 12, Sheet.JADE if delta > 0.0 else DOWN)
 		change.name = "Change"
-		change.autowrap_mode = TextServer.AUTOWRAP_OFF
 		right.add_child(change)
+
+func _number(value: float) -> String:
+	return str(roundi(value)) if is_equal_approx(value, roundf(value)) else "%.1f" % value
 
 func _stat(data: Dictionary, stat: String, percent: bool) -> float:
 	var raw: float = float(data.get(stat, 0.0))

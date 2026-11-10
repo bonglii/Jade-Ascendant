@@ -1,6 +1,6 @@
 {
-  "state": "docs/checkpoints/SETTINGS_SUMMON_CROWD_2026-11-10.json",
-  "base": "b9f5e2eef79a791f66c42a74f7617b1f7951c3d0",
-  "previous": "docs/checkpoints/PLAYER_DECISIONS_CROWD_2026-11-09.json",
+  "state": "docs/checkpoints/CAMPAIGN_ATMOSPHERE_ENERGY_HERO_2026-11-10.json",
+  "base": "2c5804eb12d2bba2cbf8ee8a3979e23595054b11",
+  "previous": "docs/checkpoints/SETTINGS_SUMMON_CROWD_2026-11-10.json",
   "source_branch": "work/player-polish-20261104"
 }

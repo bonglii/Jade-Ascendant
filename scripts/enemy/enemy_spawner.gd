@@ -34,6 +34,7 @@ const ChapterThreeEnemyVisualCatalog = preload(
 
 var boss_spawned: bool = false
 var spawn_timer: float = 0.0
+var _prepared_boss_qi: bool = false
 var elite_spawned_waves: Dictionary = {}
 var run_kill_count: int = 0
 var formation_enabled: bool = false
@@ -177,6 +178,10 @@ func _process(delta: float) -> void:
 		return
 
 	try_spawn_elite_for_current_wave()
+	if not _prepared_boss_qi and not wave_manager.campaign_durations.is_empty():
+		if wave_manager.current_wave == wave_manager.final_wave - 1 and wave_manager.wave_timer <= 5.0:
+			_prepared_boss_qi = true
+			collect_boss_entry_crystals()
 
 	spawn_timer -= delta
 

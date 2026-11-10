@@ -1012,6 +1012,9 @@ func _finalize_for_exit() -> bool:
 func _on_retry_pressed() -> void:
 	if SaveManager.is_progress_read_only():
 		return
+	if not JourneyManager.selected_stage_has_energy():
+		hint_label.text = "Energy belum cukup. Cek waktu pulih di pemilih stage." if SettingsManager.language == "id" else "Energy is refilling. See the stage picker for the timer."
+		return
 	var selected_stage_data: Dictionary = JourneyManager.get_selected_stage_data()
 	var expected_scene_path: String = str(selected_stage_data.get("scene_path", ""))
 	if expected_scene_path.is_empty() or not ResourceLoader.exists(expected_scene_path):
