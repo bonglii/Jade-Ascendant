@@ -1,6 +1,8 @@
 extends Area2D
 class_name HeavenlySwordRain
 
+const Vfx = preload("res://scripts/effects/weapon_vfx_art.gd")
+
 signal successful_impact(
 	impact_position: Vector2,
 	base_damage: float
@@ -25,9 +27,6 @@ var _locked_target_id: int = 0
 var _impact_visual_elapsed: float = 0.0
 
 var telegraph_ring: Line2D = null
-var middle_ring: Line2D = null
-var inner_marker: Line2D = null
-var descent_glow: Line2D = null
 
 @onready var collision_shape: CollisionShape2D = (
 	get_node_or_null("CollisionShape2D")
@@ -38,7 +37,6 @@ var descent_glow: Line2D = null
 
 
 func _ready() -> void:
-	preload("res://scripts/effects/skill_instance_polish.gd").install(self, "heavenly_sword_rain")
 	z_index = 2
 	collision_layer = 0
 	collision_mask = 2
@@ -152,26 +150,9 @@ func create_telegraph_visual() -> void:
 	# Area shows its true radius. Sequence marks one selected target.
 	var mark_radius := strike_radius if _locked_target_id == 0 else minf(14.0, strike_radius)
 	telegraph_ring = _make_line(create_ring_points(mark_radius), 2.6, Color(0.66, 0.90, 1.0, 0.74))
-	if _locked_target_id == 0:
-		middle_ring = _make_line(create_ring_points(strike_radius * 0.70), 1.5, Color(0.80, 0.95, 1.0, 0.46))
-		inner_marker = _make_line(create_ring_points(strike_radius * 0.34), 1.2, Color(0.92, 0.99, 1.0, 0.42))
-
-	var tween := create_tween()
-	tween.set_parallel(true)
-
-	for ring in [
-		telegraph_ring,
-		middle_ring,
-		inner_marker
-	]:
-		if ring == null:
-			continue
-		tween.tween_property(
-			ring,
-			"scale",
-			Vector2.ONE,
-			telegraph_duration
-		)
+	telegraph_ring.modulate.a = 0.70
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(telegraph_ring, "modulate:a", 1.0, telegraph_duration)
 
 	if sword_sprite != null:
 		sword_sprite.texture = CelArt.frame("blades",0)
@@ -207,14 +188,8 @@ func create_telegraph_visual() -> void:
 
 
 func hide_telegraph_visual() -> void:
-	for line in [
-		telegraph_ring,
-		middle_ring,
-		inner_marker,
-		descent_glow
-	]:
-		if line != null:
-			line.visible = false
+	if telegraph_ring != null:
+		telegraph_ring.hide()
 
 
 func create_impact_visual() -> void:
@@ -244,11 +219,12 @@ func _draw() -> void:
 	if not has_impacted: return
 	var t: float = clampf(_impact_visual_elapsed / IMPACT_VISUAL_DURATION,0,1)
 	var fade: float = pow(1.0-t,1.6)
-	var reduced: bool = SettingsManager.reduced_effects
+	var reduced: bool = Vfx.low_detail(self)
 	var visual_radius := strike_radius if _locked_target_id == 0 else minf(14.0, strike_radius)
 	CelArt.paint(self,"impacts",4,Vector2.ZERO,Vector2.ONE*visual_radius*lerpf(1.15,2.0,1.0-pow(1.0-t,2)),0,fade)
 	if not reduced:
-		CelArt.paint(self,"blades",3,Vector2.ZERO,Vector2.ONE*visual_radius*1.75,t*.22,fade*.72)
+		Vfx.curls(self, Vector2.ZERO, visual_radius, t * 0.52, Color(0.65, 0.88, 1.0, fade * 0.68))
+		CelArt.paint(self, "blades", 3, Vector2.ZERO, Vector2.ONE * visual_radius * 1.75, t * 0.22, fade * 0.52)
 	# Single true-radius boundary; the painted plume is purely vertical debris.
 	draw_arc(Vector2.ZERO,visual_radius*lerpf(.4,1,t),0,TAU,40,Color(.62,.9,1,fade*.60),1.2,true)
 

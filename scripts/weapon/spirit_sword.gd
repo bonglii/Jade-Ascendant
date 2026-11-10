@@ -1,5 +1,7 @@
 extends Area2D
 
+const Vfx = preload("res://scripts/effects/weapon_vfx_art.gd")
+
 signal critical_hit_confirmed(
 	source_projectile: Area2D,
 	hit_enemy: Node2D,
@@ -42,48 +44,40 @@ func configure_combat_profile(profile: Dictionary) -> void:
 
 
 func _ready() -> void:
-	preload("res://scripts/effects/skill_instance_polish.gd").install(self, "spirit_sword")
+	add_to_group(Vfx.CACHED_DRAW_GROUP)
 	_apply_combat_profile()
 
 
 func _apply_combat_profile() -> void:
 	var sprite := get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
-	var glow := get_node_or_null("QiTrailGlow") as Line2D
-	var trail := get_node_or_null("QiTrail") as Line2D
-	var core := get_node_or_null("QiTrailCore") as Line2D
-
 	if sprite != null:
 		sprite.visible = bool(combat_profile.get("sprite_visible", true))
-		var sprite_tint: Color = combat_profile.get("sprite_tint", Color.WHITE)
-		sprite.modulate = sprite_tint
-	if glow != null:
-		glow.default_color = combat_profile.get("trail_glow", glow.default_color)
-		glow.width = float(combat_profile.get("trail_glow_width", 12.0))
-	if trail != null:
-		trail.default_color = combat_profile.get("trail_main", trail.default_color)
-		trail.width = float(combat_profile.get("trail_main_width", 5.5))
-	if core != null:
-		core.default_color = combat_profile.get("trail_core", core.default_color)
-		core.width = float(combat_profile.get("trail_core_width", 2.0))
+		sprite.modulate = combat_profile.get("sprite_tint", Color.WHITE)
 
 	has_equipment_art = preload("res://scripts/weapon/equipment_weapon_art.gd").apply(self, str(combat_profile.get("armament_id", "")))
 	queue_redraw()
 
 
 func _draw() -> void:
-	if has_equipment_art: return
 	var motif: String = str(combat_profile.get("motif", "none"))
-	if motif == "none":
+	var main_color: Color = combat_profile.get("trail_main", Color(0.27, 0.90, 0.85, 0.38))
+	var core_color: Color = combat_profile.get("trail_core", Color(0.78, 1.0, 0.94, 0.72))
+	if is_resonance_projectile:
+		main_color = Color(0.32, 0.72, 1.0, 0.53)
+		core_color = Color(0.82, 0.96, 1.0, 0.90)
+	var light: bool = Vfx.low_detail(self)
+	var width: float = float(combat_profile.get("trail_glow_width", 12.0))
+	var length: float = 40.0 if light else 52.0 + width * 0.45
+	var lean: float = -1.0 if motif in ["moon_saber", "mist_ribbons"] else 1.0
+	Vfx.ribbon(self, Vector2(-3, 0), Vector2.RIGHT, Vector2(length, width),
+		main_color, core_color, lean)
+	if light:
 		return
-
-	var main_color: Color = combat_profile.get(
-		"trail_main",
-		Color(0.27, 0.90, 0.85, 0.38)
-	)
-	var core_color: Color = combat_profile.get(
-		"trail_core",
-		Color(0.78, 1.0, 0.94, 0.72)
-	)
+	if is_resonance_projectile or motif in ["mirror_blade", "sunfire_dragon", "seal_fan", "mist_ribbons"]:
+		Vfx.ribbon(self, Vector2(-11, 3), Vector2.RIGHT, Vector2(length * 0.70, width * 1.30),
+			Color(core_color, 0.21), Color(core_color, 0.48), -lean)
+	if has_equipment_art or motif == "none":
+		return
 
 	match motif:
 		"jade_mark":

@@ -70,6 +70,25 @@ func run() -> void:
 	paused=true;await settle()
 	check(feedback.weapon_impacts[feedback.weapon_impact_cursor].left==left,"new impacts freeze while paused")
 	paused=false
+	var settings: Node = root.get_node("SettingsManager")
+	var dense: Array[Node] = []
+	for index: int in range(80):
+		var prop := Node2D.new()
+		prop.add_to_group("enemy")
+		current_scene.add_child(prop)
+		dense.append(prop)
+	check(feedback._weapon_impact_capacity() == 16, "dense combat bounds visible impact layers")
+	settings.quiet_player_vfx = true
+	check(feedback._weapon_impact_capacity() == 12, "Quiet Player Ornament shares the lower visual budget")
+	var budget_art: Script = load("res://scripts/effects/weapon_vfx_art.gd")
+	check(budget_art.low_detail(enemy), "affected spells use the same quiet or crowd quality gate")
+	settings.quiet_player_vfx = false
+	for prop: Node in dense:
+		prop.free()
+	check(feedback._weapon_impact_capacity() == 32 and not budget_art.low_detail(enemy),
+		"full detail returns when the crowd clears")
+	check(Art.hit_index("heavenweaver_compass") == 5 and Art.hit_index("gale_parasol") == 0,
+		"dragon and wind hits use their authored impact families")
 	feedback._reset_feedback()
 	check(feedback.weapon_impacts.all(func(e: Dictionary):return e.is_empty()),"transition clears pooled impacts")
 	w.clear_blades();w.free();await settle()

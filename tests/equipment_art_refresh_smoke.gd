@@ -16,7 +16,12 @@ func run() -> void:
  var art: Script=load("res://scripts/weapon/equipment_weapon_art.gd")
  var manifest: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://assets/ui/equipment/imperial_v3/asset_sources.json"))
  var mail: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://backend/player_identity/mail_reward_catalog.json"))
- check(manifest.assets.size()==40 and art.ENTRIES.size()==8,"exact40 old items and8 old armaments")
+ check(manifest.assets.size()==40,"legacy equipment art manifest keeps all 40 items")
+ var legacy_armaments: int=0
+ for item: Dictionary in manifest.assets:
+  if item.id in art.ENTRIES:
+   legacy_armaments+=1
+ check(legacy_armaments==8,"all eight legacy armament sprites retain their presentation mapping")
  for item: Dictionary in manifest.assets:
   var path: String=visuals.get_icon_path(item.id)
   check(path==item.ui_path,"canonical UI texture "+item.id)

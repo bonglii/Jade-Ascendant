@@ -1,5 +1,6 @@
 extends Node2D
 
+const Vfx = preload("res://scripts/effects/weapon_vfx_art.gd")
 const Ledger = preload("res://scripts/weapon/run_combat_ledger.gd")
 const SetRuntime = preload("res://scripts/data/equipment_set_runtime.gd")
 const RADIUS: float = 148.0
@@ -69,9 +70,7 @@ func _draw() -> void:
 	if _radius <= 1.0 or alpha <= 0.0:
 		return
 	draw_arc(Vector2.ZERO, _radius, 0.0, TAU, 48, Color(0.70, 1.0, 0.76, alpha * 0.85), 2.6, true)
-	if SettingsManager.reduced_effects:
-		return
-	for i in range(6):
-		var start: float = TAU * i / 6.0 - _age * 2.0
-		draw_arc(Vector2.ZERO, _radius * 0.88, start, start + 0.46, 8,
-			Color(0.26, 0.79, 0.63, alpha * 0.5), 3.5, true)
+	if not Vfx.low_detail(self):
+		Vfx.curls(self, Vector2.ZERO, _radius, -_age * 3.0, Color(0.40, 0.92, 0.70, alpha * 0.72), 6)
+		Vfx.curls(self, Vector2.ZERO, _radius * 0.69, _age * 3.0 + 0.40,
+			Color(0.82, 0.93, 0.57, alpha * 0.38), 3)

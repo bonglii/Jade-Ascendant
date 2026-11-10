@@ -3,12 +3,14 @@ extends Node2D
 ## Fixed storage, one canvas draw, no per-hit Label/Line2D/particle nodes.
 const ActorPresentation = preload("res://scripts/effects/actor_presentation.gd")
 const CelArt = preload("res://scripts/effects/combat_cel_art.gd")
+const Vfx = preload("res://scripts/effects/weapon_vfx_art.gd")
 const WEAPON_IMPACT_CAPACITY: int = 32
-const CROWDED_ENEMY_COUNT: int = 80
+const CROWDED_ENEMY_COUNT: int = Vfx.CROWD_COUNT
 const CROWD_RECOVERY_COUNT: int = 72
 const REGULAR_POSE_GROUP: StringName = &"regular_enemy_pose"
 var _redraw_left: float = 0.0
 var _crowd_idle: bool = false
+var _weapon_low_detail: bool = false
 var weapon_impacts: Array[Dictionary] = []
 var weapon_impact_cursor: int = 0
 const POOL_SIZE: int = 96
@@ -63,10 +65,11 @@ func weapon_impact(point: Vector2, source: String) -> void:
 		active_scene = get_tree().current_scene
 	# Applied HP loss already verified by RunCombatLedger. Fixed ring buffer,
 	# no timers/tweens/nodes per hit and no extra camera shake.
-	weapon_impact_cursor = (weapon_impact_cursor + 1) % (12 if SettingsManager.reduced_effects else 16 if _crowded() else WEAPON_IMPACT_CAPACITY)
+	weapon_impact_cursor = (weapon_impact_cursor + 1) % _weapon_impact_capacity()
 	var entry: Dictionary = weapon_impacts[weapon_impact_cursor]
 	entry.clear()
-	entry.merge({"position":point,"index":CelArt.hit_index(source),"left":0.26,"duration":0.26})
+	entry.merge({"position":point, "index":CelArt.hit_index(source), "source":source,
+		"left":0.26, "duration":0.26})
 	_activate_feedback()
 
 func register_actor(actor: Node2D) -> void:
@@ -276,6 +279,11 @@ func _activate_feedback() -> void:
 func _crowded() -> bool:
 	return get_tree().get_node_count_in_group(&"enemy") >= CROWDED_ENEMY_COUNT
 
+func _weapon_impact_capacity() -> int:
+	if Vfx.quiet():
+		return 12
+	return 16 if _crowded() else WEAPON_IMPACT_CAPACITY
+
 func _next_effect() -> Dictionary:
 	# Bounded cosmetic overdraw only. HP loss, ledger totals and critical rolls already happened.
 	var capacity: int = 32 if SettingsManager.reduced_effects else 48 if _crowded() else POOL_SIZE
@@ -293,7 +301,12 @@ func _process(delta: float) -> void:
 	# Dense crowds keep authored sprite frames. Only the generic passive pose
 	# sleeps. Casts and hit reactions wake it on demand.
 	var cutoff: int = CROWD_RECOVERY_COUNT if _crowd_idle else CROWDED_ENEMY_COUNT
-	var crowd_idle: bool = get_tree().get_node_count_in_group(&"enemy") >= cutoff
+	var enemy_count: int = get_tree().get_node_count_in_group(&"enemy")
+	var low_detail: bool = Vfx.quiet() or enemy_count >= CROWDED_ENEMY_COUNT
+	if low_detail != _weapon_low_detail:
+		_weapon_low_detail = low_detail
+		get_tree().call_group(Vfx.CACHED_DRAW_GROUP, &"queue_redraw")
+	var crowd_idle: bool = enemy_count >= cutoff
 	if _crowd_idle != crowd_idle:
 		_crowd_idle = crowd_idle
 		get_tree().call_group(REGULAR_POSE_GROUP, &"set_crowd_idle", _crowd_idle)
@@ -382,12 +395,33 @@ func _reset_feedback() -> void:
 	queue_redraw()
 
 func _draw() -> void:
-	for entry: Dictionary in weapon_impacts:
-		if float(entry.get("left",0.0)) <= 0.0: continue
-		var progress: float = 1.0 - float(entry.left)/float(entry.duration)
-		var extent: float = lerpf(28.0,54.0,1.0-pow(1.0-progress,2.0))
-		if SettingsManager.reduced_effects: extent *= 0.60
-		CelArt.paint(self,"impacts",int(entry.index),entry.position,Vector2.ONE*extent,0.0,pow(1.0-progress,1.35))
+	var impact_capacity: int = _weapon_impact_capacity()
+	var light_impacts: bool = impact_capacity < WEAPON_IMPACT_CAPACITY
+	for index in range(impact_capacity):
+		var entry: Dictionary = weapon_impacts[index]
+		if float(entry.get("left", 0.0)) <= 0.0:
+			continue
+		var progress: float = 1.0 - float(entry.left) / float(entry.duration)
+		var fade: float = pow(1.0 - progress, 1.35)
+		var extent: float = lerpf(28.0, 54.0, 1.0 - pow(1.0 - progress, 2.0))
+		if light_impacts:
+			extent *= 0.68
+		var aspect := Vector2.ONE
+		var angle: float = 0.0
+		match entry.source:
+			"gale_parasol":
+				aspect = Vector2(1.24, 0.68)
+				angle = -progress * 0.46
+			"celestial_returning_glaive":
+				aspect = Vector2(1.05, 0.83)
+				angle = progress * 0.92
+			"heavenweaver_compass":
+				aspect = Vector2(1.03, 0.82)
+				angle = -progress * 0.60
+			"phoenix_war_fan":
+				aspect = Vector2(1.10, 0.85)
+				angle = progress * 0.38
+		CelArt.paint(self, "impacts", int(entry.index), entry.position, aspect * extent, angle, fade)
 	for entry in effects:
 		var left: float = float(entry.get("left", 0.0))
 		if left <= 0.0:

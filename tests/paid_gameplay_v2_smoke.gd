@@ -33,6 +33,15 @@ func run() -> void:
  check(Paid.local_catalog_hash()==Paid.HASH,"shipping catalog pin")
  var good: Dictionary=state()
  check(Paid.valid_snapshot(good,"a".repeat(64)),"known valid contract")
+ for id: String in ["gale_parasol","galeweave_robe","galeweave_bracer","galeweave_boots","galeweave_pendant"]:
+  var pack_snapshot: Dictionary=good.duplicate(true)
+  pack_snapshot.inventory[id]=1
+  pack_snapshot.stars[id]=1
+  check(not Paid.valid_snapshot(pack_snapshot,"a".repeat(64)), "fixed offer item excluded from paid summon ownership " + id)
+  var item: Dictionary=equipment.get_item_data(id)
+  check(not Paid.valid_command({"kind":"equip","item_id":id,"slot":item.slot,
+   "request_id":"12345678-1234-4123-8123-1234567890ab","expected_revision":0}),
+   "fixed offer item excluded from paid summon equip " + id)
  var decoded: Variant=JSON.parse_string(JSON.stringify(good))
  check(Paid.valid_snapshot(decoded,"a".repeat(64)),"actual Godot JSON floating-number decoding")
  check(not Paid.valid_snapshot(good,"b".repeat(64)),"account isolation")

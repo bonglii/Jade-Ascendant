@@ -5,6 +5,7 @@ class_name ThunderTalismanStrike
 ## authoritative in ThunderTalismanWeapon; this Node2D never deals damage.
 ## One CanvasItem draw instead of spawning Line2D and Tween nodes.
 
+const Vfx = preload("res://scripts/effects/weapon_vfx_art.gd")
 const EFFECT_DURATION: float = 0.24
 const LIGHTNING_SEGMENTS: int = 9
 const IMPACT_SEGMENTS: int = 36
@@ -13,13 +14,13 @@ const IMPACT_SEGMENTS: int = 36
 
 var _target_local: Vector2 = Vector2.ZERO
 var _bolt_points: PackedVector2Array = PackedVector2Array()
+var _forks: Array[PackedVector2Array] = []
 var _elapsed: float = 0.0
 var _effect_active: bool = false
 var _show_source_seal: bool = false
 
 
 func _ready() -> void:
-	preload("res://scripts/effects/skill_instance_polish.gd").install(self, "thunder_talisman")
 	set_process(false)
 	talisman_sprite.visible = false
 
@@ -57,6 +58,7 @@ func _align_to_player_combat_origin() -> void:
 
 func _build_bolt_points() -> void:
 	_bolt_points.clear()
+	_forks.clear()
 	var length: float = _target_local.length()
 	if length <= 0.001:
 		return
@@ -75,6 +77,11 @@ func _build_bolt_points() -> void:
 		)
 
 	_bolt_points.append(_target_local)
+	for index: int in [2, 4, 6]:
+		var join: Vector2 = _bolt_points[index]
+		var fork: Vector2 = perpendicular * (1.0 if index == 4 else -1.0)
+		_forks.append(PackedVector2Array([join, join + direction * 7.0 + fork * 13.0,
+			join + direction * 18.0 + fork * 17.0, join + direction * 25.0 + fork * 28.0]))
 
 
 func _process(delta: float) -> void:
@@ -95,7 +102,7 @@ func _draw() -> void:
 	var progress: float = clampf(_elapsed / EFFECT_DURATION, 0.0, 1.0)
 	var remaining: float = 1.0 - progress
 	var alpha: float = remaining * remaining
-	var reduced: bool = SettingsManager.reduced_effects
+	var reduced: bool = Vfx.low_detail(self)
 
 	# The actual casting origin stays distinct from the enemy impact endpoint.
 	if _show_source_seal and not reduced:
@@ -123,6 +130,10 @@ func _draw() -> void:
 			2.8, true
 		)
 
+	if not reduced:
+		for fork: PackedVector2Array in _forks:
+			draw_polyline(fork, Color(0.49, 0.79, 1.0, alpha * 0.64), 1.6, true)
+
 	# The ring marks one real struck target; it is not an AoE danger indicator.
 	var impact_radius: float = 8.0 * (1.0 + progress * 1.6)
 	if not reduced:
@@ -140,14 +151,5 @@ func _draw() -> void:
 	)
 
 	if not reduced:
-		for index in range(8):
-			var direction: Vector2 = Vector2.RIGHT.rotated(
-				float(index) * TAU / 8.0
-			)
-			var ray_length: float = 24.0 if index % 2 == 0 else 18.0
-			draw_line(
-				_target_local + direction * 7.0,
-				_target_local + direction * ray_length,
-				Color(0.72, 0.94, 1.0, 0.76 * alpha),
-				1.7, true
-			)
+		Vfx.curls(self, _target_local, impact_radius * 1.25, progress * 0.74,
+			Color(0.71, 0.94, 1.0, alpha * 0.82), 3)

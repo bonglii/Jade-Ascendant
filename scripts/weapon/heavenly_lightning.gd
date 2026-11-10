@@ -4,6 +4,7 @@ class_name HeavenlyLightning
 ## Instantaneous AoE called by Heavenly Tribulation.
 ## No fake wind-up is added. Premium visuals exist only at actual impact time.
 
+const Vfx = preload("res://scripts/effects/weapon_vfx_art.gd")
 const DEFAULT_RADIUS: float = 64.0
 const ENEMY_COLLISION_MASK: int = 2
 const MAX_QUERY_RESULTS: int = 64
@@ -22,7 +23,6 @@ var _visual_active: bool = false
 
 
 func _ready() -> void:
-	preload("res://scripts/effects/skill_instance_polish.gd").install(self, "heavenly_tribulation")
 	z_index = 5
 	collision_layer = 0
 	collision_mask = ENEMY_COLLISION_MASK
@@ -121,7 +121,7 @@ func _draw() -> void:
 		0.0, 1.0
 	)
 	var fade: float = (1.0 - progress) * (1.0 - progress)
-	var reduced: bool = SettingsManager.reduced_effects
+	var reduced: bool = Vfx.low_detail(self)
 	var hit_radius: float = maxf(lightning_radius, 0.01)
 	var expanding_radius: float = hit_radius * lerpf(0.45, 1.0, progress)
 
@@ -140,17 +140,11 @@ func _draw() -> void:
 		Color(0.92, 1.0, 0.91, 0.86 * fade), 1.8, true
 	)
 
-	var ray_count: int = 4 if reduced else 10
-	for index in range(ray_count):
-		var direction: Vector2 = Vector2.RIGHT.rotated(
-			TAU * float(index) / float(ray_count)
-		)
-		draw_line(
-			direction * hit_radius * 0.12,
-			direction * hit_radius * 0.86,
-			Color(0.68, 0.93, 1.0, 0.72 * fade),
-			1.8 if index % 2 == 0 else 1.2, true
-		)
+	if not reduced:
+		Vfx.curls(self, Vector2.ZERO, expanding_radius, progress * 0.80,
+			Color(0.68, 0.93, 1.0, fade * 0.84), 5)
+		preload("res://scripts/effects/combat_cel_art.gd").paint(self, "impacts", 2,
+			Vector2.ZERO, Vector2.ONE * hit_radius * 1.60, progress * 0.36, fade * 0.60)
 
 	# A small gold center identifies Tribulation as an empowered PLAYER hit.
 	# It stays far inside the gameplay radius and does not suggest another AoE.

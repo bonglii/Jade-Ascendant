@@ -1,6 +1,8 @@
 extends Area2D
 class_name YinYangBlade
 
+const Vfx = preload("res://scripts/effects/weapon_vfx_art.gd")
+
 signal body_contacted(body: Node)
 
 var orbit_angle: float = 0.0
@@ -16,7 +18,7 @@ var reversal_visual_active: bool = false
 
 
 func _ready() -> void:
-	preload("res://scripts/effects/skill_instance_polish.gd").install(self, "yin_yang_blades")
+	add_to_group(Vfx.CACHED_DRAW_GROUP)
 	collision_layer = 0
 	collision_mask = 2
 	monitoring = true
@@ -116,7 +118,13 @@ func apply_reversal_visual() -> void:
 
 
 func _draw() -> void:
-	if SettingsManager.reduced_effects: return
-	var art = preload("res://scripts/effects/combat_cel_art.gd")
-	# Painted crescent qi, not an octagonal halo. No visual changes the collider.
-	art.paint(self,"impacts",0,Vector2(-14,0),Vector2(42,22),PI*.08,.24 if not reversal_visual_active else .48)
+	if Vfx.low_detail(self):
+		return
+	var tint: Color = Color("#ffc46b") if polarity == &"yang" else Color("#72e5d0")
+	var bright: bool = reversal_visual_active
+	Vfx.ribbon(self, Vector2(-6, 0), Vector2.RIGHT, Vector2(42 if bright else 30, 13),
+		Color(tint, 0.48 if bright else 0.30), Color(tint.lightened(0.45), 0.80),
+		1.0 if polarity == &"yang" else -1.0)
+	if bright:
+		Vfx.ribbon(self, Vector2(-9, 3), Vector2.RIGHT, Vector2(31, 10),
+			Color(tint, 0.24), Color(tint, 0.65), -1.0)

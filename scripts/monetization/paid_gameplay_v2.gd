@@ -133,12 +133,17 @@ func can_queue_summon_after_read(count: int) -> bool:
 	return count in [1,10] and verified_read_in_flight() and paid_balance() >= (100 if count == 1 else 900)
 func can_summon(count: int) -> bool:
 	return count in [1, 10] and is_verified_ready() and not busy and _read_pending().is_empty() and paid_balance() >= (100 if count == 1 else 900)
+static func _is_paid_catalog_item(id: String) -> bool:
+	var item: Dictionary = Catalog.ITEMS.get(id, {})
+	# Event grants and fixed Starter Pack items have separate ownership routes.
+	return not item.is_empty() and not bool(item.get("retired", false)) and not bool(item.get("event_only", false)) and not bool(item.get("starter_pack", false))
+
 static func local_catalog_hash() -> String:
 	var ids: Array = Catalog.ITEMS.keys(); ids.sort()
 	var items: Array = []
 	for id: String in ids:
-		var item: Dictionary = Catalog.ITEMS[id]
-		if not bool(item.get("retired", false)) and not bool(item.get("event_only", false)):
+		if _is_paid_catalog_item(id):
+			var item: Dictionary = Catalog.ITEMS[id]
 			items.append({"id": id, "rarity": item.rarity, "slot": item.slot})
 	return JSON.stringify(items).sha256_text()
 func _bridge() -> Object:
@@ -176,7 +181,7 @@ static func valid_command(cmd: Dictionary) -> bool:
 	if cmd.has("item_id"):
 		if not cmd.item_id is String: return false
 		var id: String=cmd.item_id
-		if id!="" and (not Catalog.ITEMS.has(id) or bool(Catalog.ITEMS[id].get("retired",false))): return false
+		if id!="" and not _is_paid_catalog_item(id): return false
 		if kind=="refine" and id=="": return false
 		if kind=="wish" and id!="" and str(Catalog.ITEMS[id].rarity)!="legendary": return false
 		if kind=="equip" and (cmd.get("slot") not in SLOTS or (id!="" and str(Catalog.ITEMS[id].slot)!=cmd.slot)): return false
@@ -272,7 +277,7 @@ static func valid_snapshot(value: Dictionary, binding: String) -> bool:
 	if value.wallet.size() != 2 or not _whole(value.wallet.get("balance"),0,9007199254740991) or not _whole(value.wallet.get("revision"),0,9007199254740991): return false
 	if value.inventory.size() > 56 or value.inventory.size() != value.stars.size(): return false
 	for id: String in value.inventory:
-		if not Catalog.ITEMS.has(id) or bool(Catalog.ITEMS[id].get("retired", false)) or not _whole(value.inventory[id], 1) or not _whole(value.stars.get(id),1,5): return false
+		if not _is_paid_catalog_item(id) or not _whole(value.inventory[id], 1) or not _whole(value.stars.get(id),1,5): return false
 	if value.slots.size() != 5: return false
 	for slot: String in SLOTS:
 		var id: Variant = value.slots.get(slot)
@@ -285,7 +290,7 @@ static func valid_snapshot(value: Dictionary, binding: String) -> bool:
 		if not _whole(value.rates.get(key), rates[key], rates[key]): return false
 	if not value.get("wish") is String or not value.get("wish_guaranteed") is bool or not _whole(value.get("lifetime_pulls")): return false
 	var wish: String = value.wish
-	if not wish.is_empty() and (not Catalog.ITEMS.has(wish) or str(Catalog.ITEMS[wish].rarity) != "legendary" or bool(Catalog.ITEMS[wish].get("retired",false))): return false
+	if not wish.is_empty() and (not _is_paid_catalog_item(wish) or str(Catalog.ITEMS[wish].rarity) != "legendary"): return false
 	if bool(value.wish_guaranteed) and wish.is_empty(): return false
 	if value.state != "ready" and (not value.inventory.is_empty() or int(value.revision) != 0): return false
 	return true

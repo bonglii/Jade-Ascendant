@@ -50,7 +50,7 @@ func run() -> void:
   check(target.current_hp<10000,"moving boss takes damage at level "+str(combat_level))
   check(is_equal_approx(courier.applied_total,10000-target.current_hp),"applied HP loss accounts for every hit/echo")
   check(courier.heads.size()==(2 if combat_level==7 else 1),"dragon milestone "+str(combat_level))
-  check(courier.echoes.size()<=2 and courier.impacts.size()<=8,"bounded delayed effects")
+  check(courier.echoes.size()<=2 and root.get_node("CombatFeedback").weapon_impacts.size()==32,"bounded delayed effects")
   target.position=Vector2(301,0)
   var hp: float=target.current_hp
   for frame: int in 60:

@@ -80,7 +80,7 @@ func run() -> void:
     check(is_equal_approx(loss,float(ledger.totals.get("heavenweaver_compass",0))),"exact applied damage ledger")
     check(get_nodes_in_group("heavenweaver_cast").size()==1,"one persistent actor")
     check(weapon.pursuit.heads.size()==(2 if lv==7 else 1),"dragon milestone")
-    check(weapon.pursuit.echoes.size()<=2 and weapon.pursuit.impacts.size()<=8,"bounded echo/impact buffers")
+    check(weapon.pursuit.echoes.size()<=2 and root.get_node("CombatFeedback").weapon_impacts.size()==32,"bounded echo/impact buffers")
     measurements.append({"level":lv,"speed":speed,"mode":mode,"damage_10s":snappedf(loss,.001),"dps":snappedf(loss/10,.001)})
     var saved: Dictionary=ledger.snapshot();ledger.restore(saved)
     check(is_equal_approx(float(ledger.totals.get("heavenweaver_compass",0)),loss),"Continue keeps damage total")

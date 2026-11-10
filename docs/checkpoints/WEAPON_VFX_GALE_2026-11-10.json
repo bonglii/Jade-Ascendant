@@ -1,0 +1,42 @@
+{
+  "base": "dbab0151a3be7ede71646284b75dbe2227795eac",
+  "source_branch": "work/gale-starter-20261110",
+  "previous": "docs/checkpoints/GALE_STARTER_2026-11-10.json",
+  "scope": [
+    "Polish all current player weapon VFX and the retained bell presentation: classic armament profiles, Fire Orb and Cinder Bloom, Thunder Talisman, Heavenly Tribulation, Heavenly Sword Rain, Yin-Yang and Reversal, Eight Trigrams, Jade Binding Chain, Returning Glaive, Phoenix War Fan, Void Piercer Spear, Heavenweaver Compass and Gale Parasol",
+    "Replace redundant per-projectile decorations and duplicate impact flashes with scene-owned cached drawing and the existing pooled confirmed-hit renderer",
+    "Bound impact layers to 32 normal, 16 crowded and 12 reduced or quiet. Keep collision outlines, projectile silhouettes and active cast states in lower detail",
+    "Keep draft Starter Pack items outside the authenticated paid-summon catalog, commands and snapshots, preserving the existing server catalog hash"
+  ],
+  "validation": {
+    "engine": "Godot 4.7.2 Linux headless",
+    "checks": 1444,
+    "failures": 0,
+    "suites": {
+      "combat_cel_smoke": 93,
+      "combat_skill_polish_smoke": 261,
+      "weapon_projectile_accounting": 56,
+      "equipment_art_refresh_smoke": 209,
+      "ascendant_arsenal_smoke": 74,
+      "returning_glaive_smoke": 66,
+      "jade_binding_chain_smoke": 59,
+      "compass_pursuit_smoke": 195,
+      "odyssey_combat_smoke": 30,
+      "crowd_performance_smoke": 284,
+      "gale_starter_smoke": 49,
+      "paid_gameplay_v2_smoke": 68
+    },
+    "limits": "Native GPU composition, Android frame times and phone QA are unconfirmed. A few headless fixtures report retained resources at exit. QA artifacts and save data are outside the source project."
+  },
+  "delivery": {
+    "source": "Branch HEAD with this checkpoint",
+    "owner_install": "UNCONFIRMED",
+    "windows_qa": "UNCONFIRMED",
+    "android_export": "UNCONFIRMED",
+    "closed_test": "UNCONFIRMED",
+    "phone_qa": "UNCONFIRMED",
+    "backend_deploy": "NOT_RUN"
+  },
+  "starter_pack": "Debug preview after Stage 1-5. Rp39.000 target. Checkout disabled pending verified separate ownership, restore, refund and Play product configuration.",
+  "next_action": "Owner fetches and fast-forwards work/gale-starter-20261110, then validates the native build before exporting for closed testing. Battle Pass is deferred by the owner."
+}

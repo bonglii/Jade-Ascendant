@@ -1,4 +1,5 @@
 extends Node2D
+const Vfx = preload("res://scripts/effects/weapon_vfx_art.gd")
 const Reach=preload("res://scripts/data/weapon_reach.gd")
 ## One persistent courier, maximum two dragon meshes. Damage is cadence-gated,
 ## never driven by frame count or by the decorative trail. No ownership bypass.
@@ -25,7 +26,6 @@ var amount: float = 0.0
 var resonance_used: bool = false
 var heads: Array[Dictionary] = []
 var echoes: Array[Dictionary] = []
-var impacts: Array[Dictionary] = []
 var applied_total: float = 0.0
 static func living(value: Variant) -> bool:
 	return is_instance_valid(value) and value is Node2D and not value.is_queued_for_deletion() and value.is_in_group("enemy") and not bool(value.get("is_dead")) and value.has_method("take_damage")
@@ -75,6 +75,7 @@ func _physics_process(delta: float) -> void:
 	pending = maxf(0.0, pending - delta)
 	refresh_left -= delta
 	mesh_left -= delta
+	var mesh_interval: float = 1.0 / 30.0 if Vfx.low_detail(self) else 1.0 / 60.0
 	if refresh_left <= 0.0 or heads.any(func(h: Dictionary) -> bool: return _target(h) != null and not living(_target(h))):
 		_refresh_targets(player)
 		refresh_left = REFRESH
@@ -96,8 +97,10 @@ func _physics_process(delta: float) -> void:
 			var applied: float = _hit(player, target, hit_amount, true)
 			if applied > 0.0 and combat_level >= 5:
 				if echoes.size() < 2: echoes.append({"target": weakref(target), "left": 0.12, "amount": hit_amount * 0.25})
-		if mesh_left <= 0.0: _update_dragon(head, 1.0 / 30.0 if SettingsManager.reduced_effects else 1.0 / 60.0, index)
-	if mesh_left <= 0.0: mesh_left = 1.0 / 30.0 if SettingsManager.reduced_effects else 1.0 / 60.0
+		if mesh_left <= 0.0: _update_dragon(head, mesh_interval, index)
+	if mesh_left <= 0.0:
+		mesh_left = mesh_interval
+		queue_redraw()
 	for i: int in range(echoes.size() - 1, -1, -1):
 		var echo: Dictionary = echoes[i]
 		echo.left -= delta
@@ -105,10 +108,6 @@ func _physics_process(delta: float) -> void:
 		var target: Node2D = echo.target.get_ref() as Node2D
 		if living(target) and in_range(player, target): _hit(player, target, float(echo.amount), false)
 		echoes.remove_at(i)
-	for i: int in range(impacts.size() - 1, -1, -1):
-		impacts[i].left -= delta
-		if float(impacts[i].left) <= 0.0: impacts.remove_at(i)
-	queue_redraw()
 func _target(head: Dictionary) -> Node2D:
 	return head.target.get_ref() as Node2D if head.target != null else null
 func _refresh_targets(player: Node2D) -> void:
@@ -141,9 +140,6 @@ func _hit(player: Node2D, enemy: Node2D, damage: float, can_resonate: bool) -> f
 	CombatFeedback.mark_next_hit_critical(enemy, bool(result.is_critical))
 	var applied: float = Ledger.apply_hit(enemy, float(result.damage), "heavenweaver_compass")
 	applied_total += applied
-	if applied > 0.0:
-		if impacts.size() >= 8: impacts.pop_front()
-		impacts.append({"point": enemy.global_position, "left": 0.26, "echo": not can_resonate})
 	if applied > 0.0 and can_resonate and not resonance_used and bool(result.is_critical) and bool(stats.call("has_sword_dao_resonance")) and living(enemy):
 		resonance_used = true
 		var bonus: Dictionary = stats.call("calculate_damage_result", damage * 0.4)
@@ -210,17 +206,12 @@ func _update_dragon(head: Dictionary, _delta: float, index: int) -> void:
 	# Buffer updates do not recalculate bounds: keep culling accurate as the dragon pursues moving enemies.
 	mesh.custom_aabb=AABB(Vector3(bounds.position.x,bounds.position.y,-1),Vector3(bounds.size.x,bounds.size.y,2))
 func _draw() -> void:
+	var low: bool = Vfx.low_detail(self)
 	for head: Dictionary in heads:
 		var target: Node2D = _target(head)
 		if living(target):
 			var at: Vector2 = to_local(target.global_position)
 			draw_texture_rect(COMPASS, Rect2(at - Vector2.ONE * 12, Vector2.ONE * 24), false, Color(1, 1, 1, 0.52))
-	for hit: Dictionary in impacts:
-		var t: float = 1.0 - float(hit.left) / 0.26
-		var at: Vector2 = to_local(hit.point)
-		var color := Color(0.65, 1, 0.82, (1.0 - t) * 0.8)
-		for petal: int in (3 if SettingsManager.reduced_effects else 6):
-			var direction: Vector2 = Vector2.from_angle(petal * TAU / 6.0 + age)
-			var center: Vector2 = at + direction * (8.0 + 19.0 * t)
-			var shape: PackedVector2Array = [center - direction * 5, center + direction.orthogonal() * 2.8, center + direction * 5, center - direction.orthogonal() * 2.8]
-			draw_colored_polygon(shape, color)
+			if not low and pending > 0.0 and not bool(head.spent):
+				Vfx.curls(self, at, CONTACT_RADIUS * 0.62, age * 1.25,
+					Color(0.43, 0.98, 0.72, 0.62), 3)

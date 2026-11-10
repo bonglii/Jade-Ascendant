@@ -1013,3 +1013,7 @@ A literal credential-shaped sample in a self-published test triggered the scanne
 ## Gale source recovery — 2026-11-10
 
 A local commit and uploaded blobs did not survive an interrupted publish as a reachable source branch. Save a reachable checkpoint before long transfers or validation. Verify the GitHub ref and matching tree before treating it as the owner handoff. Reuse historical results for unchanged inputs and label fresh checks against reconstructed source separately. A fixed-item offer preview must stay locked until the verified account-bound purchase, restoration and refund flows are implemented.
+
+## Weapon effects and fixed offers — 2026-11-10
+
+Keep the production combat geometry and clocks authoritative. Draw optional weapon effects on their owning scene, cap shared contact feedback, and reuse the existing crowd counter to refresh cached decorations only when the detail setting changes. Run actual projectile-accounting and paid-catalog checks when a batch includes new equipment. Draft fixed-offer items have a separate ownership route and must be excluded consistently from the paid-summon catalog hash, commands, and snapshots.

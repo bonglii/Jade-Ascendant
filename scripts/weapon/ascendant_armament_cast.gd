@@ -1,4 +1,5 @@
 extends Node2D
+const Vfx = preload("res://scripts/effects/weapon_vfx_art.gd")
 const Reach=preload("res://scripts/data/weapon_reach.gd")
 ## Three separate readable mechanics share bounded bookkeeping, not attack geometry.
 const Ledger=preload("res://scripts/weapon/run_combat_ledger.gd")
@@ -18,8 +19,6 @@ var phases_done: Dictionary={}
 var pulses: int=2
 var radius: float=75
 var resonance_used: bool=false
-var flashes: Array[Vector2]=[]
-var flash_times: Array[float]=[]
 var icon: Texture2D
 static func living(value: Variant) -> bool:
  return is_instance_valid(value) and value is Node2D and value.is_inside_tree() and not value.is_queued_for_deletion() and value.is_in_group("enemy") and not bool(value.get("is_dead")) and value.has_method("take_damage")
@@ -75,8 +74,6 @@ func _hit(player: Node2D,enemy: Node2D,multiplier: float,resonance: bool=false) 
   result.damage*=1.4;resonance_used=true
  CombatFeedback.mark_next_hit_critical(enemy,bool(result.is_critical))
  Ledger.apply_hit(enemy,float(result.damage),mode)
- flashes.append(enemy.global_position-origin);flash_times.append(age)
- if flashes.size()>12:flashes.pop_front();flash_times.pop_front()
 func _advance_fan(player: Node2D,delta: float) -> void:
  var enemies: Array[Node]=get_tree().get_nodes_in_group("enemy")
  for feather: Dictionary in feathers:
@@ -117,61 +114,73 @@ func _pulse(player: Node2D,pulse: int) -> void:
   _hit(player,enemy,.80,pulse==pulses-1)
   if living(enemy):Slow.apply(enemy,.4,.85,.95)
 func _draw() -> void:
- var reduced: bool=get_tree().root.get_node("SettingsManager").reduced_effects
- if mode=="phoenix_war_fan":
-  if icon!=null and age<.25:
-   draw_set_transform(Vector2.ZERO,aim.angle()+PI*.5)
-   draw_texture_rect(icon,Rect2(-Vector2(38,38),Vector2(76,76)),false,Color(1,1,1,1-age/.25));draw_set_transform(Vector2.ZERO)
-  for feather: Dictionary in feathers:
-   if feather.spent:continue
-   var at: Vector2=Vector2(feather.position)-origin
-   var direction: Vector2=feather.direction
-   if not reduced:draw_line(at-direction*26,at,Color(1,.39,.09,.32),7,true)
-   draw_line(at-direction*16,at,Color(1,.74,.29),2.8,true)
-   var normal: Vector2=direction.orthogonal()
-   var contour:=PackedVector2Array([at+direction*7,at+direction*1+normal*3,at-direction*6+normal*5,at-direction*15+normal*4,at-direction*22+normal*1,at-direction*14-normal*3,at-direction*7-normal*4])
-   draw_colored_polygon(contour,Color(1,.31,.08,.88))
-   draw_polyline(PackedVector2Array([at-direction*21,at-direction*7+normal*1.5,at+direction*5]),Color(1,.89,.48),1.5,true)
-   for rib: int in range(3):
-    var along: Vector2=at-direction*(3+rib*5)
-    draw_line(along-direction*4+normal*3.5,along,Color(1,.69,.23,.8),.9,true)
-   if not reduced:draw_circle(at+direction*3,1.2,Color(1,.99,.85))
- elif mode=="void_piercer_spear":
-  var width: float=18+3*int(level>=3)+3*int(level>=7)
-  if age<.3:
-   draw_line(Vector2.ZERO,aim*cast_reach,Color(.67,.55,1,.4),1.5,true)
-   draw_line(aim.orthogonal()*width,aim*cast_reach+aim.orthogonal()*width,Color(.81,.70,1,.12),1,true)
-   draw_line(-aim.orthogonal()*width,aim*cast_reach-aim.orthogonal()*width,Color(.81,.70,1,.12),1,true)
-   if icon!=null:
-    draw_set_transform(aim*28,aim.angle()+PI*.25)
-    draw_texture_rect(icon,Rect2(-Vector2(56,56),Vector2(112,112)),false);draw_set_transform(Vector2.ZERO)
-  else:
-   var fade: float=clampf((.78-age)/.45,0,1)
-   if icon!=null and age<.53:
-    var thrust_at: Vector2=aim*lerpf(28,cast_reach-24,clampf((age-.30)/.18,0,1))
-    draw_set_transform(thrust_at,aim.angle()+PI*.25)
-    draw_texture_rect(icon,Rect2(-Vector2(56,56),Vector2(112,112)),false,Color(1,1,1,fade));draw_set_transform(Vector2.ZERO)
-   if not reduced:draw_line(Vector2.ZERO,aim*cast_reach,Color(.32,.19,.70,.32*fade),width*1.4,true)
-   draw_line(Vector2.ZERO,aim*cast_reach,Color(.77,.71,1,fade),3,true)
-   for index: int in range(5):
-    var at: Vector2=aim*(30+index*(cast_reach-60)/4.0)
-    draw_polyline(PackedVector2Array([at-aim*9+aim.orthogonal()*6,at+aim*6,at-aim*9-aim.orthogonal()*6]),Color(1,.87,.58,fade),1.3,true)
- else:
-  if icon!=null:draw_texture_rect(icon,Rect2(Vector2(-25,12),Vector2(50,50)),false,Color(1,1,1,clampf((2.9-age)/.4,0,1)))
-  # The disc flashes precisely when a pulse applies its damage; the outgoing
-  # ring is its fading aftermath, not a separate promised collision.
-  for pulse: int in range(pulses):
-   var since: float=age-(.2+pulse*.55)
-   if since<0 or since>.55:continue
-   var fade: float=1-since/.55
-   draw_arc(Vector2.ZERO,radius,0,TAU,48,Color(1,.79,.35,fade*.65),2,true)
-   if not reduced:
-    draw_circle(Vector2.ZERO,radius,Color(.32,.83,.93,fade*.07))
-    for rune: int in range(8):
-     var angle: float=rune*TAU/8
-     var at:=Vector2(cos(angle),sin(angle))*radius*.82
-     draw_arc(at,3,0,TAU,8,Color(1,.87,.55,fade*.35),1,true)
-    draw_arc(Vector2.ZERO,radius*(.25+.75*since/.55),0,TAU,48,Color(.48,.85,1,fade*.55),1.6,true)
- for index: int in range(flashes.size()):
-  var fade: float=clampf(1.0-(age-flash_times[index])/.25,0,1)
-  if fade>0:draw_arc(flashes[index],5,0,TAU,10,Color(1,.89,.58,.65*fade),1.4,true)
+ var low: bool = Vfx.low_detail(self)
+ match mode:
+  "phoenix_war_fan": _draw_fan(low)
+  "void_piercer_spear": _draw_spear(low)
+  "astral_resonance_bell": _draw_bell(low)
+
+func _draw_fan(low: bool) -> void:
+ if icon != null and age < 0.25:
+  draw_set_transform(Vector2.ZERO, aim.angle() + PI * 0.5)
+  draw_texture_rect(icon, Rect2(-Vector2(38, 38), Vector2(76, 76)), false, Color(1, 1, 1, 1 - age / 0.25))
+  draw_set_transform(Vector2.ZERO)
+ for feather: Dictionary in feathers:
+  if feather.spent:
+   continue
+  var at: Vector2 = Vector2(feather.position) - origin
+  var direction: Vector2 = feather.direction
+  var normal: Vector2 = direction.orthogonal()
+  if not low:
+   Vfx.ribbon(self, at, direction, Vector2(42, 15), Color(1, 0.30, 0.06, 0.45),
+    Color(1, 0.65, 0.22, 0.73), 1.0 if direction.cross(aim) >= 0 else -1.0)
+  var contour := PackedVector2Array([at + direction * 7, at + direction + normal * 3,
+   at - direction * 6 + normal * 5, at - direction * 22 + normal,
+   at - direction * 14 - normal * 3, at - direction * 7 - normal * 4])
+  draw_colored_polygon(contour, Color(1, 0.31, 0.08, 0.88))
+  draw_polyline(PackedVector2Array([at - direction * 21, at - direction * 7 + normal * 1.5,
+   at + direction * 5]), Color(1, 0.89, 0.48), 1.5, true)
+
+func _draw_spear(low: bool) -> void:
+ var width: float = 18 + 3 * int(level >= 3) + 3 * int(level >= 7)
+ var edge: Vector2 = aim.orthogonal() * width
+ var tip: Vector2 = aim * cast_reach
+ if age < 0.30:
+  var charge: float = clampf(age / 0.30, 0.0, 1.0)
+  draw_line(Vector2.ZERO, tip, Color(0.73, 0.64, 1.0, 0.38 + charge * 0.22), 1.5, true)
+  draw_line(edge, tip + edge, Color(0.81, 0.70, 1.0, 0.37), 1.0, true)
+  draw_line(-edge, tip - edge, Color(0.81, 0.70, 1.0, 0.37), 1.0, true)
+  _draw_spear_icon(aim * 28, 1.0)
+  return
+ var strike_age: float = age - (0.48 if level >= 5 and age >= 0.48 else 0.30)
+ var fade: float = pow(clampf(1.0 - strike_age / 0.30, 0.0, 1.0), 1.5)
+ if age < 0.53:
+  _draw_spear_icon(aim * lerpf(28, cast_reach - 24, clampf((age - 0.30) / 0.18, 0.0, 1.0)), fade)
+ draw_line(Vector2.ZERO, tip, Color(0.84, 0.79, 1.0, fade), 2.8, true)
+ if not low:
+  for index in range(3):
+   var at: Vector2 = aim * cast_reach * (0.30 + 0.29 * index)
+   Vfx.ribbon(self, at, aim, Vector2(minf(cast_reach * 0.28, 83), width * 1.4),
+    Color(0.53, 0.40, 0.93, fade * 0.46), Color(0.84, 0.82, 1.0, fade * 0.60),
+    1.0 if index % 2 == 0 else -1.0)
+
+func _draw_spear_icon(at: Vector2, alpha: float) -> void:
+ if icon == null:
+  return
+ draw_set_transform(at, aim.angle() + PI * 0.25)
+ draw_texture_rect(icon, Rect2(-Vector2(56, 56), Vector2(112, 112)), false, Color(1, 1, 1, alpha))
+ draw_set_transform(Vector2.ZERO)
+
+func _draw_bell(low: bool) -> void:
+ if icon != null:
+  draw_texture_rect(icon, Rect2(Vector2(-25, 12), Vector2(50, 50)), false, Color(1, 1, 1, clampf((2.9 - age) / 0.4, 0.0, 1.0)))
+ # The disc matches the actual pulse radius. Its curls stay inside.
+ for pulse: int in range(pulses):
+  var since: float = age - (0.20 + pulse * 0.55)
+  if since < 0.0 or since > 0.55:
+   continue
+  var fade: float = 1.0 - since / 0.55
+  draw_arc(Vector2.ZERO, radius, 0.0, TAU, 40, Color(1, 0.79, 0.35, fade * 0.65), 2.0, true)
+  if not low:
+   Vfx.curls(self, Vector2.ZERO, radius * lerpf(0.35, 1.0, since / 0.55),
+    age * 1.25, Color(0.55, 0.88, 1.0, fade * 0.70), 6)

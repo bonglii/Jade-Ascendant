@@ -1,4 +1,5 @@
 extends Node2D
+const Vfx = preload("res://scripts/effects/weapon_vfx_art.gd")
 const Reach=preload("res://scripts/data/weapon_reach.gd")
 
 ## One bounded flight. Collision is swept between simulated positions, not
@@ -27,7 +28,6 @@ var outbound_critical: bool = false
 var return_bonus_used: bool = false
 var hits: Dictionary = {}
 var trail: PackedVector2Array = PackedVector2Array()
-var hit_flashes: Array[Dictionary] = []
 var normal_range: float = Reach.NORMAL
 var boss_range: float = Reach.BOSS
 
@@ -107,9 +107,6 @@ func _advance(delta: float, player: Node2D, enemies: Array[Node]) -> void:
 	if phase != 3:
 		trail.append(global_position)
 		if trail.size() > 12: trail.remove_at(0)
-	for i: int in range(hit_flashes.size()-1, -1, -1):
-		hit_flashes[i].age += delta
-		if float(hit_flashes[i].age) > 0.16: hit_flashes.remove_at(i)
 
 func _sweep(start: Vector2, finish: Vector2, player: Node2D, enemies: Array[Node], phase_id: int, multiplier: float) -> void:
 	# Exact broad phase only: reject outside the swept segment's padded box.
@@ -140,14 +137,11 @@ func _hit(player: Node2D, enemy: Node2D, phase_id: int, multiplier: float) -> vo
 	var result: Dictionary = stats.calculate_damage_result(base_damage * multiplier)
 	if phase_id == 0 and bool(result.is_critical): outbound_critical = true
 	CombatFeedback.mark_next_hit_critical(enemy, bool(result.is_critical))
-	var hit_position: Vector2 = enemy.global_position
 	preload("res://scripts/weapon/run_combat_ledger.gd").apply_hit(enemy,float(result.damage),"celestial_returning_glaive")
-	if hit_flashes.size() >= 6: hit_flashes.pop_front()
-	hit_flashes.append({"position":hit_position, "age":0.0})
 
 func _draw() -> void:
 	if launch_delay > 0.0: return
-	var reduced: bool = SettingsManager.reduced_effects
+	var reduced: bool = Vfx.low_detail(self)
 	var local_trail := PackedVector2Array()
 	for p: Vector2 in trail: local_trail.append(p - global_position)
 	Art.trail(self, local_trail, phase >= 2, reduced)
@@ -157,6 +151,3 @@ func _draw() -> void:
 		Art.disc(self, Vector2.ZERO, age * 15.0 * side, phase >= 2, reduced, 58.0, powered)
 	elif final_refinement:
 		Art.closure(self, Vector2.ZERO, phase_age, reduced)
-	for entry: Dictionary in hit_flashes:
-		var alpha: float = 1.0 - float(entry.age) / 0.16
-		draw_arc(entry.position - global_position, 8 + float(entry.age)*90, 0, TAU, 16, Color(Art.GOLD if phase >= 2 else Art.CYAN, alpha * 0.7), 1.3, true)

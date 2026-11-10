@@ -1,5 +1,7 @@
 extends Area2D
 
+const Vfx = preload("res://scripts/effects/weapon_vfx_art.gd")
+
 ## Fire Orb selalu menampilkan hit effect pada actual collision.
 ## Lv.3+ dapat membawa Cinder Bloom dari FireOrbWeapon; pada kondisi itu
 ## impact visual ikut membesar karena memang ada splash gameplay yang nyata.
@@ -133,6 +135,7 @@ func spawn_hit_visual() -> void:
 	if effect == null:
 		return
 
+	effect.bloom_radius = cinder_bloom_radius if cinder_bloom_damage_multiplier > 0.0 else 0.0
 	current_scene.add_child(effect)
 	effect.global_position = global_position
 	effect.scale = Vector2.ONE * maxf(
@@ -141,4 +144,12 @@ func spawn_hit_visual() -> void:
 	)
 
 func _ready() -> void:
-	preload("res://scripts/effects/skill_instance_polish.gd").install(self, "fire_orb")
+	add_to_group(Vfx.CACHED_DRAW_GROUP)
+
+
+func _draw() -> void:
+	Vfx.ribbon(self, Vector2(-2, 0), Vector2.RIGHT, Vector2(47, 19),
+		Color(1.0, 0.30, 0.07, 0.56), Color(1.0, 0.85, 0.38, 0.90), -1.0)
+	if not Vfx.low_detail(self):
+		Vfx.ribbon(self, Vector2(-7, 3), Vector2.RIGHT, Vector2(51, 17),
+			Color(0.90, 0.19, 0.08, 0.28), Color(1.0, 0.54, 0.13, 0.62))

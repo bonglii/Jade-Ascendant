@@ -346,7 +346,7 @@ func get_weapons() -> Array[Weapon]:
 ## Mencari weapon berdasarkan nama.
 func get_weapon_by_name(weapon_name: String) -> Weapon:
 	for weapon in weapons:
-		if weapon.weapon_name == weapon_name:
+		if is_instance_valid(weapon) and not weapon.is_queued_for_deletion() and weapon.weapon_name == weapon_name:
 			return weapon
 
 	return null

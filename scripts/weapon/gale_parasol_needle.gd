@@ -1,5 +1,6 @@
 extends Node2D
 
+const Vfx = preload("res://scripts/effects/weapon_vfx_art.gd")
 const Ledger = preload("res://scripts/weapon/run_combat_ledger.gd")
 const Wind = preload("res://scripts/weapon/gale_parasol_wave.gd")
 const SPEED: float = 640.0
@@ -56,9 +57,13 @@ func _physics_process(delta: float) -> void:
 	if _distance >= _range:
 		queue_free()
 
+func _ready() -> void:
+	add_to_group(Vfx.CACHED_DRAW_GROUP)
+
+
 func _draw() -> void:
-	if not SettingsManager.reduced_effects:
-		draw_colored_polygon(PackedVector2Array([Vector2(-36, 0), Vector2(-13, -6),
-			Vector2(7, 0), Vector2(-13, 6)]), Color(0.22, 0.82, 0.59, 0.32))
+	if not Vfx.low_detail(self):
+		Vfx.ribbon(self, Vector2(4, 0), Vector2.RIGHT, Vector2(38, 14),
+			Color(0.22, 0.82, 0.59, 0.42), Color(0.73, 0.98, 0.64, 0.65), -1.0)
 	draw_colored_polygon(PackedVector2Array([Vector2(-17, 0), Vector2(-5, -2.5),
 		Vector2(9, 0), Vector2(-5, 2.5)]), Color("#d9f9c5"))

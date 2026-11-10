@@ -33,7 +33,7 @@ static func hit_index(source: String) -> int:
 		"thunder_talisman", "heavenly_tribulation": return 2
 		"yin_yang_blades": return 3
 		"heavenly_sword_rain": return 4
-		"eight_trigrams_formation": return 5
+		"eight_trigrams_formation", "heavenweaver_compass", "astral_resonance_bell": return 5
 		"jade_binding_chain": return 6
 		"void_piercer_spear": return 7
 	return 0

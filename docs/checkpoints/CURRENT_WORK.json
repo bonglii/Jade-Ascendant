@@ -1,6 +1,6 @@
 {
-  "state": "docs/checkpoints/GALE_STARTER_2026-11-10.json",
-  "base": "26e3c9549bcd4a3cc997344eedf2a702a5939b81",
-  "previous": "docs/checkpoints/CAMPAIGN_ATMOSPHERE_ENERGY_HERO_2026-11-10.json",
+  "state": "docs/checkpoints/WEAPON_VFX_GALE_2026-11-10.json",
+  "base": "dbab0151a3be7ede71646284b75dbe2227795eac",
+  "previous": "docs/checkpoints/GALE_STARTER_2026-11-10.json",
   "source_branch": "work/gale-starter-20261110"
 }

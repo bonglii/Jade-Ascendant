@@ -121,6 +121,7 @@ func skills() -> Array[Dictionary]:
  var player: Node=manager.get_parent()
  var rows: Array[Dictionary]=[]
  for weapon: Weapon in manager.weapons:
+  if not is_instance_valid(weapon) or weapon.is_queued_for_deletion():continue
   var id: String={"Spirit Sword":"spirit_sword","Fire Orb":"fire_orb","Thunder Talisman":"thunder_talisman","Yin-Yang Blades":"yin_yang_blades","Heavenly Sword Rain":"heavenly_sword_rain","Eight Trigrams Formation":"eight_trigrams_formation"}.get(weapon.weapon_name,"")
   if id.is_empty():continue
   var title: String=weapon.get_combat_display_name() if id=="spirit_sword" else Catalog.get_upgrade_display_name(id)

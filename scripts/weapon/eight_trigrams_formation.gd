@@ -4,12 +4,12 @@ extends Area2D
 ## Persistent ground-control instance for Eight Trigrams Formation.
 ## Visual radius is explicitly synchronized to gameplay radius.
 
+const Vfx = preload("res://scripts/effects/weapon_vfx_art.gd")
 const FORMATION_SEGMENTS: int = 56
 const PULSE_VISUAL_DURATION: float = 0.24
 # Visual canvas commands are capped at 30 Hz; physics/damage remain unchanged.
 const VISUAL_REFRESH_INTERVAL: float = 1.0 / 30.0
 const DENSE_VISUAL_REFRESH_INTERVAL: float = 1.0 / 15.0
-const DENSE_ENEMY_COUNT: int = 80
 
 var base_damage: float = 8.0
 var radius: float = 80.0
@@ -169,12 +169,10 @@ func _draw_boundary() -> void:
 
 
 func update_formation_visual() -> void:
-	_dense_visuals = SettingsManager.reduced_effects or SettingsManager.quiet_player_vfx or (
-		get_tree().get_node_count_in_group(&"enemy") >= DENSE_ENEMY_COUNT
-	)
+	_dense_visuals = Vfx.low_detail(self)
 	var fade: float = _visual_fade()
 	if is_instance_valid(_boundary):
-		_boundary.modulate.a = fade
+		_boundary.modulate.a = minf(1.0, fade * (0.77 + pulse_visual_left / PULSE_VISUAL_DURATION * 0.23))
 	if formation_sigil != null:
 		formation_sigil.modulate.a = fade * (0.24 if _dense_visuals else 0.38)
 		formation_sigil.rotation = visual_age * 0.055
@@ -200,8 +198,9 @@ func _draw() -> void:
 			32, Color(0.98, 0.82, 0.36, opacity * (0.36 + 0.44 * anticipation)), 2.5, true)
 	if pulse_visual_left > 0.0 and not _dense_visuals:
 		var remaining: float = pulse_visual_left / PULSE_VISUAL_DURATION
-		draw_arc(Vector2.ZERO, radius * lerpf(1.0, 0.28, remaining), 0.0, TAU,
-			32, Color(0.78, 1.0, 0.90, opacity * remaining * 0.62), 2.8, true)
+		var wave: float = radius * lerpf(1.0, 0.36, remaining)
+		Vfx.curls(self, Vector2.ZERO, wave, visual_age * 0.48,
+			Color(0.75, 1.0, 0.87, opacity * remaining * 0.74))
 
 
 func _apply_damage_pulse() -> void:

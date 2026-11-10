@@ -1,5 +1,6 @@
 extends Node2D
 
+const Vfx = preload("res://scripts/effects/weapon_vfx_art.gd")
 const Art = preload("res://scripts/weapon/jade_binding_art.gd")
 const Slow = preload("res://scripts/weapon/jade_binding_slow.gd")
 const SEAL_TIME: float = 0.22
@@ -82,7 +83,7 @@ func _hit(player: Node2D, enemy: Node2D, multiplier: float) -> void:
 		preload("res://scripts/weapon/run_combat_ledger.gd").apply_hit(candidate,float(bonus.damage),"jade_binding_chain")
 
 func _draw() -> void:
-	var reduced: bool = SettingsManager.reduced_effects
+	var reduced: bool = Vfx.low_detail(self)
 	var fade: float = clampf((1.45 - age) / 0.4, 0.0, 1.0)
 	var appear: float = minf(age / SEAL_TIME, 1.0)
 	Art.seal(self, Vector2.ZERO, radius * (0.65 + appear * 0.35), age, appear * fade, reduced)
@@ -94,7 +95,7 @@ func _draw() -> void:
 		var entry: Dictionary = targets[i]
 		if not entry.detonated and living(entry.ref.get_ref()):
 			Art.chain(self, Vector2.ZERO, entry.position, age + i, fade, reduced)
-			Art.knot(self, entry.position, 10.0 + sin(age * 8) * 1.0, fade)
+			Art.knot(self, entry.position, 10.0 + sin(age * 8) * 1.0, fade, reduced)
 		if float(entry.burst_age) >= 0.0:
 			Art.burst(self, entry.position, minf((age - float(entry.burst_age)) / 0.42, 1.0), reduced)
 	if resonance_age >= 0.0:

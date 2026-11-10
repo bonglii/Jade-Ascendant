@@ -130,7 +130,7 @@ func run() -> void:
  for scene_name: String in ["spirit_sword","fire_orb","yin_yang_blade","heavenly_sword_rain","eight_trigrams_formation","thunder_talisman_strike","heavenly_lightning"]:
   var spell: Node2D=load("res://scenes/weapons/"+scene_name+".tscn").instantiate()
   current_scene.add_child(spell)
-  check(spell.has_node("SkillInstancePolish"),"actual spell wrapper "+scene_name)
+  check(not spell.has_node("SkillInstancePolish"),"production spell owns its draw budget "+scene_name)
   spell.free()
  print("COMBAT_SKILL_POLISH_QA checks=%d failures=%d" % [checks,failures])
  await preload("res://tests/qa_runtime_teardown.gd").stop_audio(self);quit(0 if failures==0 else 1)
