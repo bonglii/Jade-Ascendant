@@ -179,8 +179,8 @@ func _open_equipment_detail(id: String) -> void:
 		)
 	elif bool(d.get("starter_pack",false)):
 		source = preload("res://scripts/companion/player_journal.gd").copy(
-			"STARTER PACK • Google Play purchase. Preview after Stage 1-5.",
-			"STARTER PACK • Pembelian Google Play. Pratinjau setelah Stage 1-5.")
+			"STARTER PACK • Google Play purchase is currently unavailable.",
+			"STARTER PACK • Pembelian Google Play belum tersedia.")
 	elif bool(d.get("event_only",false)):
 		source = preload("res://scripts/companion/player_journal.gd").copy("EVENT EXCLUSIVE • Check its event rewards.", "EKSKLUSIF EVENT • Cek hadiah event terkait.")
 	else:

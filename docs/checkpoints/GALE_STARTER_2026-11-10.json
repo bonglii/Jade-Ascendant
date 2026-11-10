@@ -8,10 +8,23 @@
   ],
   "recovery": {
     "interrupted_local_commit": "2208275a281892878edd677c1f5f4aa7bee95f76",
-    "status": "SOURCE_RECONSTRUCTED",
+    "status": "SOURCE_RECONSTRUCTED_AND_VALIDATED",
     "art": "Six cutouts from original approved art boards",
     "historical_targeted_checks": "80/80 passed before executor reset; raw run logs were lost",
-    "current_validation": "Godot 4.7.2 project import and startup, targeted behavior validation pending"
+    "current_validation": {
+      "engine": "Godot 4.7.2 Linux headless",
+      "targeted_smoke": "49/49 passed",
+      "checks": [
+        "Production Home and Stage 1, English and Indonesian compact/tall/landscape geometry, Stage 1-5 offer gate, disabled checkout, no summon or Stone acquisition, matching Parasol tiers, orbit levels, secondary touch, actual save/Continue and legacy fallback, real boss/normal HP loss, damage ledger"
+      ],
+      "sword_rain_area_boss_loss": 210.0,
+      "sword_rain_sequence_boss_loss": 100.8,
+      "gale_canopy_enemy_loss": 7.49,
+      "gale_canopy_boss_loss": 4.87,
+      "gale_regular_enemy_push_px": 57.0,
+      "limit": "Headless teardown reported retained resources. Native presentation, performance, Windows installation, Play checkout and phone QA are unconfirmed."
+    },
+    "remote_recovery_commit": "fec315a6a27c70b5b5abf7af2ac14e3225b6e5a7"
   },
   "commerce": {
     "product_id_draft": "gale_starter_pack",
@@ -20,10 +33,10 @@
     "remaining": "Account-bound Google Play entitlement, verified grants, restore/refund, and product configuration"
   },
   "owner_install": "UNCONFIRMED",
-  "push": "IN_PROGRESS",
+  "push": "RECOVERY_CHECKPOINT_VERIFIED",
   "windows_qa": "UNCONFIRMED",
   "android_export": "UNCONFIRMED",
   "phone_qa": "UNCONFIRMED",
   "backend_deploy": "NOT_RUN",
-  "next_action": "Publish this recovery snapshot, then run focused validation of the recovered gameplay and preview."
+  "next_action": "Implement verified account-bound non-consumable purchase, restore and refund handling before enabling the offer. Use the branch for owner-side gameplay validation."
 }
