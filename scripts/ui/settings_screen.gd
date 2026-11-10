@@ -451,8 +451,9 @@ func _build_presentation_options() -> void:
 		_local("60 FPS for smooth play, 30 FPS to save battery.",
 			"60 FPS untuk gerakan halus, 30 FPS untuk hemat baterai."))
 	fps_choice = OptionButton.new()
-	fps_choice.add_item(tr("60 FPS  •  SMOOTH"))
-	fps_choice.add_item(tr("30 FPS  •  BATTERY SAVER"))
+	fps_choice.name = "FrameRate"
+	fps_choice.add_item("60 FPS")
+	fps_choice.add_item("30 FPS")
 	fps_choice.custom_minimum_size.y = 56.0
 	fps_choice.item_selected.connect(_on_fps_selected)
 	system_box.add_child(fps_choice)
@@ -776,7 +777,7 @@ func _apply_settings_visual_polish() -> void:
 	_settings_scroll = get_node("SafeArea/Scroll") as ScrollContainer
 	var content: VBoxContainer = get_node("SafeArea/Scroll/Content") as VBoxContainer
 	content.add_theme_constant_override("separation", 18)
-	_settings_scroll.anchor_top = 0.10
+	_settings_scroll.anchor_top = 0.0
 	_settings_scroll.anchor_bottom = 0.975
 	_settings_scroll.scroll_deadzone = int(SCROLL_GESTURE_DEADZONE)
 	_settings_scroll.follow_focus = false
@@ -857,18 +858,37 @@ func _build_sticky_navigation() -> void:
 	back_button.custom_minimum_size = Vector2(104, 49)
 	back_button.text = _local("‹  HOME", "‹  BERANDA")
 	_stylize_button(back_button, GOLD)
-	var gap := Control.new()
-	gap.custom_minimum_size.x = 4
-	row.add_child(gap)
-	var status := Label.new()
-	status.text = _local("SETTINGS", "PENGATURAN")
-	status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	status.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	status.add_theme_font_size_override("font_size", 14)
-	status.add_theme_color_override("font_color", JADE)
-	status.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	row.add_child(status)
+	var sections := OptionButton.new()
+	sections.name = "SettingsSectionPicker"
+	sections.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sections.custom_minimum_size.y = 49
+	sections.accessibility_name = _local("Jump to a settings section", "Buka bagian pengaturan")
+	row.add_child(sections)
+	_apply_dropdown_polish(sections)
+	var cards: Array[PanelContainer] = []
+	for card: Node in _settings_scroll.get_node("Content").get_children():
+		if not card is PanelContainer or card.name == "Header":
+			continue
+		var caption: Label
+		if card.name == "AudioCard":
+			caption = card.get_node_or_null("AudioContent/AudioHeading/AudioText/AudioTitle") as Label
+		elif card.get_child_count() > 0 and card.get_child(0).get_child_count() > 1:
+			caption = card.get_child(0).get_child(1) as Label
+		if caption != null:
+			cards.append(card)
+			sections.add_item(caption.text)
+	sections.select(-1)
+	sections.text = _local("SECTIONS", "BAGIAN")
+	sections.item_selected.connect(func(index: int):
+		_settings_scroll.set_deferred("scroll_vertical", roundi(cards[index].position.y))
+		sections.select(-1)
+		sections.text = _local("SECTIONS", "BAGIAN")
+	)
+	var fit_rail: Callable = func():
+		_settings_scroll.offset_top = rail.position.y + rail.size.y + 8.0
+	rail.resized.connect(fit_rail)
+	safe_area.resized.connect(fit_rail, CONNECT_DEFERRED)
+	fit_rail.call_deferred()
 	old_top.hide()
 
 
@@ -1000,6 +1020,7 @@ func _create_settings_card(parent_box: VBoxContainer, source_card: PanelContaine
 	box.add_child(eyebrow_label)
 	var title_label := Label.new()
 	title_label.text = title_text
+	title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title_label.add_theme_font_size_override("font_size", 22)
 	title_label.add_theme_color_override("font_color", GOLD)
 	box.add_child(title_label)
@@ -1340,8 +1361,12 @@ func _finish_neo_settings() -> void:
 		if card.name == "GoogleAccountCard": card.add_theme_stylebox_override("panel", _make_premium_card_style(GOLD))
 	for button: Button in find_children("*", "Button", true, false):
 		button.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
-		button.clip_text = not button is CheckButton and not bool(button.get_meta("settings_full_label",false))
-		if not button is CheckButton and not button is OptionButton: _stylize_button(button, JADE)
+		if not button is CheckButton and not button is OptionButton:
+			_stylize_button(button, JADE)
+			button.clip_text = false
+			button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			button.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+			button.custom_minimum_size.y = maxf(48.0, button.custom_minimum_size.y)
 	for label: Label in find_children("*", "Label", true, false):
 		if label in [master_value_label, music_value_label, sfx_value_label, joystick_opacity_label]: continue
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

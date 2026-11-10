@@ -41,6 +41,8 @@ var player_health: PlayerHealth = null
 
 var blades: Array[YinYangBlade] = []
 var hit_cooldowns: Dictionary = {}
+var _hit_clock: float = 0.0
+var _next_hit_prune: float = HIT_INTERVAL
 
 var reversal_active: bool = false
 var reversal_time_remaining: float = 0.0
@@ -214,16 +216,16 @@ func damage_target(target: Node, blade_id: int = 0) -> void:
 	if not is_instance_valid(target):
 		return
 
-	if not target.has_method("take_damage"):
-		return
-
-	if player_stats == null:
-		return
-
 	var target_id: int = target.get_instance_id()
-	var blade_hits: Dictionary = hit_cooldowns.get(blade_id, {})
-	if blade_hits.has(target_id):
+	var blade_hits: Variant = hit_cooldowns.get(blade_id)
+	if blade_hits != null and float(blade_hits.get(target_id, -1.0)) > _hit_clock + 0.000000001:
 		return
+
+	if player_stats == null or not target.has_method("take_damage"):
+		return
+	if blade_hits == null:
+		blade_hits = {}
+		hit_cooldowns[blade_id] = blade_hits
 
 	var damage_before_player_stats: float = (
 		get_current_damage()
@@ -237,13 +239,7 @@ func damage_target(target: Node, blade_id: int = 0) -> void:
 
 	preload("res://scripts/weapon/run_combat_ledger.gd").apply_hit(target,final_damage,"yin_yang_blades")
 
-	blade_hits[target_id] = HIT_INTERVAL
-	hit_cooldowns[blade_id] = blade_hits
-
-	DebugLogger.combat(
-		"Yin-Yang Blade Hit | Damage: %.1f"
-		% final_damage
-	)
+	blade_hits[target_id] = _hit_clock + HIT_INTERVAL
 
 ## Mengaktifkan atau me-refresh Yin-Yang Reversal.
 func activate_reversal() -> void:
@@ -352,11 +348,14 @@ func apply_current_orbit_stats() -> void:
 ## Repeated physics overlap cannot multiply one blade's hit. Different blades
 ## keep independent target cooldowns and can land in the same physics tick.
 func update_hit_cooldowns(delta: float) -> void:
+	_hit_clock += delta
+	if _hit_clock < _next_hit_prune:
+		return
+	_next_hit_prune = _hit_clock + HIT_INTERVAL
 	for blade_id: int in hit_cooldowns.keys():
 		var blade_hits: Dictionary = hit_cooldowns[blade_id]
 		for target_id: int in blade_hits.keys():
-			blade_hits[target_id] -= delta
-			if blade_hits[target_id] <= 0.0:
+			if float(blade_hits[target_id]) <= _hit_clock:
 				blade_hits.erase(target_id)
 		if blade_hits.is_empty():
 			hit_cooldowns.erase(blade_id)

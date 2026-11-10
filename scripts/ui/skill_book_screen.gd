@@ -178,12 +178,22 @@ func _open_equipment_detail(id: String) -> void:
 		for tier: int in [2,3,4]:c.add_child(_label(tr("%d PIECES: %s")%[tier,Sets.get_tier_description(set_id,tier)],15,Color(.68,.90,.80)))
 	else:c.add_child(_label("Independent weapon • does not count toward a set. Permanent level cap: 10 / 20 / 30 / 40 / 50 at 1–5 stars. Run refinement is separate.",15,Color(.68,.90,.80)))
 	c.add_child(_label("Star ascension requires identical duplicates. Manage your loadout and upgrades in HERO.",14,Color(.73,.83,.79)))
-	if bool(d.get("event_only",false)):
-		c.add_child(_label("EVENT EXCLUSIVE • Jade Dragon Odyssey: complete 12 full laps past START, claim the milestone, then collect the Compass in Mail. Not in normal gacha.",14,Color(.99,.83,.45)))
+	var source: String
+	if id == "heavenweaver_compass":
+		source = preload("res://scripts/companion/player_journal.gd").copy(
+			"EVENT EXCLUSIVE • Complete 12 full Jade Dragon Odyssey laps, then claim the Compass through Mail.",
+			"EKSKLUSIF EVENT • Selesaikan 12 putaran penuh Jade Dragon Odyssey, lalu klaim Kompas lewat Mail."
+		)
+	elif bool(d.get("event_only",false)):
+		source = preload("res://scripts/companion/player_journal.gd").copy("EVENT EXCLUSIVE • Check its event rewards.", "EKSKLUSIF EVENT • Cek hadiah event terkait.")
 	else:
-		var chapter: int=int(d.get("requires_chapter",0));var stage: int=int(d.get("requires_stage",0))
-		c.add_child(_label(tr("EQUIPMENT UNLOCK: Clear %d-%d")%[chapter,stage] if chapter>0 else "ACQUISITION: Available from the beginning",14,Color(.99,.83,.45)))
-		c.add_child(_label("GACHA COLLECTION: Opens after clear 1-5. Equipment unlock requirements are separate.",14,Color(.68,.90,.80)))
+		source = preload("res://scripts/companion/player_journal.gd").copy(
+			"PAVILION SUMMON • Clear Stage 1-5 to unlock summoning.",
+			"SUMMON PAVILION • Selesaikan Stage 1-5 untuk membuka summon."
+		)
+	var acquisition: Label = _label(source,14,Color(.99,.83,.45))
+	acquisition.name = "EquipmentAcquisition"
+	c.add_child(acquisition)
 	_open_popup(str(d.display_name),c)
 func _open_popup(title: String,content: Control) -> void:
 	_close_popup()

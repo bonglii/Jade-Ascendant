@@ -7,6 +7,7 @@ const Catalog = preload("res://scripts/data/equipment_catalog.gd")
 const SLOTS: Array[String] = ["armament", "robe", "bracer", "boots", "pendant"]
 const SINGLETON: String = "JadeMonetizationNativeBridge"
 const ENTRY_WAIT_MSEC: int = 12000
+const VERIFIED_REFRESH_INTERVAL_MSEC: int = 60000
 const SNAPSHOT_FIELDS: Array[String] = [
 	"paid_gameplay_version", "account_binding", "catalog_hash", "state", "revision",
 	"wallet", "inventory", "stars", "slots", "pity", "wish", "wish_guaranteed",
@@ -325,7 +326,7 @@ func _on_result(request_id: String, success: bool, result_status: String, payloa
 			result.merge(op.outcome, true)
 			result.merge({"payment_method": "paid_seal" if op.kind=="seal_summon" else "paid_jade", "payment_amount": 1 if op.kind=="seal_summon" else 100 if int(cmd.pull_count) == 1 else 900, "refinement_shards_gained": 0}, true)
 	snapshot = next.duplicate(true); _expires = Time.get_ticks_msec() + 120000
-	_next_read = Time.get_ticks_msec() + 60000; status = "verified"
+	_next_read = Time.get_ticks_msec() + VERIFIED_REFRESH_INTERVAL_MSEC; status = "verified"
 	_last_result = result.duplicate(true)
 	changed.emit(); finished.emit(result)
 	if next.state == "initialize_required": call_deferred("submit", "initialize")

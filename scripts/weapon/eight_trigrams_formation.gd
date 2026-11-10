@@ -5,10 +5,11 @@ extends Area2D
 ## Visual radius is explicitly synchronized to gameplay radius.
 
 const FORMATION_SEGMENTS: int = 56
-const TRIGRAM_MARKER_COUNT: int = 8
 const PULSE_VISUAL_DURATION: float = 0.24
 # Visual canvas commands are capped at 30 Hz; physics/damage remain unchanged.
 const VISUAL_REFRESH_INTERVAL: float = 1.0 / 30.0
+const DENSE_VISUAL_REFRESH_INTERVAL: float = 1.0 / 15.0
+const DENSE_ENEMY_COUNT: int = 80
 
 var base_damage: float = 8.0
 var radius: float = 80.0
@@ -23,13 +24,14 @@ var player_stats: Node = null
 var visual_age: float = 0.0
 var pulse_visual_left: float = 0.0
 var _visual_refresh_elapsed: float = 0.0
+var _boundary: Node2D
+var _dense_visuals: bool = false
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 @onready var formation_sigil: Sprite2D = $FormationSigil
 
 
 func _ready() -> void:
-	preload("res://scripts/effects/skill_instance_polish.gd").install(self, "eight_trigrams_formation")
 	z_index = -1
 	lifetime_remaining = duration
 	pulse_remaining = pulse_interval
@@ -51,14 +53,9 @@ func _physics_process(delta: float) -> void:
 		queue_free()
 		return
 
-	# Keep the formation's expensive CanvasItem redraw off the 60 Hz
-	# physics path. Its damage pulse, duration, and overlaps still tick
-	# every physics frame and queue their impact visuals immediately.
-	# Lower visual refresh in reduced-effects mode; physics/pulses are untouched.
-	var refresh_interval: float = (
-		1.0 / 18.0 if SettingsManager.reduced_effects
-		else VISUAL_REFRESH_INTERVAL
-	)
+	# Only the optional animation slows down in a crowd. Pulse and collision
+	# clocks are advanced independently, including on the first and last tick.
+	var refresh_interval: float = DENSE_VISUAL_REFRESH_INTERVAL if _dense_visuals else VISUAL_REFRESH_INTERVAL
 	_visual_refresh_elapsed += delta
 	if _visual_refresh_elapsed >= refresh_interval:
 		_visual_refresh_elapsed = fmod(
@@ -150,256 +147,61 @@ func _sync_sigil_to_gameplay_radius() -> void:
 
 
 func create_formation_visual() -> void:
-	queue_redraw()
+	# The painted sigil already contains the complete Bagua artwork. Cache
+	# one boundary at the actual hit radius and animate only the pulse cue.
+	_boundary = Node2D.new()
+	_boundary.name = "FormationBoundary"
+	_boundary.draw.connect(_draw_boundary)
+	add_child(_boundary)
+	update_formation_visual()
 
 
 func rebuild_formation_visual() -> void:
 	_sync_sigil_to_gameplay_radius()
-	queue_redraw()
+	if is_instance_valid(_boundary):
+		_boundary.queue_redraw()
+	update_formation_visual()
+
+
+func _draw_boundary() -> void:
+	_boundary.draw_arc(Vector2.ZERO, radius, 0.0, TAU, FORMATION_SEGMENTS,
+		Color(0.38, 0.96, 0.72, 0.62), 2.5, true)
 
 
 func update_formation_visual() -> void:
+	_dense_visuals = SettingsManager.reduced_effects or SettingsManager.quiet_player_vfx or (
+		get_tree().get_node_count_in_group(&"enemy") >= DENSE_ENEMY_COUNT
+	)
+	var fade: float = _visual_fade()
+	if is_instance_valid(_boundary):
+		_boundary.modulate.a = fade
 	if formation_sigil != null:
-		formation_sigil.rotation = (
-			visual_age
-			* (0.025 if SettingsManager.reduced_effects else 0.055)
-		)
+		formation_sigil.modulate.a = fade * (0.24 if _dense_visuals else 0.38)
+		formation_sigil.rotation = visual_age * 0.055
 	queue_redraw()
 
 
 func create_damage_pulse_visual() -> void:
 	pulse_visual_left = PULSE_VISUAL_DURATION
-
-	# Pooled tick confirmation stays intentionally small because the persistent
-	# formation itself already communicates the true damage area.
-	CombatFeedback.pulse(
-		global_position,
-		"formation"
-	)
+	CombatFeedback.pulse(global_position, "formation")
 	queue_redraw()
 
 
+func _visual_fade() -> float:
+	return clampf(minf(visual_age / 0.30, lifetime_remaining / 0.40), 0.0, 1.0)
+
+
 func _draw() -> void:
-	var fade: float = clampf(
-		minf(
-			visual_age / 0.30,
-			lifetime_remaining / 0.40
-		),
-		0.0,
-		1.0
-	)
-	var opacity: float = (
-		fade
-		* (
-			0.38
-			if SettingsManager.reduced_effects
-			else 0.62
-		)
-	)
-
-	var jade := Color(0.38, 0.96, 0.72, opacity)
-	var pale := Color(0.78, 1.0, 0.90, opacity * 0.78)
-	var gold := Color(0.96, 0.76, 0.30, opacity * 0.88)
-
-	draw_arc(
-		Vector2.ZERO,
-		radius,
-		0.0,
-		TAU,
-		FORMATION_SEGMENTS,
-		jade,
-		2.5,
-		true
-	)
-	# Golden anticipation arc fills only during the final moments before
-	# the NEXT ACTUAL damage pulse. It never exceeds the gameplay radius.
+	var opacity: float = _visual_fade()
 	var anticipation_window: float = minf(pulse_interval * 0.33, 0.28)
 	if pulse_remaining > 0.0 and pulse_remaining <= anticipation_window:
-		var anticipation: float = clampf(
-			1.0 - pulse_remaining / maxf(anticipation_window, 0.01),
-			0.0, 1.0
-		)
-		draw_arc(
-			Vector2.ZERO, radius * 0.96,
-			-PI * 0.5, -PI * 0.5 + TAU * anticipation,
-			FORMATION_SEGMENTS,
-			Color(0.98, 0.82, 0.36, opacity * (0.36 + 0.44 * anticipation)),
-			3.0 if not SettingsManager.reduced_effects else 2.0, true
-		)
-
-	draw_arc(
-		Vector2.ZERO,
-		radius * 0.78,
-		0.0,
-		TAU,
-		48,
-		gold,
-		1.5,
-		true
-	)
-	draw_arc(
-		Vector2.ZERO,
-		radius * 0.50,
-		0.0,
-		TAU,
-		40,
-		pale,
-		1.2,
-		true
-	)
-
-	for index in range(TRIGRAM_MARKER_COUNT):
-		var angle: float = (
-			float(index) * TAU / 8.0
-			+ visual_age * 0.055
-		)
-		var radial: Vector2 = Vector2.from_angle(angle)
-		var tangent: Vector2 = radial.orthogonal()
-
-		# Connector stays entirely inside the real gameplay radius.
-		draw_line(
-			radial * radius * 0.53,
-			radial * radius * 0.70,
-			Color(
-				jade.r,
-				jade.g,
-				jade.b,
-				opacity * 0.44
-			),
-			1.0,
-			true
-		)
-
-		for stroke in range(3):
-			var center: Vector2 = (
-				radial
-				* (
-					radius * 0.84
-					+ float(stroke - 1) * 4.0
-				)
-			)
-
-			if (index & (1 << stroke)) != 0:
-				draw_line(
-					center - tangent * 8.0,
-					center + tangent * 8.0,
-					gold,
-					1.8,
-					true
-				)
-			else:
-				draw_line(
-					center - tangent * 8.0,
-					center - tangent * 2.3,
-					gold,
-					1.8,
-					true
-				)
-				draw_line(
-					center + tangent * 2.3,
-					center + tangent * 8.0,
-					gold,
-					1.8,
-					true
-				)
-
-	var seal_radius: float = minf(
-		radius * 0.21,
-		24.0
-	)
-	draw_arc(
-		Vector2.ZERO,
-		seal_radius,
-		0.0,
-		TAU,
-		32,
-		jade,
-		2.0,
-		true
-	)
-	draw_arc(
-		Vector2(0.0, -seal_radius * 0.5),
-		seal_radius * 0.5,
-		-PI / 2.0,
-		PI / 2.0,
-		14,
-		gold,
-		1.5,
-		true
-	)
-	draw_arc(
-		Vector2(0.0, seal_radius * 0.5),
-		seal_radius * 0.5,
-		PI / 2.0,
-		PI * 1.5,
-		14,
-		jade,
-		1.5,
-		true
-	)
-	draw_circle(
-		Vector2(0.0, -seal_radius * 0.5),
-		2.4,
-		jade
-	)
-	draw_circle(
-		Vector2(0.0, seal_radius * 0.5),
-		2.4,
-		gold
-	)
-
-	if pulse_visual_left > 0.0:
-		var progress: float = (
-			1.0
-			- pulse_visual_left
-			/ PULSE_VISUAL_DURATION
-		)
-		var pulse_alpha: float = (
-			opacity
-			* (1.0 - progress)
-		)
-
-		draw_arc(
-			Vector2.ZERO,
-			radius * lerpf(
-				0.28,
-				1.0,
-				progress
-			),
-			0.0,
-			TAU,
-			FORMATION_SEGMENTS,
-			Color(
-				pale.r,
-				pale.g,
-				pale.b,
-				pulse_alpha
-			),
-			2.8,
-			true
-		)
-
-		if not SettingsManager.reduced_effects:
-			for index in range(8):
-				var direction := Vector2.RIGHT.rotated(
-					float(index) * TAU / 8.0
-				)
-				draw_line(
-					direction * radius * 0.25,
-					direction * radius * lerpf(
-						0.42,
-						0.78,
-						progress
-					),
-					Color(
-						gold.r,
-						gold.g,
-						gold.b,
-						pulse_alpha * 0.72
-					),
-					1.5,
-					true
-				)
+		var anticipation: float = 1.0 - pulse_remaining / anticipation_window
+		draw_arc(Vector2.ZERO, radius * 0.96, -PI * 0.5, -PI * 0.5 + TAU * anticipation,
+			32, Color(0.98, 0.82, 0.36, opacity * (0.36 + 0.44 * anticipation)), 2.5, true)
+	if pulse_visual_left > 0.0 and not _dense_visuals:
+		var remaining: float = pulse_visual_left / PULSE_VISUAL_DURATION
+		draw_arc(Vector2.ZERO, radius * lerpf(1.0, 0.28, remaining), 0.0, TAU,
+			32, Color(0.78, 1.0, 0.90, opacity * remaining * 0.62), 2.8, true)
 
 
 func _apply_damage_pulse() -> void:

@@ -245,7 +245,9 @@ func _refresh_paid_summons() -> void:
 		_paid_status.text = _copy("Saldo Jade berbayar belum terverifikasi.", "Paid Jade balance is awaiting verification.")
 	_focus_paid_note.visible = paid_mode
 	_focus_paid_note.text = _copy("Segel biasa dipakai lebih dulu. Saldo berbayar tetap tersimpan.", "Use regular Seals first. Your paid balance is retained.") if owns_seals else _copy("Pilih target Legendary di atas. Target dan jaminan Jade berbayar tersimpan terpisah.", "Choose a Legendary target above. Paid Jade target and guarantee are retained separately.")
-	if paid_mode and is_instance_valid(PavilionManager.paid_gameplay) and PavilionManager.paid_gameplay.mutation_pending():
+	if _paid_reveal_busy and paid_mode:
+		_focus_paid_note.text = _copy("Menghubungi server untuk summon…", "Contacting the summon server…") if _queued_paid_intent.is_empty() else _copy("Menunggu cek saldo selesai…", "Waiting for the wallet check…")
+	elif paid_mode and is_instance_valid(PavilionManager.paid_gameplay) and PavilionManager.paid_gameplay.mutation_pending():
 		_focus_paid_note.text = _copy("Permintaan yang sama sedang diverifikasi atau dipulihkan.", "The same request is being verified or recovered.")
 	_focus_use_seals.visible = paid_mode and owns_seals
 	for action: Button in _paid_buttons:
@@ -272,7 +274,9 @@ func _select_summon_mode(use_paid: bool) -> void:
 	_close_history_overlay()
 	paid_mode = use_paid
 	if paid_mode and is_instance_valid(PavilionManager.paid_gameplay):
-		PavilionManager.paid_gameplay.refresh_if_stale()
+		# Keep a recent verified read usable for an immediate tap. The server
+		# still validates the expected revision on the journaled summon.
+		PavilionManager.paid_gameplay.refresh_if_stale(PavilionManager.paid_gameplay.VERIFIED_REFRESH_INTERVAL_MSEC)
 	_refresh_summon_panel()
 
 func _select_focus_tab(key: String) -> void:

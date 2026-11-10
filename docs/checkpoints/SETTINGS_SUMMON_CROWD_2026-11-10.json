@@ -1,0 +1,22 @@
+{
+  "base": "b9f5e2eef79a791f66c42a74f7617b1f7951c3d0",
+  "branch": "work/player-polish-20261104",
+  "status": "IMPLEMENTED_VALIDATION_IN_PROGRESS",
+  "owner_evidence": "1.4.6 present in Play Console. A 76-second Android recording shows dense enemies with overlapping combat effects. Phone frame timing and paid-summon network timing were not recorded.",
+  "scope": [
+    "Pinned Settings section picker, readable buttons and visible labels under safe insets",
+    "Library acquisition text for the summon pool and event-exclusive equipment",
+    "Avoid an extra wallet read on Paid Jade entry while a sufficiently recent verified snapshot is available",
+    "Altar of Two Winds uses existing illustrated frames with clear benefit and cost cards",
+    "Yin-Yang contact cooldown work and Eight Trigrams formation rendering"
+  ],
+  "validation": {
+    "base_exact": "PASS",
+    "base_strict_import": "PASS",
+    "next": "Run candidate import, focused compatibility and QA fixtures, actual overlap/damage checks, and native compact captures."
+  },
+  "owner_install": "PENDING",
+  "aab": "PENDING",
+  "phone": "PENDING",
+  "deploy": "NOT_REQUESTED"
+}

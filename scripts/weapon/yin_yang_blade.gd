@@ -12,6 +12,7 @@ var reversal_visual_active: bool = false
 
 @onready var blade_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var aura_ring: Line2D = $AuraRing
+@onready var combat_origin: Node2D = get_parent().get_node_or_null("CombatOrigin") as Node2D
 
 
 func _ready() -> void:
@@ -32,7 +33,7 @@ func _physics_process(delta: float) -> void:
 		TAU
 	)
 
-	var orbit_center: Vector2 = _get_player_combat_origin_local()
+	var orbit_center: Vector2 = combat_origin.position if is_instance_valid(combat_origin) else Vector2.ZERO
 
 	position = orbit_center + Vector2(
 		cos(orbit_angle),
@@ -48,21 +49,6 @@ func _physics_process(delta: float) -> void:
 	# The blade trail has no time-dependent geometry. The Area2D transform
 	# already moves and rotates its cached CanvasItem each physics frame.
 	# Redraw only when polarity or Reversal changes.
-
-
-func _get_player_combat_origin_local() -> Vector2:
-	var player := get_parent() as Node2D
-	if player == null:
-		return Vector2.ZERO
-
-	var combat_origin := (
-		player.get_node_or_null("CombatOrigin")
-		as Node2D
-	)
-	if combat_origin == null:
-		return Vector2.ZERO
-
-	return combat_origin.position
 
 
 func set_polarity(new_polarity: StringName) -> void:

@@ -7,7 +7,10 @@ const SafeArea=preload("res://scripts/ui/mobile_safe_area.gd")
 const SERIF: Font=preload("res://assets/ui/library/fonts/archive_serif.ttf")
 const EMBER_ICON: Texture2D=preload("res://assets/ui/level_up/skill_art/fire_orb.png")
 const WIND_ICON: Texture2D=preload("res://assets/ui/level_up/skill_art/movement_speed.png")
-const BOON_HEIGHT: float=436.0
+const BOON_HEIGHT: float=476.0
+const ALTAR_FRAME: Texture2D=preload("res://assets/ui/system_v2/custom/frames/relic_altar_v2.svg")
+const EMBER_FRAME: Texture2D=preload("res://assets/ui/settings/neo/command_card_gold.svg")
+const WIND_FRAME: Texture2D=preload("res://assets/ui/settings/neo/command_card_aqua.svg")
 var _modal: CanvasLayer
 var _left: float=1.0
 var _key: String=""
@@ -42,18 +45,27 @@ func _offer(key: String,title: String,choices: Array) -> void:
 	var boon: bool=key=="boon"
 	_modal=CanvasLayer.new();_modal.name="RunPathChoice";_modal.layer=80;add_child(_modal)
 	var root:=Control.new();_modal.add_child(root);root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var veil:=ColorRect.new();veil.color=Color(.005,.025,.025,.88);root.add_child(veil);veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var veil:=ColorRect.new();veil.color=Color(.005,.016,.025,.72 if boon else .88);root.add_child(veil);veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var safe:=SafeArea.new();safe.name="ChoiceSafeArea";root.add_child(safe);safe.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var panel:=PanelContainer.new();panel.name="PathPanel";panel.add_theme_stylebox_override("panel",Sheet.skin(14));safe.add_child(panel)
 	var body:=VBoxContainer.new();body.add_theme_constant_override("separation",8);panel.add_child(body)
-	if boon:
-		var eyebrow: Label=Sheet.label(Sheet.copy("RUN EVENT  ◆  OPTIONAL BOON","EVENT RUN  ◆  BERKAH OPSIONAL"),12,Sheet.JADE)
-		eyebrow.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
-		body.add_child(eyebrow)
 	var heading: Label=Sheet.label(title,22,Sheet.GOLD)
 	heading.add_theme_font_override("font",SERIF)
 	heading.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
-	body.add_child(heading)
+	if boon:
+		var banner := PanelContainer.new()
+		banner.name = "AltarBanner"
+		banner.add_theme_stylebox_override("panel", _altar_frame(ALTAR_FRAME, 9))
+		body.add_child(banner)
+		var titles := VBoxContainer.new()
+		titles.add_theme_constant_override("separation", 2)
+		banner.add_child(titles)
+		var eyebrow: Label=Sheet.label(Sheet.copy("◆  WAVE 3 · CHOOSE ONE BOON  ◆","◆  WAVE 3 · PILIH SATU BERKAH  ◆"),12,Sheet.JADE)
+		eyebrow.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+		titles.add_child(eyebrow)
+		titles.add_child(heading)
+	else:
+		body.add_child(heading)
 	var caption: String=Sheet.copy("This run only · Continue keeps your choice.","Hanya run ini · pilihan tersimpan saat Continue.") if boon else Sheet.copy("This run only · chosen once · Continue keeps your choice. Set DoT ticks receive no additional path multiplier.","Hanya run ini · satu pilihan · Continue menyimpan pilihanmu. Tick DoT set tidak dikalikan ulang oleh cabang.")
 	var hint: Label=Sheet.label(caption,14)
 	hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
@@ -96,26 +108,20 @@ func _offer(key: String,title: String,choices: Array) -> void:
 func _boon_card(id: String, title: String, art: Texture2D, accent: Color) -> Button:
 	var action: Button=Sheet.button("",_pick.bind(id))
 	action.name="Path_"+id
-	action.custom_minimum_size.y=94
-	var style:=StyleBoxFlat.new()
-	style.bg_color=Color("19231e") if id=="ember" else Color("0c2528")
-	style.border_color=Color(accent,.68)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(8)
-	style.border_width_left=3
+	action.custom_minimum_size.y=104
+	var style: StyleBoxTexture = _altar_frame(EMBER_FRAME if id == "ember" else WIND_FRAME, 12)
 	action.add_theme_stylebox_override("normal",style)
-	var active: StyleBoxFlat=style.duplicate()
-	active.bg_color=style.bg_color.lightened(.08)
-	active.border_color=accent
+	var active: StyleBoxTexture=style.duplicate()
+	active.modulate_color=Color(1.20, 1.16, 1.10)
 	action.add_theme_stylebox_override("pressed",active)
 	action.add_theme_stylebox_override("hover",active)
 	var row:=HBoxContainer.new()
 	row.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	row.add_theme_constant_override("separation",10)
 	action.add_child(row);row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	row.offset_left=10;row.offset_right=-10;row.offset_top=6;row.offset_bottom=-6
+	row.offset_left=13;row.offset_right=-13;row.offset_top=9;row.offset_bottom=-9
 	var icon:=TextureRect.new()
-	icon.texture=art;icon.custom_minimum_size.x=44;icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
+	icon.texture=art;icon.custom_minimum_size.x=48;icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;icon.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	row.add_child(icon)
 	var text:=VBoxContainer.new()
@@ -132,8 +138,23 @@ func _boon_card(id: String, title: String, art: Texture2D, accent: Color) -> But
 	var cost: String=movement if id=="ember" else damage
 	text.add_child(Sheet.label(gain,14,Sheet.JADE))
 	text.add_child(Sheet.label(cost,14,Color("f6a089")))
+	var arrow: Label = Sheet.label("›", 23, accent)
+	arrow.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(arrow)
+	row.minimum_size_changed.connect(func():
+		action.custom_minimum_size.y = maxf(104.0, row.get_combined_minimum_size().y + 18.0)
+	)
 	action.accessibility_name="%s. %s. %s"%[title,gain,cost]
 	return action
+
+func _altar_frame(texture: Texture2D, padding: int) -> StyleBoxTexture:
+	var frame := StyleBoxTexture.new()
+	frame.texture = texture
+	for edge: String in ["left", "right", "top", "bottom"]:
+		frame.set("texture_margin_" + edge, 18.0)
+		frame.set("content_margin_" + edge, padding)
+	return frame
+
 func _pick(value: String) -> void:
 	if not is_instance_valid(_modal):return
 	var manager: Node=get_parent()
