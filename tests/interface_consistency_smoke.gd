@@ -1,5 +1,6 @@
 extends SceneTree
 const Catalog=preload("res://scripts/data/skill_catalog.gd")
+const UiTokens=preload("res://scripts/ui/jade_ui_tokens.gd")
 var checks: int=0
 var failures: int=0
 func check(ok: bool,why: String) -> void:
@@ -29,20 +30,18 @@ func run() -> void:
  for dims: Vector2i in [Vector2i(320,568),Vector2i(390,844),Vector2i(648,1152)]:
   root.size=dims;await frames()
   var expected: Rect2
-  var label_sizes: Array[int]=[]
   for name: String in ["cultivation_menu","equipment_screen","daily_quest_screen","pavilion_screen","main_menu"]:
    change_scene_to_file("res://scenes/ui/"+name+".tscn");await frames(28)
    var nav: Control=current_scene.find_child("HubNav",true,false)
    check(nav!=null,"shared navigation exists "+name)
    if nav==null:continue
    var rect: Rect2=nav.get_global_rect()
-   check(is_equal_approx(rect.size.y,88),"same88px navigation height "+name+str(dims))
+   check(is_equal_approx(rect.size.y,UiTokens.NAV_HEIGHT),"shared navigation height "+name+str(dims))
    if expected.size==Vector2.ZERO:expected=rect
    check(rect.is_equal_approx(expected),"same safe-area navigation bounds "+name+str(dims))
-   var sizes: Array[int]=[]
-   for label: Label in nav.tab_labels:sizes.append(label.get_theme_font_size("font_size"))
-   if label_sizes.is_empty():label_sizes=sizes
-   check(sizes==label_sizes,"same navigation label sizes "+name+str(dims))
+   var icons_only: bool=nav.tab_labels.size()==5
+   for label: Label in nav.tab_labels:icons_only=icons_only and not label.visible and label.text.is_empty()
+   check(icons_only,"five icon-only navigation tabs "+name+str(dims))
    if name=="main_menu":
     var label: Label=current_scene.find_child("FeaturedTitle",true,false)
     var tag: Label=current_scene.find_child("EventKind",true,false)

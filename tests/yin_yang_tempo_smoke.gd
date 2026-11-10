@@ -17,6 +17,8 @@ func run() -> void:
 	current_scene.get_node("EnemySpawner").clear_normal_enemies();current_scene.get_node("WaveManager").set_process(false)
 	var player: Node2D=current_scene.get_node("player_1");player.set_physics_process(false)
 	var manager: Node=player.get_node("WeaponManager");manager.set_process(false)
+	# Keep physics running during the timed samples after the level-five choice unlocks.
+	manager.run_paths={"arts":{"yin_yang_blades":"balanced"},"boon":"none"}
 	for child: Node in manager.weapons:child.free()
 	manager.weapons.clear();manager.attack_timers.clear()
 	var stats: Node=player.get_node("PlayerStats");stats.power_multiplier=1;stats.sword_intent_level=0
@@ -60,7 +62,8 @@ func run() -> void:
 			for enemy: Node2D in enemies:before_hp.append(enemy.current_hp)
 			var before_ledger: float=float(ledger.totals.get("yin_yang_blades",0))
 			var radius: float=weapon.get_current_orbit_radius()
-			for tick: int in 90:
+			var sample_ticks: int=90
+			for tick: int in sample_ticks:
 				enemies[0].global_position=origin+Vector2(radius,0)
 				enemies[1].global_position=origin+Vector2.from_angle(PI+float(tick)/60*.7)*radius
 				enemies[2].global_position=origin+Vector2(35,0)
@@ -68,11 +71,13 @@ func run() -> void:
 				for blade: Node2D in weapon.blades:blade._physics_process(1.0/60)
 				await physics_frame
 			var actual: float=0
+			var hits_per_blade: int=1+floori((sample_ticks/60.0)/weapon.HIT_INTERVAL)
+			var max_target_loss: float=float(stats.calculate_damage(weapon.get_current_damage()))*hits_per_blade*weapon.blades.size()
 			for i: int in 2:
 				var loss: float=before_hp[i]-enemies[i].current_hp
 				actual+=loss
 				check(loss>0,"faster Area2D hits real stationary/moving target")
-				check(loss<=float(stats.calculate_damage(weapon.get_current_damage()))*4+.01,"shared0.5s target interval still bounds actual damage")
+				check(loss<=max_target_loss+.01,"independent blade intervals still bound actual damage")
 			check(is_equal_approx(actual,float(ledger.totals.get("yin_yang_blades",0))-before_ledger),"run report exactly matches applied enemy HP loss")
 			check(enemies[2].current_hp==before_hp[2],"orbit does not become invisible full-disc damage")
 			measurements.append({"level":level,"reversal":reversed,"stationary_and_moving_hp_loss_1_5s":actual,"seconds_per_turn":TAU/weapon.get_current_orbit_speed()})

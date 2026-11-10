@@ -994,3 +994,10 @@ A literal credential-shaped sample in a self-published test triggered the scanne
 - Run the clean strict Godot import before treating static validation or a warm fixture as release readiness. GitHub caught an inherited autoload parameter shadowing Node.owner, which stopped both release and journey suites before runtime. Rename the parameter and preserve both account checks.
 
 - Godot strict import passed while a typed ternary array still failed at runtime. Exercise both translated branches in the production Trials screen. Keep an extra final-day reward out of the two-card grid so its caption cannot inflate a fixed-width column.
+
+## 2026-11-10 · Settings, summons and dense fights
+
+- A settings option can fit its container and still clip the prompt once the native arrow and padding are measured. Inspect the rendered compact rail with insets. Put acquisition text near the top of a Library detail and verify it is in the initial visible scroll area.
+- A native Paid Jade tap should keep its progress message in view above the cost buttons. A recent verified wallet can avoid an extra read while submission still checks the account binding and expected revision and waits for a server receipt.
+- Seed the neutral art choice and boon when isolating combat. An unexpected pause invalidates a timed physics fixture, and the current Yin-Yang limit applies per blade and target. Compare applied damage before and after with both stationary and moving crowds.
+- Check the shared icon-only navigation against its current layout token and rendered label visibility. A historic height and hidden caption font size can no longer establish that contract.

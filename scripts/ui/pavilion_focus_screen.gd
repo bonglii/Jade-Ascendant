@@ -239,16 +239,16 @@ func _refresh_paid_summons() -> void:
 	_paid_status.visible = paid_mode
 	var view: Dictionary = PavilionManager.get_server_jade_view()
 	var paid_balance: int = int(view.get("balance", -1))
-	if paid_balance >= 0:
+	if _paid_reveal_busy and paid_mode:
+		_paid_status.text = _copy("Menghubungi server untuk summon…", "Contacting the summon server…") if _queued_paid_intent.is_empty() else _copy("Menunggu cek saldo selesai…", "Waiting for the wallet check…")
+	elif paid_mode and is_instance_valid(PavilionManager.paid_gameplay) and PavilionManager.paid_gameplay.mutation_pending():
+		_paid_status.text = _copy("Permintaan yang sama sedang diverifikasi atau dipulihkan.", "The same request is being verified or recovered.")
+	elif paid_balance >= 0:
 		_paid_status.text = _copy("Saldo Jade berbayar · ", "Paid Jade balance · ") + _format_count(paid_balance)
 	else:
 		_paid_status.text = _copy("Saldo Jade berbayar belum terverifikasi.", "Paid Jade balance is awaiting verification.")
-	_focus_paid_note.visible = paid_mode
+	_focus_paid_note.visible = paid_mode and not _paid_reveal_busy
 	_focus_paid_note.text = _copy("Segel biasa dipakai lebih dulu. Saldo berbayar tetap tersimpan.", "Use regular Seals first. Your paid balance is retained.") if owns_seals else _copy("Pilih target Legendary di atas. Target dan jaminan Jade berbayar tersimpan terpisah.", "Choose a Legendary target above. Paid Jade target and guarantee are retained separately.")
-	if _paid_reveal_busy and paid_mode:
-		_focus_paid_note.text = _copy("Menghubungi server untuk summon…", "Contacting the summon server…") if _queued_paid_intent.is_empty() else _copy("Menunggu cek saldo selesai…", "Waiting for the wallet check…")
-	elif paid_mode and is_instance_valid(PavilionManager.paid_gameplay) and PavilionManager.paid_gameplay.mutation_pending():
-		_focus_paid_note.text = _copy("Permintaan yang sama sedang diverifikasi atau dipulihkan.", "The same request is being verified or recovered.")
 	_focus_use_seals.visible = paid_mode and owns_seals
 	for action: Button in _paid_buttons:
 		action.disabled = action.disabled or owns_seals

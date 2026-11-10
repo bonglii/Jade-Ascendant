@@ -66,7 +66,7 @@ func _offer(key: String,title: String,choices: Array) -> void:
 		titles.add_child(heading)
 	else:
 		body.add_child(heading)
-	var caption: String=Sheet.copy("This run only · Continue keeps your choice.","Hanya run ini · pilihan tersimpan saat Continue.") if boon else Sheet.copy("This run only · chosen once · Continue keeps your choice. Set DoT ticks receive no additional path multiplier.","Hanya run ini · satu pilihan · Continue menyimpan pilihanmu. Tick DoT set tidak dikalikan ulang oleh cabang.")
+	var caption: String=Sheet.copy("Choose one boon for this run.","Pilih satu berkah untuk run ini.") if boon else Sheet.copy("This run only · chosen once · Continue keeps your choice. Set DoT ticks receive no additional path multiplier.","Hanya run ini · satu pilihan · Continue menyimpan pilihanmu. Tick DoT set tidak dikalikan ulang oleh cabang.")
 	var hint: Label=Sheet.label(caption,14)
 	hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
 	body.add_child(hint)

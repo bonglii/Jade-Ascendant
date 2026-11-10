@@ -4,6 +4,7 @@ const Visual=preload("res://scripts/ui/equipment_visual_catalog.gd")
 const Sets=preload("res://scripts/data/equipment_set_catalog.gd")
 const BuildGuide=preload("res://scripts/data/build_guidance_catalog.gd")
 const ArchiveFont=preload("res://assets/ui/library/fonts/archive_serif.ttf")
+const DETAIL_HEIGHT_RATIO: float = 0.72
 var _detail_panel: PanelContainer
 var _detail_scroll: ScrollContainer
 var _detail_content: Control
@@ -170,19 +171,11 @@ func _open_equipment_detail(id: String) -> void:
 	var d: Dictionary=EquipmentManager.get_item_data(id);var c:=VBoxContainer.new();c.add_theme_constant_override("separation",12)
 	var art:=TextureRect.new();art.custom_minimum_size.y=100;art.texture=load(Visual.get_icon_path(id));art.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;art.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;c.add_child(art)
 	c.add_child(_label(str(d.rarity).to_upper()+" • "+Visual.get_slot_title(str(d.slot)),14,Visual.get_rarity_color(str(d.rarity))))
-	c.add_child(_label(tr("BASE STATS • ")+Visual.get_stat_summary(d),16,Color(.9,.94,.9)))
-	c.add_child(_label(Visual.get_signature_effect_description(d),15,Color(.82,.90,.86)))
-	var set_id: String=Sets.get_set_id_for_item(id)
-	if not set_id.is_empty():
-		c.add_child(_label(Sets.get_display_name(set_id)+tr(" • FOUR ARMOR/ACCESSORY PIECES"),16,Color(.99,.83,.45)))
-		for tier: int in [2,3,4]:c.add_child(_label(tr("%d PIECES: %s")%[tier,Sets.get_tier_description(set_id,tier)],15,Color(.68,.90,.80)))
-	else:c.add_child(_label("Independent weapon • does not count toward a set. Permanent level cap: 10 / 20 / 30 / 40 / 50 at 1–5 stars. Run refinement is separate.",15,Color(.68,.90,.80)))
-	c.add_child(_label("Star ascension requires identical duplicates. Manage your loadout and upgrades in HERO.",14,Color(.73,.83,.79)))
 	var source: String
 	if id == "heavenweaver_compass":
 		source = preload("res://scripts/companion/player_journal.gd").copy(
-			"EVENT EXCLUSIVE • Complete 12 full Jade Dragon Odyssey laps, then claim the Compass through Mail.",
-			"EKSKLUSIF EVENT • Selesaikan 12 putaran penuh Jade Dragon Odyssey, lalu klaim Kompas lewat Mail."
+			"EVENT EXCLUSIVE • Complete 12 laps past START in Jade Dragon Odyssey. Claim the milestone, then collect the Compass in Mail.",
+			"EKSKLUSIF EVENT • Lewati START 12 kali di Jade Dragon Odyssey. Klaim hadiah milestone, lalu ambil Kompas di Mail."
 		)
 	elif bool(d.get("event_only",false)):
 		source = preload("res://scripts/companion/player_journal.gd").copy("EVENT EXCLUSIVE • Check its event rewards.", "EKSKLUSIF EVENT • Cek hadiah event terkait.")
@@ -194,6 +187,14 @@ func _open_equipment_detail(id: String) -> void:
 	var acquisition: Label = _label(source,14,Color(.99,.83,.45))
 	acquisition.name = "EquipmentAcquisition"
 	c.add_child(acquisition)
+	c.add_child(_label(tr("BASE STATS • ")+Visual.get_stat_summary(d),16,Color(.9,.94,.9)))
+	c.add_child(_label(Visual.get_signature_effect_description(d),15,Color(.82,.90,.86)))
+	var set_id: String=Sets.get_set_id_for_item(id)
+	if not set_id.is_empty():
+		c.add_child(_label(Sets.get_display_name(set_id)+tr(" • FOUR ARMOR/ACCESSORY PIECES"),16,Color(.99,.83,.45)))
+		for tier: int in [2,3,4]:c.add_child(_label(tr("%d PIECES: %s")%[tier,Sets.get_tier_description(set_id,tier)],15,Color(.68,.90,.80)))
+	else:c.add_child(_label("Independent weapon • does not count toward a set. Permanent level cap: 10 / 20 / 30 / 40 / 50 at 1–5 stars. Run refinement is separate.",15,Color(.68,.90,.80)))
+	c.add_child(_label("Star ascension requires identical duplicates. Manage your loadout and upgrades in HERO.",14,Color(.73,.83,.79)))
 	_open_popup(str(d.display_name),c)
 func _open_popup(title: String,content: Control) -> void:
 	_close_popup()
@@ -217,7 +218,7 @@ func _fit_detail_popup() -> void:
 	var width: float=minf(520,size.x-32)
 	var skin: StyleBox=_detail_panel.get_theme_stylebox("panel")
 	_detail_content.custom_minimum_size.x=maxf(1,width-skin.get_minimum_size().x-12)
-	_detail_panel.size=Vector2(width,minf(520,size.y*.75))
+	_detail_panel.size=Vector2(width,minf(520,floorf(size.y*DETAIL_HEIGHT_RATIO)))
 	call_deferred("_finish_detail_popup_fit")
 
 func _finish_detail_popup_fit() -> void:
@@ -233,7 +234,7 @@ func _finish_detail_popup_fit() -> void:
 		var width: float=minf(520,size.x-32)
 		var skin: StyleBox=expected.get_theme_stylebox("panel")
 		var wanted: float=_detail_content.get_combined_minimum_size().y+maxf(44,_detail_header.get_combined_minimum_size().y)+skin.get_minimum_size().y+12
-		var height: float=clampf(wanted,150,minf(520,size.y*.75))
+		var height: float=clampf(wanted,150,minf(520,floorf(size.y*DETAIL_HEIGHT_RATIO)))
 		expected.size=Vector2(width,height);expected.position=(size-expected.size)*.5
 	expected.modulate.a=1.0
 func _close_popup() -> void:

@@ -635,7 +635,7 @@ func _on_reset_controls_pressed() -> void:
 	_sync_from_settings()
 
 
-func _apply_dropdown_polish(option: OptionButton) -> void:
+func _apply_dropdown_polish(option: OptionButton, compact: bool = false) -> void:
 	if option == null:
 		return
 	# Native OptionButton defaults to click-on-PRESS. Within ScrollContainer this
@@ -649,8 +649,8 @@ func _apply_dropdown_polish(option: OptionButton) -> void:
 	var base_style: StyleBoxFlat = _style_for_control(AQUA)
 	base_style.bg_color = Color(0.004, 0.035, 0.048, 0.99)
 	base_style.border_color = Color(0.24, 0.82, 0.81, 0.86)
-	base_style.content_margin_left = 16.0
-	base_style.content_margin_right = 38.0
+	base_style.content_margin_left = 10.0 if compact else 16.0
+	base_style.content_margin_right = 18.0 if compact else 38.0
 	base_style.content_margin_top = 12.0
 	base_style.content_margin_bottom = 12.0
 	var hover: StyleBoxFlat = base_style.duplicate() as StyleBoxFlat
@@ -675,7 +675,7 @@ func _apply_dropdown_polish(option: OptionButton) -> void:
 	option.add_theme_color_override("font_disabled_color", MUTED.darkened(0.30))
 	option.add_theme_font_size_override("font_size", 16)
 	option.add_theme_constant_override("modulate_arrow", 1)
-	option.add_theme_constant_override("arrow_margin", 14)
+	option.add_theme_constant_override("arrow_margin", 8 if compact else 14)
 	var popup: PopupMenu = option.get_popup()
 	if popup == null:
 		return
@@ -864,7 +864,7 @@ func _build_sticky_navigation() -> void:
 	sections.custom_minimum_size.y = 49
 	sections.accessibility_name = _local("Jump to a settings section", "Buka bagian pengaturan")
 	row.add_child(sections)
-	_apply_dropdown_polish(sections)
+	_apply_dropdown_polish(sections, true)
 	var cards: Array[PanelContainer] = []
 	for card: Node in _settings_scroll.get_node("Content").get_children():
 		if not card is PanelContainer or card.name == "Header":
@@ -877,12 +877,13 @@ func _build_sticky_navigation() -> void:
 		if caption != null:
 			cards.append(card)
 			sections.add_item(caption.text)
+	var section_prompt: String = _local("JUMP TO", "BAGIAN")
 	sections.select(-1)
-	sections.text = _local("SECTIONS", "BAGIAN")
+	sections.text = section_prompt
 	sections.item_selected.connect(func(index: int):
 		_settings_scroll.set_deferred("scroll_vertical", roundi(cards[index].position.y))
 		sections.select(-1)
-		sections.text = _local("SECTIONS", "BAGIAN")
+		sections.text = section_prompt
 	)
 	var fit_rail: Callable = func():
 		_settings_scroll.offset_top = rail.position.y + rail.size.y + 8.0

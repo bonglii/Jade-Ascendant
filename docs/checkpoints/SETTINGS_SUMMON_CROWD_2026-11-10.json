@@ -1,7 +1,7 @@
 {
   "base": "b9f5e2eef79a791f66c42a74f7617b1f7951c3d0",
   "branch": "work/player-polish-20261104",
-  "status": "IMPLEMENTED_VALIDATION_IN_PROGRESS",
+  "status": "AUTHOR_QA_PASS",
   "owner_evidence": "1.4.6 present in Play Console. A 76-second Android recording shows dense enemies with overlapping combat effects. Phone frame timing and paid-summon network timing were not recorded.",
   "scope": [
     "Pinned Settings section picker, readable buttons and visible labels under safe insets",
@@ -13,10 +13,36 @@
   "validation": {
     "base_exact": "PASS",
     "base_strict_import": "PASS",
-    "next": "Run candidate import, focused compatibility and QA fixtures, actual overlap/damage checks, and native compact captures."
+    "candidate_strict_import": "PASS (Godot 4.7.2)",
+    "native_linux_x11": {
+      "settings_library_altar_pavilion": "244/244, EN and ID",
+      "simulated_safe_insets_and_altar_swipe": "239/239, EN and ID, compact landscape swipe from the first boon card",
+      "settings_controls_first_swipe": "65/65",
+      "lin_yue_library": "238/238"
+    },
+    "regression": {
+      "paid_gameplay_client": "58/58",
+      "paid_gameplay_server": "21/21",
+      "production_contract": "3/3, all nine gates preserved",
+      "pavilion": "38/38",
+      "combat_cel": "88/88",
+      "combat_six_fixes": "402/402, existing exit resource warning",
+      "yin_yang_tempo": "86/86 on baseline and candidate, identical measurements",
+      "yin_yang_coverage": "12/12 on baseline and candidate",
+      "small_ui_surfaces": "Player comfort 60/60, event scroll surfaces 159/159, player flow 55/55, shared navigation and interface 91/91"
+    },
+    "crowd_ab": {
+      "method": "Actual production enemy and weapon nodes. 120 targets, two paired 300-frame Linux X11 runs with stationary targets and a headless run with moving targets. All before and after per-target damage signatures matched.",
+      "stationary_damage": {"yin_yang_blades": 102960, "eight_trigrams_formation": 6720},
+      "moving_damage": {"yin_yang_blades": 100256, "eight_trigrams_formation": 6720},
+      "median_draw_calls": {"before": 227, "after": 207},
+      "p95_frame_ms": {"before": [28.876, 29.619], "after": [35.793, 26.2]},
+      "limits": "Software renderer frame times varied. Android FPS and live Paid Jade response times are pending."
+    }
   },
   "owner_install": "PENDING",
   "aab": "PENDING",
   "phone": "PENDING",
-  "deploy": "NOT_REQUESTED"
+  "deploy": "NOT_REQUESTED",
+  "next": "Install the exact work branch, export and test the same dense fight and a verified paid summon on Android."
 }
