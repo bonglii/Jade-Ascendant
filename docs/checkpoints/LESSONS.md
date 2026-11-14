@@ -1028,3 +1028,5 @@ Sort equipment with the same ownership resolver that supplies its displayed star
 - A set-piece tile must open visible detail when its normal selection summary is hidden. Verify the real tap and first swipe, not only a callback or dimensions.
 - Anchored button children do not supply their wrapped text height to the button automatically. Bound preview lines, derive the card height from native content minimums and retain the full description in its reader.
 - LineEdit has no set_text_no_signal method in the pinned engine. Use its text property for programmatic assignment; fixtures must emit text_changed or type through GUI when testing user edits. A long description that fits fully should pass without requiring an unnecessary scrollbar.
+
+- Set advice must use the real tier condition, including required weapon type. A full piece count does not establish Windstep readiness. Include the equipped armament in read-only build inputs and cover both compatible and incompatible loadouts when adding a specialist set.

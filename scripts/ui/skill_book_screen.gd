@@ -81,6 +81,7 @@ func _ready() -> void:
 	for state: String in ["normal","hover","pressed"]:_rarity_picker.add_theme_stylebox_override(state,_skin(state))
 	_rarity_picker.get_popup().add_theme_stylebox_override("panel",Ui.make_panel_style(Color(.003,.03,.039,.99),Color(.83,.66,.32),10))
 	_rarity_picker.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE;_rarity_picker.fit_to_longest_item=false
+	_rarity_picker.alignment=HORIZONTAL_ALIGNMENT_CENTER
 	_rarity_picker.clip_text=true;_rarity_picker.custom_minimum_size.y=44
 	_rarity_picker.item_selected.connect(func(index: int):_rarity=["ALL","common","rare","epic","legendary"][index];_restart_archive_list())
 	count_row.add_child(_rarity_picker)
@@ -129,6 +130,7 @@ func _archive_picker(node_name: String) -> OptionButton:
 	picker.custom_minimum_size.y=44
 	picker.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	picker.fit_to_longest_item=false
+	picker.alignment=HORIZONTAL_ALIGNMENT_CENTER
 	picker.clip_text=true
 	picker.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 	picker.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE
@@ -403,11 +405,13 @@ func _refresh_builds() -> void:
 	var query: String=_search.text.strip_edges().to_lower();var shown: int=0
 	if _filter in ["ALL","LOADOUT"]:
 		var ids: Array[String]=[]
-		for slot: String in ["robe","bracer","boots","pendant"]:ids.append(EquipmentManager.get_loadout_equipped_item_id(slot))
+		for slot: String in ["armament","robe","bracer","boots","pendant"]:ids.append(EquipmentManager.get_loadout_equipped_item_id(slot))
 		var current: Dictionary=BuildGuide.loadout(ids)
 		var title: String=tr("CURRENT BUILD · %d / 4")%int(current.piece_count)
 		var detail: String=tr("No matching set equipped. Visit HERO to assemble your loadout.")
 		if not str(current.set_id).is_empty():detail=Sets.get_display_name(current.set_id)+" · "+str(current.role)+"\n"+(str(current.passive.get("name",""))+" · ACTIVE" if current.active else tr("FULL SET · HP BONUSES ACTIVE") if bool(current.full_resonance) else tr("Four matching pieces activate the full bonus."))+"\n"+str(current.advice)
+		if current.set_id=="galeweave" and bool(current.full_resonance) and not bool(current.active):
+			detail=Sets.get_display_name(current.set_id)+" · "+str(current.role)+"\n"+tr("FULL SET · PARASOL REQUIRED FOR WINDSTEP")+"\n"+str(current.advice)
 		detail+=tr("\nOne dominant set supplies the set tiers. A mixed 2+2 build does not combine both sets' tier bonuses. The weapon is independent.")
 		if query.is_empty() or (title+detail).to_lower().contains(query):_list.add_child(_guide_card(title,detail));shown+=1
 	if _filter in ["ALL","SETS"]:

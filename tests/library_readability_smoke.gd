@@ -2,6 +2,7 @@ extends SceneTree
 ## Production Library, isolated local saves, real native input; no live claims.
 var checks: int=0
 var failures: int=0
+const Guide=preload("res://scripts/data/build_guidance_catalog.gd")
 
 func _initialize() -> void:
 	run.call_deferred()
@@ -55,6 +56,11 @@ func run() -> void:
 		settings.set_presentation("language",language)
 		root.size=Vector2i(320,568)
 		var book: Control=await open_book()
+		var gale_pieces: Array[String]=Guide.Sets.get_piece_ids("galeweave")
+		check(not bool(Guide.loadout(gale_pieces).active),"Windstep is inactive without a parasol "+language)
+		gale_pieces.append("gale_parasol")
+		check(bool(Guide.loadout(gale_pieces).active),"full Galeweave with a parasol activates Windstep "+language)
+		check(Guide.set_advice("galeweave").role==book.tr("PARASOL SPECIALIST"),"Galeweave has its own translated role "+language)
 		for dimensions: Vector2i in [Vector2i(320,568),Vector2i(405,860),Vector2i(648,1152),Vector2i(860,405)]:
 			root.size=dimensions
 			await frames(12)
@@ -93,6 +99,13 @@ func run() -> void:
 					book._close_popup()
 		root.size=Vector2i(320,568)
 		await frames()
+		for item: String in Guide.Sets.get_piece_ids("galeweave"):
+			equipment.equipped_item_ids[str(equipment.get_item_data(item).slot)]=item
+		book._set_mode("BUILDS");await frames()
+		var build_text: String=""
+		for copy_label: Label in book._list.get_child(0).find_children("*","Label",true,false):build_text+=copy_label.text
+		check(build_text.contains(book.tr("FULL SET · PARASOL REQUIRED FOR WINDSTEP")),"production build card discloses missing weapon condition "+language)
+		equipment.equipped_item_ids=slots_before.duplicate(true)
 		book._set_mode("EQUIPMENT")
 		await frames()
 		var scroll: ScrollContainer=book.find_child("SkillBookScroll",true,false)

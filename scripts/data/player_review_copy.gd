@@ -1,6 +1,10 @@
 extends RefCounted
 ## Review batch: complete message IDs before composing dynamic UI text.
 const INDONESIAN: Dictionary = {
+  "PARASOL SPECIALIST": "SPESIALIS PARASOL",
+  "Two pieces grant HP with any weapon. Three and four pieces require a Parasol: extra thorn piercing, then a stronger canopy push and brief Windstep. Reposition when the canopy opens; bosses are not pushed.": "Dua bagian memberi HP untuk semua senjata. Tiga dan empat bagian perlu Parasol: penetrasi duri tambahan, lalu dorongan payung lebih kuat dan Windstep singkat. Pindah posisi saat payung membuka; boss tidak terdorong.",
+  "PIERCING THORNS · CROWD ESCAPE": "DURI PENEMBUS · LOLOS DARI KEPUNGAN",
+  "FULL SET · PARASOL REQUIRED FOR WINDSTEP": "SET PENUH · WINDSTEP PERLU PARASOL",
   "Valley Patrol": "Patroli Lembah",
   "Guard the Path": "Jaga Jalur",
   "Defeat %d enemies.": "Kalahkan %d musuh.",

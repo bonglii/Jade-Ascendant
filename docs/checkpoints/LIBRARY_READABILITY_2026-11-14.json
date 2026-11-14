@@ -6,7 +6,8 @@
   "observed_before": [
     "Native 320x568: pinned header and selection reduced equipment list to a sliver",
     "Set-piece selection updated the hidden selection panel instead of opening details",
-    "Skill cards used a fixed height for variable-length descriptions and narrow category labels clipped"
+    "Skill cards used a fixed height for variable-length descriptions and narrow category labels clipped",
+    "Native Build tab exposed a generic lower-rarity fallback for Galeweave; full set count alone incorrectly advertised Windstep as active without a Parasol"
   ],
   "changes": [
     "Responsive section/category pickers, compact header and direct equipment detail on short screens",
@@ -15,16 +16,19 @@
     "Skill previews show up to three lines, explicit detail affordance and height from actual wrapped content; full text remains in detail",
     "Translated equipment/set search, reset hidden rarity on section change and return new search/filter to the first result",
     "Detail panels fit the actual safe area",
-    "Full-width skill descriptions with a small icon/category header, plus clear TYPE/RARITY default filter captions"
+    "Full-width skill descriptions with a small icon/category header, plus clear TYPE/RARITY default filter captions",
+    "Galeweave/Parasol get specific bilingual build advice; Windstep readiness follows the actual tier/weapon condition, including the equipped armament in the read-only build input"
   ],
   "validation": {
     "engine": "Godot 4.7.2",
-    "headless": "447/447 distinct checks",
+    "headless": "455/455 distinct checks",
     "coverage": "Four production tabs, EN/ID, 320x568 / 405x860 / 648x1152 / 860x405; real card swipes/taps, long equipped-chain skill text, full catalog, search/filter state, safe insets, unchanged inventory/loadout",
     "native": {
       "initial_source": "52a30ec3b84304079e07681f8e65c8fec6069f16",
       "initial_checks": "437/437, X11/OpenGL compatibility",
-      "final_review": "IN_PROGRESS after full-width skill reader and filter-caption correction"
+      "final_review": "IN_PROGRESS after the Galeweave guide condition and centered picker captions",
+      "reader_source": "f128a78edfa2bdb4430062e37a126bada8fa1ea4",
+      "reader_checks": "447/447; all four tabs reviewed manually in compact ID and tall EN, plus equipment and skill detail"
     },
     "qa_artifacts": "Outside source repository in disposable author QA directories",
     "unchanged_suites": "Previous Hero/Sword Rain 107/107 and historical VFX/combat suites reused; this batch does not change those inputs"
