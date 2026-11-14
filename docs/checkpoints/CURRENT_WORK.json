@@ -1,6 +1,6 @@
 {
-  "state": "docs/checkpoints/WEAPON_VFX_GALE_2026-11-10.json",
-  "base": "dbab0151a3be7ede71646284b75dbe2227795eac",
-  "previous": "docs/checkpoints/GALE_STARTER_2026-11-10.json",
+  "state": "docs/checkpoints/PLAYER_READABILITY_2026-11-14.json",
+  "base": "e27bb3b19b01ba8b7d7ca4bc0ebed4bda5c6fb8a",
+  "previous": "docs/checkpoints/WEAPON_VFX_GALE_2026-11-10.json",
   "source_branch": "work/gale-starter-20261110"
 }

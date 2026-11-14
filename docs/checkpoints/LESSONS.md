@@ -1017,3 +1017,7 @@ A local commit and uploaded blobs did not survive an interrupted publish as a re
 ## Weapon effects and fixed offers — 2026-11-10
 
 Keep the production combat geometry and clocks authoritative. Draw optional weapon effects on their owning scene, cap shared contact feedback, and reuse the existing crowd counter to refresh cached decorations only when the detail setting changes. Run actual projectile-accounting and paid-catalog checks when a batch includes new equipment. Draft fixed-offer items have a separate ownership route and must be excluded consistently from the paid-summon catalog hash, commands, and snapshots.
+
+## Hero readability and input fixtures — 2026-11-14
+
+Sort equipment with the same ownership resolver that supplies its displayed star count. A partially populated paid fixture can pass its own assertions while the shared wallet renderer raises script errors. Validate the complete snapshot contract and inspect script errors as well as the process exit code. Enable the established touch-emulation mode before simulating a mobile first swipe in a desktop fixture.

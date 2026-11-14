@@ -170,6 +170,28 @@ func _rain() -> void:
 			touch.pressed = pressed
 			root.push_input(touch, true)
 	_check(rain.sequential, "secondary touch switches to Sequence")
+	var center: Vector2 = button.get_global_transform_with_canvas() * (button.size / 2.0)
+	for gesture: String in ["drag", "cancel", "focus"]:
+		var press := InputEventScreenTouch.new()
+		press.index = 1
+		press.position = center
+		press.pressed = true
+		root.push_input(press, true)
+		if gesture == "drag":
+			var drag := InputEventScreenDrag.new()
+			drag.index = 1
+			drag.position = center + Vector2(20, 0)
+			drag.relative = Vector2(20, 0)
+			root.push_input(drag, true)
+		elif gesture == "focus":
+			button.notification(Node.NOTIFICATION_APPLICATION_FOCUS_OUT)
+		var release := InputEventScreenTouch.new()
+		release.index = 1
+		release.position = center
+		release.canceled = gesture == "cancel"
+		root.push_input(release, true)
+		_check(rain.sequential and button._second_finger == -1, "mode survives interrupted gesture " + gesture)
+		_check(button.self_modulate == Color.WHITE, "press feedback cleared after " + gesture)
 	rain.attack(player, boss)
 	await create_timer(1.65).timeout
 	var sequence: float = 10000.0 - boss.current_hp

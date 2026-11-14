@@ -1,0 +1,30 @@
+{
+  "base": "e27bb3b19b01ba8b7d7ca4bc0ebed4bda5c6fb8a",
+  "source_branch": "work/gale-starter-20261110",
+  "previous": "docs/checkpoints/WEAPON_VFX_GALE_2026-11-10.json",
+  "owner_status": "Owner reports that production access requires another 14-day testing period. The rejection reason and start date were not supplied.",
+  "changes": [
+    "Hero star sorting uses the same verified or local ownership as the displayed card",
+    "Compact equipment star fractions and EN/ID equipped badges",
+    "Opening an empty slot clears an unrelated search and reveals owned candidates",
+    "Equipment search trims surrounding whitespace and matches translated display names",
+    "Sword Rain secondary-touch taps cancel on drag, cancelled touch, loss of focus, pause or hide, with press feedback"
+  ],
+  "validation": {
+    "engine": "Godot 4.7.2",
+    "headless_hero_checks": "44/44",
+    "headless_gale_checks": "55/55",
+    "coverage": "Actual Hero with valid paid snapshot, local vs paid star discrepancy, EN/ID, compact/tall/landscape, first card swipe, unchanged ownership, production-stage Sword Rain, interrupted secondary touches and actual Save/Continue",
+    "native": "IN_PROGRESS. A baseline Hero and comparison sheet were inspected in the native Linux renderer. Final source review pending.",
+    "qa_artifacts": "Outside the source project, in disposable author QA directories"
+  },
+  "delivery": {
+    "source": "IMPLEMENTED",
+    "push": "CHECKPOINT_IN_PROGRESS",
+    "owner_install": "UNCONFIRMED",
+    "android_export": "UNCONFIRMED",
+    "phone_qa": "UNCONFIRMED",
+    "backend_deploy": "NOT_RUN"
+  },
+  "next_action": "Verify the published source in the native renderer and record the receipt. Owner Android validation follows the source update."
+}

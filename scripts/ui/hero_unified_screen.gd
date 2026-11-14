@@ -325,7 +325,7 @@ func _build_slots() -> void:
   button.tooltip_text=tr(SLOT_NAMES[i])
   _sync_slot(button,id)
   button.pressed.connect(_slot_pressed.bind(SLOTS[i]))
-  var label:=_label(SLOT_NAMES[i],12);label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;box.add_child(label)
+  var label:=_label(tr(SLOT_NAMES[i]),12);label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;box.add_child(label)
 
 func _equipped_ids() -> Array[String]:
  var ids: Array[String]=[]
@@ -381,11 +381,14 @@ func _visible_item_ids() -> Array[String]:
   var data: Dictionary=EquipmentManager.get_item_data(id) if EquipmentManager.has_item_definition(id) else InventoryManager.get_item_data(id)
   if filter_id=="material" and InventoryManager.get_item_type(id)!="material":continue
   if filter_id not in ["all","material"] and str(data.get("slot",""))!=filter_id:continue
-  if not query.is_empty() and not str(data.get("display_name",id)).to_lower().contains(query.to_lower()):continue
+  if not query.is_empty() and not tr(str(data.get("display_name",id))).to_lower().contains(query.strip_edges().to_lower()):continue
   ids.append(id)
  ids.sort_custom(func(a: String,b: String):
   if sort_id==1:return str(_backpack_data(a).get("display_name",a))<str(_backpack_data(b).get("display_name",b))
-  if sort_id==2 and EquipmentManager.get_item_star(a)!=EquipmentManager.get_item_star(b):return EquipmentManager.get_item_star(a)>EquipmentManager.get_item_star(b)
+  if sort_id==2:
+   var first_star: int=EquipmentManager.get_backpack_item_star(a)
+   var second_star: int=EquipmentManager.get_backpack_item_star(b)
+   if first_star!=second_star:return first_star>second_star
   var ranks: Dictionary={"legendary":3,"epic":2,"rare":1,"common":0}
   var ra: int=int(ranks.get(_backpack_data(a).get("rarity",""),-1))
   var rb: int=int(ranks.get(_backpack_data(b).get("rarity",""),-1))
@@ -405,7 +408,7 @@ func _rebuild_grid() -> void:
   _skin_card(card,str(data.get("rarity","rare")))
   var icon:=_texture(Visual.get_icon_path(id));card.add_child(icon);icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
   icon.offset_left=8*unit;icon.offset_top=7*unit;icon.offset_right=-8*unit;icon.offset_bottom=-maxf(24,30*unit)
-  card.tooltip_text=str(data.get("display_name",id))
+  card.tooltip_text=tr(str(data.get("display_name",id)))
   var label:=_label(_stars(EquipmentManager.get_backpack_item_star(id)) if is_equipment else "×%d"%InventoryManager.get_item_count(id),12,GOLD)
   label.name="ItemRank"
   label.add_theme_font_size_override("font_size",maxi(11,int(16*unit)));label.add_theme_constant_override("outline_size",1)
@@ -427,11 +430,12 @@ func _build_equipped_mark(card: Button,side: float) -> void:
  badge.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE);badge.offset_left=4;badge.offset_right=-4;badge.offset_top=4;badge.offset_bottom=maxf(17,20*unit)
  var skin:=StyleBoxFlat.new();skin.bg_color=Color(.035,.24,.21,.97);skin.border_color=GOLD;skin.set_border_width_all(1);skin.set_corner_radius_all(3)
  badge.add_theme_stylebox_override("panel",skin)
- var caption:=_label("✓ AKTIF" if side<80 else "TERPAKAI",11,GOLD);caption.name="EquippedCaption";caption.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;badge.add_child(caption)
+ var badge_text: String=("✓ AKTIF" if side<80 else "TERPAKAI") if SettingsManager.language=="id" else ("✓ ON" if side<80 else "EQUIPPED")
+ var caption:=_label(badge_text,11,GOLD);caption.name="EquippedCaption";caption.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;badge.add_child(caption)
  mark.visible=str(card.name).trim_prefix("Relic_") in _equipped_ids()
 
 func _stars(rank: int) -> String:
- return "★".repeat(clampi(rank,0,5))+"☆".repeat(5-clampi(rank,0,5))
+ return "★ %d/5"%clampi(rank,0,5)
 
 func _card_pressed(id: String) -> void:
  if card_buttons.has(id) and bool(card_buttons[id].get_meta("jade_scroll_cancelled",false)):return
@@ -445,6 +449,9 @@ func _slot_pressed(slot: String) -> void:
  var id: String=EquipmentManager.get_loadout_equipped_item_id(slot)
  if id.is_empty():
   filter_id=slot
+  query=""
+  search_box.text=""
+  search_box.hide()
   filter_menu.select(maxi(FILTERS.find(slot),0))
   _rebuild_grid()
   scroll.set_deferred("scroll_vertical",0)
