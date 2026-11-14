@@ -206,6 +206,10 @@ func _refresh() -> void:
 	_section_picker.select(ARCHIVE_MODES.find(_mode))
 	for index: int in range(_category_picker.item_count):
 		if str(_category_picker.get_item_metadata(index))==_filter:_category_picker.select(index)
+	_category_picker.accessibility_name="Filter category" if SettingsManager.language=="en" else "Filter kategori"
+	_rarity_picker.accessibility_name="Filter rarity" if SettingsManager.language=="en" else "Filter kelangkaan"
+	if _filter=="ALL":_category_picker.text="TYPE" if SettingsManager.language=="en" else "TIPE"
+	if _rarity=="ALL":_rarity_picker.text="RARITY" if SettingsManager.language=="en" else "RARITAS"
 	for tab: String in _tabs:_tabs[tab].add_theme_color_override("font_color",Color(1,.87,.44) if tab==_mode else Color(.72,.83,.79))
 	if _mode=="CHRONICLES":_refresh_chronicles();return
 	if _mode=="BUILDS":_refresh_builds();return
@@ -274,7 +278,24 @@ func _card(id: String) -> Control:
 	var fit: Callable=func():b.custom_minimum_size.y=maxf(132.0,row.get_combined_minimum_size().y+20.0)
 	row.minimum_size_changed.connect(fit);fit.call_deferred()
 	b.pressed.connect(_open_skill_detail.bind(id));return b
-func _open_skill_detail(id: String) -> void:_open_popup(_display_name(id),super._card(id))
+func _open_skill_detail(id: String) -> void:
+	# Reuse the complete shared description/requirements, but give text the full
+	# reader width rather than reserving an icon column for the entire scroll.
+	var card: Control=super._card(id)
+	var row: HBoxContainer=card.get_child(0)
+	var icon: TextureRect=row.get_child(0)
+	var copy: VBoxContainer=row.get_child(1)
+	var category: Label=copy.get_child(0)
+	var duplicate_title: Label=copy.get_child(1)
+	copy.reparent(card)
+	card.remove_child(row)
+	var masthead:=HBoxContainer.new()
+	masthead.add_theme_constant_override("separation",12)
+	copy.add_child(masthead);copy.move_child(masthead,0)
+	icon.reparent(masthead);category.reparent(masthead)
+	copy.remove_child(duplicate_title);duplicate_title.queue_free()
+	row.queue_free()
+	_open_popup(_display_name(id),card)
 func _open_equipment_detail(id: String) -> void:
 	var d: Dictionary=EquipmentManager.get_item_data(id);var c:=VBoxContainer.new();c.add_theme_constant_override("separation",12)
 	var art:=TextureRect.new();art.custom_minimum_size.y=100;art.texture=load(Visual.get_icon_path(id));art.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;art.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;c.add_child(art)

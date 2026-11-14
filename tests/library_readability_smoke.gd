@@ -86,6 +86,8 @@ func run() -> void:
 					for copy_label: Label in book._detail_content.find_children("*","Label",true,false):
 						if copy_label.text==book.tr(book._description("spirit_sword")):full_description=true
 					check(full_description,"detail retains the complete production description "+label)
+					var description: Label=book._detail_content.get_child(0).get_child(1)
+					check(description.size.x>=book._detail_scroll.size.x-36,"detail text uses the reader width "+label)
 					var bar: VScrollBar=book._detail_scroll.get_v_scroll_bar()
 					check(bar.max_value>bar.page or book._detail_scroll.get_global_rect().grow(1).encloses(book._detail_content.get_global_rect()),"full description fits or can scroll "+label)
 					book._close_popup()
@@ -112,6 +114,7 @@ func run() -> void:
 		book._set_mode("SKILLS");book._set_mode("EQUIPMENT")
 		await frames()
 		check(book._rarity=="ALL" and book._rarity_picker.selected==0,"section change resets hidden rarity state "+language)
+		check(book._category_picker.text==("TIPE" if language=="id" else "TYPE") and book._rarity_picker.text==("RARITAS" if language=="id" else "RARITY"),"default filters identify their purpose "+language)
 		grid=book._list.get_node("LibraryEquipmentGrid");first=grid.get_child(0)
 		await touch(first.get_global_rect().get_center(),true)
 		await touch(first.get_global_rect().get_center(),false)

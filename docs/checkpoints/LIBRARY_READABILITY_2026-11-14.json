@@ -14,13 +14,18 @@
     "Set-piece taps open details at every size",
     "Skill previews show up to three lines, explicit detail affordance and height from actual wrapped content; full text remains in detail",
     "Translated equipment/set search, reset hidden rarity on section change and return new search/filter to the first result",
-    "Detail panels fit the actual safe area"
+    "Detail panels fit the actual safe area",
+    "Full-width skill descriptions with a small icon/category header, plus clear TYPE/RARITY default filter captions"
   ],
   "validation": {
     "engine": "Godot 4.7.2",
-    "headless": "437/437 distinct checks",
+    "headless": "447/447 distinct checks",
     "coverage": "Four production tabs, EN/ID, 320x568 / 405x860 / 648x1152 / 860x405; real card swipes/taps, long equipped-chain skill text, full catalog, search/filter state, safe insets, unchanged inventory/loadout",
-    "native": "IN_PROGRESS; baseline render observed, corrected-source review follows",
+    "native": {
+      "initial_source": "52a30ec3b84304079e07681f8e65c8fec6069f16",
+      "initial_checks": "437/437, X11/OpenGL compatibility",
+      "final_review": "IN_PROGRESS after full-width skill reader and filter-caption correction"
+    },
     "qa_artifacts": "Outside source repository in disposable author QA directories",
     "unchanged_suites": "Previous Hero/Sword Rain 107/107 and historical VFX/combat suites reused; this batch does not change those inputs"
   },
