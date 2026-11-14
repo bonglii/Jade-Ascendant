@@ -21,6 +21,19 @@ var _summary_stats: Label
 var _selected: String=""
 var _popup: Control
 var _rarity_picker: OptionButton
+var _section_picker: OptionButton
+var _category_picker: OptionButton
+var _archive_body: VBoxContainer
+var _archive_top: HBoxContainer
+var _archive_title: Label
+var _archive_seal: Label
+var _archive_shortcuts: HBoxContainer
+var _archive_tabs: GridContainer
+var _archive_back: Button
+var _archive_margin: MarginContainer
+var _archive_scroll: ScrollContainer
+var _compact_archive: bool = false
+const ARCHIVE_MODES: Array[String] = ["EQUIPMENT", "SKILLS", "BUILDS", "CHRONICLES"]
 func _ready() -> void:
 	process_mode=Node.PROCESS_MODE_ALWAYS
 	Localization.install()
@@ -38,7 +51,7 @@ func _ready() -> void:
 	var top:=HBoxContainer.new();body.add_child(top)
 	var back:=_button("‹ HOME");back.custom_minimum_size.x=100;back.name="SkillBookBack";back.pressed.connect(_back);top.add_child(back)
 	var seal:=_label("JADE ARCHIVES",13,Color(.97,.80,.43));seal.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;top.add_child(seal)
-	body.add_child(_label("LIBRARY",30,Color(1,.88,.55)))
+	_archive_title=_label("LIBRARY",30,Color(1,.88,.55));body.add_child(_archive_title)
 	var shortcuts:=HBoxContainer.new()
 	body.add_child(shortcuts)
 	var journal: Button=_button("JURNAL" if SettingsManager.language=="id" else "JOURNAL")
@@ -50,18 +63,26 @@ func _ready() -> void:
 	var tabs:=GridContainer.new();tabs.columns=2;body.add_child(tabs)
 	for value: String in ["EQUIPMENT","SKILLS","BUILDS","CHRONICLES"]:
 		var tab:=_button(value);tab.name="LibraryTab"+value;tab.size_flags_horizontal=Control.SIZE_EXPAND_FILL;tab.pressed.connect(_set_mode.bind(value));tabs.add_child(tab);_tabs[value]=tab
+	_section_picker=_archive_picker("LibrarySectionPicker")
+	for value: String in ARCHIVE_MODES:_section_picker.add_item(tr(value))
+	body.add_child(_section_picker)
+	_section_picker.item_selected.connect(func(index: int):_set_mode(ARCHIVE_MODES[index]))
 	_search=LineEdit.new();_search.name="SkillBookSearch";_search.placeholder_text=tr("Search the archives…");_search.custom_minimum_size.y=44
 	_search.add_theme_font_size_override("font_size",16)
 	_search.add_theme_stylebox_override("normal",Ui.make_panel_style(Color(.004,.03,.036,.97),Color(.40,.68,.60),8))
 	_search.text_changed.connect(_on_search);body.add_child(_search)
 	_filters=HBoxContainer.new();_filters.add_theme_constant_override("separation",5);body.add_child(_filters);_build_filters()
-	var count_row:=HBoxContainer.new();body.add_child(count_row)
+	var count_row:=HBoxContainer.new();count_row.add_theme_constant_override("separation",6);body.add_child(count_row)
 	_count=_label("",13,Color(.79,.87,.82));count_row.add_child(_count)
+	_category_picker=_archive_picker("LibraryCategoryPicker");_category_picker.custom_minimum_size.x=100;count_row.add_child(_category_picker)
+	_category_picker.item_selected.connect(func(index: int):_set_filter(str(_category_picker.get_item_metadata(index))))
 	_rarity_picker=OptionButton.new();_rarity_picker.name="LibraryRarity";_rarity_picker.custom_minimum_size=Vector2(104,34);_rarity_picker.add_theme_font_size_override("font_size",12)
-	for value: String in ["ALL","common","rare","epic","legendary"]:_rarity_picker.add_item(tr("All rarities") if value=="ALL" else value.capitalize())
+	for value: String in ["ALL","common","rare","epic","legendary"]:_rarity_picker.add_item(tr("All rarities") if value=="ALL" else tr(value.capitalize()))
 	for state: String in ["normal","hover","pressed"]:_rarity_picker.add_theme_stylebox_override(state,_skin(state))
 	_rarity_picker.get_popup().add_theme_stylebox_override("panel",Ui.make_panel_style(Color(.003,.03,.039,.99),Color(.83,.66,.32),10))
-	_rarity_picker.item_selected.connect(func(index: int):_rarity=["ALL","common","rare","epic","legendary"][index];_refresh())
+	_rarity_picker.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE;_rarity_picker.fit_to_longest_item=false
+	_rarity_picker.clip_text=true;_rarity_picker.custom_minimum_size.y=44
+	_rarity_picker.item_selected.connect(func(index: int):_rarity=["ALL","common","rare","epic","legendary"][index];_restart_archive_list())
 	count_row.add_child(_rarity_picker)
 	var scroll:=ScrollContainer.new();scroll.name="SkillBookScroll";scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL;scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;scroll.scroll_deadzone=8;body.add_child(scroll);preload("res://scripts/ui/mobile_scroll_policy.gd").configure(scroll)
 	scroll.get_v_scroll_bar().modulate=Color(.46,.64,.57,.5)
@@ -74,6 +95,12 @@ func _ready() -> void:
 	_summary_meta=_label("",12,Color(.50,.90,.78));copy.add_child(_summary_meta)
 	_summary_stats=_label("",13,Color(.82,.90,.86));copy.add_child(_summary_stats)
 	var detail:=_button("VIEW DETAILS ›");detail.custom_minimum_size.y=36;detail.pressed.connect(func():if not _selected.is_empty():_open_equipment_detail(_selected));copy.add_child(detail)
+	_archive_body=body;_archive_top=top;_archive_seal=seal;_archive_shortcuts=shortcuts
+	_archive_tabs=tabs;_archive_back=back;_archive_margin=margin;_archive_scroll=scroll
+	_build_filters()
+	resized.connect(_layout_archive)
+	safe.resized.connect(_layout_archive,CONNECT_DEFERRED)
+	_layout_archive.call_deferred()
 	var guard: Node=preload("res://scripts/ui/mobile_touch_presentation_guard.gd").new();add_child(guard)
 	SceneTransitionManager.set_back_handler(_back)
 	if bool(get_tree().root.get_meta("library_open_builds",false)):
@@ -95,19 +122,90 @@ func _button(value: String) -> Button:
 	button.mouse_filter=Control.MOUSE_FILTER_PASS;button.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE
 	for state: String in ["normal","hover","pressed"]:button.add_theme_stylebox_override(state,_skin(state))
 	return button
+
+func _archive_picker(node_name: String) -> OptionButton:
+	var picker:=OptionButton.new()
+	picker.name=node_name
+	picker.custom_minimum_size.y=44
+	picker.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	picker.fit_to_longest_item=false
+	picker.clip_text=true
+	picker.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
+	picker.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE
+	picker.add_theme_font_size_override("font_size",14)
+	for state: String in ["normal","hover","pressed"]:picker.add_theme_stylebox_override(state,_skin(state))
+	var menu: PopupMenu=picker.get_popup()
+	menu.prefer_native_menu=false
+	menu.add_theme_stylebox_override("panel",Ui.make_panel_style(Color(.003,.03,.039,.99),Color(.83,.66,.32),10))
+	menu.add_theme_color_override("font_color",Color(.94,.97,.92))
+	menu.add_theme_font_size_override("font_size",16)
+	menu.add_theme_constant_override("v_separation",16)
+	return picker
+
+func _use_category_picker() -> bool:
+	return _compact_archive or size.x<440
+
+func _layout_archive() -> void:
+	if not is_inside_tree() or not is_instance_valid(_archive_scroll):return
+	var safe: Control=get_node("DeviceSafeArea")
+	_compact_archive=safe.size.y<720
+	var landscape: bool=_compact_archive and safe.size.x>safe.size.y
+	_archive_seal.visible=not _compact_archive
+	_archive_title.visible=not _compact_archive
+	_archive_tabs.visible=not _compact_archive
+	_section_picker.visible=_compact_archive
+	_archive_shortcuts.visible=not _compact_archive
+	_archive_back.text="‹" if _compact_archive else tr("‹ HOME")
+	_archive_back.tooltip_text=tr("HOME")
+	_archive_back.accessibility_name=tr("HOME")
+	_archive_back.custom_minimum_size.x=44 if _compact_archive else 100
+	for node_name: String in ["LibraryJournal","LibraryTraining"]:
+		var action: Button=find_child(node_name,true,false)
+		var target: HBoxContainer=_archive_top if _compact_archive else _archive_shortcuts
+		if action.get_parent()!=target:action.reparent(target)
+	var picker_parent: Control=_archive_top if landscape else _archive_body
+	if _section_picker.get_parent()!=picker_parent:_section_picker.reparent(picker_parent)
+	if landscape:_archive_top.move_child(_section_picker,1)
+	else:_archive_body.move_child(_section_picker,_archive_tabs.get_index()+1)
+	for edge: String in ["left","right","top","bottom"]:
+		_archive_margin.add_theme_constant_override("margin_"+edge,12 if _compact_archive or size.x<400 else 24)
+	_refresh()
+	if is_instance_valid(_popup):_fit_detail_popup()
+
 func _set_mode(value: String) -> void:
-	_close_popup();_mode=value;_filter="ALL";_search.text="";_build_filters();_refresh()
+	_close_popup();_mode=value;_filter="ALL";_rarity="ALL";_rarity_picker.select(0)
+	_search.text="";_build_filters();_restart_archive_list()
+
+func _on_search(_query: String) -> void:
+	_restart_archive_list()
+
+func _set_filter(category: String) -> void:
+	_filter=category
+	_restart_archive_list()
+
+func _restart_archive_list() -> void:
+	if is_instance_valid(_archive_scroll):_archive_scroll.scroll_vertical=0
+	_refresh()
 func _build_filters() -> void:
 	for child: Node in _filters.get_children():_filters.remove_child(child);child.queue_free()
 	_filter_buttons.clear()
 	var categories: Array=["ALL","WEAPONS","ARMOR","SETS"] if _mode=="EQUIPMENT" else ["ALL","LOADOUT","SETS","WEAPONS"] if _mode=="BUILDS" else ["ALL","WEAPONS","PASSIVES","SYNERGIES"]
 	for category: String in categories:
 		var b:=_button(category);b.custom_minimum_size.y=38;b.add_theme_font_size_override("font_size",11 if size.x<400 else 14);b.size_flags_horizontal=Control.SIZE_EXPAND_FILL;b.pressed.connect(_set_filter.bind(category));_filters.add_child(b);_filter_buttons[category]=b
+	if is_instance_valid(_category_picker):
+		_category_picker.clear()
+		for category: String in categories:
+			_category_picker.add_item(tr(category))
+			_category_picker.set_item_metadata(_category_picker.item_count-1,category)
 func _refresh() -> void:
 	call_deferred("_prepare_library_scroll")
-	_filters.visible = _mode != "CHRONICLES"
-	_summary.visible=_mode=="EQUIPMENT" and _filter!="SETS"
-	_rarity_picker.visible=_summary.visible
+	_filters.visible=_mode!="CHRONICLES" and not _use_category_picker()
+	_category_picker.visible=_mode!="CHRONICLES" and _use_category_picker()
+	_summary.visible=_mode=="EQUIPMENT" and _filter!="SETS" and not _compact_archive
+	_rarity_picker.visible=_mode=="EQUIPMENT" and _filter!="SETS"
+	_section_picker.select(ARCHIVE_MODES.find(_mode))
+	for index: int in range(_category_picker.item_count):
+		if str(_category_picker.get_item_metadata(index))==_filter:_category_picker.select(index)
 	for tab: String in _tabs:_tabs[tab].add_theme_color_override("font_color",Color(1,.87,.44) if tab==_mode else Color(.72,.83,.79))
 	if _mode=="CHRONICLES":_refresh_chronicles();return
 	if _mode=="BUILDS":_refresh_builds();return
@@ -117,7 +215,7 @@ func _refresh() -> void:
 	var visible_relics: Array[String]=[]
 	if _filter=="SETS":
 		for id: String in Sets.SET_ORDER:
-			if not query.is_empty() and not (id+" "+Sets.get_display_name(id)+" "+Sets.get_identity(id)).to_lower().contains(query):continue
+			if not query.is_empty() and not (id+" "+tr(Sets.get_display_name(id))+" "+tr(Sets.get_identity(id))).to_lower().contains(query):continue
 			_list.add_child(_set_card(id));shown+=1
 	else:
 		var grid:=GridContainer.new();grid.name="LibraryEquipmentGrid";grid.columns=5;grid.size_flags_horizontal=Control.SIZE_EXPAND_FILL;grid.add_theme_constant_override("h_separation",6);grid.add_theme_constant_override("v_separation",8);_list.add_child(grid)
@@ -132,10 +230,11 @@ func _refresh() -> void:
 			if _filter=="WEAPONS" and slot!="armament":continue
 			if _filter=="ARMOR" and slot=="armament":continue
 			if _rarity!="ALL" and str(d.rarity)!=_rarity:continue
-			if not query.is_empty() and not (id+" "+str(d.display_name)+" "+str(d.rarity)+" "+Sets.get_display_name(Sets.get_set_id_for_item(id))).to_lower().contains(query):continue
+			if not query.is_empty() and not (id+" "+tr(str(d.display_name))+" "+tr(str(d.rarity).capitalize())+" "+tr(Sets.get_display_name(Sets.get_set_id_for_item(id)))).to_lower().contains(query):continue
 			grid.add_child(_equipment_tile(id));shown+=1
 			visible_relics.append(id)
-	_count.text="%d %s"%[shown,"SETS" if _filter=="SETS" else "RELICS"]
+	if _filter=="SETS":_count.text=("%d SET" if SettingsManager.language=="id" else "%d SETS")%shown
+	else:_count.text=("%d RELIK" if SettingsManager.language=="id" else "%d RELICS")%shown
 	if shown==0:_list.add_child(_label("NO MATCHING ENTRIES",18,Color(.77,.85,.80)))
 	for category: String in _filter_buttons:_filter_buttons[category].add_theme_color_override("font_color",Color(1,.87,.44) if category==_filter else Color(.75,.85,.80))
 	if _summary.visible and _selected not in visible_relics:
@@ -143,29 +242,38 @@ func _refresh() -> void:
 		else:_select_equipment(visible_relics[0])
 func _equipment_tile(id: String) -> Button:
 	var d: Dictionary=EquipmentManager.get_item_data(id);var color: Color=Visual.get_rarity_color(str(d.rarity))
-	var b:=Button.new();b.name="Relic_"+id;b.tooltip_text=str(d.display_name);b.custom_minimum_size.y=62 if size.x<400 else 104;b.size_flags_horizontal=Control.SIZE_EXPAND_FILL;b.mouse_filter=Control.MOUSE_FILTER_PASS;b.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE
+	var b:=Button.new();b.name="Relic_"+id;b.tooltip_text=tr(str(d.display_name));b.accessibility_name=b.tooltip_text;b.custom_minimum_size.y=62 if size.x<400 else 104;b.size_flags_horizontal=Control.SIZE_EXPAND_FILL;b.mouse_filter=Control.MOUSE_FILTER_PASS;b.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE
 	for state: String in ["normal","hover","pressed"]:
 		var skin:=Ui.make_panel_style(Color(.005,.028,.037,.98),color,8);skin.set_border_width_all(2);skin.shadow_color=Color(color.r,color.g,color.b,.18);skin.shadow_size=4;skin.content_margin_left=4;skin.content_margin_right=4;b.add_theme_stylebox_override(state,skin)
 	var art:=TextureRect.new();art.texture=load(Visual.get_icon_path(id));art.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;art.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;art.mouse_filter=Control.MOUSE_FILTER_IGNORE;b.add_child(art);art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);art.offset_left=6;art.offset_right=-6;art.offset_top=6;art.offset_bottom=-6
 	var mark:=Label.new();mark.text="◆" if EquipmentManager.owns_backpack_item(id) else "○";mark.add_theme_font_size_override("font_size",12);mark.add_theme_color_override("font_color",color);mark.mouse_filter=Control.MOUSE_FILTER_IGNORE;b.add_child(mark);mark.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT);mark.offset_left=-18;mark.offset_top=4
-	b.pressed.connect(_select_equipment.bind(id));return b
+	b.pressed.connect(_inspect_equipment.bind(id));return b
+func _inspect_equipment(id: String) -> void:
+	_select_equipment(id)
+	if _compact_archive or _filter=="SETS":_open_equipment_detail(id)
 func _select_equipment(id: String) -> void:
 	_selected=id
 	var data: Dictionary=EquipmentManager.get_item_data(id)
 	_summary_icon.texture=load(Visual.get_icon_path(id))
-	_summary_text.text=str(data.display_name)
-	_summary_meta.text="%s · %s"%[str(data.rarity).to_upper(),tr("OWNED") if EquipmentManager.owns_backpack_item(id) else tr("NOT OWNED")]
+	_summary_text.text=tr(str(data.display_name))
+	_summary_meta.text="%s · %s"%[tr(str(data.rarity).capitalize()).to_upper(),tr("OWNED") if EquipmentManager.owns_backpack_item(id) else tr("NOT OWNED")]
 	_summary_stats.text=Visual.get_stat_summary(data)
 func _set_card(id: String) -> Control:
 	var p:=PanelContainer.new();p.add_theme_stylebox_override("panel",Ui.make_panel_style(Color(.003,.028,.035,.97),Visual.get_rarity_color(Sets.get_set_rarity(id)),10));var c:=VBoxContainer.new();p.add_child(c);c.add_child(_label(Sets.get_display_name(id),20,Color(.99,.85,.48)));var row:=HBoxContainer.new();c.add_child(row)
 	for item: String in Sets.get_piece_ids(id):var tile:=_equipment_tile(item);tile.custom_minimum_size.y=74;row.add_child(tile)
 	c.add_child(_label(tr("FOUR PIECES • ")+Sets.get_identity(id),14,Color(.62,.91,.82)));c.add_child(_label(Sets.get_tier_description(id,4),14,Color(.85,.93,.87)));return p
 func _card(id: String) -> Control:
-	var b:=Button.new();b.name="Skill_"+id;b.custom_minimum_size.y=114;b.mouse_filter=Control.MOUSE_FILTER_PASS;b.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE
+	var b:=Button.new();b.name="Skill_"+id;b.custom_minimum_size.y=132;b.mouse_filter=Control.MOUSE_FILTER_PASS;b.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE
 	b.add_theme_stylebox_override("normal",Ui.make_panel_style(Color(.003,.028,.035,.96),Color(.58,.66,.40),10))
 	var row:=HBoxContainer.new();row.mouse_filter=Control.MOUSE_FILTER_IGNORE;row.add_theme_constant_override("separation",12);b.add_child(row);row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);row.offset_left=12;row.offset_right=-12;row.offset_top=10;row.offset_bottom=-10
 	var icon:=TextureRect.new();var arm: String=EquipmentManager.get_equipped_item_id("armament");icon.texture=load(Catalog.get_icon_path(id,arm));icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;icon.custom_minimum_size=Vector2(72,72);icon.mouse_filter=Control.MOUSE_FILTER_IGNORE;row.add_child(icon)
-	var c:=VBoxContainer.new();c.mouse_filter=Control.MOUSE_FILTER_IGNORE;c.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(c);c.add_child(_label(_display_name(id),20,Color(.99,.85,.48)));c.add_child(_label(Catalog.get_category(id),11,Color(.50,.90,.78)));c.add_child(_label(_description(id),14,Color(.82,.90,.86)));b.pressed.connect(_open_skill_detail.bind(id));return b
+	var c:=VBoxContainer.new();c.mouse_filter=Control.MOUSE_FILTER_IGNORE;c.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(c);c.add_child(_label(_display_name(id),20,Color(.99,.85,.48)));c.add_child(_label(Catalog.get_category(id),11,Color(.50,.90,.78)))
+	var preview:=_label(_description(id),14,Color(.82,.90,.86));preview.name="SkillPreview"
+	preview.max_lines_visible=3;preview.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS;c.add_child(preview)
+	c.add_child(_label("VIEW DETAILS ›",12,Color(.50,.90,.78)))
+	var fit: Callable=func():b.custom_minimum_size.y=maxf(132.0,row.get_combined_minimum_size().y+20.0)
+	row.minimum_size_changed.connect(fit);fit.call_deferred()
+	b.pressed.connect(_open_skill_detail.bind(id));return b
 func _open_skill_detail(id: String) -> void:_open_popup(_display_name(id),super._card(id))
 func _open_equipment_detail(id: String) -> void:
 	var d: Dictionary=EquipmentManager.get_item_data(id);var c:=VBoxContainer.new();c.add_theme_constant_override("separation",12)
@@ -217,12 +325,17 @@ func _open_popup(title: String,content: Control) -> void:
 	if not resized.is_connected(_fit_detail_popup):resized.connect(_fit_detail_popup)
 	_fit_detail_popup()
 
+func _detail_available_rect() -> Rect2:
+	var safe: Control=get_node("DeviceSafeArea")
+	return safe.get_rect()
+
 func _fit_detail_popup() -> void:
 	if not is_inside_tree() or not is_instance_valid(_popup) or not is_instance_valid(_detail_panel):return
-	var width: float=minf(520,size.x-32)
+	var available: Rect2=_detail_available_rect()
+	var width: float=minf(520,available.size.x-32)
 	var skin: StyleBox=_detail_panel.get_theme_stylebox("panel")
 	_detail_content.custom_minimum_size.x=maxf(1,width-skin.get_minimum_size().x-12)
-	_detail_panel.size=Vector2(width,minf(520,floorf(size.y*DETAIL_HEIGHT_RATIO)))
+	_detail_panel.size=Vector2(width,minf(520,floorf(available.size.y*DETAIL_HEIGHT_RATIO)))
 	call_deferred("_finish_detail_popup_fit")
 
 func _finish_detail_popup_fit() -> void:
@@ -235,11 +348,12 @@ func _finish_detail_popup_fit() -> void:
 		if not is_inside_tree():return
 		await tree.process_frame
 		if not is_inside_tree() or not is_instance_valid(_popup) or not is_instance_valid(expected) or expected!=_detail_panel:return
-		var width: float=minf(520,size.x-32)
+		var available: Rect2=_detail_available_rect()
+		var width: float=minf(520,available.size.x-32)
 		var skin: StyleBox=expected.get_theme_stylebox("panel")
 		var wanted: float=_detail_content.get_combined_minimum_size().y+maxf(44,_detail_header.get_combined_minimum_size().y)+skin.get_minimum_size().y+12
-		var height: float=clampf(wanted,150,minf(520,floorf(size.y*DETAIL_HEIGHT_RATIO)))
-		expected.size=Vector2(width,height);expected.position=(size-expected.size)*.5
+		var height: float=clampf(wanted,150,minf(520,floorf(available.size.y*DETAIL_HEIGHT_RATIO)))
+		expected.size=Vector2(width,height);expected.position=available.position+(available.size-expected.size)*.5
 	expected.modulate.a=1.0
 func _close_popup() -> void:
 	if is_instance_valid(_popup):remove_child(_popup);_popup.queue_free()

@@ -1,0 +1,36 @@
+{
+  "base": "761fee6136bd9600b964bff9a966d7a75ea480dd",
+  "source_branch": "work/gale-starter-20261110",
+  "previous": "docs/checkpoints/PLAYER_READABILITY_2026-11-14.json",
+  "scope": "Library readability and inspection only; existing art and native touch-scroll policy reused",
+  "observed_before": [
+    "Native 320x568: pinned header and selection reduced equipment list to a sliver",
+    "Set-piece selection updated the hidden selection panel instead of opening details",
+    "Skill cards used a fixed height for variable-length descriptions and narrow category labels clipped"
+  ],
+  "changes": [
+    "Responsive section/category pickers, compact header and direct equipment detail on short screens",
+    "Journal/Training remain reachable; tall screens retain their tabs and selection panel",
+    "Set-piece taps open details at every size",
+    "Skill previews show up to three lines, explicit detail affordance and height from actual wrapped content; full text remains in detail",
+    "Translated equipment/set search, reset hidden rarity on section change and return new search/filter to the first result",
+    "Detail panels fit the actual safe area"
+  ],
+  "validation": {
+    "engine": "Godot 4.7.2",
+    "headless": "437/437 distinct checks",
+    "coverage": "Four production tabs, EN/ID, 320x568 / 405x860 / 648x1152 / 860x405; real card swipes/taps, long equipped-chain skill text, full catalog, search/filter state, safe insets, unchanged inventory/loadout",
+    "native": "IN_PROGRESS; baseline render observed, corrected-source review follows",
+    "qa_artifacts": "Outside source repository in disposable author QA directories",
+    "unchanged_suites": "Previous Hero/Sword Rain 107/107 and historical VFX/combat suites reused; this batch does not change those inputs"
+  },
+  "delivery": {
+    "source": "IMPLEMENTED",
+    "push": "IN_PROGRESS",
+    "owner_install": "UNCONFIRMED",
+    "android_export": "UNCONFIRMED",
+    "phone_qa": "UNCONFIRMED",
+    "backend_deploy": "NOT_RUN"
+  },
+  "next_action": "Review exact published source with native renderer, fix any findings, then record final receipt. Preserve existing commercial/ads gates and defer Battle Pass."
+}

@@ -1021,3 +1021,10 @@ Keep the production combat geometry and clocks authoritative. Draw optional weap
 ## Hero readability and input fixtures — 2026-11-14
 
 Sort equipment with the same ownership resolver that supplies its displayed star count. A partially populated paid fixture can pass its own assertions while the shared wallet renderer raises script errors. Validate the complete snapshot contract and inspect script errors as well as the process exit code. Enable the established touch-emulation mode before simulating a mobile first swipe in a desktop fixture.
+
+## 2026-11-14 — Library reader space and native input
+
+- A fixed summary plus repeated header rows can leave an otherwise valid ScrollContainer with only a sliver on a short phone. Inspect all tab compositions and reserve real reader space; keep direct detail access when the pinned summary is omitted.
+- A set-piece tile must open visible detail when its normal selection summary is hidden. Verify the real tap and first swipe, not only a callback or dimensions.
+- Anchored button children do not supply their wrapped text height to the button automatically. Bound preview lines, derive the card height from native content minimums and retain the full description in its reader.
+- LineEdit has no set_text_no_signal method in the pinned engine. Use its text property for programmatic assignment; fixtures must emit text_changed or type through GUI when testing user edits. A long description that fits fully should pass without requiring an unnecessary scrollbar.
