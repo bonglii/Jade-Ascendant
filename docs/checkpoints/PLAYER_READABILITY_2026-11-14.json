@@ -8,14 +8,21 @@
     "Compact equipment star fractions and EN/ID equipped badges",
     "Opening an empty slot clears an unrelated search and reveals owned candidates",
     "Equipment search trims surrounding whitespace and matches translated display names",
-    "Sword Rain secondary-touch taps cancel on drag, cancelled touch, loss of focus, pause or hide, with press feedback"
+    "Sword Rain secondary-touch taps cancel on drag, cancelled touch, loss of focus, pause or hide, with press feedback",
+    "Short phones prioritize equipment cards. Short landscape puts the loadout and backpack into the existing native scroller."
   ],
   "validation": {
     "engine": "Godot 4.7.2",
-    "headless_hero_checks": "44/44",
+    "headless_hero_checks": "52/52",
     "headless_gale_checks": "55/55",
     "coverage": "Actual Hero with valid paid snapshot, local vs paid star discrepancy, EN/ID, compact/tall/landscape, first card swipe, unchanged ownership, production-stage Sword Rain, interrupted secondary touches and actual Save/Continue",
-    "native": "IN_PROGRESS. A baseline Hero and comparison sheet were inspected in the native Linux renderer. Final source review pending.",
+    "native": {
+      "engine": "Godot 4.7.2, X11, OpenGL compatibility",
+      "initial_source": "58026af081d9e939b0adf97581a0b667acecdf6c",
+      "initial_checks": "44/44",
+      "observed": "English Hero and weapon comparison at 405x860, Indonesian compact Hero at 320x568. Compact inspection found excessive pinned content.",
+      "final_source": "IN_PROGRESS after the short-layout correction"
+    },
     "qa_artifacts": "Outside the source project, in disposable author QA directories"
   },
   "delivery": {

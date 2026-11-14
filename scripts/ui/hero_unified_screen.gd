@@ -17,6 +17,7 @@ const FILTERS: Array[String]=["all","armament","robe","bracer","pendant","boots"
 @onready var content: Control=$Content
 var scroll: ScrollContainer
 var fixed_deck: VBoxContainer
+var scroll_stack: VBoxContainer
 var page: VBoxContainer
 var grid: GridContainer
 var nav: Control
@@ -67,7 +68,8 @@ func _ready() -> void:
  scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_SHOW_NEVER;scroll.follow_focus=false;scroll.scroll_deadzone=10
  ScrollPolicy.configure(scroll)
  content.add_child(scroll)
- page=VBoxContainer.new();page.name="UnifiedPage";page.size_flags_horizontal=Control.SIZE_EXPAND_FILL;page.add_theme_constant_override("separation",12);scroll.add_child(page)
+ scroll_stack=VBoxContainer.new();scroll_stack.name="HeroScrollStack";scroll_stack.size_flags_horizontal=Control.SIZE_EXPAND_FILL;scroll.add_child(scroll_stack)
+ page=VBoxContainer.new();page.name="UnifiedPage";page.size_flags_horizontal=Control.SIZE_EXPAND_FILL;page.add_theme_constant_override("separation",12);scroll_stack.add_child(page)
  nav=Nav.new();nav.name="HubNav";nav.active_tab=2;content.add_child(nav)
  content.resized.connect(_layout)
  EquipmentManager.equipment_changed.connect(_on_equipment_changed)
@@ -84,9 +86,14 @@ func _layout() -> void:
  if content.size.y<620 and content.size.x>content.size.y: unit=minf(unit,1.0)
  var side: float=12.0*unit
  nav.fit_shared_layout()
- fixed_deck.position=Vector2(side,78.0)
+ var short_wide: bool=content.size.y<620 and content.size.x>content.size.y
+ var deck_parent: Node=scroll_stack if short_wide else content
+ if fixed_deck.get_parent()!=deck_parent:fixed_deck.reparent(deck_parent)
+ if short_wide:scroll_stack.move_child(fixed_deck,0)
+ else:fixed_deck.position=Vector2(side,78.0)
  fixed_deck.size.x=content.size.x-side*2
  page.custom_minimum_size.x=content.size.x-side*2
+ scroll_stack.custom_minimum_size.x=page.custom_minimum_size.x
  fixed_deck.custom_minimum_size.x=page.custom_minimum_size.x
  if is_instance_valid(detail):_fit_sheet.call_deferred(sheet_generation)
  _queue_refresh()
@@ -221,7 +228,7 @@ func _refresh_all() -> void:
  var sync:=_button("SINKRONKAN" if SettingsManager.language=="id" else "REFRESH");sync.name="SyncCollection";heading.add_child(sync)
  sync.pressed.connect(func():
   if is_instance_valid(PavilionManager.paid_gameplay):PavilionManager.paid_gameplay.refresh())
- if content.size.y>=620 or content.size.y>content.size.x:_build_banner()
+ if content.size.y>=620:_build_banner()
  _build_slots();_build_resonance()
  var journal: Button=_button("JURNAL BUILD" if SettingsManager.language=="id" else "BUILD JOURNAL");journal.name="HeroJournal"
  # On short viewports the journal shares the title row, freeing the pinned
@@ -231,7 +238,12 @@ func _refresh_all() -> void:
   heading.add_child(journal)
  else:page.add_child(journal)
  journal.pressed.connect(func():load("res://scripts/companion/player_journal.gd").open(self,"presets"))
- var practice: Button=_button("UJI BUILD ›" if SettingsManager.language=="id" else "TEST BUILD ›");practice.name="HeroTraining";page.add_child(practice);practice.pressed.connect(func():SceneTransitionManager.transition_menu_to("res://scenes/ui/training_ground.tscn"))
+ var practice: Button=_button("UJI BUILD ›" if SettingsManager.language=="id" else "TEST BUILD ›");practice.name="HeroTraining"
+ if content.size.y<620:
+  practice.text="UJI ›" if SettingsManager.language=="id" else "TEST ›"
+  heading.add_child(practice)
+ else:page.add_child(practice)
+ practice.pressed.connect(func():SceneTransitionManager.transition_menu_to("res://scenes/ui/training_ground.tscn"))
  page=backpack
  _build_collection()
  _layout_sections.call_deferred()
@@ -804,6 +816,11 @@ func _sync_refine_dot(card: Button, id: String) -> void:
 
 func _layout_sections() -> void:
  if not is_instance_valid(fixed_deck):return
+ if fixed_deck.get_parent()==scroll_stack:
+  # Short landscape uses one native scroller for the loadout and backpack.
+  scroll.position=Vector2(12.0*unit,78.0)
+  scroll.size=Vector2(page.custom_minimum_size.x,maxf(40,nav.position.y-86.0))
+  return
  var height: float=fixed_deck.get_combined_minimum_size().y
  fixed_deck.size=Vector2(page.custom_minimum_size.x,height)
  # Maintain a four-pixel gap in landscape while preserving portrait spacing.

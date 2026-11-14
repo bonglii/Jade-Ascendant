@@ -118,6 +118,19 @@ func run() -> void:
 			check(rank.get_theme_font("font").get_string_size(rank.text, HORIZONTAL_ALIGNMENT_LEFT, -1,
 				rank.get_theme_font_size("font_size")).x <= rank.size.x + 1,
 				"rank fraction fits " + language + str(viewport))
+			if viewport.y < 620:
+				hero.scroll.scroll_vertical = 0
+				await frames()
+				var first_card: Button = hero.card_buttons["mistveil_jian"]
+				if viewport.x > viewport.y:
+					check(hero.fixed_deck.get_parent() == hero.scroll_stack and hero.scroll.size.y > 160,
+						"landscape loadout and backpack share a usable native scroller " + language)
+				else:
+					check(hero.scroll.get_global_rect().grow(1).encloses(first_card.get_global_rect()),
+						"short phone shows a complete first card " + language)
+				var practice: Button = hero.content.find_child("HeroTraining", true, false)
+				check(practice != null and practice.get_global_rect().end.x <= hero.content.get_global_rect().end.x,
+					"compact training action fits " + language + str(viewport))
 			var same_order: Array[String] = hero._visible_item_ids()
 			check(same_order[0] == "mistveil_jian" and same_order[1] == "wanderer_jade_jian",
 				"sort stable across layout and language " + language + str(viewport))
