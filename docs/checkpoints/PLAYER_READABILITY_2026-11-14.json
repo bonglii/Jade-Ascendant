@@ -18,20 +18,28 @@
     "coverage": "Actual Hero with valid paid snapshot, local vs paid star discrepancy, EN/ID, compact/tall/landscape, first card swipe, unchanged ownership, production-stage Sword Rain, interrupted secondary touches and actual Save/Continue",
     "native": {
       "engine": "Godot 4.7.2, X11, OpenGL compatibility",
-      "initial_source": "58026af081d9e939b0adf97581a0b667acecdf6c",
-      "initial_checks": "44/44",
-      "observed": "English Hero and weapon comparison at 405x860, Indonesian compact Hero at 320x568. Compact inspection found excessive pinned content.",
-      "final_source": "IN_PROGRESS after the short-layout correction"
+      "hero_source": "31f7eb427d9317c2523098da60c1b88dabf52976",
+      "hero_checks": "52/52",
+      "gale_source": "58026af081d9e939b0adf97581a0b667acecdf6c",
+      "gale_checks": "55/55; Gale/Sword Rain source and test unchanged by the subsequent Hero layout correction",
+      "total": "107/107 distinct checks",
+      "manual_review": "English Hero and weapon comparison at 405x860, Indonesian compact Hero and weapon comparison at 320x568, English landscape shared scrolling and equipment rank labels at 860x405. The initial cramped compact layout was corrected and checked again.",
+      "first_swipe": "Actual input starts on an equipment card, moves the native scroller, opens no popup and changes no ownership; touch/mouse emulation is enabled as in the established desktop fixture.",
+      "platform_limit": "Linux native rendering does not confirm Windows installation, Android packaging or owner phone behavior."
     },
-    "qa_artifacts": "Outside the source project, in disposable author QA directories"
+    "qa_artifacts": "Outside the source project, in disposable author QA directories",
+    "headless_total": "107/107 distinct checks (52 Hero + 55 Gale/Sword Rain)"
   },
   "delivery": {
-    "source": "IMPLEMENTED",
-    "push": "CHECKPOINT_IN_PROGRESS",
+    "source": "IMPLEMENTED_AND_REVIEWED",
+    "push": "SOURCE_VERIFIED; final receipt follows on the same branch",
     "owner_install": "UNCONFIRMED",
     "android_export": "UNCONFIRMED",
     "phone_qa": "UNCONFIRMED",
-    "backend_deploy": "NOT_RUN"
+    "backend_deploy": "NOT_RUN",
+    "verified_code_commit": "31f7eb427d9317c2523098da60c1b88dabf52976",
+    "battle_pass": "DEFERRED",
+    "starter_pack_checkout": "DISABLED; verified commercial entitlement flow is not implemented by this polish batch"
   },
-  "next_action": "Verify the published source in the native renderer and record the receipt. Owner Android validation follows the source update."
+  "next_action": "Owner can pull the source branch. Windows/Android export and phone checks remain separate receipts. Do not repeat the unchanged historical 1444/12 suite solely for this receipt update."
 }
