@@ -25,22 +25,33 @@
     "native": {
       "initial_source": "07d4363f19f25bd29c332a7bb98eff939a612382",
       "initial_checks": "310/310; X11/OpenGL; clean process exit 0",
-      "final_review": "IN_PROGRESS after the Victory save-state caption correction",
-      "review_fixture": "Watchdog now stops enforcing the assertion deadline after checks complete; interactive review is not an unfinished test."
+      "final_review": "PASS: native Stage ID 860x405 Need Energy CTA stays inside the screen; Victory EN 405x860 shows Rewards Pending with Save Pending; Defeat ID 320x568 wraps all action captions, shows recorded damage shares, and actual Skills drag scrolls without switching before a deliberate tap reveals Skills in place.",
+      "review_fixture": "Watchdog now stops enforcing the assertion deadline after checks complete; interactive review is not an unfinished test.",
+      "final_source": "0d7909ed8a9191db7f69a8efe732bed5bab16ff1",
+      "final_checks": "314/314; Godot 4.7.2 X11/OpenGL compatibility; clean process exit 0",
+      "platform_limit": "Linux native UI validation does not establish Windows installation, Android export, phone performance or live service readiness."
     },
     "coverage": "EN/ID; 320x568,405x860,648x1152,860x405; stage energy/lock/save-barrier/replay states; production Victory/Defeat UI; native input tab taps/swipes; damage percentages and typography; partial/empty states; safe insets; unchanged currency/clears/combat evidence and pending defeat",
     "boundary": "Damage totals are controlled display fixtures in a real stage. Victory UI invocation does not establish a completed victory/reward transaction. No phone FPS, authenticated service or Android export proof.",
     "unchanged_evidence": "Reuse previous Library 455/455, Hero/Sword Rain 107/107 and unchanged combat/IAP gates",
-    "qa_artifacts": "Outside source worktree in disposable author QA project"
+    "qa_artifacts": "Outside source worktree in disposable author QA project",
+    "input_sha256": {
+      "scripts/ui/stage_select.gd": "7b6a36e408beca80317abd70c8c3829fe2a30c72849a77e6db699c1112ee0c43",
+      "scripts/ui/result_ceremony.gd": "32dd634ffaacf0c0c410051cc99f54fe5abf6af3a70db3758957978c1923c2fd",
+      "scripts/ui/VictoryUI.gd": "fc2cb76a66091ff6164af8473fa9a876dc3de527315c22b25450fc1877257859",
+      "tests/stage_flow_readability_smoke.gd": "d0d92d2fa114c1ac794f3b7d96fb6f25d28eb7ac3ab788154d6ea4325459d037"
+    }
   },
   "delivery": {
-    "source": "IMPLEMENTED",
-    "push": "IN_PROGRESS",
+    "source": "IMPLEMENTED_AND_REVIEWED",
+    "push": "VERIFIED_CODE_PUBLISHED; final receipt is a checkpoint-only child",
     "owner_install": "UNCONFIRMED",
     "windows_qa": "UNCONFIRMED",
     "android_export": "UNCONFIRMED",
     "phone_qa": "UNCONFIRMED",
-    "backend_deploy": "NOT_RUN"
+    "backend_deploy": "NOT_RUN",
+    "verified_code_commit": "0d7909ed8a9191db7f69a8efe732bed5bab16ff1",
+    "verified_code_tree": "e1f3b1f8f09d35f718b3613abbde87572b30230c"
   },
-  "next_action": "Review the exact source with native renderer, including actual tab drag/tap and compact/landscape states, then record final receipt and update the same handoff."
+  "next_action": "Owner may pull the same work/gale-starter-20261110 branch. Keep Windows install, Android export and phone QA as separate receipts. Reuse the passed unchanged Hero/Library/combat evidence; no backend/native/payment/ads gates were changed."
 }
