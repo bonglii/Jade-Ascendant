@@ -26,20 +26,28 @@
     "native": {
       "initial_source": "52a30ec3b84304079e07681f8e65c8fec6069f16",
       "initial_checks": "437/437, X11/OpenGL compatibility",
-      "final_review": "IN_PROGRESS after the Galeweave guide condition and centered picker captions",
+      "final_review": "PASS: all four tabs in compact Indonesian and tall English; full-width skill detail, equipment detail and set inspection; final centered filter captions and translated Galeweave advice at 320x568; equipment landscape at 860x405.",
       "reader_source": "f128a78edfa2bdb4430062e37a126bada8fa1ea4",
-      "reader_checks": "447/447; all four tabs reviewed manually in compact ID and tall EN, plus equipment and skill detail"
+      "reader_checks": "447/447; all four tabs reviewed manually in compact ID and tall EN, plus equipment and skill detail",
+      "final_source": "5ed81ff3fef7051f523d84cf6981bb8c70e15e0b",
+      "final_checks": "455/455 distinct checks, Godot 4.7.2, X11/OpenGL compatibility",
+      "platform_limit": "Linux native rendering does not establish owner Windows installation, Android export or phone QA.",
+      "network_scope": "An earlier isolated native run reported failed public auto-refresh connections; authenticated/backend availability was not assessed by this UI batch."
     },
     "qa_artifacts": "Outside source repository in disposable author QA directories",
-    "unchanged_suites": "Previous Hero/Sword Rain 107/107 and historical VFX/combat suites reused; this batch does not change those inputs"
+    "unchanged_suites": "Previous Hero/Sword Rain 107/107 and historical VFX/combat suites reused; this batch does not change those inputs",
+    "evidence_retention": "Checks and exact native code SHA were observed before the author executor reset; the receipt is preserved here. Temporary raw author logs were not retained. Reuse the completed checks; no gameplay source changes after this receipt."
   },
   "delivery": {
-    "source": "IMPLEMENTED",
-    "push": "IN_PROGRESS",
+    "source": "IMPLEMENTED_AND_REVIEWED",
+    "push": "VERIFIED_CODE_PUBLISHED; final receipt is its checkpoint-only child on the same branch",
     "owner_install": "UNCONFIRMED",
     "android_export": "UNCONFIRMED",
     "phone_qa": "UNCONFIRMED",
-    "backend_deploy": "NOT_RUN"
+    "backend_deploy": "NOT_RUN",
+    "verified_code_commit": "5ed81ff3fef7051f523d84cf6981bb8c70e15e0b",
+    "verified_code_tree": "dc64d5e9da4771cc665a4e3a4374d6ea16a96e6f",
+    "receipt_completed_date": "2026-11-15"
   },
-  "next_action": "Review exact published source with native renderer, fix any findings, then record final receipt. Preserve existing commercial/ads gates and defer Battle Pass."
+  "next_action": "Owner may pull work/gale-starter-20261110. Installation, Windows, Android export and phone QA remain separate receipts. Preserve existing commercial/ads gates and defer Battle Pass."
 }
