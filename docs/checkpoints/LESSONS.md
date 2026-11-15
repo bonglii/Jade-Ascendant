@@ -1030,3 +1030,10 @@ Sort equipment with the same ownership resolver that supplies its displayed star
 - LineEdit has no set_text_no_signal method in the pinned engine. Use its text property for programmatic assignment; fixtures must emit text_changed or type through GUI when testing user edits. A long description that fits fully should pass without requiring an unnecessary scrollbar.
 
 - Set advice must use the real tier condition, including required weapon type. A full piece count does not establish Windstep readiness. Include the equipped armament in read-only build inputs and cover both compatible and incompatible loadouts when adding a specialist set.
+
+## 2026-11-15 — Stage and run reader decisions
+
+- A tab below a long result summary must reveal its own report, not reset the whole reader to the result title. Verify a real tab tap and the first drag with the production GUI.
+- Disabled stage actions must disclose the actual blocking reason. Save recovery takes priority; Energy readiness does not imply a locked stage unlocks after that timer. Restore the ready caption when the blocker clears.
+- Test full localized action captions against the actual safe area. Indonesian Retry forced a 317px result panel into a 296px safe area; allow the complete caption to wrap rather than shrinking or clipping it.
+- Report fixtures must retain zero-damage owned weapons, use explicitly typed Array[Dictionary] for dynamic assignments, and accept scroll position zero when all report content fits. Controlled display totals should be installed after final combat callbacks settle.

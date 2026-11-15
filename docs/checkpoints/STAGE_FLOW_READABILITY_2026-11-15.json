@@ -1,0 +1,39 @@
+{
+  "base": "392d3e746b211dcaf4241eaaefccabf8cc2c5b0b",
+  "source_branch": "work/gale-starter-20261110",
+  "previous": "docs/checkpoints/LIBRARY_READABILITY_2026-11-14.json",
+  "scope": "Stage readiness and shared Victory/Defeat report readability; no progression, balance, purchase, ad or reward authority changes",
+  "observed_before": [
+    "Native compact stage preview showed an Energy Ready-in countdown while the trial was progression-locked",
+    "Native defeat Skills tap jumped back to the run title and hid the selected report",
+    "Short landscape stage Start extended below the viewport",
+    "Indonesian retry caption forced a 317px panel into a 296px safe area"
+  ],
+  "changes": [
+    "Stage CTA explains insufficient Energy and save recovery, restores ready state and identifies free replay",
+    "Locked/unimplemented trial labels stay distinct; energy refill does not imply progression unlock",
+    "Short landscape reduces decorative/map and detail minimum heights while retaining Start",
+    "Victory/Defeat tabs bring their report into view rather than resetting to the run title",
+    "Damage amounts include share of recorded total; tiny nonzero shares use <1%; empty reports are explicit and partial-history wording remains",
+    "Shared result buttons wrap full captions; panels respect compact safe insets"
+  ],
+  "validation": {
+    "engine": "Godot 4.7.2; official archive SHA256 cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4",
+    "headless": "310/310",
+    "native": "IN_PROGRESS; baseline observed, final source review follows",
+    "coverage": "EN/ID; 320x568,405x860,648x1152,860x405; stage energy/lock/save-barrier/replay states; production Victory/Defeat UI; native input tab taps/swipes; damage percentages and typography; partial/empty states; safe insets; unchanged currency/clears/combat evidence and pending defeat",
+    "boundary": "Damage totals are controlled display fixtures in a real stage. Victory UI invocation does not establish a completed victory/reward transaction. No phone FPS, authenticated service or Android export proof.",
+    "unchanged_evidence": "Reuse previous Library 455/455, Hero/Sword Rain 107/107 and unchanged combat/IAP gates",
+    "qa_artifacts": "Outside source worktree in disposable author QA project"
+  },
+  "delivery": {
+    "source": "IMPLEMENTED",
+    "push": "IN_PROGRESS",
+    "owner_install": "UNCONFIRMED",
+    "windows_qa": "UNCONFIRMED",
+    "android_export": "UNCONFIRMED",
+    "phone_qa": "UNCONFIRMED",
+    "backend_deploy": "NOT_RUN"
+  },
+  "next_action": "Review the exact source with native renderer, including actual tab drag/tap and compact/landscape states, then record final receipt and update the same handoff."
+}

@@ -1,6 +1,6 @@
 {
-  "base": "761fee6136bd9600b964bff9a966d7a75ea480dd",
-  "previous": "docs/checkpoints/PLAYER_READABILITY_2026-11-14.json",
-  "source_branch": "work/gale-starter-20261110",
-  "state": "docs/checkpoints/LIBRARY_READABILITY_2026-11-14.json"
+  "state": "docs/checkpoints/STAGE_FLOW_READABILITY_2026-11-15.json",
+  "base": "392d3e746b211dcaf4241eaaefccabf8cc2c5b0b",
+  "previous": "docs/checkpoints/LIBRARY_READABILITY_2026-11-14.json",
+  "source_branch": "work/gale-starter-20261110"
 }

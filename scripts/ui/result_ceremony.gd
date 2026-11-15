@@ -109,6 +109,9 @@ func _ready() -> void:
 
 static func style_button(button: Button, palette: String) -> void:
 	button.custom_minimum_size = Vector2(0, 56)
+	button.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	button.clip_text=false
+	button.text_overrun_behavior=TextServer.OVERRUN_NO_TRIMMING
 	button.add_theme_font_size_override("font_size", 16)
 	for pair: Array in [["normal", "normal"], ["hover", "hover"], ["pressed", "pressed"], ["disabled", "pressed"]]:
 		var style := StyleBoxTexture.new()
@@ -252,8 +255,8 @@ func _install_run_report() -> void:
 		button.custom_minimum_size=Vector2(0,44)
 		tabs.add_child(button)
 		style_button(button,"navy")
-	_damage_tab.pressed.connect(func():_show_skills=false;_refresh_report_rows())
-	_skills_tab.pressed.connect(func():_show_skills=true;_refresh_report_rows())
+	_damage_tab.pressed.connect(_select_report_tab.bind(false))
+	_skills_tab.pressed.connect(_select_report_tab.bind(true))
 	_report_rows=VBoxContainer.new()
 	_report_rows.add_theme_constant_override("separation",8)
 	_report.add_child(_report_rows)
@@ -299,14 +302,23 @@ func _report_label(text: String,color: Color,font_size: int=15) -> Label:
 	label.add_theme_font_size_override("font_size",font_size)
 	return label
 
-func _refresh_report_rows() -> void:
+func _select_report_tab(show_skills: bool) -> void:
+	_show_skills=show_skills
+	_refresh_report_rows(false)
+
+func _refresh_report_rows(reset_reader: bool=true) -> void:
 	if _report_rows==null:return
+	# A deliberate tab change should reveal that tab's rows. The report can sit
+	# below long reward/review copy, so resetting the entire reader hides it.
+	var reader_target: int=0 if reset_reader else maxi(0,roundi(_damage_tab.global_position.y-_body.global_position.y)-8)
 	for child: Node in _report_rows.get_children():_report_rows.remove_child(child);child.queue_free()
 	var indonesian: bool=SettingsManager.language=="id"
 	_damage_tab.text="DAMAGE"
 	_skills_tab.text="SKILL" if indonesian else "SKILLS"
 	_damage_tab.set_pressed_no_signal(not _show_skills);_skills_tab.set_pressed_no_signal(_show_skills)
 	if _show_skills:
+		if _report_skills.is_empty():
+			_report_rows.add_child(_report_label("Belum ada skill tercatat untuk run ini." if indonesian else "No skills recorded for this run.",Color(.72,.82,.78),14))
 		for skill: Dictionary in _report_skills:
 			var row:=HBoxContainer.new();row.add_theme_constant_override("separation",8);_report_rows.add_child(row)
 			var icon:=TextureRect.new();icon.name="ReportSkillIcon_"+str(skill.id);icon.texture=load(preload("res://scripts/data/skill_catalog.gd").get_icon_path(str(skill.id),str(skill.get("armament_id",""))))
@@ -317,15 +329,19 @@ func _refresh_report_rows() -> void:
 		var total: float=0
 		for item: Dictionary in _report_damage:total+=float(item.damage)
 		_report_rows.add_child(_report_label(("TOTAL TERCATAT" if indonesian else "TOTAL RECORDED")+"  "+preload("res://scripts/ui/readable_numbers.gd").compact(roundi(total)),Color(.94,.84,.60),17))
+		if _report_damage.is_empty():
+			_report_rows.add_child(_report_label("Belum ada damage tercatat untuk run ini." if indonesian else "No damage recorded for this run.",Color(.72,.82,.78),14))
 		for item: Dictionary in _report_damage:
 			var row:=VBoxContainer.new();row.add_theme_constant_override("separation",4);_report_rows.add_child(row)
 			var heading:=HBoxContainer.new();row.add_child(heading)
 			heading.add_child(_report_label(str(item.name),Color(.84,.91,.86)))
-			var number:=_report_label(preload("res://scripts/ui/readable_numbers.gd").compact(roundi(float(item.damage))),Color(.96,.86,.65));number.name="ReportDamageAmount";number.autowrap_mode=TextServer.AUTOWRAP_OFF;number.custom_minimum_size.x=56;number.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;number.size_flags_horizontal=Control.SIZE_SHRINK_END;heading.add_child(number)
+			var percentage: float=100.0*float(item.damage)/total if total>0 else 0.0
+			var share_text: String="<1%" if percentage>0 and percentage<1 else "%.1f%%"%percentage
+			var number:=_report_label(preload("res://scripts/ui/readable_numbers.gd").compact(roundi(float(item.damage)))+" · "+share_text,Color(.96,.86,.65));number.name="ReportDamageAmount";number.autowrap_mode=TextServer.AUTOWRAP_OFF;number.custom_minimum_size.x=56;number.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;number.size_flags_horizontal=Control.SIZE_SHRINK_END;heading.add_child(number)
 			var bar:=ProgressBar.new();bar.custom_minimum_size.y=4;bar.show_percentage=false;bar.max_value=maxf(total,1);bar.value=float(item.damage);row.add_child(bar)
 			var fill:=StyleBoxFlat.new();fill.bg_color=Color(.30,.72,.59);fill.set_corner_radius_all(2);bar.add_theme_stylebox_override("fill",fill)
 			var bg:=StyleBoxFlat.new();bg.bg_color=Color(.1,.23,.24);bg.set_corner_radius_all(2);bar.add_theme_stylebox_override("background",bg)
 		if _report_partial:
 			_report_rows.add_child(_report_label("Catatan damage dimulai setelah Continue." if indonesian else "Damage tracking started after Continue.",Color(.65,.74,.72),12))
-	_scroll.set_deferred("scroll_vertical",0)
+	_scroll.set_deferred("scroll_vertical",reader_target)
 	fit.call_deferred()

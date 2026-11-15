@@ -29,6 +29,7 @@ var _detail_art: PanelContainer
 var start_button: Button
 var _energy_label: Label
 var _stage_can_start: bool = false
+var _stage_start_text: String = ""
 var confirm_overlay: Control
 var start_confirm_dialog: Control
 var confirm_stage_label: Label
@@ -135,6 +136,7 @@ func _build_shell() -> void:
 	safe_host.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	safe_host.set_script(MobileSafeAreaScript)
 	add_child(safe_host)
+	safe_host.resized.connect(_fit_phone,CONNECT_DEFERRED)
 
 	var safe := MarginContainer.new()
 	safe.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -405,8 +407,11 @@ func _selected_stage_view_data() -> Dictionary:
 			+ " • " + summary
 		),
 		"button_text": (
-			"BEGIN TRIAL" if can_start
-			else ("TRIAL LOCKED" if status == "LOCKED" else "SELECT TRIAL")
+			("ULANGI UJIAN" if SettingsManager.language=="id" else "REPLAY TRIAL") if can_start and not first_clear
+			else ("MULAI UJIAN" if SettingsManager.language=="id" else "BEGIN TRIAL") if can_start
+			else ("UJIAN TERKUNCI" if SettingsManager.language=="id" else "TRIAL LOCKED") if status=="LOCKED"
+			else ("SEGERA HADIR" if SettingsManager.language=="id" else "COMING SOON") if status=="COMING SOON"
+			else ("PILIH UJIAN" if SettingsManager.language=="id" else "SELECT TRIAL")
 		),
 	}
 
@@ -489,6 +494,8 @@ func _build_selected_stage_panel(accent: Color) -> PanelContainer:
 	start_button.theme_type_variation = &"JadePrimaryButton"
 	start_button.add_theme_font_size_override("font_size", 16)
 	start_button.text = str(state.get("button_text", ""))
+	_stage_start_text = start_button.text
+	start_button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	start_button.disabled = not can_start
 	start_button.focus_mode = Control.FOCUS_NONE
 	start_button.pressed.connect(_on_start_pressed)
@@ -659,6 +666,7 @@ func _refresh_selected_stage_panel() -> void:
 	var entry: Dictionary = preload("res://scripts/data/chronicle_catalog.gd").for_chapter(chapter_id,"enter")
 	_story_button.visible = not entry.is_empty() and preload("res://scripts/data/chronicle_catalog.gd").unlocked(entry,JourneyManager.cleared_stage_keys,JourneyManager.cosmetic_badges)
 	var next_button_text: String = str(state.get("button_text", ""))
+	_stage_start_text = next_button_text
 	if start_button.text != next_button_text:
 		start_button.text = next_button_text
 	_stage_can_start = bool(state.get("can_start", false))
@@ -670,19 +678,27 @@ func _refresh_stage_energy() -> void:
 		return
 	var status: Dictionary = JourneyManager.get_energy_status(chapter_id, preview_stage_id)
 	var indonesian: bool = SettingsManager.language == "id"
-	var display: String = "Energy %d/%d" % [status.units, status.capacity]
+	var display: String = ("Energi %d/%d" if indonesian else "Energy %d/%d") % [status.units, status.capacity]
 	if _get_stage_status(preview_stage_id) in ["AVAILABLE", "CLEARED"]:
 		if int(status.cost) == 0:
 			display += " · Gratis" if indonesian else " · Free"
 		else:
 			display += " · %d saat menang" % status.cost if indonesian else " · %d on first clear" % status.cost
 	var wait_seconds: int = int(status.wait_seconds)
-	if wait_seconds > 0:
+	var recovering: bool = SaveManager.is_progress_read_only()
+	if recovering:
+		display += "\nPulihkan save melalui Beranda." if indonesian else "\nRecover your save from Home."
+	elif _stage_can_start and wait_seconds > 0:
 		display += ("\nSiap dalam " if indonesian else "\nReady in ") + _energy_clock_text(wait_seconds)
 	elif int(status.refill_seconds) > 0:
 		display += ("\n+1 dalam " if indonesian else "\n+1 in ") + _energy_clock_text(int(status.refill_seconds))
 	_energy_label.text = display
-	start_button.disabled = not _stage_can_start or wait_seconds > 0 or SaveManager.is_progress_read_only()
+	start_button.disabled = not _stage_can_start or wait_seconds > 0 or recovering
+	if recovering:start_button.text = "PULIHKAN SAVE" if indonesian else "RECOVER SAVE"
+	elif _stage_can_start and wait_seconds > 0:
+		start_button.text = ("PERLU %d ENERGI" if indonesian else "NEED %d ENERGY") % int(status.cost)
+	else:start_button.text = _stage_start_text
+	start_button.tooltip_text = display
 
 
 func _energy_clock_text(seconds: int) -> String:
@@ -1021,10 +1037,15 @@ func _on_back_pressed() -> void:
 
 func _fit_phone() -> void:
 	var compact: bool=size.y<700 or size.x<350
-	if is_instance_valid(_realm_header):_realm_header.custom_minimum_size.y=50 if compact else 82
+	var safe: Control=get_node_or_null("SafeArea")
+	var short_landscape: bool=is_instance_valid(safe) and safe.size.y<480 and safe.size.x>safe.size.y
+	if is_instance_valid(_realm_header):_realm_header.custom_minimum_size.y=40 if short_landscape else 50 if compact else 82
 	if is_instance_valid(_realm_eyebrow):_realm_eyebrow.visible=not compact
 	if is_instance_valid(_realm_subtitle):_realm_subtitle.visible=not compact
 	if is_instance_valid(_detail_art):_detail_art.visible=not compact
+	if is_instance_valid(map_scroll):map_scroll.custom_minimum_size.y=40 if short_landscape else 72
+	var reader: ScrollContainer=find_child("StageDetailScroll",true,false)
+	if is_instance_valid(reader):reader.custom_minimum_size.y=96 if short_landscape else 135
 
 func _fit_map_width(canvas: Control) -> void:
 	if not is_instance_valid(canvas):return
