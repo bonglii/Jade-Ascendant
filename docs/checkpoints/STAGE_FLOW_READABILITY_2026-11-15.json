@@ -7,7 +7,8 @@
     "Native compact stage preview showed an Energy Ready-in countdown while the trial was progression-locked",
     "Native defeat Skills tap jumped back to the run title and hid the selected report",
     "Short landscape stage Start extended below the viewport",
-    "Indonesian retry caption forced a 317px panel into a 296px safe area"
+    "Indonesian retry caption forced a 317px panel into a 296px safe area",
+    "Native Victory save-pending state still advertised REWARDS SECURED"
   ],
   "changes": [
     "Stage CTA explains insufficient Energy and save recovery, restores ready state and identifies free replay",
@@ -15,12 +16,18 @@
     "Short landscape reduces decorative/map and detail minimum heights while retaining Start",
     "Victory/Defeat tabs bring their report into view rather than resetting to the run title",
     "Damage amounts include share of recorded total; tiny nonzero shares use <1%; empty reports are explicit and partial-history wording remains",
-    "Shared result buttons wrap full captions; panels respect compact safe insets"
+    "Shared result buttons wrap full captions; panels respect compact safe insets",
+    "Victory reward heading follows save-pending state and resets correctly when the saved presentation is shown again"
   ],
   "validation": {
     "engine": "Godot 4.7.2; official archive SHA256 cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4",
-    "headless": "310/310",
-    "native": "IN_PROGRESS; baseline observed, final source review follows",
+    "headless": "314/314",
+    "native": {
+      "initial_source": "07d4363f19f25bd29c332a7bb98eff939a612382",
+      "initial_checks": "310/310; X11/OpenGL; clean process exit 0",
+      "final_review": "IN_PROGRESS after the Victory save-state caption correction",
+      "review_fixture": "Watchdog now stops enforcing the assertion deadline after checks complete; interactive review is not an unfinished test."
+    },
     "coverage": "EN/ID; 320x568,405x860,648x1152,860x405; stage energy/lock/save-barrier/replay states; production Victory/Defeat UI; native input tab taps/swipes; damage percentages and typography; partial/empty states; safe insets; unchanged currency/clears/combat evidence and pending defeat",
     "boundary": "Damage totals are controlled display fixtures in a real stage. Victory UI invocation does not establish a completed victory/reward transaction. No phone FPS, authenticated service or Android export proof.",
     "unchanged_evidence": "Reuse previous Library 455/455, Hero/Sword Rain 107/107 and unchanged combat/IAP gates",

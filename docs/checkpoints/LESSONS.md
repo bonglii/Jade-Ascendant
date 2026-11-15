@@ -1037,3 +1037,5 @@ Sort equipment with the same ownership resolver that supplies its displayed star
 - Disabled stage actions must disclose the actual blocking reason. Save recovery takes priority; Energy readiness does not imply a locked stage unlocks after that timer. Restore the ready caption when the blocker clears.
 - Test full localized action captions against the actual safe area. Indonesian Retry forced a 317px result panel into a 296px safe area; allow the complete caption to wrap rather than shrinking or clipping it.
 - Report fixtures must retain zero-damage owned weapons, use explicitly typed Array[Dictionary] for dynamic assignments, and accept scroll position zero when all report content fits. Controlled display totals should be installed after final combat callbacks settle.
+
+- Inspect message combinations, not only isolated labels: a save-pending result must not also advertise rewards secured. Reset the heading on every presentation and cover pending-to-saved reuse. A fixture watchdog must stop enforcing an assertion deadline after completed checks enter interactive review.

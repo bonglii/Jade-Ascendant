@@ -123,7 +123,9 @@ func show_victory(completion: Dictionary = {}, clear_saved: bool = true) -> void
 	get_node("ResultCeremony").call_deferred("capture_run_report")
 	_refresh_stage_identity()
 	_refresh_reward_summary()
+	reward_header_label.text = tr("REWARDS SECURED")
 	if not _clear_saved:
+		reward_header_label.text = "HADIAH MENUNGGU" if SettingsManager.language=="id" else "REWARDS PENDING"
 		reward_summary_label.show()
 		clear_state_label.text = tr("SAVE PENDING")
 		reward_summary_label.text = tr(

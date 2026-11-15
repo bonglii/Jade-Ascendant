@@ -2,6 +2,7 @@ extends SceneTree
 ## Isolated production UI/input fixtures, not phone FPS or a reward transaction.
 var checks: int=0
 var failures: int=0
+var checks_finished: bool=false
 
 func _initialize() -> void:run.call_deferred()
 func check(ok: bool, message: String) -> void:
@@ -33,7 +34,7 @@ func dispose() -> void:
 
 func run() -> void:
 	if not OS.get_user_data_dir().contains("jade_stage_flow_qa"):quit(2);return
-	create_timer(100).timeout.connect(func():quit(1))
+	create_timer(100).timeout.connect(func():if not checks_finished:quit(1))
 	await frames();Input.set_emulate_touch_from_mouse(true)
 	root.content_scale_mode=Window.CONTENT_SCALE_MODE_DISABLED;root.content_scale_size=Vector2i.ZERO
 	var settings: Node=root.get_node("SettingsManager")
@@ -107,6 +108,12 @@ func run() -> void:
 		else:ceremony.capture_defeat_report();ceremony._defeat_details.show()
 		for language: String in ["en","id"]:
 			settings.set_presentation("language",language)
+			if mode=="victory":
+				ui.show_victory({},false);await frames()
+				check(ui.reward_header_label.text==("HADIAH MENUNGGU" if language=="id" else "REWARDS PENDING"),"pending save never claims rewards secured "+language)
+				ui.show_victory({},true);await frames()
+				check(ui.reward_header_label.text==ui.tr("REWARDS SECURED"),"saved presentation restores normal reward heading "+language)
+				ui.show_victory({},false);await frames()
 			for dimensions: Vector2i in [Vector2i(320,568),Vector2i(405,860),Vector2i(648,1152),Vector2i(860,405)]:
 				root.size=dimensions;await frames(12)
 				ceremony._show_skills=false;ceremony._refresh_report_rows();await frames()
@@ -150,6 +157,7 @@ func run() -> void:
 	check(ledger.snapshot().totals==ledger_before.totals and ledger.snapshot().metrics==ledger_before.metrics,"report browsing preserves combat evidence")
 	check(not current_scene.get_node("GameOverManager").defeat_finalized,"report browsing does not finalize a recoverable defeat")
 	print("STAGE_FLOW_CHECKS=",checks,";FAILURES=",failures,";DISPLAY=",DisplayServer.get_name())
+	checks_finished=true
 	if "--review" in OS.get_cmdline_user_args():
 		settings.set_presentation("language","id" if "--id" in OS.get_cmdline_user_args() else "en")
 		root.size=Vector2i(860,405) if "--landscape" in OS.get_cmdline_user_args() else Vector2i(320,568) if "--compact" in OS.get_cmdline_user_args() else Vector2i(405,860)
